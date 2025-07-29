@@ -62,26 +62,13 @@ class SubjectResource extends Resource
 
                 Forms\Components\Section::make('تفاصيل التدريس')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Select::make('difficulty_level')
-                                    ->label('مستوى الصعوبة')
-                                    ->options([
-                                        'beginner' => 'مبتدئ',
-                                        'intermediate' => 'متوسط',
-                                        'advanced' => 'متقدم',
-                                    ])
-                                    ->default('beginner')
-                                    ->required(),
-
-                                Forms\Components\TextInput::make('hours_per_week')
-                                    ->label('عدد الساعات أسبوعياً')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(20)
-                                    ->default(2)
-                                    ->required(),
-                            ]),
+                        Forms\Components\TextInput::make('hours_per_week')
+                            ->label('عدد الساعات أسبوعياً')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(20)
+                            ->default(2)
+                            ->required(),
 
                         Forms\Components\Textarea::make('prerequisites')
                             ->label('المتطلبات المسبقة')
@@ -111,20 +98,6 @@ class SubjectResource extends Resource
                     ->sortable()
                     ->placeholder('غير محدد'),
                     
-                Tables\Columns\BadgeColumn::make('difficulty_level')
-                    ->label('مستوى الصعوبة')
-                    ->colors([
-                        'success' => 'beginner',
-                        'warning' => 'intermediate',
-                        'danger' => 'advanced',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'beginner' => 'مبتدئ',
-                        'intermediate' => 'متوسط',
-                        'advanced' => 'متقدم',
-                        default => $state,
-                    }),
-                    
                 Tables\Columns\TextColumn::make('hours_per_week')
                     ->label('ساعات/أسبوع')
                     ->sortable()
@@ -149,14 +122,6 @@ class SubjectResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('difficulty_level')
-                    ->label('مستوى الصعوبة')
-                    ->options([
-                        'beginner' => 'مبتدئ',
-                        'intermediate' => 'متوسط',
-                        'advanced' => 'متقدم',
-                    ]),
-                    
                 Tables\Filters\Filter::make('hours_per_week')
                     ->label('عدد الساعات')
                     ->form([
@@ -241,27 +206,16 @@ class SubjectResource extends Resource
                     ->schema([
                         Components\Grid::make(2)
                             ->schema([
-                                Components\TextEntry::make('difficulty_level')
-                                    ->label('مستوى الصعوبة')
-                                    ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        'beginner' => 'success',
-                                        'intermediate' => 'warning',
-                                        'advanced' => 'danger',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                                        'beginner' => 'مبتدئ',
-                                        'intermediate' => 'متوسط',
-                                        'advanced' => 'متقدم',
-                                        default => $state,
-                                    }),
-                                    
                                 Components\TextEntry::make('hours_per_week')
                                     ->label('ساعات أسبوعياً')
                                     ->badge()
                                     ->color('info')
                                     ->suffix(' ساعة'),
+
+                                Components\TextEntry::make('academy.name')
+                                    ->label('الأكاديمية')
+                                    ->badge()
+                                    ->color('primary'),
                             ]),
 
                         Components\TextEntry::make('prerequisites')

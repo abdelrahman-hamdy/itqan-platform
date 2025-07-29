@@ -20,7 +20,6 @@ class Subject extends Model
         'description',
         'prerequisites',
         'hours_per_week',
-        'difficulty_level',
         'is_active',
     ];
 

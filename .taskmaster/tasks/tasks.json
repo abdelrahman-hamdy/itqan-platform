@@ -185,28 +185,28 @@
         "testStrategy": "Test all dashboard functionalities including CRUD operations, workflows, and filters",
         "subtasks": [
             {
-                "id": 3.5.1,
+                "id": 3.51,
                 "title": "Create QuranTeacher Filament Resource",
                 "description": "Complete teacher management with approval workflow",
                 "status": "completed",
                 "details": "✅ COMPLETED: Multi-section forms, advanced filtering, approval actions, proper Arabic localization"
             },
             {
-                "id": 3.5.2,
+                "id": 3.52,
                 "title": "Create QuranSubscription Filament Resource",
                 "description": "Subscription lifecycle management with status controls",
                 "status": "completed",
                 "details": "✅ COMPLETED: Complete subscription management, progress tracking, payment status, lifecycle actions"
             },
             {
-                "id": 3.5.3,
+                "id": 3.53,
                 "title": "Create QuranCircle Filament Resource",
                 "description": "Group circle management with enrollment and workflow",
                 "status": "completed",
                 "details": "✅ COMPLETED: Circle creation, enrollment management, publishing workflow, capacity tracking"
             },
             {
-                "id": 3.5.4,
+                "id": 3.54,
                 "title": "Complete remaining Quran resources",
                 "description": "Create QuranSession, QuranProgress, and QuranHomework resources",
                 "status": "pending",
