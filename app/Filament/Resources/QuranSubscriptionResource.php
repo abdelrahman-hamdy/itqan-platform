@@ -61,15 +61,18 @@ class QuranSubscriptionResource extends Resource
 
                                 Select::make('quran_teacher_id')
                                     ->label('معلم القرآن')
-                                    ->relationship('quranTeacher', 'first_name')
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->first_name . ' ' . $record->last_name)
-                                    ->searchable(['first_name', 'last_name', 'email'])
+                                    ->options(\App\Models\QuranTeacher::where('approval_status', 'approved')
+                                        ->get()
+                                        ->pluck('full_name', 'id'))
+                                    ->searchable()
                                     ->preload()
                                     ->required(),
 
                                 Select::make('package_id')
                                     ->label('الباقة')
-                                    ->relationship('package', 'name_ar')
+                                    ->options(\App\Models\QuranPackage::where('is_active', true)
+                                        ->orderBy('sort_order')
+                                        ->pluck('name_ar', 'id'))
                                     ->searchable()
                                     ->preload()
                                     ->required()
@@ -298,33 +301,15 @@ class QuranSubscriptionResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('quranTeacher.user.name')
+                TextColumn::make('quranTeacher.full_name')
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('package_name')
+                TextColumn::make('package.name_ar')
                     ->label('اسم الباقة')
                     ->searchable()
                     ->limit(20),
-
-                BadgeColumn::make('package_type')
-                    ->label('نوع الباقة')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'basic' => 'أساسية',
-                        'standard' => 'قياسية',
-                        'premium' => 'مميزة',
-                        'intensive' => 'مكثفة',
-                        'custom' => 'مخصصة',
-                        default => $state,
-                    })
-                    ->colors([
-                        'secondary' => 'basic',
-                        'primary' => 'standard',
-                        'success' => 'premium',
-                        'warning' => 'intensive',
-                        'info' => 'custom',
-                    ]),
 
                 TextColumn::make('total_sessions')
                     ->label('إجمالي الجلسات')
@@ -341,9 +326,22 @@ class QuranSubscriptionResource extends Resource
                     ->color('success'),
 
                 TextColumn::make('total_price')
-                    ->label('السعر الإجمالي')
+                    ->label('السعر الأصلي')
                     ->money('SAR')
                     ->sortable(),
+
+                TextColumn::make('discount_amount')
+                    ->label('الخصم')
+                    ->money('SAR')
+                    ->sortable()
+                    ->default(0),
+
+                TextColumn::make('final_price')
+                    ->label('السعر النهائي')
+                    ->money('SAR')
+                    ->sortable()
+                    ->weight(FontWeight::Bold)
+                    ->color('success'),
 
                 BadgeColumn::make('subscription_status')
                     ->label('حالة الاشتراك')
@@ -426,15 +424,9 @@ class QuranSubscriptionResource extends Resource
                         'cancelled' => 'ملغي',
                     ]),
 
-                SelectFilter::make('package_type')
-                    ->label('نوع الباقة')
-                    ->options([
-                        'basic' => 'أساسية',
-                        'standard' => 'قياسية',
-                        'premium' => 'مميزة',
-                        'intensive' => 'مكثفة',
-                        'custom' => 'مخصصة',
-                    ]),
+                SelectFilter::make('package_id')
+                    ->label('الباقة')
+                    ->relationship('package', 'name_ar'),
 
                 Filter::make('expiring_soon')
                     ->label('تنتهي قريباً')
