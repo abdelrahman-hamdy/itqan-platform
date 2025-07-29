@@ -52,25 +52,46 @@ class AcademicTeacherResource extends Resource
                                     ->options(function () {
                                         $academyId = auth()->user()->academy_id ?? 1;
                                         return User::where('academy_id', $academyId)
-                                            ->whereHas('roles', function ($query) {
-                                                $query->where('name', 'academic_teacher');
-                                            })
+                                            ->where('role', 'teacher')
                                             ->pluck('name', 'id');
                                     })
                                     ->searchable()
-                                    ->required()
                                     ->createOptionForm([
-                                        Forms\Components\TextInput::make('name')
-                                            ->label('الاسم')
-                                            ->required(),
+                                        Forms\Components\TextInput::make('first_name')
+                                            ->label('الاسم الأول')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\TextInput::make('last_name')
+                                            ->label('الاسم الأخير')
+                                            ->required()
+                                            ->maxLength(255),
                                         Forms\Components\TextInput::make('email')
                                             ->label('البريد الإلكتروني')
                                             ->email()
-                                            ->required(),
+                                            ->required()
+                                            ->unique(User::class),
                                         Forms\Components\TextInput::make('phone')
                                             ->label('رقم الهاتف')
-                                            ->tel(),
-                                    ]),
+                                            ->tel()
+                                            ->maxLength(20),
+                                        Forms\Components\TextInput::make('password')
+                                            ->label('كلمة المرور')
+                                            ->password()
+                                            ->required()
+                                            ->minLength(8),
+                                    ])
+                                    ->createOptionUsing(function (array $data): int {
+                                        $academyId = auth()->user()->academy_id ?? 1;
+                                        $user = User::create([
+                                            ...$data,
+                                            'academy_id' => $academyId,
+                                            'role' => 'teacher',
+                                            'status' => 'active',
+                                            'password' => bcrypt($data['password']),
+                                        ]);
+                                        return $user->id;
+                                    })
+                                    ->required(),
 
                                 Forms\Components\TextInput::make('teacher_code')
                                     ->label('رمز المعلم')

@@ -45,8 +45,7 @@ class ManageAcademicSettings extends Page implements HasForms
 
     public function form(Form $form): Form
     {
-        return $form
-            ->schema(AcademicSettingsResource::form(new Form)->getSchema())
+        return AcademicSettingsResource::form($form)
             ->statePath('data');
     }
 

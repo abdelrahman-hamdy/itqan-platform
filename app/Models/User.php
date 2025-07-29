@@ -186,6 +186,8 @@ class User extends Authenticatable
         return $this->status === 'pending';
     }
 
+
+
     /**
      * Scope to get users by role
      */
