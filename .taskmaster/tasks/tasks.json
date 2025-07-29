@@ -173,6 +173,48 @@
         ]
     },
     {
+        "id": 3.5,
+        "title": "Phase 1D: Quran Section Dashboard Implementation",
+        "description": "Create Filament admin dashboard resources for complete Quran section management",
+        "status": "completed",
+        "priority": "high",
+        "dependencies": [
+            3
+        ],
+        "details": "✅ COMPLETED: Created comprehensive Filament resources for QuranTeacher, QuranSubscription, and QuranCircle with full admin management capabilities, Arabic localization, proper form sections, advanced filtering, custom actions, and workflow management.",
+        "testStrategy": "Test all dashboard functionalities including CRUD operations, workflows, and filters",
+        "subtasks": [
+            {
+                "id": 3.5.1,
+                "title": "Create QuranTeacher Filament Resource",
+                "description": "Complete teacher management with approval workflow",
+                "status": "completed",
+                "details": "✅ COMPLETED: Multi-section forms, advanced filtering, approval actions, proper Arabic localization"
+            },
+            {
+                "id": 3.5.2,
+                "title": "Create QuranSubscription Filament Resource",
+                "description": "Subscription lifecycle management with status controls",
+                "status": "completed",
+                "details": "✅ COMPLETED: Complete subscription management, progress tracking, payment status, lifecycle actions"
+            },
+            {
+                "id": 3.5.3,
+                "title": "Create QuranCircle Filament Resource",
+                "description": "Group circle management with enrollment and workflow",
+                "status": "completed",
+                "details": "✅ COMPLETED: Circle creation, enrollment management, publishing workflow, capacity tracking"
+            },
+            {
+                "id": 3.5.4,
+                "title": "Complete remaining Quran resources",
+                "description": "Create QuranSession, QuranProgress, and QuranHomework resources",
+                "status": "pending",
+                "details": "Need to create remaining dashboard resources for complete Quran section management"
+            }
+        ]
+    },
+    {
         "id": 4,
         "title": "Phase 2A: Academic Section Backend Implementation",
         "description": "Implement academic education section with private sessions and interactive courses",
