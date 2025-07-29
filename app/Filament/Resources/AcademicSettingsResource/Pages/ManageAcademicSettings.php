@@ -5,13 +5,21 @@ namespace App\Filament\Resources\AcademicSettingsResource\Pages;
 use App\Filament\Resources\AcademicSettingsResource;
 use App\Models\AcademicSettings;
 use Filament\Actions;
-use Filament\Resources\Pages\ManageRecords;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\Page;
 
-class ManageAcademicSettings extends ManageRecords
+class ManageAcademicSettings extends Page implements HasForms
 {
+    use InteractsWithForms;
+
     protected static string $resource = AcademicSettingsResource::class;
+
+    protected static string $view = 'filament.resources.academic-settings-resource.pages.manage-academic-settings';
+
+    public ?array $data = [];
 
     public function getTitle(): string
     {
@@ -24,26 +32,8 @@ class ManageAcademicSettings extends ManageRecords
         return "إدارة إعدادات القسم الأكاديمي لـ {$academyName}";
     }
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\Action::make('save')
-                ->label('حفظ الإعدادات')
-                ->icon('heroicon-o-check')
-                ->color('success')
-                ->action('save'),
-        ];
-    }
-
-    public function form(Form $form): Form
-    {
-        return static::getResource()::form($form);
-    }
-
     public function mount(): void
     {
-        parent::mount();
-
         $academyId = auth()->user()->academy_id ?? 1;
         
         // Get or create settings for current academy
@@ -51,6 +41,13 @@ class ManageAcademicSettings extends ManageRecords
         
         // Fill the form with current settings
         $this->form->fill($settings->toArray());
+    }
+
+    public function form(Form $form): Form
+    {
+        return $form
+            ->schema(AcademicSettingsResource::form(new Form)->getSchema())
+            ->statePath('data');
     }
 
     public function save(): void
@@ -85,9 +82,10 @@ class ManageAcademicSettings extends ManageRecords
         return [
             Actions\Action::make('save')
                 ->label('حفظ الإعدادات')
-                ->submit('save')
+                ->action('save')
                 ->keyBindings(['mod+s'])
-                ->color('success'),
+                ->color('success')
+                ->icon('heroicon-o-check'),
         ];
     }
 } 
