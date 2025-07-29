@@ -63,7 +63,7 @@ class GradeLevelResource extends Resource
 
                 Forms\Components\Section::make('تفاصيل المرحلة')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('level')
                                     ->label('ترتيب المرحلة')
@@ -73,28 +73,11 @@ class GradeLevelResource extends Resource
                                     ->required()
                                     ->helperText('1 للمرحلة الأولى، 2 للثانية، وهكذا'),
 
-                                Forms\Components\TextInput::make('min_age')
-                                    ->label('الحد الأدنى للعمر')
-                                    ->numeric()
-                                    ->minValue(3)
-                                    ->maxValue(25)
-                                    ->suffix('سنة')
-                                    ->helperText('أقل عمر للالتحاق بهذه المرحلة'),
-
-                                Forms\Components\TextInput::make('max_age')
-                                    ->label('الحد الأقصى للعمر')
-                                    ->numeric()
-                                    ->minValue(5)
-                                    ->maxValue(30)
-                                    ->suffix('سنة')
-                                    ->helperText('أكبر عمر للالتحاق بهذه المرحلة')
-                                    ->after('min_age'),
+                                Forms\Components\Toggle::make('is_active')
+                                    ->label('نشطة')
+                                    ->default(true)
+                                    ->helperText('هل هذه المرحلة متاحة للتسجيل؟'),
                             ]),
-
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('نشطة')
-                            ->default(true)
-                            ->helperText('هل هذه المرحلة متاحة للتسجيل؟'),
                     ]),
             ]);
     }
@@ -121,18 +104,6 @@ class GradeLevelResource extends Resource
                     ->badge()
                     ->color('info'),
 
-                Tables\Columns\TextColumn::make('min_age')
-                    ->label('العمر من')
-                    ->suffix(' سنة')
-                    ->alignCenter()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('max_age')
-                    ->label('إلى')
-                    ->suffix(' سنة')
-                    ->alignCenter()
-                    ->sortable(),
-
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('نشطة')
                     ->boolean()
@@ -152,28 +123,6 @@ class GradeLevelResource extends Resource
                     ->placeholder('الكل')
                     ->trueLabel('نشطة')
                     ->falseLabel('غير نشطة'),
-
-                Tables\Filters\Filter::make('age_range')
-                    ->form([
-                        Forms\Components\TextInput::make('min_age')
-                            ->label('الحد الأدنى للعمر')
-                            ->numeric(),
-                        Forms\Components\TextInput::make('max_age')
-                            ->label('الحد الأقصى للعمر')
-                            ->numeric(),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['min_age'],
-                                fn (Builder $query, $minAge): Builder => $query->where('min_age', '>=', $minAge),
-                            )
-                            ->when(
-                                $data['max_age'],
-                                fn (Builder $query, $maxAge): Builder => $query->where('max_age', '<=', $maxAge),
-                            );
-                    })
-                    ->label('نطاق العمر'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()

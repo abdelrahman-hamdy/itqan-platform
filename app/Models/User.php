@@ -4,10 +4,10 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
@@ -25,20 +25,12 @@ class User extends Authenticatable
         'email',
         'phone',
         'password',
-        'role',
+        'user_type',
         'status',
-        'bio',
-        'teacher_type',
-        'qualification_degree',
-        'qualification_text',
-        'university',
-        'years_experience',
-        'has_ijazah',
-        'student_session_price',
-        'teacher_session_price',
-        'parent_phone',
-        'parent_id',
-        'avatar',
+        'role', // Keep for backwards compatibility during transition
+        'email_verified_at',
+        'phone_verified_at',
+        'last_login_at',
     ];
 
     /**
@@ -60,22 +52,14 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
-            'has_ijazah' => 'boolean',
-            'student_session_price' => 'decimal:2',
-            'teacher_session_price' => 'decimal:2',
-            'years_experience' => 'integer',
         ];
     }
 
-    protected $attributes = [
-        'role' => 'student',
-        'status' => 'pending',
-        'has_ijazah' => false,
-    ];
-
     /**
-     * Get the academy this user belongs to
+     * Academy relationship
      */
     public function academy(): BelongsTo
     {
@@ -83,117 +67,106 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the parent user (for students)
+     * Get the user's profile based on user_type
      */
-    public function parent(): BelongsTo
+    public function profile()
     {
-        return $this->belongsTo(User::class, 'parent_id');
+        return match($this->user_type) {
+            'student' => $this->hasOne(StudentProfile::class),
+            'quran_teacher' => $this->hasOne(QuranTeacherProfile::class),
+            'academic_teacher' => $this->hasOne(AcademicTeacherProfile::class),
+            'parent' => $this->hasOne(ParentProfile::class),
+            'supervisor' => $this->hasOne(SupervisorProfile::class),
+            'admin' => null, // Admins use basic user info only
+            default => null,
+        };
     }
 
     /**
-     * Get children users (for parents)
+     * Get full name attribute
      */
-    public function children(): HasMany
+    public function getNameAttribute(): string
     {
-        return $this->hasMany(User::class, 'parent_id');
+        return trim($this->first_name . ' ' . $this->last_name) ?: 'مستخدم غير محدد';
     }
 
     /**
-     * Get academies where this user is admin
+     * User type helper methods
      */
-    public function managedAcademies(): HasMany
-    {
-        return $this->hasMany(Academy::class, 'admin_id');
+    public function isStudent(): bool 
+    { 
+        return $this->user_type === 'student'; 
+    }
+
+    public function isQuranTeacher(): bool 
+    { 
+        return $this->user_type === 'quran_teacher'; 
+    }
+
+    public function isAcademicTeacher(): bool 
+    { 
+        return $this->user_type === 'academic_teacher'; 
+    }
+
+    public function isParent(): bool 
+    { 
+        return $this->user_type === 'parent'; 
+    }
+
+    public function isSupervisor(): bool 
+    { 
+        return $this->user_type === 'supervisor'; 
+    }
+
+    public function isAdmin(): bool 
+    { 
+        return $this->user_type === 'admin'; 
     }
 
     /**
-     * Get the full name attribute
-     */
-    public function getFullNameAttribute(): string
-    {
-        return $this->first_name . ' ' . $this->last_name;
-    }
-
-    /**
-     * Get the display name (uses full_name or falls back to name)
-     */
-    public function getDisplayNameAttribute(): string
-    {
-        return $this->full_name ?: $this->name;
-    }
-
-    /**
-     * Check if user is super admin
-     */
-    public function isSuperAdmin(): bool
-    {
-        return $this->role === 'super_admin';
-    }
-
-    /**
-     * Check if user is academy admin
-     */
-    public function isAcademyAdmin(): bool
-    {
-        return $this->role === 'academy_admin';
-    }
-
-    /**
-     * Check if user is teacher
+     * Check if user is a teacher (any type)
      */
     public function isTeacher(): bool
     {
-        return $this->role === 'teacher';
+        return in_array($this->user_type, ['quran_teacher', 'academic_teacher']);
     }
 
     /**
-     * Check if user is student
+     * Check if user is staff (admin, supervisor, or teacher)
      */
-    public function isStudent(): bool
+    public function isStaff(): bool
     {
-        return $this->role === 'student';
+        return in_array($this->user_type, ['admin', 'supervisor', 'quran_teacher', 'academic_teacher']);
     }
 
     /**
-     * Check if user is parent
+     * Get display name based on profile data
      */
-    public function isParent(): bool
+    public function getDisplayNameAttribute(): string
     {
-        return $this->role === 'parent';
+        $profile = $this->profile;
+        
+        if ($profile && method_exists($profile, 'getDisplayName')) {
+            return $profile->getDisplayName();
+        }
+        
+        return $this->name;
     }
 
     /**
-     * Check if user is supervisor
+     * Scope to filter by user type
      */
-    public function isSupervisor(): bool
+    public function scopeOfType($query, string $type)
     {
-        return $this->role === 'supervisor';
+        return $query->where('user_type', $type);
     }
 
     /**
-     * Check if user is active
+     * Scope to filter by academy
      */
-    public function isActive(): bool
+    public function scopeForAcademy($query, int $academyId)
     {
-        return $this->status === 'active';
-    }
-
-    /**
-     * Check if user is pending
-     */
-    public function isPending(): bool
-    {
-        return $this->status === 'pending';
-    }
-
-
-
-    /**
-     * Scope to get users by role
-     */
-    public function scopeByRole($query, string $role)
-    {
-        return $query->where('role', $role);
+        return $query->where('academy_id', $academyId);
     }
 
     /**
@@ -202,25 +175,5 @@ class User extends Authenticatable
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
-    }
-
-    /**
-     * Scope to get users by academy
-     */
-    public function scopeByAcademy($query, int $academyId)
-    {
-        return $query->where('academy_id', $academyId);
-    }
-
-    /**
-     * Get avatar URL with fallback
-     */
-    public function getAvatarUrlAttribute(): string
-    {
-        if ($this->avatar) {
-            return asset('storage/' . $this->avatar);
-        }
-        
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->display_name) . '&background=0ea5e9&color=fff';
     }
 }

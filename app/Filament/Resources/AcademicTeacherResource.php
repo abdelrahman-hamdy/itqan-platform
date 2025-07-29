@@ -264,10 +264,6 @@ class AcademicTeacherResource extends Resource
                                     ->maxLength(1000)
                                     ->rows(4),
                             ]),
-
-                        Forms\Components\Toggle::make('can_create_courses')
-                            ->label('يمكنه إنشاء دورات تفاعلية')
-                            ->default(false),
                     ]),
 
                 Forms\Components\Section::make('الحالة والاعتماد')
