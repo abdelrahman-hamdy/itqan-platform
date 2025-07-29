@@ -30,6 +30,13 @@ class SubjectResource extends Resource
     
     protected static ?string $pluralModelLabel = 'المواد الدراسية';
 
+    // Override to scope to current user's academy
+    public static function getEloquentQuery(): Builder
+    {
+        $academyId = auth()->user()->academy_id ?? 1;
+        return parent::getEloquentQuery()->where('academy_id', $academyId);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

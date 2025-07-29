@@ -1,24 +1,23 @@
 <?php
 
-namespace App\Filament\Resources\AcademicSettingsResource\Pages;
+namespace App\Filament\Resources\AcademicTeacherResource\Pages;
 
-use App\Filament\Resources\AcademicSettingsResource;
+use App\Filament\Resources\AcademicTeacherResource;
 use Filament\Resources\Pages\CreateRecord;
 
-class CreateAcademicSettings extends CreateRecord
+class CreateAcademicTeacher extends CreateRecord
 {
-    protected static string $resource = AcademicSettingsResource::class;
+    protected static string $resource = AcademicTeacherResource::class;
 
     public function getTitle(): string
     {
-        return 'إنشاء إعدادات أكاديمية جديدة';
+        return 'إضافة معلم أكاديمي جديد';
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Automatically set academy_id based on current user's academy
         $data['academy_id'] = auth()->user()->academy_id ?? 1;
-        $data['created_by'] = auth()->id();
         
         return $data;
     }
@@ -30,6 +29,6 @@ class CreateAcademicSettings extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'تم إنشاء الإعدادات الأكاديمية بنجاح';
+        return 'تم إضافة المعلم الأكاديمي بنجاح';
     }
 }

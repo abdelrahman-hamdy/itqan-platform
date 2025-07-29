@@ -29,6 +29,17 @@ class AcademicSettingsResource extends Resource
     
     protected static ?string $pluralModelLabel = 'الإعدادات الأكاديمية';
 
+    // Override to get/create settings for current user's academy
+    public static function getEloquentQuery(): Builder
+    {
+        $academyId = auth()->user()->academy_id ?? 1;
+        
+        // Ensure settings exist for current academy
+        AcademicSettings::getForAcademy($academyId);
+        
+        return parent::getEloquentQuery()->where('academy_id', $academyId);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -207,66 +218,12 @@ class AcademicSettingsResource extends Resource
 
     public static function table(Table $table): Table
     {
+        // This table won't be used since we're using ManageSettings page
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('academy.name')
-                    ->label('الأكاديمية')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('sessions_per_week_options_text')
-                    ->label('خيارات الحصص الأسبوعية')
-                    ->wrap(),
-
-                Tables\Columns\TextColumn::make('default_session_duration_minutes')
-                    ->label('مدة الحصة')
-                    ->suffix(' دقيقة')
-                    ->alignCenter(),
-
-                Tables\Columns\IconColumn::make('enable_trial_sessions')
-                    ->label('حصص تجريبية')
-                    ->boolean()
-                    ->trueColor('success')
-                    ->falseColor('danger'),
-
-                Tables\Columns\TextColumn::make('payment_methods_text')
-                    ->label('طرق الدفع')
-                    ->wrap(),
-
-                Tables\Columns\IconColumn::make('auto_create_google_meet_links')
-                    ->label('Google Meet تلقائي')
-                    ->boolean()
-                    ->trueColor('success')
-                    ->falseColor('gray'),
-
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('آخر تحديث')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable(),
-            ])
-            ->filters([
-                Tables\Filters\TernaryFilter::make('enable_trial_sessions')
-                    ->label('الحصص التجريبية')
-                    ->placeholder('الكل')
-                    ->trueLabel('مفعلة')
-                    ->falseLabel('غير مفعلة'),
-
-                Tables\Filters\TernaryFilter::make('auto_create_google_meet_links')
-                    ->label('Google Meet التلقائي')
-                    ->placeholder('الكل')
-                    ->trueLabel('مفعل')
-                    ->falseLabel('غير مفعل'),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('عرض'),
-                Tables\Actions\EditAction::make()
-                    ->label('تعديل'),
-            ])
-            ->bulkActions([
-                // Remove bulk actions for settings
-            ])
-            ->defaultSort('updated_at', 'desc');
+                    ->label('الأكاديمية'),
+            ]);
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -349,20 +306,27 @@ class AcademicSettingsResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAcademicSettings::route('/'),
-            'create' => Pages\CreateAcademicSettings::route('/create'),
-            'view' => Pages\ViewAcademicSettings::route('/{record}'),
-            'edit' => Pages\EditAcademicSettings::route('/{record}/edit'),
+            'index' => Pages\ManageAcademicSettings::route('/'),
         ];
     }
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return null; // Remove badge since we're dealing with single academy
     }
 
-    public static function getNavigationBadgeColor(): string|array|null
+    public static function canCreate(): bool
     {
-        return 'primary';
+        return false; // Settings are auto-created
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return false; // Settings should not be deleted
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false; // Settings should not be deleted
     }
 }
