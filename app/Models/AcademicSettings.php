@@ -28,6 +28,7 @@ class AcademicSettings extends Model
         'courses_start_on_schedule',
         'course_enrollment_deadline_days',
         'allow_late_enrollment',
+        'available_languages',
         'created_by',
         'updated_by',
         'notes',
@@ -48,6 +49,7 @@ class AcademicSettings extends Model
         'courses_start_on_schedule' => 'boolean',
         'course_enrollment_deadline_days' => 'integer',
         'allow_late_enrollment' => 'boolean',
+        'available_languages' => 'array',
     ];
 
     /**

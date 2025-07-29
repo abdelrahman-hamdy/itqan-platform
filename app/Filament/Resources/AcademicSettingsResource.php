@@ -197,6 +197,33 @@ class AcademicSettingsResource extends Resource
                             ]),
                     ]),
 
+                Forms\Components\Section::make('إعدادات اللغات')
+                    ->schema([
+                        Forms\Components\CheckboxList::make('available_languages')
+                            ->label('اللغات المتاحة للمعلمين')
+                            ->options([
+                                'arabic' => 'العربية',
+                                'english' => 'الإنجليزية',
+                                'french' => 'الفرنسية',
+                                'german' => 'الألمانية',
+                                'turkish' => 'التركية',
+                                'spanish' => 'الإسبانية',
+                                'chinese' => 'الصينية',
+                                'japanese' => 'اليابانية',
+                                'korean' => 'الكورية',
+                                'italian' => 'الإيطالية',
+                                'portuguese' => 'البرتغالية',
+                                'russian' => 'الروسية',
+                                'hindi' => 'الهندية',
+                                'urdu' => 'الأردية',
+                                'persian' => 'الفارسية',
+                            ])
+                            ->default(['arabic', 'english'])
+                            ->columns(3)
+                            ->helperText('اختر اللغات التي يمكن للمعلمين التدريس بها')
+                            ->required(),
+                    ]),
+
                 Forms\Components\Section::make('ملاحظات إدارية')
                     ->schema([
                         Forms\Components\Textarea::make('notes')

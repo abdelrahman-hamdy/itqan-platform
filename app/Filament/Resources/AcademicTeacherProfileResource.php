@@ -19,13 +19,13 @@ class AcademicTeacherProfileResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationLabel = 'المدرسون الأكاديميون';
+    protected static ?string $navigationLabel = 'المعلمون الأكاديميون';
 
     protected static ?string $navigationGroup = 'القسم الأكاديمي';
 
-    protected static ?string $modelLabel = 'مدرس أكاديمي';
+    protected static ?string $modelLabel = 'معلم أكاديمي';
 
-    protected static ?string $pluralModelLabel = 'المدرسون الأكاديميون';
+    protected static ?string $pluralModelLabel = 'المعلمون الأكاديميون';
 
     public static function form(Form $form): Form
     {
@@ -51,7 +51,7 @@ class AcademicTeacherProfileResource extends Resource
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255)
-                                    ->helperText('سيستخدم المدرس هذا البريد للدخول إلى المنصة'),
+                                    ->helperText('سيستخدم المعلم هذا البريد للدخول إلى المنصة'),
                                 Forms\Components\TextInput::make('phone')
                                     ->label('رقم الهاتف')
                                     ->tel()
@@ -97,15 +97,32 @@ class AcademicTeacherProfileResource extends Resource
                             ->helperText('اضغط Enter لإضافة شهادة جديدة'),
                         Forms\Components\CheckboxList::make('languages')
                             ->label('اللغات')
-                            ->options([
-                                'arabic' => 'العربية',
-                                'english' => 'الإنجليزية',
-                                'french' => 'الفرنسية',
-                                'german' => 'الألمانية',
-                                'turkish' => 'التركية',
-                            ])
+                            ->options(function () use ($academyId) {
+                                $settings = \App\Models\AcademicSettings::getForAcademy($academyId);
+                                $availableLanguages = $settings->available_languages ?? ['arabic', 'english'];
+                                
+                                $languageNames = [
+                                    'arabic' => 'العربية',
+                                    'english' => 'الإنجليزية',
+                                    'french' => 'الفرنسية',
+                                    'german' => 'الألمانية',
+                                    'turkish' => 'التركية',
+                                    'spanish' => 'الإسبانية',
+                                    'chinese' => 'الصينية',
+                                    'japanese' => 'اليابانية',
+                                    'korean' => 'الكورية',
+                                    'italian' => 'الإيطالية',
+                                    'portuguese' => 'البرتغالية',
+                                    'russian' => 'الروسية',
+                                    'hindi' => 'الهندية',
+                                    'urdu' => 'الأردية',
+                                    'persian' => 'الفارسية',
+                                ];
+                                
+                                return array_intersect_key($languageNames, array_flip($availableLanguages));
+                            })
                             ->default(['arabic'])
-                            ->columns(2),
+                            ->columns(3),
                     ]),
 
                 Forms\Components\Section::make('التخصص التدريسي')
@@ -119,8 +136,7 @@ class AcademicTeacherProfileResource extends Resource
                                     ->toArray();
                             })
                             ->required()
-                            ->columns(2)
-                            ->searchable(),
+                            ->columns(3),
                         Forms\Components\CheckboxList::make('grade_level_ids')
                             ->label('المراحل الدراسية')
                             ->options(function () use ($academyId) {
@@ -128,11 +144,11 @@ class AcademicTeacherProfileResource extends Resource
                                     ->active()
                                     ->orderBy('level')
                                     ->get()
-                                    ->pluck('display_name', 'id')
+                                    ->pluck('name', 'id')
                                     ->toArray();
                             })
                             ->required()
-                            ->columns(2),
+                            ->columns(3),
                     ]),
 
                 Forms\Components\Section::make('الأوقات المتاحة والأسعار')
@@ -159,7 +175,7 @@ class AcademicTeacherProfileResource extends Resource
                                 'friday' => 'الجمعة',
                                 'saturday' => 'السبت',
                             ])
-                            ->columns(2)
+                            ->columns(3)
                             ->required(),
                         Forms\Components\Grid::make(3)
                             ->schema([
@@ -170,27 +186,7 @@ class AcademicTeacherProfileResource extends Resource
                                     ->minValue(0)
                                     ->step(5)
                                     ->default(100),
-                                Forms\Components\TextInput::make('min_session_duration')
-                                    ->label('أقل مدة للحصة (دقيقة)')
-                                    ->numeric()
-                                    ->minValue(30)
-                                    ->maxValue(180)
-                                    ->step(15)
-                                    ->default(45),
-                                Forms\Components\TextInput::make('max_session_duration')
-                                    ->label('أقصى مدة للحصة (دقيقة)')
-                                    ->numeric()
-                                    ->minValue(30)
-                                    ->maxValue(180)
-                                    ->step(15)
-                                    ->default(90),
                             ]),
-                        Forms\Components\TextInput::make('max_students_per_group')
-                            ->label('أقصى عدد طلاب في المجموعة')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(50)
-                            ->default(10),
                     ]),
 
                 Forms\Components\Section::make('السيرة الذاتية')
