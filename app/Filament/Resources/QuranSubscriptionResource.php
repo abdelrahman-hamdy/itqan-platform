@@ -61,8 +61,7 @@ class QuranSubscriptionResource extends Resource
 
                                 Select::make('quran_teacher_id')
                                     ->label('معلم القرآن')
-                                    ->options(\App\Models\QuranTeacher::where('approval_status', 'approved')
-                                        ->get()
+                                    ->options(\App\Models\QuranTeacher::all()
                                         ->pluck('full_name', 'id'))
                                     ->searchable()
                                     ->preload()

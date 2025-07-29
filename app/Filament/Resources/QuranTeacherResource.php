@@ -480,7 +480,7 @@ class QuranTeacherResource extends Resource
                     ->schema([
                         Infolists\Components\Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('user.name')
+                                Infolists\Components\TextEntry::make('full_name')
                                     ->label('اسم المعلم'),
                                 Infolists\Components\TextEntry::make('teacher_code')
                                     ->label('رمز المعلم'),

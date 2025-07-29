@@ -150,7 +150,7 @@ class QuranTeacher extends Model
     // Accessors
     public function getFullNameAttribute(): string
     {
-        return $this->user->name ?? 'Unknown Teacher';
+        return trim($this->first_name . ' ' . $this->last_name) ?: 'Unknown Teacher';
     }
 
     public function getStatusTextAttribute(): string
@@ -258,7 +258,7 @@ class QuranTeacher extends Model
         return $this;
     }
 
-    public function reject(User $rejector, string $reason = null): self
+    public function reject(User $rejector, ?string $reason = null): self
     {
         $this->update([
             'approval_status' => 'rejected',
@@ -269,7 +269,7 @@ class QuranTeacher extends Model
         return $this;
     }
 
-    public function suspend(string $reason = null): self
+    public function suspend(?string $reason = null): self
     {
         $this->update([
             'status' => 'suspended',
