@@ -22,7 +22,7 @@ class SubjectResource extends Resource
     
     protected static ?string $navigationLabel = 'المواد الدراسية';
     
-    protected static ?string $navigationGroup = 'إدارة المحتوى';
+    protected static ?string $navigationGroup = 'القسم الأكاديمي';
     
     protected static ?int $navigationSort = 1;
     
@@ -34,9 +34,9 @@ class SubjectResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('معلومات المادة')
+                Forms\Components\Section::make('معلومات المادة الأساسية')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(3)
                             ->schema([
                                 Forms\Components\TextInput::make('name')
                                     ->label('اسم المادة (عربي)')
@@ -46,43 +46,49 @@ class SubjectResource extends Resource
                                 Forms\Components\TextInput::make('name_en')
                                     ->label('اسم المادة (إنجليزي)')
                                     ->maxLength(255),
-                            ]),
-                            
-                        Forms\Components\Select::make('academy_id')
-                            ->label('الأكاديمية')
-                            ->relationship('academy', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required(),
-                            
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Select::make('category')
-                                    ->label('التصنيف')
-                                    ->options([
-                                        'general' => 'عام',
-                                        'science' => 'علوم',
-                                        'language' => 'لغات',
-                                        'arts' => 'فنون',
-                                        'mathematics' => 'رياضيات',
-                                        'social' => 'اجتماعيات',
-                                        'quran' => 'قرآن كريم',
-                                        'islamic' => 'تربية إسلامية',
-                                    ])
-                                    ->default('general')
-                                    ->required(),
-                                    
-                                Forms\Components\Toggle::make('is_academic')
-                                    ->label('مادة أكاديمية')
-                                    ->helperText('إلغاء التحديد للمواد القرآنية')
-                                    ->default(true),
+
+                                Forms\Components\TextInput::make('subject_code')
+                                    ->label('رمز المادة')
+                                    ->maxLength(10)
+                                    ->unique(ignoreRecord: true)
+                                    ->placeholder('مثل: MATH101'),
                             ]),
                             
                         Forms\Components\Textarea::make('description')
                             ->label('وصف المادة')
                             ->maxLength(1000)
                             ->columnSpanFull(),
-                            
+                    ]),
+
+                Forms\Components\Section::make('تفاصيل التدريس')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('difficulty_level')
+                                    ->label('مستوى الصعوبة')
+                                    ->options([
+                                        'beginner' => 'مبتدئ',
+                                        'intermediate' => 'متوسط',
+                                        'advanced' => 'متقدم',
+                                    ])
+                                    ->default('beginner')
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('hours_per_week')
+                                    ->label('عدد الساعات أسبوعياً')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(20)
+                                    ->default(2)
+                                    ->required(),
+                            ]),
+
+                        Forms\Components\Textarea::make('prerequisites')
+                            ->label('المتطلبات المسبقة')
+                            ->maxLength(500)
+                            ->placeholder('مثل: إتمام الرياضيات الأساسية، معرفة اللغة الإنجليزية...')
+                            ->columnSpanFull(),
+
                         Forms\Components\Toggle::make('is_active')
                             ->label('نشطة')
                             ->default(true),
@@ -99,47 +105,31 @@ class SubjectResource extends Resource
                     ->searchable()
                     ->sortable(),
                     
-                Tables\Columns\TextColumn::make('name_en')
-                    ->label('الاسم الإنجليزي')
+                Tables\Columns\TextColumn::make('subject_code')
+                    ->label('رمز المادة')
                     ->searchable()
+                    ->sortable()
                     ->placeholder('غير محدد'),
                     
-                Tables\Columns\TextColumn::make('academy.name')
-                    ->label('الأكاديمية')
-                    ->searchable()
-                    ->sortable(),
-                    
-                Tables\Columns\BadgeColumn::make('category')
-                    ->label('التصنيف')
+                Tables\Columns\BadgeColumn::make('difficulty_level')
+                    ->label('مستوى الصعوبة')
                     ->colors([
-                        'primary' => 'general',
-                        'success' => 'science',
-                        'warning' => 'language',
-                        'info' => 'arts',
-                        'danger' => 'mathematics',
-                        'secondary' => 'social',
-                        'purple' => 'quran',
-                        'emerald' => 'islamic',
+                        'success' => 'beginner',
+                        'warning' => 'intermediate',
+                        'danger' => 'advanced',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'general' => 'عام',
-                        'science' => 'علوم',
-                        'language' => 'لغات',
-                        'arts' => 'فنون',
-                        'mathematics' => 'رياضيات',
-                        'social' => 'اجتماعيات',
-                        'quran' => 'قرآن كريم',
-                        'islamic' => 'تربية إسلامية',
+                        'beginner' => 'مبتدئ',
+                        'intermediate' => 'متوسط',
+                        'advanced' => 'متقدم',
                         default => $state,
                     }),
                     
-                Tables\Columns\IconColumn::make('is_academic')
-                    ->label('أكاديمية')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-book-open')
-                    ->trueColor('success')
-                    ->falseColor('warning'),
+                Tables\Columns\TextColumn::make('hours_per_week')
+                    ->label('ساعات/أسبوع')
+                    ->sortable()
+                    ->alignCenter()
+                    ->suffix(' ساعة'),
                     
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('نشطة')
@@ -159,30 +149,32 @@ class SubjectResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('academy_id')
-                    ->label('الأكاديمية')
-                    ->relationship('academy', 'name')
-                    ->searchable()
-                    ->preload(),
-                    
-                Tables\Filters\SelectFilter::make('category')
-                    ->label('التصنيف')
+                Tables\Filters\SelectFilter::make('difficulty_level')
+                    ->label('مستوى الصعوبة')
                     ->options([
-                        'general' => 'عام',
-                        'science' => 'علوم',
-                        'language' => 'لغات',
-                        'arts' => 'فنون',
-                        'mathematics' => 'رياضيات',
-                        'social' => 'اجتماعيات',
-                        'quran' => 'قرآن كريم',
-                        'islamic' => 'تربية إسلامية',
+                        'beginner' => 'مبتدئ',
+                        'intermediate' => 'متوسط',
+                        'advanced' => 'متقدم',
                     ]),
                     
-                Tables\Filters\TernaryFilter::make('is_academic')
-                    ->label('نوع المادة')
-                    ->placeholder('الكل')
-                    ->trueLabel('مواد أكاديمية')
-                    ->falseLabel('مواد قرآنية'),
+                Tables\Filters\Filter::make('hours_per_week')
+                    ->label('عدد الساعات')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('hours_from')
+                                    ->label('من')
+                                    ->numeric(),
+                                Forms\Components\TextInput::make('hours_to')
+                                    ->label('إلى')
+                                    ->numeric(),
+                            ])
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['hours_from'], fn (Builder $query, $hours): Builder => $query->where('hours_per_week', '>=', $hours))
+                            ->when($data['hours_to'], fn (Builder $query, $hours): Builder => $query->where('hours_per_week', '<=', $hours));
+                    }),
                     
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('الحالة')

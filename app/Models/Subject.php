@@ -16,15 +16,17 @@ class Subject extends Model
         'academy_id',
         'name',
         'name_en',
+        'subject_code',
         'description',
-        'category',
-        'is_academic',
+        'prerequisites',
+        'hours_per_week',
+        'difficulty_level',
         'is_active',
     ];
 
     protected $casts = [
-        'is_academic' => 'boolean',
         'is_active' => 'boolean',
+        'hours_per_week' => 'integer',
     ];
 
     /**
@@ -69,18 +71,18 @@ class Subject extends Model
     }
 
     /**
-     * Scope for academic subjects (non-Quran)
+     * Scope for subjects by difficulty level
      */
-    public function scopeAcademic($query)
+    public function scopeByDifficulty($query, $level)
     {
-        return $query->where('is_academic', true);
+        return $query->where('difficulty_level', $level);
     }
 
     /**
-     * Scope for Quran subjects
+     * Scope for subjects by academy
      */
-    public function scopeQuran($query)
+    public function scopeForAcademy($query, $academyId)
     {
-        return $query->where('is_academic', false);
+        return $query->where('academy_id', $academyId);
     }
 }
