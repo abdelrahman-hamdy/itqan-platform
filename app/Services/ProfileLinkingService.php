@@ -1,0 +1,198 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\User;
+use App\Models\StudentProfile;
+use App\Models\QuranTeacherProfile;
+use App\Models\AcademicTeacherProfile;
+use App\Models\ParentProfile;
+use App\Models\SupervisorProfile;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Model;
+
+class ProfileLinkingService
+{
+    /**
+     * Register a new user and link to existing profile by email
+     */
+    public function registerUserWithProfile(array $userData): array
+    {
+        $email = $userData['email'];
+        $password = $userData['password'];
+
+        // Find existing profile by email
+        $profile = $this->findProfileByEmail($email);
+
+        if (!$profile) {
+            return [
+                'success' => false,
+                'message' => 'لم يتم العثور على ملف شخصي مطابق لهذا البريد الإلكتروني. يرجى التواصل مع الإدارة.',
+                'profile' => null,
+                'user' => null,
+            ];
+        }
+
+        // Check if profile is already linked
+        if ($profile->isLinked()) {
+            return [
+                'success' => false,
+                'message' => 'هذا البريد الإلكتروني مرتبط بحساب موجود بالفعل.',
+                'profile' => $profile,
+                'user' => null,
+            ];
+        }
+
+        // Determine user type based on profile
+        $userType = $this->determineUserType($profile);
+
+        // Extract academy ID from profile or use default
+        $academyId = $this->extractAcademyId($profile);
+
+        // Create user account
+        $user = User::create([
+            'academy_id' => $academyId,
+            'email' => $email,
+            'password' => Hash::make($password),
+            'first_name' => $profile->first_name,
+            'last_name' => $profile->last_name,
+            'phone' => $profile->phone,
+            'user_type' => $userType,
+            'status' => 'active',
+            'role' => $this->mapUserTypeToRole($userType), // Keep for backward compatibility
+            'email_verified_at' => now(), // Auto-verify since profile was created by admin
+        ]);
+
+        // Link profile to user
+        $profile->update(['user_id' => $user->id]);
+
+        return [
+            'success' => true,
+            'message' => 'تم إنشاء الحساب وربطه بنجاح!',
+            'profile' => $profile,
+            'user' => $user,
+        ];
+    }
+
+    /**
+     * Find profile by email across all profile types
+     */
+    private function findProfileByEmail(string $email): ?Model
+    {
+        // Check StudentProfile
+        $profile = StudentProfile::where('email', $email)->first();
+        if ($profile) return $profile;
+
+        // Check QuranTeacherProfile
+        $profile = QuranTeacherProfile::where('email', $email)->first();
+        if ($profile) return $profile;
+
+        // Check AcademicTeacherProfile
+        $profile = AcademicTeacherProfile::where('email', $email)->first();
+        if ($profile) return $profile;
+
+        // Check ParentProfile (if table exists)
+        if (class_exists(ParentProfile::class)) {
+            $profile = ParentProfile::where('email', $email)->first();
+            if ($profile) return $profile;
+        }
+
+        // Check SupervisorProfile (if table exists)
+        if (class_exists(SupervisorProfile::class)) {
+            $profile = SupervisorProfile::where('email', $email)->first();
+            if ($profile) return $profile;
+        }
+
+        return null;
+    }
+
+    /**
+     * Determine user type based on profile model
+     */
+    private function determineUserType(Model $profile): string
+    {
+        return match (class_basename($profile)) {
+            'StudentProfile' => 'student',
+            'QuranTeacherProfile' => 'quran_teacher',
+            'AcademicTeacherProfile' => 'academic_teacher',
+            'ParentProfile' => 'parent',
+            'SupervisorProfile' => 'supervisor',
+            default => 'student',
+        };
+    }
+
+    /**
+     * Extract academy ID from profile or use default
+     */
+    private function extractAcademyId(Model $profile): int
+    {
+        // For StudentProfile, get academy through grade level
+        if ($profile instanceof StudentProfile) {
+            return $profile->gradeLevel?->academy_id ?? 1;
+        }
+
+        // For other profiles, we can implement academy extraction logic
+        // based on email domain or other criteria
+        // For now, use default academy ID
+        return 1; // TODO: Implement academy extraction logic
+    }
+
+    /**
+     * Map user type to role (for backward compatibility)
+     */
+    private function mapUserTypeToRole(string $userType): string
+    {
+        return match ($userType) {
+            'student' => 'student',
+            'quran_teacher' => 'teacher',
+            'academic_teacher' => 'teacher',
+            'parent' => 'parent',
+            'supervisor' => 'supervisor',
+            'admin' => 'admin',
+            default => 'student',
+        };
+    }
+
+    /**
+     * Check if email has an existing profile
+     */
+    public function hasExistingProfile(string $email): bool
+    {
+        return $this->findProfileByEmail($email) !== null;
+    }
+
+    /**
+     * Get profile type by email
+     */
+    public function getProfileTypeByEmail(string $email): ?string
+    {
+        $profile = $this->findProfileByEmail($email);
+        
+        if (!$profile) {
+            return null;
+        }
+
+        return match (class_basename($profile)) {
+            'StudentProfile' => 'طالب',
+            'QuranTeacherProfile' => 'معلم قرآن',
+            'AcademicTeacherProfile' => 'معلم أكاديمي',
+            'ParentProfile' => 'ولي أمر',
+            'SupervisorProfile' => 'مشرف',
+            default => 'غير محدد',
+        };
+    }
+
+    /**
+     * Get unlinked profiles count for admin dashboard
+     */
+    public function getUnlinkedProfilesCount(): array
+    {
+        return [
+            'students' => StudentProfile::unlinked()->count(),
+            'quran_teachers' => QuranTeacherProfile::unlinked()->count(),
+            'academic_teachers' => AcademicTeacherProfile::unlinked()->count(),
+            'parents' => class_exists(ParentProfile::class) ? ParentProfile::unlinked()->count() : 0,
+            'supervisors' => class_exists(SupervisorProfile::class) ? SupervisorProfile::unlinked()->count() : 0,
+        ];
+    }
+} 

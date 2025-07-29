@@ -13,7 +13,11 @@ class AcademicTeacherProfile extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'user_id', // Nullable - will be linked during registration
+        'email',
+        'first_name',
+        'last_name',
+        'phone',
         'teacher_code',
         'education_level',
         'university',
@@ -75,10 +79,9 @@ class AcademicTeacherProfile extends Model
 
         static::creating(function ($model) {
             if (empty($model->teacher_code)) {
-                $academyId = $model->user->academy_id ?? 1;
-                $count = static::whereHas('user', function ($query) use ($academyId) {
-                    $query->where('academy_id', $academyId);
-                })->count() + 1;
+                // Extract academy from email or use default academy ID 1
+                $academyId = 1; // TODO: Extract from email domain or admin context
+                $count = static::count() + 1;
                 $model->teacher_code = 'AT-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
             }
         });
@@ -97,66 +100,38 @@ class AcademicTeacherProfile extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    /**
-     * Get subjects this teacher can teach (for display purposes)
-     */
-    public function getSubjectNamesAttribute()
+    public function interactiveCourses(): HasMany
     {
-        if (empty($this->subject_ids)) {
-            return collect();
-        }
-        
-        return Subject::whereIn('id', $this->subject_ids)
-            ->where('is_active', true)
-            ->pluck('name');
+        return $this->hasMany(InteractiveCourse::class, 'assigned_teacher_id');
     }
 
     /**
-     * Get grade levels this teacher can teach (for display purposes)
+     * Helper Methods
      */
-    public function getGradeLevelNamesAttribute()
-    {
-        if (empty($this->grade_level_ids)) {
-            return collect();
-        }
-        
-        return GradeLevel::whereIn('id', $this->grade_level_ids)
-            ->where('is_active', true)
-            ->pluck('name');
-    }
-
-    /**
-     * Helper methods
-     */
-    public function getDisplayName(): string
-    {
-        return $this->user->name . ' (' . $this->teacher_code . ')';
-    }
-
     public function getFullNameAttribute(): string
     {
-        return $this->user->name;
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 
-    public function getEducationLevelInArabicAttribute(): string
+    public function getDisplayNameAttribute(): string
     {
-        return match($this->education_level) {
-            'diploma' => 'دبلوم',
-            'bachelor' => 'بكالوريوس',
-            'master' => 'ماجستير',
-            'phd' => 'دكتوراه',
-            default => $this->education_level,
-        };
+        return $this->full_name . ' (' . $this->teacher_code . ')';
     }
 
-    public function getApprovalStatusInArabicAttribute(): string
+    /**
+     * Check if profile is linked to a user account
+     */
+    public function isLinked(): bool
     {
-        return match($this->approval_status) {
-            'pending' => 'في الانتظار',
-            'approved' => 'معتمد',
-            'rejected' => 'مرفوض',
-            default => $this->approval_status,
-        };
+        return !is_null($this->user_id);
+    }
+
+    /**
+     * Status Methods
+     */
+    public function isPending(): bool
+    {
+        return $this->approval_status === 'pending';
     }
 
     public function isApproved(): bool
@@ -164,20 +139,35 @@ class AcademicTeacherProfile extends Model
         return $this->approval_status === 'approved';
     }
 
-    public function approve(User $approver): void
+    public function isRejected(): bool
+    {
+        return $this->approval_status === 'rejected';
+    }
+
+    public function isActive(): bool
+    {
+        return $this->is_active && $this->isApproved();
+    }
+
+    /**
+     * Actions
+     */
+    public function approve(int $approvedBy): void
     {
         $this->update([
             'approval_status' => 'approved',
-            'approved_by' => $approver->id,
+            'approved_by' => $approvedBy,
             'approved_at' => now(),
             'is_active' => true,
         ]);
     }
 
-    public function reject(?string $reason = null): void
+    public function reject(int $rejectedBy, ?string $reason = null): void
     {
         $this->update([
             'approval_status' => 'rejected',
+            'approved_by' => $rejectedBy,
+            'approved_at' => now(),
             'is_active' => false,
         ]);
     }
@@ -218,11 +208,26 @@ class AcademicTeacherProfile extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopePending($query)
+    {
+        return $query->where('approval_status', 'pending');
+    }
+
+    public function scopeUnlinked($query)
+    {
+        return $query->whereNull('user_id');
+    }
+
+    public function scopeLinked($query)
+    {
+        return $query->whereNotNull('user_id');
+    }
+
     public function scopeForAcademy($query, int $academyId)
     {
-        return $query->whereHas('user', function ($q) use ($academyId) {
-            $q->where('academy_id', $academyId);
-        });
+        // Since we don't have direct academy relationship, we'll need to determine this differently
+        // For now, we can use a TODO comment and implement based on email domain or other logic
+        return $query; // TODO: Implement academy scoping for registration flow
     }
 
     public function scopeCanTeachSubject($query, int $subjectId)

@@ -5,14 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class StudentProfile extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'user_id', // Nullable - will be linked during registration
+        'email',
+        'first_name',
+        'last_name',
+        'phone',
         'student_code',
         'grade_level_id',
         'birth_date',
@@ -31,6 +34,8 @@ class StudentProfile extends Model
         'birth_date' => 'date',
         'enrollment_date' => 'date',
         'graduation_date' => 'date',
+        'grade_level_id' => 'integer',
+        'parent_id' => 'integer',
     ];
 
     /**
@@ -42,11 +47,10 @@ class StudentProfile extends Model
 
         static::creating(function ($model) {
             if (empty($model->student_code)) {
-                $academyId = $model->user->academy_id ?? 1;
-                $count = static::whereHas('user', function ($query) use ($academyId) {
-                    $query->where('academy_id', $academyId);
-                })->count() + 1;
-                $model->student_code = 'STU-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                // Extract academy from email or use default academy ID 1
+                $academyId = 1; // TODO: Extract from email domain or admin context
+                $count = static::count() + 1;
+                $model->student_code = 'ST-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
             }
         });
     }
@@ -64,42 +68,51 @@ class StudentProfile extends Model
         return $this->belongsTo(GradeLevel::class);
     }
 
-    public function parents(): BelongsToMany
+    /**
+     * Helper Methods
+     */
+    public function getFullNameAttribute(): string
     {
-        return $this->belongsToMany(ParentProfile::class, 'parent_student_relationships', 'student_id', 'parent_id')
-            ->withPivot('relationship_type', 'is_primary_contact', 'can_view_grades', 'can_receive_notifications')
-            ->withTimestamps();
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->full_name . ' (' . $this->student_code . ')';
     }
 
     /**
-     * Helper methods
+     * Check if profile is linked to a user account
      */
-    public function getDisplayName(): string
+    public function isLinked(): bool
     {
-        return $this->user->name . ' (' . $this->student_code . ')';
+        return !is_null($this->user_id);
     }
 
-    public function getAge(): ?int
+    /**
+     * Get academy through grade level
+     */
+    public function getAcademyIdAttribute(): ?int
     {
-        return $this->birth_date ? $this->birth_date->age : null;
-    }
-
-    public function isActive(): bool
-    {
-        return $this->academic_status === 'enrolled';
+        return $this->gradeLevel?->academy_id;
     }
 
     /**
      * Scopes
      */
-    public function scopeActive($query)
+    public function scopeUnlinked($query)
     {
-        return $query->where('academic_status', 'enrolled');
+        return $query->whereNull('user_id');
+    }
+
+    public function scopeLinked($query)
+    {
+        return $query->whereNotNull('user_id');
     }
 
     public function scopeForAcademy($query, int $academyId)
     {
-        return $query->whereHas('user', function ($q) use ($academyId) {
+        return $query->whereHas('gradeLevel', function ($q) use ($academyId) {
             $q->where('academy_id', $academyId);
         });
     }

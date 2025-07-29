@@ -3,50 +3,137 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentProfileResource\Pages;
-use App\Filament\Resources\StudentProfileResource\RelationManagers;
 use App\Models\StudentProfile;
+use App\Models\GradeLevel;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StudentProfileResource extends Resource
 {
     protected static ?string $model = StudentProfile::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-users';
+
+    protected static ?string $navigationLabel = 'الطلاب';
+
+    protected static ?string $navigationGroup = 'إدارة المستخدمين';
+
+    protected static ?string $modelLabel = 'طالب';
+
+    protected static ?string $pluralModelLabel = 'الطلاب';
+
+    // Override to scope to current user's academy
+    public static function getEloquentQuery(): Builder
+    {
+        $academyId = auth()->user()->academy_id ?? 1;
+        return parent::getEloquentQuery()->forAcademy($academyId);
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->required(),
-                Forms\Components\TextInput::make('student_code')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Select::make('grade_level_id')
-                    ->relationship('gradeLevel', 'name'),
-                Forms\Components\DatePicker::make('birth_date'),
-                Forms\Components\TextInput::make('gender'),
-                Forms\Components\TextInput::make('nationality')
-                    ->maxLength(50),
-                Forms\Components\TextInput::make('parent_id')
-                    ->numeric(),
-                Forms\Components\Textarea::make('address')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('emergency_contact')
-                    ->maxLength(20),
-                Forms\Components\DatePicker::make('enrollment_date'),
-                Forms\Components\DatePicker::make('graduation_date'),
-                Forms\Components\TextInput::make('academic_status')
-                    ->required(),
-                Forms\Components\Textarea::make('notes')
-                    ->columnSpanFull(),
+                Forms\Components\Section::make('المعلومات الشخصية')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('first_name')
+                                    ->label('الاسم الأول')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('last_name')
+                                    ->label('الاسم الأخير')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('email')
+                                    ->label('البريد الإلكتروني')
+                                    ->email()
+                                    ->required()
+                                    ->unique(ignoreRecord: true)
+                                    ->maxLength(255)
+                                    ->helperText('سيستخدم الطالب هذا البريد للدخول إلى المنصة'),
+                                Forms\Components\TextInput::make('phone')
+                                    ->label('رقم الهاتف')
+                                    ->tel()
+                                    ->maxLength(20),
+                            ]),
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\DatePicker::make('birth_date')
+                                    ->label('تاريخ الميلاد'),
+                                Forms\Components\Select::make('gender')
+                                    ->label('الجنس')
+                                    ->options([
+                                        'male' => 'ذكر',
+                                        'female' => 'أنثى',
+                                    ]),
+                                Forms\Components\TextInput::make('nationality')
+                                    ->label('الجنسية')
+                                    ->maxLength(50),
+                            ]),
+                    ]),
+
+                Forms\Components\Section::make('المعلومات الأكاديمية')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('grade_level_id')
+                                    ->label('المرحلة الدراسية')
+                                    ->relationship('gradeLevel', 'name')
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->display_name)
+                                    ->required()
+                                    ->searchable()
+                                    ->preload(),
+                                Forms\Components\Select::make('academic_status')
+                                    ->label('الحالة الأكاديمية')
+                                    ->options([
+                                        'enrolled' => 'مسجل',
+                                        'graduated' => 'متخرج',
+                                        'suspended' => 'موقوف',
+                                        'withdrawn' => 'منسحب',
+                                    ])
+                                    ->default('enrolled')
+                                    ->required(),
+                            ]),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DatePicker::make('enrollment_date')
+                                    ->label('تاريخ التسجيل')
+                                    ->default(now()),
+                                Forms\Components\DatePicker::make('graduation_date')
+                                    ->label('تاريخ التخرج المتوقع'),
+                            ]),
+                    ]),
+
+                Forms\Components\Section::make('معلومات الاتصال والطوارئ')
+                    ->schema([
+                        Forms\Components\Textarea::make('address')
+                            ->label('العنوان')
+                            ->maxLength(500)
+                            ->rows(3)
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('emergency_contact')
+                            ->label('رقم الطوارئ')
+                            ->tel()
+                            ->maxLength(20),
+                        Forms\Components\TextInput::make('parent_id')
+                            ->label('معرف ولي الأمر')
+                            ->numeric()
+                            ->helperText('سيتم ربطه لاحقاً بملف ولي الأمر'),
+                    ]),
+
+                Forms\Components\Section::make('ملاحظات إضافية')
+                    ->schema([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('ملاحظات')
+                            ->maxLength(1000)
+                            ->rows(4)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
@@ -54,59 +141,78 @@ class StudentProfileResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('student_code')
-                    ->searchable(),
+                    ->label('رمز الطالب')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('full_name')
+                    ->label('الاسم')
+                    ->searchable(['first_name', 'last_name'])
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('email')
+                    ->label('البريد الإلكتروني')
+                    ->searchable()
+                    ->sortable()
+                    ->copyable(),
+                Tables\Columns\IconColumn::make('user_id')
+                    ->label('مربوط بحساب')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
                 Tables\Columns\TextColumn::make('gradeLevel.name')
-                    ->numeric()
+                    ->label('المرحلة الدراسية')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('birth_date')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('gender'),
-                Tables\Columns\TextColumn::make('nationality')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('parent_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('emergency_contact')
-                    ->searchable(),
+                Tables\Columns\BadgeColumn::make('academic_status')
+                    ->label('الحالة الأكاديمية')
+                    ->colors([
+                        'success' => 'enrolled',
+                        'primary' => 'graduated',
+                        'warning' => 'suspended',
+                        'danger' => 'withdrawn',
+                    ])
+                    ->formatStateUsing(function (string $state): string {
+                        return match ($state) {
+                            'enrolled' => 'مسجل',
+                            'graduated' => 'متخرج',
+                            'suspended' => 'موقوف',
+                            'withdrawn' => 'منسحب',
+                            default => $state,
+                        };
+                    }),
                 Tables\Columns\TextColumn::make('enrollment_date')
+                    ->label('تاريخ التسجيل')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('graduation_date')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('academic_status'),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('grade_level_id')
+                    ->label('المرحلة الدراسية')
+                    ->relationship('gradeLevel', 'name'),
+                Tables\Filters\SelectFilter::make('academic_status')
+                    ->label('الحالة الأكاديمية')
+                    ->options([
+                        'enrolled' => 'مسجل',
+                        'graduated' => 'متخرج',
+                        'suspended' => 'موقوف',
+                        'withdrawn' => 'منسحب',
+                    ]),
+                Tables\Filters\TernaryFilter::make('user_id')
+                    ->label('مربوط بحساب')
+                    ->nullable()
+                    ->trueLabel('مربوط')
+                    ->falseLabel('غير مربوط'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
     }
 
     public static function getPages(): array
