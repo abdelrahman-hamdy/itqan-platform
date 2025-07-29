@@ -14,7 +14,10 @@ class QuranTeacher extends Model
 
     protected $fillable = [
         'academy_id',
-        'user_id',
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
         'teacher_code',
         'specialization',
         'has_ijazah',
@@ -22,20 +25,16 @@ class QuranTeacher extends Model
         'ijazah_chain',
         'memorization_level',
         'teaching_experience_years',
-        'available_grade_levels',
-        'teaching_methods',
+        'educational_qualification',
         'hourly_rate_individual',
         'hourly_rate_group',
         'currency',
-        'max_students_per_circle',
-        'preferred_session_duration',
         'available_days',
-        'available_times',
+        'available_time_start',
+        'available_time_end',
         'bio_ar',
         'bio_en',
-        'certifications',
         'achievements',
-        'teaching_philosophy',
         'status',
         'approval_status',
         'approved_at',
@@ -54,13 +53,9 @@ class QuranTeacher extends Model
         'teaching_experience_years' => 'integer',
         'hourly_rate_individual' => 'decimal:2',
         'hourly_rate_group' => 'decimal:2',
-        'max_students_per_circle' => 'integer',
-        'preferred_session_duration' => 'integer',
-        'available_grade_levels' => 'array',
-        'teaching_methods' => 'array',
         'available_days' => 'array',
-        'available_times' => 'array',
-        'certifications' => 'array',
+        'available_time_start' => 'string',
+        'available_time_end' => 'string',
         'achievements' => 'array',
         'rating' => 'decimal:1',
         'total_reviews' => 'integer',
@@ -69,15 +64,18 @@ class QuranTeacher extends Model
         'approved_at' => 'datetime'
     ];
 
+    // Constants
+    const EDUCATIONAL_QUALIFICATIONS = [
+        'bachelor' => 'بكالوريوس',
+        'master' => 'ماجستير',
+        'phd' => 'دكتوراه',
+        'other' => 'أخرى'
+    ];
+
     // Relationships
     public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 
     public function approvedBy(): BelongsTo

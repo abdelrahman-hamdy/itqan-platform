@@ -16,15 +16,15 @@ class QuranSubscription extends Model
         'academy_id',
         'student_id',
         'quran_teacher_id',
+        'package_id',
         'subscription_code',
-        'package_name',
-        'package_type',
         'subscription_type',
         'total_sessions',
         'sessions_used',
         'sessions_remaining',
-        'price_per_session',
         'total_price',
+        'discount_amount',
+        'final_price',
         'currency',
         'billing_cycle',
         'payment_status',
@@ -64,8 +64,9 @@ class QuranSubscription extends Model
         'trial_used' => 'integer',
         'verses_memorized' => 'integer',
         'progress_percentage' => 'decimal:2',
-        'price_per_session' => 'decimal:2',
         'total_price' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'final_price' => 'decimal:2',
         'is_trial_active' => 'boolean',
         'auto_renew' => 'boolean',
         'rating' => 'integer',
@@ -78,6 +79,13 @@ class QuranSubscription extends Model
         'last_payment_at' => 'datetime',
         'reviewed_at' => 'datetime',
         'metadata' => 'array'
+    ];
+
+    // Constants
+    const BILLING_CYCLES = [
+        'monthly' => 'شهرية',
+        'quarterly' => 'ربع سنوية (ثلاثة أشهر)',
+        'yearly' => 'سنوية'
     ];
 
     // Relationships
@@ -94,6 +102,11 @@ class QuranSubscription extends Model
     public function quranTeacher(): BelongsTo
     {
         return $this->belongsTo(QuranTeacher::class);
+    }
+
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(QuranPackage::class, 'package_id');
     }
 
     public function sessions(): HasMany

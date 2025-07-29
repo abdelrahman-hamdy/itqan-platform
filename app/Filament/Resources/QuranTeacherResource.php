@@ -52,25 +52,28 @@ class QuranTeacherResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Select::make('user_id')
-                                    ->label('المستخدم')
-                                    ->relationship('user', 'name')
-                                    ->searchable()
-                                    ->preload()
+                                TextInput::make('first_name')
+                                    ->label('الاسم الأول')
                                     ->required()
-                                    ->createOptionForm([
-                                        TextInput::make('name')
-                                            ->label('الاسم')
-                                            ->required(),
-                                        TextInput::make('email')
-                                            ->label('البريد الإلكتروني')
-                                            ->email()
-                                            ->required(),
-                                        TextInput::make('password')
-                                            ->label('كلمة المرور')
-                                            ->password()
-                                            ->required(),
-                                    ]),
+                                    ->maxLength(255),
+
+                                TextInput::make('last_name')
+                                    ->label('الاسم الأخير')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                TextInput::make('email')
+                                    ->label('البريد الإلكتروني')
+                                    ->email()
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->unique(ignoreRecord: true),
+
+                                TextInput::make('phone')
+                                    ->label('رقم الهاتف')
+                                    ->tel()
+                                    ->required()
+                                    ->maxLength(20),
 
                                 Select::make('specialization')
                                     ->label('التخصص')
@@ -87,10 +90,8 @@ class QuranTeacherResource extends Resource
                                     ->label('مستوى الحفظ')
                                     ->options([
                                         'beginner' => 'مبتدئ',
-                                        'elementary' => 'أولي',
                                         'intermediate' => 'متوسط',
                                         'advanced' => 'متقدم',
-                                        'expert' => 'خبير',
                                     ])
                                     ->required(),
 
@@ -99,6 +100,16 @@ class QuranTeacherResource extends Resource
                                     ->numeric()
                                     ->minValue(0)
                                     ->maxValue(50)
+                                    ->required(),
+
+                                Select::make('educational_qualification')
+                                    ->label('المؤهل العلمي')
+                                    ->options([
+                                        'bachelor' => 'بكالوريوس',
+                                        'master' => 'ماجستير',
+                                        'phd' => 'دكتوراه',
+                                        'other' => 'أخرى',
+                                    ])
                                     ->required(),
                             ]),
                     ]),
@@ -127,10 +138,6 @@ class QuranTeacherResource extends Resource
                                     ->rows(3)
                                     ->columnSpanFull()
                                     ->visible(fn (Forms\Get $get) => $get('has_ijazah')),
-
-                                TagsInput::make('certifications')
-                                    ->label('الشهادات والدورات')
-                                    ->placeholder('أضف شهادة'),
 
                                 TagsInput::make('achievements')
                                     ->label('الإنجازات')
@@ -166,25 +173,7 @@ class QuranTeacherResource extends Resource
                                     ->default('SAR')
                                     ->required(),
 
-                                TextInput::make('max_students_per_circle')
-                                    ->label('أقصى عدد طلاب في الدائرة')
-                                    ->numeric()
-                                    ->minValue(3)
-                                    ->maxValue(15)
-                                    ->default(8)
-                                    ->required(),
 
-                                TextInput::make('preferred_session_duration')
-                                    ->label('مدة الجلسة المفضلة (دقيقة)')
-                                    ->numeric()
-                                    ->minValue(30)
-                                    ->maxValue(120)
-                                    ->default(45)
-                                    ->required(),
-
-                                TagsInput::make('available_grade_levels')
-                                    ->label('المستويات المتاحة')
-                                    ->placeholder('أضف مستوى'),
                             ]),
                     ]),
 
@@ -205,14 +194,14 @@ class QuranTeacherResource extends Resource
                                     ])
                                     ->placeholder('اختر الأيام'),
 
-                                TagsInput::make('available_times')
-                                    ->label('الأوقات المتاحة')
-                                    ->placeholder('مثال: 09:00-12:00')
-                                    ->helperText('أدخل الأوقات بصيغة 09:00-12:00'),
+                                Forms\Components\TimePicker::make('available_time_start')
+                                    ->label('وقت البداية المتاح')
+                                    ->required(),
 
-                                TagsInput::make('teaching_methods')
-                                    ->label('طرق التدريس')
-                                    ->placeholder('أضف طريقة تدريس'),
+                                Forms\Components\TimePicker::make('available_time_end')
+                                    ->label('وقت النهاية المتاح')
+                                    ->required()
+                                    ->after('available_time_start'),
                             ]),
                     ]),
 
@@ -230,11 +219,7 @@ class QuranTeacherResource extends Resource
                                     ->rows(4)
                                     ->maxLength(2000),
 
-                                Textarea::make('teaching_philosophy')
-                                    ->label('فلسفة التدريس')
-                                    ->rows(3)
-                                    ->maxLength(1500)
-                                    ->columnSpanFull(),
+
 
                                 Textarea::make('notes')
                                     ->label('ملاحظات إدارية')
@@ -277,11 +262,20 @@ class QuranTeacherResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('user.name')
-                    ->label('اسم المعلم')
+                TextColumn::make('first_name')
+                    ->label('الاسم الأول')
                     ->searchable()
-                    ->sortable()
-                    ->weight(FontWeight::Bold),
+                    ->sortable(),
+
+                TextColumn::make('last_name')
+                    ->label('الاسم الأخير')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('email')
+                    ->label('البريد الإلكتروني')
+                    ->searchable()
+                    ->copyable(),
 
                 TextColumn::make('teacher_code')
                     ->label('رمز المعلم')
@@ -310,12 +304,21 @@ class QuranTeacherResource extends Resource
                     ->label('مستوى الحفظ')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'beginner' => 'مبتدئ',
-                        'elementary' => 'أولي',
                         'intermediate' => 'متوسط',
                         'advanced' => 'متقدم',
-                        'expert' => 'خبير',
                         default => $state,
                     }),
+
+                TextColumn::make('educational_qualification')
+                    ->label('المؤهل العلمي')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'bachelor' => 'بكالوريوس',
+                        'master' => 'ماجستير',
+                        'phd' => 'دكتوراه',
+                        'other' => 'أخرى',
+                        default => $state,
+                    })
+                    ->badge(),
 
                 TextColumn::make('teaching_experience_years')
                     ->label('سنوات الخبرة')
@@ -374,8 +377,8 @@ class QuranTeacherResource extends Resource
 
                 TextColumn::make('total_students')
                     ->label('عدد الطلاب')
-                    ->counts()
-                    ->sortable(),
+                    ->sortable()
+                    ->default(0),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ التسجيل')

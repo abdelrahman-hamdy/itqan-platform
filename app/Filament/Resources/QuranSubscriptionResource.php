@@ -61,26 +61,28 @@ class QuranSubscriptionResource extends Resource
 
                                 Select::make('quran_teacher_id')
                                     ->label('معلم القرآن')
-                                    ->relationship('quranTeacher.user', 'name')
-                                    ->searchable()
+                                    ->relationship('quranTeacher', 'first_name')
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->first_name . ' ' . $record->last_name)
+                                    ->searchable(['first_name', 'last_name', 'email'])
                                     ->preload()
                                     ->required(),
 
-                                TextInput::make('package_name')
-                                    ->label('اسم الباقة')
+                                Select::make('package_id')
+                                    ->label('الباقة')
+                                    ->relationship('package', 'name_ar')
+                                    ->searchable()
+                                    ->preload()
                                     ->required()
-                                    ->maxLength(100),
-
-                                Select::make('package_type')
-                                    ->label('نوع الباقة')
-                                    ->options([
-                                        'basic' => 'أساسية',
-                                        'standard' => 'قياسية',
-                                        'premium' => 'مميزة',
-                                        'intensive' => 'مكثفة',
-                                        'custom' => 'مخصصة',
-                                    ])
-                                    ->required(),
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, $set) {
+                                        if ($state) {
+                                            $package = \App\Models\QuranPackage::find($state);
+                                            if ($package) {
+                                                $set('total_sessions', $package->sessions_per_month);
+                                                $set('currency', $package->currency);
+                                            }
+                                        }
+                                    }),
                             ]),
                     ]),
 
@@ -95,26 +97,44 @@ class QuranSubscriptionResource extends Resource
                                     ->maxValue(32)
                                     ->required(),
 
-                                TextInput::make('price_per_session')
-                                    ->label('سعر الجلسة')
+                                TextInput::make('total_price')
+                                    ->label('السعر الأصلي')
                                     ->numeric()
                                     ->prefix('SAR')
                                     ->minValue(0)
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        $discount = $get('discount_amount') ?: 0;
+                                        $finalPrice = max(0, $state - $discount);
+                                        $set('final_price', $finalPrice);
+                                    }),
 
-                                TextInput::make('total_price')
-                                    ->label('السعر الإجمالي')
+                                TextInput::make('discount_amount')
+                                    ->label('مقدار الخصم')
+                                    ->numeric()
+                                    ->prefix('SAR')
+                                    ->minValue(0)
+                                    ->default(0)
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        $total = $get('total_price') ?: 0;
+                                        $finalPrice = max(0, $total - $state);
+                                        $set('final_price', $finalPrice);
+                                    }),
+
+                                TextInput::make('final_price')
+                                    ->label('السعر النهائي')
                                     ->numeric()
                                     ->prefix('SAR')
                                     ->disabled()
-                                    ->dehydrated(false),
+                                    ->dehydrated(),
 
                                 Select::make('billing_cycle')
                                     ->label('دورة الفوترة')
                                     ->options([
-                                        'weekly' => 'أسبوعية',
                                         'monthly' => 'شهرية',
-                                        'quarterly' => 'ربع سنوية',
+                                        'quarterly' => 'ربع سنوية (ثلاثة أشهر)',
                                         'yearly' => 'سنوية',
                                     ])
                                     ->default('monthly')

@@ -25,36 +25,29 @@ class QuranCircle extends Model
         'circle_type',
         'specialization',
         'memorization_level',
-        'grade_levels',
-        'age_range_min',
-        'age_range_max',
+        'age_group',
+        'gender_type',
         'max_students',
-        'current_students',
+        'enrolled_students',
         'min_students_to_start',
         'session_duration_minutes',
-        'weekly_schedule',
         'schedule_days',
-        'schedule_times',
+        'schedule_time',
         'timezone',
-        'price_per_student',
         'monthly_fee',
         'currency',
         'enrollment_fee',
         'materials_fee',
-        'total_sessions_planned',
         'sessions_completed',
         'current_surah',
         'current_verse',
-        'teaching_method',
         'materials_used',
         'requirements',
         'learning_objectives',
-        'assessment_methods',
         'status',
         'enrollment_status',
-        'start_date',
-        'end_date',
-        'registration_deadline',
+        'actual_start_date',
+        'actual_end_date',
         'last_session_at',
         'next_session_at',
         'room_link',
@@ -75,23 +68,15 @@ class QuranCircle extends Model
     ];
 
     protected $casts = [
-        'grade_levels' => 'array',
         'schedule_days' => 'array',
-        'schedule_times' => 'array',
-        'weekly_schedule' => 'array',
         'materials_used' => 'array',
         'requirements' => 'array',
         'learning_objectives' => 'array',
-        'assessment_methods' => 'array',
-        'age_range_min' => 'integer',
-        'age_range_max' => 'integer',
         'max_students' => 'integer',
-        'current_students' => 'integer',
+        'enrolled_students' => 'integer',
         'min_students_to_start' => 'integer',
         'session_duration_minutes' => 'integer',
-        'total_sessions_planned' => 'integer',
         'sessions_completed' => 'integer',
-        'price_per_student' => 'decimal:2',
         'monthly_fee' => 'decimal:2',
         'enrollment_fee' => 'decimal:2',
         'materials_fee' => 'decimal:2',
@@ -103,11 +88,30 @@ class QuranCircle extends Model
         'attendance_required' => 'boolean',
         'makeup_sessions_allowed' => 'boolean',
         'certificates_enabled' => 'boolean',
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'registration_deadline' => 'date',
+        'actual_start_date' => 'date',
+        'actual_end_date' => 'date',
         'last_session_at' => 'datetime',
         'next_session_at' => 'datetime'
+    ];
+
+    // Constants
+    const LEVELS = [
+        'beginner' => 'مبتدئ',
+        'intermediate' => 'متوسط',
+        'advanced' => 'متقدم'
+    ];
+
+    const AGE_GROUPS = [
+        'children' => 'أطفال',
+        'youth' => 'شباب',
+        'adults' => 'كبار',
+        'all_ages' => 'كل الفئات'
+    ];
+
+    const GENDER_TYPES = [
+        'male' => 'رجال',
+        'female' => 'نساء',
+        'mixed' => 'مختلط'
     ];
 
     // Relationships
