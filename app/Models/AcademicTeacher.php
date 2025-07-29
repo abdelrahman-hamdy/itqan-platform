@@ -109,7 +109,7 @@ class AcademicTeacher extends Model
      */
     public function subjects(): BelongsToMany
     {
-        return $this->belongsToMany(AcademicSubject::class, 'academic_teacher_subjects', 'teacher_id', 'subject_id')
+        return $this->belongsToMany(Subject::class, 'academic_teacher_subjects', 'teacher_id', 'subject_id')
                     ->withPivot(['proficiency_level', 'years_experience', 'is_primary', 'certification'])
                     ->withTimestamps();
     }
@@ -119,7 +119,7 @@ class AcademicTeacher extends Model
      */
     public function gradeLevels(): BelongsToMany
     {
-        return $this->belongsToMany(AcademicGradeLevel::class, 'academic_teacher_grade_levels', 'teacher_id', 'grade_level_id')
+        return $this->belongsToMany(GradeLevel::class, 'academic_teacher_grade_levels', 'teacher_id', 'grade_level_id')
                     ->withPivot(['years_experience', 'specialization_notes'])
                     ->withTimestamps();
     }
