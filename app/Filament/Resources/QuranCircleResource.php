@@ -35,11 +35,11 @@ class QuranCircleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationLabel = 'دوائر القرآن';
+    protected static ?string $navigationLabel = 'حلقات القرآن';
 
-    protected static ?string $modelLabel = 'دائرة قرآن';
+    protected static ?string $modelLabel = 'حلقة قرآن';
 
-    protected static ?string $pluralModelLabel = 'دوائر القرآن';
+    protected static ?string $pluralModelLabel = 'حلقات القرآن';
 
     protected static ?string $navigationGroup = 'قسم القرآن الكريم';
 
@@ -55,7 +55,9 @@ class QuranCircleResource extends Resource
                             ->schema([
                                 Select::make('quran_teacher_id')
                                     ->label('معلم القرآن')
-                                    ->relationship('quranTeacher.user', 'name')
+                                    ->options(\App\Models\QuranTeacher::where('approval_status', 'approved')
+                                        ->get()
+                                        ->pluck('full_name', 'id'))
                                     ->searchable()
                                     ->preload()
                                     ->required(),
@@ -69,14 +71,12 @@ class QuranCircleResource extends Resource
                                     ->label('اسم الدائرة (إنجليزي)')
                                     ->maxLength(100),
 
-                                Select::make('level')
+                                Select::make('memorization_level')
                                     ->label('المستوى')
                                     ->options([
                                         'beginner' => 'مبتدئ',
-                                        'elementary' => 'أولي',
                                         'intermediate' => 'متوسط',
                                         'advanced' => 'متقدم',
-                                        'expert' => 'خبير',
                                     ])
                                     ->required(),
                             ]),
@@ -86,30 +86,26 @@ class QuranCircleResource extends Resource
                     ->schema([
                         Grid::make(3)
                             ->schema([
-                                Select::make('target_age_group')
+                                Select::make('age_group')
                                     ->label('الفئة العمرية')
                                     ->options([
                                         'children' => 'أطفال',
-                                        'teenagers' => 'مراهقون',
-                                        'adults' => 'بالغون',
-                                        'seniors' => 'كبار السن',
+                                        'youth' => 'شباب',
+                                        'adults' => 'كبار',
+                                        'all_ages' => 'كل الفئات',
+                                    ])
+                                    ->required(),
+
+                                Select::make('gender_type')
+                                    ->label('النوع')
+                                    ->options([
+                                        'male' => 'رجال',
+                                        'female' => 'نساء',
                                         'mixed' => 'مختلط',
                                     ])
                                     ->required(),
 
-                                TextInput::make('min_age')
-                                    ->label('العمر الأدنى')
-                                    ->numeric()
-                                    ->minValue(5)
-                                    ->maxValue(80)
-                                    ->required(),
 
-                                TextInput::make('max_age')
-                                    ->label('العمر الأعلى')
-                                    ->numeric()
-                                    ->minValue(5)
-                                    ->maxValue(80)
-                                    ->required(),
 
                                 TextInput::make('max_students')
                                     ->label('الحد الأقصى للطلاب')
@@ -119,22 +115,11 @@ class QuranCircleResource extends Resource
                                     ->default(8)
                                     ->required(),
 
-                                TextInput::make('price_per_student')
-                                    ->label('سعر الطالب')
+                                TextInput::make('monthly_fee')
+                                    ->label('الرسوم الشهرية')
                                     ->numeric()
                                     ->prefix('SAR')
                                     ->minValue(0)
-                                    ->required(),
-
-                                Select::make('billing_cycle')
-                                    ->label('دورة الفوترة')
-                                    ->options([
-                                        'weekly' => 'أسبوعية',
-                                        'monthly' => 'شهرية',
-                                        'quarterly' => 'ربع سنوية',
-                                        'yearly' => 'سنوية',
-                                    ])
-                                    ->default('monthly')
                                     ->required(),
                             ]),
                     ]),
@@ -143,8 +128,8 @@ class QuranCircleResource extends Resource
                     ->schema([
                         Grid::make(3)
                             ->schema([
-                                Select::make('day_of_week')
-                                    ->label('يوم الأسبوع')
+                                Select::make('schedule_days')
+                                    ->label('أيام الأسبوع')
                                     ->options([
                                         'saturday' => 'السبت',
                                         'sunday' => 'الأحد',
@@ -154,31 +139,19 @@ class QuranCircleResource extends Resource
                                         'thursday' => 'الخميس',
                                         'friday' => 'الجمعة',
                                     ])
+                                    ->multiple()
                                     ->required(),
 
-                                TimePicker::make('start_time')
-                                    ->label('وقت البداية')
+                                TimePicker::make('schedule_time')
+                                    ->label('توقيت الحلقة')
                                     ->required(),
 
-                                TimePicker::make('end_time')
-                                    ->label('وقت النهاية')
-                                    ->after('start_time')
-                                    ->required(),
-
-                                TextInput::make('duration_minutes')
+                                TextInput::make('session_duration_minutes')
                                     ->label('مدة الجلسة (دقيقة)')
                                     ->numeric()
                                     ->minValue(30)
                                     ->maxValue(120)
                                     ->default(60)
-                                    ->required(),
-
-                                TextInput::make('total_sessions')
-                                    ->label('إجمالي الجلسات')
-                                    ->numeric()
-                                    ->minValue(4)
-                                    ->maxValue(52)
-                                    ->default(16)
                                     ->required(),
                             ]),
                     ]),
@@ -197,13 +170,10 @@ class QuranCircleResource extends Resource
                                     ])
                                     ->required(),
 
-                                TagsInput::make('curriculum_focus')
-                                    ->label('التركيز في المنهج')
-                                    ->placeholder('أضف عنصر منهج'),
-
                                 TagsInput::make('learning_objectives')
                                     ->label('أهداف التعلم')
-                                    ->placeholder('أضف هدف تعليمي'),
+                                    ->placeholder('أضف هدف تعليمي')
+                                    ->reorderable(),
 
                                 Textarea::make('prerequisites')
                                     ->label('المتطلبات المسبقة')
@@ -212,29 +182,7 @@ class QuranCircleResource extends Resource
                             ]),
                     ]),
 
-                Section::make('التواريخ المهمة')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                DateTimePicker::make('enrollment_start_date')
-                                    ->label('بداية التسجيل')
-                                    ->required(),
 
-                                DateTimePicker::make('enrollment_end_date')
-                                    ->label('نهاية التسجيل')
-                                    ->after('enrollment_start_date')
-                                    ->required(),
-
-                                DateTimePicker::make('circle_start_date')
-                                    ->label('بداية الدائرة')
-                                    ->after('enrollment_end_date')
-                                    ->required(),
-
-                                DateTimePicker::make('circle_end_date')
-                                    ->label('نهاية الدائرة')
-                                    ->after('circle_start_date'),
-                            ]),
-                    ]),
 
                 Section::make('المكان ووسائل التعلم')
                     ->schema([
@@ -334,32 +282,43 @@ class QuranCircleResource extends Resource
                     ->searchable()
                     ->limit(30),
 
-                TextColumn::make('quranTeacher.user.name')
+                TextColumn::make('quranTeacher.full_name')
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
 
-                BadgeColumn::make('level')
+                BadgeColumn::make('memorization_level')
                     ->label('المستوى')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'beginner' => 'مبتدئ',
-                        'elementary' => 'أولي',
                         'intermediate' => 'متوسط',
                         'advanced' => 'متقدم',
-                        'expert' => 'خبير',
                         default => $state,
                     }),
 
-                BadgeColumn::make('target_age_group')
+                BadgeColumn::make('age_group')
                     ->label('الفئة العمرية')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'children' => 'أطفال',
-                        'teenagers' => 'مراهقون',
-                        'adults' => 'بالغون',
-                        'seniors' => 'كبار السن',
-                        'mixed' => 'مختلط',
+                        'youth' => 'شباب',
+                        'adults' => 'كبار',
+                        'all_ages' => 'كل الفئات',
                         default => $state,
                     }),
+
+                BadgeColumn::make('gender_type')
+                    ->label('النوع')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'male' => 'رجال',
+                        'female' => 'نساء',
+                        'mixed' => 'مختلط',
+                        default => $state,
+                    })
+                    ->colors([
+                        'info' => 'male',
+                        'success' => 'female',
+                        'warning' => 'mixed',
+                    ]),
 
                 TextColumn::make('enrolled_students')
                     ->label('المسجلون')
@@ -370,25 +329,43 @@ class QuranCircleResource extends Resource
                     ->label('الحد الأقصى')
                     ->alignCenter(),
 
-                TextColumn::make('day_of_week')
-                    ->label('اليوم')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'saturday' => 'السبت',
-                        'sunday' => 'الأحد',
-                        'monday' => 'الاثنين',
-                        'tuesday' => 'الثلاثاء',
-                        'wednesday' => 'الأربعاء',
-                        'thursday' => 'الخميس',
-                        'friday' => 'الجمعة',
-                        default => $state,
+                TextColumn::make('schedule_days')
+                    ->label('الأيام')
+                    ->formatStateUsing(function ($state) {
+                        if (is_array($state)) {
+                            $days = [];
+                            foreach ($state as $day) {
+                                $days[] = match ($day) {
+                                    'saturday' => 'السبت',
+                                    'sunday' => 'الأحد',
+                                    'monday' => 'الاثنين',
+                                    'tuesday' => 'الثلاثاء',
+                                    'wednesday' => 'الأربعاء',
+                                    'thursday' => 'الخميس',
+                                    'friday' => 'الجمعة',
+                                    default => $day,
+                                };
+                            }
+                            return implode(', ', $days);
+                        }
+                        return match ($state) {
+                            'saturday' => 'السبت',
+                            'sunday' => 'الأحد',
+                            'monday' => 'الاثنين',
+                            'tuesday' => 'الثلاثاء',
+                            'wednesday' => 'الأربعاء',
+                            'thursday' => 'الخميس',
+                            'friday' => 'الجمعة',
+                            default => $state,
+                        };
                     }),
 
-                TextColumn::make('start_time')
+                TextColumn::make('schedule_time')
                     ->label('الوقت')
                     ->time('H:i'),
 
-                TextColumn::make('price_per_student')
-                    ->label('السعر')
+                TextColumn::make('monthly_fee')
+                    ->label('الرسوم الشهرية')
                     ->money('SAR'),
 
                 BadgeColumn::make('status')

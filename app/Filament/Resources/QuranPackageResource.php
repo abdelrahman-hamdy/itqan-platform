@@ -24,7 +24,7 @@ class QuranPackageResource extends Resource
 
     protected static ?string $pluralModelLabel = 'باقات القرآن';
 
-    protected static ?string $navigationGroup = 'إدارة القرآن الكريم';
+    protected static ?string $navigationGroup = 'قسم القرآن الكريم';
 
     protected static ?int $navigationSort = 1;
 
