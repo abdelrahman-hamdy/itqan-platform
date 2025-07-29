@@ -1,786 +1,251 @@
-{
-    "metadata": {
-        "projectName": "Itqan Educational Platform",
-        "version": "1.0.0",
-        "created": "2025-01-30",
-        "author": "Development Team",
-        "description": "Complete implementation of the Itqan multi-tenant educational platform with three educational sections and role-based dashboards"
-    },
-    "tags": {
-        "master": {
-            "name": "master",
-            "description": "Main development branch with all platform features",
-            "created": "2025-01-30T12:00:00Z",
-            "metadata": {
-                "phase": "Implementation",
-                "priority": "High"
-            }
-        }
-    },
-    "currentTag": "master",
-    "tasks": {
-        "master": [
+[
+    {
+        "id": 1,
+        "title": "Phase 1A: Quran Section Backend Implementation",
+        "description": "Implement complete Quran section with models, controllers, and business logic for individual sessions and group circles",
+        "status": "completed",
+        "priority": "high",
+        "dependencies": [],
+        "details": "✅ COMPLETED: Created all Quran-specific models (QuranTeacher, QuranSubscription, QuranCircle, QuranSession, QuranProgress, QuranHomework) with proper relationships, validation, and business methods. Includes Arabic localization and proper tenant isolation.",
+        "testStrategy": "Test model relationships, scopes, and business logic methods",
+        "subtasks": [
             {
-                "id": 1,
-                "title": "Phase 1A: Quran Section Backend Implementation",
-                "description": "Implement complete Quran section with models, controllers, and business logic for individual sessions and group circles",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [],
-                "details": "Create all Quran-specific models (QuranTeacher, QuranSubscription, QuranCircle, QuranSession, QuranProgress, QuranHomework) with proper relationships, validation, and business methods. Implement controllers for teacher management, circle enrollment, session scheduling, and progress tracking. Include Arabic localization and proper tenant isolation.",
-                "testStrategy": "Unit tests for all models and controllers, feature tests for key workflows like teacher registration, circle enrollment, and session booking.",
-                "subtasks": [
-                    {
-                        "id": 1.1,
-                        "title": "Create Quran Section Models",
-                        "description": "Implement QuranTeacher, QuranSubscription, QuranCircle, QuranSession, QuranProgress, QuranHomework models",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Build comprehensive models with proper relationships, casts, scopes, and business logic methods. Include Arabic localization and Quran-specific features like verse tracking."
-                    },
-                    {
-                        "id": 1.2,
-                        "title": "Create Quran Section Migrations",
-                        "description": "Create database migrations for all Quran section tables with proper indexing",
-                        "status": "pending",
-                        "dependencies": [
-                            1.1
-                        ],
-                        "details": "Design efficient database structure with proper foreign keys, indexes for multi-tenant queries, and Arabic content support."
-                    },
-                    {
-                        "id": 1.3,
-                        "title": "Implement Quran Controllers",
-                        "description": "Build QuranTeacherController, QuranCircleController, QuranSessionController, QuranProgressController",
-                        "status": "pending",
-                        "dependencies": [
-                            1.2
-                        ],
-                        "details": "Create full CRUD operations, booking systems, progress tracking, and session management with proper validation and error handling."
-                    },
-                    {
-                        "id": 1.4,
-                        "title": "Add Quran Section Routes",
-                        "description": "Define routing structure for all Quran section endpoints",
-                        "status": "pending",
-                        "dependencies": [
-                            1.3
-                        ],
-                        "details": "Create RESTful routes with proper middleware, tenant-aware routing, and access control."
-                    }
-                ]
+                "id": 1.1,
+                "title": "Create QuranTeacher Model",
+                "description": "Model for Quran teachers with certifications and teaching capabilities",
+                "status": "completed",
+                "details": "✅ COMPLETED: Created comprehensive QuranTeacher model with ijazah tracking, specializations, ratings, and availability management"
             },
             {
-                "id": 2,
-                "title": "Phase 1B: Academic Education Section Backend Implementation",
-                "description": "Implement complete Academic Education section with private sessions and interactive courses",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [],
-                "details": "Create all Academic-specific models for private tutoring sessions and interactive group courses. Include subject-based categorization, grade levels, and scheduling systems with Google Meet integration.",
-                "testStrategy": "Comprehensive testing of academic workflows including teacher-student matching, session scheduling, and course enrollment.",
-                "subtasks": [
-                    {
-                        "id": 2.1,
-                        "title": "Create Academic Section Models",
-                        "description": "Implement AcademicTeacher, AcademicSession, InteractiveCourse, AcademicSubscription, AcademicHomework, AcademicQuiz models",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Build models with subject expertise tracking, hourly pricing, course scheduling, and academic-specific features."
-                    },
-                    {
-                        "id": 2.2,
-                        "title": "Create Academic Section Migrations",
-                        "description": "Create database migrations for all Academic section tables",
-                        "status": "pending",
-                        "dependencies": [
-                            2.1
-                        ],
-                        "details": "Design tables for academic sessions, courses, subscriptions with proper relationships and performance indexes."
-                    },
-                    {
-                        "id": 2.3,
-                        "title": "Implement Academic Controllers",
-                        "description": "Build AcademicTeacherController, AcademicSessionController, InteractiveCourseController, AcademicSubscriptionController",
-                        "status": "pending",
-                        "dependencies": [
-                            2.2
-                        ],
-                        "details": "Create comprehensive controllers for academic workflows including session booking, course creation, and subscription management."
-                    },
-                    {
-                        "id": 2.4,
-                        "title": "Add Academic Section Routes",
-                        "description": "Define routing structure for all Academic section endpoints",
-                        "status": "pending",
-                        "dependencies": [
-                            2.3
-                        ],
-                        "details": "Create tenant-aware routes for academic features with proper access control and validation."
-                    }
-                ]
+                "id": 1.2,
+                "title": "Create QuranSubscription Model",
+                "description": "Individual monthly Quran packages with proper subscription management",
+                "status": "completed",
+                "details": "✅ COMPLETED: Created QuranSubscription model with session tracking, trial management, and progress integration"
             },
             {
-                "id": 3,
-                "title": "Phase 1C: Cross-Cutting Features Implementation",
-                "description": "Implement shared features across all educational sections: homework, quizzes, sessions, messaging",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [
-                    1,
-                    2
-                ],
-                "details": "Build polymorphic models and systems that work across all three educational sections. Include homework submission system, quiz engine, session management, and enhanced messaging.",
-                "testStrategy": "Integration tests to ensure cross-cutting features work correctly with all three educational sections.",
-                "subtasks": [
-                    {
-                        "id": 3.1,
-                        "title": "Implement Polymorphic Homework System",
-                        "description": "Create homework models and controllers that work across Quran, Academic, and Recorded sections",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Build flexible homework system with file/text submissions, teacher grading interface, and progress tracking."
-                    },
-                    {
-                        "id": 3.2,
-                        "title": "Build Quiz Engine",
-                        "description": "Create comprehensive quiz system with question builder, randomization, and grading",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Implement multiple-choice quiz system with timed attempts, automatic grading, and detailed analytics."
-                    },
-                    {
-                        "id": 3.3,
-                        "title": "Enhance Session Management",
-                        "description": "Build unified session system with Google Meet integration and recording capabilities",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Create session scheduling, Meet link generation, attendance tracking, and recording management."
-                    },
-                    {
-                        "id": 3.4,
-                        "title": "Implement Enhanced Messaging System",
-                        "description": "Integrate and enhance Chatify for role-based messaging with supervisor monitoring",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Build messaging system with 1-to-1 chats, group chats, supervisor mirror channels, and file sharing."
-                    }
-                ]
+                "id": 1.3,
+                "title": "Create QuranCircle Model",
+                "description": "Group Quran circles with weekly schedules and student management",
+                "status": "completed",
+                "details": "✅ COMPLETED: Created QuranCircle model with enrollment management, scheduling, and certificate issuance"
             },
             {
-                "id": 4,
-                "title": "Phase 2A: Authentication System Implementation",
-                "description": "Implement comprehensive authentication system for all user roles with tenant-aware access control",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [
-                    3
-                ],
-                "details": "Build multi-role authentication using Laravel Sanctum, Spatie Permission, and Filament Shield. Include registration, email verification, password reset, and role-based redirects.",
-                "testStrategy": "Security testing for authentication flows, role-based access control, and tenant isolation.",
-                "subtasks": [
-                    {
-                        "id": 4.1,
-                        "title": "Set up Laravel Sanctum",
-                        "description": "Configure Sanctum for API authentication across all user roles",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Install and configure Sanctum with proper token management and API protection."
-                    },
-                    {
-                        "id": 4.2,
-                        "title": "Implement Spatie Permission System",
-                        "description": "Set up role-based permissions with tenant isolation",
-                        "status": "pending",
-                        "dependencies": [
-                            4.1
-                        ],
-                        "details": "Configure roles and permissions for Super-Admin, Academy Admin, Teacher, Supervisor, Student, Parent with proper tenant scoping."
-                    },
-                    {
-                        "id": 4.3,
-                        "title": "Build Registration & Login System",
-                        "description": "Create registration and login interfaces for all user roles",
-                        "status": "pending",
-                        "dependencies": [
-                            4.2
-                        ],
-                        "details": "Build role-specific registration forms, email verification, and login interfaces with proper validation."
-                    },
-                    {
-                        "id": 4.4,
-                        "title": "Implement Password Reset & 2FA",
-                        "description": "Add password reset functionality and optional two-factor authentication",
-                        "status": "pending",
-                        "dependencies": [
-                            4.3
-                        ],
-                        "details": "Build secure password reset flow and optional 2FA using SMS/email verification."
-                    }
-                ]
+                "id": 1.4,
+                "title": "Create QuranSession Model",
+                "description": "Handle both individual and group Quran sessions",
+                "status": "completed",
+                "details": "✅ COMPLETED: Created QuranSession model with comprehensive session management, progress tracking, and evaluation"
             },
             {
-                "id": 5,
-                "title": "Phase 2B: Multi-Panel Filament Dashboard Setup",
-                "description": "Implement multi-panel Filament architecture with role-specific dashboards",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [
-                    4
-                ],
-                "details": "Set up Filament 4 multi-panel architecture with separate panels for Super-Admin, Academy Admin, Teacher, and Supervisor roles. Configure proper navigation, access control, and tenant isolation.",
-                "testStrategy": "UI testing for all dashboard panels, access control verification, and responsive design testing.",
-                "subtasks": [
-                    {
-                        "id": 5.1,
-                        "title": "Configure Filament Multi-Panel Architecture",
-                        "description": "Set up separate Filament panels for each power user role",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Configure SuperAdminPanelProvider, AcademyPanelProvider, TeacherPanelProvider, SupervisorPanelProvider with proper routing."
-                    },
-                    {
-                        "id": 5.2,
-                        "title": "Build Super-Admin Panel",
-                        "description": "Create comprehensive Super-Admin panel with global management capabilities",
-                        "status": "pending",
-                        "dependencies": [
-                            5.1
-                        ],
-                        "details": "Build dashboard with academy management, global user management, financial oversight, and system settings."
-                    },
-                    {
-                        "id": 5.3,
-                        "title": "Build Academy Admin Panel",
-                        "description": "Create tenant-scoped Academy Admin panel with branding and settings",
-                        "status": "pending",
-                        "dependencies": [
-                            5.1
-                        ],
-                        "details": "Build academy-specific dashboard with user management, content management, and academy customization."
-                    },
-                    {
-                        "id": 5.4,
-                        "title": "Build Teacher Panel",
-                        "description": "Create Teacher panel with schedule, sessions, and course management",
-                        "status": "pending",
-                        "dependencies": [
-                            5.1
-                        ],
-                        "details": "Build teacher-focused dashboard with calendar, session management, homework grading, and profile settings."
-                    },
-                    {
-                        "id": 5.5,
-                        "title": "Build Supervisor Panel",
-                        "description": "Create Supervisor panel with monitoring and quality control features",
-                        "status": "pending",
-                        "dependencies": [
-                            5.1
-                        ],
-                        "details": "Build supervisor dashboard with chat monitoring, quality reports, and complaint management."
-                    }
-                ]
+                "id": 1.5,
+                "title": "Create QuranProgress Model",
+                "description": "Track student memorization progress with comprehensive analytics",
+                "status": "completed",
+                "details": "✅ COMPLETED: Created QuranProgress model with detailed progress tracking, goals, milestones, and performance analytics"
             },
             {
-                "id": 6,
-                "title": "Phase 2C: Student & Parent Personal Areas",
-                "description": "Build responsive Blade + Livewire interfaces for students and parents",
-                "status": "pending",
-                "priority": "medium",
-                "dependencies": [
-                    5
-                ],
-                "details": "Create mobile-first personal areas for students and parents using Blade templates and Livewire components. Include dashboards, subscription management, progress tracking, and communication features.",
-                "testStrategy": "Mobile responsiveness testing, user experience testing, and accessibility compliance verification.",
-                "subtasks": [
-                    {
-                        "id": 6.1,
-                        "title": "Build Student Personal Area",
-                        "description": "Create comprehensive student dashboard with all educational sections",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Build student interface with subscription management, homework submission, quiz taking, progress reports, and messaging."
-                    },
-                    {
-                        "id": 6.2,
-                        "title": "Build Parent Personal Area",
-                        "description": "Create parent dashboard with child monitoring and payment management",
-                        "status": "pending",
-                        "dependencies": [
-                            6.1
-                        ],
-                        "details": "Build parent interface with child progress monitoring, payment management, teacher communication, and multiple children support."
-                    },
-                    {
-                        "id": 6.3,
-                        "title": "Implement Mobile Responsiveness",
-                        "description": "Ensure all personal areas are fully responsive and mobile-optimized",
-                        "status": "pending",
-                        "dependencies": [
-                            6.2
-                        ],
-                        "details": "Optimize layouts for mobile devices, implement touch-friendly interfaces, and ensure accessibility compliance."
-                    }
-                ]
-            },
-            {
-                "id": 7,
-                "title": "Phase 3A: Recorded Courses Frontend Implementation",
-                "description": "Complete the frontend implementation for the Recorded Courses section",
-                "status": "pending",
-                "priority": "medium",
-                "dependencies": [
-                    6
-                ],
-                "details": "Build course catalog, video player interface, enrollment system, and progress tracking frontend for the already-implemented Recorded Courses backend.",
-                "testStrategy": "Video playback testing, progress tracking accuracy, payment flow testing, and certificate generation verification.",
-                "subtasks": [
-                    {
-                        "id": 7.1,
-                        "title": "Build Course Catalog Interface",
-                        "description": "Create course browsing and discovery interface with filtering and search",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Build responsive course catalog with advanced filtering, search functionality, and course preview capabilities."
-                    },
-                    {
-                        "id": 7.2,
-                        "title": "Implement Video Player",
-                        "description": "Create advanced video player with progress tracking and interactive features",
-                        "status": "pending",
-                        "dependencies": [
-                            7.1
-                        ],
-                        "details": "Build video player with progress saving, bookmarks, notes, speed control, and transcript support."
-                    },
-                    {
-                        "id": 7.3,
-                        "title": "Build Course Enrollment System",
-                        "description": "Create course enrollment and payment processing interface",
-                        "status": "pending",
-                        "dependencies": [
-                            7.2
-                        ],
-                        "details": "Build enrollment flow with payment integration, enrollment confirmation, and access management."
-                    },
-                    {
-                        "id": 7.4,
-                        "title": "Implement Progress Analytics",
-                        "description": "Build student progress dashboard and certificate generation interface",
-                        "status": "pending",
-                        "dependencies": [
-                            7.3
-                        ],
-                        "details": "Create detailed progress analytics, completion certificates, and achievement tracking interface."
-                    }
-                ]
-            },
-            {
-                "id": 8,
-                "title": "Phase 3B: Payment Gateway Integration",
-                "description": "Integrate Paymob and Tap payment gateways with comprehensive billing system",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [
-                    7
-                ],
-                "details": "Complete payment processing implementation with multiple gateway support, invoice generation, subscription billing, and refund processing.",
-                "testStrategy": "End-to-end payment testing, refund processing verification, and subscription billing accuracy testing.",
-                "subtasks": [
-                    {
-                        "id": 8.1,
-                        "title": "Integrate Paymob Gateway",
-                        "description": "Implement Paymob payment gateway for MENA region",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Configure Paymob API integration with webhook handling, payment verification, and error management."
-                    },
-                    {
-                        "id": 8.2,
-                        "title": "Integrate Tap Payments Gateway",
-                        "description": "Implement Tap Payments gateway for GCC region",
-                        "status": "pending",
-                        "dependencies": [
-                            8.1
-                        ],
-                        "details": "Configure Tap Payments API with multi-currency support, payment verification, and regional compliance."
-                    },
-                    {
-                        "id": 8.3,
-                        "title": "Build Invoice & Receipt System",
-                        "description": "Create comprehensive invoicing and receipt generation system",
-                        "status": "pending",
-                        "dependencies": [
-                            8.2
-                        ],
-                        "details": "Build PDF invoice generation, receipt management, and transaction history tracking."
-                    },
-                    {
-                        "id": 8.4,
-                        "title": "Implement Subscription Billing",
-                        "description": "Build automated subscription billing and renewal system",
-                        "status": "pending",
-                        "dependencies": [
-                            8.3
-                        ],
-                        "details": "Create subscription management, renewal notifications, and automated billing cycles."
-                    }
-                ]
-            },
-            {
-                "id": 9,
-                "title": "Phase 3C: Real-Time Features Integration",
-                "description": "Implement real-time features including WebSocket communication, notifications, and live updates",
-                "status": "pending",
-                "priority": "medium",
-                "dependencies": [
-                    8
-                ],
-                "details": "Integrate WebSocket communication, push notifications, real-time chat, session reminders, and live dashboard updates.",
-                "testStrategy": "Real-time functionality testing, notification delivery verification, and WebSocket connection stability testing.",
-                "subtasks": [
-                    {
-                        "id": 9.1,
-                        "title": "Configure WebSocket Infrastructure",
-                        "description": "Set up Soketi/Pusher for real-time communication",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Configure WebSocket server, authentication, and channel management for real-time features."
-                    },
-                    {
-                        "id": 9.2,
-                        "title": "Implement Push Notifications",
-                        "description": "Build FCM push notification system for mobile and web",
-                        "status": "pending",
-                        "dependencies": [
-                            9.1
-                        ],
-                        "details": "Configure FCM integration with notification scheduling, delivery tracking, and user preferences."
-                    },
-                    {
-                        "id": 9.3,
-                        "title": "Build Real-Time Chat System",
-                        "description": "Enhance messaging system with real-time capabilities",
-                        "status": "pending",
-                        "dependencies": [
-                            9.2
-                        ],
-                        "details": "Implement real-time messaging with typing indicators, online status, and message delivery confirmation."
-                    },
-                    {
-                        "id": 9.4,
-                        "title": "Implement Session Reminders",
-                        "description": "Build automated session reminder and notification system",
-                        "status": "pending",
-                        "dependencies": [
-                            9.3
-                        ],
-                        "details": "Create automated reminders 15 minutes before sessions with Google Meet link delivery."
-                    }
-                ]
-            },
-            {
-                "id": 10,
-                "title": "Phase 4A: Google Meet Integration",
-                "description": "Implement comprehensive Google Meet integration with calendar API and recording management",
-                "status": "pending",
-                "priority": "medium",
-                "dependencies": [
-                    9
-                ],
-                "details": "Build Google Calendar API integration for automatic Meet link generation, session scheduling, and recording management for different session types.",
-                "testStrategy": "Google API integration testing, Meet link generation verification, and recording functionality testing.",
-                "subtasks": [
-                    {
-                        "id": 10.1,
-                        "title": "Configure Google Calendar API",
-                        "description": "Set up Google Calendar API integration for Meet link generation",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Configure Google API credentials, calendar access, and Meet link creation automation."
-                    },
-                    {
-                        "id": 10.2,
-                        "title": "Implement Automatic Meet Link Generation",
-                        "description": "Build system to automatically generate Meet links 15 minutes before sessions",
-                        "status": "pending",
-                        "dependencies": [
-                            10.1
-                        ],
-                        "details": "Create scheduled job to generate Meet links and send to participants with proper timing."
-                    },
-                    {
-                        "id": 10.3,
-                        "title": "Build Recording Management",
-                        "description": "Implement session recording management for Interactive Courses",
-                        "status": "pending",
-                        "dependencies": [
-                            10.2
-                        ],
-                        "details": "Build recording storage, access control, and playback system for course recordings."
-                    }
-                ]
-            },
-            {
-                "id": 11,
-                "title": "Phase 4B: Testing & Quality Assurance",
-                "description": "Implement comprehensive testing suite and quality assurance processes",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [
-                    10
-                ],
-                "details": "Build complete testing infrastructure including unit tests, feature tests, integration tests, and browser tests. Implement quality assurance processes and performance optimization.",
-                "testStrategy": "Automated testing pipeline with coverage reporting, performance benchmarking, and security testing.",
-                "subtasks": [
-                    {
-                        "id": 11.1,
-                        "title": "Build Unit Test Suite",
-                        "description": "Create comprehensive unit tests for all models and controllers",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Write unit tests with high coverage for all business logic, model relationships, and controller methods."
-                    },
-                    {
-                        "id": 11.2,
-                        "title": "Implement Feature Tests",
-                        "description": "Create feature tests for all user workflows and critical paths",
-                        "status": "pending",
-                        "dependencies": [
-                            11.1
-                        ],
-                        "details": "Build comprehensive feature tests covering registration, enrollment, payment, and session workflows."
-                    },
-                    {
-                        "id": 11.3,
-                        "title": "Add Integration Tests",
-                        "description": "Create integration tests for payment processing and external API integrations",
-                        "status": "pending",
-                        "dependencies": [
-                            11.2
-                        ],
-                        "details": "Test payment gateway integrations, Google API interactions, and notification delivery systems."
-                    },
-                    {
-                        "id": 11.4,
-                        "title": "Implement Browser Tests",
-                        "description": "Create browser automation tests for critical user journeys",
-                        "status": "pending",
-                        "dependencies": [
-                            11.3
-                        ],
-                        "details": "Build end-to-end browser tests using Laravel Dusk for complete user workflows."
-                    }
-                ]
-            },
-            {
-                "id": 12,
-                "title": "Phase 4C: Performance Optimization",
-                "description": "Optimize application performance, implement caching strategies, and ensure scalability",
-                "status": "pending",
-                "priority": "medium",
-                "dependencies": [
-                    11
-                ],
-                "details": "Implement comprehensive performance optimization including database query optimization, caching strategies, file delivery optimization, and scalability improvements.",
-                "testStrategy": "Performance benchmarking, load testing, and scalability testing under various conditions.",
-                "subtasks": [
-                    {
-                        "id": 12.1,
-                        "title": "Optimize Database Queries",
-                        "description": "Implement query optimization and efficient indexing strategies",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Optimize slow queries, implement proper indexes, and add query caching where appropriate."
-                    },
-                    {
-                        "id": 12.2,
-                        "title": "Implement Caching Strategy",
-                        "description": "Build comprehensive caching system using Redis",
-                        "status": "pending",
-                        "dependencies": [
-                            12.1
-                        ],
-                        "details": "Implement multi-level caching for user data, permissions, settings, and frequently accessed content."
-                    },
-                    {
-                        "id": 12.3,
-                        "title": "Optimize File Delivery",
-                        "description": "Implement CDN integration and file optimization",
-                        "status": "pending",
-                        "dependencies": [
-                            12.2
-                        ],
-                        "details": "Configure CDN for static assets, optimize video delivery, and implement efficient file storage strategies."
-                    },
-                    {
-                        "id": 12.4,
-                        "title": "Implement Queue Optimization",
-                        "description": "Optimize background job processing and queue management",
-                        "status": "pending",
-                        "dependencies": [
-                            12.3
-                        ],
-                        "details": "Configure queue priorities, optimize job processing, and implement efficient background task handling."
-                    }
-                ]
-            },
-            {
-                "id": 13,
-                "title": "Phase 5A: Security Implementation",
-                "description": "Implement comprehensive security measures and conduct security audit",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [
-                    12
-                ],
-                "details": "Implement security best practices, conduct vulnerability assessment, and ensure data protection compliance. Include input validation, CSRF protection, XSS prevention, and secure file handling.",
-                "testStrategy": "Security penetration testing, vulnerability scanning, and compliance verification.",
-                "subtasks": [
-                    {
-                        "id": 13.1,
-                        "title": "Implement Input Validation",
-                        "description": "Add comprehensive input validation and sanitization across all forms",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Implement server-side validation, input sanitization, and protection against injection attacks."
-                    },
-                    {
-                        "id": 13.2,
-                        "title": "Add Security Headers",
-                        "description": "Implement security headers and CSRF protection",
-                        "status": "pending",
-                        "dependencies": [
-                            13.1
-                        ],
-                        "details": "Configure security headers, CSRF tokens, and XSS protection mechanisms."
-                    },
-                    {
-                        "id": 13.3,
-                        "title": "Secure File Uploads",
-                        "description": "Implement secure file upload and storage system",
-                        "status": "pending",
-                        "dependencies": [
-                            13.2
-                        ],
-                        "details": "Add file type validation, virus scanning, and secure storage with signed URLs."
-                    },
-                    {
-                        "id": 13.4,
-                        "title": "Conduct Security Audit",
-                        "description": "Perform comprehensive security audit and penetration testing",
-                        "status": "pending",
-                        "dependencies": [
-                            13.3
-                        ],
-                        "details": "Conduct thorough security review, vulnerability assessment, and compliance verification."
-                    }
-                ]
-            },
-            {
-                "id": 14,
-                "title": "Phase 5B: Documentation & Training",
-                "description": "Create comprehensive documentation and training materials for all user roles",
-                "status": "pending",
-                "priority": "medium",
-                "dependencies": [
-                    13
-                ],
-                "details": "Build complete documentation including API documentation, user guides, admin manuals, and developer documentation. Create training materials and video tutorials.",
-                "testStrategy": "Documentation accuracy verification, user testing of guides, and training material effectiveness assessment.",
-                "subtasks": [
-                    {
-                        "id": 14.1,
-                        "title": "Create API Documentation",
-                        "description": "Build comprehensive API documentation with examples",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Document all API endpoints with request/response examples, authentication, and error handling."
-                    },
-                    {
-                        "id": 14.2,
-                        "title": "Write User Guides",
-                        "description": "Create user guides for all user roles and features",
-                        "status": "pending",
-                        "dependencies": [
-                            14.1
-                        ],
-                        "details": "Build step-by-step guides for students, teachers, admins, and parents with screenshots and examples."
-                    },
-                    {
-                        "id": 14.3,
-                        "title": "Build Admin Manual",
-                        "description": "Create comprehensive admin documentation for system management",
-                        "status": "pending",
-                        "dependencies": [
-                            14.2
-                        ],
-                        "details": "Document admin features, system configuration, troubleshooting, and maintenance procedures."
-                    },
-                    {
-                        "id": 14.4,
-                        "title": "Create Training Videos",
-                        "description": "Produce training videos and tutorials for all user types",
-                        "status": "pending",
-                        "dependencies": [
-                            14.3
-                        ],
-                        "details": "Create video tutorials covering key workflows, feature demonstrations, and troubleshooting guides."
-                    }
-                ]
-            },
-            {
-                "id": 15,
-                "title": "Phase 5C: Deployment & DevOps",
-                "description": "Set up production deployment pipeline and monitoring infrastructure",
-                "status": "pending",
-                "priority": "high",
-                "dependencies": [
-                    14
-                ],
-                "details": "Configure production environment, implement CI/CD pipeline, set up monitoring and logging, and establish backup and disaster recovery procedures.",
-                "testStrategy": "Deployment testing, monitoring verification, backup restoration testing, and disaster recovery simulation.",
-                "subtasks": [
-                    {
-                        "id": 15.1,
-                        "title": "Configure Production Environment",
-                        "description": "Set up production servers, databases, and infrastructure",
-                        "status": "pending",
-                        "dependencies": [],
-                        "details": "Configure production servers, database clusters, Redis cache, and file storage with proper security."
-                    },
-                    {
-                        "id": 15.2,
-                        "title": "Implement CI/CD Pipeline",
-                        "description": "Build automated deployment pipeline with testing and quality gates",
-                        "status": "pending",
-                        "dependencies": [
-                            15.1
-                        ],
-                        "details": "Configure GitHub Actions for automated testing, building, and zero-downtime deployment."
-                    },
-                    {
-                        "id": 15.3,
-                        "title": "Set up Monitoring",
-                        "description": "Implement comprehensive application and infrastructure monitoring",
-                        "status": "pending",
-                        "dependencies": [
-                            15.2
-                        ],
-                        "details": "Configure application monitoring, error tracking, performance metrics, and alerting systems."
-                    },
-                    {
-                        "id": 15.4,
-                        "title": "Establish Backup Procedures",
-                        "description": "Implement backup and disaster recovery procedures",
-                        "status": "pending",
-                        "dependencies": [
-                            15.3
-                        ],
-                        "details": "Configure automated backups, disaster recovery procedures, and data restoration protocols."
-                    }
-                ]
+                "id": 1.6,
+                "title": "Create QuranHomework Model",
+                "description": "Manage Quran homework assignments with submission tracking",
+                "status": "completed",
+                "details": "✅ COMPLETED: Created QuranHomework model with assignment management, submission tracking, and evaluation system"
             }
         ]
+    },
+    {
+        "id": 2,
+        "title": "Phase 1B: Create Quran Section Migrations",
+        "description": "Create database migrations for all Quran section models with proper indexes and foreign keys",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            1
+        ],
+        "details": "Create migrations for QuranTeacher, QuranSubscription, QuranCircle, QuranSession, QuranProgress, and QuranHomework tables with proper relationships and tenant isolation.",
+        "testStrategy": "Run migrations and verify table structure and relationships",
+        "subtasks": []
+    },
+    {
+        "id": 3,
+        "title": "Phase 1C: Quran Section Controllers",
+        "description": "Create controllers for Quran section with comprehensive CRUD operations and business logic",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            2
+        ],
+        "details": "Implement controllers for QuranTeacher, QuranCircle, QuranSession, QuranProgress, and QuranHomework management with proper authorization and validation.",
+        "testStrategy": "Test all controller endpoints with proper authentication and authorization",
+        "subtasks": []
+    },
+    {
+        "id": 4,
+        "title": "Phase 2A: Academic Section Backend Implementation",
+        "description": "Implement academic education section with private sessions and interactive courses",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            3
+        ],
+        "details": "Create models for AcademicTeacher, AcademicSubject, PrivateSession, InteractiveCourse, AcademicProgress, and related entities for the academic education section.",
+        "testStrategy": "Test academic models, relationships, and business logic",
+        "subtasks": []
+    },
+    {
+        "id": 5,
+        "title": "Phase 2B: Academic Section Controllers",
+        "description": "Create controllers for academic section management",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            4
+        ],
+        "details": "Implement controllers for academic teacher management, subject enrollment, session scheduling, and progress tracking.",
+        "testStrategy": "Test academic section endpoints and integration",
+        "subtasks": []
+    },
+    {
+        "id": 6,
+        "title": "Phase 3A: Enhanced Recorded Courses Section",
+        "description": "Enhance the existing recorded courses section with improved features",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+            5
+        ],
+        "details": "Improve existing RecordedCourse models and add missing features like course reviews, instructor profiles, and advanced progress tracking.",
+        "testStrategy": "Test enhanced recorded course features",
+        "subtasks": []
+    },
+    {
+        "id": 7,
+        "title": "Phase 4A: Multi-Tenant Authentication System",
+        "description": "Implement comprehensive authentication system for all user roles",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            6
+        ],
+        "details": "Create authentication system supporting Super-Admin, Academy Admin, Teacher, Supervisor, Student, and Parent roles with proper multi-tenant isolation.",
+        "testStrategy": "Test authentication flows for all user roles and tenant isolation",
+        "subtasks": []
+    },
+    {
+        "id": 8,
+        "title": "Phase 4B: Role-Based Dashboard Implementation",
+        "description": "Implement role-based dashboards using Filament panels and Livewire",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            7
+        ],
+        "details": "Create separate dashboard interfaces: Super-Admin (Filament), Academy Admin (Filament), Teacher (Filament), Supervisor (Filament), Student (Livewire), Parent (Livewire).",
+        "testStrategy": "Test all dashboard interfaces and role-based access control",
+        "subtasks": []
+    },
+    {
+        "id": 9,
+        "title": "Phase 5A: Super-Admin Dashboard",
+        "description": "Create comprehensive Super-Admin panel with global system management",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            8
+        ],
+        "details": "Implement global dashboard with academy management, user oversight, financial reports, and system settings using Filament admin panel.",
+        "testStrategy": "Test Super-Admin panel functionality and global management features",
+        "subtasks": []
+    },
+    {
+        "id": 10,
+        "title": "Phase 5B: Academy Admin Dashboard",
+        "description": "Create Academy Admin panel with tenant-scoped management",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            9
+        ],
+        "details": "Implement tenant-scoped dashboard for academy management, teacher oversight, student management, and academy settings using Filament panel.",
+        "testStrategy": "Test Academy Admin panel and tenant isolation",
+        "subtasks": []
+    },
+    {
+        "id": 11,
+        "title": "Phase 5C: Teacher Dashboard",
+        "description": "Create Teacher dashboard with session management and student tracking",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            10
+        ],
+        "details": "Implement teacher interface for session scheduling, student progress tracking, homework management, and performance analytics using Filament panel.",
+        "testStrategy": "Test teacher dashboard functionality and student management features",
+        "subtasks": []
+    },
+    {
+        "id": 12,
+        "title": "Phase 5D: Student & Parent Areas",
+        "description": "Create student and parent personal areas using Livewire",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            11
+        ],
+        "details": "Implement lightweight personal areas for students (course access, progress, homework) and parents (child monitoring, payments, reports) using Blade + Livewire.",
+        "testStrategy": "Test student and parent interfaces and family account features",
+        "subtasks": []
+    },
+    {
+        "id": 13,
+        "title": "Phase 6A: Payment Integration",
+        "description": "Integrate payment gateways (Paymob/Tap) with subscription management",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            12
+        ],
+        "details": "Implement payment processing for subscriptions, courses, and fees with proper receipt generation and refund handling.",
+        "testStrategy": "Test payment flows, subscription renewals, and refund processes",
+        "subtasks": []
+    },
+    {
+        "id": 14,
+        "title": "Phase 6B: Google Calendar Integration",
+        "description": "Integrate Google Meet and Google Calendar for live sessions",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+            13
+        ],
+        "details": "Implement Google Calendar integration for session scheduling and Google Meet for video conferencing as specified in the google-calendar-integration rule.",
+        "testStrategy": "Test calendar integration and meeting link generation",
+        "subtasks": []
+    },
+    {
+        "id": 15,
+        "title": "Phase 7A: Advanced Features",
+        "description": "Implement advanced features like notifications, reports, and analytics",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+            14
+        ],
+        "details": "Add comprehensive notification system, detailed reporting, advanced analytics, and other premium features.",
+        "testStrategy": "Test advanced features and system performance",
+        "subtasks": []
+    },
+    {
+        "id": 16,
+        "title": "Phase 7B: Testing & Deployment",
+        "description": "Comprehensive testing and production deployment setup",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+            15
+        ],
+        "details": "Implement comprehensive test suite, setup CI/CD pipeline, and prepare production deployment with proper security measures.",
+        "testStrategy": "Full system testing, performance testing, and security audit",
+        "subtasks": []
     }
-}
+]
