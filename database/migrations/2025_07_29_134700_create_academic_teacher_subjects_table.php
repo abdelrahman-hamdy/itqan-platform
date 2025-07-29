@@ -25,12 +25,12 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->index(['teacher_id', 'subject_id']);
-            $table->index(['subject_id', 'proficiency_level']);
-            $table->index(['is_primary', 'proficiency_level']);
+            $table->index(['teacher_id', 'subject_id'], 'at_subj_teacher_subj_idx');
+            $table->index(['subject_id', 'proficiency_level'], 'at_subj_level_idx');
+            $table->index(['is_primary', 'proficiency_level'], 'at_subj_primary_level_idx');
             
             // Unique constraint to prevent duplicate assignments
-            $table->unique(['teacher_id', 'subject_id']);
+            $table->unique(['teacher_id', 'subject_id'], 'at_subj_teacher_subj_unique');
 
             // Foreign keys will be added later
         });

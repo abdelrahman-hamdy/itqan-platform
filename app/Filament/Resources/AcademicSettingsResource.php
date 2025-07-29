@@ -152,14 +152,6 @@ class AcademicSettingsResource extends Resource
                                     ->default(['tab_pay', 'paymob'])
                                     ->required()
                                     ->columns(2),
-
-                                Forms\Components\TextInput::make('late_payment_penalty_percentage')
-                                    ->label('غرامة التأخير في الدفع (%)')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->maxValue(50)
-                                    ->default(0)
-                                    ->suffix('%'),
                             ]),
                     ]),
 
@@ -260,9 +252,6 @@ class AcademicSettingsResource extends Resource
                     ->schema([
                         Components\TextEntry::make('payment_methods_text')
                             ->label('طرق الدفع المفعلة'),
-                        Components\TextEntry::make('late_payment_penalty_percentage')
-                            ->label('غرامة التأخير')
-                            ->suffix('%'),
                     ])
                     ->columns(2),
 

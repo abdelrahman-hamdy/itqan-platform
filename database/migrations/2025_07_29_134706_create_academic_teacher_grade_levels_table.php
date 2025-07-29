@@ -23,11 +23,11 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->index(['teacher_id', 'grade_level_id']);
-            $table->index(['grade_level_id', 'years_experience']);
+            $table->index(['teacher_id', 'grade_level_id'], 'at_grade_teacher_grade_idx');
+            $table->index(['grade_level_id', 'years_experience'], 'at_grade_level_exp_idx');
             
             // Unique constraint to prevent duplicate assignments
-            $table->unique(['teacher_id', 'grade_level_id']);
+            $table->unique(['teacher_id', 'grade_level_id'], 'at_grade_teacher_grade_unique');
 
             // Foreign keys will be added later
         });

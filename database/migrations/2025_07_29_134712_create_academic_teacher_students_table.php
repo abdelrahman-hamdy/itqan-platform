@@ -26,13 +26,13 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->index(['teacher_id', 'student_id']);
-            $table->index(['student_id', 'status']);
-            $table->index(['status', 'start_date']);
-            $table->index(['end_date']);
+            $table->index(['teacher_id', 'student_id'], 'at_stud_teacher_stud_idx');
+            $table->index(['student_id', 'status'], 'at_stud_status_idx');
+            $table->index(['status', 'start_date'], 'at_stud_status_start_idx');
+            $table->index(['end_date'], 'at_stud_end_date_idx');
             
             // Unique constraint to prevent duplicate active relationships
-            $table->unique(['teacher_id', 'student_id']);
+            $table->unique(['teacher_id', 'student_id'], 'at_stud_teacher_stud_unique');
 
             // Foreign keys will be added later
         });
