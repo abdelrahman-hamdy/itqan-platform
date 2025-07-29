@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class GradeLevel extends Model
 {
@@ -18,15 +17,11 @@ class GradeLevel extends Model
         'name_en',
         'description',
         'level',
-        'min_age',
-        'max_age',
         'is_active',
     ];
 
     protected $casts = [
         'level' => 'integer',
-        'min_age' => 'integer',
-        'max_age' => 'integer',
         'is_active' => 'boolean',
     ];
 
@@ -39,37 +34,27 @@ class GradeLevel extends Model
     }
 
     /**
-     * Students in this grade level
+     * Students in this grade level (via student profiles)
      */
-    public function students(): BelongsToMany
+    public function studentProfiles(): HasMany
     {
-        return $this->belongsToMany(User::class, 'student_grade_levels')
-                    ->where('role', 'student');
+        return $this->hasMany(StudentProfile::class);
     }
 
     /**
-     * Teachers who teach this grade level
+     * Interactive courses for this grade level
      */
-    public function teachers(): BelongsToMany
+    public function interactiveCourses(): HasMany
     {
-        return $this->belongsToMany(User::class, 'teacher_grade_levels')
-                    ->where('role', 'teacher');
+        return $this->hasMany(InteractiveCourse::class);
     }
 
     /**
-     * Subjects available for this grade level
+     * Recorded courses for this grade level
      */
-    public function subjects(): BelongsToMany
+    public function recordedCourses(): HasMany
     {
-        return $this->belongsToMany(Subject::class, 'subject_grade_levels');
-    }
-
-    /**
-     * Courses for this grade level
-     */
-    public function courses(): HasMany
-    {
-        return $this->hasMany(Course::class);
+        return $this->hasMany(RecordedCourse::class);
     }
 
     /**
@@ -81,10 +66,26 @@ class GradeLevel extends Model
     }
 
     /**
+     * Scope for grade levels by academy
+     */
+    public function scopeForAcademy($query, $academyId)
+    {
+        return $query->where('academy_id', $academyId);
+    }
+
+    /**
      * Scope ordered by level
      */
     public function scopeOrdered($query)
     {
         return $query->orderBy('level');
+    }
+
+    /**
+     * Get display name with level
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->name . ' (المستوى ' . $this->level . ')';
     }
 }
