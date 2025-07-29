@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Models\Academy;
+use App\Http\Controllers\RecordedCourseController;
+use App\Http\Controllers\LessonController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\StudentDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +54,8 @@ Route::domain(config('app.domain'))->group(function () {
 
 // Subdomain routes ({subdomain}.itqan-platform.test)
 Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
+    
+    // Academy Home Page
     Route::get('/', function ($subdomain) {
         // Find academy by subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -71,12 +77,123 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
             <p><strong>Logo URL:</strong> " . ($academy->logo_url ?? 'No logo uploaded') . "</p>
             <hr>
             <p>🚀 <strong>Subdomain routing is working!</strong></p>
-            <a href='http://itqan-platform.test/admin' style='display: inline-block; margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;'>Go to Admin Panel</a>
+            <div style='margin-top: 20px;'>
+                <a href='/courses' style='display: inline-block; margin: 5px; padding: 10px 20px; background: #16a34a; color: white; text-decoration: none; border-radius: 4px;'>Browse Courses</a>
+                <a href='/dashboard' style='display: inline-block; margin: 5px; padding: 10px 20px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;'>Student Dashboard</a>
+                <a href='http://itqan-platform.test/admin' style='display: inline-block; margin: 5px; padding: 10px 20px; background: #dc2626; color: white; text-decoration: none; border-radius: 4px;'>Admin Panel</a>
+            </div>
         </div>
         ";
-    });
+    })->name('academy.home');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Course Management Routes
+    |--------------------------------------------------------------------------
+    */
     
-    // Add more academy-specific routes here
-    // Route::get('/courses', [CoursesController::class, 'index']);
-    // Route::get('/teachers', [TeachersController::class, 'index']);
+    // Course Listing & Discovery
+    Route::get('/courses', [RecordedCourseController::class, 'index'])->name('courses.index');
+    Route::get('/courses/create', [RecordedCourseController::class, 'create'])->name('courses.create');
+    Route::post('/courses', [RecordedCourseController::class, 'store'])->name('courses.store');
+    Route::get('/courses/{course}', [RecordedCourseController::class, 'show'])->name('courses.show');
+    
+    // Course Enrollment
+    Route::post('/courses/{course}/enroll', [RecordedCourseController::class, 'enroll'])->name('courses.enroll');
+    Route::get('/courses/{course}/checkout', [RecordedCourseController::class, 'checkout'])->name('courses.checkout');
+    Route::get('/courses/{course}/learn', [RecordedCourseController::class, 'learn'])->name('courses.learn');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lesson & Learning Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Lesson Viewing & Progress
+    Route::get('/courses/{course}/lessons/{lesson}', [LessonController::class, 'show'])->name('lessons.show');
+    Route::post('/courses/{course}/lessons/{lesson}/progress', [LessonController::class, 'updateProgress'])->name('lessons.progress');
+    Route::post('/courses/{course}/lessons/{lesson}/complete', [LessonController::class, 'markCompleted'])->name('lessons.complete');
+    
+    // Lesson Interactions
+    Route::post('/courses/{course}/lessons/{lesson}/bookmark', [LessonController::class, 'addBookmark'])->name('lessons.bookmark');
+    Route::delete('/courses/{course}/lessons/{lesson}/bookmark', [LessonController::class, 'removeBookmark'])->name('lessons.unbookmark');
+    Route::post('/courses/{course}/lessons/{lesson}/notes', [LessonController::class, 'addNote'])->name('lessons.notes.add');
+    Route::get('/courses/{course}/lessons/{lesson}/notes', [LessonController::class, 'getNotes'])->name('lessons.notes.get');
+    Route::post('/courses/{course}/lessons/{lesson}/rate', [LessonController::class, 'rate'])->name('lessons.rate');
+    
+    // Lesson Resources
+    Route::get('/courses/{course}/lessons/{lesson}/transcript', [LessonController::class, 'getTranscript'])->name('lessons.transcript');
+    Route::get('/courses/{course}/lessons/{lesson}/materials', [LessonController::class, 'downloadMaterials'])->name('lessons.materials');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Payment Processing
+    Route::get('/courses/{course}/payment', [PaymentController::class, 'create'])->name('payments.create');
+    Route::post('/courses/{course}/payment', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/{payment}/success', [PaymentController::class, 'success'])->name('payments.success');
+    Route::get('/payments/{payment}/failed', [PaymentController::class, 'failed'])->name('payments.failed');
+    
+    // Payment Management
+    Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+    Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
+    Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
+    
+    // Payment Methods API
+    Route::get('/api/payment-methods/{academy}', [PaymentController::class, 'getPaymentMethods'])->name('api.payment-methods');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Dashboard Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Main Dashboard
+    Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
+    Route::get('/my-courses', [StudentDashboardController::class, 'courses'])->name('student.courses');
+    Route::get('/enrollments/{enrollment}/progress', [StudentDashboardController::class, 'courseProgress'])->name('student.course-progress');
+    
+    // Learning Resources
+    Route::get('/certificates', [StudentDashboardController::class, 'certificates'])->name('student.certificates');
+    Route::get('/enrollments/{enrollment}/certificate', [StudentDashboardController::class, 'downloadCertificate'])->name('student.certificate.download');
+    Route::get('/bookmarks', [StudentDashboardController::class, 'bookmarks'])->name('student.bookmarks');
+    Route::get('/notes', [StudentDashboardController::class, 'notes'])->name('student.notes');
+    
+    // Learning Analytics
+    Route::get('/analytics', [StudentDashboardController::class, 'analytics'])->name('student.analytics');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Additional Academy Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // These can be extended for other features
+    // Route::get('/teachers', [TeachersController::class, 'index'])->name('teachers.index');
+    // Route::get('/subjects', [SubjectsController::class, 'index'])->name('subjects.index');
+    // Route::get('/about', [AcademyController::class, 'about'])->name('academy.about');
+    // Route::get('/contact', [AcademyController::class, 'contact'])->name('academy.contact');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Authentication Routes
+|--------------------------------------------------------------------------
+*/
+
+// Include authentication routes (these would typically be in a separate file)
+// Auth::routes();
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes (Global)
+|--------------------------------------------------------------------------
+*/
+
+// Admin routes would typically be in a separate route file
+// Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
+//     // Admin routes
+// });
