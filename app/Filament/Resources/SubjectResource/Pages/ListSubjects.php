@@ -29,23 +29,30 @@ class ListSubjects extends ListRecords
             'all' => Tab::make('الكل')
                 ->badge(fn () => \App\Models\Subject::count()),
                 
-            'academic' => Tab::make('المواد الأكاديمية')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_academic', true))
-                ->badge(fn () => \App\Models\Subject::where('is_academic', true)->count()),
+            'beginner' => Tab::make('مبتدئ')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('difficulty_level', 'beginner'))
+                ->badge(fn () => \App\Models\Subject::where('difficulty_level', 'beginner')->count())
+                ->badgeColor('success'),
                 
-            'quran' => Tab::make('المواد القرآنية')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_academic', false))
-                ->badge(fn () => \App\Models\Subject::where('is_academic', false)->count()),
+            'intermediate' => Tab::make('متوسط')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('difficulty_level', 'intermediate'))
+                ->badge(fn () => \App\Models\Subject::where('difficulty_level', 'intermediate')->count())
+                ->badgeColor('warning'),
+                
+            'advanced' => Tab::make('متقدم')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('difficulty_level', 'advanced'))
+                ->badge(fn () => \App\Models\Subject::where('difficulty_level', 'advanced')->count())
+                ->badgeColor('danger'),
                 
             'active' => Tab::make('نشطة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', true))
                 ->badge(fn () => \App\Models\Subject::where('is_active', true)->count())
-                ->badgeColor('success'),
+                ->badgeColor('info'),
                 
             'inactive' => Tab::make('غير نشطة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', false))
                 ->badge(fn () => \App\Models\Subject::where('is_active', false)->count())
-                ->badgeColor('danger'),
+                ->badgeColor('gray'),
         ];
     }
 } 

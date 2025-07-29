@@ -215,31 +215,20 @@ class SubjectResource extends Resource
     {
         return $infolist
             ->schema([
-                Components\Section::make('معلومات المادة')
+                Components\Section::make('المعلومات الأساسية')
                     ->schema([
-                        Components\Grid::make(2)
+                        Components\Grid::make(3)
                             ->schema([
                                 Components\TextEntry::make('name')
                                     ->label('اسم المادة (عربي)'),
                                 Components\TextEntry::make('name_en')
                                     ->label('اسم المادة (إنجليزي)')
                                     ->placeholder('غير محدد'),
-                                Components\TextEntry::make('academy.name')
-                                    ->label('الأكاديمية'),
-                                Components\TextEntry::make('category')
-                                    ->label('التصنيف')
+                                Components\TextEntry::make('subject_code')
+                                    ->label('رمز المادة')
                                     ->badge()
-                                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                                        'general' => 'عام',
-                                        'science' => 'علوم',
-                                        'language' => 'لغات',
-                                        'arts' => 'فنون',
-                                        'mathematics' => 'رياضيات',
-                                        'social' => 'اجتماعيات',
-                                        'quran' => 'قرآن كريم',
-                                        'islamic' => 'تربية إسلامية',
-                                        default => $state,
-                                    }),
+                                    ->color('info')
+                                    ->placeholder('غير محدد'),
                             ]),
                             
                         Components\TextEntry::make('description')
@@ -248,21 +237,53 @@ class SubjectResource extends Resource
                             ->columnSpanFull(),
                     ]),
                     
+                Components\Section::make('تفاصيل التدريس')
+                    ->schema([
+                        Components\Grid::make(2)
+                            ->schema([
+                                Components\TextEntry::make('difficulty_level')
+                                    ->label('مستوى الصعوبة')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'beginner' => 'success',
+                                        'intermediate' => 'warning',
+                                        'advanced' => 'danger',
+                                        default => 'gray',
+                                    })
+                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                        'beginner' => 'مبتدئ',
+                                        'intermediate' => 'متوسط',
+                                        'advanced' => 'متقدم',
+                                        default => $state,
+                                    }),
+                                    
+                                Components\TextEntry::make('hours_per_week')
+                                    ->label('ساعات أسبوعياً')
+                                    ->badge()
+                                    ->color('info')
+                                    ->suffix(' ساعة'),
+                            ]),
+
+                        Components\TextEntry::make('prerequisites')
+                            ->label('المتطلبات المسبقة')
+                            ->placeholder('لا توجد متطلبات')
+                            ->columnSpanFull(),
+                    ]),
+                    
                 Components\Section::make('الحالة والإحصائيات')
                     ->schema([
                         Components\Grid::make(4)
                             ->schema([
-                                Components\TextEntry::make('is_academic')
-                                    ->label('نوع المادة')
-                                    ->badge()
-                                    ->color(fn (bool $state): string => $state ? 'success' : 'warning')
-                                    ->formatStateUsing(fn (bool $state): string => $state ? 'أكاديمية' : 'قرآنية'),
-                                    
                                 Components\TextEntry::make('is_active')
                                     ->label('الحالة')
                                     ->badge()
                                     ->color(fn (bool $state): string => $state ? 'success' : 'danger')
                                     ->formatStateUsing(fn (bool $state): string => $state ? 'نشطة' : 'غير نشطة'),
+                                    
+                                Components\TextEntry::make('academy.name')
+                                    ->label('الأكاديمية')
+                                    ->badge()
+                                    ->color('primary'),
                                     
                                 Components\TextEntry::make('courses_count')
                                     ->label('عدد الدورات')
