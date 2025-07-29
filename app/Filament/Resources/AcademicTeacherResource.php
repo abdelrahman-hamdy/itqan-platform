@@ -131,45 +131,14 @@ class AcademicTeacherResource extends Resource
                                     ->maxValue(date('Y')),
                             ]),
 
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Select::make('specialization_field')
-                                    ->label('مجال التخصص')
-                                    ->options([
-                                        'mathematics' => 'الرياضيات',
-                                        'physics' => 'الفيزياء',
-                                        'chemistry' => 'الكيمياء',
-                                        'biology' => 'الأحياء',
-                                        'arabic_language' => 'اللغة العربية',
-                                        'english_language' => 'اللغة الإنجليزية',
-                                        'history' => 'التاريخ',
-                                        'geography' => 'الجغرافيا',
-                                        'islamic_studies' => 'التربية الإسلامية',
-                                        'computer_science' => 'علوم الحاسوب',
-                                        'art' => 'التربية الفنية',
-                                        'physical_education' => 'التربية البدنية',
-                                        'economics' => 'الاقتصاد',
-                                        'philosophy' => 'الفلسفة',
-                                        'psychology' => 'علم النفس',
-                                    ])
-                                    ->default('mathematics')
-                                    ->required(),
-
-                                Forms\Components\TextInput::make('teaching_experience_years')
-                                    ->label('سنوات الخبرة في التدريس')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->maxValue(50)
-                                    ->default(0)
-                                    ->required()
-                                    ->suffix('سنة'),
-                            ]),
-
-                        Forms\Components\Textarea::make('qualification_details')
-                            ->label('تفاصيل المؤهلات')
-                            ->maxLength(1000)
-                            ->rows(3)
-                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('teaching_experience_years')
+                            ->label('سنوات الخبرة في التدريس')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(50)
+                            ->default(0)
+                            ->required()
+                            ->suffix('سنة'),
                     ]),
 
                 Forms\Components\Section::make('التدريس والمواد')
@@ -178,25 +147,30 @@ class AcademicTeacherResource extends Resource
                             ->schema([
                                 Forms\Components\CheckboxList::make('subjects')
                                     ->label('المواد التي يدرسها')
-                                    ->relationship(
-                                        'subjects',
-                                        'name',
-                                        function (Builder $query) {
-                                            $academyId = auth()->user()->academy_id ?? 1;
-                                            return $query->where('academy_id', $academyId);
-                                        }
-                                    )
+                                    ->relationship('subjects', 'name')
+                                    ->options(function () {
+                                        $academyId = auth()->user()->academy_id ?? 1;
+                                        return \App\Models\Subject::where('academy_id', $academyId)
+                                            ->where('is_active', true)
+                                            ->pluck('name', 'id');
+                                    })
                                     ->columns(2)
                                     ->required(),
 
                                 Forms\Components\CheckboxList::make('gradeLevels')
-                                    ->label('المراحل الدراسية')
+                                    ->label('المراحل التي يدرسها')
                                     ->relationship('gradeLevels', 'name')
+                                    ->options(function () {
+                                        $academyId = auth()->user()->academy_id ?? 1;
+                                        return \App\Models\GradeLevel::where('academy_id', $academyId)
+                                            ->where('is_active', true)
+                                            ->pluck('name', 'id');
+                                    })
                                     ->columns(2)
                                     ->required(),
                             ]),
 
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(3)
                             ->schema([
                                 Forms\Components\TextInput::make('session_price_individual')
                                     ->label('سعر الحصة الخاصة (ريال/ساعة)')
@@ -207,27 +181,24 @@ class AcademicTeacherResource extends Resource
                                     ->prefix('SAR')
                                     ->helperText('سعر الساعة الواحدة للدروس الخاصة'),
 
-                                Forms\Components\TextInput::make('session_price_group')
-                                    ->label('سعر الحصة الجماعية (ريال/طالب/ساعة)')
+                                Forms\Components\TextInput::make('min_session_duration')
+                                    ->label('أقل مدة للحصة (دقيقة)')
                                     ->numeric()
-                                    ->minValue(0)
-                                    ->default(50)
-                                    ->prefix('SAR')
-                                    ->helperText('سعر الطالب الواحد في الحصة الجماعية'),
-                            ]),
+                                    ->minValue(15)
+                                    ->maxValue(180)
+                                    ->default(45)
+                                    ->required()
+                                    ->suffix('دقيقة'),
 
-                        Forms\Components\CheckboxList::make('preferred_teaching_methods')
-                            ->label('طرق التدريس المفضلة')
-                            ->options([
-                                'lecture' => 'المحاضرة التقليدية',
-                                'interactive' => 'التفاعلي',
-                                'problem_solving' => 'حل المشكلات',
-                                'project_based' => 'التعلم القائم على المشاريع',
-                                'collaborative' => 'التعلم التشاركي',
-                                'visual_learning' => 'التعلم البصري',
-                                'gamification' => 'التلعيب',
-                            ])
-                            ->columns(3),
+                                Forms\Components\TextInput::make('max_session_duration')
+                                    ->label('أقصى مدة للحصة (دقيقة)')
+                                    ->numeric()
+                                    ->minValue(30)
+                                    ->maxValue(180)
+                                    ->default(90)
+                                    ->required()
+                                    ->suffix('دقيقة'),
+                            ]),
                     ]),
 
                 Forms\Components\Section::make('الجدول الزمني والتوفر')
@@ -255,16 +226,28 @@ class AcademicTeacherResource extends Resource
                                         'en' => 'الإنجليزية',
                                         'fr' => 'الفرنسية',
                                         'de' => 'الألمانية',
-                                        'es' => 'الإسبانية',
                                     ])
                                     ->default(['ar'])
                                     ->required(),
                             ]),
 
-                        Forms\Components\KeyValue::make('available_times')
-                            ->label('الأوقات المتاحة')
-                            ->helperText('حدد الأوقات المتاحة لكل يوم (مثل: saturday => 09:00-17:00)')
-                            ->columnSpanFull(),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TimePicker::make('available_time_start')
+                                    ->label('وقت البداية المتاح')
+                                    ->default('08:00')
+                                    ->required()
+                                    ->seconds(false)
+                                    ->helperText('الوقت الذي يبدأ فيه المعلم العمل يومياً'),
+
+                                Forms\Components\TimePicker::make('available_time_end')
+                                    ->label('وقت النهاية المتاح')
+                                    ->default('18:00')
+                                    ->required()
+                                    ->seconds(false)
+                                    ->helperText('الوقت الذي ينتهي فيه المعلم من العمل يومياً')
+                                    ->after('available_time_start'),
+                            ]),
                     ]),
 
                 Forms\Components\Section::make('معلومات إضافية')
@@ -282,23 +265,9 @@ class AcademicTeacherResource extends Resource
                                     ->rows(4),
                             ]),
 
-                        Forms\Components\Grid::make(3)
-                            ->schema([
-                                Forms\Components\TextInput::make('portfolio_url')
-                                    ->label('رابط الأعمال')
-                                    ->url()
-                                    ->maxLength(255),
-
-                                Forms\Components\FileUpload::make('cv_file_path')
-                                    ->label('ملف السيرة الذاتية')
-                                    ->acceptedFileTypes(['application/pdf'])
-                                    ->maxSize(5120)
-                                    ->directory('teacher-cvs'),
-
-                                Forms\Components\Toggle::make('can_create_courses')
-                                    ->label('يمكنه إنشاء دورات تفاعلية')
-                                    ->default(false),
-                            ]),
+                        Forms\Components\Toggle::make('can_create_courses')
+                            ->label('يمكنه إنشاء دورات تفاعلية')
+                            ->default(false),
                     ]),
 
                 Forms\Components\Section::make('الحالة والاعتماد')
@@ -348,11 +317,6 @@ class AcademicTeacherResource extends Resource
                     ->label('اسم المعلم')
                     ->searchable()
                     ->sortable(),
-
-                Tables\Columns\TextColumn::make('specialization_field_in_arabic')
-                    ->label('التخصص')
-                    ->badge()
-                    ->color('info'),
 
                 Tables\Columns\TextColumn::make('education_level_in_arabic')
                     ->label('المؤهل')
@@ -405,21 +369,6 @@ class AcademicTeacherResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('specialization_field')
-                    ->label('التخصص')
-                    ->options([
-                        'mathematics' => 'الرياضيات',
-                        'physics' => 'الفيزياء',
-                        'chemistry' => 'الكيمياء',
-                        'biology' => 'الأحياء',
-                        'arabic_language' => 'اللغة العربية',
-                        'english_language' => 'اللغة الإنجليزية',
-                        'history' => 'التاريخ',
-                        'geography' => 'الجغرافيا',
-                        'islamic_studies' => 'التربية الإسلامية',
-                        'computer_science' => 'علوم الحاسوب',
-                    ]),
-
                 Tables\Filters\SelectFilter::make('education_level')
                     ->label('المؤهل العلمي')
                     ->options([
@@ -487,12 +436,8 @@ class AcademicTeacherResource extends Resource
 
                 Components\Section::make('المؤهلات والتخصص')
                     ->schema([
-                        Components\Grid::make(2)
+                        Components\Grid::make(3)
                             ->schema([
-                                Components\TextEntry::make('specialization_field_in_arabic')
-                                    ->label('مجال التخصص')
-                                    ->badge()
-                                    ->color('info'),
                                 Components\TextEntry::make('education_level_in_arabic')
                                     ->label('المؤهل العلمي')
                                     ->badge()
@@ -504,22 +449,21 @@ class AcademicTeacherResource extends Resource
                                     ->label('سنوات الخبرة')
                                     ->suffix(' سنة'),
                             ]),
-                        Components\TextEntry::make('qualification_details')
-                            ->label('تفاصيل المؤهلات')
-                            ->placeholder('لا توجد تفاصيل')
-                            ->columnSpanFull(),
                     ]),
 
                 Components\Section::make('الأسعار والجدولة')
                     ->schema([
-                        Components\Grid::make(2)
+                        Components\Grid::make(3)
                             ->schema([
                                 Components\TextEntry::make('session_price_individual')
                                     ->label('سعر الحصة الخاصة')
                                     ->money('SAR'),
-                                Components\TextEntry::make('session_price_group')
-                                    ->label('سعر الحصة الجماعية')
-                                    ->money('SAR'),
+                                Components\TextEntry::make('available_time_start')
+                                    ->label('وقت البداية')
+                                    ->time('H:i'),
+                                Components\TextEntry::make('available_time_end')
+                                    ->label('وقت النهاية')
+                                    ->time('H:i'),
                             ]),
                         Components\RepeatableEntry::make('available_days')
                             ->label('الأيام المتاحة')
