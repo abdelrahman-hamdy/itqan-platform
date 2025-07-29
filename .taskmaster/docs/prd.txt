@@ -1,264 +1,339 @@
-# Product Requirements Document: Itqan Educational Platform
+# Itqan Educational Platform - Complete Implementation PRD
 
-## 1. Product Overview
+## Project Overview
 
-Itqan is a comprehensive multi-tenant SaaS platform designed for Quran memorization and academic learning. Each tenant represents an independent academy with its own branding, while a global Super-Admin manages the entire installation.
+The Itqan Platform is a comprehensive multi-tenant SaaS educational system serving Islamic academies with three distinct educational pillars. The platform requires complete implementation of backend models, controllers, authentication systems, and role-based dashboard interfaces.
 
-### Core Mission
-Enable Islamic academies to deliver Quran memorization programs, live academic tutoring, and pre-recorded courses under their own branding while maintaining centralized oversight.
+## Current Status
 
-## 2. Target Users & Roles
+### Completed Components (80% Backend Foundation)
+- Multi-tenant database architecture with tenant_id isolation
+- 8 advanced models with comprehensive relationships  
+- 18 migration files with proper indexing and foreign keys
+- 4 core controllers (RecordedCourse, Lesson, Payment, StudentDashboard)
+- Complete routing structure with subdomain-based multi-tenancy
+- Arabic localization throughout models and business logic
+- Recorded Courses section backend (needs frontend)
 
-### 2.1 Super-Admin (Global Scope)
-- Create and manage academies
-- Access global financial dashboards
-- Seed default data across all tenants
-- Message any user across all academies
+### Critical Missing Components
+- Quran Section complete implementation
+- Academic Education Section complete implementation  
+- Authentication system for all user roles
+- Multi-panel Filament dashboard architecture
+- Cross-cutting features (homework, quizzes, messaging)
+- Frontend views for all sections
 
-### 2.2 Academy Admin (Per Academy)
-- Configure academy branding (logo, colors, name)
-- Set pricing and currency preferences
-- Manage teachers, supervisors, and packages
-- Configure subjects and courses
+## Three Educational Sections Implementation
 
-### 2.3 Supervisor (Assigned Entities)
-- Monitor assigned circles, lessons, and courses
-- Access read-only chat channels for quality assurance
-- Generate daily quality reports
-- Provide support to assigned users
+### 1. Quran Section (القرآن)
+**Requirements:**
+- Individual 1-to-1 sessions with Quran teachers (monthly subscriptions)
+- Group Quran circles (حلقات جماعية) with weekly schedules
+- Quran teacher profiles with certification tracking
+- Memorization progress monitoring
+- Quran-specific homework and assessments
+- Monthly subscription packages with add-on sessions
 
-### 2.4 Teachers
-- **Quran Teachers**: Certified profiles with Quran-specific qualifications
-- **Academic Teachers**: Subject-based teaching with grade-level specifications
-- Create individual schedules and availability
-- Assign homework and quizzes
-- Generate progress reports and certificates
+**Models Needed:**
+- QuranTeacher (extends User with Quran certifications)
+- QuranSubscription (individual monthly packages)
+- QuranCircle (group circles with weekly schedules)  
+- QuranSession (1-to-1 and group sessions)
+- QuranProgress (memorization tracking with verses)
+- QuranHomework (Quran-specific assignments)
 
-### 2.5 Students
-- Browse and book teacher sessions
-- Purchase subscriptions and courses
-- Attend Google Meet sessions
-- Submit homework and take quizzes
-- Receive progress reports and certificates
+**Controllers:**
+- QuranTeacherController (profile, availability, sessions)
+- QuranCircleController (group management, enrollment)
+- QuranSessionController (scheduling, Meet links, reports)
+- QuranProgressController (memorization tracking)
 
-### 2.6 Parents
-- Linked to exactly one student
-- View child's progress and reports
-- Pay invoices and manage billing
-- Chat with assigned teachers and supervisors
+### 2. Academic Education Section (التعليم الأكاديمي)
+**Requirements:**
+- Private 1-to-1 sessions with academic teachers (monthly subscriptions)
+- Interactive group courses with scheduled lessons (one-time payment)
+- Subject-based teacher expertise and pricing
+- Academic homework and quiz systems
+- Grade-level and subject categorization
 
-## 3. Core Features
+**Models Needed:**
+- AcademicTeacher (extends User with subject expertise)
+- AcademicSession (private 1-to-1 lessons)
+- InteractiveCourse (group courses with scheduled lessons)
+- AcademicSubscription (monthly packages for private lessons)
+- AcademicHomework (subject-specific assignments)
+- AcademicQuiz (academic assessments)
 
-### 3.1 Quran Memorization Module
+**Controllers:**
+- AcademicTeacherController (subjects, pricing, availability)
+- AcademicSessionController (scheduling, Meet integration)
+- InteractiveCourseController (course creation, enrollment)
+- AcademicSubscriptionController (package management)
 
-#### Individual Sessions (1-to-1)
-- Student browses teacher profile cards
-- Free trial booking system with approval workflow
-- Monthly package purchases with session allocation
-- Extra session add-ons with expiration handling
-- Google Meet integration for live sessions
+### 3. Recorded Courses Section (الدورات المسجلة)
+**Status:** Backend complete, needs frontend implementation
+**Requirements:**
+- Video course player with progress tracking
+- Course enrollment and payment interface
+- Student dashboard for course management
+- Certificate generation upon completion
 
-#### Group Circles
-- Fixed weekly schedules with multiple students
-- Automatic Google Meet links generated 15 minutes before sessions
-- Collective chat rooms per circle
-- Attendance tracking and homework assignments
+## Authentication System Implementation
 
-### 3.2 Live Academic Tutoring
+### Multi-Role Authentication
+**Requirements:**
+- Laravel Sanctum for API authentication
+- Spatie Permission for role-based access control
+- Filament Shield for admin panel security
+- Custom policies for cross-tenant restrictions
 
-#### Private Lessons
-- Subject-based hourly pricing model
-- Similar workflow to Quran sessions but academic-focused
-- Recording capabilities for session playback
+**User Roles:**
+1. Super-Admin (global access)
+2. Academy Admin (tenant-scoped admin)
+3. Teacher (Quran/Academic/Recorded Course)
+4. Supervisor (monitoring and quality control)
+5. Student (learning access)
+6. Parent (child monitoring and payment)
 
-#### Interactive Courses
-- Multi-lesson courses over defined date ranges
-- One-time payment model
-- Late joiners access to previous session recordings
-- Group chat functionality
+### Authentication Features:
+- Registration with email verification
+- Password reset functionality
+- Two-factor authentication (optional)
+- Role-based redirects after login
+- Tenant-aware authentication
 
-### 3.3 Recorded Courses
-- Hierarchical course catalog with admin-defined categories
-- One-time purchase with perpetual access
-- Secure video streaming with signed tokens
-- Downloadable PDFs and materials
-- Integrated quiz system
+## Multi-Panel Dashboard Architecture
 
-### 3.4 Communication System (Enhanced Chatify)
+### Filament Panels (Power Users)
+**1. Super-Admin Panel (/admin - Global Domain)**
+Navigation Groups:
+- النظرة العامة (Overview Dashboard with KPIs)
+- إدارة الأكاديميات (Academy Management - CRUD)
+- المستخدمون (Global User Management)
+- قسم القرآن (Quran Section - teachers, circles, subscriptions)
+- التعليم الأكاديمي (Academic Education - teachers, courses, sessions)
+- الدورات المسجلة (Recorded Courses - content, analytics)
+- الإدارة المالية (Financial - payments, invoices, revenue)
+- السجلات والتدقيق (Audit Logs - activity tracking)
+- التخصيص العام (Global Settings - themes, email templates)
 
-#### Role-Based Messaging Matrix
-- Controlled communication based on user roles
-- Group chats auto-created for circles and courses
-- Supervisor mirror channels for quality monitoring
-- File attachment support with tenant isolation
+**2. Academy Admin Panel (/{academy}/panel)**
+Similar to Super-Admin but tenant-scoped, plus:
+- إعداد الهوية (Academy Branding - logo, colors, identity)
+- الإعدادات الأكاديمية (Academy Settings - currency, timezone, pricing)
 
-#### Notification System
-- FCM push notifications for mobile and web
-- Email notifications for critical events
-- Session reminders (10 minutes before start)
-- Homework and quiz notifications
+**3. Teacher Panel (/{academy}/teacher-panel)**
+Navigation Groups:
+- جدولي (My Schedule - calendar view with sessions)
+- جلساتي السابقة (Past Sessions - history with reports)
+- الواجبات/الاختبارات (Assignments/Quizzes - creation and grading)
+- دوراتي المسجلة (My Recorded Courses - for Academic teachers only)
+- ملفي (Profile - settings, availability, pricing)
 
-### 3.5 Assessment System
+**4. Supervisor Panel (/{academy}/supervisor-panel)**
+Navigation Groups:
+- الحلقات/الدورات المُراقَبة (Monitored Circles/Courses)
+- الشات المباشر (Live Chat Monitoring - read-only access)
+- تقارير الجودة (Quality Reports - daily assessments)
+- الشكاوى (Complaints - student/parent issues)
 
-#### Quiz Engine
-- Multiple-choice questions only
-- Randomized question and answer order
-- Configurable point values and pass thresholds
-- Multiple attempts with attempt tracking
-- Automatic grading with queue processing
+### Blade + Livewire Areas (End Users)
+**5. Student Personal Area (/{academy}/student)**
+Sidebar Navigation:
+- الرئيسية (Dashboard - next session countdown, recent activity)
+- اشتراكاتي (My Subscriptions - Quran, Academic, Recorded Courses)
+- واجباتي (My Homework - all sections with submission status)
+- اختباراتي (My Quizzes - all sections with results)
+- التقارير (Progress Reports - detailed analytics per section)
+- الفواتير والمدفوعات (Invoices & Payments - history and receipts)
+- المحادثات (Messaging - Chatify integration with teachers)
+- الإعدادات (Account Settings - profile, preferences, notifications)
 
-#### Homework Management
-- Text or file-based assignments
+**6. Parent Personal Area (/{academy}/parent)**
+Same as student but child-focused, plus:
+- Multiple children support with filtering
+- Payment management for all children
+- Direct communication with teachers
+- Detailed progress monitoring
+
+## Cross-Cutting Features Implementation
+
+### 1. Homework System
+**Requirements:**
+- Polymorphic homework for all three sections
+- File and text submission support
+- Teacher grading interface
 - Student submission tracking
-- Teacher grading with score assignment
-- Progress tracking and reporting
+- Due date notifications
 
-### 3.6 Payment & Billing System
-- Multi-gateway support (Paymob for MENA, Tap for GCC)
-- Per-academy currency configuration
-- Invoice generation with multiple line items
-- Subscription and add-on session billing
-- Manual renewal system (auto-renewal planned for future)
+### 2. Quiz System  
+**Requirements:**
+- Multiple-choice question builder
+- Randomized question and answer order
+- Timed quizzes with attempt limits
+- Automatic grading with pass/fail thresholds
+- Detailed result analytics
 
-## 4. Technical Requirements
+### 3. Session Management
+**Requirements:**
+- Google Meet integration with auto-generated links
+- Session scheduling with calendar integration
+- Attendance tracking
+- Session recordings (for Interactive Courses only)
+- Reminder notifications (15 minutes before)
 
-### 4.1 Architecture
-- Laravel 11 framework with PHP 8.3
-- Single-database multi-tenancy using Spatie packages
-- MySQL 8 with Redis 7 for caching and queues
-- Livewire 3 for reactive components
-- Filament 4 for admin interfaces
+### 4. Messaging System
+**Requirements:**
+- Enhanced Chatify integration
+- 1-to-1 conversations between roles
+- Group chats for circles and courses
+- Supervisor mirror channels (read-only monitoring)
+- File attachment support
+- Tenant-scoped message isolation
 
-### 4.2 Frontend
-- Blade templates with Livewire components
-- TailwindCSS 3 for styling
-- RTL support for Arabic content
-- Dark mode compatibility
-- Responsive design for mobile and desktop
+### 5. Payment Processing
+**Requirements:**
+- Paymob gateway integration (MENA region)
+- Tap Payments integration (GCC region)
+- Invoice generation with line items
+- Subscription management
+- Add-on session purchases
+- Refund processing
+- Receipt generation and download
 
-### 4.3 Storage & Media
-- DigitalOcean Spaces for file storage
-- Tenant-isolated storage paths
-- MediaLibrary integration for file management
-- Secure URL generation with signed tokens
+### 6. Notification System
+**Requirements:**
+- FCM push notifications (mobile + web)
+- Email notifications for key events
+- In-app notification center
+- Notification preferences per user
+- Tenant-aware notification routing
 
-### 4.4 Real-time Features
-- WebSocket integration using Soketi/Pusher
-- Real-time chat messaging
-- Live session updates
-- Notification broadcasting
+## Frontend Implementation Requirements
 
-### 4.5 Integrations
-- Google Calendar API for Meet link generation
-- FCM for push notifications
-- Email service integration
-- Payment gateway APIs (Paymob, Tap)
+### 1. Recorded Courses Frontend
+- Course catalog with filtering and search
+- Video player with progress tracking
+- Course enrollment and payment flow
+- Student learning dashboard
+- Progress analytics and certificates
 
-## 5. User Workflows
+### 2. Quran Section Frontend
+- Teacher discovery and booking interface
+- Circle enrollment system
+- Session attendance interface
+- Memorization progress tracking
+- Homework submission portal
 
-### 5.1 Student Journey
-1. Discover teachers through profile browsing
-2. Book free trial session
-3. Receive email confirmation
-4. Attend trial session via Google Meet
-5. Purchase monthly package or course
-6. Attend scheduled sessions
-7. Submit homework and take quizzes
-8. Receive progress reports and certificates
+### 3. Academic Section Frontend
+- Subject-based teacher browsing
+- Private session booking
+- Interactive course enrollment
+- Assignment submission system
+- Grade tracking interface
 
-### 5.2 Teacher Onboarding
-1. Complete registration form with qualifications
-2. Profile review and approval by admin
-3. Admin sets pricing and availability
-4. Status activation for booking acceptance
-5. Define weekly availability schedule
-6. Receive booking notifications
-7. Conduct sessions and fill reports
+### 4. Mobile Responsiveness
+- Mobile-first design for student/parent areas
+- Responsive Filament panels
+- Progressive Web App (PWA) capabilities
+- Touch-optimized interfaces
 
-### 5.3 Academy Setup
-1. Super-Admin creates new academy
-2. System seeds default roles and settings
-3. Academy admin configures branding
-4. Admin invites teachers and supervisors
-5. Configure subjects, packages, and pricing
-6. Launch public academy website
+## Technical Implementation Standards
 
-## 6. Success Metrics
-
-### 6.1 Business Metrics
-- Academy acquisition and retention rates
-- Student enrollment and completion rates
-- Teacher utilization and satisfaction scores
-- Revenue per academy and per student
-
-### 6.2 Technical Metrics
-- System uptime and performance
-- Session completion rates
-- Payment success rates
-- User engagement metrics
-
-## 7. Security & Compliance
-
-### 7.1 Data Protection
-- Tenant data isolation
-- Secure file storage and access
-- Audit logging for sensitive operations
-- Role-based access control
-
-### 7.2 Payment Security
-- PCI compliance through payment gateways
-- Secure webhook handling
-- Transaction audit trails
-
-## 8. Scalability Requirements
-
-### 8.1 Performance Targets
-- Support for 100+ academies
-- 10,000+ concurrent users
-- Sub-3-second page load times
-- 99.9% uptime availability
-
-### 8.2 Growth Planning
-- Horizontal scaling capabilities
+### Backend Standards
+- Laravel 11 with PHP 8.3+
+- Multi-tenant architecture with tenant_id isolation
+- Comprehensive model relationships
 - Queue-based background processing
-- CDN integration for global content delivery
-- Database optimization for large datasets
+- Redis caching for performance
+- Proper indexing for multi-tenant queries
 
-## 9. Future Roadmap
+### Frontend Standards
+- Blade + Livewire 3 for reactive interfaces
+- TailwindCSS 3 for styling
+- Filament 4 for admin panels
+- RTL support for Arabic content
+- Mobile-responsive design
+- Accessibility compliance
 
-### Phase 1 (MVP)
-- Core functionality as described above
-- Single default academy (Itqan Academy)
-- Basic reporting and analytics
+### Security Requirements
+- Role-based access control
+- Tenant data isolation
+- Input validation and sanitization
+- CSRF protection
+- XSS prevention
+- Secure file uploads
+- API rate limiting
 
-### Phase 2 (Enhancement)
-- Auto-renewal billing system
-- Advanced analytics dashboards
-- Mobile app development
-- LiveKit integration for better video quality
+## Quality Assurance
 
-### Phase 3 (Marketplace)
-- Teacher marketplace across academies
-- Revenue sharing model
-- Advanced certification system
-- AI-powered matching algorithms
+### Testing Requirements
+- Unit tests for all models and controllers
+- Feature tests for user workflows
+- Integration tests for payment processing
+- Browser tests for critical user paths
+- API endpoint testing
 
-## 10. Acceptance Criteria
+### Performance Requirements  
+- Page load times under 2 seconds
+- Database query optimization
+- Efficient file storage and delivery
+- Scalable queue processing
+- Memory usage optimization
 
-### 10.1 Core Functionality
-- All user roles can perform their designated functions
-- Payment processing works end-to-end
-- Video sessions integrate seamlessly with Google Meet
-- Chat system maintains proper role-based restrictions
+## Deployment and DevOps
 
-### 10.2 Technical Criteria
-- Multi-tenancy isolation verified
-- Performance benchmarks met
+### Deployment Requirements
+- Zero-downtime deployment
+- Database migration safety
+- Asset optimization and CDN
+- Environment configuration
+- SSL certificate management
+- Backup and recovery procedures
+
+### Monitoring Requirements
+- Application performance monitoring
+- Error tracking with Sentry
+- Queue monitoring with Horizon
+- Database performance metrics
+- User activity analytics
+
+## Success Criteria
+
+### Phase 1 Success (Backend Complete)
+- All models and controllers implemented
+- Authentication system fully functional
+- All three educational sections operational
+- Cross-cutting features integrated
+
+### Phase 2 Success (Frontend Complete)
+- All user interfaces implemented
+- Multi-panel dashboards functional
+- Student/parent areas responsive
+- Payment processing operational
+
+### Phase 3 Success (Production Ready)
+- Full testing suite passing
+- Performance optimization complete
 - Security audit completed
-- Mobile responsiveness confirmed
+- Documentation comprehensive
+- Deployment pipeline functional
 
-### 10.3 User Experience
-- Intuitive navigation for all user types
-- RTL support fully functional
-- Accessibility standards met
-- Cross-browser compatibility verified 
+## Timeline Expectations
+
+### Immediate Phase (1-2 weeks)
+- Complete Quran and Academic section implementation
+- Set up authentication system
+- Build core Filament panels
+
+### Short-term Phase (2-4 weeks)  
+- Implement all frontend interfaces
+- Complete cross-cutting features
+- Integrate payment processing
+
+### Medium-term Phase (4-8 weeks)
+- Comprehensive testing and optimization
+- Production deployment preparation
+- Documentation and training materials
+
+This PRD provides the comprehensive roadmap for completing the Itqan Educational Platform with all required features, maintaining the highest standards of quality, security, and user experience. 

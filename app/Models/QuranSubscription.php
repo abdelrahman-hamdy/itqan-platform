@@ -16,80 +16,68 @@ class QuranSubscription extends Model
         'academy_id',
         'student_id',
         'quran_teacher_id',
-        'quran_circle_id',
         'subscription_code',
+        'package_name',
+        'package_type',
         'subscription_type',
-        'session_type',
-        'specialization',
-        'recitation_style',
-        'memorization_level',
-        'sessions_per_week',
-        'session_duration_minutes',
-        'preferred_schedule',
+        'total_sessions',
+        'sessions_used',
+        'sessions_remaining',
         'price_per_session',
-        'monthly_fee',
+        'total_price',
         'currency',
-        'payment_method',
-        'status',
+        'billing_cycle',
+        'payment_status',
+        'subscription_status',
         'trial_sessions',
         'trial_used',
-        'total_sessions',
-        'completed_sessions',
-        'missed_sessions',
-        'makeup_sessions_allowed',
-        'makeup_sessions_used',
-        'progress_notes',
+        'is_trial_active',
         'current_surah',
         'current_verse',
-        'memorized_verses_count',
-        'memorized_pages_count',
-        'memorized_surahs',
-        'tajweed_level',
-        'recitation_accuracy',
-        'performance_rating',
-        'goals',
-        'special_requirements',
+        'verses_memorized',
+        'memorization_level',
+        'progress_percentage',
+        'last_session_at',
         'starts_at',
         'expires_at',
-        'last_session_at',
-        'next_session_at',
         'paused_at',
         'pause_reason',
         'cancelled_at',
         'cancellation_reason',
-        'parent_approval',
+        'auto_renew',
+        'next_payment_at',
+        'last_payment_at',
+        'rating',
+        'review_text',
+        'reviewed_at',
+        'notes',
+        'metadata',
         'created_by',
-        'updated_by',
-        'notes'
+        'updated_by'
     ];
 
     protected $casts = [
-        'price_per_session' => 'decimal:2',
-        'monthly_fee' => 'decimal:2',
+        'total_sessions' => 'integer',
+        'sessions_used' => 'integer',
+        'sessions_remaining' => 'integer',
         'trial_sessions' => 'integer',
         'trial_used' => 'integer',
-        'total_sessions' => 'integer',
-        'completed_sessions' => 'integer',
-        'missed_sessions' => 'integer',
-        'makeup_sessions_allowed' => 'integer',
-        'makeup_sessions_used' => 'integer',
-        'sessions_per_week' => 'integer',
-        'session_duration_minutes' => 'integer',
-        'memorized_verses_count' => 'integer',
-        'memorized_pages_count' => 'integer',
-        'recitation_accuracy' => 'decimal:1',
-        'performance_rating' => 'decimal:1',
-        'parent_approval' => 'boolean',
-        'memorized_surahs' => 'array',
-        'goals' => 'array',
-        'special_requirements' => 'array',
-        'preferred_schedule' => 'array',
+        'verses_memorized' => 'integer',
+        'progress_percentage' => 'decimal:2',
+        'price_per_session' => 'decimal:2',
+        'total_price' => 'decimal:2',
+        'is_trial_active' => 'boolean',
+        'auto_renew' => 'boolean',
+        'rating' => 'integer',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
-        'last_session_at' => 'datetime',
-        'next_session_at' => 'datetime',
         'paused_at' => 'datetime',
-        'cancelled_at' => 'datetime'
+        'cancelled_at' => 'datetime',
+        'last_session_at' => 'datetime',
+        'next_payment_at' => 'datetime',
+        'last_payment_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'metadata' => 'array'
     ];
 
     // Relationships
@@ -108,14 +96,19 @@ class QuranSubscription extends Model
         return $this->belongsTo(QuranTeacher::class);
     }
 
-    public function quranCircle(): BelongsTo
-    {
-        return $this->belongsTo(QuranCircle::class);
-    }
-
     public function sessions(): HasMany
     {
         return $this->hasMany(QuranSession::class);
+    }
+
+    public function progress(): HasMany
+    {
+        return $this->hasMany(QuranProgress::class);
+    }
+
+    public function homework(): HasMany
+    {
+        return $this->hasMany(QuranHomework::class);
     }
 
     public function payments(): HasMany
@@ -126,174 +119,200 @@ class QuranSubscription extends Model
     // Scopes
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('subscription_status', 'active')
+                    ->where(function($q) {
+                        $q->where('expires_at', '>', now())
+                          ->orWhereNull('expires_at');
+                    });
     }
 
-    public function scopeIndividual($query)
+    public function scopeExpired($query)
     {
-        return $query->where('subscription_type', 'individual');
-    }
-
-    public function scopeCircle($query)
-    {
-        return $query->where('subscription_type', 'circle');
-    }
-
-    public function scopeBySpecialization($query, $specialization)
-    {
-        return $query->where('specialization', $specialization);
-    }
-
-    public function scopeByTeacher($query, $teacherId)
-    {
-        return $query->where('quran_teacher_id', $teacherId);
-    }
-
-    public function scopeInTrial($query)
-    {
-        return $query->where('trial_used', '<', DB::raw('trial_sessions'));
+        return $query->where('expires_at', '<=', now())
+                    ->where('subscription_status', '!=', 'cancelled');
     }
 
     public function scopeExpiringSoon($query, $days = 7)
     {
-        return $query->where('status', 'active')
+        return $query->where('subscription_status', 'active')
                     ->whereBetween('expires_at', [now(), now()->addDays($days)]);
     }
 
+    public function scopeInTrial($query)
+    {
+        return $query->where('is_trial_active', true)
+                    ->where('trial_used', '<', 'trial_sessions');
+    }
+
+    public function scopeTrialExpired($query)
+    {
+        return $query->where('is_trial_active', true)
+                    ->whereRaw('trial_used >= trial_sessions');
+    }
+
+    public function scopePaused($query)
+    {
+        return $query->where('subscription_status', 'paused');
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('subscription_status', 'cancelled');
+    }
+
+    public function scopeByPaymentStatus($query, $status)
+    {
+        return $query->where('payment_status', $status);
+    }
+
+    public function scopeByPackageType($query, $type)
+    {
+        return $query->where('package_type', $type);
+    }
+
+    public function scopeNeedsRenewal($query)
+    {
+        return $query->where('sessions_remaining', '<=', 3)
+                    ->where('subscription_status', 'active');
+    }
+
     // Accessors
-    public function getSubscriptionTypeTextAttribute(): string
-    {
-        $types = [
-            'individual' => 'فردي',
-            'circle' => 'حلقة جماعية'
-        ];
-
-        return $types[$this->subscription_type] ?? $this->subscription_type;
-    }
-
-    public function getSpecializationTextAttribute(): string
-    {
-        $specializations = [
-            'memorization' => 'حفظ',
-            'recitation' => 'تلاوة',
-            'tajweed' => 'تجويد',
-            'complete' => 'شامل (حفظ وتجويد)'
-        ];
-
-        return $specializations[$this->specialization] ?? $this->specialization;
-    }
-
     public function getStatusTextAttribute(): string
     {
         $statuses = [
-            'trial' => 'فترة تجريبية',
             'active' => 'نشط',
+            'expired' => 'منتهي الصلاحية',
             'paused' => 'متوقف مؤقتاً',
-            'expired' => 'منتهي',
+            'cancelled' => 'ملغي',
+            'pending' => 'في الانتظار',
+            'suspended' => 'معلق'
+        ];
+
+        return $statuses[$this->subscription_status] ?? $this->subscription_status;
+    }
+
+    public function getPaymentStatusTextAttribute(): string
+    {
+        $statuses = [
+            'paid' => 'مدفوع',
+            'pending' => 'في انتظار الدفع',
+            'failed' => 'فشل الدفع',
+            'refunded' => 'مسترد',
             'cancelled' => 'ملغي'
         ];
 
-        return $statuses[$this->status] ?? $this->status;
+        return $statuses[$this->payment_status] ?? $this->payment_status;
     }
 
-    public function getStatusBadgeColorAttribute(): string
+    public function getPackageTypeTextAttribute(): string
     {
-        $colors = [
-            'trial' => 'info',
-            'active' => 'success',
-            'paused' => 'warning',
-            'expired' => 'danger',
-            'cancelled' => 'secondary'
+        $types = [
+            'basic' => 'الباقة الأساسية',
+            'standard' => 'الباقة المعيارية',
+            'premium' => 'الباقة المميزة',
+            'intensive' => 'الباقة المكثفة',
+            'custom' => 'باقة مخصصة'
         ];
 
-        return $colors[$this->status] ?? 'secondary';
+        return $types[$this->package_type] ?? $this->package_type;
     }
 
-    public function getProgressPercentageAttribute(): float
+    public function getFormattedPriceAttribute(): string
     {
-        if ($this->total_sessions == 0) {
-            return 0;
+        return number_format($this->total_price, 2) . ' ' . $this->currency;
+    }
+
+    public function getFormattedPricePerSessionAttribute(): string
+    {
+        return number_format($this->price_per_session, 2) . ' ' . $this->currency;
+    }
+
+    public function getCurrentSurahFormattedAttribute(): string
+    {
+        if (!$this->current_surah) {
+            return 'لم يتم تحديد السورة بعد';
         }
 
-        return ($this->completed_sessions / $this->total_sessions) * 100;
+        $surahNames = [
+            1 => 'الفاتحة', 2 => 'البقرة', 3 => 'آل عمران', 4 => 'النساء',
+            5 => 'المائدة', 6 => 'الأنعام', 7 => 'الأعراف', 8 => 'الأنفال',
+            9 => 'التوبة', 10 => 'يونس', 11 => 'هود', 12 => 'يوسف',
+            // ... add all 114 surahs
+        ];
+
+        return $surahNames[$this->current_surah] ?? 'سورة رقم ' . $this->current_surah;
     }
 
-    public function getAttendanceRateAttribute(): float
+    public function getMemorizationLevelTextAttribute(): string
     {
-        $totalScheduled = $this->completed_sessions + $this->missed_sessions;
-        if ($totalScheduled == 0) {
-            return 100;
-        }
+        $levels = [
+            'beginner' => 'مبتدئ',
+            'elementary' => 'أساسي',
+            'intermediate' => 'متوسط',
+            'advanced' => 'متقدم',
+            'expert' => 'متقن',
+            'hafiz' => 'حافظ'
+        ];
 
-        return ($this->completed_sessions / $totalScheduled) * 100;
-    }
-
-    public function getTrialRemainingAttribute(): int
-    {
-        return max(0, $this->trial_sessions - $this->trial_used);
-    }
-
-    public function getMakeupSessionsRemainingAttribute(): int
-    {
-        return max(0, $this->makeup_sessions_allowed - $this->makeup_sessions_used);
-    }
-
-    public function getMonthlyPriceAttribute(): float
-    {
-        if ($this->monthly_fee) {
-            return $this->monthly_fee;
-        }
-
-        // Calculate from session price
-        return $this->price_per_session * $this->sessions_per_week * 4.33; // Average weeks per month
+        return $levels[$this->memorization_level] ?? $this->memorization_level;
     }
 
     public function getDaysRemainingAttribute(): int
     {
         if (!$this->expires_at) {
-            return 0;
+            return -1; // Unlimited
         }
 
         return max(0, now()->diffInDays($this->expires_at, false));
     }
 
+    public function getIsActiveAttribute(): bool
+    {
+        return $this->subscription_status === 'active' && 
+               ($this->expires_at === null || $this->expires_at->isFuture());
+    }
+
+    public function getIsExpiredAttribute(): bool
+    {
+        return $this->expires_at && $this->expires_at->isPast();
+    }
+
+    public function getIsInTrialAttribute(): bool
+    {
+        return $this->is_trial_active && $this->trial_used < $this->trial_sessions;
+    }
+
+    public function getCanRenewAttribute(): bool
+    {
+        return in_array($this->subscription_status, ['active', 'expired']) &&
+               $this->sessions_remaining <= 5;
+    }
+
+    public function getCompletionRateAttribute(): float
+    {
+        if ($this->total_sessions <= 0) {
+            return 0;
+        }
+
+        return ($this->sessions_used / $this->total_sessions) * 100;
+    }
+
     // Methods
-    public function recordSession(array $sessionData): QuranSession
+    public function useSession(): self
     {
-        $session = $this->sessions()->create(array_merge($sessionData, [
-            'academy_id' => $this->academy_id,
-            'student_id' => $this->student_id,
-            'quran_teacher_id' => $this->quran_teacher_id
-        ]));
-
-        // Update subscription stats
-        $this->increment('completed_sessions');
-        $this->update(['last_session_at' => now()]);
-
-        // Update progress if provided
-        if (isset($sessionData['verses_memorized_today'])) {
-            $this->increment('memorized_verses_count', $sessionData['verses_memorized_today']);
+        if ($this->sessions_remaining <= 0) {
+            throw new \Exception('لا توجد جلسات متبقية في الاشتراك');
         }
 
-        return $session;
-    }
+        $this->update([
+            'sessions_used' => $this->sessions_used + 1,
+            'sessions_remaining' => $this->sessions_remaining - 1,
+            'last_session_at' => now()
+        ]);
 
-    public function recordMissedSession(string $reason = null): self
-    {
-        $this->increment('missed_sessions');
-        
-        // Allow makeup session if attendance rate is good
-        if ($this->attendance_rate >= 80 && $this->makeup_sessions_remaining > 0) {
-            // Makeup session can be scheduled
-        }
-
-        return $this;
-    }
-
-    public function useMakeupSession(): self
-    {
-        if ($this->makeup_sessions_remaining > 0) {
-            $this->increment('makeup_sessions_used');
+        // Check if subscription should be marked as completed
+        if ($this->sessions_remaining <= 0) {
+            $this->markAsCompleted();
         }
 
         return $this;
@@ -301,9 +320,30 @@ class QuranSubscription extends Model
 
     public function useTrialSession(): self
     {
-        if ($this->trial_remaining > 0) {
-            $this->increment('trial_used');
+        if (!$this->is_trial_active || $this->trial_used >= $this->trial_sessions) {
+            throw new \Exception('لا توجد جلسات تجريبية متبقية');
         }
+
+        $this->update([
+            'trial_used' => $this->trial_used + 1,
+            'last_session_at' => now()
+        ]);
+
+        // Check if trial should be deactivated
+        if ($this->trial_used >= $this->trial_sessions) {
+            $this->update(['is_trial_active' => false]);
+        }
+
+        return $this;
+    }
+
+    public function addSessions(int $sessionsCount, float $price = null): self
+    {
+        $this->update([
+            'total_sessions' => $this->total_sessions + $sessionsCount,
+            'sessions_remaining' => $this->sessions_remaining + $sessionsCount,
+            'total_price' => $this->total_price + ($price ?? ($sessionsCount * $this->price_per_session))
+        ]);
 
         return $this;
     }
@@ -311,7 +351,7 @@ class QuranSubscription extends Model
     public function pause(string $reason = null): self
     {
         $this->update([
-            'status' => 'paused',
+            'subscription_status' => 'paused',
             'paused_at' => now(),
             'pause_reason' => $reason
         ]);
@@ -324,7 +364,7 @@ class QuranSubscription extends Model
         $pausedDays = $this->paused_at ? now()->diffInDays($this->paused_at) : 0;
         
         $this->update([
-            'status' => 'active',
+            'subscription_status' => 'active',
             'paused_at' => null,
             'pause_reason' => null,
             'expires_at' => $this->expires_at ? $this->expires_at->addDays($pausedDays) : null
@@ -336,77 +376,156 @@ class QuranSubscription extends Model
     public function cancel(string $reason = null): self
     {
         $this->update([
-            'status' => 'cancelled',
+            'subscription_status' => 'cancelled',
             'cancelled_at' => now(),
-            'cancellation_reason' => $reason
+            'cancellation_reason' => $reason,
+            'auto_renew' => false
         ]);
 
         return $this;
     }
 
-    public function extend(int $months): self
-    {
-        $newExpiry = $this->expires_at && $this->expires_at->isFuture() 
-            ? $this->expires_at->addMonths($months)
-            : now()->addMonths($months);
-
-        $this->update([
-            'expires_at' => $newExpiry,
-            'status' => 'active'
-        ]);
-
-        return $this;
-    }
-
-    public function updateProgress(array $progressData): self
+    public function markAsCompleted(): self
     {
         $this->update([
-            'current_surah' => $progressData['current_surah'] ?? $this->current_surah,
-            'current_verse' => $progressData['current_verse'] ?? $this->current_verse,
-            'memorized_verses_count' => $progressData['memorized_verses_count'] ?? $this->memorized_verses_count,
-            'memorized_pages_count' => $progressData['memorized_pages_count'] ?? $this->memorized_pages_count,
-            'tajweed_level' => $progressData['tajweed_level'] ?? $this->tajweed_level,
-            'recitation_accuracy' => $progressData['recitation_accuracy'] ?? $this->recitation_accuracy,
-            'performance_rating' => $progressData['performance_rating'] ?? $this->performance_rating
+            'subscription_status' => 'completed',
+            'auto_renew' => false
         ]);
 
         return $this;
     }
 
-    public function getNextSessionTime(): ?\Carbon\Carbon
+    public function renew(array $newPackageData = []): self
     {
-        if (!$this->preferred_schedule || $this->status !== 'active') {
+        $renewalData = array_merge([
+            'sessions_used' => 0,
+            'sessions_remaining' => $newPackageData['total_sessions'] ?? $this->total_sessions,
+            'total_sessions' => $newPackageData['total_sessions'] ?? $this->total_sessions,
+            'total_price' => $newPackageData['total_price'] ?? $this->total_price,
+            'subscription_status' => 'active',
+            'starts_at' => now(),
+            'expires_at' => now()->addMonth(),
+            'last_payment_at' => now(),
+            'next_payment_at' => $this->billing_cycle === 'monthly' ? now()->addMonth() : null
+        ], $newPackageData);
+
+        $this->update($renewalData);
+
+        return $this;
+    }
+
+    public function updateProgress(int $currentVerse = null, int $versesMemorized = null, float $progressPercentage = null): self
+    {
+        $updateData = [];
+
+        if ($currentVerse !== null) {
+            $updateData['current_verse'] = $currentVerse;
+        }
+
+        if ($versesMemorized !== null) {
+            $updateData['verses_memorized'] = $versesMemorized;
+        }
+
+        if ($progressPercentage !== null) {
+            $updateData['progress_percentage'] = min(100, max(0, $progressPercentage));
+        }
+
+        if (!empty($updateData)) {
+            $this->update($updateData);
+        }
+
+        return $this;
+    }
+
+    public function addRating(int $rating, string $reviewText = null): self
+    {
+        $this->update([
+            'rating' => $rating,
+            'review_text' => $reviewText,
+            'reviewed_at' => now()
+        ]);
+
+        // Update teacher's rating
+        $this->quranTeacher->updateRating();
+
+        return $this;
+    }
+
+    public function calculateNextPayment(): ?\Carbon\Carbon
+    {
+        if (!$this->auto_renew || $this->subscription_status !== 'active') {
             return null;
         }
 
-        // Logic to calculate next session based on preferred schedule
-        // This would involve complex scheduling logic
-        return $this->next_session_at;
+        return match ($this->billing_cycle) {
+            'weekly' => now()->addWeek(),
+            'monthly' => now()->addMonth(),
+            'quarterly' => now()->addMonths(3),
+            'yearly' => now()->addYear(),
+            default => null
+        };
     }
 
-    public function canScheduleSession(): bool
+    public function extendExpiry(int $days): self
     {
-        return $this->status === 'active' && 
-               ($this->expires_at === null || $this->expires_at->isFuture());
+        if ($this->expires_at) {
+            $newExpiry = $this->expires_at->isFuture() 
+                ? $this->expires_at->addDays($days)
+                : now()->addDays($days);
+                
+            $this->update(['expires_at' => $newExpiry]);
+        }
+
+        return $this;
     }
 
-    public function generateProgressReport(): array
+    // Static methods
+    public static function createSubscription(array $data): self
     {
-        return [
-            'student_name' => $this->student->name,
-            'teacher_name' => $this->quranTeacher?->user->name,
-            'subscription_type' => $this->subscription_type_text,
-            'specialization' => $this->specialization_text,
-            'total_sessions' => $this->completed_sessions,
-            'attendance_rate' => round($this->attendance_rate, 1),
-            'memorized_verses' => $this->memorized_verses_count,
-            'memorized_pages' => $this->memorized_pages_count,
-            'current_progress' => $this->current_surah . ' - آية ' . $this->current_verse,
-            'tajweed_level' => $this->tajweed_level,
-            'recitation_accuracy' => $this->recitation_accuracy,
-            'performance_rating' => $this->performance_rating,
-            'last_session' => $this->last_session_at?->format('Y-m-d'),
-            'days_remaining' => $this->days_remaining
-        ];
+        $subscription = self::create(array_merge($data, [
+            'subscription_code' => self::generateSubscriptionCode($data['academy_id']),
+            'sessions_used' => 0,
+            'trial_used' => 0,
+            'progress_percentage' => 0,
+            'verses_memorized' => 0,
+            'subscription_status' => 'pending',
+            'payment_status' => 'pending'
+        ]));
+
+        return $subscription;
+    }
+
+    public static function createTrialSubscription(array $data): self
+    {
+        return self::createSubscription(array_merge($data, [
+            'is_trial_active' => true,
+            'trial_sessions' => $data['trial_sessions'] ?? 2,
+            'subscription_status' => 'active',
+            'payment_status' => 'free',
+            'total_price' => 0,
+            'price_per_session' => 0
+        ]));
+    }
+
+    private static function generateSubscriptionCode(int $academyId): string
+    {
+        $count = self::where('academy_id', $academyId)->count() + 1;
+        return 'QS-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+    }
+
+    public static function getExpiringSoon(int $academyId, int $days = 7): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::where('academy_id', $academyId)
+            ->expiringSoon($days)
+            ->with(['student', 'quranTeacher.user'])
+            ->get();
+    }
+
+    public static function getRenewalCandidates(int $academyId): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::where('academy_id', $academyId)
+            ->needsRenewal()
+            ->with(['student', 'quranTeacher.user'])
+            ->get();
     }
 } 

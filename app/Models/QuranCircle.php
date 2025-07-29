@@ -5,377 +5,735 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QuranCircle extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
-        'teacher_id',
+        'quran_teacher_id',
         'supervisor_id',
         'circle_code',
-        'name',
-        'description',
+        'name_ar',
+        'name_en',
+        'description_ar',
+        'description_en',
         'circle_type',
-        'level',
-        'age_group_min',
-        'age_group_max',
+        'specialization',
+        'memorization_level',
+        'grade_levels',
+        'age_range_min',
+        'age_range_max',
         'max_students',
-        'current_students_count',
+        'current_students',
+        'min_students_to_start',
+        'session_duration_minutes',
+        'weekly_schedule',
         'schedule_days',
         'schedule_times',
-        'session_duration_minutes',
-        'start_date',
-        'end_date',
+        'timezone',
+        'price_per_student',
         'monthly_fee',
         'currency',
+        'enrollment_fee',
+        'materials_fee',
+        'total_sessions_planned',
+        'sessions_completed',
+        'current_surah',
+        'current_verse',
+        'teaching_method',
+        'materials_used',
+        'requirements',
+        'learning_objectives',
+        'assessment_methods',
         'status',
-        'is_active',
-        'google_calendar_id',
-        'meeting_room_url',
-        'circle_objectives',
-        'current_curriculum',
-        'progress_tracking',
+        'enrollment_status',
+        'start_date',
+        'end_date',
+        'registration_deadline',
+        'last_session_at',
+        'next_session_at',
+        'room_link',
+        'meeting_id',
+        'meeting_password',
+        'recording_enabled',
+        'attendance_required',
+        'makeup_sessions_allowed',
+        'certificates_enabled',
+        'avg_rating',
+        'total_reviews',
+        'completion_rate',
+        'dropout_rate',
         'notes',
+        'special_instructions',
         'created_by',
+        'updated_by'
     ];
 
     protected $casts = [
-        'age_group_min' => 'integer',
-        'age_group_max' => 'integer',
-        'max_students' => 'integer',
-        'current_students_count' => 'integer',
-        'session_duration_minutes' => 'integer',
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'monthly_fee' => 'decimal:2',
+        'grade_levels' => 'array',
         'schedule_days' => 'array',
         'schedule_times' => 'array',
-        'circle_objectives' => 'array',
-        'current_curriculum' => 'array',
-        'progress_tracking' => 'array',
-        'is_active' => 'boolean',
+        'weekly_schedule' => 'array',
+        'materials_used' => 'array',
+        'requirements' => 'array',
+        'learning_objectives' => 'array',
+        'assessment_methods' => 'array',
+        'age_range_min' => 'integer',
+        'age_range_max' => 'integer',
+        'max_students' => 'integer',
+        'current_students' => 'integer',
+        'min_students_to_start' => 'integer',
+        'session_duration_minutes' => 'integer',
+        'total_sessions_planned' => 'integer',
+        'sessions_completed' => 'integer',
+        'price_per_student' => 'decimal:2',
+        'monthly_fee' => 'decimal:2',
+        'enrollment_fee' => 'decimal:2',
+        'materials_fee' => 'decimal:2',
+        'avg_rating' => 'decimal:1',
+        'total_reviews' => 'integer',
+        'completion_rate' => 'decimal:2',
+        'dropout_rate' => 'decimal:2',
+        'recording_enabled' => 'boolean',
+        'attendance_required' => 'boolean',
+        'makeup_sessions_allowed' => 'boolean',
+        'certificates_enabled' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'registration_deadline' => 'date',
+        'last_session_at' => 'datetime',
+        'next_session_at' => 'datetime'
     ];
 
-    protected $attributes = [
-        'status' => 'active',
-        'is_active' => true,
-        'max_students' => 8,
-        'current_students_count' => 0,
-        'session_duration_minutes' => 60,
-        'level' => 'beginner',
-        'circle_type' => 'memorization',
-    ];
-
-    /**
-     * العلاقة مع الأكاديمية
-     */
+    // Relationships
     public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
     }
 
-    /**
-     * العلاقة مع معلم القرآن
-     */
-    public function teacher(): BelongsTo
+    public function quranTeacher(): BelongsTo
     {
-        return $this->belongsTo(QuranTeacher::class, 'teacher_id');
+        return $this->belongsTo(QuranTeacher::class);
     }
 
-    /**
-     * العلاقة مع المشرف
-     */
     public function supervisor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'supervisor_id');
     }
 
-    /**
-     * الشخص الذي أنشأ الحلقة
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * الطلاب المسجلين في الحلقة
-     */
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'quran_circle_students', 'circle_id', 'student_id')
                     ->withPivot([
-                        'enrollment_date', 
-                        'status', 
-                        'current_level', 
-                        'total_verses_memorized',
-                        'last_surah',
-                        'last_ayah',
-                        'attendance_percentage',
-                        'performance_rating',
-                        'notes'
+                        'enrolled_at',
+                        'status',
+                        'attendance_count',
+                        'missed_sessions',
+                        'makeup_sessions_used',
+                        'current_level',
+                        'progress_notes',
+                        'parent_rating',
+                        'student_rating',
+                        'completion_date',
+                        'certificate_issued'
                     ])
                     ->withTimestamps();
     }
 
-    /**
-     * جلسات الحلقة
-     */
     public function sessions(): HasMany
     {
-        return $this->hasMany(QuranCircleSession::class, 'circle_id');
+        return $this->hasMany(QuranSession::class, 'circle_id');
     }
 
-    /**
-     * اشتراكات الطلاب في هذه الحلقة
-     */
-    public function subscriptions(): HasMany
+    public function enrollments(): HasMany
     {
-        return $this->hasMany(QuranSubscription::class, 'circle_id');
+        return $this->hasMany(QuranCircleEnrollment::class);
     }
 
-    /**
-     * نطاق الحلقات النشطة
-     */
+    public function homework(): HasMany
+    {
+        return $this->hasMany(QuranHomework::class, 'circle_id');
+    }
+
+    public function progress(): HasMany
+    {
+        return $this->hasMany(QuranProgress::class, 'circle_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'circle_id');
+    }
+
+    // Scopes
     public function scopeActive($query)
     {
-        return $query->where('is_active', true)->where('status', 'active');
+        return $query->where('status', 'active')
+                    ->where('enrollment_status', 'open');
     }
 
-    /**
-     * نطاق الحلقات حسب المعلم
-     */
+    public function scopeOngoing($query)
+    {
+        return $query->where('status', 'ongoing')
+                    ->where('start_date', '<=', now())
+                    ->where(function($q) {
+                        $q->where('end_date', '>=', now())
+                          ->orWhereNull('end_date');
+                    });
+    }
+
+    public function scopeOpenForEnrollment($query)
+    {
+        return $query->where('enrollment_status', 'open')
+                    ->where('registration_deadline', '>=', now())
+                    ->where('current_students', '<', 'max_students');
+    }
+
+    public function scopeStartingSoon($query, $days = 7)
+    {
+        return $query->where('status', 'pending')
+                    ->whereBetween('start_date', [now(), now()->addDays($days)]);
+    }
+
+    public function scopeBySpecialization($query, $specialization)
+    {
+        return $query->where('specialization', $specialization);
+    }
+
+    public function scopeByGradeLevel($query, $grade)
+    {
+        return $query->whereJsonContains('grade_levels', $grade);
+    }
+
+    public function scopeByAgeRange($query, $age)
+    {
+        return $query->where('age_range_min', '<=', $age)
+                    ->where('age_range_max', '>=', $age);
+    }
+
+    public function scopeByDay($query, $day)
+    {
+        return $query->whereJsonContains('schedule_days', $day);
+    }
+
+    public function scopeWithAvailableSpots($query)
+    {
+        return $query->whereRaw('current_students < max_students');
+    }
+
     public function scopeByTeacher($query, $teacherId)
     {
-        return $query->where('teacher_id', $teacherId);
+        return $query->where('quran_teacher_id', $teacherId);
     }
 
-    /**
-     * نطاق الحلقات حسب المستوى
-     */
-    public function scopeByLevel($query, $level)
+    public function scopeHighRated($query, $minRating = 4.0)
     {
-        return $query->where('level', $level);
+        return $query->where('avg_rating', '>=', $minRating);
     }
 
-    /**
-     * نطاق الحلقات حسب الفئة العمرية
-     */
-    public function scopeByAgeGroup($query, $minAge, $maxAge)
+    // Accessors
+    public function getNameAttribute(): string
     {
-        return $query->where('age_group_min', '>=', $minAge)
-                    ->where('age_group_max', '<=', $maxAge);
+        return app()->getLocale() === 'ar' ? $this->name_ar : $this->name_en;
     }
 
-    /**
-     * نطاق الحلقات حسب الأكاديمية
-     */
-    public function scopeByAcademy($query, $academyId)
+    public function getDescriptionAttribute(): string
     {
-        return $query->where('academy_id', $academyId);
+        return app()->getLocale() === 'ar' ? $this->description_ar : $this->description_en;
     }
 
-    /**
-     * نطاق الحلقات التي لديها مقاعد متاحة
-     */
-    public function scopeHasAvailableSeats($query)
+    public function getStatusTextAttribute(): string
     {
-        return $query->whereColumn('current_students_count', '<', 'max_students');
+        $statuses = [
+            'planning' => 'قيد التخطيط',
+            'pending' => 'في انتظار البداية',
+            'active' => 'نشط',
+            'ongoing' => 'جاري',
+            'completed' => 'مكتمل',
+            'cancelled' => 'ملغي',
+            'suspended' => 'معلق'
+        ];
+
+        return $statuses[$this->status] ?? $this->status;
     }
 
-    /**
-     * الحصول على عدد المقاعد المتاحة
-     */
-    public function getAvailableSeatsAttribute()
+    public function getEnrollmentStatusTextAttribute(): string
     {
-        return $this->max_students - $this->current_students_count;
+        $statuses = [
+            'open' => 'مفتوح للتسجيل',
+            'closed' => 'مغلق',
+            'full' => 'مكتمل العدد',
+            'waitlist' => 'قائمة انتظار'
+        ];
+
+        return $statuses[$this->enrollment_status] ?? $this->enrollment_status;
     }
 
-    /**
-     * الحصول على نسبة امتلاء الحلقة
-     */
-    public function getOccupancyPercentageAttribute()
+    public function getCircleTypeTextAttribute(): string
     {
-        if ($this->max_students == 0) return 0;
-        return round(($this->current_students_count / $this->max_students) * 100, 1);
+        $types = [
+            'memorization' => 'حلقة حفظ',
+            'recitation' => 'حلقة تلاوة وتجويد',
+            'mixed' => 'حلقة مختلطة',
+            'advanced' => 'حلقة متقدمة',
+            'beginners' => 'حلقة مبتدئين'
+        ];
+
+        return $types[$this->circle_type] ?? $this->circle_type;
     }
 
-    /**
-     * تحديد ما إذا كانت الحلقة ممتلئة
-     */
-    public function isFullAttribute()
+    public function getSpecializationTextAttribute(): string
     {
-        return $this->current_students_count >= $this->max_students;
+        $specializations = [
+            'memorization' => 'حفظ القرآن',
+            'recitation' => 'تلاوة وتجويد',
+            'interpretation' => 'تفسير',
+            'arabic_language' => 'اللغة العربية القرآنية',
+            'complete' => 'شامل'
+        ];
+
+        return $specializations[$this->specialization] ?? $this->specialization;
     }
 
-    /**
-     * الحصول على الفئة العمرية المستهدفة
-     */
-    public function getTargetAgeGroupAttribute()
+    public function getMemorizationLevelTextAttribute(): string
     {
-        return "{$this->age_group_min} - {$this->age_group_max} سنة";
+        $levels = [
+            'beginner' => 'مبتدئ',
+            'elementary' => 'أساسي',
+            'intermediate' => 'متوسط',
+            'advanced' => 'متقدم',
+            'expert' => 'متقن'
+        ];
+
+        return $levels[$this->memorization_level] ?? $this->memorization_level;
     }
 
-    /**
-     * الحصول على أيام الأسبوع بالعربية
-     */
-    public function getScheduleDaysInArabicAttribute()
+    public function getFormattedPriceAttribute(): string
     {
+        return number_format($this->price_per_student, 2) . ' ' . $this->currency;
+    }
+
+    public function getFormattedMonthlyFeeAttribute(): string
+    {
+        return number_format($this->monthly_fee, 2) . ' ' . $this->currency;
+    }
+
+    public function getTotalCostAttribute(): float
+    {
+        return $this->monthly_fee + $this->enrollment_fee + $this->materials_fee;
+    }
+
+    public function getFormattedTotalCostAttribute(): string
+    {
+        return number_format($this->total_cost, 2) . ' ' . $this->currency;
+    }
+
+    public function getAvailableSpotsAttribute(): int
+    {
+        return max(0, $this->max_students - $this->current_students);
+    }
+
+    public function getIsFullAttribute(): bool
+    {
+        return $this->current_students >= $this->max_students;
+    }
+
+    public function getCanStartAttribute(): bool
+    {
+        return $this->current_students >= $this->min_students_to_start;
+    }
+
+    public function getScheduleTextAttribute(): string
+    {
+        if (empty($this->schedule_days) || empty($this->schedule_times)) {
+            return 'لم يتم تحديد الجدول بعد';
+        }
+
         $days = [
+            'sunday' => 'الأحد',
             'monday' => 'الاثنين',
             'tuesday' => 'الثلاثاء',
             'wednesday' => 'الأربعاء',
             'thursday' => 'الخميس',
             'friday' => 'الجمعة',
-            'saturday' => 'السبت',
-            'sunday' => 'الأحد',
+            'saturday' => 'السبت'
         ];
 
-        return collect($this->schedule_days ?? [])->map(function($day) use ($days) {
-            return $days[$day] ?? $day;
-        })->toArray();
+        $scheduleDays = array_map(fn($day) => $days[$day] ?? $day, $this->schedule_days);
+        $times = implode(', ', $this->schedule_times);
+
+        return implode(', ', $scheduleDays) . ' - ' . $times;
     }
 
-    /**
-     * الحصول على نوع الحلقة بالعربية
-     */
-    public function getCircleTypeInArabicAttribute()
+    public function getAgeRangeTextAttribute(): string
     {
-        $types = [
-            'memorization' => 'تحفيظ',
-            'recitation' => 'تلاوة وتجويد',
-            'interpretation' => 'تفسير',
-            'mixed' => 'مختلط',
-        ];
+        if (!$this->age_range_min || !$this->age_range_max) {
+            return 'جميع الأعمار';
+        }
 
-        return $types[$this->circle_type] ?? 'غير محدد';
+        return $this->age_range_min . ' - ' . $this->age_range_max . ' سنة';
     }
 
-    /**
-     * الحصول على مستوى الحلقة بالعربية
-     */
-    public function getLevelInArabicAttribute()
+    public function getProgressPercentageAttribute(): float
     {
-        $levels = [
-            'beginner' => 'مبتدئ',
-            'intermediate' => 'متوسط',
-            'advanced' => 'متقدم',
-            'expert' => 'متقن',
-        ];
+        if ($this->total_sessions_planned <= 0) {
+            return 0;
+        }
 
-        return $levels[$this->level] ?? 'غير محدد';
+        return ($this->sessions_completed / $this->total_sessions_planned) * 100;
     }
 
-    /**
-     * الحصول على حالة الحلقة بالعربية
-     */
-    public function getStatusInArabicAttribute()
+    public function getDaysUntilStartAttribute(): int
     {
-        $statuses = [
-            'active' => 'نشطة',
-            'inactive' => 'غير نشطة',
-            'completed' => 'مكتملة',
-            'suspended' => 'معلقة',
-            'cancelled' => 'ملغاة',
-        ];
+        if (!$this->start_date) {
+            return 0;
+        }
 
-        return $statuses[$this->status] ?? 'غير محدد';
+        return max(0, now()->diffInDays($this->start_date, false));
     }
 
-    /**
-     * الحصول على متوسط أداء الطلاب في الحلقة
-     */
-    public function getAverageStudentPerformanceAttribute()
+    public function getDaysUntilRegistrationDeadlineAttribute(): int
     {
-        $averageRating = $this->students()
-                             ->wherePivot('status', 'active')
-                             ->avg('quran_circle_students.performance_rating');
-        
-        return $averageRating ? round($averageRating, 1) : 0;
+        if (!$this->registration_deadline) {
+            return 999; // No deadline
+        }
+
+        return max(0, now()->diffInDays($this->registration_deadline, false));
     }
 
-    /**
-     * الحصول على متوسط نسبة الحضور
-     */
-    public function getAverageAttendanceAttribute()
-    {
-        $averageAttendance = $this->students()
-                                 ->wherePivot('status', 'active')
-                                 ->avg('quran_circle_students.attendance_percentage');
-        
-        return $averageAttendance ? round($averageAttendance, 1) : 0;
-    }
-
-    /**
-     * تسجيل طالب في الحلقة
-     */
-    public function enrollStudent($studentId, $data = [])
+    // Methods
+    public function enrollStudent(User $student, array $additionalData = []): self
     {
         if ($this->is_full) {
+            throw new \Exception('الحلقة مكتملة العدد');
+        }
+
+        if (!$this->canEnrollStudent($student)) {
+            throw new \Exception('لا يمكن تسجيل هذا الطالب في الحلقة');
+        }
+
+        $pivotData = array_merge([
+            'enrolled_at' => now(),
+            'status' => 'enrolled',
+            'attendance_count' => 0,
+            'missed_sessions' => 0,
+            'makeup_sessions_used' => 0,
+            'current_level' => $this->memorization_level
+        ], $additionalData);
+
+        $this->students()->attach($student->id, $pivotData);
+        $this->increment('current_students');
+
+        // Update enrollment status if full
+        if ($this->current_students >= $this->max_students) {
+            $this->update(['enrollment_status' => 'full']);
+        }
+
+        return $this;
+    }
+
+    public function unenrollStudent(User $student, string $reason = null): self
+    {
+        $this->students()->detach($student->id);
+        $this->decrement('current_students');
+
+        // Update enrollment status
+        if ($this->enrollment_status === 'full' && $this->current_students < $this->max_students) {
+            $this->update(['enrollment_status' => 'open']);
+        }
+
+        return $this;
+    }
+
+    public function canEnrollStudent(User $student): bool
+    {
+        // Check if already enrolled
+        if ($this->students()->where('user_id', $student->id)->exists()) {
             return false;
         }
 
-        $this->students()->attach($studentId, array_merge([
-            'enrollment_date' => now(),
-            'status' => 'active',
-            'current_level' => 'beginner',
-            'total_verses_memorized' => 0,
-            'attendance_percentage' => 0,
-            'performance_rating' => 0,
-        ], $data));
+        // Check age range
+        if ($this->age_range_min && $this->age_range_max) {
+            $studentAge = $student->age ?? 0;
+            if ($studentAge < $this->age_range_min || $studentAge > $this->age_range_max) {
+                return false;
+            }
+        }
 
-        $this->increment('current_students_count');
-        
-        return true;
+        // Check grade level
+        if (!empty($this->grade_levels) && $student->grade_level) {
+            if (!in_array($student->grade_level, $this->grade_levels)) {
+                return false;
+            }
+        }
+
+        // Check enrollment status and capacity
+        return $this->enrollment_status === 'open' && 
+               !$this->is_full && 
+               $this->registration_deadline >= now();
     }
 
-    /**
-     * إلغاء تسجيل طالب من الحلقة
-     */
-    public function unenrollStudent($studentId)
+    public function start(): self
     {
-        $this->students()->detach($studentId);
-        $this->decrement('current_students_count');
+        if (!$this->can_start) {
+            throw new \Exception('عدد الطلاب غير كافي لبدء الحلقة');
+        }
+
+        $this->update([
+            'status' => 'ongoing',
+            'enrollment_status' => 'closed',
+            'start_date' => now()
+        ]);
+
+        return $this;
     }
 
-    /**
-     * تحديد ما إذا كان يمكن للطالب الانضمام للحلقة
-     */
-    public function canStudentJoin($studentAge)
+    public function suspend(string $reason = null): self
     {
-        return !$this->is_full && 
-               $studentAge >= $this->age_group_min && 
-               $studentAge <= $this->age_group_max &&
-               $this->status === 'active';
+        $this->update([
+            'status' => 'suspended',
+            'notes' => $reason
+        ]);
+
+        return $this;
     }
 
-    /**
-     * الحصول على الجلسة القادمة
-     */
-    public function getNextSessionAttribute()
+    public function resume(): self
     {
-        return $this->sessions()
-                   ->where('scheduled_at', '>', now())
-                   ->where('status', 'scheduled')
-                   ->orderBy('scheduled_at', 'asc')
-                   ->first();
+        $this->update([
+            'status' => 'ongoing'
+        ]);
+
+        return $this;
     }
 
-    /**
-     * الحصول على جلسات هذا الأسبوع
-     */
-    public function getThisWeekSessionsAttribute()
+    public function complete(): self
     {
-        return $this->sessions()
-                   ->whereBetween('scheduled_at', [
-                       now()->startOfWeek(),
-                       now()->endOfWeek()
-                   ])
-                   ->orderBy('scheduled_at', 'asc')
-                   ->get();
+        $this->update([
+            'status' => 'completed',
+            'enrollment_status' => 'closed',
+            'end_date' => now()
+        ]);
+
+        // Issue certificates if enabled
+        if ($this->certificates_enabled) {
+            $this->issueCertificates();
+        }
+
+        return $this;
+    }
+
+    public function cancel(string $reason = null): self
+    {
+        $this->update([
+            'status' => 'cancelled',
+            'enrollment_status' => 'closed',
+            'notes' => $reason
+        ]);
+
+        return $this;
+    }
+
+    public function recordSession(array $sessionData): QuranSession
+    {
+        $session = $this->sessions()->create(array_merge($sessionData, [
+            'academy_id' => $this->academy_id,
+            'quran_teacher_id' => $this->quran_teacher_id,
+            'session_type' => 'circle',
+            'participants_count' => $this->current_students
+        ]));
+
+        $this->increment('sessions_completed');
+        $this->update(['last_session_at' => now()]);
+
+        return $session;
+    }
+
+    public function updateRating(): self
+    {
+        $ratings = $this->students()
+            ->wherePivotNotNull('parent_rating')
+            ->orWherePivotNotNull('student_rating')
+            ->get();
+
+        if ($ratings->isEmpty()) {
+            return $this;
+        }
+
+        $totalRating = 0;
+        $ratingCount = 0;
+
+        foreach ($ratings as $student) {
+            if ($student->pivot->parent_rating) {
+                $totalRating += $student->pivot->parent_rating;
+                $ratingCount++;
+            }
+            if ($student->pivot->student_rating) {
+                $totalRating += $student->pivot->student_rating;
+                $ratingCount++;
+            }
+        }
+
+        $avgRating = $ratingCount > 0 ? $totalRating / $ratingCount : 0;
+
+        $this->update([
+            'avg_rating' => round($avgRating, 1),
+            'total_reviews' => $ratingCount
+        ]);
+
+        // Update teacher's rating
+        $this->quranTeacher->updateRating();
+
+        return $this;
+    }
+
+    public function calculateStatistics(): self
+    {
+        $totalEnrolled = $this->students()->count();
+        $stillEnrolled = $this->students()->wherePivot('status', 'enrolled')->count();
+        $completed = $this->students()->wherePivot('status', 'completed')->count();
+        $dropped = $this->students()->wherePivot('status', 'dropped')->count();
+
+        $completionRate = $totalEnrolled > 0 ? ($completed / $totalEnrolled) * 100 : 0;
+        $dropoutRate = $totalEnrolled > 0 ? ($dropped / $totalEnrolled) * 100 : 0;
+
+        $this->update([
+            'completion_rate' => round($completionRate, 2),
+            'dropout_rate' => round($dropoutRate, 2)
+        ]);
+
+        return $this;
+    }
+
+    public function generateSchedule(): self
+    {
+        if (empty($this->schedule_days) || empty($this->schedule_times)) {
+            return $this;
+        }
+
+        // Generate recurring sessions based on schedule
+        $schedule = [];
+        $currentDate = $this->start_date;
+        $endDate = $this->end_date ?? $currentDate->copy()->addMonths(3);
+
+        while ($currentDate <= $endDate) {
+            $dayName = strtolower($currentDate->format('l'));
+            
+            if (in_array($dayName, $this->schedule_days)) {
+                foreach ($this->schedule_times as $time) {
+                    $sessionDateTime = $currentDate->copy()->setTimeFromTimeString($time);
+                    $schedule[] = [
+                        'scheduled_at' => $sessionDateTime,
+                        'duration_minutes' => $this->session_duration_minutes,
+                        'status' => 'scheduled'
+                    ];
+                }
+            }
+            
+            $currentDate->addDay();
+        }
+
+        $this->update(['weekly_schedule' => $schedule]);
+
+        return $this;
+    }
+
+    public function issueCertificates(): self
+    {
+        if (!$this->certificates_enabled) {
+            return $this;
+        }
+
+        $completedStudents = $this->students()
+            ->wherePivot('status', 'completed')
+            ->wherePivot('certificate_issued', false)
+            ->get();
+
+        foreach ($completedStudents as $student) {
+            // Generate certificate
+            $certificateData = [
+                'student_name' => $student->name,
+                'circle_name' => $this->name,
+                'teacher_name' => $this->quranTeacher->user->name,
+                'academy_name' => $this->academy->name,
+                'completion_date' => now(),
+                'specialization' => $this->specialization_text,
+                'level' => $this->memorization_level_text
+            ];
+
+            // Update pivot to mark certificate as issued
+            $this->students()->updateExistingPivot($student->id, [
+                'certificate_issued' => true,
+                'completion_date' => now()
+            ]);
+        }
+
+        return $this;
+    }
+
+    // Static methods
+    public static function createCircle(array $data): self
+    {
+        return self::create(array_merge($data, [
+            'circle_code' => self::generateCircleCode($data['academy_id']),
+            'current_students' => 0,
+            'sessions_completed' => 0,
+            'avg_rating' => 0,
+            'total_reviews' => 0,
+            'completion_rate' => 0,
+            'dropout_rate' => 0,
+            'status' => 'planning',
+            'enrollment_status' => 'closed'
+        ]));
+    }
+
+    private static function generateCircleCode(int $academyId): string
+    {
+        $count = self::where('academy_id', $academyId)->count() + 1;
+        return 'QC-' . $academyId . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+    }
+
+    public static function getOpenForEnrollment(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = self::where('academy_id', $academyId)
+            ->openForEnrollment()
+            ->with(['quranTeacher.user', 'academy']);
+
+        if (isset($filters['specialization'])) {
+            $query->where('specialization', $filters['specialization']);
+        }
+
+        if (isset($filters['grade_level'])) {
+            $query->byGradeLevel($filters['grade_level']);
+        }
+
+        if (isset($filters['age'])) {
+            $query->byAgeRange($filters['age']);
+        }
+
+        if (isset($filters['day'])) {
+            $query->byDay($filters['day']);
+        }
+
+        if (isset($filters['min_rating'])) {
+            $query->highRated($filters['min_rating']);
+        }
+
+        return $query->orderBy('avg_rating', 'desc')
+                    ->orderBy('start_date', 'asc')
+                    ->get();
+    }
+
+    public static function getStartingSoon(int $academyId, int $days = 7): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::where('academy_id', $academyId)
+            ->startingSoon($days)
+            ->with(['quranTeacher.user', 'students'])
+            ->get();
     }
 } 

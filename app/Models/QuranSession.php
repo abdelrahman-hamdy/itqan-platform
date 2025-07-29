@@ -6,52 +6,73 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QuranSession extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
-        'teacher_id',
+        'quran_teacher_id',
+        'quran_subscription_id',
+        'circle_id',
         'student_id',
-        'subscription_id',
         'session_code',
-        'title',
-        'description',
         'session_type',
         'status',
+        'title',
+        'description',
+        'lesson_objectives',
         'scheduled_at',
         'started_at',
         'ended_at',
+        'duration_minutes',
         'actual_duration_minutes',
-        'planned_duration_minutes',
-        'google_event_id',
-        'google_meet_url',
-        'session_notes',
-        'student_notes',
-        'homework_assigned',
-        'homework_description',
+        'location_type',
+        'location_details',
+        'meeting_link',
+        'meeting_id',
+        'meeting_password',
+        'recording_url',
+        'recording_enabled',
+        'attendance_status',
+        'participants_count',
+        'attendance_notes',
         'current_surah',
-        'current_ayah_from',
-        'current_ayah_to',
-        'verses_reviewed',
+        'current_verse',
+        'verses_covered_start',
+        'verses_covered_end',
         'verses_memorized_today',
-        'verses_corrected',
-        'reading_mistakes',
-        'tajweed_notes',
-        'student_performance_rating',
-        'student_attendance_status',
+        'recitation_quality',
+        'tajweed_accuracy',
+        'mistakes_count',
+        'common_mistakes',
+        'areas_for_improvement',
+        'homework_assigned',
+        'homework_details',
         'next_session_plan',
+        'session_notes',
+        'teacher_feedback',
+        'student_feedback',
+        'parent_feedback',
+        'overall_rating',
+        'technical_issues',
+        'makeup_session_for',
         'is_makeup_session',
-        'original_session_id',
         'cancellation_reason',
         'cancelled_by',
         'cancelled_at',
-        'session_fee',
-        'payment_status',
-        'recording_url',
-        'session_materials',
+        'reschedule_reason',
+        'rescheduled_from',
+        'rescheduled_to',
+        'materials_used',
+        'learning_outcomes',
+        'assessment_results',
+        'follow_up_required',
+        'follow_up_notes',
+        'created_by',
+        'updated_by'
     ];
 
     protected $casts = [
@@ -59,293 +80,611 @@ class QuranSession extends Model
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'rescheduled_from' => 'datetime',
+        'rescheduled_to' => 'datetime',
+        'duration_minutes' => 'integer',
         'actual_duration_minutes' => 'integer',
-        'planned_duration_minutes' => 'integer',
-        'current_ayah_from' => 'integer',
-        'current_ayah_to' => 'integer',
-        'verses_reviewed' => 'integer',
+        'participants_count' => 'integer',
+        'current_surah' => 'integer',
+        'current_verse' => 'integer',
+        'verses_covered_start' => 'integer',
+        'verses_covered_end' => 'integer',
         'verses_memorized_today' => 'integer',
-        'verses_corrected' => 'integer',
-        'student_performance_rating' => 'decimal:1',
-        'session_fee' => 'decimal:2',
+        'recitation_quality' => 'decimal:1',
+        'tajweed_accuracy' => 'decimal:1',
+        'mistakes_count' => 'integer',
+        'overall_rating' => 'integer',
+        'recording_enabled' => 'boolean',
         'is_makeup_session' => 'boolean',
-        'reading_mistakes' => 'array',
-        'session_materials' => 'array',
+        'follow_up_required' => 'boolean',
+        'lesson_objectives' => 'array',
+        'common_mistakes' => 'array',
+        'areas_for_improvement' => 'array',
+        'homework_assigned' => 'array',
+        'materials_used' => 'array',
+        'learning_outcomes' => 'array',
+        'assessment_results' => 'array'
     ];
 
-    protected $attributes = [
-        'status' => 'scheduled',
-        'session_type' => 'individual',
-        'planned_duration_minutes' => 45,
-        'student_attendance_status' => 'pending',
-        'payment_status' => 'pending',
-        'is_makeup_session' => false,
-        'verses_reviewed' => 0,
-        'verses_memorized_today' => 0,
-        'verses_corrected' => 0,
-    ];
-
-    /**
-     * العلاقة مع الأكاديمية
-     */
+    // Relationships
     public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
     }
 
-    /**
-     * العلاقة مع معلم القرآن
-     */
-    public function teacher(): BelongsTo
+    public function quranTeacher(): BelongsTo
     {
-        return $this->belongsTo(QuranTeacher::class, 'teacher_id');
+        return $this->belongsTo(QuranTeacher::class);
     }
 
-    /**
-     * العلاقة مع الطالب
-     */
+    public function subscription(): BelongsTo
+    {
+        return $this->belongsTo(QuranSubscription::class, 'quran_subscription_id');
+    }
+
+    public function circle(): BelongsTo
+    {
+        return $this->belongsTo(QuranCircle::class);
+    }
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
     }
 
-    /**
-     * العلاقة مع الاشتراك
-     */
-    public function subscription(): BelongsTo
-    {
-        return $this->belongsTo(QuranSubscription::class, 'subscription_id');
-    }
-
-    /**
-     * الجلسة الأصلية (في حالة كانت هذه جلسة تعويضية)
-     */
-    public function originalSession(): BelongsTo
-    {
-        return $this->belongsTo(QuranSession::class, 'original_session_id');
-    }
-
-    /**
-     * الجلسات التعويضية لهذه الجلسة
-     */
-    public function makeupSessions(): HasMany
-    {
-        return $this->hasMany(QuranSession::class, 'original_session_id');
-    }
-
-    /**
-     * الشخص الذي ألغى الجلسة
-     */
     public function cancelledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cancelled_by');
     }
 
-    /**
-     * نطاق الجلسات المجدولة
-     */
+    public function makeupFor(): BelongsTo
+    {
+        return $this->belongsTo(QuranSession::class, 'makeup_session_for');
+    }
+
+    public function makeupSessions(): HasMany
+    {
+        return $this->hasMany(QuranSession::class, 'makeup_session_for');
+    }
+
+    public function homework(): HasMany
+    {
+        return $this->hasMany(QuranHomework::class);
+    }
+
+    public function progress(): HasMany
+    {
+        return $this->hasMany(QuranProgress::class);
+    }
+
+    // Scopes
     public function scopeScheduled($query)
     {
         return $query->where('status', 'scheduled');
     }
 
-    /**
-     * نطاق الجلسات المكتملة
-     */
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');
     }
 
-    /**
-     * نطاق الجلسات الملغاة
-     */
     public function scopeCancelled($query)
     {
         return $query->where('status', 'cancelled');
     }
 
-    /**
-     * نطاق الجلسات الجارية
-     */
-    public function scopeInProgress($query)
+    public function scopeMissed($query)
     {
-        return $query->where('status', 'in_progress');
+        return $query->where('status', 'missed');
     }
 
-    /**
-     * نطاق الجلسات القادمة
-     */
+    public function scopeOngoing($query)
+    {
+        return $query->where('status', 'ongoing');
+    }
+
+    public function scopeToday($query)
+    {
+        return $query->whereDate('scheduled_at', today());
+    }
+
     public function scopeUpcoming($query)
     {
         return $query->where('scheduled_at', '>', now())
                     ->where('status', 'scheduled');
     }
 
-    /**
-     * نطاق الجلسات اليوم
-     */
-    public function scopeToday($query)
+    public function scopePast($query)
     {
-        return $query->whereDate('scheduled_at', today());
+        return $query->where('scheduled_at', '<', now());
     }
 
-    /**
-     * نطاق الجلسات حسب المعلم
-     */
+    public function scopeThisWeek($query)
+    {
+        return $query->whereBetween('scheduled_at', [
+            now()->startOfWeek(),
+            now()->endOfWeek()
+        ]);
+    }
+
+    public function scopeBySessionType($query, $type)
+    {
+        return $query->where('session_type', $type);
+    }
+
+    public function scopeIndividual($query)
+    {
+        return $query->where('session_type', 'individual');
+    }
+
+    public function scopeCircle($query)
+    {
+        return $query->where('session_type', 'circle');
+    }
+
+    public function scopeMakeupSessions($query)
+    {
+        return $query->where('is_makeup_session', true);
+    }
+
+    public function scopeRegularSessions($query)
+    {
+        return $query->where('is_makeup_session', false);
+    }
+
+    public function scopeAttended($query)
+    {
+        return $query->where('attendance_status', 'attended');
+    }
+
+    public function scopeAbsent($query)
+    {
+        return $query->where('attendance_status', 'absent');
+    }
+
     public function scopeByTeacher($query, $teacherId)
     {
-        return $query->where('teacher_id', $teacherId);
+        return $query->where('quran_teacher_id', $teacherId);
     }
 
-    /**
-     * نطاق الجلسات حسب الطالب
-     */
     public function scopeByStudent($query, $studentId)
     {
         return $query->where('student_id', $studentId);
     }
 
-    /**
-     * نطاق الجلسات حسب الأكاديمية
-     */
-    public function scopeByAcademy($query, $academyId)
+    public function scopeHighRated($query, $minRating = 4)
     {
-        return $query->where('academy_id', $academyId);
+        return $query->where('overall_rating', '>=', $minRating);
     }
 
-    /**
-     * الحصول على مدة الجلسة الفعلية بالدقائق
-     */
-    public function getActualDurationAttribute()
+    // Accessors
+    public function getSessionTypeTextAttribute(): string
     {
-        if ($this->started_at && $this->ended_at) {
-            return $this->ended_at->diffInMinutes($this->started_at);
-        }
-        return null;
+        $types = [
+            'individual' => 'جلسة فردية',
+            'circle' => 'حلقة جماعية',
+            'makeup' => 'جلسة تعويضية',
+            'trial' => 'جلسة تجريبية',
+            'assessment' => 'جلسة تقييم'
+        ];
+
+        return $types[$this->session_type] ?? $this->session_type;
     }
 
-    /**
-     * الحصول على حالة الجلسة باللغة العربية
-     */
-    public function getStatusInArabicAttribute()
+    public function getStatusTextAttribute(): string
     {
         $statuses = [
             'scheduled' => 'مجدولة',
-            'in_progress' => 'جارية',
+            'ongoing' => 'جارية',
             'completed' => 'مكتملة',
             'cancelled' => 'ملغاة',
-            'no_show' => 'غياب بدون إعذار',
-            'postponed' => 'مؤجلة',
+            'missed' => 'متغيب',
+            'rescheduled' => 'تم إعادة جدولتها',
+            'pending' => 'في الانتظار'
         ];
 
-        return $statuses[$this->status] ?? 'غير محدد';
+        return $statuses[$this->status] ?? $this->status;
     }
 
-    /**
-     * تحديد ما إذا كان يمكن إلغاء الجلسة
-     */
-    public function canBeCancelled()
+    public function getAttendanceStatusTextAttribute(): string
     {
-        return in_array($this->status, ['scheduled']) && 
-               $this->scheduled_at > now()->addHours(2);
+        $statuses = [
+            'attended' => 'حضر',
+            'absent' => 'غائب',
+            'late' => 'متأخر',
+            'left_early' => 'غادر مبكراً',
+            'partial' => 'حضور جزئي'
+        ];
+
+        return $statuses[$this->attendance_status] ?? $this->attendance_status;
     }
 
-    /**
-     * تحديد ما إذا كان يمكن بدء الجلسة
-     */
-    public function canBeStarted()
+    public function getLocationTypeTextAttribute(): string
+    {
+        $types = [
+            'online' => 'عبر الإنترنت',
+            'physical' => 'حضوري',
+            'hybrid' => 'مختلط'
+        ];
+
+        return $types[$this->location_type] ?? $this->location_type;
+    }
+
+    public function getFormattedScheduledTimeAttribute(): string
+    {
+        return $this->scheduled_at ? $this->scheduled_at->format('Y-m-d H:i') : 'غير محدد';
+    }
+
+    public function getFormattedDateAttribute(): string
+    {
+        return $this->scheduled_at ? $this->scheduled_at->format('Y-m-d') : 'غير محدد';
+    }
+
+    public function getFormattedTimeAttribute(): string
+    {
+        return $this->scheduled_at ? $this->scheduled_at->format('H:i') : 'غير محدد';
+    }
+
+    public function getDurationTextAttribute(): string
+    {
+        $duration = $this->actual_duration_minutes ?? $this->duration_minutes;
+        
+        if ($duration < 60) {
+            return $duration . ' دقيقة';
+        }
+        
+        $hours = floor($duration / 60);
+        $minutes = $duration % 60;
+        
+        if ($minutes === 0) {
+            return $hours . ' ساعة';
+        }
+        
+        return $hours . ' ساعة و ' . $minutes . ' دقيقة';
+    }
+
+    public function getIsUpcomingAttribute(): bool
+    {
+        return $this->scheduled_at && $this->scheduled_at->isFuture();
+    }
+
+    public function getIsTodayAttribute(): bool
+    {
+        return $this->scheduled_at && $this->scheduled_at->isToday();
+    }
+
+    public function getIsCompletedAttribute(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    public function getIsCancelledAttribute(): bool
+    {
+        return $this->status === 'cancelled';
+    }
+
+    public function getCanStartAttribute(): bool
     {
         return $this->status === 'scheduled' && 
-               $this->scheduled_at <= now()->addMinutes(15);
+               $this->scheduled_at &&
+               $this->scheduled_at->diffInMinutes(now()) <= 15;
     }
 
-    /**
-     * تحديد ما إذا كان يمكن إنهاء الجلسة
-     */
-    public function canBeEnded()
+    public function getCanCancelAttribute(): bool
     {
-        return $this->status === 'in_progress';
+        return in_array($this->status, ['scheduled', 'ongoing']) &&
+               $this->scheduled_at &&
+               $this->scheduled_at->diffInHours(now()) >= 2;
     }
 
-    /**
-     * الحصول على تقييم الأداء باللغة العربية
-     */
-    public function getPerformanceRatingInArabicAttribute()
+    public function getCanRescheduleAttribute(): bool
     {
-        if (!$this->student_performance_rating) {
-            return 'غير مقيم';
+        return $this->status === 'scheduled' &&
+               $this->scheduled_at &&
+               $this->scheduled_at->diffInHours(now()) >= 24;
+    }
+
+    public function getProgressSummaryAttribute(): string
+    {
+        if (!$this->current_surah || !$this->current_verse) {
+            return 'لم يتم تحديد التقدم';
         }
 
-        $ratings = [
-            1 => 'ضعيف',
-            2 => 'مقبول',
-            3 => 'جيد',
-            4 => 'جيد جداً',
-            5 => 'ممتاز',
-        ];
-
-        return $ratings[round($this->student_performance_rating)] ?? 'غير محدد';
-    }
-
-    /**
-     * الحصول على إجمالي الآيات المراجعة والمحفوظة
-     */
-    public function getTotalVersesWorkedAttribute()
-    {
-        return ($this->verses_reviewed ?? 0) + ($this->verses_memorized_today ?? 0);
-    }
-
-    /**
-     * الحصول على تفاصيل السورة الحالية
-     */
-    public function getCurrentSurahDetailsAttribute()
-    {
-        if (!$this->current_surah) {
-            return null;
+        $surahName = $this->getSurahName($this->current_surah);
+        $versesMemorized = $this->verses_memorized_today ?? 0;
+        
+        $summary = "سورة {$surahName} - آية {$this->current_verse}";
+        
+        if ($versesMemorized > 0) {
+            $summary .= " (حُفظت {$versesMemorized} آيات)";
         }
 
+        return $summary;
+    }
+
+    public function getPerformanceSummaryAttribute(): array
+    {
         return [
-            'surah' => $this->current_surah,
-            'from_ayah' => $this->current_ayah_from,
-            'to_ayah' => $this->current_ayah_to,
-            'verses_count' => $this->current_ayah_to - $this->current_ayah_from + 1,
+            'recitation_quality' => $this->recitation_quality,
+            'tajweed_accuracy' => $this->tajweed_accuracy,
+            'mistakes_count' => $this->mistakes_count,
+            'overall_rating' => $this->overall_rating,
+            'verses_memorized' => $this->verses_memorized_today
         ];
     }
 
-    /**
-     * بدء الجلسة
-     */
-    public function start()
+    public function getTimeDurationAttribute(): int
     {
+        if (!$this->started_at) {
+            return 0;
+        }
+
+        $endTime = $this->ended_at ?? now();
+        return $this->started_at->diffInMinutes($endTime);
+    }
+
+    // Methods
+    public function start(): self
+    {
+        if ($this->status !== 'scheduled') {
+            throw new \Exception('لا يمكن بدء الجلسة. الحالة الحالية: ' . $this->status_text);
+        }
+
         $this->update([
-            'status' => 'in_progress',
-            'started_at' => now(),
+            'status' => 'ongoing',
+            'started_at' => now()
         ]);
+
+        return $this;
     }
 
-    /**
-     * إنهاء الجلسة
-     */
-    public function complete($data = [])
+    public function complete(array $sessionData = []): self
     {
-        $this->update(array_merge([
+        if (!in_array($this->status, ['ongoing', 'scheduled'])) {
+            throw new \Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: ' . $this->status_text);
+        }
+
+        $endTime = now();
+        $actualDuration = $this->started_at ? $this->started_at->diffInMinutes($endTime) : $this->duration_minutes;
+
+        $updateData = array_merge([
             'status' => 'completed',
-            'ended_at' => now(),
-            'actual_duration_minutes' => now()->diffInMinutes($this->started_at),
-        ], $data));
+            'ended_at' => $endTime,
+            'actual_duration_minutes' => $actualDuration,
+            'attendance_status' => 'attended'
+        ], $sessionData);
+
+        $this->update($updateData);
+
+        // Update subscription session count
+        if ($this->subscription) {
+            $this->subscription->useSession();
+        }
+
+        // Update circle session count
+        if ($this->circle) {
+            $this->circle->increment('sessions_completed');
+        }
+
+        // Create progress record if progress data is provided
+        if (isset($sessionData['verses_memorized_today']) && $sessionData['verses_memorized_today'] > 0) {
+            $this->recordProgress($sessionData);
+        }
+
+        return $this;
     }
 
-    /**
-     * إلغاء الجلسة
-     */
-    public function cancel($reason, $cancelledBy)
+    public function cancel(string $reason, User $cancelledBy = null): self
     {
+        if (!$this->can_cancel) {
+            throw new \Exception('لا يمكن إلغاء الجلسة في هذا الوقت');
+        }
+
         $this->update([
             'status' => 'cancelled',
             'cancellation_reason' => $reason,
-            'cancelled_by' => $cancelledBy,
-            'cancelled_at' => now(),
+            'cancelled_by' => $cancelledBy?->id,
+            'cancelled_at' => now()
         ]);
+
+        return $this;
+    }
+
+    public function reschedule(\Carbon\Carbon $newDateTime, string $reason = null): self
+    {
+        if (!$this->can_reschedule) {
+            throw new \Exception('لا يمكن إعادة جدولة الجلسة في هذا الوقت');
+        }
+
+        $this->update([
+            'rescheduled_from' => $this->scheduled_at,
+            'scheduled_at' => $newDateTime,
+            'reschedule_reason' => $reason,
+            'status' => 'rescheduled'
+        ]);
+
+        return $this;
+    }
+
+    public function markAsNoShow(): self
+    {
+        $this->update([
+            'status' => 'missed',
+            'attendance_status' => 'absent',
+            'ended_at' => $this->scheduled_at->addMinutes($this->duration_minutes)
+        ]);
+
+        return $this;
+    }
+
+    public function createMakeupSession(\Carbon\Carbon $scheduledAt, array $additionalData = []): self
+    {
+        $makeupData = array_merge([
+            'academy_id' => $this->academy_id,
+            'quran_teacher_id' => $this->quran_teacher_id,
+            'quran_subscription_id' => $this->quran_subscription_id,
+            'circle_id' => $this->circle_id,
+            'student_id' => $this->student_id,
+            'session_code' => self::generateSessionCode($this->academy_id),
+            'session_type' => $this->session_type,
+            'status' => 'scheduled',
+            'title' => 'جلسة تعويضية - ' . $this->title,
+            'scheduled_at' => $scheduledAt,
+            'duration_minutes' => $this->duration_minutes,
+            'location_type' => $this->location_type,
+            'is_makeup_session' => true,
+            'makeup_session_for' => $this->id
+        ], $additionalData);
+
+        return self::create($makeupData);
+    }
+
+    public function recordProgress(array $progressData): QuranProgress
+    {
+        return QuranProgress::create([
+            'academy_id' => $this->academy_id,
+            'student_id' => $this->student_id,
+            'quran_teacher_id' => $this->quran_teacher_id,
+            'quran_subscription_id' => $this->quran_subscription_id,
+            'circle_id' => $this->circle_id,
+            'session_id' => $this->id,
+            'progress_date' => now(),
+            'current_surah' => $this->current_surah,
+            'current_verse' => $this->current_verse,
+            'verses_memorized' => $this->verses_memorized_today,
+            'recitation_quality' => $this->recitation_quality,
+            'tajweed_accuracy' => $this->tajweed_accuracy,
+            'areas_for_improvement' => $this->areas_for_improvement,
+            'notes' => $this->session_notes
+        ]);
+    }
+
+    public function assignHomework(array $homeworkData): QuranHomework
+    {
+        return QuranHomework::create(array_merge($homeworkData, [
+            'academy_id' => $this->academy_id,
+            'quran_teacher_id' => $this->quran_teacher_id,
+            'student_id' => $this->student_id,
+            'session_id' => $this->id,
+            'subscription_id' => $this->quran_subscription_id,
+            'circle_id' => $this->circle_id,
+            'assigned_at' => now(),
+            'status' => 'assigned'
+        ]));
+    }
+
+    public function generateMeetingLink(): string
+    {
+        // This would integrate with Google Meet API or similar
+        // For now, return a placeholder
+        $meetingId = 'meet-' . $this->session_code . '-' . uniqid();
+        $meetingLink = "https://meet.google.com/{$meetingId}";
+        
+        $this->update([
+            'meeting_id' => $meetingId,
+            'meeting_link' => $meetingLink
+        ]);
+
+        return $meetingLink;
+    }
+
+    public function addFeedback(string $feedbackType, string $feedback, User $feedbackBy = null): self
+    {
+        $feedbackField = $feedbackType . '_feedback';
+        
+        if (!in_array($feedbackField, ['teacher_feedback', 'student_feedback', 'parent_feedback'])) {
+            throw new \Exception('نوع التعليق غير صحيح');
+        }
+
+        $this->update([
+            $feedbackField => $feedback
+        ]);
+
+        return $this;
+    }
+
+    public function rate(int $rating): self
+    {
+        if ($rating < 1 || $rating > 5) {
+            throw new \Exception('التقييم يجب أن يكون بين 1 و 5');
+        }
+
+        $this->update(['overall_rating' => $rating]);
+
+        return $this;
+    }
+
+    private function getSurahName(int $surahNumber): string
+    {
+        $surahNames = [
+            1 => 'الفاتحة', 2 => 'البقرة', 3 => 'آل عمران', 4 => 'النساء',
+            5 => 'المائدة', 6 => 'الأنعام', 7 => 'الأعراف', 8 => 'الأنفال',
+            9 => 'التوبة', 10 => 'يونس', 11 => 'هود', 12 => 'يوسف',
+            13 => 'الرعد', 14 => 'إبراهيم', 15 => 'الحجر', 16 => 'النحل',
+            17 => 'الإسراء', 18 => 'الكهف', 19 => 'مريم', 20 => 'طه',
+            // Add all 114 surahs as needed
+        ];
+
+        return $surahNames[$surahNumber] ?? "سورة رقم {$surahNumber}";
+    }
+
+    // Static methods
+    public static function createSession(array $data): self
+    {
+        return self::create(array_merge($data, [
+            'session_code' => self::generateSessionCode($data['academy_id']),
+            'status' => 'scheduled',
+            'is_makeup_session' => false
+        ]));
+    }
+
+    private static function generateSessionCode(int $academyId): string
+    {
+        $count = self::where('academy_id', $academyId)->count() + 1;
+        return 'QSE-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+    }
+
+    public static function getTodaysSessions(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = self::where('academy_id', $academyId)
+            ->today()
+            ->with(['quranTeacher.user', 'student', 'subscription', 'circle']);
+
+        if (isset($filters['teacher_id'])) {
+            $query->where('quran_teacher_id', $filters['teacher_id']);
+        }
+
+        if (isset($filters['student_id'])) {
+            $query->where('student_id', $filters['student_id']);
+        }
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['session_type'])) {
+            $query->where('session_type', $filters['session_type']);
+        }
+
+        return $query->orderBy('scheduled_at', 'asc')->get();
+    }
+
+    public static function getUpcomingSessions(int $teacherId, int $days = 7): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::where('quran_teacher_id', $teacherId)
+            ->upcoming()
+            ->whereBetween('scheduled_at', [now(), now()->addDays($days)])
+            ->with(['student', 'subscription', 'circle'])
+            ->orderBy('scheduled_at', 'asc')
+            ->get();
+    }
+
+    public static function getSessionsNeedingFollowUp(int $academyId): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::where('academy_id', $academyId)
+            ->completed()
+            ->where('follow_up_required', true)
+            ->with(['quranTeacher.user', 'student'])
+            ->get();
     }
 } 
