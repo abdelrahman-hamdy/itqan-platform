@@ -1,11 +1,92 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/* Import Arabic fonts from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap');
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* RTL Support */
+[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+}
+
+[dir="ltr"] {
+    direction: ltr;
+    text-align: left;
+}
+
+/* Arabic font classes */
+.font-arabic {
+    font-family: 'Tajawal', 'Cairo', 'Amiri', sans-serif;
+}
+
+/* Custom scrollbar for RTL */
+[dir="rtl"] ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+[dir="rtl"] ::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+}
+
+/* Filament theme customizations for Arabic */
+.fi-body {
+    font-family: 'Tajawal', 'Cairo', sans-serif !important;
+}
+
+/* Custom color utilities */
+.bg-itqan-primary {
+    background-color: #0ea5e9;
+}
+
+.text-itqan-primary {
+    color: #0ea5e9;
+}
+
+.border-itqan-primary {
+    border-color: #0ea5e9;
+}
+}
+
+[dir="ltr"] {
+    direction: ltr;
+    text-align: left;
+}
+
+/* Arabic font classes */
+.font-arabic {
+    font-family: 'Tajawal', 'Cairo', 'Amiri', sans-serif;
+}
+
+/* Custom scrollbar for RTL */
+[dir="rtl"] ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+[dir="rtl"] ::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+}
+
+/* Filament theme customizations for Arabic */
+.fi-body {
+    font-family: 'Tajawal', 'Cairo', sans-serif !important;
+}
+
+/* Custom color utilities */
+.bg-itqan-primary {
+    background-color: #0ea5e9;
+}
+
+.text-itqan-primary {
+    color: #0ea5e9;
+}
+
+.border-itqan-primary {
+    border-color: #0ea5e9;
 }

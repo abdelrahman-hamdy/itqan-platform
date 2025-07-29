@@ -1,0 +1,264 @@
+# Product Requirements Document: Itqan Educational Platform
+
+## 1. Product Overview
+
+Itqan is a comprehensive multi-tenant SaaS platform designed for Quran memorization and academic learning. Each tenant represents an independent academy with its own branding, while a global Super-Admin manages the entire installation.
+
+### Core Mission
+Enable Islamic academies to deliver Quran memorization programs, live academic tutoring, and pre-recorded courses under their own branding while maintaining centralized oversight.
+
+## 2. Target Users & Roles
+
+### 2.1 Super-Admin (Global Scope)
+- Create and manage academies
+- Access global financial dashboards
+- Seed default data across all tenants
+- Message any user across all academies
+
+### 2.2 Academy Admin (Per Academy)
+- Configure academy branding (logo, colors, name)
+- Set pricing and currency preferences
+- Manage teachers, supervisors, and packages
+- Configure subjects and courses
+
+### 2.3 Supervisor (Assigned Entities)
+- Monitor assigned circles, lessons, and courses
+- Access read-only chat channels for quality assurance
+- Generate daily quality reports
+- Provide support to assigned users
+
+### 2.4 Teachers
+- **Quran Teachers**: Certified profiles with Quran-specific qualifications
+- **Academic Teachers**: Subject-based teaching with grade-level specifications
+- Create individual schedules and availability
+- Assign homework and quizzes
+- Generate progress reports and certificates
+
+### 2.5 Students
+- Browse and book teacher sessions
+- Purchase subscriptions and courses
+- Attend Google Meet sessions
+- Submit homework and take quizzes
+- Receive progress reports and certificates
+
+### 2.6 Parents
+- Linked to exactly one student
+- View child's progress and reports
+- Pay invoices and manage billing
+- Chat with assigned teachers and supervisors
+
+## 3. Core Features
+
+### 3.1 Quran Memorization Module
+
+#### Individual Sessions (1-to-1)
+- Student browses teacher profile cards
+- Free trial booking system with approval workflow
+- Monthly package purchases with session allocation
+- Extra session add-ons with expiration handling
+- Google Meet integration for live sessions
+
+#### Group Circles
+- Fixed weekly schedules with multiple students
+- Automatic Google Meet links generated 15 minutes before sessions
+- Collective chat rooms per circle
+- Attendance tracking and homework assignments
+
+### 3.2 Live Academic Tutoring
+
+#### Private Lessons
+- Subject-based hourly pricing model
+- Similar workflow to Quran sessions but academic-focused
+- Recording capabilities for session playback
+
+#### Interactive Courses
+- Multi-lesson courses over defined date ranges
+- One-time payment model
+- Late joiners access to previous session recordings
+- Group chat functionality
+
+### 3.3 Recorded Courses
+- Hierarchical course catalog with admin-defined categories
+- One-time purchase with perpetual access
+- Secure video streaming with signed tokens
+- Downloadable PDFs and materials
+- Integrated quiz system
+
+### 3.4 Communication System (Enhanced Chatify)
+
+#### Role-Based Messaging Matrix
+- Controlled communication based on user roles
+- Group chats auto-created for circles and courses
+- Supervisor mirror channels for quality monitoring
+- File attachment support with tenant isolation
+
+#### Notification System
+- FCM push notifications for mobile and web
+- Email notifications for critical events
+- Session reminders (10 minutes before start)
+- Homework and quiz notifications
+
+### 3.5 Assessment System
+
+#### Quiz Engine
+- Multiple-choice questions only
+- Randomized question and answer order
+- Configurable point values and pass thresholds
+- Multiple attempts with attempt tracking
+- Automatic grading with queue processing
+
+#### Homework Management
+- Text or file-based assignments
+- Student submission tracking
+- Teacher grading with score assignment
+- Progress tracking and reporting
+
+### 3.6 Payment & Billing System
+- Multi-gateway support (Paymob for MENA, Tap for GCC)
+- Per-academy currency configuration
+- Invoice generation with multiple line items
+- Subscription and add-on session billing
+- Manual renewal system (auto-renewal planned for future)
+
+## 4. Technical Requirements
+
+### 4.1 Architecture
+- Laravel 11 framework with PHP 8.3
+- Single-database multi-tenancy using Spatie packages
+- MySQL 8 with Redis 7 for caching and queues
+- Livewire 3 for reactive components
+- Filament 4 for admin interfaces
+
+### 4.2 Frontend
+- Blade templates with Livewire components
+- TailwindCSS 3 for styling
+- RTL support for Arabic content
+- Dark mode compatibility
+- Responsive design for mobile and desktop
+
+### 4.3 Storage & Media
+- DigitalOcean Spaces for file storage
+- Tenant-isolated storage paths
+- MediaLibrary integration for file management
+- Secure URL generation with signed tokens
+
+### 4.4 Real-time Features
+- WebSocket integration using Soketi/Pusher
+- Real-time chat messaging
+- Live session updates
+- Notification broadcasting
+
+### 4.5 Integrations
+- Google Calendar API for Meet link generation
+- FCM for push notifications
+- Email service integration
+- Payment gateway APIs (Paymob, Tap)
+
+## 5. User Workflows
+
+### 5.1 Student Journey
+1. Discover teachers through profile browsing
+2. Book free trial session
+3. Receive email confirmation
+4. Attend trial session via Google Meet
+5. Purchase monthly package or course
+6. Attend scheduled sessions
+7. Submit homework and take quizzes
+8. Receive progress reports and certificates
+
+### 5.2 Teacher Onboarding
+1. Complete registration form with qualifications
+2. Profile review and approval by admin
+3. Admin sets pricing and availability
+4. Status activation for booking acceptance
+5. Define weekly availability schedule
+6. Receive booking notifications
+7. Conduct sessions and fill reports
+
+### 5.3 Academy Setup
+1. Super-Admin creates new academy
+2. System seeds default roles and settings
+3. Academy admin configures branding
+4. Admin invites teachers and supervisors
+5. Configure subjects, packages, and pricing
+6. Launch public academy website
+
+## 6. Success Metrics
+
+### 6.1 Business Metrics
+- Academy acquisition and retention rates
+- Student enrollment and completion rates
+- Teacher utilization and satisfaction scores
+- Revenue per academy and per student
+
+### 6.2 Technical Metrics
+- System uptime and performance
+- Session completion rates
+- Payment success rates
+- User engagement metrics
+
+## 7. Security & Compliance
+
+### 7.1 Data Protection
+- Tenant data isolation
+- Secure file storage and access
+- Audit logging for sensitive operations
+- Role-based access control
+
+### 7.2 Payment Security
+- PCI compliance through payment gateways
+- Secure webhook handling
+- Transaction audit trails
+
+## 8. Scalability Requirements
+
+### 8.1 Performance Targets
+- Support for 100+ academies
+- 10,000+ concurrent users
+- Sub-3-second page load times
+- 99.9% uptime availability
+
+### 8.2 Growth Planning
+- Horizontal scaling capabilities
+- Queue-based background processing
+- CDN integration for global content delivery
+- Database optimization for large datasets
+
+## 9. Future Roadmap
+
+### Phase 1 (MVP)
+- Core functionality as described above
+- Single default academy (Itqan Academy)
+- Basic reporting and analytics
+
+### Phase 2 (Enhancement)
+- Auto-renewal billing system
+- Advanced analytics dashboards
+- Mobile app development
+- LiveKit integration for better video quality
+
+### Phase 3 (Marketplace)
+- Teacher marketplace across academies
+- Revenue sharing model
+- Advanced certification system
+- AI-powered matching algorithms
+
+## 10. Acceptance Criteria
+
+### 10.1 Core Functionality
+- All user roles can perform their designated functions
+- Payment processing works end-to-end
+- Video sessions integrate seamlessly with Google Meet
+- Chat system maintains proper role-based restrictions
+
+### 10.2 Technical Criteria
+- Multi-tenancy isolation verified
+- Performance benchmarks met
+- Security audit completed
+- Mobile responsiveness confirmed
+
+### 10.3 User Experience
+- Intuitive navigation for all user types
+- RTL support fully functional
+- Accessibility standards met
+- Cross-browser compatibility verified 

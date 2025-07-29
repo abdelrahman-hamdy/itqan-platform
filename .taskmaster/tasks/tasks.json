@@ -1,0 +1,793 @@
+{
+    "metadata": {
+        "version": "1.0.0",
+        "createdAt": "2025-01-28T10:00:00Z",
+        "lastModified": "2025-01-28T10:00:00Z",
+        "tags": {
+            "master": {
+                "name": "master",
+                "description": "Main development track for Itqan Educational Platform",
+                "createdAt": "2025-01-28T10:00:00Z",
+                "lastModified": "2025-01-28T10:00:00Z"
+            }
+        },
+        "currentTag": "master"
+    },
+    "tasks": {
+        "master": {
+            "1": {
+                "id": "1",
+                "title": "Multi-Panel Infrastructure Setup",
+                "description": "Create the technical foundation for multi-panel interfaces with Arabic and RTL support",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [],
+                "subtasks": {
+                    "1.1": {
+                        "id": "1.1",
+                        "title": "Setup Four Panel Providers",
+                        "description": "Create AdminPanelProvider, AcademyPanelProvider, TeacherPanelProvider, and SupervisorPanelProvider",
+                        "status": "pending",
+                        "details": "Create separate Panel Provider files for each role with appropriate routing settings and permissions"
+                    },
+                    "1.2": {
+                        "id": "1.2",
+                        "title": "Configure Domain Routing",
+                        "description": "Configure routing for main domain and academy subdomains",
+                        "status": "pending",
+                        "details": "Setup routes for main domain (/admin) and subdomains (/{academy}/panel, /teacher-panel, /supervisor-panel)"
+                    },
+                    "1.3": {
+                        "id": "1.3",
+                        "title": "Implement Arabic RTL Theming",
+                        "description": "Setup Filament themes with Arabic and RTL support",
+                        "status": "pending",
+                        "details": "Configure TailwindCSS with RTL, setup Arabic fonts, and customize Filament panels for Arabic"
+                    }
+                },
+                "details": "Core phase for setting up the multi-panel system. This task must be completed before starting development of any specific panel.",
+                "testStrategy": "Test each role's access to their designated panel while verifying routing and Arabic theme functionality"
+            },
+            "2": {
+                "id": "2",
+                "title": "Develop Super-Admin Panel",
+                "description": "Create the main control panel for global administration across all academies",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [
+                    "1"
+                ],
+                "subtasks": {
+                    "2.1": {
+                        "id": "2.1",
+                        "title": "Create Global Dashboard with KPIs",
+                        "description": "Main dashboard displaying general statistics for all academies",
+                        "status": "pending",
+                        "details": "Display academy count, total revenue, active users, daily sessions"
+                    },
+                    "2.2": {
+                        "id": "2.2",
+                        "title": "Academy Management (CRUD)",
+                        "description": "Interface for creating, editing, and deleting academies",
+                        "status": "pending",
+                        "details": "Create Filament Resource for Academy model management with subdomain settings and admin assignment"
+                    },
+                    "2.3": {
+                        "id": "2.3",
+                        "title": "Global User Management",
+                        "description": "View and manage all users across academies",
+                        "status": "pending",
+                        "details": "Resource to display Users with filtering by academy and role, import/export functionality"
+                    }
+                },
+                "details": "Super-Admin panel operates on the main domain and provides comprehensive system-wide management.",
+                "testStrategy": "Test Super-Admin only access, verify cross-academy data display, test CRUD operations"
+            },
+            "3": {
+                "id": "3",
+                "title": "Develop Academy Admin Panel",
+                "description": "Create academy management panel with branding and customization settings",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [
+                    "1"
+                ],
+                "subtasks": {
+                    "3.1": {
+                        "id": "3.1",
+                        "title": "Academy Branding Setup",
+                        "description": "Interface for customizing logo, colors, and academy description",
+                        "status": "pending",
+                        "details": "Form for logo upload, primary color selection, academy description, contact settings"
+                    },
+                    "3.2": {
+                        "id": "3.2",
+                        "title": "Local User Management",
+                        "description": "Manage teachers, students, and parents within the academy",
+                        "status": "pending",
+                        "details": "Tenant-scoped Resources for managing Users with different roles"
+                    },
+                    "3.3": {
+                        "id": "3.3",
+                        "title": "Academy Settings",
+                        "description": "Configure currency, timezone, packages, and pricing",
+                        "status": "pending",
+                        "details": "Forms for Currency, Timezone, Package pricing, Session rates configuration"
+                    }
+                },
+                "details": "Dedicated panel for academy admin with local management capabilities and branding customization.",
+                "testStrategy": "Test data isolation between academies, verify branding functionality, test permissions"
+            },
+            "4": {
+                "id": "4",
+                "title": "Develop Teacher Panel",
+                "description": "Create teacher panel with teaching tools and scheduling",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "1"
+                ],
+                "subtasks": {
+                    "4.1": {
+                        "id": "4.1",
+                        "title": "Teacher Calendar with Google Calendar",
+                        "description": "Calendar interface displaying teacher sessions with Google Calendar integration",
+                        "status": "pending",
+                        "details": "Livewire component for Calendar display, ability to create new sessions, Google Meet linking"
+                    },
+                    "4.2": {
+                        "id": "4.2",
+                        "title": "Assignment and Test Management",
+                        "description": "Tools for creating and grading assignments and tests",
+                        "status": "pending",
+                        "details": "Interface for creating Assignments and Quizzes, grading student responses, displaying statistics"
+                    },
+                    "4.3": {
+                        "id": "4.3",
+                        "title": "Session and Report Management",
+                        "description": "Display past sessions and write student reports",
+                        "status": "pending",
+                        "details": "Sessions list with filtering, report writing forms, student performance evaluation"
+                    }
+                },
+                "details": "Simplified panel for teachers focusing on essential teaching tools.",
+                "testStrategy": "Test session creation, verify Google Calendar integration, test assignments and reports"
+            },
+            "5": {
+                "id": "5",
+                "title": "Develop Supervisor Panel",
+                "description": "Create supervisor panel for quality monitoring and complaints",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "1"
+                ],
+                "subtasks": {
+                    "5.1": {
+                        "id": "5.1",
+                        "title": "Monitor Circles and Courses",
+                        "description": "Interface for displaying assigned circles for monitoring",
+                        "status": "pending",
+                        "details": "Display monitored Circles/Courses, attendance counter, monitoring access capability"
+                    },
+                    "5.2": {
+                        "id": "5.2",
+                        "title": "Chat Monitoring",
+                        "description": "Interface for monitoring conversations in read-only mode",
+                        "status": "pending",
+                        "details": "Chat rooms list, read-only monitoring mode, note-taking functionality"
+                    },
+                    "5.3": {
+                        "id": "5.3",
+                        "title": "Quality Reports and Complaints Management",
+                        "description": "Forms for writing quality reports and tracking complaints",
+                        "status": "pending",
+                        "details": "Quality report forms, Complaints ticket management, priority classification"
+                    }
+                },
+                "details": "Dedicated panel for supervisors with monitoring tools and quality assurance.",
+                "testStrategy": "Test monitoring functionality, verify quality reports, test complaint management"
+            },
+            "6": {
+                "id": "6",
+                "title": "Develop Student Area",
+                "description": "Create student personal area using Blade + Livewire",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "1"
+                ],
+                "subtasks": {
+                    "6.1": {
+                        "id": "6.1",
+                        "title": "Main Student Dashboard",
+                        "description": "Simple dashboard displaying upcoming sessions and assignments",
+                        "status": "pending",
+                        "details": "Livewire component displaying upcoming sessions, pending assignments, progress stats"
+                    },
+                    "6.2": {
+                        "id": "6.2",
+                        "title": "Subscription and Payment Management",
+                        "description": "Pages for displaying subscriptions and invoices with payment capability",
+                        "status": "pending",
+                        "details": "Display current subscription, remaining sessions, payment history, renewal options"
+                    },
+                    "6.3": {
+                        "id": "6.3",
+                        "title": "Assignments, Tests, and Reports",
+                        "description": "Pages for viewing assignments, taking tests, and reviewing reports",
+                        "status": "pending",
+                        "details": "Assignments list, Quiz interface, Progress reports, Certificates"
+                    }
+                },
+                "details": "Simple mobile-optimized interface for students.",
+                "testStrategy": "Test access, verify mobile responsiveness, test payment functionality"
+            },
+            "7": {
+                "id": "7",
+                "title": "Develop Parent Area",
+                "description": "Create parent personal area with multi-children management",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "1"
+                ],
+                "subtasks": {
+                    "7.1": {
+                        "id": "7.1",
+                        "title": "Children Management",
+                        "description": "Interface for viewing and managing multiple children accounts",
+                        "status": "pending",
+                        "details": "Children list, filtering by child, adding new children, account linking"
+                    },
+                    "7.2": {
+                        "id": "7.2",
+                        "title": "Combined Reports",
+                        "description": "Comprehensive reports for all children with comparison capability",
+                        "status": "pending",
+                        "details": "Combined reports, Performance comparison, Financial summary, Alerts"
+                    },
+                    "7.3": {
+                        "id": "7.3",
+                        "title": "Communication and Unified Payments",
+                        "description": "Teacher conversations and payment for all children",
+                        "status": "pending",
+                        "details": "Teacher communication, Unified billing, Family discounts, Payment history"
+                    }
+                },
+                "details": "Family-oriented interface with multi-children management.",
+                "testStrategy": "Test multi-children management, verify combined reports, test payments"
+            },
+            "8": {
+                "id": "8",
+                "title": "Google Calendar & Meet Integration",
+                "description": "Setup Google Calendar integration for session creation and Meet links",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [
+                    "4"
+                ],
+                "subtasks": {
+                    "8.1": {
+                        "id": "8.1",
+                        "title": "Google Service Account Setup",
+                        "description": "Configure service account and necessary permissions",
+                        "status": "pending",
+                        "details": "Create Service account, configure Calendar API, setup OAuth permissions"
+                    },
+                    "8.2": {
+                        "id": "8.2",
+                        "title": "Auto-Create Events with Meet Links",
+                        "description": "Create Calendar events with Google Meet links automatically",
+                        "status": "pending",
+                        "details": "GoogleCalendarService class, Event creation, Conference data, Meet links"
+                    },
+                    "8.3": {
+                        "id": "8.3",
+                        "title": "Session Calendar Synchronization",
+                        "description": "Link system sessions with Google Calendar events",
+                        "status": "pending",
+                        "details": "Session model integration, Calendar sync, Notifications, Updates handling"
+                    }
+                },
+                "details": "Comprehensive Google Calendar integration for session management and automatic Meet link creation.",
+                "testStrategy": "Test Event creation, verify Meet links, test synchronization"
+            },
+            "9": {
+                "id": "9",
+                "title": "Permissions and Roles Management System",
+                "description": "Implement comprehensive permissions system using Spatie Permission",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [
+                    "1"
+                ],
+                "subtasks": {
+                    "9.1": {
+                        "id": "9.1",
+                        "title": "Define Roles and Permissions",
+                        "description": "Create six roles with their specific permissions",
+                        "status": "pending",
+                        "details": "Create Roles: super_admin, academy_admin, teacher, supervisor, student, parent with permissions"
+                    },
+                    "9.2": {
+                        "id": "9.2",
+                        "title": "Resource Policies",
+                        "description": "Create Policy classes for each Resource with permission logic",
+                        "status": "pending",
+                        "details": "Resource policies, Panel access control, Tenant-based permissions"
+                    },
+                    "9.3": {
+                        "id": "9.3",
+                        "title": "Access Middleware",
+                        "description": "Middleware for checking permissions when accessing panels",
+                        "status": "pending",
+                        "details": "Panel access middleware, Role verification, Tenant isolation"
+                    }
+                },
+                "details": "Comprehensive security system ensuring each user accesses only their appropriate interface.",
+                "testStrategy": "Test each role's access, verify unauthorized access prevention, test data isolation"
+            },
+            "10": {
+                "id": "10",
+                "title": "Payment System Setup with Tap Gateway",
+                "description": "Integrate Tap payment gateway for Gulf region in sandbox mode",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "6",
+                    "7"
+                ],
+                "subtasks": {
+                    "10.1": {
+                        "id": "10.1",
+                        "title": "Configure Tap API",
+                        "description": "Setup Tap payment gateway in test mode",
+                        "status": "pending",
+                        "details": "Tap service class, API credentials, Sandbox configuration"
+                    },
+                    "10.2": {
+                        "id": "10.2",
+                        "title": "Payment Processing",
+                        "description": "Create Payment controller and processing logic",
+                        "status": "pending",
+                        "details": "Payment processing, Webhooks handling, Transaction records"
+                    },
+                    "10.3": {
+                        "id": "10.3",
+                        "title": "Payment Interfaces for Students and Parents",
+                        "description": "Add payment interfaces in Student/Parent areas",
+                        "status": "pending",
+                        "details": "Payment forms, Receipt generation, Payment history"
+                    }
+                },
+                "details": "Secure integrated payment system supporting local currencies for each academy.",
+                "testStrategy": "Test sandbox payments, verify webhooks, test receipts"
+            },
+            "11": {
+                "id": "11",
+                "title": "Mobile Design Optimization",
+                "description": "Optimize all interfaces for optimal mobile performance",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "6",
+                    "7"
+                ],
+                "subtasks": {
+                    "11.1": {
+                        "id": "11.1",
+                        "title": "TailwindCSS RTL Configuration",
+                        "description": "Configure Tailwind for full Arabic and RTL support",
+                        "status": "pending",
+                        "details": "RTL plugin, Arabic fonts, Responsive breakpoints, Touch gestures"
+                    },
+                    "11.2": {
+                        "id": "11.2",
+                        "title": "Mobile Navigation",
+                        "description": "Optimize menus and navigation for mobile devices",
+                        "status": "pending",
+                        "details": "Slide menus, Touch navigation, Quick actions, Mobile-first approach"
+                    },
+                    "11.3": {
+                        "id": "11.3",
+                        "title": "Performance Optimization",
+                        "description": "Optimize performance for small screens and slow networks",
+                        "status": "pending",
+                        "details": "Lazy loading, Image optimization, Minimal JS, Fast interactions"
+                    }
+                },
+                "details": "Perfect mobile experience with full Arabic support and touch usage.",
+                "testStrategy": "Test on various devices, verify performance, test touch navigation"
+            },
+            "12": {
+                "id": "12",
+                "title": "Multi-tenancy Setup with Spatie",
+                "description": "Complete multi-tenancy system integration with data isolation",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [
+                    "1"
+                ],
+                "subtasks": {
+                    "12.1": {
+                        "id": "12.1",
+                        "title": "Configure Tenant Model",
+                        "description": "Setup Academy model as Tenant with required settings",
+                        "status": "pending",
+                        "details": "Academy model, Tenant configuration, Subdomain resolution"
+                    },
+                    "12.2": {
+                        "id": "12.2",
+                        "title": "Tenant Scoping",
+                        "description": "Apply data isolation in all Models",
+                        "status": "pending",
+                        "details": "TenantScope trait, Model modifications, Automatic scoping"
+                    },
+                    "12.3": {
+                        "id": "12.3",
+                        "title": "Default Tenant Setup",
+                        "description": "Setup default itqan-academy academy",
+                        "status": "pending",
+                        "details": "Default tenant creation, Main domain configuration, Seeder data"
+                    }
+                },
+                "details": "Complete multi-tenancy system ensuring data isolation between academies.",
+                "testStrategy": "Test data isolation, verify Subdomain routing, test Default tenant"
+            },
+            "13": {
+                "id": "13",
+                "title": "Chat System Setup with Chatify",
+                "description": "Integrate chat system with role restrictions and supervisor monitoring",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "9"
+                ],
+                "subtasks": {
+                    "13.1": {
+                        "id": "13.1",
+                        "title": "Configure Chatify",
+                        "description": "Install and configure Chatify package with required customizations",
+                        "status": "pending",
+                        "details": "Chatify installation, Configuration, Arabic localization"
+                    },
+                    "13.2": {
+                        "id": "13.2",
+                        "title": "Role Restrictions in Chat",
+                        "description": "Apply restrictions on who can message whom",
+                        "status": "pending",
+                        "details": "Chat permissions, Role-based messaging, Contact restrictions"
+                    },
+                    "13.3": {
+                        "id": "13.3",
+                        "title": "Supervisor Monitoring",
+                        "description": "Enable supervisors to monitor conversations",
+                        "status": "pending",
+                        "details": "Supervisor monitoring, Read-only access, Chat logging"
+                    }
+                },
+                "details": "Secure monitored chat system respecting roles and professional boundaries.",
+                "testStrategy": "Test chat restrictions, verify supervisor monitoring, test security"
+            },
+            "14": {
+                "id": "14",
+                "title": "Media Library and File Management Setup",
+                "description": "File management system with Spatie Media Library and academy isolation",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "12"
+                ],
+                "subtasks": {
+                    "14.1": {
+                        "id": "14.1",
+                        "title": "Configure Media Library",
+                        "description": "Setup Spatie Media Library with tenant isolation",
+                        "status": "pending",
+                        "details": "Media collections, File conversions, Storage paths, Tenant scoping"
+                    },
+                    "14.2": {
+                        "id": "14.2",
+                        "title": "Academy Files",
+                        "description": "Manage academy files (logo, images, documents)",
+                        "status": "pending",
+                        "details": "Academy branding files, Document storage, Image processing"
+                    },
+                    "14.3": {
+                        "id": "14.3",
+                        "title": "Educational Content Files",
+                        "description": "Manage lesson, assignment, and certificate files",
+                        "status": "pending",
+                        "details": "Course materials, Assignment files, Certificates, Video storage"
+                    }
+                },
+                "details": "Comprehensive file management system with complete academy isolation.",
+                "testStrategy": "Test file uploads, verify isolation, test image processing"
+            },
+            "15": {
+                "id": "15",
+                "title": "Create Core Data Models",
+                "description": "Create all required Models with relationships and validation",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [
+                    "12"
+                ],
+                "subtasks": {
+                    "15.1": {
+                        "id": "15.1",
+                        "title": "User Management Models",
+                        "description": "User, UserProfile, TeacherProfile, SupervisorAssignment",
+                        "status": "pending",
+                        "details": "User model with roles, Profile relationships, Teacher specializations"
+                    },
+                    "15.2": {
+                        "id": "15.2",
+                        "title": "Educational Content Models",
+                        "description": "Subject, Course, Lesson, Circle, Package, Subscription",
+                        "status": "pending",
+                        "details": "Content hierarchy, Pricing models, Enrollment tracking"
+                    },
+                    "15.3": {
+                        "id": "15.3",
+                        "title": "Assessment Models",
+                        "description": "Quiz, Question, Assignment, Submission, Grade",
+                        "status": "pending",
+                        "details": "Assessment structure, Grading system, Progress tracking"
+                    }
+                },
+                "details": "Core data structure with all relationships and constraints.",
+                "testStrategy": "Test relationships, verify constraints, test validations"
+            },
+            "16": {
+                "id": "16",
+                "title": "Create Seeders for Test Data",
+                "description": "Comprehensive test data for system testing",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "15"
+                ],
+                "subtasks": {
+                    "16.1": {
+                        "id": "16.1",
+                        "title": "Test Academies and Administration",
+                        "description": "Create test academies with administrators",
+                        "status": "pending",
+                        "details": "Default itqan-academy, Test academies, Admin users"
+                    },
+                    "16.2": {
+                        "id": "16.2",
+                        "title": "Test Teachers and Students",
+                        "description": "Teacher data with specializations and students with parents",
+                        "status": "pending",
+                        "details": "Teacher profiles, Student accounts, Parent relationships"
+                    },
+                    "16.3": {
+                        "id": "16.3",
+                        "title": "Test Educational Content",
+                        "description": "Courses, lessons, and assignments for testing",
+                        "status": "pending",
+                        "details": "Sample courses, Test assignments, Quiz examples"
+                    }
+                },
+                "details": "Rich test data for testing all system functions.",
+                "testStrategy": "Verify data creation, test relationships, try different scenarios"
+            },
+            "17": {
+                "id": "17",
+                "title": "FCM Notifications Setup",
+                "description": "Firebase Cloud Messaging integration for mobile notifications",
+                "status": "pending",
+                "priority": "low",
+                "dependencies": [
+                    "6",
+                    "7"
+                ],
+                "subtasks": {
+                    "17.1": {
+                        "id": "17.1",
+                        "title": "Configure Firebase Project",
+                        "description": "Setup Firebase project and notification service",
+                        "status": "pending",
+                        "details": "Firebase project setup, Service account, FCM configuration"
+                    },
+                    "17.2": {
+                        "id": "17.2",
+                        "title": "Laravel Notifications Integration",
+                        "description": "Integrate Laravel notifications with FCM",
+                        "status": "pending",
+                        "details": "FCM channel, Notification classes, Token management"
+                    },
+                    "17.3": {
+                        "id": "17.3",
+                        "title": "Notification Management Interfaces",
+                        "description": "Panels for sending and managing notifications",
+                        "status": "pending",
+                        "details": "Admin notification panel, User preferences, Notification history"
+                    }
+                },
+                "details": "Comprehensive notification system for instant user communication.",
+                "testStrategy": "Test notification sending, verify delivery, test user settings"
+            },
+            "18": {
+                "id": "18",
+                "title": "Security and Performance Testing",
+                "description": "Comprehensive security, performance, and data isolation testing",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [
+                    "9",
+                    "12"
+                ],
+                "subtasks": {
+                    "18.1": {
+                        "id": "18.1",
+                        "title": "Data Isolation Testing",
+                        "description": "Verify no data leakage between academies",
+                        "status": "pending",
+                        "details": "Tenant isolation tests, Data leakage prevention, Cross-tenant access tests"
+                    },
+                    "18.2": {
+                        "id": "18.2",
+                        "title": "Permission Testing",
+                        "description": "Verify permissions system works correctly",
+                        "status": "pending",
+                        "details": "Role-based access tests, Permission verification, Unauthorized access prevention"
+                    },
+                    "18.3": {
+                        "id": "18.3",
+                        "title": "Performance Testing",
+                        "description": "Measure system performance with multiple users load",
+                        "status": "pending",
+                        "details": "Load testing, Database performance, UI responsiveness"
+                    }
+                },
+                "details": "Comprehensive testing to ensure system security and performance in production.",
+                "testStrategy": "Automated testing, Security audits, Performance benchmarks"
+            },
+            "19": {
+                "id": "19",
+                "title": "Production Environment Setup",
+                "description": "Prepare system for production deployment",
+                "status": "pending",
+                "priority": "medium",
+                "dependencies": [
+                    "18"
+                ],
+                "subtasks": {
+                    "19.1": {
+                        "id": "19.1",
+                        "title": "Server Configuration",
+                        "description": "Setup production server with requirements",
+                        "status": "pending",
+                        "details": "Server setup, SSL certificates, Domain configuration"
+                    },
+                    "19.2": {
+                        "id": "19.2",
+                        "title": "Database and Backup",
+                        "description": "Setup production database and backup policies",
+                        "status": "pending",
+                        "details": "Production database, Backup strategy, Monitoring setup"
+                    },
+                    "19.3": {
+                        "id": "19.3",
+                        "title": "System Monitoring",
+                        "description": "Setup performance and error monitoring tools",
+                        "status": "pending",
+                        "details": "Error tracking, Performance monitoring, Log management"
+                    }
+                },
+                "details": "Comprehensive setup for secure and stable production environment.",
+                "testStrategy": "Production deployment tests, Monitoring verification, Backup restoration tests"
+            },
+            "20": {
+                "id": "20",
+                "title": "User Documentation and Training",
+                "description": "Create user guides and training materials for each role",
+                "status": "pending",
+                "priority": "low",
+                "dependencies": [
+                    "19"
+                ],
+                "subtasks": {
+                    "20.1": {
+                        "id": "20.1",
+                        "title": "Administrator Guides",
+                        "description": "Comprehensive documentation for Super-Admin and Academy Admin",
+                        "status": "pending",
+                        "details": "Admin guides, Setup tutorials, Best practices"
+                    },
+                    "20.2": {
+                        "id": "20.2",
+                        "title": "Teacher and Supervisor Guides",
+                        "description": "Usage guidelines for teacher and supervisor panels",
+                        "status": "pending",
+                        "details": "Teacher guides, Supervisor manuals, Feature tutorials"
+                    },
+                    "20.3": {
+                        "id": "20.3",
+                        "title": "Student and Parent Guides",
+                        "description": "Simplified guide for students and parents",
+                        "status": "pending",
+                        "details": "Student guides, Parent manuals, FAQ sections"
+                    }
+                },
+                "details": "Comprehensive documentation and training materials for all users.",
+                "testStrategy": "User feedback, Documentation testing, Training effectiveness"
+            },
+            "21": {
+                "id": "21",
+                "title": "Advanced Registration System Implementation",
+                "description": "Create comprehensive registration system with role-specific forms, teacher approval workflow, and automatic parent account creation",
+                "status": "pending",
+                "priority": "high",
+                "dependencies": [
+                    "1",
+                    "15"
+                ],
+                "subtasks": {
+                    "21.1": {
+                        "id": "21.1",
+                        "title": "Database Schema for Registration System",
+                        "description": "Create grade_levels, subjects, teacher approval, and WhatsApp notification tables",
+                        "status": "pending",
+                        "details": "Implement grade_levels (academy-specific), subjects (academy-specific), teacher_subjects, teacher_grade_levels, teacher_approvals, whatsapp_notifications, and student_grade_levels tables with proper relationships and indexes"
+                    },
+                    "21.2": {
+                        "id": "21.2",
+                        "title": "Registration Form Routes and Controllers",
+                        "description": "Create academy-specific registration routes for different user types",
+                        "status": "pending",
+                        "details": "Implement /register (type selection), /register/teacher (Quran vs Academic choice), /register/teacher/quran, /register/teacher/academic, /register/student routes with proper tenant-aware controllers and validation"
+                    },
+                    "21.3": {
+                        "id": "21.3",
+                        "title": "Teacher Registration Forms",
+                        "description": "Create separate forms for Quran and Academic teacher registration",
+                        "status": "pending",
+                        "details": "Quran teacher form: name, phone, email, password, bio, ijazah (yes/no), experience years, grade levels. Academic teacher form: includes qualification degree, university, subjects selection, detailed qualification text"
+                    },
+                    "21.4": {
+                        "id": "21.4",
+                        "title": "Student Registration with Auto Parent Creation",
+                        "description": "Student registration form that automatically creates parent accounts",
+                        "status": "pending",
+                        "details": "Student form with parent phone field, automatic parent account creation with generated credentials, WhatsApp notification service for sending login details to parents"
+                    },
+                    "21.5": {
+                        "id": "21.5",
+                        "title": "Teacher Approval Workflow",
+                        "description": "Admin interface for reviewing and approving teacher registrations",
+                        "status": "pending",
+                        "details": "Pending teachers queue in academy admin panel, teacher profile review interface, pricing setup (student price vs teacher price), approval/rejection workflow with notifications"
+                    },
+                    "21.6": {
+                        "id": "21.6",
+                        "title": "Grade Levels and Subjects Management",
+                        "description": "Admin panels for managing grade levels and academic subjects",
+                        "status": "pending",
+                        "details": "Academy admin CRUD interfaces for grade levels (seeded with primary, preparatory, secondary, university), subjects management (academic only), proper academy scoping and validation"
+                    },
+                    "21.7": {
+                        "id": "21.7",
+                        "title": "WhatsApp Integration for Parent Notifications",
+                        "description": "WhatsApp service for sending parent account credentials",
+                        "status": "pending",
+                        "details": "WhatsApp API integration (free solution), notification queue system, message templates for parent account creation, delivery status tracking, fallback mechanisms"
+                    },
+                    "21.8": {
+                        "id": "21.8",
+                        "title": "Supervisor Account Management",
+                        "description": "Admin interface for creating supervisor accounts with temporary passwords",
+                        "status": "pending",
+                        "details": "Academy admin interface for supervisor creation, email/temp password generation, first-login password change flow, proper role assignment and permissions"
+                    }
+                },
+                "details": "Comprehensive registration system supporting different user types with academy-specific data, teacher approval workflows, automatic parent account creation with WhatsApp notifications, and proper admin management interfaces.",
+                "testStrategy": "Test all registration flows, verify teacher approval process, test automatic parent account creation and WhatsApp delivery, verify academy-specific data isolation, test supervisor account creation and first-login experience"
+            }
+        }
+    }
+}
