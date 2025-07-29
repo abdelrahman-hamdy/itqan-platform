@@ -12,7 +12,7 @@ class ViewQuranTeacher extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'معلم القرآن: ' . $this->record->user->name;
+        return 'معلم القرآن: ' . $this->record->full_name;
     }
 
     protected function getHeaderActions(): array

@@ -13,7 +13,7 @@ class EditQuranTeacher extends EditRecord
 
     public function getTitle(): string
     {
-        return 'تعديل معلم القرآن: ' . $this->record->user->name;
+        return 'تعديل معلم القرآن: ' . $this->record->full_name;
     }
 
     protected function getHeaderActions(): array

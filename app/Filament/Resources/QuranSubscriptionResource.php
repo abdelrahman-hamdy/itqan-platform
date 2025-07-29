@@ -514,7 +514,7 @@ class QuranSubscriptionResource extends Resource
                                     ->label('اسم الباقة'),
                                 Infolists\Components\TextEntry::make('student.name')
                                     ->label('الطالب'),
-                                Infolists\Components\TextEntry::make('quranTeacher.user.name')
+                                Infolists\Components\TextEntry::make('quranTeacher.full_name')
                                     ->label('المعلم'),
                                 Infolists\Components\TextEntry::make('package_type')
                                     ->label('نوع الباقة')
