@@ -4,7 +4,7 @@
             @if($has_academy_selected && $current_academy)
                 {{-- Super Admin with Academy Selected --}}
                 @php
-                    $primaryColor = $current_academy->primary_color ?? '#3B82F6';
+                    $primaryColor = $current_academy->brand_color ?? '#3B82F6';
                     $rgbColor = sscanf($primaryColor, "#%02x%02x%02x");
                     $backgroundColor = "rgba({$rgbColor[0]}, {$rgbColor[1]}, {$rgbColor[2]}, 0.1)";
                     $borderColor = "rgba({$rgbColor[0]}, {$rgbColor[1]}, {$rgbColor[2]}, 0.3)";
@@ -39,7 +39,7 @@
                         <p class="text-sm opacity-75 dark:text-gray-300" style="color: {{ $textColor }};">
                             النطاق الفرعي: {{ $current_academy->subdomain }}.itqan.com
                         </p>
-                        @if($current_academy->primary_color)
+                        @if($current_academy->brand_color)
                             <div class="flex items-center gap-2 mt-2">
                                 <div class="w-3 h-3 rounded-full border border-gray-300" style="background-color: {{ $primaryColor }};"></div>
                                 <span class="text-xs opacity-60 dark:text-gray-400" style="color: {{ $textColor }};">
@@ -92,7 +92,7 @@
             {{-- Regular User --}}
             @if($current_academy)
                 @php
-                    $primaryColor = $current_academy->primary_color ?? '#10B981';
+                    $primaryColor = $current_academy->brand_color ?? '#10B981';
                     $rgbColor = sscanf($primaryColor, "#%02x%02x%02x");
                     $backgroundColor = "rgba({$rgbColor[0]}, {$rgbColor[1]}, {$rgbColor[2]}, 0.1)";
                     $borderColor = "rgba({$rgbColor[0]}, {$rgbColor[1]}, {$rgbColor[2]}, 0.3)";

@@ -1,7 +1,7 @@
 @php
     use App\Services\AcademyContextService;
     $currentAcademy = AcademyContextService::getCurrentAcademy();
-    $primaryColorHex = $currentAcademy?->primary_color ?? '#3B82F6';
+    $primaryColorHex = $currentAcademy?->brand_color ?? '#3B82F6';
     
     // Convert hex to RGB for Filament CSS variables
     $hex = ltrim($primaryColorHex, '#');

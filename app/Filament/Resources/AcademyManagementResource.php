@@ -115,7 +115,7 @@ class AcademyManagementResource extends Resource
                                     ->directory('academy-logos')
                                     ->visibility('public'),
 
-                                ColorPicker::make('primary_color')
+                                ColorPicker::make('brand_color')
                                     ->label('اللون الأساسي')
                                     ->default('#3B82F6')
                                     ->helperText('لون الواجهة الأساسي'),
