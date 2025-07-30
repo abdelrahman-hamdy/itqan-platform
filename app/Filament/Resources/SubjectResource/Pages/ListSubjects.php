@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
 use Illuminate\Database\Eloquent\Builder;
+use App\Services\AcademyContextService;
 
 class ListSubjects extends ListRecords
 {
@@ -27,16 +28,25 @@ class ListSubjects extends ListRecords
     {
         return [
             'all' => Tab::make('الكل')
-                ->badge(fn () => \App\Models\Subject::count()),
+                ->badge(function () {
+                    $academyId = AcademyContextService::getCurrentAcademyId();
+                    return $academyId ? \App\Models\Subject::where('academy_id', $academyId)->count() : 0;
+                }),
                 
             'active' => Tab::make('نشطة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', true))
-                ->badge(fn () => \App\Models\Subject::where('is_active', true)->count())
+                ->badge(function () {
+                    $academyId = AcademyContextService::getCurrentAcademyId();
+                    return $academyId ? \App\Models\Subject::where('academy_id', $academyId)->where('is_active', true)->count() : 0;
+                })
                 ->badgeColor('success'),
                 
             'inactive' => Tab::make('غير نشطة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', false))
-                ->badge(fn () => \App\Models\Subject::where('is_active', false)->count())
+                ->badge(function () {
+                    $academyId = AcademyContextService::getCurrentAcademyId();
+                    return $academyId ? \App\Models\Subject::where('academy_id', $academyId)->where('is_active', false)->count() : 0;
+                })
                 ->badgeColor('danger'),
         ];
     }

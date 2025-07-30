@@ -17,7 +17,14 @@
         @if($currentAcademy)
             <!-- Academy Logo/Icon -->
             @if($currentAcademy->logo)
-                <img src="{{ $currentAcademy->logo }}" alt="{{ $currentAcademy->name }}" class="w-5 h-5 rounded">
+                <div class="w-5 h-5 rounded overflow-hidden">
+                    <img src="{{ $currentAcademy->logo }}" alt="{{ $currentAcademy->name }}" 
+                         class="w-full h-full object-cover"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="w-full h-full bg-blue-500 rounded flex items-center justify-center" style="display: none;">
+                        <span class="text-xs text-white font-bold">{{ substr($currentAcademy->name, 0, 1) }}</span>
+                    </div>
+                </div>
             @else
                 <div class="w-5 h-5 bg-blue-500 rounded flex items-center justify-center">
                     <span class="text-xs text-white font-bold">{{ substr($currentAcademy->name, 0, 1) }}</span>
@@ -64,12 +71,19 @@
                 <button 
                     wire:click="selectAcademy({{ $academy->id }})"
                     type="button"
-                    class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors {{ $selectedAcademyId == $academy->id ? 'bg-blue-50 dark:bg-blue-900/20' : '' }}"
+                    class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors {{ $selectedAcademyId == $academy->id ? 'bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-600 dark:border-blue-400' : '' }}"
                 >
                     <div class="flex items-center gap-3">
                         <!-- Academy Logo/Icon -->
                         @if($academy->logo)
-                            <img src="{{ $academy->logo }}" alt="{{ $academy->name }}" class="w-8 h-8 rounded">
+                            <div class="w-8 h-8 rounded overflow-hidden">
+                                <img src="{{ $academy->logo }}" alt="{{ $academy->name }}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="w-full h-full bg-blue-500 rounded flex items-center justify-center" style="display: none;">
+                                    <span class="text-sm text-white font-bold">{{ substr($academy->name, 0, 1) }}</span>
+                                </div>
+                            </div>
                         @else
                             <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
                                 <span class="text-sm text-white font-bold">{{ substr($academy->name, 0, 1) }}</span>
@@ -78,10 +92,10 @@
                         
                         <!-- Academy Info -->
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            <p class="text-sm font-medium truncate {{ $selectedAcademyId == $academy->id ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
                                 {{ $academy->name }}
                             </p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            <p class="text-xs truncate {{ $selectedAcademyId == $academy->id ? 'text-blue-700 dark:text-blue-200' : 'text-gray-500 dark:text-gray-400' }}">
                                 {{ $academy->subdomain }}.{{ config('app.domain', 'itqan-platform.test') }}
                             </p>
                         </div>

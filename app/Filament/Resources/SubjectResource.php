@@ -277,7 +277,8 @@ class SubjectResource extends Resource
     
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        return $academyId ? static::getModel()::forAcademy($academyId)->count() : '0';
     }
 
     public static function shouldRegisterNavigation(): bool

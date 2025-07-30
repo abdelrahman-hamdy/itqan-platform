@@ -3,25 +3,51 @@
         @if($is_super_admin)
             @if($has_academy_selected && $current_academy)
                 {{-- Super Admin with Academy Selected --}}
-                <div class="flex items-center gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                @php
+                    $primaryColor = $current_academy->primary_color ?? '#3B82F6';
+                    $rgbColor = sscanf($primaryColor, "#%02x%02x%02x");
+                    $backgroundColor = "rgba({$rgbColor[0]}, {$rgbColor[1]}, {$rgbColor[2]}, 0.1)";
+                    $borderColor = "rgba({$rgbColor[0]}, {$rgbColor[1]}, {$rgbColor[2]}, 0.3)";
+                    $textColor = $primaryColor;
+                @endphp
+                
+                <div class="flex items-center gap-4 p-4 rounded-lg border-2" 
+                     style="background-color: {{ $backgroundColor }}; border-color: {{ $borderColor }};">
                     <div class="flex-shrink-0">
                         @if($current_academy->logo)
-                            <img src="{{ $current_academy->logo }}" alt="{{ $current_academy->name }}" class="w-12 h-12 rounded-lg">
+                            <div class="w-12 h-12 rounded-lg border-2 overflow-hidden" style="border-color: {{ $primaryColor }};">
+                                <img src="{{ $current_academy->logo }}" alt="{{ $current_academy->name }}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="w-full h-full flex items-center justify-center" 
+                                     style="background-color: {{ $primaryColor }}; display: none;">
+                                    <span class="text-white font-bold text-lg">{{ substr($current_academy->name, 0, 1) }}</span>
+                                </div>
+                            </div>
                         @else
-                            <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <div class="w-12 h-12 rounded-lg flex items-center justify-center border-2" 
+                                 style="background-color: {{ $primaryColor }}; border-color: {{ $primaryColor }};">
                                 <span class="text-white font-bold text-lg">{{ substr($current_academy->name, 0, 1) }}</span>
                             </div>
                         @endif
                     </div>
                     
                     <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                        <h3 class="text-lg font-semibold dark:text-white" style="color: {{ $textColor }};">
                             إدارة أكاديمية: {{ $current_academy->name }}
                         </h3>
-                        <p class="text-sm text-blue-700 dark:text-blue-300">
+                        <p class="text-sm opacity-75 dark:text-gray-300" style="color: {{ $textColor }};">
                             النطاق الفرعي: {{ $current_academy->subdomain }}.itqan.com
                         </p>
-                        <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        @if($current_academy->primary_color)
+                            <div class="flex items-center gap-2 mt-2">
+                                <div class="w-3 h-3 rounded-full border border-gray-300" style="background-color: {{ $primaryColor }};"></div>
+                                <span class="text-xs opacity-60 dark:text-gray-400" style="color: {{ $textColor }};">
+                                    ألوان الأكاديمية: {{ $primaryColor }}
+                                </span>
+                            </div>
+                        @endif
+                        <p class="text-xs opacity-50 dark:text-gray-400 mt-1" style="color: {{ $textColor }};">
                             جميع العمليات ستتم على هذه الأكاديمية
                         </p>
                     </div>
@@ -65,22 +91,40 @@
         @else
             {{-- Regular User --}}
             @if($current_academy)
-                <div class="flex items-center gap-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                @php
+                    $primaryColor = $current_academy->primary_color ?? '#10B981';
+                    $rgbColor = sscanf($primaryColor, "#%02x%02x%02x");
+                    $backgroundColor = "rgba({$rgbColor[0]}, {$rgbColor[1]}, {$rgbColor[2]}, 0.1)";
+                    $borderColor = "rgba({$rgbColor[0]}, {$rgbColor[1]}, {$rgbColor[2]}, 0.3)";
+                    $textColor = $primaryColor;
+                @endphp
+                
+                <div class="flex items-center gap-4 p-4 rounded-lg border" 
+                     style="background-color: {{ $backgroundColor }}; border-color: {{ $borderColor }};">
                     <div class="flex-shrink-0">
                         @if($current_academy->logo)
-                            <img src="{{ $current_academy->logo }}" alt="{{ $current_academy->name }}" class="w-10 h-10 rounded-lg">
+                            <div class="w-10 h-10 rounded-lg border-2 overflow-hidden" style="border-color: {{ $primaryColor }};">
+                                <img src="{{ $current_academy->logo }}" alt="{{ $current_academy->name }}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="w-full h-full flex items-center justify-center" 
+                                     style="background-color: {{ $primaryColor }}; display: none;">
+                                    <span class="text-white font-bold">{{ substr($current_academy->name, 0, 1) }}</span>
+                                </div>
+                            </div>
                         @else
-                            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center border-2" 
+                                 style="background-color: {{ $primaryColor }}; border-color: {{ $primaryColor }};">
                                 <span class="text-white font-bold">{{ substr($current_academy->name, 0, 1) }}</span>
                             </div>
                         @endif
                     </div>
                     
                     <div class="flex-1">
-                        <h3 class="font-semibold text-green-900 dark:text-green-100">
+                        <h3 class="font-semibold dark:text-white" style="color: {{ $textColor }};">
                             {{ $current_academy->name }}
                         </h3>
-                        <p class="text-sm text-green-700 dark:text-green-300">
+                        <p class="text-sm opacity-75 dark:text-gray-300" style="color: {{ $textColor }};">
                             مرحباً {{ $user->name }}
                         </p>
                     </div>
