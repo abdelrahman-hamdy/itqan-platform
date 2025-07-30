@@ -19,8 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'button[type="submit"]:not(.fi-btn-color-gray)',
             '.bg-primary-500',
             '[class*="bg-primary-5"]',
-            '.fi-btn-color-success', // Save button (change from green to primary)
-            'button.fi-btn-color-success' // Save button variants
+            '.fi-ta-actions .fi-btn.fi-color-primary', // Edit buttons in tables
+            '.fi-ac-btn-action.fi-color-primary', // Action buttons
+            '[data-action-color="primary"]' // Data table action buttons
         ];
         
         backgroundSelectors.forEach(selector => {
@@ -28,11 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Skip checkboxes and input elements
                 if (el.type === 'checkbox' || el.tagName === 'INPUT') return;
                 el.style.setProperty('background-color', color, 'important');
-                
-                // For buttons with primary background, ensure white text
-                if (el.tagName === 'BUTTON' || el.classList.contains('fi-btn')) {
-                    el.style.setProperty('color', 'white', 'important');
-                }
+                el.style.setProperty('color', 'white', 'important'); // Ensure white text on primary buttons
             });
         });
         
@@ -63,37 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
         borderSelectors.forEach(selector => {
             document.querySelectorAll(selector).forEach(el => {
                 el.style.setProperty('border-color', color, 'important');
-            });
-        });
-        
-        // SUBTLE BACKGROUND ELEMENTS (labels with borders)
-        const subtleBackgroundSelectors = [
-            '.fi-badge.fi-color-primary',
-            '.fi-color-primary[class*="border"]',
-            'span.fi-color-primary[class*="border"]'
-        ];
-        
-        // Calculate subtle shade (10% opacity of primary color)
-        const primaryRgb = color.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16));
-        const subtleBackground = `rgba(${primaryRgb[0]}, ${primaryRgb[1]}, ${primaryRgb[2]}, 0.1)`;
-        
-        subtleBackgroundSelectors.forEach(selector => {
-            document.querySelectorAll(selector).forEach(el => {
-                el.style.setProperty('background-color', subtleBackground, 'important');
-                el.style.setProperty('color', color, 'important');
-            });
-        });
-        
-        // TOGGLES - Change from blue to primary color
-        const toggleSelectors = [
-            '[role="switch"][data-state="checked"]',
-            '.fi-toggle-switch[data-state="checked"]',
-            'button[role="switch"][data-state="checked"]'
-        ];
-        
-        toggleSelectors.forEach(selector => {
-            document.querySelectorAll(selector).forEach(el => {
-                el.style.setProperty('background-color', color, 'important');
             });
         });
         
@@ -145,10 +111,20 @@ document.addEventListener('DOMContentLoaded', function() {
     button[type="submit"]:not(.fi-btn-color-gray),
     .bg-primary-500,
     [class*="bg-primary-5"],
-    .fi-btn-color-success,
-    button.fi-btn-color-success {
+    .fi-ta-actions .fi-btn.fi-color-primary,
+    .fi-ac-btn-action.fi-color-primary,
+    [data-action-color="primary"],
+    .fi-dropdown-list-item.fi-color-primary {
         background-color: {{ $brandColor }} !important;
-        color: white !important; /* Ensure white text on primary background */
+        color: white !important; /* Ensure white text on primary buttons */
+    }
+    
+    /* SIDEBAR ACTIVE ITEM TEXT - Ensure active sidebar items use primary color for text */
+    .fi-sidebar-nav-item.fi-active .fi-sidebar-nav-item-label,
+    .fi-sidebar-nav-item-active .fi-sidebar-nav-item-label,
+    .fi-sidebar-nav-item.fi-active span,
+    .fi-sidebar-nav-item-active span {
+        color: white !important; /* Force white text on active sidebar items */
     }
     
     /* TEXT COLORS - For links, text buttons, headings */
@@ -172,6 +148,15 @@ document.addEventListener('DOMContentLoaded', function() {
         --tw-ring-color: {{ $brandColor }} !important;
     }
     
+    /* Additional button styling for data table actions */
+    .fi-ta-actions button.fi-btn.fi-color-primary,
+    .fi-ta-actions a.fi-btn.fi-color-primary,
+    .fi-table .fi-ta-actions .fi-btn.fi-color-primary {
+        background-color: {{ $brandColor }} !important;
+        color: white !important;
+        border-color: {{ $brandColor }} !important;
+    }
+    
     /* EXCLUDE ELEMENTS - Explicitly prevent coloring */
     input[type="checkbox"],
     input[type="radio"],
@@ -182,31 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /* Text-only primary elements (no background) */
-    .fi-color-primary:not(.fi-btn):not(.fi-ac-btn):not(button):not(.fi-badge) {
+    .fi-color-primary:not(.fi-btn):not(.fi-ac-btn):not(button) {
         color: {{ $brandColor }} !important;
         background-color: transparent !important;
-    }
-    
-    /* SUBTLE BACKGROUND ELEMENTS - Labels with borders get subtle primary shade */
-    .fi-badge.fi-color-primary,
-    .fi-color-primary[class*="border"],
-    span.fi-color-primary[class*="border"] {
-        background-color: rgba({{ hexdec(substr(ltrim($brandColor, '#'), 0, 2)) }}, {{ hexdec(substr(ltrim($brandColor, '#'), 2, 2)) }}, {{ hexdec(substr(ltrim($brandColor, '#'), 4, 2)) }}, 0.1) !important;
-        color: {{ $brandColor }} !important;
-        border-color: {{ $brandColor }} !important;
-    }
-    
-    /* TOGGLES - Change from blue to primary color */
-    [role="switch"][data-state="checked"],
-    .fi-toggle-switch[data-state="checked"],
-    button[role="switch"][data-state="checked"],
-    [data-state="checked"] .fi-toggle-switch-thumb {
-        background-color: {{ $brandColor }} !important;
-    }
-    
-    /* Additional toggle targeting for Filament switches */
-    [class*="fi-toggle"] [data-state="checked"],
-    [class*="toggle"] [data-state="checked"] {
-        background-color: {{ $brandColor }} !important;
     }
 </style>
