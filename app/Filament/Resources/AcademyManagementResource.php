@@ -147,12 +147,12 @@ class AcademyManagementResource extends Resource
                                     ->label('حالة الأكاديمية')
                                     ->options([
                                         'active' => 'نشطة',
-                                        'inactive' => 'غير نشطة',
                                         'suspended' => 'معلقة',
                                         'maintenance' => 'صيانة',
                                     ])
                                     ->default('active')
-                                    ->required(),
+                                    ->required()
+                                    ->helperText('استخدم مفتاح "مفعلة" أدناه لتفعيل/إلغاء تفعيل الأكاديمية'),
 
                                 Select::make('timezone')
                                     ->label('المنطقة الزمنية')
@@ -220,15 +220,15 @@ class AcademyManagementResource extends Resource
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'active' => 'success',
-                        'inactive' => 'gray',
                         'suspended' => 'danger',
                         'maintenance' => 'warning',
+                        default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'active' => 'نشطة',
-                        'inactive' => 'غير نشطة',
                         'suspended' => 'معلقة',
                         'maintenance' => 'صيانة',
+                        default => $state,
                     }),
 
                 TextColumn::make('users_count')
@@ -275,7 +275,6 @@ class AcademyManagementResource extends Resource
                     ->label('الحالة')
                     ->options([
                         'active' => 'نشطة',
-                        'inactive' => 'غير نشطة',
                         'suspended' => 'معلقة',
                         'maintenance' => 'صيانة',
                     ]),
