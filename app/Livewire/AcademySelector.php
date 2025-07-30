@@ -42,20 +42,7 @@ class AcademySelector extends Component
         }
     }
 
-    public function clearAcademy()
-    {
-        if (!AcademyContextService::isSuperAdmin()) {
-            return;
-        }
-
-        $this->selectedAcademyId = null;
-        $this->currentAcademy = null;
-        
-        // Clear academy context using the service
-        AcademyContextService::clearAcademyContext();
-        
-        $this->dispatch('academy-cleared');
-    }
+    // clearAcademy method removed to prevent dashboard pages from disappearing
 
     public function render()
     {

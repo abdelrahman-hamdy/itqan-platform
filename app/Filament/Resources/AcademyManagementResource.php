@@ -129,19 +129,8 @@ class AcademyManagementResource extends Resource
                                     }),
                             ]),
 
-                        Grid::make(2)
+                        Grid::make(1)
                             ->schema([
-                                ColorPicker::make('secondary_color')
-                                    ->label('اللون الثانوي')
-                                    ->default('#10B981')
-                                    ->live()
-                                    ->afterStateUpdated(function (string $state, \Filament\Forms\Set $set) {
-                                        // Ensure the color format is correct
-                                        if (!str_starts_with($state, '#')) {
-                                            $set('secondary_color', '#' . ltrim($state, '#'));
-                                        }
-                                    }),
-
                                 Select::make('theme')
                                     ->label('المظهر')
                                     ->options([

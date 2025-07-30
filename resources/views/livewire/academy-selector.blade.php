@@ -114,23 +114,7 @@
                 </div>
             @endforelse
 
-            <!-- Clear Selection -->
-            @if($selectedAcademyId)
-                <div class="border-t border-gray-200 dark:border-gray-700">
-                    <button 
-                        wire:click="clearAcademy"
-                        type="button"
-                        class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    >
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                            إلغاء الاختيار
-                        </div>
-                    </button>
-                </div>
-            @endif
+            {{-- Clear Selection option removed to prevent dashboard pages from disappearing --}}
         </div>
     </div>
 </div> 

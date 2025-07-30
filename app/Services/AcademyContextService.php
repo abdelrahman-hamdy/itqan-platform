@@ -112,8 +112,7 @@ class AcademyContextService
      */
     public static function getAvailableAcademies(): \Illuminate\Database\Eloquent\Collection
     {
-        return Academy::where('is_active', true)
-            ->orderBy('name')
+        return Academy::orderBy('name')
             ->get();
     }
 

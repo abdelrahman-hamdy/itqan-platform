@@ -53,7 +53,40 @@
     [class*="fi-ac-btn-color-primary"],
     [class*="fi-ta-link-color-primary"],
     [class*="fi-badge-color-primary"],
-    [class*="fi-no-color-primary"] {
+    [class*="fi-no-color-primary"],
+    .fi-color-primary,
+    .fi-btn-color-primary,
+    .fi-ac-btn-color-primary,
+    .fi-ta-link-color-primary,
+    .fi-badge-color-primary,
+    .fi-no-color-primary {
+        --c-50: var(--primary-50);
+        --c-100: var(--primary-100);
+        --c-200: var(--primary-200);
+        --c-300: var(--primary-300);
+        --c-400: var(--primary-400);
+        --c-500: var(--primary-500);
+        --c-600: var(--primary-600);
+        --c-700: var(--primary-700);
+        --c-800: var(--primary-800);
+        --c-900: var(--primary-900);
+        --c-950: var(--primary-950);
+    }
+
+    /* Sidebar navigation specific targeting */
+    .fi-sidebar-nav-item-active,
+    .fi-sidebar-nav-item.fi-active {
+        --c-50: var(--primary-50);
+        --c-500: var(--primary-500);
+        --c-600: var(--primary-600);
+    }
+
+    /* Additional component targeting for better coverage */
+    .fi-btn.fi-color-primary,
+    .fi-ac-btn.fi-color-primary,
+    .fi-ta-link.fi-color-primary,
+    .fi-badge.fi-color-primary,
+    .fi-no.fi-color-primary {
         --c-50: var(--primary-50);
         --c-100: var(--primary-100);
         --c-200: var(--primary-200);

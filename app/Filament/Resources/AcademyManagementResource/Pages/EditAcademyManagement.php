@@ -25,9 +25,7 @@ class EditAcademyManagement extends EditRecord
             $data['brand_color'] = '#' . ltrim($data['brand_color'], '#');
         }
         
-        if (isset($data['secondary_color']) && !str_starts_with($data['secondary_color'], '#')) {
-            $data['secondary_color'] = '#' . ltrim($data['secondary_color'], '#');
-        }
+        // Secondary color field removed
         
         $record->update($data);
         
