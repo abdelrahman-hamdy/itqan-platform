@@ -94,10 +94,6 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::head.end',
                 fn (): string => view('filament.hooks.academy-branding')->render()
-            )
-            ->renderHook(
-                'panels::body.end',
-                fn (): string => view('filament.hooks.academy-brand-name')->render()
             );
     }
     
