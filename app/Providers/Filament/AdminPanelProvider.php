@@ -23,10 +23,7 @@ use App\Http\Middleware\AcademyContext;
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
-    {
-        // Get current academy from context service
-        $currentAcademy = AcademyContextService::getCurrentAcademy();
-        
+    {        
         return $panel
             ->default()
             ->id('admin')
@@ -34,16 +31,16 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->authGuard('web')
             ->colors([
-                'primary' => $currentAcademy ? Color::hex($currentAcademy->primary_color ?? '#3B82F6') : Color::Blue,
+                'primary' => Color::Blue, // Default color, will be overridden by CSS
                 'success' => Color::Green,
                 'warning' => Color::Orange,
                 'danger' => Color::Red,
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon($currentAcademy ? $currentAcademy->logo : asset('images/favicon.ico'))
-            ->brandName($currentAcademy ? $currentAcademy->name : 'منصة إتقان - لوحة التحكم')
-            ->brandLogo($currentAcademy ? $currentAcademy->logo : asset('images/logo.png'))
+            ->favicon(asset('images/favicon.ico')) // Default favicon
+            ->brandName('منصة إتقان - لوحة التحكم') // Default brand name
+            ->brandLogo(asset('images/logo.png')) // Default logo
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->resources([
                 \App\Filament\Resources\AcademyManagementResource::class,
@@ -93,6 +90,14 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::topbar.start',
                 fn (): string => view('filament.hooks.academy-selector')->render()
+            )
+            ->renderHook(
+                'panels::head.end',
+                fn (): string => view('filament.hooks.academy-branding')->render()
+            )
+            ->renderHook(
+                'panels::body.end',
+                fn (): string => view('filament.hooks.academy-brand-name')->render()
             );
     }
     
