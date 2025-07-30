@@ -63,7 +63,7 @@ class PlatformOverviewWidget extends BaseWidget
     private function getPlatformStats(): array
     {
         $totalAcademies = Academy::count();
-        $activeAcademies = Academy::where('status', 'active')->where('is_active', true)->count();
+        $activeAcademies = Academy::where('is_active', true)->where('maintenance_mode', false)->count();
         $totalUsers = User::count();
         $totalRevenue = Academy::sum('total_revenue');
         

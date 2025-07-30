@@ -19,7 +19,8 @@ class AcademyContextService
         $user = auth()->user();
         
         if (!$user) {
-            return null;
+            // If no user is authenticated, return the first active academy as default
+            return Academy::where('is_active', true)->where('maintenance_mode', false)->first();
         }
 
         // For super admin, use selected academy from session
@@ -35,11 +36,17 @@ class AcademyContextService
                 }
             }
             
-            return null; // Super admin with no academy selected
+            // If super admin has no academy selected, return the first active academy as default
+            return Academy::where('is_active', true)->where('maintenance_mode', false)->first();
         }
 
         // For regular users, use their assigned academy
-        return $user->academy;
+        if ($user->academy) {
+            return $user->academy;
+        }
+        
+        // If user has no academy assigned, return the first active academy as fallback
+        return Academy::where('is_active', true)->where('maintenance_mode', false)->first();
     }
 
     /**

@@ -1,6 +1,8 @@
 @php
     use App\Services\AcademyContextService;
     $currentAcademy = AcademyContextService::getCurrentAcademy();
+    
+    // Use academy color if available, otherwise use default blue
     $primaryColorHex = $currentAcademy?->brand_color ?? '#3B82F6';
     
     // Convert hex to RGB for Filament CSS variables
@@ -11,9 +13,7 @@
     $primaryColorRgb = "$r $g $b";
 @endphp
 
-{{-- Academy Branding System --}}
-
-@if($currentAcademy)
+{{-- Academy Branding System - Always apply colors --}}
 <style>
     :root {
         /* Override Filament's primary color variables with RGB values */
@@ -74,4 +74,4 @@
         --tw-ring-color: {{ $primaryColorHex }} !important;
     }
 </style>
-@endif 
+{{-- Always show branding styles for consistency --}} 

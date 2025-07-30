@@ -28,7 +28,7 @@ Route::domain(config('app.domain'))->group(function () {
                 <hr>
                 <h3>Available Academies:</h3>";
                 
-            $academies = Academy::where('status', 'active')->get();
+            $academies = Academy::where('is_active', true)->where('maintenance_mode', false)->get();
             foreach($academies as $academy) {
                 $output .= "<p><a href='http://{$academy->full_domain}' style='color: #2563eb; text-decoration: none;'>{$academy->name} ({$academy->subdomain})</a></p>";
             }
