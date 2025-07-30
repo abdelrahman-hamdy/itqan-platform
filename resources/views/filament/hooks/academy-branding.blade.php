@@ -11,11 +11,7 @@
     $primaryColorRgb = "$r $g $b";
 @endphp
 
-<!-- Debug: Academy Context -->
-<!-- Current Academy: {{ $currentAcademy ? $currentAcademy->name : 'None' }} -->
-<!-- Primary Color Hex: {{ $primaryColorHex }} -->
-<!-- Primary Color RGB: {{ $primaryColorRgb }} -->
-<!-- Academy ID: {{ $currentAcademy?->id ?? 'None' }} -->
+{{-- Academy Branding System --}}
 
 @if($currentAcademy)
 <style>
