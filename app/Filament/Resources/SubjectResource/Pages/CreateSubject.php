@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SubjectResource\Pages;
 
 use App\Filament\Resources\SubjectResource;
 use Filament\Resources\Pages\CreateRecord;
+use App\Services\AcademyContextService;
 
 class CreateSubject extends CreateRecord
 {
@@ -13,9 +14,13 @@ class CreateSubject extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Automatically set academy_id based on current user's academy
-        $data['academy_id'] = auth()->user()->academy_id ?? 1; // Default to academy 1 if not set
+        $academyId = AcademyContextService::getCurrentAcademyId();
         
+        if (!$academyId) {
+            throw new \Exception('No academy context available. Please select an academy first.');
+        }
+        
+        $data['academy_id'] = $academyId;
         return $data;
     }
     

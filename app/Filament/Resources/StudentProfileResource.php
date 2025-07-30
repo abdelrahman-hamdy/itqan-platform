@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\StudentProfileResource\Pages;
 use App\Models\StudentProfile;
 use App\Models\GradeLevel;
+use App\Traits\ScopedToAcademyViaRelationship;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,6 +16,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class StudentProfileResource extends Resource
 {
+    use ScopedToAcademyViaRelationship;
+
     protected static ?string $model = StudentProfile::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
@@ -26,11 +30,22 @@ class StudentProfileResource extends Resource
 
     protected static ?string $pluralModelLabel = 'الطلاب';
 
-    // Override to scope to current user's academy
-    public static function getEloquentQuery(): Builder
+    protected static function getAcademyRelationshipPath(): string
     {
-        $academyId = auth()->user()->academy_id ?? 1;
-        return parent::getEloquentQuery()->forAcademy($academyId);
+        return 'gradeLevel'; // StudentProfile -> GradeLevel -> academy_id
+    }
+
+    // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        // For super admin, only show navigation when academy is selected
+        if (AcademyContextService::isSuperAdmin()) {
+            return AcademyContextService::hasAcademySelected();
+        }
+        
+        // For regular users, always show if they have academy access
+        return AcademyContextService::getCurrentAcademy() !== null;
     }
 
     public static function form(Form $form): Form
@@ -61,6 +76,13 @@ class StudentProfileResource extends Resource
                                     ->tel()
                                     ->maxLength(20),
                             ]),
+                        Forms\Components\FileUpload::make('avatar')
+                            ->label('الصورة الشخصية')
+                            ->image()
+                            ->imageEditor()
+                            ->circleCropper()
+                            ->directory('avatars/students')
+                            ->maxSize(2048),
                         Forms\Components\Grid::make(3)
                             ->schema([
                                 Forms\Components\DatePicker::make('birth_date')
@@ -141,6 +163,9 @@ class StudentProfileResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('avatar')
+                    ->label('الصورة')
+                    ->circular(),
                 Tables\Columns\TextColumn::make('student_code')
                     ->label('رمز الطالب')
                     ->searchable()

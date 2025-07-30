@@ -4,6 +4,7 @@ namespace App\Filament\Resources\GradeLevelResource\Pages;
 
 use App\Filament\Resources\GradeLevelResource;
 use Filament\Resources\Pages\CreateRecord;
+use App\Services\AcademyContextService;
 
 class CreateGradeLevel extends CreateRecord
 {
@@ -16,7 +17,13 @@ class CreateGradeLevel extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['academy_id'] = auth()->user()->academy_id ?? 1;
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        
+        if (!$academyId) {
+            throw new \Exception('No academy context available. Please select an academy first.');
+        }
+        
+        $data['academy_id'] = $academyId;
         return $data;
     }
 

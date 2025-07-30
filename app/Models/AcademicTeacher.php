@@ -41,7 +41,6 @@ class AcademicTeacher extends Model
         'total_sessions',
         'total_courses_created',
         'is_active',
-        'can_create_courses',
         'notes',
     ];
 
@@ -56,7 +55,7 @@ class AcademicTeacher extends Model
         'approval_date' => 'datetime',
         'is_approved' => 'boolean',
         'is_active' => 'boolean',
-        'can_create_courses' => 'boolean',
+        // 'can_create_courses' => 'boolean', // Removed - column doesn't exist in table
         'session_price_individual' => 'decimal:2',
         'rating' => 'decimal:2',
         'min_session_duration' => 'integer',
@@ -70,12 +69,12 @@ class AcademicTeacher extends Model
     protected $attributes = [
         'status' => 'pending',
         'is_active' => true,
-        'can_create_courses' => false,
+        // 'can_create_courses' => false, // Removed - column doesn't exist in table
         'min_session_duration' => 45,
         'max_session_duration' => 90,
         'max_students_per_group' => 6,
         'session_price_individual' => 0,
-        'session_price_group' => 0,
+        // 'session_price_group' => 0, // Removed - column doesn't exist in table
         'rating' => 0,
         'total_students' => 0,
         'total_sessions' => 0,

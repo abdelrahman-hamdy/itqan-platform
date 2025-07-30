@@ -18,6 +18,7 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Models\Academy;
+use App\Filament\Academy\Resources\RecordedCourseResource;
 
 class AcademyPanelProvider extends PanelProvider
 {
@@ -50,6 +51,9 @@ class AcademyPanelProvider extends PanelProvider
                 'الإعدادات' => 'الإعدادات',
             ])
             ->discoverResources(in: app_path('Filament/Academy/Resources'), for: 'App\\Filament\\Academy\\Resources')
+            ->resources([
+                RecordedCourseResource::class,
+            ])
             ->discoverPages(in: app_path('Filament/Academy/Pages'), for: 'App\\Filament\\Academy\\Pages')
             ->pages([
                 Pages\Dashboard::class,

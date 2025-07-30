@@ -168,4 +168,15 @@ class Academy extends Model
     {
         return $this->users()->count();
     }
+
+    // Filament v4 Tenant methods
+    public function getTenantKeyName(): string
+    {
+        return 'id';
+    }
+
+    public function getTenantKey(): string|int
+    {
+        return $this->getKey();
+    }
 }

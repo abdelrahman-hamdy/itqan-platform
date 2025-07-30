@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $superAdmin = User::firstOrCreate(
             ['email' => 'admin@itqan.com'],
             [
+                'academy_id' => null, // Super admin doesn't belong to any specific academy
                 'first_name' => 'Super',
                 'last_name' => 'Admin',
                 'phone' => '+966501234567',

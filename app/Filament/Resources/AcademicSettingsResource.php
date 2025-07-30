@@ -12,32 +12,38 @@ use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\ScopedToAcademy;
+use App\Services\AcademyContextService;
 
 class AcademicSettingsResource extends Resource
 {
+    use ScopedToAcademy;
+
     protected static ?string $model = AcademicSettings::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
     
-    protected static ?string $navigationLabel = 'الإعدادات الأكاديمية';
+    protected static ?string $navigationLabel = 'إعدادات القسم الأكاديمي';
     
-    protected static ?string $navigationGroup = 'القسم الأكاديمي';
+    protected static ?string $navigationGroup = 'الإعدادات';
     
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 1;
     
     protected static ?string $modelLabel = 'إعدادات أكاديمية';
     
-    protected static ?string $pluralModelLabel = 'الإعدادات الأكاديمية';
+    protected static ?string $pluralModelLabel = 'إعدادات القسم الأكاديمي';
 
-    // Override to get/create settings for current user's academy
-    public static function getEloquentQuery(): Builder
+    // Note: getEloquentQuery() is now handled by ScopedToAcademy trait
+
+    public static function shouldRegisterNavigation(): bool
     {
-        $academyId = auth()->user()->academy_id ?? 1;
+        // For super admin, only show navigation when academy is selected
+        if (AcademyContextService::isSuperAdmin()) {
+            return AcademyContextService::hasAcademySelected();
+        }
         
-        // Ensure settings exist for current academy
-        AcademicSettings::getForAcademy($academyId);
-        
-        return parent::getEloquentQuery()->where('academy_id', $academyId);
+        // For regular users, always show if they have academy access
+        return AcademyContextService::getCurrentAcademy() !== null;
     }
 
     public static function form(Form $form): Form

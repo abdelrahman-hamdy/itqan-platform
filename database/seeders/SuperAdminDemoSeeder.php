@@ -20,6 +20,7 @@ class SuperAdminDemoSeeder extends Seeder
         $superAdmin = User::updateOrCreate(
             ['email' => 'admin@itqan-platform.test'],
             [
+                'academy_id' => null, // Super admin doesn't belong to any specific academy
                 'first_name' => 'مدير',
                 'last_name' => 'النظام',
                 'email' => 'admin@itqan-platform.test',

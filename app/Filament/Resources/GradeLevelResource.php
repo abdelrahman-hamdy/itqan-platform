@@ -10,27 +10,38 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\ScopedToAcademy;
+use App\Services\AcademyContextService;
 
 class GradeLevelResource extends Resource
 {
+    use ScopedToAcademy;
+
     protected static ?string $model = GradeLevel::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
     
-    protected static ?string $navigationLabel = 'المراحل الدراسية';
+    protected static ?string $navigationLabel = 'الصفوف الدراسية';
     
     protected static ?string $navigationGroup = 'القسم الأكاديمي';
     
-    protected static ?string $modelLabel = 'مرحلة دراسية';
+    protected static ?string $modelLabel = 'صف دراسي';
     
-    protected static ?string $pluralModelLabel = 'المراحل الدراسية';
+    protected static ?string $pluralModelLabel = 'الصفوف الدراسية';
 
     protected static ?int $navigationSort = 2;
 
-    public static function getEloquentQuery(): Builder
+    // Note: getEloquentQuery() is now handled by ScopedToAcademy trait
+
+    public static function shouldRegisterNavigation(): bool
     {
-        $academyId = auth()->user()->academy_id ?? 1;
-        return parent::getEloquentQuery()->where('academy_id', $academyId);
+        // For super admin, only show navigation when academy is selected
+        if (AcademyContextService::isSuperAdmin()) {
+            return AcademyContextService::hasAcademySelected();
+        }
+        
+        // For regular users, always show if they have academy access
+        return AcademyContextService::getCurrentAcademy() !== null;
     }
 
     public static function form(Form $form): Form
@@ -143,8 +154,7 @@ class GradeLevelResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $academyId = auth()->user()->academy_id ?? 1;
-        return static::getModel()::where('academy_id', $academyId)->count();
+        return static::getModel()::count();
     }
 
     public static function getNavigationBadgeColor(): ?string

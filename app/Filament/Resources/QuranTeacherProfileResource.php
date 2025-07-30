@@ -10,20 +10,42 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\ScopedToAcademyViaRelationship;
+use App\Services\AcademyContextService;
 
 class QuranTeacherProfileResource extends Resource
 {
+    use ScopedToAcademyViaRelationship;
+
     protected static ?string $model = QuranTeacherProfile::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
 
-    protected static ?string $navigationLabel = 'معلمو القرآن';
+    protected static ?string $navigationLabel = 'معلمي القرآن';
 
-    protected static ?string $navigationGroup = 'قسم القرآن الكريم';
+    protected static ?string $navigationGroup = 'إدارة المستخدمين';
 
     protected static ?string $modelLabel = 'معلم قرآن';
 
-    protected static ?string $pluralModelLabel = 'معلمو القرآن';
+    protected static ?string $pluralModelLabel = 'معلمي القرآن';
+
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'user'; // QuranTeacherProfile -> User -> academy_id
+    }
+
+    // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        // For super admin, only show navigation when academy is selected
+        if (AcademyContextService::isSuperAdmin()) {
+            return AcademyContextService::hasAcademySelected();
+        }
+        
+        // For regular users, always show if they have academy access
+        return AcademyContextService::getCurrentAcademy() !== null;
+    }
 
     public static function form(Form $form): Form
     {
@@ -53,6 +75,13 @@ class QuranTeacherProfileResource extends Resource
                                     ->tel()
                                     ->maxLength(20),
                             ]),
+                        Forms\Components\FileUpload::make('avatar')
+                            ->label('الصورة الشخصية')
+                            ->image()
+                            ->imageEditor()
+                            ->circleCropper()
+                            ->directory('avatars/quran-teachers')
+                            ->maxSize(2048),
                     ]),
 
                 Forms\Components\Section::make('المؤهلات والخبرة')
@@ -166,6 +195,9 @@ class QuranTeacherProfileResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('avatar')
+                    ->label('الصورة')
+                    ->circular(),
                 Tables\Columns\TextColumn::make('teacher_code')
                     ->label('رمز المعلم')
                     ->searchable()

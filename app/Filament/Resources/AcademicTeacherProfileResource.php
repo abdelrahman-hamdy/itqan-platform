@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\Subject;
 use App\Models\GradeLevel;
 use Filament\Forms;
@@ -11,26 +12,47 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\ScopedToAcademyViaRelationship;
+use App\Services\AcademyContextService;
 
 class AcademicTeacherProfileResource extends Resource
 {
+    use ScopedToAcademyViaRelationship;
+
     protected static ?string $model = AcademicTeacherProfile::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationLabel = 'المعلمون الأكاديميون';
+    protected static ?string $navigationLabel = 'المدرسين الأكاديميين';
 
-    protected static ?string $navigationGroup = 'القسم الأكاديمي';
+    protected static ?string $navigationGroup = 'إدارة المستخدمين';
 
-    protected static ?string $modelLabel = 'معلم أكاديمي';
+    protected static ?string $modelLabel = 'مدرس أكاديمي';
 
-    protected static ?string $pluralModelLabel = 'المعلمون الأكاديميون';
+    protected static ?string $pluralModelLabel = 'المدرسين الأكاديميين';
+
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'user'; // AcademicTeacherProfile -> User -> academy_id
+    }
+
+    // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        // For super admin, only show navigation when academy is selected
+        if (AcademyContextService::isSuperAdmin()) {
+            return AcademyContextService::hasAcademySelected();
+        }
+        
+        // For regular users, always show if they have academy access
+        return AcademyContextService::getCurrentAcademy() !== null;
+    }
 
     public static function form(Form $form): Form
     {
-        $academyId = auth()->user()->academy_id ?? 1;
-
         return $form
             ->schema([
                 Forms\Components\Section::make('المعلومات الشخصية')
@@ -57,6 +79,13 @@ class AcademicTeacherProfileResource extends Resource
                                     ->tel()
                                     ->maxLength(20),
                             ]),
+                        Forms\Components\FileUpload::make('avatar')
+                            ->label('الصورة الشخصية')
+                            ->image()
+                            ->imageEditor()
+                            ->circleCropper()
+                            ->directory('avatars/academic-teachers')
+                            ->maxSize(2048),
                     ]),
 
                 Forms\Components\Section::make('المؤهلات التعليمية')
@@ -235,6 +264,16 @@ class AcademicTeacherProfileResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('academy.name')
+                    ->label('الأكاديمية')
+                    ->searchable()
+                    ->sortable()
+                    ->badge()
+                    ->color('primary'),
+
+                Tables\Columns\ImageColumn::make('avatar')
+                    ->label('الصورة')
+                    ->circular(),
                 Tables\Columns\TextColumn::make('teacher_code')
                     ->label('رمز المدرس')
                     ->searchable()
@@ -285,6 +324,11 @@ class AcademicTeacherProfileResource extends Resource
                     ->sortable(),
             ])
             ->filters([
+                SelectFilter::make('academy_id')
+                    ->label('الأكاديمية')
+                    ->options(Academy::where('is_active', true)->pluck('name', 'id'))
+                    ->searchable(),
+
                 Tables\Filters\SelectFilter::make('approval_status')
                     ->label('حالة الموافقة')
                     ->options([

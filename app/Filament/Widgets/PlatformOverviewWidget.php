@@ -4,12 +4,63 @@ namespace App\Filament\Widgets;
 
 use App\Models\Academy;
 use App\Models\User;
+use App\Models\RecordedCourse;
+use App\Models\AcademicTeacher;
+use App\Services\AcademyContextService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class PlatformOverviewWidget extends BaseWidget
 {
     protected function getStats(): array
+    {
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
+        
+        // If super admin has selected an academy, show academy-specific stats
+        if ($currentAcademy) {
+            return $this->getAcademyStats($currentAcademy);
+        }
+        
+        // If super admin with no academy selected or system overview, show platform stats
+        if (AcademyContextService::isSuperAdmin()) {
+            return $this->getPlatformStats();
+        }
+        
+        // Fallback - should not happen
+        return [];
+    }
+    
+    private function getAcademyStats(Academy $academy): array
+    {
+        $academyUsers = User::where('academy_id', $academy->id)->count();
+        $academyTeachers = User::where('academy_id', $academy->id)->where('role', 'teacher')->count();
+        $academyStudents = User::where('academy_id', $academy->id)->where('role', 'student')->count();
+        $academyCourses = RecordedCourse::where('academy_id', $academy->id)->count();
+        
+        return [
+            Stat::make('مستخدمي الأكاديمية', number_format($academyUsers))
+                ->description($academy->name)
+                ->descriptionIcon('heroicon-m-users')
+                ->color('primary'),
+                
+            Stat::make('المعلمين', number_format($academyTeachers))
+                ->description('معلمين نشطين')
+                ->descriptionIcon('heroicon-m-academic-cap')
+                ->color('success'),
+                
+            Stat::make('الطلاب', number_format($academyStudents))
+                ->description('طلاب مسجلين')
+                ->descriptionIcon('heroicon-m-user-group')
+                ->color('info'),
+                
+            Stat::make('الدورات المسجلة', number_format($academyCourses))
+                ->description('دورات متاحة')
+                ->descriptionIcon('heroicon-m-video-camera')
+                ->color('warning'),
+        ];
+    }
+    
+    private function getPlatformStats(): array
     {
         $totalAcademies = Academy::count();
         $activeAcademies = Academy::where('status', 'active')->where('is_active', true)->count();
@@ -48,8 +99,9 @@ class PlatformOverviewWidget extends BaseWidget
         ];
     }
     
-    protected function getColumns(): int
+    public static function canView(): bool
     {
-        return 4;
+        // Show for super admin always, or for users with academy context
+        return AcademyContextService::isSuperAdmin() || AcademyContextService::getCurrentAcademy() !== null;
     }
 } 

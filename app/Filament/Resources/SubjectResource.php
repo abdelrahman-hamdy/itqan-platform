@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SubjectResource\Pages;
 use App\Models\Subject;
 use App\Models\Academy;
+use App\Traits\ScopedToAcademy;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,9 +14,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
+use App\Services\AcademyContextService;
 
 class SubjectResource extends Resource
 {
+    use ScopedToAcademy;
+
     protected static ?string $model = Subject::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
@@ -30,12 +34,7 @@ class SubjectResource extends Resource
     
     protected static ?string $pluralModelLabel = 'المواد الدراسية';
 
-    // Override to scope to current user's academy
-    public static function getEloquentQuery(): Builder
-    {
-        $academyId = auth()->user()->academy_id ?? 1;
-        return parent::getEloquentQuery()->where('academy_id', $academyId);
-    }
+    // Note: getEloquentQuery() is now handled by ScopedToAcademy trait
 
     public static function form(Form $form): Form
     {
@@ -279,5 +278,16 @@ class SubjectResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::count();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        // For super admin, only show navigation when academy is selected
+        if (AcademyContextService::isSuperAdmin()) {
+            return AcademyContextService::hasAcademySelected();
+        }
+        
+        // For regular users, always show if they have academy access
+        return AcademyContextService::getCurrentAcademy() !== null;
     }
 } 

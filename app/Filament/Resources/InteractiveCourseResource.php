@@ -13,9 +13,13 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\ScopedToAcademy;
+use App\Services\AcademyContextService;
 
 class InteractiveCourseResource extends Resource
 {
+    use ScopedToAcademy;
+
     protected static ?string $model = InteractiveCourse::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
@@ -24,9 +28,17 @@ class InteractiveCourseResource extends Resource
     protected static ?string $modelLabel = 'دورة تفاعلية';
     protected static ?string $pluralModelLabel = 'الدورات التفاعلية';
 
-    public static function getEloquentQuery(): Builder
+    // Note: getEloquentQuery() is now handled by ScopedToAcademy trait
+
+    public static function shouldRegisterNavigation(): bool
     {
-        return parent::getEloquentQuery()->forAcademy(auth()->user()->academy_id ?? 1);
+        // For super admin, only show navigation when academy is selected
+        if (AcademyContextService::isSuperAdmin()) {
+            return AcademyContextService::hasAcademySelected();
+        }
+        
+        // For regular users, always show if they have academy access
+        return AcademyContextService::getCurrentAcademy() !== null;
     }
 
     public static function form(Form $form): Form
@@ -68,29 +80,28 @@ class InteractiveCourseResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('subject_id')
                                     ->label('المادة الدراسية')
-                                    ->options(Subject::forAcademy(auth()->user()->academy_id ?? 1)
-                                        ->where('is_active', true)
-                                        ->pluck('name', 'id'))
+                                    ->options(function () {
+                                        $academyId = AcademyContextService::getCurrentAcademyId();
+                                        return $academyId ? Subject::forAcademy($academyId)->pluck('name', 'id') : [];
+                                    })
                                     ->required()
                                     ->searchable(),
 
                                 Forms\Components\Select::make('grade_level_id')
                                     ->label('المرحلة الدراسية')
-                                    ->options(GradeLevel::forAcademy(auth()->user()->academy_id ?? 1)
-                                        ->where('is_active', true)
-                                        ->pluck('name', 'id'))
+                                    ->options(function () {
+                                        $academyId = AcademyContextService::getCurrentAcademyId();
+                                        return $academyId ? GradeLevel::forAcademy($academyId)->pluck('name', 'id') : [];
+                                    })
                                     ->required()
                                     ->searchable(),
 
                                 Forms\Components\Select::make('assigned_teacher_id')
                                     ->label('المعلم المعين')
                                     ->options(function () {
-                                        return AcademicTeacherProfile::forAcademy(auth()->user()->academy_id ?? 1)
-                                            ->approved()
-                                            ->active()
-                                            ->with('user')
-                                            ->get()
-                                            ->pluck('user.name', 'id');
+                                        $academyId = AcademyContextService::getCurrentAcademyId();
+                                        return $academyId ? AcademicTeacherProfile::forAcademy($academyId)->with('user')->get()
+                                            ->mapWithKeys(fn($teacher) => [$teacher->id => $teacher->user->name . ' - ' . $teacher->specialization]) : [];
                                     })
                                     ->required()
                                     ->searchable(),
@@ -380,7 +391,8 @@ class InteractiveCourseResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::forAcademy(auth()->user()->academy_id ?? 1)->count();
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        return $academyId ? static::getModel()::forAcademy($academyId)->count() : '0';
     }
 
     public static function getNavigationBadgeColor(): string|array|null

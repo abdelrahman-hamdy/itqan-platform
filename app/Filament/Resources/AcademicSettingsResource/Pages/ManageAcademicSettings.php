@@ -4,6 +4,7 @@ namespace App\Filament\Resources\AcademicSettingsResource\Pages;
 
 use App\Filament\Resources\AcademicSettingsResource;
 use App\Models\AcademicSettings;
+use App\Services\AcademyContextService;
 use Filament\Actions;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -28,13 +29,18 @@ class ManageAcademicSettings extends Page implements HasForms
 
     public function getSubheading(): ?string
     {
-        $academyName = auth()->user()->academy->name ?? 'الأكاديمية';
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
+        $academyName = $currentAcademy?->name ?? 'الأكاديمية';
         return "إدارة إعدادات القسم الأكاديمي لـ {$academyName}";
     }
 
     public function mount(): void
     {
-        $academyId = auth()->user()->academy_id ?? 1;
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        
+        if (!$academyId) {
+            throw new \Exception('No academy context available. Please select an academy first.');
+        }
         
         // Get or create settings for current academy
         $settings = AcademicSettings::getForAcademy($academyId);
@@ -54,7 +60,12 @@ class ManageAcademicSettings extends Page implements HasForms
         try {
             $data = $this->form->getState();
             
-            $academyId = auth()->user()->academy_id ?? 1;
+            $academyId = AcademyContextService::getCurrentAcademyId();
+            
+            if (!$academyId) {
+                throw new \Exception('No academy context available. Please select an academy first.');
+            }
+            
             $settings = AcademicSettings::getForAcademy($academyId);
             
             // Add updated_by field
@@ -86,5 +97,31 @@ class ManageAcademicSettings extends Page implements HasForms
                 ->color('success')
                 ->icon('heroicon-o-check'),
         ];
+    }
+
+    protected function getData(): array
+    {
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        
+        if (!$academyId) {
+            throw new \Exception('No academy context available. Please select an academy first.');
+        }
+
+        // Get or create settings for current academy
+        $settings = AcademicSettings::getForAcademy($academyId);
+        
+        return $settings->toArray();
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        
+        if (!$academyId) {
+            throw new \Exception('No academy context available. Please select an academy first.');
+        }
+
+        $data['academy_id'] = $academyId;
+        return $data;
     }
 } 

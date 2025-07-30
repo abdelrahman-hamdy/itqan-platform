@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web([
             \App\Http\Middleware\TenantMiddleware::class,
+            \App\Http\Middleware\AcademyContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

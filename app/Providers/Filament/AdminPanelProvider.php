@@ -17,11 +17,16 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use App\Services\AcademyContextService;
+use App\Http\Middleware\AcademyContext;
 
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        // Get current academy from context service
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
+        
         return $panel
             ->default()
             ->id('admin')
@@ -29,23 +34,27 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->authGuard('web')
             ->colors([
-                'primary' => Color::Blue,
+                'primary' => $currentAcademy ? Color::hex($currentAcademy->primary_color ?? '#3B82F6') : Color::Blue,
                 'success' => Color::Green,
                 'warning' => Color::Orange,
                 'danger' => Color::Red,
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(asset('images/favicon.ico'))
-            ->brandName('منصة إتقان - لوحة التحكم')
-            ->brandLogo(asset('images/logo.png'))
+            ->favicon($currentAcademy ? $currentAcademy->logo : asset('images/favicon.ico'))
+            ->brandName($currentAcademy ? $currentAcademy->name : 'منصة إتقان - لوحة التحكم')
+            ->brandLogo($currentAcademy ? $currentAcademy->logo : asset('images/logo.png'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+            ->resources([
+                \App\Filament\Resources\AcademyManagementResource::class,
+            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                \App\Filament\Widgets\AcademyContextWidget::class,
                 \App\Filament\Widgets\PlatformOverviewWidget::class,
                 \App\Filament\Widgets\AcademyStatsWidget::class,
                 \App\Filament\Widgets\RecentActivitiesWidget::class,
@@ -62,6 +71,7 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                AcademyContext::class, // Add academy context middleware
             ])
             ->authMiddleware([
                 Authenticate::class,
@@ -72,13 +82,18 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
                 'إدارة النظام',
+                'الدورات المسجلة',
                 'إدارة المحتوى',
                 'الإعدادات',
                 'التقارير',
             ])
             ->topNavigation(false) // Use sidebar navigation for RTL support
             ->renderHook('panels::page.start', fn (): string => '<div dir="rtl" class="filament-rtl">') // RTL wrapper
-            ->renderHook('panels::page.end', fn (): string => '</div>'); // Close RTL wrapper
+            ->renderHook('panels::page.end', fn (): string => '</div>') // Close RTL wrapper
+            ->renderHook(
+                'panels::topbar.start',
+                fn (): string => view('filament.hooks.academy-selector')->render()
+            );
     }
     
     public function boot(): void
