@@ -13,12 +13,22 @@ class Academy extends Model
 
     protected $fillable = [
         'name',
+        'name_en',
         'subdomain',
         'description',
+        'email',
+        'phone',
+        'website',
         'logo',
         'brand_color',
+        'secondary_color',
+        'theme',
+        'timezone',
+        'currency',
         'status',
         'is_active',
+        'allow_registration',
+        'maintenance_mode',
         'admin_id',
         'total_revenue',
         'monthly_revenue',
@@ -29,6 +39,8 @@ class Academy extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'allow_registration' => 'boolean',
+        'maintenance_mode' => 'boolean',
         'total_revenue' => 'decimal:2',
         'monthly_revenue' => 'decimal:2',
         'pending_payments' => 'decimal:2',
@@ -38,8 +50,14 @@ class Academy extends Model
 
     protected $attributes = [
         'brand_color' => '#0ea5e9',
+        'secondary_color' => '#10B981',
+        'theme' => 'light',
+        'timezone' => 'Asia/Riyadh',
+        'currency' => 'SAR',
         'status' => 'active',
         'is_active' => true,
+        'allow_registration' => true,
+        'maintenance_mode' => false,
     ];
 
     /**
