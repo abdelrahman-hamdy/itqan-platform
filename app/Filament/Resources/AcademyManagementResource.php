@@ -118,10 +118,14 @@ class AcademyManagementResource extends Resource
                                 ColorPicker::make('brand_color')
                                     ->label('اللون الأساسي')
                                     ->default('#0ea5e9')
-                                    ->helperText('لون الواجهة الأساسي')
-                                    ->required()
+                                    ->helperText('لون الواجهة الأساسي - اتركه فارغاً لاستخدام اللون الافتراضي')
                                     ->live()
-                                    ->afterStateUpdated(function (string $state, \Filament\Forms\Set $set) {
+                                    ->afterStateUpdated(function (?string $state, \Filament\Forms\Set $set) {
+                                        // Handle null/empty values
+                                        if ($state === null || $state === '') {
+                                            return; // Allow empty values
+                                        }
+                                        
                                         // Ensure the color format is correct
                                         if (!str_starts_with($state, '#')) {
                                             $set('brand_color', '#' . ltrim($state, '#'));
