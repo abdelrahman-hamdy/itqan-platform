@@ -38,8 +38,12 @@ class TenantMiddleware
                     abort(404, 'Academy not found');
                 }
                 
-                if ($academy->status !== 'active' || !$academy->is_active) {
+                if (!$academy->is_active) {
                     abort(503, 'Academy is currently unavailable');
+                }
+                
+                if ($academy->maintenance_mode) {
+                    abort(503, 'Academy is currently under maintenance');
                 }
                 
                 // Set the tenant in Filament context only for tenant-aware panels

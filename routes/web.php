@@ -64,8 +64,12 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
             abort(404, 'Academy not found');
         }
         
-        if ($academy->status !== 'active' || !$academy->is_active) {
+        if (!$academy->is_active) {
             abort(503, 'Academy is currently unavailable');
+        }
+        
+        if ($academy->maintenance_mode) {
+            abort(503, 'Academy is currently under maintenance');
         }
         
         return "

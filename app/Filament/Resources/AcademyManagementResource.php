@@ -117,15 +117,30 @@ class AcademyManagementResource extends Resource
 
                                 ColorPicker::make('brand_color')
                                     ->label('اللون الأساسي')
-                                    ->default('#3B82F6')
-                                    ->helperText('لون الواجهة الأساسي'),
+                                    ->default('#0ea5e9')
+                                    ->helperText('لون الواجهة الأساسي')
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (string $state, \Filament\Forms\Set $set) {
+                                        // Ensure the color format is correct
+                                        if (!str_starts_with($state, '#')) {
+                                            $set('brand_color', '#' . ltrim($state, '#'));
+                                        }
+                                    }),
                             ]),
 
                         Grid::make(2)
                             ->schema([
                                 ColorPicker::make('secondary_color')
                                     ->label('اللون الثانوي')
-                                    ->default('#10B981'),
+                                    ->default('#10B981')
+                                    ->live()
+                                    ->afterStateUpdated(function (string $state, \Filament\Forms\Set $set) {
+                                        // Ensure the color format is correct
+                                        if (!str_starts_with($state, '#')) {
+                                            $set('secondary_color', '#' . ltrim($state, '#'));
+                                        }
+                                    }),
 
                                 Select::make('theme')
                                     ->label('المظهر')
@@ -141,19 +156,8 @@ class AcademyManagementResource extends Resource
 
                 Section::make('الإعدادات')
                     ->schema([
-                        Grid::make(3)
+                        Grid::make(2)
                             ->schema([
-                                Select::make('status')
-                                    ->label('حالة الأكاديمية')
-                                    ->options([
-                                        'active' => 'نشطة',
-                                        'suspended' => 'معلقة',
-                                        'maintenance' => 'صيانة',
-                                    ])
-                                    ->default('active')
-                                    ->required()
-                                    ->helperText('استخدم مفتاح "مفعلة" أدناه لتفعيل/إلغاء تفعيل الأكاديمية'),
-
                                 Select::make('timezone')
                                     ->label('المنطقة الزمنية')
                                     ->options([
@@ -179,7 +183,8 @@ class AcademyManagementResource extends Resource
                             ->schema([
                                 Toggle::make('is_active')
                                     ->label('مفعلة')
-                                    ->default(true),
+                                    ->default(true)
+                                    ->helperText('تفعيل/إلغاء تفعيل الأكاديمية بشكل كامل'),
 
                                 Toggle::make('allow_registration')
                                     ->label('السماح بالتسجيل')
@@ -215,20 +220,20 @@ class AcademyManagementResource extends Resource
                     ->badge()
                     ->color('primary'),
 
-                TextColumn::make('status')
+                TextColumn::make('is_active')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'active' => 'success',
-                        'suspended' => 'danger',
-                        'maintenance' => 'warning',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'active' => 'نشطة',
-                        'suspended' => 'معلقة',
-                        'maintenance' => 'صيانة',
-                        default => $state,
+                    ->color(fn (bool $state): string => $state ? 'success' : 'danger')
+                    ->formatStateUsing(function (bool $state, $record): string {
+                        if (!$state) {
+                            return 'غير نشطة';
+                        }
+                        
+                        if ($record->maintenance_mode) {
+                            return 'تحت الصيانة';
+                        }
+                        
+                        return 'نشطة';
                     }),
 
                 TextColumn::make('users_count')
@@ -271,19 +276,17 @@ class AcademyManagementResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options([
-                        'active' => 'نشطة',
-                        'suspended' => 'معلقة',
-                        'maintenance' => 'صيانة',
-                    ]),
-
                 TernaryFilter::make('is_active')
                     ->label('مفعلة')
                     ->placeholder('الكل')
                     ->trueLabel('مفعلة')
                     ->falseLabel('غير مفعلة'),
+
+                TernaryFilter::make('maintenance_mode')
+                    ->label('وضع الصيانة')
+                    ->placeholder('الكل')
+                    ->trueLabel('تحت الصيانة')
+                    ->falseLabel('غير في الصيانة'),
             ])
             ->actions([
                 Action::make('select_academy')

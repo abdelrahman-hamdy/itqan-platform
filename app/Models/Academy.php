@@ -25,7 +25,6 @@ class Academy extends Model
         'theme',
         'timezone',
         'currency',
-        'status',
         'is_active',
         'allow_registration',
         'maintenance_mode',
@@ -54,7 +53,6 @@ class Academy extends Model
         'theme' => 'light',
         'timezone' => 'Asia/Riyadh',
         'currency' => 'SAR',
-        'status' => 'active',
         'is_active' => true,
         'allow_registration' => true,
         'maintenance_mode' => false,
@@ -77,6 +75,38 @@ class Academy extends Model
     }
 
     /**
+     * Get academy status display
+     */
+    public function getStatusDisplayAttribute(): string
+    {
+        if (!$this->is_active) {
+            return 'غير نشطة';
+        }
+        
+        if ($this->maintenance_mode) {
+            return 'تحت الصيانة';
+        }
+        
+        return 'نشطة';
+    }
+
+    /**
+     * Get academy status for admin display
+     */
+    public function getAdminStatusAttribute(): string
+    {
+        if (!$this->is_active) {
+            return 'inactive';
+        }
+        
+        if ($this->maintenance_mode) {
+            return 'maintenance';
+        }
+        
+        return 'active';
+    }
+
+    /**
      * Get teachers in this academy
      */
     public function teachers(): HasMany
@@ -90,6 +120,30 @@ class Academy extends Model
     public function students(): HasMany
     {
         return $this->hasMany(User::class)->where('role', 'student');
+    }
+
+    /**
+     * Scope for active academies
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope for inactive academies
+     */
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
+    }
+
+    /**
+     * Scope for academies in maintenance mode
+     */
+    public function scopeMaintenance($query)
+    {
+        return $query->where('maintenance_mode', true);
     }
 
     /**
@@ -156,11 +210,11 @@ class Academy extends Model
     }
 
     /**
-     * Scope to get active academies only
+     * Scope to get active academies only (alternative to the one above)
      */
-    public function scopeActive($query)
+    public function scopeActiveAndAvailable($query)
     {
-        return $query->where('status', 'active')->where('is_active', true);
+        return $query->where('is_active', true)->where('maintenance_mode', false);
     }
 
     /**

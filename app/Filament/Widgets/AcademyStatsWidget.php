@@ -15,34 +15,37 @@ class AcademyStatsWidget extends ChartWidget
 
     protected function getData(): array
     {
-        $academies = Academy::selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+        $activeCount = Academy::where('is_active', true)->where('maintenance_mode', false)->count();
+        $inactiveCount = Academy::where('is_active', false)->count();
+        $maintenanceCount = Academy::where('maintenance_mode', true)->count();
 
         $statusLabels = [
             'active' => 'نشطة',
-            'inactive' => 'غير نشطة',
-            'suspended' => 'معلقة',
+            'inactive' => 'غير نشطة', 
             'maintenance' => 'تحت الصيانة'
         ];
 
         $labels = [];
         $data = [];
         $colors = [];
-
-        foreach ($academies as $status => $count) {
-            $labels[] = $statusLabels[$status] ?? $status;
-            $data[] = $count;
-            
-            // Color coding for different statuses
-            $colors[] = match($status) {
-                'active' => '#10b981',
-                'inactive' => '#6b7280',
-                'suspended' => '#ef4444',
-                'maintenance' => '#f59e0b',
-                default => '#3b82f6'
-            };
+        
+        // Add data for each status that has academies
+        if ($activeCount > 0) {
+            $labels[] = $statusLabels['active'];
+            $data[] = $activeCount;
+            $colors[] = '#10b981';
+        }
+        
+        if ($inactiveCount > 0) {
+            $labels[] = $statusLabels['inactive'];
+            $data[] = $inactiveCount;
+            $colors[] = '#6b7280';
+        }
+        
+        if ($maintenanceCount > 0) {
+            $labels[] = $statusLabels['maintenance'];
+            $data[] = $maintenanceCount;
+            $colors[] = '#f59e0b';
         }
 
         return [

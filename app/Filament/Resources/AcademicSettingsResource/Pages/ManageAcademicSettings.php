@@ -31,7 +31,7 @@ class ManageAcademicSettings extends Page implements HasForms
     {
         $currentAcademy = AcademyContextService::getCurrentAcademy();
         $academyName = $currentAcademy?->name ?? 'الأكاديمية';
-        return "إدارة إعدادات القسم الأكاديمي لـ {$academyName}";
+        return "إدارة إعدادات القسم الأكاديمي لـ {$academyName} | لتحرير ألوان الأكاديمية والهوية البصرية، استخدم صفحة 'إدارة الأكاديميات'";
     }
 
     public function mount(): void
