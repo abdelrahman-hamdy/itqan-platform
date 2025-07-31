@@ -73,6 +73,19 @@ class ParentProfile extends Model
         return $this->user->name . ' (' . $this->parent_code . ')';
     }
 
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    /**
+     * Check if profile is linked to a user account
+     */
+    public function isLinked(): bool
+    {
+        return !is_null($this->user_id);
+    }
+
     public function getRelationshipTypeInArabicAttribute(): string
     {
         return match($this->relationship_type) {
@@ -97,6 +110,16 @@ class ParentProfile extends Model
     /**
      * Scopes
      */
+    public function scopeUnlinked($query)
+    {
+        return $query->whereNull('user_id');
+    }
+
+    public function scopeLinked($query)
+    {
+        return $query->whereNotNull('user_id');
+    }
+
     public function scopeForAcademy($query, int $academyId)
     {
         return $query->whereHas('user', function ($q) use ($academyId) {

@@ -37,7 +37,7 @@ class TeacherPanelProvider extends PanelProvider
             ->font('Tajawal') // Arabic font
             ->favicon(asset('images/favicon.ico'))
             ->brandName('لوحة المعلم')
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/itqan-logo.svg'))
             ->navigationGroups([
                 'جدولي' => 'جدولي',
                 'جلساتي' => 'جلساتي',

@@ -100,8 +100,17 @@ class InteractiveCourseResource extends Resource
                                     ->label('المعلم المعين')
                                     ->options(function () {
                                         $academyId = AcademyContextService::getCurrentAcademyId();
-                                        return $academyId ? AcademicTeacherProfile::forAcademy($academyId)->with('user')->get()
-                                            ->mapWithKeys(fn($teacher) => [$teacher->id => $teacher->user->name . ' - ' . $teacher->specialization]) : [];
+                                        return $academyId ? AcademicTeacherProfile::forAcademy($academyId)
+                                            ->approved()
+                                            ->active()
+                                            ->with('user')
+                                            ->get()
+                                            ->mapWithKeys(function($teacher) {
+                                                // Use linked user name if available, otherwise use profile's full name
+                                                $displayName = $teacher->user ? $teacher->user->name : $teacher->full_name;
+                                                $qualification = $teacher->educational_qualification ?? 'غير محدد';
+                                                return [$teacher->id => $displayName . ' (' . $qualification . ')'];
+                                            }) : [];
                                     })
                                     ->required()
                                     ->searchable(),
@@ -287,7 +296,15 @@ class InteractiveCourseResource extends Resource
 
                 Tables\Columns\TextColumn::make('assignedTeacher.user.name')
                     ->label('المعلم')
-                    ->searchable(),
+                    ->searchable()
+                    ->getStateUsing(function ($record) {
+                        if (!$record->assignedTeacher) {
+                            return 'غير معين';
+                        }
+                        return $record->assignedTeacher->user 
+                            ? $record->assignedTeacher->user->name 
+                            : $record->assignedTeacher->full_name;
+                    }),
 
                 Tables\Columns\TextColumn::make('course_type_in_arabic')
                     ->label('النوع')

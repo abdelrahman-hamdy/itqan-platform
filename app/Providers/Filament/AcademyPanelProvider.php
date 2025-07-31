@@ -41,7 +41,7 @@ class AcademyPanelProvider extends PanelProvider
             ->font('Tajawal') // Arabic font
             ->favicon(asset('images/favicon.ico'))
             ->brandName('لوحة إدارة الأكاديمية')
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/itqan-logo.svg'))
             ->navigationGroups([
                 'لوحة التحكم' => 'لوحة التحكم',
                 'إدارة المستخدمين' => 'إدارة المستخدمين',

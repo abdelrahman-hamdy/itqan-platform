@@ -22,22 +22,6 @@ class ListGradeLevels extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
-            Actions\Action::make('active_grades')
-                ->label('الصفوف النشطة')
-                ->icon('heroicon-o-check-circle')
-                ->color('success')
-                ->badge(function () {
-                    $academyId = AcademyContextService::getCurrentAcademyId();
-                    return $academyId ? \App\Models\GradeLevel::where('academy_id', $academyId)->where('is_active', true)->count() : 0;
-                }),
-            Actions\Action::make('inactive_grades')
-                ->label('الصفوف غير النشطة')
-                ->icon('heroicon-o-x-circle')
-                ->color('danger')
-                ->badge(function () {
-                    $academyId = AcademyContextService::getCurrentAcademyId();
-                    return $academyId ? \App\Models\GradeLevel::where('academy_id', $academyId)->where('is_active', false)->count() : 0;
-                }),
         ];
     }
 

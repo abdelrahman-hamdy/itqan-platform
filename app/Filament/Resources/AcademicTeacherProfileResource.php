@@ -126,9 +126,14 @@ class AcademicTeacherProfileResource extends Resource
                             ->helperText('اضغط Enter لإضافة شهادة جديدة'),
                         Forms\Components\CheckboxList::make('languages')
                             ->label('اللغات')
-                            ->options(function () use ($academyId) {
-                                $settings = \App\Models\AcademicSettings::getForAcademy($academyId);
-                                $availableLanguages = $settings->available_languages ?? ['arabic', 'english'];
+                            ->options(function () {
+                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                                if (!$academyId) {
+                                    $availableLanguages = ['arabic', 'english'];
+                                } else {
+                                    $settings = \App\Models\AcademicSettings::getForAcademy($academyId);
+                                    $availableLanguages = $settings->available_languages ?? ['arabic', 'english'];
+                                }
                                 
                                 $languageNames = [
                                     'arabic' => 'العربية',
@@ -158,7 +163,11 @@ class AcademicTeacherProfileResource extends Resource
                     ->schema([
                         Forms\Components\CheckboxList::make('subject_ids')
                             ->label('المواد التي يمكن تدريسها')
-                            ->options(function () use ($academyId) {
+                            ->options(function () {
+                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                                if (!$academyId) {
+                                    return [];
+                                }
                                 return Subject::forAcademy($academyId)
                                     ->active()
                                     ->pluck('name', 'id')
@@ -168,7 +177,11 @@ class AcademicTeacherProfileResource extends Resource
                             ->columns(3),
                         Forms\Components\CheckboxList::make('grade_level_ids')
                             ->label('المراحل الدراسية')
-                            ->options(function () use ($academyId) {
+                            ->options(function () {
+                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                                if (!$academyId) {
+                                    return [];
+                                }
                                 return GradeLevel::forAcademy($academyId)
                                     ->active()
                                     ->orderBy('level')

@@ -37,7 +37,7 @@ class SupervisorPanelProvider extends PanelProvider
             ->font('Tajawal') // Arabic font
             ->favicon(asset('images/favicon.ico'))
             ->brandName('لوحة المشرف')
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/itqan-logo.svg'))
             ->navigationGroups([
                 'الحلقات المراقبة' => 'الحلقات المراقبة',
                 'مراقبة الدردشة' => 'مراقبة الدردشة',

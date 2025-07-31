@@ -7,29 +7,43 @@
         <!-- Academy Context Dashboard -->
         <div class="space-y-6">
             <!-- Academy Info Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <div class="flex items-center gap-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 max-w-4xl mx-auto">
+                <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4">
                     @if($currentAcademy->logo)
-                        <img src="{{ $currentAcademy->logo }}" alt="{{ $currentAcademy->name }}" class="w-16 h-16 rounded-lg">
+                        <img src="{{ $currentAcademy->logo }}" alt="{{ $currentAcademy->name }}" class="w-16 h-16 rounded-lg flex-shrink-0">
                     @else
-                        <div class="w-16 h-16 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <div class="w-16 h-16 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
                             <span class="text-2xl text-white font-bold">{{ substr($currentAcademy->name, 0, 1) }}</span>
                         </div>
                     @endif
                     
-                    <div class="flex-1">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $currentAcademy->name }}</h2>
-                        <p class="text-gray-600 dark:text-gray-400">{{ $currentAcademy->description }}</p>
-                        <div class="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                            <span>{{ $currentAcademy->subdomain }}.{{ config('app.domain', 'itqan-platform.test') }}</span>
-                            <span>{{ $currentAcademy->email }}</span>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ $currentAcademy->name }}</h2>
+                        @if($currentAcademy->description)
+                            <p class="text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{{ $currentAcademy->description }}</p>
+                        @endif
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 dark:text-gray-400">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
+                                </svg>
+                                {{ $currentAcademy->subdomain }}.{{ config('app.domain', 'itqan-platform.test') }}
+                            </span>
+                            @if($currentAcademy->email)
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                    {{ $currentAcademy->email }}
+                                </span>
+                            @endif
                         </div>
                     </div>
                     
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-shrink-0">
                         <a href="{{ route('filament.admin.resources.recorded-courses.index') }}" 
-                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
                             إضافة دورة جديدة

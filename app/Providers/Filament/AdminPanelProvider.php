@@ -40,7 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Tajawal') // Arabic font
             ->favicon(asset('images/favicon.ico')) // Default favicon
             ->brandName('منصة إتقان - لوحة التحكم') // Default brand name
-            ->brandLogo(asset('images/logo.png')) // Default logo
+            ->brandLogo(asset('images/itqan-logo.svg')) // Default logo
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->resources([
                 \App\Filament\Resources\AcademyManagementResource::class,
