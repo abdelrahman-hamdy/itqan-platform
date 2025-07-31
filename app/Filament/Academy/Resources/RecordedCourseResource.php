@@ -26,11 +26,14 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\SectionsRelationManager;
+use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers as RelationManagers;
 
 class RecordedCourseResource extends Resource
 {
@@ -52,285 +55,437 @@ class RecordedCourseResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('المعلومات الأساسية')
-                    ->schema([
-                        Grid::make(2)
+                Tabs::make('Course Creation')
+                    ->tabs([
+                        Tabs\Tab::make('المعلومات الأساسية')
+                            ->icon('heroicon-o-information-circle')
                             ->schema([
-                                TextInput::make('title')
-                                    ->label('عنوان الدورة')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->placeholder('أدخل عنوان الدورة باللغة العربية'),
+                                Section::make('المعلومات الأساسية')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('title')
+                                                    ->label('عنوان الدورة')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->placeholder('أدخل عنوان الدورة باللغة العربية'),
 
-                                TextInput::make('title_en')
-                                    ->label('Course Title (English)')
-                                    ->maxLength(255)
-                                    ->placeholder('Enter course title in English'),
-                            ]),
+                                                TextInput::make('title_en')
+                                                    ->label('Course Title (English)')
+                                                    ->maxLength(255)
+                                                    ->placeholder('Enter course title in English'),
+                                            ]),
 
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('course_code')
-                                    ->label('رمز الدورة')
-                                    ->required()
-                                    ->unique(ignoreRecord: true)
-                                    ->maxLength(50)
-                                    ->placeholder('مثال: MATH101'),
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('course_code')
+                                                    ->label('رمز الدورة')
+                                                    ->required()
+                                                    ->unique(ignoreRecord: true)
+                                                    ->maxLength(50)
+                                                    ->placeholder('مثال: MATH101'),
 
-                                Select::make('instructor_id')
-                                    ->label('المدرب')
-                                    ->options(function () {
-                                        $academyId = Auth::user()->academy_id;
-                                        return AcademicTeacher::where('academy_id', $academyId)
-                                            ->where('is_approved', true)
-                                            ->where('is_active', true)
-                                            ->pluck('full_name', 'id');
-                                    })
-                                    ->searchable()
-                                    ->required()
-                                    ->placeholder('اختر المدرب'),
-                            ]),
+                                                Select::make('instructor_id')
+                                                    ->label('المدرب')
+                                                    ->options(function () {
+                                                        $academyId = Auth::user()->academy_id;
+                                                        return AcademicTeacher::where('academy_id', $academyId)
+                                                            ->where('is_approved', true)
+                                                            ->where('is_active', true)
+                                                            ->pluck('full_name', 'id');
+                                                    })
+                                                    ->searchable()
+                                                    ->required()
+                                                    ->placeholder('اختر المدرب'),
+                                            ]),
 
-                        RichEditor::make('description')
-                            ->label('وصف الدورة')
-                            ->required()
-                            ->columnSpanFull()
-                            ->placeholder('أدخل وصف مفصل للدورة باللغة العربية'),
+                                        RichEditor::make('description')
+                                            ->label('وصف الدورة')
+                                            ->required()
+                                            ->columnSpanFull()
+                                            ->placeholder('أدخل وصف مفصل للدورة باللغة العربية'),
 
-                        Textarea::make('description_en')
-                            ->label('Course Description (English)')
-                            ->rows(3)
-                            ->columnSpanFull()
-                            ->placeholder('Enter course description in English'),
-                    ])
-                    ->collapsible(),
-
-                Section::make('التصنيف الأكاديمي')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('subject_id')
-                                    ->label('المادة الدراسية')
-                                    ->options(function () {
-                                        $academyId = Auth::user()->academy_id;
-                                        return AcademicSubject::where('academy_id', $academyId)
-                                            ->where('is_active', true)
-                                            ->pluck('name', 'id');
-                                    })
-                                    ->searchable()
-                                    ->required()
-                                    ->placeholder('اختر المادة الدراسية'),
-
-                                Select::make('grade_level_id')
-                                    ->label('المستوى الدراسي')
-                                    ->options(function () {
-                                        $academyId = Auth::user()->academy_id;
-                                        return AcademicGradeLevel::where('academy_id', $academyId)
-                                            ->where('is_active', true)
-                                            ->pluck('name', 'id');
-                                    })
-                                    ->searchable()
-                                    ->required()
-                                    ->placeholder('اختر المستوى الدراسي'),
-                            ]),
-
-                        Grid::make(3)
-                            ->schema([
-                                Select::make('level')
-                                    ->label('مستوى الدورة')
-                                    ->options([
-                                        'beginner' => 'مبتدئ',
-                                        'intermediate' => 'متوسط',
-                                        'advanced' => 'متقدم',
+                                        Textarea::make('description_en')
+                                            ->label('Course Description (English)')
+                                            ->rows(3)
+                                            ->columnSpanFull()
+                                            ->placeholder('Enter course description in English'),
                                     ])
-                                    ->required()
-                                    ->default('intermediate'),
+                                    ->collapsible(),
 
-                                Select::make('difficulty_level')
-                                    ->label('مستوى الصعوبة')
-                                    ->options([
-                                        'easy' => 'سهل',
-                                        'medium' => 'متوسط',
-                                        'hard' => 'صعب',
+                                Section::make('التصنيف الأكاديمي')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                Select::make('subject_id')
+                                                    ->label('المادة الدراسية')
+                                                    ->options(function () {
+                                                        $academyId = Auth::user()->academy_id;
+                                                        return AcademicSubject::where('academy_id', $academyId)
+                                                            ->where('is_active', true)
+                                                            ->pluck('name', 'id');
+                                                    })
+                                                    ->searchable()
+                                                    ->required()
+                                                    ->placeholder('اختر المادة الدراسية'),
+
+                                                Select::make('grade_level_id')
+                                                    ->label('المستوى الدراسي')
+                                                    ->options(function () {
+                                                        $academyId = Auth::user()->academy_id;
+                                                        return AcademicGradeLevel::where('academy_id', $academyId)
+                                                            ->where('is_active', true)
+                                                            ->pluck('name', 'id');
+                                                    })
+                                                    ->searchable()
+                                                    ->required()
+                                                    ->placeholder('اختر المستوى الدراسي'),
+                                            ]),
+
+                                        Grid::make(3)
+                                            ->schema([
+                                                Select::make('level')
+                                                    ->label('مستوى الدورة')
+                                                    ->options([
+                                                        'beginner' => 'مبتدئ',
+                                                        'intermediate' => 'متوسط',
+                                                        'advanced' => 'متقدم',
+                                                    ])
+                                                    ->required()
+                                                    ->default('intermediate'),
+
+                                                Select::make('difficulty_level')
+                                                    ->label('مستوى الصعوبة')
+                                                    ->options([
+                                                        'easy' => 'سهل',
+                                                        'medium' => 'متوسط',
+                                                        'hard' => 'صعب',
+                                                    ])
+                                                    ->required()
+                                                    ->default('medium'),
+
+                                                Select::make('category')
+                                                    ->label('فئة الدورة')
+                                                    ->options([
+                                                        'academic' => 'أكاديمي',
+                                                        'skills' => 'مهارات',
+                                                        'language' => 'لغة',
+                                                        'technology' => 'تقنية',
+                                                        'arts' => 'فنون',
+                                                        'other' => 'أخرى',
+                                                    ])
+                                                    ->required()
+                                                    ->default('academic'),
+                                            ]),
+
+                                        Select::make('language')
+                                            ->label('لغة الدورة')
+                                            ->options([
+                                                'ar' => 'العربية',
+                                                'en' => 'English',
+                                                'ar-en' => 'عربي/إنجليزي',
+                                            ])
+                                            ->required()
+                                            ->default('ar'),
                                     ])
-                                    ->required()
-                                    ->default('medium'),
+                                    ->collapsible(),
 
-                                Select::make('category')
-                                    ->label('فئة الدورة')
-                                    ->options([
-                                        'academic' => 'أكاديمي',
-                                        'skills' => 'مهارات',
-                                        'language' => 'لغة',
-                                        'technology' => 'تقنية',
-                                        'arts' => 'فنون',
-                                        'other' => 'أخرى',
+                                Section::make('الوسائط')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                FileUpload::make('thumbnail_url')
+                                                    ->label('صورة مصغرة للدورة')
+                                                    ->image()
+                                                    ->imageEditor()
+                                                    ->imageCropAspectRatio('16:9')
+                                                    ->imageResizeTargetWidth('400')
+                                                    ->imageResizeTargetHeight('225')
+                                                    ->directory('courses/thumbnails')
+                                                    ->placeholder('اختر صورة مصغرة للدورة'),
+
+                                                FileUpload::make('trailer_video_url')
+                                                    ->label('فيديو تعريفي')
+                                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/ogg'])
+                                                    ->maxSize(100 * 1024) // 100MB
+                                                    ->directory('courses/trailers')
+                                                    ->placeholder('اختر فيديو تعريفي للدورة'),
+                                            ]),
                                     ])
-                                    ->required()
-                                    ->default('academic'),
+                                    ->collapsible(),
+
+                                Section::make('التسعير')
+                                    ->schema([
+                                        Grid::make(3)
+                                            ->schema([
+                                                Toggle::make('is_free')
+                                                    ->label('دورة مجانية')
+                                                    ->default(false)
+                                                    ->reactive(),
+
+                                                TextInput::make('price')
+                                                    ->label('السعر')
+                                                    ->numeric()
+                                                    ->prefix('$')
+                                                    ->visible(fn (Get $get): bool => !$get('is_free'))
+                                                    ->required(fn (Get $get): bool => !$get('is_free'))
+                                                    ->placeholder('0.00'),
+
+                                                TextInput::make('discount_price')
+                                                    ->label('سعر الخصم')
+                                                    ->numeric()
+                                                    ->prefix('$')
+                                                    ->visible(fn (Get $get): bool => !$get('is_free'))
+                                                    ->placeholder('0.00'),
+                                            ]),
+
+                                        Select::make('currency')
+                                            ->label('العملة')
+                                            ->options([
+                                                'USD' => 'دولار أمريكي',
+                                                'SAR' => 'ريال سعودي',
+                                                'AED' => 'درهم إماراتي',
+                                                'EGP' => 'جنيه مصري',
+                                            ])
+                                            ->default('USD')
+                                            ->required(),
+                                    ])
+                                    ->collapsible(),
+
+                                Section::make('محتوى الدورة')
+                                    ->schema([
+                                        KeyValue::make('prerequisites')
+                                            ->label('المتطلبات المسبقة')
+                                            ->keyLabel('المتطلب')
+                                            ->valueLabel('الوصف')
+                                            ->addActionLabel('إضافة متطلب')
+                                            ->placeholder('أدخل المتطلبات المسبقة للدورة'),
+
+                                        KeyValue::make('learning_outcomes')
+                                            ->label('نتائج التعلم')
+                                            ->keyLabel('النتيجة')
+                                            ->valueLabel('الوصف')
+                                            ->addActionLabel('إضافة نتيجة تعلم')
+                                            ->placeholder('أدخل نتائج التعلم المتوقعة'),
+
+                                        KeyValue::make('course_materials')
+                                            ->label('المواد التعليمية')
+                                            ->keyLabel('المادة')
+                                            ->valueLabel('الوصف')
+                                            ->addActionLabel('إضافة مادة')
+                                            ->placeholder('أدخل المواد التعليمية المطلوبة'),
+
+                                        Grid::make(3)
+                                            ->schema([
+                                                TextInput::make('total_sections')
+                                                    ->label('عدد الأقسام')
+                                                    ->numeric()
+                                                    ->minValue(1)
+                                                    ->default(1)
+                                                    ->required(),
+
+                                                TextInput::make('total_lessons')
+                                                    ->label('عدد الدروس')
+                                                    ->numeric()
+                                                    ->minValue(1)
+                                                    ->default(1)
+                                                    ->required(),
+
+                                                TextInput::make('duration_hours')
+                                                    ->label('المدة بالساعات')
+                                                    ->numeric()
+                                                    ->minValue(0.5)
+                                                    ->step(0.5)
+                                                    ->default(1)
+                                                    ->required(),
+                                            ]),
+                                    ])
+                                    ->collapsible(),
+
+                                Section::make('الإعدادات')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                Toggle::make('is_published')
+                                                    ->label('منشور')
+                                                    ->default(false)
+                                                    ->helperText('الدورة ستكون مرئية للطلاب عند النشر'),
+
+                                                Toggle::make('is_featured')
+                                                    ->label('مميزة')
+                                                    ->default(false)
+                                                    ->helperText('ستظهر الدورة في القسم المميز'),
+                                            ]),
+
+                                        Toggle::make('completion_certificate')
+                                            ->label('شهادة إتمام')
+                                            ->default(true)
+                                            ->helperText('سيحصل الطلاب على شهادة عند إتمام الدورة'),
+
+                                        TagsInput::make('tags')
+                                            ->label('العلامات')
+                                            ->separator(',')
+                                            ->placeholder('أدخل العلامات مفصولة بفواصل'),
+
+                                        Textarea::make('meta_description')
+                                            ->label('وصف SEO')
+                                            ->rows(2)
+                                            ->maxLength(160)
+                                            ->helperText('وصف مختصر للدورة لتحسين محركات البحث'),
+
+                                        Textarea::make('notes')
+                                            ->label('ملاحظات')
+                                            ->rows(3)
+                                            ->placeholder('ملاحظات إضافية للدورة'),
+                                    ])
+                                    ->collapsible(),
                             ]),
-
-                        Select::make('language')
-                            ->label('لغة الدورة')
-                            ->options([
-                                'ar' => 'العربية',
-                                'en' => 'English',
-                                'ar-en' => 'عربي/إنجليزي',
-                            ])
-                            ->required()
-                            ->default('ar'),
-                    ])
-                    ->collapsible(),
-
-                Section::make('الوسائط')
-                    ->schema([
-                        Grid::make(2)
+                            
+                        Tabs\Tab::make('دروس الدورة')
+                            ->icon('heroicon-o-play')
                             ->schema([
-                                FileUpload::make('thumbnail_url')
-                                    ->label('صورة مصغرة للدورة')
-                                    ->image()
-                                    ->imageEditor()
-                                    ->imageCropAspectRatio('16:9')
-                                    ->imageResizeTargetWidth('400')
-                                    ->imageResizeTargetHeight('225')
-                                    ->directory('courses/thumbnails')
-                                    ->placeholder('اختر صورة مصغرة للدورة'),
+                                Section::make('دروس الدورة')
+                                    ->description('أضف دروس الدورة وحدد المحتوى لكل درس')
+                                    ->schema([
+                                        Repeater::make('lessons')
+                                            ->label('الدروس')
+                                            ->relationship('lessons')
+                                            ->schema([
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('title')
+                                                            ->label('عنوان الدرس')
+                                                            ->required()
+                                                            ->maxLength(255)
+                                                            ->placeholder('أدخل عنوان الدرس'),
 
-                                FileUpload::make('trailer_video_url')
-                                    ->label('فيديو تعريفي')
-                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/ogg'])
-                                    ->maxSize(100 * 1024) // 100MB
-                                    ->directory('courses/trailers')
-                                    ->placeholder('اختر فيديو تعريفي للدورة'),
+                                                        TextInput::make('title_en')
+                                                            ->label('Lesson Title (English)')
+                                                            ->maxLength(255)
+                                                            ->placeholder('Enter lesson title in English'),
+                                                    ]),
+
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('lesson_code')
+                                                            ->label('رمز الدرس')
+                                                            ->maxLength(50)
+                                                            ->placeholder('مثال: LESSON01')
+                                                            ->unique(ignoreRecord: true),
+
+                                                        TextInput::make('order')
+                                                            ->label('ترتيب الدرس')
+                                                            ->numeric()
+                                                            ->minValue(1)
+                                                            ->required()
+                                                            ->placeholder('ترتيب الدرس في الدورة'),
+                                                    ]),
+
+                                                FileUpload::make('video_url')
+                                                    ->label('فيديو الدرس')
+                                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
+                                                    ->maxSize(500 * 1024) // 500MB
+                                                    ->directory('lessons/videos')
+                                                    ->required()
+                                                    ->columnSpanFull()
+                                                    ->placeholder('اختر فيديو الدرس'),
+
+                                                RichEditor::make('description')
+                                                    ->label('وصف الدرس')
+                                                    ->required()
+                                                    ->columnSpanFull()
+                                                    ->placeholder('أدخل وصف مفصل للدرس'),
+
+                                                Textarea::make('description_en')
+                                                    ->label('Lesson Description (English)')
+                                                    ->rows(3)
+                                                    ->columnSpanFull()
+                                                    ->placeholder('Enter lesson description in English'),
+
+                                                Grid::make(3)
+                                                    ->schema([
+                                                        TextInput::make('video_duration_seconds')
+                                                            ->label('مدة الفيديو (بالثواني)')
+                                                            ->numeric()
+                                                            ->minValue(1)
+                                                            ->placeholder('مدة الفيديو'),
+
+                                                        TextInput::make('estimated_study_time_minutes')
+                                                            ->label('وقت الدراسة المقدر (بالدقائق)')
+                                                            ->numeric()
+                                                            ->minValue(1)
+                                                            ->placeholder('الوقت المقدر للدراسة'),
+
+                                                        Select::make('difficulty_level')
+                                                            ->label('مستوى الصعوبة')
+                                                            ->options([
+                                                                'easy' => 'سهل',
+                                                                'medium' => 'متوسط',
+                                                                'hard' => 'صعب',
+                                                            ])
+                                                            ->default('medium'),
+                                                    ]),
+
+                                                Select::make('lesson_type')
+                                                    ->label('نوع الدرس')
+                                                    ->options([
+                                                        'video' => 'فيديو',
+                                                        'quiz' => 'اختبار',
+                                                        'assignment' => 'مهمة',
+                                                        'reading' => 'قراءة',
+                                                        'exercise' => 'تمرين',
+                                                    ])
+                                                    ->default('video')
+                                                    ->required(),
+
+                                                KeyValue::make('learning_objectives')
+                                                    ->label('أهداف التعلم')
+                                                    ->keyLabel('الهدف')
+                                                    ->valueLabel('الوصف')
+                                                    ->addActionLabel('إضافة هدف')
+                                                    ->columnSpanFull(),
+
+                                                FileUpload::make('attachments')
+                                                    ->label('مرفقات الدرس')
+                                                    ->multiple()
+                                                    ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/*'])
+                                                    ->directory('lessons/attachments')
+                                                    ->columnSpanFull(),
+
+                                                Grid::make(3)
+                                                    ->schema([
+                                                        Toggle::make('is_published')
+                                                            ->label('منشور')
+                                                            ->default(true),
+
+                                                        Toggle::make('is_free_preview')
+                                                            ->label('معاينة مجانية')
+                                                            ->default(false)
+                                                            ->helperText('يمكن للطلاب مشاهدة هذا الدرس مجاناً'),
+
+                                                        Toggle::make('is_downloadable')
+                                                            ->label('قابل للتحميل')
+                                                            ->default(false)
+                                                            ->helperText('يمكن للطلاب تحميل هذا الدرس'),
+                                                    ]),
+
+                                                Textarea::make('notes')
+                                                    ->label('ملاحظات الدرس')
+                                                    ->rows(3)
+                                                    ->columnSpanFull()
+                                                    ->placeholder('ملاحظات إضافية للدرس'),
+                                            ])
+                                            ->defaultItems(1)
+                                            ->addActionLabel('إضافة درس جديد')
+                                            ->reorderableWithButtons()
+                                            ->collapsible()
+                                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? 'درس جديد')
+                                            ->columnSpanFull(),
+                                    ]),
                             ]),
                     ])
-                    ->collapsible(),
-
-                Section::make('التسعير')
-                    ->schema([
-                        Grid::make(3)
-                            ->schema([
-                                Toggle::make('is_free')
-                                    ->label('دورة مجانية')
-                                    ->default(false)
-                                    ->reactive(),
-
-                                TextInput::make('price')
-                                    ->label('السعر')
-                                    ->numeric()
-                                    ->prefix('$')
-                                    ->visible(fn (Get $get): bool => !$get('is_free'))
-                                    ->required(fn (Get $get): bool => !$get('is_free'))
-                                    ->placeholder('0.00'),
-
-                                TextInput::make('discount_price')
-                                    ->label('سعر الخصم')
-                                    ->numeric()
-                                    ->prefix('$')
-                                    ->visible(fn (Get $get): bool => !$get('is_free'))
-                                    ->placeholder('0.00'),
-                            ]),
-
-                        Select::make('currency')
-                            ->label('العملة')
-                            ->options([
-                                'USD' => 'دولار أمريكي',
-                                'SAR' => 'ريال سعودي',
-                                'AED' => 'درهم إماراتي',
-                                'EGP' => 'جنيه مصري',
-                            ])
-                            ->default('USD')
-                            ->required(),
-                    ])
-                    ->collapsible(),
-
-                Section::make('محتوى الدورة')
-                    ->schema([
-                        KeyValue::make('prerequisites')
-                            ->label('المتطلبات المسبقة')
-                            ->keyLabel('المتطلب')
-                            ->valueLabel('الوصف')
-                            ->addActionLabel('إضافة متطلب')
-                            ->placeholder('أدخل المتطلبات المسبقة للدورة'),
-
-                        KeyValue::make('learning_outcomes')
-                            ->label('نتائج التعلم')
-                            ->keyLabel('النتيجة')
-                            ->valueLabel('الوصف')
-                            ->addActionLabel('إضافة نتيجة تعلم')
-                            ->placeholder('أدخل نتائج التعلم المتوقعة'),
-
-                        KeyValue::make('course_materials')
-                            ->label('المواد التعليمية')
-                            ->keyLabel('المادة')
-                            ->valueLabel('الوصف')
-                            ->addActionLabel('إضافة مادة')
-                            ->placeholder('أدخل المواد التعليمية المطلوبة'),
-
-                        Grid::make(3)
-                            ->schema([
-                                TextInput::make('total_sections')
-                                    ->label('عدد الأقسام')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->default(1)
-                                    ->required(),
-
-                                TextInput::make('total_lessons')
-                                    ->label('عدد الدروس')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->default(1)
-                                    ->required(),
-
-                                TextInput::make('duration_hours')
-                                    ->label('المدة بالساعات')
-                                    ->numeric()
-                                    ->minValue(0.5)
-                                    ->step(0.5)
-                                    ->default(1)
-                                    ->required(),
-                            ]),
-                    ])
-                    ->collapsible(),
-
-                Section::make('الإعدادات')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Toggle::make('is_published')
-                                    ->label('منشور')
-                                    ->default(false)
-                                    ->helperText('الدورة ستكون مرئية للطلاب عند النشر'),
-
-                                Toggle::make('is_featured')
-                                    ->label('مميزة')
-                                    ->default(false)
-                                    ->helperText('ستظهر الدورة في القسم المميز'),
-                            ]),
-
-                        Toggle::make('completion_certificate')
-                            ->label('شهادة إتمام')
-                            ->default(true)
-                            ->helperText('سيحصل الطلاب على شهادة عند إتمام الدورة'),
-
-                        TagsInput::make('tags')
-                            ->label('العلامات')
-                            ->separator(',')
-                            ->placeholder('أدخل العلامات مفصولة بفواصل'),
-
-                        Textarea::make('meta_description')
-                            ->label('وصف SEO')
-                            ->rows(2)
-                            ->maxLength(160)
-                            ->helperText('وصف مختصر للدورة لتحسين محركات البحث'),
-
-                        Textarea::make('notes')
-                            ->label('ملاحظات')
-                            ->rows(3)
-                            ->placeholder('ملاحظات إضافية للدورة'),
-                    ])
-                    ->collapsible(),
+                    ->columnSpanFull()
+                    ->persistTabInQueryString(),
             ]);
     }
 
@@ -547,6 +702,7 @@ class RecordedCourseResource extends Resource
     {
         return [
             SectionsRelationManager::class,
+            RelationManagers\LessonsRelationManager::class,
         ];
     }
 

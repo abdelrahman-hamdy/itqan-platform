@@ -21,21 +21,39 @@ document.addEventListener('DOMContentLoaded', function() {
             '[class*="bg-primary-5"]',
             '.fi-ta-actions .fi-btn.fi-color-primary', // Edit buttons in tables
             '.fi-ac-btn-action.fi-color-primary', // Action buttons
-            '[data-action-color="primary"]' // Data table action buttons
+            '[data-action-color="primary"]', // Data table action buttons
+            '.fi-btn.fi-btn-color-primary', // Primary buttons with btn-color-primary class
+            '.fi-btn.fi-color-custom.fi-btn-color-primary', // Custom colored primary buttons
+            'a.fi-btn.fi-color-custom.fi-btn-color-primary', // Link buttons with custom primary color
+            '.fi-ac-action.fi-color-primary' // Action buttons with primary color
         ];
         
         backgroundSelectors.forEach(selector => {
             document.querySelectorAll(selector).forEach(el => {
                 // Skip checkboxes and input elements
                 if (el.type === 'checkbox' || el.tagName === 'INPUT') return;
+                
+                // Force remove any conflicting inline color styles
+                el.style.removeProperty('color');
+                
+                // Apply academy colors with maximum specificity
                 el.style.setProperty('background-color', color, 'important');
-                el.style.setProperty('color', 'white', 'important'); // Ensure white text on primary buttons
+                el.style.setProperty('color', 'white', 'important');
+                el.style.setProperty('border-color', color, 'important');
+                
+                // Also update CSS custom properties if they exist
+                if (el.style.getPropertyValue('--c-500')) {
+                    el.style.setProperty('--c-400', color, 'important');
+                    el.style.setProperty('--c-500', color, 'important');
+                    el.style.setProperty('--c-600', color, 'important');
+                }
             });
         });
         
         // TEXT COLOR ELEMENTS (links, text buttons, headings)
         const textSelectors = [
             '.text-primary-500',
+            '.text-primary-600',
             '[class*="text-primary-5"]',
             'a.fi-color-primary',
             '.fi-ta-link.fi-color-primary',
@@ -89,12 +107,51 @@ document.addEventListener('DOMContentLoaded', function() {
     // Apply again after short delay (for elements that load later)
     setTimeout(applyAcademyColors, 100);
     setTimeout(applyAcademyColors, 500);
+    setTimeout(applyAcademyColors, 1000);
+    setTimeout(applyAcademyColors, 2000);
     
-    // Watch for new elements (for dynamic content)
-    const observer = new MutationObserver(function() {
-        setTimeout(applyAcademyColors, 50);
+    // Watch for DOM changes and reapply colors more intelligently
+    const observer = new MutationObserver(function(mutations) {
+        let shouldReapply = false;
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                mutation.addedNodes.forEach(function(node) {
+                    // Check if the added node contains buttons or is a button itself
+                    if (node.nodeType === 1) { // Element node
+                        if (node.classList && (
+                            node.classList.contains('fi-btn') || 
+                            node.classList.contains('fi-color-primary') ||
+                            node.querySelector && node.querySelector('.fi-btn, .fi-color-primary')
+                        )) {
+                            shouldReapply = true;
+                        }
+                    }
+                });
+            }
+            // Also check for attribute changes that might affect styling
+            if (mutation.type === 'attributes' && 
+                (mutation.attributeName === 'class' || mutation.attributeName === 'style')) {
+                shouldReapply = true;
+            }
+        });
+        if (shouldReapply) {
+            setTimeout(applyAcademyColors, 50);
+        }
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+    
+    // Also listen for Livewire events if available
+    if (typeof Livewire !== 'undefined') {
+        Livewire.hook('message.processed', () => {
+            setTimeout(applyAcademyColors, 100);
+        });
+    }
 });
 </script>
 
@@ -155,6 +212,43 @@ document.addEventListener('DOMContentLoaded', function() {
         background-color: {{ $brandColor }} !important;
         color: white !important;
         border-color: {{ $brandColor }} !important;
+    }
+    
+    /* Comprehensive primary button styling - override inline styles */
+    .fi-btn.fi-btn-color-primary,
+    .fi-btn.fi-color-custom.fi-btn-color-primary,
+    a.fi-btn.fi-color-custom.fi-btn-color-primary,
+    button.fi-btn-color-primary,
+    .fi-ac-action.fi-color-primary,
+    .fi-ac-btn-action.fi-btn-color-primary {
+        background-color: {{ $brandColor }} !important;
+        color: white !important;
+        border-color: {{ $brandColor }} !important;
+        --c-400: {{ $brandColor }} !important;
+        --c-500: {{ $brandColor }} !important;
+        --c-600: {{ $brandColor }} !important;
+    }
+    
+    /* Override hover states for custom primary buttons */
+    .fi-btn.fi-btn-color-primary:hover,
+    .fi-btn.fi-color-custom.fi-btn-color-primary:hover,
+    a.fi-btn.fi-color-custom.fi-btn-color-primary:hover {
+        background-color: {{ $brandColor }} !important;
+        color: white !important;
+        opacity: 0.9;
+    }
+    
+    /* Maximum specificity for problematic buttons with inline styles */
+    a.fi-btn.fi-color-custom.fi-btn-color-primary.fi-color-primary.fi-ac-action.fi-ac-btn-action,
+    a.fi-btn.fi-color-custom.fi-btn-color-primary.fi-color-primary.fi-ac-action,
+    a.fi-btn.fi-color-custom.fi-btn-color-primary.fi-color-primary,
+    .fi-btn.fi-color-custom.fi-btn-color-primary.fi-color-primary.fi-ac-action.fi-ac-btn-action {
+        background-color: {{ $brandColor }} !important;
+        color: white !important;
+        border-color: {{ $brandColor }} !important;
+        --c-400: {{ $brandColor }} !important;
+        --c-500: {{ $brandColor }} !important;
+        --c-600: {{ $brandColor }} !important;
     }
     
     /* EXCLUDE ELEMENTS - Explicitly prevent coloring */
