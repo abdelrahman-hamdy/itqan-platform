@@ -37,8 +37,13 @@ class RecordedCourseResource extends Resource
         
         return $form
             ->schema([
-                Forms\Components\Section::make('معلومات الدورة')
-                    ->schema([
+                Forms\Components\Tabs::make('admin-course-tabs')
+                    ->tabs([
+                        Forms\Components\Tabs\Tab::make('المعلومات الأساسية')
+                            ->icon('heroicon-o-information-circle')
+                            ->schema([
+                                Forms\Components\Section::make('معلومات الدورة')
+                                    ->schema([
                         Forms\Components\TextInput::make('title_ar')
                             ->label('عنوان الدورة (عربي)')
                             ->required()
@@ -84,13 +89,13 @@ class RecordedCourseResource extends Resource
 
                         Forms\Components\Select::make('subject_id')
                             ->label('المادة الدراسية')
-                            ->options(AcademicSubject::pluck('name_ar', 'id'))
+                            ->options(AcademicSubject::pluck('name', 'id'))
                             ->searchable()
                             ->required(),
 
                         Forms\Components\Select::make('grade_level_id')
                             ->label('المستوى الدراسي')
-                            ->options(AcademicGradeLevel::pluck('name_ar', 'id'))
+                            ->options(AcademicGradeLevel::pluck('name', 'id'))
                             ->searchable()
                             ->required(),
                     ])->columns(2),
@@ -142,14 +147,77 @@ class RecordedCourseResource extends Resource
 
                         Forms\Components\FileUpload::make('intro_video')
                             ->label('فيديو تعريفي')
-                            ->video()
-                            ->directory('course-videos'),
+                            ->acceptedFileTypes(['video/mp4', 'video/mov', 'video/avi', 'video/wmv', 'video/flv', 'video/webm'])
+                            ->directory('course-videos')
+                            ->maxSize(512000) // 512MB max size
+                            ->helperText('الأنواع المدعومة: MP4, MOV, AVI, WMV, FLV, WebM'),
 
                         Forms\Components\FileUpload::make('materials')
                             ->label('الملفات المرفقة')
                             ->multiple()
                             ->directory('course-materials'),
-                    ]),
+                                    ])->columns(2),
+                            ]),
+
+                        Forms\Components\Tabs\Tab::make('دروس الدورة')
+                            ->icon('heroicon-o-play')
+                            ->schema([
+                                Forms\Components\Section::make('📚 إدارة دروس الدورة')
+                                    ->description('يمكنك إضافة عدد لا محدود من الدروس وتحديد محتوى كل درس')
+                                    ->schema([
+                                        Forms\Components\Repeater::make('lessons')
+                                            ->label('دروس الدورة')
+                                            ->schema([
+                                                Forms\Components\Grid::make(2)
+                                                    ->schema([
+                                                        Forms\Components\TextInput::make('title')
+                                                            ->label('عنوان الدرس')
+                                                            ->required()
+                                                            ->maxLength(255),
+
+                                                        Forms\Components\TextInput::make('order')
+                                                            ->label('ترتيب الدرس')
+                                                            ->numeric()
+                                                            ->minValue(1)
+                                                            ->required(),
+                                                    ]),
+
+                                                Forms\Components\RichEditor::make('description')
+                                                    ->label('وصف الدرس')
+                                                    ->required()
+                                                    ->columnSpanFull(),
+
+                                                Forms\Components\FileUpload::make('video_url')
+                                                    ->label('🎥 فيديو الدرس')
+                                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov'])
+                                                    ->maxSize(500 * 1024)
+                                                    ->directory('lessons/videos')
+                                                    ->required()
+                                                    ->columnSpanFull(),
+
+                                                Forms\Components\Grid::make(2)
+                                                    ->schema([
+                                                        Forms\Components\Toggle::make('is_published')
+                                                            ->label('منشور')
+                                                            ->default(true),
+
+                                                        Forms\Components\Toggle::make('is_free_preview')
+                                                            ->label('معاينة مجانية')
+                                                            ->default(false),
+                                                    ]),
+                                            ])
+                                            ->defaultItems(1)
+                                            ->collapsible()
+                                            ->itemLabel(fn (array $state): ?string => 
+                                                !empty($state['title']) ? "📹 " . $state['title'] : "درس جديد"
+                                            )
+                                            ->addActionLabel('➕ إضافة درس جديد')
+                                            ->reorderableWithButtons(),
+                                    ]),
+                            ]),
+                    ])
+                    ->columnSpanFull()
+                    ->persistTabInQueryString(),
             ]);
     }
 
@@ -171,11 +239,11 @@ class RecordedCourseResource extends Resource
                     ->label('المدرس')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('subject.name_ar')
+                Tables\Columns\TextColumn::make('subject.name')
                     ->label('المادة')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('grade_level.name_ar')
+                Tables\Columns\TextColumn::make('grade_level.name')
                     ->label('المستوى')
                     ->sortable(),
 
