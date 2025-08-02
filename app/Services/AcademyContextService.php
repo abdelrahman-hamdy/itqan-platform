@@ -10,6 +10,7 @@ class AcademyContextService
 {
     const SELECTED_ACADEMY_SESSION_KEY = 'selected_academy_id';
     const ACADEMY_OBJECT_SESSION_KEY = 'selected_academy';
+    const GLOBAL_VIEW_SESSION_KEY = 'super_admin_global_view';
 
     /**
      * Get the current academy context for the authenticated user
@@ -19,34 +20,46 @@ class AcademyContextService
         $user = auth()->user();
         
         if (!$user) {
-            // If no user is authenticated, return the first active academy as default
-            return Academy::where('is_active', true)->where('maintenance_mode', false)->first();
+            // If no user is authenticated, return the default academy
+            return self::getDefaultAcademy();
         }
 
         // For super admin, use selected academy from session
         if (self::isSuperAdmin($user)) {
+            // If in global view mode, return null to indicate no specific academy
+            if (self::isGlobalViewMode()) {
+                return null;
+            }
+            
             $academyId = Session::get(self::SELECTED_ACADEMY_SESSION_KEY);
             
             if ($academyId) {
                 $academy = Academy::find($academyId);
-                if ($academy) {
+                if ($academy && $academy->is_active && !$academy->maintenance_mode) {
                     // Cache academy object in session to avoid repeated queries
                     Session::put(self::ACADEMY_OBJECT_SESSION_KEY, $academy);
                     return $academy;
                 }
             }
             
-            // If super admin has no academy selected, return the first active academy as default
-            return Academy::where('is_active', true)->where('maintenance_mode', false)->first();
+            // Auto-load default academy if none selected or invalid and not in global mode
+            $defaultAcademy = self::getDefaultAcademy();
+            if ($defaultAcademy) {
+                self::setAcademyContext($defaultAcademy->id);
+                return $defaultAcademy;
+            }
+            
+            // If no default academy exists, return null to force academy selection
+            return null;
         }
 
         // For regular users, use their assigned academy
-        if ($user->academy) {
+        if ($user->academy && $user->academy->is_active && !$user->academy->maintenance_mode) {
             return $user->academy;
         }
         
-        // If user has no academy assigned, return the first active academy as fallback
-        return Academy::where('is_active', true)->where('maintenance_mode', false)->first();
+        // If user has no academy assigned or academy is inactive, return default as fallback
+        return self::getDefaultAcademy();
     }
 
     /**
@@ -78,6 +91,9 @@ class AcademyContextService
             Session::put(self::SELECTED_ACADEMY_SESSION_KEY, $academyId);
             Session::put(self::ACADEMY_OBJECT_SESSION_KEY, $academy);
             
+            // Disable global view when selecting a specific academy
+            Session::forget(self::GLOBAL_VIEW_SESSION_KEY);
+            
             // Make academy available globally for this request
             app()->instance('current_academy', $academy);
         } else {
@@ -96,7 +112,7 @@ class AcademyContextService
     public static function isSuperAdmin(?User $user = null): bool
     {
         $user = $user ?? auth()->user();
-        return $user && $user->role === 'super_admin';
+        return $user && $user->isSuperAdmin();
     }
 
     /**
@@ -127,6 +143,100 @@ class AcademyContextService
     }
 
     /**
+     * Get the default academy (itqan-academy or first active academy)
+     */
+    public static function getDefaultAcademy(): ?Academy
+    {
+        // First try to get the designated default academy
+        $defaultAcademy = Academy::where('subdomain', 'itqan-academy')
+            ->where('is_active', true)
+            ->where('maintenance_mode', false)
+            ->first();
+            
+        if ($defaultAcademy) {
+            return $defaultAcademy;
+        }
+        
+        // If no designated default, get the first active academy
+        return Academy::where('is_active', true)
+            ->where('maintenance_mode', false)
+            ->orderBy('created_at')
+            ->first();
+    }
+
+    /**
+     * Check if we have a valid academy context
+     */
+    public static function hasValidAcademyContext(): bool
+    {
+        $academy = self::getCurrentAcademy();
+        return $academy !== null && $academy->is_active && !$academy->maintenance_mode;
+    }
+
+    /**
+     * Force academy context initialization for Super Admin
+     */
+    public static function initializeSuperAdminContext(): bool
+    {
+        if (!self::isSuperAdmin()) {
+            return false;
+        }
+
+        // Check if already has valid context
+        if (self::hasAcademySelected() && self::hasValidAcademyContext()) {
+            return true;
+        }
+
+        // Try to load default academy
+        $defaultAcademy = self::getDefaultAcademy();
+        if ($defaultAcademy) {
+            return self::setAcademyContext($defaultAcademy->id);
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if super admin is in global view mode
+     */
+    public static function isGlobalViewMode(): bool
+    {
+        return self::isSuperAdmin() && Session::get(self::GLOBAL_VIEW_SESSION_KEY, false);
+    }
+
+    /**
+     * Enable global view mode for super admin
+     */
+    public static function enableGlobalView(): bool
+    {
+        if (!self::isSuperAdmin()) {
+            return false;
+        }
+
+        Session::put(self::GLOBAL_VIEW_SESSION_KEY, true);
+        
+        // Clear academy context when enabling global view
+        Session::forget(self::SELECTED_ACADEMY_SESSION_KEY);
+        Session::forget(self::ACADEMY_OBJECT_SESSION_KEY);
+        app()->forgetInstance('current_academy');
+        
+        return true;
+    }
+
+    /**
+     * Disable global view mode for super admin
+     */
+    public static function disableGlobalView(): bool
+    {
+        if (!self::isSuperAdmin()) {
+            return false;
+        }
+
+        Session::forget(self::GLOBAL_VIEW_SESSION_KEY);
+        return true;
+    }
+
+    /**
      * Check if current user can access multi-academy management
      */
     public static function canManageMultipleAcademies(): bool
@@ -144,7 +254,7 @@ class AcademyContextService
         
         return [
             'user_id' => $user?->id,
-            'user_role' => $user?->role,
+            'user_type' => $user?->user_type,
             'user_academy_id' => $user?->academy_id,
             'is_super_admin' => self::isSuperAdmin($user),
             'selected_academy_id' => Session::get(self::SELECTED_ACADEMY_SESSION_KEY),

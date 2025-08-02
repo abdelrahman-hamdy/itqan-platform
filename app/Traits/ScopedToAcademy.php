@@ -2,60 +2,32 @@
 
 namespace App\Traits;
 
-use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use App\Services\AcademyContextService;
 
 trait ScopedToAcademy
 {
-    /**
-     * Get the Eloquent query scoped to the current academy context
-     */
-    public static function getEloquentQuery(): Builder
+    protected static function bootScopedToAcademy()
     {
-        $query = parent::getEloquentQuery();
-        
-        // Get current academy context
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        
-        // If no academy context (super admin with no academy selected), return empty result
-        if (!$academyId) {
-            return $query->whereRaw('1 = 0'); // This returns no results
-        }
-        
-        // Scope to current academy
-        return $query->where('academy_id', $academyId);
+        static::addGlobalScope('academy', function (Builder $builder) {
+            $academyContextService = app(AcademyContextService::class);
+            $currentAcademyId = $academyContextService->getCurrentAcademyId();
+            
+            // Only apply academy scoping if a specific academy is selected
+            // If "All Academies" is selected (null), don't apply scoping
+            if ($currentAcademyId) {
+                $builder->where('academy_id', $currentAcademyId);
+            }
+        });
     }
-
+    
     /**
-     * Get the academy ID for creating new records
+     * Check if currently viewing all academies
      */
-    protected static function getAcademyIdForCreate(): int
+    public static function isViewingAllAcademies(): bool
     {
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        
-        if (!$academyId) {
-            throw new \Exception('No academy context available for creating records. Please select an academy first.');
-        }
-        
-        return $academyId;
+        $academyContextService = app(AcademyContextService::class);
+        return $academyContextService->getCurrentAcademyId() === null;
     }
-
-    /**
-     * Automatically set academy_id when creating records
-     */
-    protected function mutateFormDataBeforeCreate(array $data): array
-    {
-        $data['academy_id'] = static::getAcademyIdForCreate();
-        return $data;
-    }
-
-    /**
-     * Prevent academy_id modification during updates (optional)
-     */
-    protected function mutateFormDataBeforeSave(array $data): array
-    {
-        // Remove academy_id from update data to prevent accidental changes
-        unset($data['academy_id']);
-        return $data;
-    }
-} 
+}

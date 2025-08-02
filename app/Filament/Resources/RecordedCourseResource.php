@@ -11,19 +11,19 @@ use App\Models\AcademicGradeLevel;
 use App\Helpers\AcademyHelper;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class RecordedCourseResource extends Resource
+class RecordedCourseResource extends BaseResource
 {
     protected static ?string $model = RecordedCourse::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-video-camera';
 
-    protected static ?string $navigationGroup = 'الدورات المسجلة';
+    protected static ?string $navigationGroup = 'إدارة الدورات المسجلة';
 
     protected static ?string $navigationLabel = 'الدورات المسجلة';
 

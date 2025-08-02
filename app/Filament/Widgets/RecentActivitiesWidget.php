@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Academy;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -19,36 +20,53 @@ class RecentActivitiesWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $query = User::query()
+            ->with(['academy'])
+            ->whereIn('user_type', ['quran_teacher', 'academic_teacher', 'student', 'admin', 'parent', 'supervisor']);
+
+        // If super admin is NOT in global view mode and has an academy selected, scope to that academy
+        if (AcademyContextService::isSuperAdmin() && !AcademyContextService::isGlobalViewMode()) {
+            $currentAcademy = AcademyContextService::getCurrentAcademy();
+            if ($currentAcademy) {
+                $query->where('academy_id', $currentAcademy->id);
+            }
+        }
+        // If regular user, scope to their academy
+        elseif (!AcademyContextService::isSuperAdmin()) {
+            $currentAcademy = AcademyContextService::getCurrentAcademy();
+            if ($currentAcademy) {
+                $query->where('academy_id', $currentAcademy->id);
+            }
+        }
+        // If super admin in global view mode, show all users (no academy filter)
+
         return $table
             ->query(
-                User::query()
-                    ->with(['academy'])
-                    ->whereIn('role', ['teacher', 'student', 'academy_admin'])
-                    ->latest()
-                    ->limit(10)
+                $query->latest()->limit(10)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('full_name')
+                Tables\Columns\TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable()
                     ->sortable(),
                     
-                Tables\Columns\BadgeColumn::make('role')
-                    ->label('الدور')
+                Tables\Columns\BadgeColumn::make('user_type')
+                    ->label('نوع المستخدم')
                     ->colors([
-                        'primary' => 'teacher',
+                        'primary' => 'quran_teacher',
+                        'info' => 'academic_teacher',
                         'success' => 'student',
-                        'warning' => 'academy_admin',
+                        'warning' => 'admin',
                         'danger' => 'parent',
                         'secondary' => 'supervisor',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'teacher' => 'معلم',
+                        'quran_teacher' => 'معلم قرآن',
+                        'academic_teacher' => 'معلم أكاديمي',
                         'student' => 'طالب',
-                        'academy_admin' => 'مدير أكاديمية',
+                        'admin' => 'مدير',
                         'parent' => 'ولي أمر',
                         'supervisor' => 'مشرف',
-                        'super_admin' => 'مدير النظام',
                         default => $state,
                     }),
                     
@@ -95,6 +113,13 @@ class RecentActivitiesWidget extends BaseWidget
     
     protected function getTableHeading(): string
     {
-        return 'آخر 10 مستخدمين مسجلين';
+        if (AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()) {
+            return 'آخر 10 مستخدمين مسجلين (جميع الأكاديميات)';
+        } elseif (AcademyContextService::isSuperAdmin()) {
+            $currentAcademy = AcademyContextService::getCurrentAcademy();
+            return $currentAcademy ? "آخر 10 مستخدمين مسجلين ({$currentAcademy->name})" : 'آخر 10 مستخدمين مسجلين';
+        } else {
+            return 'آخر 10 مستخدمين مسجلين';
+        }
     }
 } 

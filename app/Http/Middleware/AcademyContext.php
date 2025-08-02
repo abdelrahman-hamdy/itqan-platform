@@ -32,6 +32,11 @@ class AcademyContext
             return redirect($request->url());
         }
 
+        // Auto-initialize academy context for Super Admin if not set and not in global view
+        if (!AcademyContextService::hasAcademySelected() && !AcademyContextService::isGlobalViewMode()) {
+            AcademyContextService::initializeSuperAdminContext();
+        }
+
         // Ensure current academy context is set in app container for this request
         $currentAcademy = AcademyContextService::getCurrentAcademy();
         if ($currentAcademy) {

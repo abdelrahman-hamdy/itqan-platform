@@ -87,10 +87,6 @@
                         </svg>
                     </div>
                     <div class="space-y-2">
-                        <a href="{{ route('filament.admin.resources.quran-teacher-profiles.index') }}" 
-                           class="block text-green-100 hover:text-white transition-colors">
-                            مدرسي القرآن
-                        </a>
                         <a href="{{ route('filament.admin.resources.quran-circles.index') }}" 
                            class="block text-green-100 hover:text-white transition-colors">
                             حلقات القرآن

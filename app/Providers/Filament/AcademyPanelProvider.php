@@ -18,7 +18,20 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Models\Academy;
+use App\Http\Middleware\AcademyContext;
 use App\Filament\Academy\Resources\RecordedCourseResource;
+use App\Filament\Resources\AcademicTeacherProfileResource;
+use App\Filament\Resources\StudentProfileResource;
+use App\Filament\Resources\ParentProfileResource;
+use App\Filament\Resources\QuranTeacherProfileResource;
+use App\Filament\Resources\SupervisorProfileResource;
+use App\Filament\Resources\QuranCircleResource;
+use App\Filament\Resources\QuranSubscriptionResource;
+use App\Filament\Resources\QuranPackageResource;
+use App\Filament\Resources\InteractiveCourseResource;
+use App\Filament\Resources\GradeLevelResource;
+use App\Filament\Resources\SubjectResource;
+use App\Filament\Resources\AcademicSettingsResource;
 
 class AcademyPanelProvider extends PanelProvider
 {
@@ -43,16 +56,37 @@ class AcademyPanelProvider extends PanelProvider
             ->brandName('لوحة إدارة الأكاديمية')
             ->brandLogo(asset('images/itqan-logo.svg'))
             ->navigationGroups([
-                'لوحة التحكم' => 'لوحة التحكم',
-                'إدارة المستخدمين' => 'إدارة المستخدمين',
-                'المحتوى التعليمي' => 'المحتوى التعليمي',
-                'الجلسات والدورات' => 'الجلسات والدورات',
-                'التقارير المالية' => 'التقارير المالية',
-                'الإعدادات' => 'الإعدادات',
+                'لوحة التحكم',
+                'إدارة المستخدمين',
+                'إدارة القرآن',
+                'إدارة التعليم الأكاديمي',
+                'إدارة الدورات المسجلة',
+                'الإعدادات',
             ])
             ->discoverResources(in: app_path('Filament/Academy/Resources'), for: 'App\\Filament\\Academy\\Resources')
             ->resources([
+                // إدارة المستخدمين
+                StudentProfileResource::class,
+                ParentProfileResource::class,
+                SupervisorProfileResource::class,
+                AcademicTeacherProfileResource::class,
+                QuranTeacherProfileResource::class,
+                
+                // إدارة القرآن
+                QuranCircleResource::class,
+                QuranSubscriptionResource::class,
+                QuranPackageResource::class,
+                
+                // إدارة التعليم الأكاديمي
+                InteractiveCourseResource::class,
+                GradeLevelResource::class,
+                SubjectResource::class,
+                
+                // إدارة الدورات المسجلة
                 RecordedCourseResource::class,
+                
+                // الإعدادات
+                AcademicSettingsResource::class,
             ])
             ->discoverPages(in: app_path('Filament/Academy/Pages'), for: 'App\\Filament\\Academy\\Pages')
             ->pages([
@@ -61,7 +95,8 @@ class AcademyPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Academy/Widgets'), for: 'App\\Filament\\Academy\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                \App\Filament\Widgets\AcademyStatsWidget::class,
+                \App\Filament\Widgets\AcademyContextWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -73,6 +108,7 @@ class AcademyPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                AcademyContext::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
@@ -82,6 +118,10 @@ class AcademyPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
             ->login()
-            ->profile();
+            ->profile()
+            ->renderHook(
+                'panels::topbar.start', 
+                fn (): string => view('filament.hooks.academy-selector')->render()
+            );
     }
 }

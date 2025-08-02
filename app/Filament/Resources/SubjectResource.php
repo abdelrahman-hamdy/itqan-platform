@@ -8,7 +8,7 @@ use App\Models\Academy;
 use App\Traits\ScopedToAcademy;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +16,7 @@ use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
 use App\Services\AcademyContextService;
 
-class SubjectResource extends Resource
+class SubjectResource extends BaseResource
 {
     use ScopedToAcademy;
 
@@ -26,7 +26,7 @@ class SubjectResource extends Resource
     
     protected static ?string $navigationLabel = 'المواد الدراسية';
     
-    protected static ?string $navigationGroup = 'القسم الأكاديمي';
+    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
     
     protected static ?int $navigationSort = 1;
     
@@ -93,6 +93,7 @@ class SubjectResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\TextColumn::make('name')
                     ->label('اسم المادة')
                     ->searchable()
@@ -281,14 +282,5 @@ class SubjectResource extends Resource
         return $academyId ? static::getModel()::forAcademy($academyId)->count() : '0';
     }
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
-    }
+
 } 

@@ -2,52 +2,43 @@
 
 namespace App\Traits;
 
-use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use App\Services\AcademyContextService;
 
 trait ScopedToAcademyViaRelationship
 {
-    /**
-     * Get the relationship path to academy_id
-     * Must be implemented by using class
-     */
-    abstract protected static function getAcademyRelationshipPath(): string;
-
-    /**
-     * Get the Eloquent query scoped to the current academy context via relationship
-     */
-    public static function getEloquentQuery(): Builder
+    protected static function bootScopedToAcademyViaRelationship()
     {
-        $query = parent::getEloquentQuery();
-        
-        // Get current academy context
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        
-        // If no academy context (super admin with no academy selected), return empty result
-        if (!$academyId) {
-            return $query->whereRaw('1 = 0'); // This returns no results
-        }
-        
-        // Get the relationship path from implementing class
-        $relationshipPath = static::getAcademyRelationshipPath();
-        
-        // Scope to current academy via relationship
-        return $query->whereHas($relationshipPath, function ($q) use ($academyId) {
-            $q->where('academy_id', $academyId);
+        static::addGlobalScope('academy_via_relationship', function (Builder $builder) {
+            $academyContextService = app(AcademyContextService::class);
+            $currentAcademyId = $academyContextService->getCurrentAcademyId();
+            
+            // Only apply academy scoping if a specific academy is selected
+            // If "All Academies" is selected (null), don't apply scoping
+            if ($currentAcademyId) {
+                $relationshipName = static::getAcademyRelationshipName();
+                $builder->whereHas($relationshipName, function ($query) use ($currentAcademyId) {
+                    $query->where('academy_id', $currentAcademyId);
+                });
+            }
         });
     }
-
+    
     /**
-     * Get the academy ID for creating new records via relationship
+     * Get the relationship name to the academy
      */
-    protected static function getAcademyIdForCreate(): int
+    protected static function getAcademyRelationshipName(): string
     {
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        
-        if (!$academyId) {
-            throw new \Exception('No academy context available for creating records. Please select an academy first.');
-        }
-        
-        return $academyId;
+        return 'academy';
     }
-} 
+    
+    /**
+     * Check if currently viewing all academies
+     */
+    public static function isViewingAllAcademies(): bool
+    {
+        $academyContextService = app(AcademyContextService::class);
+        return $academyContextService->getCurrentAcademyId() === null;
+    }
+}

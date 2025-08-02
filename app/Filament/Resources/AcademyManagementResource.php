@@ -13,7 +13,7 @@ use App\Models\QuranTeacher;
 use App\Models\StudentProfile;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
@@ -31,7 +31,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use App\Services\AcademyContextService;
 
-class AcademyManagementResource extends Resource
+class AcademyManagementResource extends BaseResource
 {
     protected static ?string $model = Academy::class;
 
@@ -102,6 +102,23 @@ class AcademyManagementResource extends Resource
                                     ->url()
                                     ->placeholder('https://academy.com'),
                             ]),
+                    ])
+                    ->collapsible(),
+
+                Section::make('إدارة الأكاديمية')
+                    ->schema([
+                        Select::make('admin_id')
+                            ->label('مدير الأكاديمية')
+                            ->relationship('admin', 'name')
+                            ->options(function () {
+                                return User::where('user_type', 'admin')
+                                    ->get()
+                                    ->mapWithKeys(fn($user) => [$user->id => $user->name . ' (' . $user->email . ')']);
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->nullable()
+                            ->helperText('اختر المدير المسؤول عن هذه الأكاديمية'),
                     ])
                     ->collapsible(),
 
@@ -231,6 +248,13 @@ class AcademyManagementResource extends Resource
                         return 'نشطة';
                     }),
 
+                TextColumn::make('admin.name')
+                    ->label('مدير الأكاديمية')
+                    ->default('غير محدد')
+                    ->badge()
+                    ->color('warning')
+                    ->icon('heroicon-o-user-circle'),
+
                 TextColumn::make('users_count')
                     ->label('المستخدمين')
                     ->counts('users')
@@ -326,14 +350,7 @@ class AcademyManagementResource extends Resource
             'view' => Pages\ViewAcademyManagement::route('/{record}'),
         ];
     }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        // Only show this resource for super admin
-        return AcademyContextService::isSuperAdmin();
-    }
-
-    public static function canViewAny(): bool
+public static function canViewAny(): bool
     {
         // Only super admin can access academy management
         return AcademyContextService::isSuperAdmin();

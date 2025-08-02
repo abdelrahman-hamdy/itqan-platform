@@ -41,7 +41,7 @@ class RecordedCourseResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationGroup = 'المحتوى التعليمي';
+    protected static ?string $navigationGroup = 'إدارة الدورات المسجلة';
 
     protected static ?string $navigationLabel = 'الدورات المسجلة';
 
@@ -597,10 +597,13 @@ class RecordedCourseResource extends Resource
                     ->label('المدرب')
                     ->options(function () {
                         $academyId = Auth::user()->academy_id;
-                        return AcademicTeacher::where('academy_id', $academyId)
+                        return AcademicTeacher::with('user')
+                            ->where('academy_id', $academyId)
                             ->where('is_approved', true)
                             ->where('is_active', true)
-                            ->pluck('full_name', 'id');
+                            ->get()
+                            ->pluck('user.name', 'id')
+                            ->toArray();
                     }),
 
                 SelectFilter::make('level')
@@ -691,7 +694,7 @@ class RecordedCourseResource extends Resource
         }
         
         // If user is a teacher, only show their courses
-        if (Auth::user()->hasRole('teacher')) {
+        if (Auth::user()->isAcademicTeacher()) {
             $query->where('instructor_id', Auth::user()->academicTeacher->id);
         }
         

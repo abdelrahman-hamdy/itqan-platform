@@ -9,14 +9,14 @@ use App\Models\Subject;
 use App\Models\GradeLevel;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
 
-class InteractiveCourseResource extends Resource
+class InteractiveCourseResource extends BaseResource
 {
     use ScopedToAcademy;
 
@@ -24,22 +24,11 @@ class InteractiveCourseResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
-    protected static ?string $navigationGroup = 'القسم الأكاديمي';
+    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
     protected static ?string $modelLabel = 'دورة تفاعلية';
     protected static ?string $pluralModelLabel = 'الدورات التفاعلية';
 
     // Note: getEloquentQuery() is now handled by ScopedToAcademy trait
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
-    }
 
     public static function form(Form $form): Form
     {
@@ -270,6 +259,7 @@ class InteractiveCourseResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\TextColumn::make('course_code')
                     ->label('رمز الدورة')
                     ->searchable()
@@ -293,6 +283,12 @@ class InteractiveCourseResource extends Resource
                     ->label('المرحلة')
                     ->badge()
                     ->color('success'),
+
+                Tables\Columns\TextColumn::make('academy.name')
+                    ->label('الأكاديمية')
+                    ->badge()
+                    ->color('info')
+                    ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
 
                 Tables\Columns\TextColumn::make('assignedTeacher.user.name')
                     ->label('المعلم')

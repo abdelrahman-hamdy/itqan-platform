@@ -6,7 +6,7 @@ use App\Filament\Resources\QuranCircleResource\Pages;
 use App\Models\QuranCircle;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Infolists;
@@ -28,9 +28,12 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TimePicker;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
+use App\Services\AcademyContextService;
+use App\Traits\ScopedToAcademy;
 
-class QuranCircleResource extends Resource
+class QuranCircleResource extends BaseResource
 {
+    use ScopedToAcademy;
     protected static ?string $model = QuranCircle::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
@@ -41,11 +44,10 @@ class QuranCircleResource extends Resource
 
     protected static ?string $pluralModelLabel = 'حلقات القرآن';
 
-    protected static ?string $navigationGroup = 'قسم القرآن الكريم';
+    protected static ?string $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 3;
-
-    public static function form(Form $form): Form
+public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -103,8 +105,6 @@ class QuranCircleResource extends Resource
                                         'mixed' => 'مختلط',
                                     ])
                                     ->required(),
-
-
 
                                 TextInput::make('max_students')
                                     ->label('الحد الأقصى للطلاب')
@@ -180,8 +180,6 @@ class QuranCircleResource extends Resource
                                     ->maxLength(500),
                             ]),
                     ]),
-
-
 
                 Section::make('المكان ووسائل التعلم')
                     ->schema([
@@ -497,17 +495,11 @@ class QuranCircleResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
-    }
-
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'draft')->count() ?: null;
+        // Use the scoped query from trait for consistent academy filtering
+        $query = static::getEloquentQuery()->where('status', 'draft');
+        return $query->count() ?: null;
     }
 
     public static function getNavigationBadgeColor(): string|array|null

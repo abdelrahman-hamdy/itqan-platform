@@ -9,16 +9,18 @@ use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-class StudentProfileResource extends Resource
+class StudentProfileResource extends BaseResource
 {
     use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = StudentProfile::class;
+    
+    protected static ?string $tenantOwnershipRelationshipName = 'gradeLevel';
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
@@ -32,21 +34,12 @@ class StudentProfileResource extends Resource
 
     protected static function getAcademyRelationshipPath(): string
     {
-        return 'gradeLevel'; // StudentProfile -> GradeLevel -> academy_id
+        return 'gradeLevel.academy'; // StudentProfile -> GradeLevel -> Academy
     }
 
     // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
-    }
+
 
     public static function form(Form $form): Form
     {
@@ -163,6 +156,7 @@ class StudentProfileResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular(),
@@ -189,6 +183,11 @@ class StudentProfileResource extends Resource
                 Tables\Columns\TextColumn::make('gradeLevel.name')
                     ->label('المرحلة الدراسية')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('gradeLevel.academy.name')
+                    ->label('الأكاديمية')
+                    ->badge()
+                    ->color('info')
+                    ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
                 Tables\Columns\BadgeColumn::make('academic_status')
                     ->label('الحالة الأكاديمية')
                     ->colors([

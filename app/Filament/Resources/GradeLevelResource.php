@@ -6,14 +6,14 @@ use App\Filament\Resources\GradeLevelResource\Pages;
 use App\Models\GradeLevel;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
 
-class GradeLevelResource extends Resource
+class GradeLevelResource extends BaseResource
 {
     use ScopedToAcademy;
 
@@ -23,7 +23,7 @@ class GradeLevelResource extends Resource
     
     protected static ?string $navigationLabel = 'الصفوف الدراسية';
     
-    protected static ?string $navigationGroup = 'القسم الأكاديمي';
+    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
     
     protected static ?string $modelLabel = 'صف دراسي';
     
@@ -32,19 +32,7 @@ class GradeLevelResource extends Resource
     protected static ?int $navigationSort = 2;
 
     // Note: getEloquentQuery() is now handled by ScopedToAcademy trait
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
-    }
-
-    public static function form(Form $form): Form
+public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -97,6 +85,7 @@ class GradeLevelResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\TextColumn::make('name')
                     ->label('اسم المرحلة')
                     ->searchable()
@@ -114,6 +103,12 @@ class GradeLevelResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('info'),
+
+                Tables\Columns\TextColumn::make('academy.name')
+                    ->label('الأكاديمية')
+                    ->badge()
+                    ->color('info')
+                    ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('نشطة')

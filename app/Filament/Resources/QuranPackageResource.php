@@ -6,14 +6,17 @@ use App\Filament\Resources\QuranPackageResource\Pages;
 use App\Models\QuranPackage;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
+use App\Services\AcademyContextService;
+use App\Traits\ScopedToAcademy;
 
-class QuranPackageResource extends Resource
+class QuranPackageResource extends BaseResource
 {
+    use ScopedToAcademy;
     protected static ?string $model = QuranPackage::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
@@ -24,11 +27,10 @@ class QuranPackageResource extends Resource
 
     protected static ?string $pluralModelLabel = 'باقات القرآن';
 
-    protected static ?string $navigationGroup = 'قسم القرآن الكريم';
+    protected static ?string $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 1;
-
-    public static function form(Form $form): Form
+public static function form(Form $form): Form
     {
         return $form
             ->schema([

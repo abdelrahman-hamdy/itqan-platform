@@ -111,7 +111,7 @@ class Academy extends Model
      */
     public function teachers(): HasMany
     {
-        return $this->hasMany(User::class)->where('role', 'teacher');
+        return $this->hasMany(User::class)->whereIn('user_type', ['quran_teacher', 'academic_teacher']);
     }
 
     /**
@@ -119,7 +119,7 @@ class Academy extends Model
      */
     public function students(): HasMany
     {
-        return $this->hasMany(User::class)->where('role', 'student');
+        return $this->hasMany(User::class)->where('user_type', 'student');
     }
 
     /**
@@ -151,7 +151,7 @@ class Academy extends Model
      */
     public function parents(): HasMany
     {
-        return $this->hasMany(User::class)->where('role', 'parent');
+        return $this->hasMany(User::class)->where('user_type', 'parent');
     }
 
     /**
@@ -159,7 +159,7 @@ class Academy extends Model
      */
     public function supervisors(): HasMany
     {
-        return $this->hasMany(User::class)->where('role', 'supervisor');
+        return $this->hasMany(User::class)->where('user_type', 'supervisor');
     }
 
     /**
@@ -222,7 +222,7 @@ class Academy extends Model
      */
     public function getTeachersCountAttribute(): int
     {
-        return $this->users()->where('role', 'teacher')->count();
+        return $this->users()->whereIn('user_type', ['quran_teacher', 'academic_teacher'])->count();
     }
 
     /**
@@ -230,7 +230,7 @@ class Academy extends Model
      */
     public function getStudentsCountAttribute(): int
     {
-        return $this->users()->where('role', 'student')->count();
+        return $this->users()->where('user_type', 'student')->count();
     }
 
     /**

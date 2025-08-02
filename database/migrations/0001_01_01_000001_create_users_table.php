@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('phone', 20);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['super_admin', 'academy_admin', 'teacher', 'supervisor', 'student', 'parent'])->default('student');
+            // Role field removed - using user_type instead
             $table->enum('status', ['pending', 'active', 'inactive', 'rejected'])->default('pending');
             $table->text('bio')->nullable();
             
@@ -43,7 +43,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
             
-            $table->index(['academy_id', 'role']);
+            // Index on academy_id, user_type will be added by later migration
             $table->index(['academy_id', 'status']);
             $table->index('teacher_type');
             $table->index('email');

@@ -8,13 +8,26 @@
             // Reload the page to refresh all resources and navigation
             window.location.reload();
         });
+        $wire.on('global-view-enabled', () => {
+            // Reload page when global view is enabled
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+        });
      ">
     <!-- Academy Selector Button -->
     <button 
         @click="open = !open"
         class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
     >
-        @if($currentAcademy)
+        @if($isGlobalView)
+            <!-- Global View State -->
+            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-semibold text-green-600">جميع الأكاديميات</span>
+        @elseif($currentAcademy)
             <!-- Academy Logo/Icon -->
             @if($currentAcademy->logo)
                 <div class="w-5 h-5 rounded overflow-hidden">
@@ -57,7 +70,7 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 dark:bg-gray-800 dark:ring-white/10"
+        class="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 dark:bg-gray-800 dark:ring-white/10"
     >
         <div class="py-1">
             <!-- Header -->
@@ -65,6 +78,43 @@
                 <h3 class="text-sm font-medium text-gray-900 dark:text-white">الأكاديميات المتاحة</h3>
                 <p class="text-xs text-gray-500 dark:text-gray-400">اختر أكاديمية لإدارة محتواها</p>
             </div>
+
+            <!-- Global View Option -->
+            <button 
+                wire:click="selectAcademy('global')"
+                type="button"
+                class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors {{ $isGlobalView ? 'bg-green-50 dark:bg-green-900/50 border-l-4 border-green-600 dark:border-green-400' : '' }}"
+            >
+                <div class="flex items-center gap-3">
+                    <!-- Global View Icon -->
+                    <div class="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    
+                    <!-- Global View Info -->
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate {{ $isGlobalView ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white' }}">
+                            جميع الأكاديميات
+                        </p>
+                        <p class="text-xs truncate {{ $isGlobalView ? 'text-green-700 dark:text-green-200' : 'text-gray-500 dark:text-gray-400' }}">
+                            عرض شامل لجميع البيانات عبر كل الأكاديميات
+                        </p>
+                    </div>
+                    
+                    <!-- Selected Indicator -->
+                    @if($isGlobalView)
+                        <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    @endif
+                </div>
+            </button>
+
+            <!-- Separator -->
+            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
 
             <!-- Academy List -->
             @forelse($academies as $academy)

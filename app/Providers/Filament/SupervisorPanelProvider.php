@@ -39,11 +39,11 @@ class SupervisorPanelProvider extends PanelProvider
             ->brandName('لوحة المشرف')
             ->brandLogo(asset('images/itqan-logo.svg'))
             ->navigationGroups([
-                'الحلقات المراقبة' => 'الحلقات المراقبة',
-                'مراقبة الدردشة' => 'مراقبة الدردشة',
-                'تقارير الجودة' => 'تقارير الجودة',
-                'الشكاوى' => 'الشكاوى',
-                'ملفي الشخصي' => 'ملفي الشخصي',
+                'الحلقات المراقبة',
+                'مراقبة الدردشة',
+                'تقارير الجودة',
+                'الشكاوى',
+                'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/Supervisor/Resources'), for: 'App\\Filament\\Supervisor\\Resources')
             ->discoverPages(in: app_path('Filament/Supervisor/Pages'), for: 'App\\Filament\\Supervisor\\Pages')

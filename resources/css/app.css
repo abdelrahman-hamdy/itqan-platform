@@ -13,6 +13,23 @@
     text-align: left;
 }
 
+/* Fix for RTL spacing utilities */
+[dir="rtl"] .ms-auto {
+    margin-inline-start: auto;
+}
+
+[dir="rtl"] .me-auto {
+    margin-inline-end: auto;
+}
+
+[dir="rtl"] .ps-4 {
+    padding-inline-start: 1rem;
+}
+
+[dir="rtl"] .pe-4 {
+    padding-inline-end: 1rem;
+}
+
 /* Arabic font classes */
 .font-arabic {
     font-family: 'Tajawal', 'Cairo', 'Amiri', sans-serif;

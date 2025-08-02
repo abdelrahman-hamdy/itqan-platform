@@ -37,13 +37,6 @@ export default {
         require('tailwindcss-rtl'),
     ],
 
-    // RTL support
-    corePlugins: {
-        // Disable default margin and padding to use RTL versions
-        margin: false,
-        padding: false,
-    },
-
     // Dark mode support
     darkMode: 'class',
 }; 

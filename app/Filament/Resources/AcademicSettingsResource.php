@@ -6,7 +6,7 @@ use App\Filament\Resources\AcademicSettingsResource\Pages;
 use App\Models\AcademicSettings;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseSettingsResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
 
-class AcademicSettingsResource extends Resource
+class AcademicSettingsResource extends BaseSettingsResource
 {
     use ScopedToAcademy;
 
@@ -37,13 +37,7 @@ class AcademicSettingsResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
+        return parent::shouldRegisterNavigation();
     }
 
     public static function form(Form $form): Form

@@ -39,12 +39,12 @@ class TeacherPanelProvider extends PanelProvider
             ->brandName('لوحة المعلم')
             ->brandLogo(asset('images/itqan-logo.svg'))
             ->navigationGroups([
-                'جدولي' => 'جدولي',
-                'جلساتي' => 'جلساتي',
-                'الواجبات' => 'الواجبات',
-                'الاختبارات' => 'الاختبارات',
-                'دوراتي' => 'دوراتي',
-                'ملفي الشخصي' => 'ملفي الشخصي',
+                'جدولي',
+                'جلساتي',
+                'الواجبات',
+                'الاختبارات',
+                'دوراتي',
+                'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')
             ->discoverPages(in: app_path('Filament/Teacher/Pages'), for: 'App\\Filament\\Teacher\\Pages')

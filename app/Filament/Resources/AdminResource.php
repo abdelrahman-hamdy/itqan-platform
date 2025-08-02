@@ -31,26 +31,34 @@ class AdminResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $academyId = AcademyContextService::getCurrentAcademyId();
+        $query = parent::getEloquentQuery()->where('user_type', 'admin');
         
-        if (!$academyId) {
-            return parent::getEloquentQuery()->whereRaw('1 = 0');
+        // For super admin in admin panel
+        if (request()->is('admin/*')) {
+            $academyId = AcademyContextService::getCurrentAcademyId();
+            
+            if ($academyId) {
+                // When academy is selected, show both:
+                // 1. Super admins (academy_id = null) 
+                // 2. Academy-specific admins for the selected academy
+                $query->where(function ($q) use ($academyId) {
+                    $q->whereNull('academy_id') // Super admins
+                      ->orWhere('academy_id', $academyId); // Academy admins for selected academy
+                });
+            }
+            // If no academy context, show all admins
+        } else {
+            // For academy panel, only show current academy's admins
+            $academyId = AcademyContextService::getCurrentAcademyId();
+            if ($academyId) {
+                $query->where('academy_id', $academyId);
+            }
         }
         
-        return parent::getEloquentQuery()
-            ->where('academy_id', $academyId);
+        return $query;
     }
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
-    }
+
 
     public static function form(Form $form): Form
     {
@@ -97,19 +105,23 @@ class AdminResource extends Resource
                                     ->password()
                                     ->dehydrated(fn ($state) => filled($state))
                                     ->required(fn (string $context): bool => $context === 'create'),
-                                Forms\Components\Select::make('role')
-                                    ->label('الدور')
+                                Forms\Components\Select::make('user_type')
+                                    ->label('نوع المستخدم')
                                     ->options([
-                                        'super_admin' => 'مدير عام',
-                                        'academy_admin' => 'مدير أكاديمية',
                                         'admin' => 'مدير',
                                     ])
                                     ->required()
-                                    ->default('admin'),
+                                    ->default('admin')
+                                    ->disabled(), // Always admin for this resource
                                 Forms\Components\Toggle::make('status')
-                                    ->label('الحالة')
-                                    ->default(true),
+                                    ->label('نشط')
+                                    ->default(true)
+                                    ->dehydrateStateUsing(fn ($state) => $state ? 'active' : 'inactive'),
                             ]),
+                        Forms\Components\Hidden::make('academy_id')
+                            ->default(fn () => AcademyContextService::getCurrentAcademyId())
+                            ->dehydrated()
+                            ->required(),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)
@@ -136,16 +148,44 @@ class AdminResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('رقم الهاتف')
                     ->searchable(),
-                Tables\Columns\BadgeColumn::make('role')
-                    ->label('الدور')
+                Tables\Columns\TextColumn::make('academy.name')
+                    ->label('الأكاديمية')
+                    ->badge()
+                    ->getStateUsing(function ($record) {
+                        if (is_null($record->academy_id)) {
+                            return 'مدير عام'; // Super Admin
+                        }
+                        return $record->academy?->name ?? 'غير محدد';
+                    })
+                    ->color(function ($record) {
+                        return is_null($record->academy_id) ? 'warning' : 'info';
+                    })
+                    ->visible(static::isViewingAllAcademies()),
+                Tables\Columns\BadgeColumn::make('user_type')
+                    ->label('نوع المستخدم')
+                    ->getStateUsing(function ($record) {
+                        if (is_null($record->academy_id)) {
+                            return 'super_admin';
+                        }
+                        return 'academy_admin';
+                    })
                     ->colors([
-                        'danger' => 'super_admin',
-                        'warning' => 'academy_admin',
-                        'success' => 'admin',
-                    ]),
+                        'warning' => 'super_admin',
+                        'success' => 'academy_admin',
+                    ])
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'super_admin' => 'مدير عام',
+                        'academy_admin' => 'مدير أكاديمية',
+                        default => $state,
+                    }),
                 Tables\Columns\IconColumn::make('status')
                     ->label('الحالة')
-                    ->boolean(),
+                    ->boolean()
+                    ->trueColor('success')
+                    ->falseColor('danger')
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->getStateUsing(fn($record) => $record->status === 'active'),
                 Tables\Columns\TextColumn::make('last_login_at')
                     ->label('آخر تسجيل دخول')
                     ->dateTime()
@@ -158,18 +198,18 @@ class AdminResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('role')
-                    ->label('الدور')
+                Tables\Filters\SelectFilter::make('user_type')
+                    ->label('نوع المستخدم')
                     ->options([
-                        'super_admin' => 'مدير عام',
-                        'academy_admin' => 'مدير أكاديمية',
                         'admin' => 'مدير',
                     ]),
-                Tables\Filters\TernaryFilter::make('status')
+                Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
-                    ->placeholder('جميع المديرين')
-                    ->trueLabel('نشط')
-                    ->falseLabel('غير نشط'),
+                    ->options([
+                        'active' => 'نشط',
+                        'inactive' => 'غير نشط',
+                        'pending' => 'في الانتظار',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

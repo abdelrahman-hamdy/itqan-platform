@@ -17,11 +17,13 @@ class AcademyContextWidget extends Widget
     {
         $user = auth()->user();
         $isSuperAdmin = AcademyContextService::isSuperAdmin($user);
+        $isGlobalView = AcademyContextService::isGlobalViewMode();
         $currentAcademy = AcademyContextService::getCurrentAcademy();
         $hasAcademySelected = AcademyContextService::hasAcademySelected();
 
         return [
             'is_super_admin' => $isSuperAdmin,
+            'is_global_view' => $isGlobalView,
             'current_academy' => $currentAcademy,
             'has_academy_selected' => $hasAcademySelected,
             'user' => $user,

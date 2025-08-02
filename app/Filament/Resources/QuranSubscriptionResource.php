@@ -6,7 +6,7 @@ use App\Filament\Resources\QuranSubscriptionResource\Pages;
 use App\Models\QuranSubscription;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Infolists;
@@ -27,9 +27,12 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
+use App\Services\AcademyContextService;
+use App\Traits\ScopedToAcademy;
 
-class QuranSubscriptionResource extends Resource
+class QuranSubscriptionResource extends BaseResource
 {
+    use ScopedToAcademy;
     protected static ?string $model = QuranSubscription::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
@@ -40,11 +43,10 @@ class QuranSubscriptionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'اشتراكات القرآن';
 
-    protected static ?string $navigationGroup = 'قسم القرآن الكريم';
+    protected static ?string $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 2;
-
-    public static function form(Form $form): Form
+public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -574,17 +576,11 @@ class QuranSubscriptionResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
-    }
-
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('subscription_status', 'pending')->count() ?: null;
+        // Use the scoped query from trait for consistent academy filtering
+        $query = static::getEloquentQuery()->where('subscription_status', 'pending');
+        return $query->count() ?: null;
     }
 
     public static function getNavigationBadgeColor(): string|array|null

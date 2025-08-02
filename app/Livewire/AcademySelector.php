@@ -11,6 +11,7 @@ class AcademySelector extends Component
     public $selectedAcademyId;
     public $academies = [];
     public $currentAcademy;
+    public $isGlobalView = false;
 
     public function mount()
     {
@@ -22,6 +23,7 @@ class AcademySelector extends Component
         $this->academies = AcademyContextService::getAvailableAcademies();
         $this->selectedAcademyId = AcademyContextService::getCurrentAcademyId();
         $this->currentAcademy = AcademyContextService::getCurrentAcademy();
+        $this->isGlobalView = AcademyContextService::isGlobalViewMode();
     }
 
     public function selectAcademy($academyId)
@@ -30,7 +32,19 @@ class AcademySelector extends Component
             return;
         }
 
+        // Check if this is the global view selection
+        if ($academyId === 'global') {
+            $this->enableGlobalView();
+            return;
+        }
+
         $this->selectedAcademyId = $academyId;
+        
+        // Disable global view when selecting a specific academy
+        if ($this->isGlobalView) {
+            AcademyContextService::disableGlobalView();
+            $this->isGlobalView = false;
+        }
         
         // Set academy context using the service
         if (AcademyContextService::setAcademyContext($academyId)) {
@@ -40,6 +54,44 @@ class AcademySelector extends Component
             // Use JavaScript redirect for full page reload to refresh all resources
             $this->dispatch('academy-selected', academyId: $academyId);
         }
+    }
+
+    public function enableGlobalView()
+    {
+        if (!AcademyContextService::isSuperAdmin()) {
+            return;
+        }
+
+        // Enable global view and clear academy context
+        AcademyContextService::enableGlobalView();
+        
+        // Update component state
+        $this->isGlobalView = true;
+        $this->selectedAcademyId = null;
+        $this->currentAcademy = null;
+
+        // Trigger page refresh to reload all resources in global mode
+        $this->dispatch('global-view-enabled');
+    }
+
+    public function toggleGlobalView()
+    {
+        if (!AcademyContextService::isSuperAdmin()) {
+            return;
+        }
+
+        if ($this->isGlobalView) {
+            // Switch to academy-specific view
+            AcademyContextService::disableGlobalView();
+            $this->isGlobalView = false;
+        } else {
+            // Switch to global view
+            AcademyContextService::enableGlobalView();
+            $this->isGlobalView = true;
+        }
+
+        // Trigger page refresh to reload all resources
+        $this->dispatch('global-view-toggled', isGlobalView: $this->isGlobalView);
     }
 
     // clearAcademy method removed to prevent dashboard pages from disappearing

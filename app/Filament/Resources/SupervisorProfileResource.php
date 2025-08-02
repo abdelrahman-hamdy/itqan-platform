@@ -6,7 +6,7 @@ use App\Filament\Resources\SupervisorProfileResource\Pages;
 use App\Models\SupervisorProfile;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,11 +14,13 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 
-class SupervisorProfileResource extends Resource
+class SupervisorProfileResource extends BaseResource
 {
     use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = SupervisorProfile::class;
+    
+    protected static ?string $tenantOwnershipRelationshipName = 'user';
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
@@ -34,21 +36,10 @@ class SupervisorProfileResource extends Resource
 
     protected static function getAcademyRelationshipPath(): string
     {
-        return 'user'; // SupervisorProfile -> User -> academy_id
+        return 'user.academy'; // SupervisorProfile -> User -> Academy
     }
 
     // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
-    }
 
     public static function form(Form $form): Form
     {
@@ -159,6 +150,7 @@ class SupervisorProfileResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular(),

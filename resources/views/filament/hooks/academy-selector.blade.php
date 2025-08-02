@@ -1,5 +1,5 @@
-@if(auth()->check() && auth()->user()->role === 'super_admin')
-    <div class="flex items-center gap-4 mr-4">
+@if(auth()->check() && auth()->user()->isSuperAdmin())
+    <div class="flex items-center">
         @livewire('academy-selector')
     </div>
 @endif 

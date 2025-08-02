@@ -6,7 +6,7 @@ use App\Filament\Resources\ParentProfileResource\Pages;
 use App\Models\ParentProfile;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,11 +14,13 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 
-class ParentProfileResource extends Resource
+class ParentProfileResource extends BaseResource
 {
     use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = ParentProfile::class;
+    
+    protected static ?string $tenantOwnershipRelationshipName = 'user';
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
@@ -36,19 +38,7 @@ class ParentProfileResource extends Resource
     {
         return 'user'; // ParentProfile -> User -> academy_id
     }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
-    }
-
-    public static function form(Form $form): Form
+public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -163,6 +153,7 @@ class ParentProfileResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular(),
@@ -196,6 +187,11 @@ class ParentProfileResource extends Resource
                     ->label('مرتبط بحساب')
                     ->boolean()
                     ->getStateUsing(fn ($record) => $record->isLinked()),
+                Tables\Columns\TextColumn::make('academy.name')
+                    ->label('الأكاديمية')
+                    ->badge()
+                    ->color('info')
+                    ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime()

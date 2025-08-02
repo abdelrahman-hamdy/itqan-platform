@@ -2,10 +2,71 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Models\Academy;
+use App\Http\Controllers\AcademyHomepageController;
 use App\Http\Controllers\RecordedCourseController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\StudentDashboardController;
+
+// Include authentication routes
+require __DIR__.'/auth.php';
+
+// Test routes for academy styling verification
+Route::get('/test-academy', function () {
+    $academy = \App\Models\Academy::where('subdomain', 'itqan-academy')->first();
+    if (!$academy) {
+        return 'Academy not found';
+    }
+    
+    $stats = [
+        'total_students' => 150,
+        'total_teachers' => 25,
+        'active_courses' => 45,
+        'quran_circles' => 12,
+        'completion_rate' => 85,
+    ];
+    
+    $services = [
+        'quran_circles' => collect(),
+        'quran_teachers' => collect(),
+        'interactive_courses' => collect(),
+        'academic_teachers' => collect(),
+        'recorded_courses' => collect(),
+    ];
+    
+    return view('academy.homepage', compact('academy', 'stats', 'services'));
+});
+
+
+
+// Dynamic test routes for each academy (localhost development)
+Route::get('/academy/{subdomain}', function ($subdomain) {
+    $academy = \App\Models\Academy::where('subdomain', $subdomain)->first();
+    if (!$academy) {
+        return redirect('/')->with('error', 'Academy not found: ' . $subdomain);
+    }
+    
+    // Make academy available for the view
+    app()->instance('current_academy', $academy);
+    
+    $stats = [
+        'total_students' => rand(50, 200),
+        'total_teachers' => rand(10, 50),
+        'active_courses' => rand(20, 80),
+        'quran_circles' => rand(5, 20),
+        'completion_rate' => rand(75, 95),
+    ];
+    
+    $services = [
+        'quran_circles' => collect(),
+        'quran_teachers' => collect(),
+        'interactive_courses' => collect(),
+        'academic_teachers' => collect(),
+        'recorded_courses' => collect(),
+    ];
+    
+    return view('academy.homepage', compact('academy', 'stats', 'services'));
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -15,7 +76,39 @@ use App\Http\Controllers\StudentDashboardController;
 
 // Main domain routes (itqan-platform.test or default academy)
 Route::domain(config('app.domain'))->group(function () {
+    
+    // Temporary test route for styling verification
+    Route::get('/test-academy', function () {
+        $academy = \App\Models\Academy::where('subdomain', 'itqan-academy')->first();
+        if (!$academy) {
+            return 'Academy not found';
+        }
+        
+        $stats = [
+            'total_students' => 150,
+            'total_teachers' => 25,
+            'active_courses' => 45,
+            'quran_circles' => 12,
+            'completion_rate' => 85,
+        ];
+        
+        $services = [
+            'quran_circles' => collect(),
+            'quran_teachers' => collect(),
+            'interactive_courses' => collect(),
+            'academic_teachers' => collect(),
+            'recorded_courses' => collect(),
+        ];
+        
+        return view('academy.homepage', compact('academy', 'stats', 'services'));
+    });
+    
     Route::get('/', function () {
+        // Redirect to a default academy or show available academies
+        return redirect('http://itqan-academy.' . config('app.domain'));
+    });
+    
+    Route::get('/old-home', function () {
         // Check if there's a default academy (itqan-academy)
         $defaultAcademy = Academy::where('subdomain', 'itqan-academy')->first();
         
@@ -56,39 +149,7 @@ Route::domain(config('app.domain'))->group(function () {
 Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     
     // Academy Home Page
-    Route::get('/', function ($subdomain) {
-        // Find academy by subdomain
-        $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
-            abort(404, 'Academy not found');
-        }
-        
-        if (!$academy->is_active) {
-            abort(503, 'Academy is currently unavailable');
-        }
-        
-        if ($academy->maintenance_mode) {
-            abort(503, 'Academy is currently under maintenance');
-        }
-        
-        return "
-        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; border: 1px solid #ddd; border-radius: 8px;'>
-            <h1 style='color: #2563eb;'>🎓 {$academy->name}</h1>
-            <p><strong>Subdomain:</strong> {$subdomain}</p>
-            <p><strong>Full Domain:</strong> {$academy->full_domain}</p>
-            <p><strong>Status:</strong> {$academy->status}</p>
-            <p><strong>Logo URL:</strong> " . ($academy->logo_url ?? 'No logo uploaded') . "</p>
-            <hr>
-            <p>🚀 <strong>Subdomain routing is working!</strong></p>
-            <div style='margin-top: 20px;'>
-                <a href='/courses' style='display: inline-block; margin: 5px; padding: 10px 20px; background: #16a34a; color: white; text-decoration: none; border-radius: 4px;'>Browse Courses</a>
-                <a href='/dashboard' style='display: inline-block; margin: 5px; padding: 10px 20px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;'>Student Dashboard</a>
-                <a href='http://itqan-platform.test/admin' style='display: inline-block; margin: 5px; padding: 10px 20px; background: #dc2626; color: white; text-decoration: none; border-radius: 4px;'>Admin Panel</a>
-            </div>
-        </div>
-        ";
-    })->name('academy.home');
+    Route::get('/', [AcademyHomepageController::class, 'index'])->name('academy.home');
 
     /*
     |--------------------------------------------------------------------------
@@ -181,23 +242,3 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     // Route::get('/about', [AcademyController::class, 'about'])->name('academy.about');
     // Route::get('/contact', [AcademyController::class, 'contact'])->name('academy.contact');
 });
-
-/*
-|--------------------------------------------------------------------------
-| Authentication Routes
-|--------------------------------------------------------------------------
-*/
-
-// Include authentication routes (these would typically be in a separate file)
-// Auth::routes();
-
-/*
-|--------------------------------------------------------------------------
-| Admin Routes (Global)
-|--------------------------------------------------------------------------
-*/
-
-// Admin routes would typically be in a separate route file
-// Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
-//     // Admin routes
-// });

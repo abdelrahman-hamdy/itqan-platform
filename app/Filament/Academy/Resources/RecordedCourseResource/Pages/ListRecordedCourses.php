@@ -38,7 +38,7 @@ class ListRecordedCourses extends ListRecords
         }
         
         // If user is a teacher, only show their courses
-        if (Auth::user()->hasRole('teacher')) {
+        if (Auth::user()->isAcademicTeacher()) {
             $query->where('instructor_id', Auth::user()->academicTeacher->id);
         }
         

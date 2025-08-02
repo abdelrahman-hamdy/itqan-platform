@@ -5,8 +5,35 @@ namespace App\Filament\Resources\AdminResource\Pages;
 use App\Filament\Resources\AdminResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+use App\Services\AcademyContextService;
 
 class CreateAdmin extends CreateRecord
 {
     protected static string $resource = AdminResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        // Redirect to the admins list page after creation
+        return $this->getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        // Ensure academy_id is set if not already provided
+        if (empty($data['academy_id'])) {
+            $data['academy_id'] = AcademyContextService::getCurrentAcademyId();
+        }
+
+        // Ensure status is properly formatted
+        if (isset($data['status']) && is_bool($data['status'])) {
+            $data['status'] = $data['status'] ? 'active' : 'inactive';
+        }
+
+        return $data;
+    }
+
+    protected function getCreatedNotificationTitle(): ?string
+    {
+        return 'تم إنشاء المدير بنجاح';
+    }
 }

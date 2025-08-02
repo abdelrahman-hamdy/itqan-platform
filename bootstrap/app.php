@@ -11,10 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web([
-            \App\Http\Middleware\TenantMiddleware::class,
-            \App\Http\Middleware\AcademyContext::class,
-        ]);
+        // Temporarily disabled all global middleware to debug route registration
+        // $middleware->web([
+        //     \App\Http\Middleware\TenantMiddleware::class,
+        //     // Temporarily disabled AcademyContext to prevent infinite loops
+        //     // \App\Http\Middleware\AcademyContext::class,
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

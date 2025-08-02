@@ -6,28 +6,32 @@ use App\Filament\Resources\QuranTeacherProfileResource\Pages;
 use App\Models\QuranTeacherProfile;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 
-class QuranTeacherProfileResource extends Resource
+class QuranTeacherProfileResource extends BaseResource
 {
     use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = QuranTeacherProfile::class;
+    
+    protected static ?string $tenantOwnershipRelationshipName = 'user';
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
 
-    protected static ?string $navigationLabel = 'معلمي القرآن';
+    protected static ?string $navigationLabel = 'معلمو القرآن';
 
-    protected static ?string $navigationGroup = 'إدارة المستخدمين';
+    protected static ?string $navigationGroup = 'إدارة القرآن';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'معلم قرآن';
 
-    protected static ?string $pluralModelLabel = 'معلمي القرآن';
+    protected static ?string $pluralModelLabel = 'معلمو القرآن';
 
     protected static function getAcademyRelationshipPath(): string
     {
@@ -35,19 +39,7 @@ class QuranTeacherProfileResource extends Resource
     }
 
     // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        // For super admin, only show navigation when academy is selected
-        if (AcademyContextService::isSuperAdmin()) {
-            return AcademyContextService::hasAcademySelected();
-        }
-        
-        // For regular users, always show if they have academy access
-        return AcademyContextService::getCurrentAcademy() !== null;
-    }
-
-    public static function form(Form $form): Form
+public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -259,6 +251,11 @@ class QuranTeacherProfileResource extends Resource
                     ->label('التقييم')
                     ->formatStateUsing(fn ($state) => $state ? number_format($state, 1) . ' ⭐' : 'غير مقيم')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('academy.name')
+                    ->label('الأكاديمية')
+                    ->badge()
+                    ->color('info')
+                    ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('approval_status')

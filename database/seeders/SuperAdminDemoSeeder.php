@@ -26,7 +26,7 @@ class SuperAdminDemoSeeder extends Seeder
                 'email' => 'admin@itqan-platform.test',
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'),
-                'role' => 'super_admin',
+                'user_type' => 'super_admin',
                 'status' => 'active',
                 'phone' => '+966501234567',
                 'bio' => 'مدير النظام الرئيسي لمنصة إتقان',

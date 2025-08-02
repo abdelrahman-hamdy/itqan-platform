@@ -14,6 +14,11 @@ class PlatformOverviewWidget extends BaseWidget
 {
     protected function getStats(): array
     {
+        // Check if super admin is in global view mode
+        if (AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()) {
+            return $this->getPlatformStats();
+        }
+        
         $currentAcademy = AcademyContextService::getCurrentAcademy();
         
         // If super admin has selected an academy, show academy-specific stats
@@ -21,7 +26,7 @@ class PlatformOverviewWidget extends BaseWidget
             return $this->getAcademyStats($currentAcademy);
         }
         
-        // If super admin with no academy selected or system overview, show platform stats
+        // If super admin with no academy selected, show platform stats
         if (AcademyContextService::isSuperAdmin()) {
             return $this->getPlatformStats();
         }
@@ -33,8 +38,8 @@ class PlatformOverviewWidget extends BaseWidget
     private function getAcademyStats(Academy $academy): array
     {
         $academyUsers = User::where('academy_id', $academy->id)->count();
-        $academyTeachers = User::where('academy_id', $academy->id)->where('role', 'teacher')->count();
-        $academyStudents = User::where('academy_id', $academy->id)->where('role', 'student')->count();
+        $academyTeachers = User::where('academy_id', $academy->id)->whereIn('user_type', ['quran_teacher', 'academic_teacher'])->count();
+        $academyStudents = User::where('academy_id', $academy->id)->where('user_type', 'student')->count();
         $academyCourses = RecordedCourse::where('academy_id', $academy->id)->count();
         
         return [
@@ -67,10 +72,10 @@ class PlatformOverviewWidget extends BaseWidget
         $totalUsers = User::count();
         $totalRevenue = Academy::sum('total_revenue');
         
-        // Users by role
-        $teachers = User::where('role', 'teacher')->count();
-        $students = User::where('role', 'student')->count();
-        $parents = User::where('role', 'parent')->count();
+        // Users by type
+        $teachers = User::whereIn('user_type', ['quran_teacher', 'academic_teacher'])->count();
+        $students = User::where('user_type', 'student')->count();
+        $parents = User::where('user_type', 'parent')->count();
         
         return [
             Stat::make('إجمالي الأكاديميات', $totalAcademies)
