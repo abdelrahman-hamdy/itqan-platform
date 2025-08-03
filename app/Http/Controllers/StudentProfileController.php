@@ -85,7 +85,7 @@ class StudentProfileController extends Controller
         // Count completed lessons
         $completedLessons = AcademicProgress::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->where('status', 'completed')
+            ->where('progress_status', 'completed')
             ->count();
 
         // Calculate Quran progress (simplified)
