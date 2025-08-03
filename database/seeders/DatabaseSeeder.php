@@ -211,7 +211,7 @@ class DatabaseSeeder extends Seeder
                 'first_name' => 'يوسف',
                 'last_name' => 'القارئ',
                 'phone' => '+966510123456',
-                'user_type' => 'teacher',
+                'user_type' => 'quran_teacher',
                 'status' => 'active',
                 'teacher_type' => 'quran',
                 'password' => Hash::make('password123'),
