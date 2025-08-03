@@ -6,6 +6,7 @@ use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use App\Services\AcademyContextService;
 use App\Models\Academy;
+use Illuminate\Database\Eloquent\Builder;
 
 abstract class BaseResource extends Resource
 {
@@ -62,7 +63,24 @@ abstract class BaseResource extends Resource
             ->label('الأكاديمية')
             ->sortable()
             ->searchable()
-            ->visible(static::isViewingAllAcademies());
+            ->visible(static::isViewingAllAcademies())
+            ->placeholder('غير محدد');
+    }
+    
+    /**
+     * Get the Eloquent query with academy relationship eager loaded when needed
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        // When viewing all academies, eager load the academy relationship to prevent N+1 queries
+        if (static::isViewingAllAcademies()) {
+            $academyPath = static::getAcademyRelationshipPath();
+            $query->with($academyPath);
+        }
+        
+        return $query;
     }
     
     /**

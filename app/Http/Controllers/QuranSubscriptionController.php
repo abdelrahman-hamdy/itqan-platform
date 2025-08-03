@@ -111,7 +111,7 @@ class QuranSubscriptionController extends Controller
         
         $validated = $request->validate([
             'student_id' => 'required|exists:users,id',
-            'quran_teacher_id' => 'required|exists:quran_teachers,id',
+            'quran_teacher_id' => 'required|exists:users,id',
             'package_name' => 'required|string|max:100',
             'package_type' => 'required|in:basic,standard,premium,intensive,custom',
             'total_sessions' => 'required|integer|min:4|max:32',

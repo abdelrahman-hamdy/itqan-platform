@@ -98,7 +98,7 @@ class QuranTeacherController extends Controller
             'user_id' => [
                 'required',
                 'exists:users,id',
-                Rule::unique('quran_teachers')->where('academy_id', $academy->id)
+                Rule::unique('quran_teacher_profiles')->where('academy_id', $academy->id)
             ],
             'specialization' => 'required|in:memorization,recitation,interpretation,arabic_language,general',
             'has_ijazah' => 'boolean',

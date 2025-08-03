@@ -30,7 +30,7 @@ class ResolveTenantFromSubdomain
                 
                 if ($academy) {
                     // Set the current tenant in the request
-                    $request->merge(['current_academy' => $academy]);
+                    $request->merge(['academy' => $academy]);
                     
                     // You can also set it globally if needed
                     app()->instance('current_academy', $academy);

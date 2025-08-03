@@ -28,7 +28,7 @@ Route::get('/test-academy', function () {
     
     $services = [
         'quran_circles' => collect(),
-        'quran_teachers' => collect(),
+        'quran_teacher_profiles' => collect(),
         'interactive_courses' => collect(),
         'academic_teachers' => collect(),
         'recorded_courses' => collect(),
@@ -59,7 +59,7 @@ Route::get('/academy/{subdomain}', function ($subdomain) {
     
     $services = [
         'quran_circles' => collect(),
-        'quran_teachers' => collect(),
+        'quran_teacher_profiles' => collect(),
         'interactive_courses' => collect(),
         'academic_teachers' => collect(),
         'recorded_courses' => collect(),
@@ -94,7 +94,7 @@ Route::domain(config('app.domain'))->group(function () {
         
         $services = [
             'quran_circles' => collect(),
-            'quran_teachers' => collect(),
+            'quran_teacher_profiles' => collect(),
             'interactive_courses' => collect(),
             'academic_teachers' => collect(),
             'recorded_courses' => collect(),
@@ -149,7 +149,7 @@ Route::domain(config('app.domain'))->group(function () {
 Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     
     // Academy Home Page
-    Route::get('/', [AcademyHomepageController::class, 'index'])->name('academy.home');
+    Route::get('/', [AcademyHomepageController::class, 'show'])->name('academy.home');
 
     /*
     |--------------------------------------------------------------------------
@@ -229,6 +229,24 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     
     // Learning Analytics
     Route::get('/analytics', [StudentDashboardController::class, 'analytics'])->name('student.analytics');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Profile Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Student Profile Routes (Protected)
+    Route::middleware(['auth', 'role:student'])->group(function () {
+        Route::get('/profile', [App\Http\Controllers\StudentProfileController::class, 'index'])->name('student.profile');
+        Route::get('/profile/edit', [App\Http\Controllers\StudentProfileController::class, 'edit'])->name('student.profile.edit');
+        Route::put('/profile/update', [App\Http\Controllers\StudentProfileController::class, 'update'])->name('student.profile.update');
+        Route::get('/settings', [App\Http\Controllers\StudentProfileController::class, 'settings'])->name('student.settings');
+        Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
+        Route::get('/payments', [App\Http\Controllers\StudentProfileController::class, 'payments'])->name('student.payments');
+        Route::get('/progress', [App\Http\Controllers\StudentProfileController::class, 'progress'])->name('student.progress');
+        Route::get('/certificates', [App\Http\Controllers\StudentProfileController::class, 'certificates'])->name('student.certificates');
+    });
 
     /*
     |--------------------------------------------------------------------------

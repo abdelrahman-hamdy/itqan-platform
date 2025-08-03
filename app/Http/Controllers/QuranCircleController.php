@@ -100,7 +100,7 @@ class QuranCircleController extends Controller
         $academy = $this->getCurrentAcademy();
         
         $validated = $request->validate([
-            'quran_teacher_id' => 'required|exists:quran_teachers,id',
+            'quran_teacher_id' => 'required|exists:users,id',
             'name_ar' => 'required|string|max:100',
             'name_en' => 'nullable|string|max:100',
             'description_ar' => 'nullable|string|max:500',

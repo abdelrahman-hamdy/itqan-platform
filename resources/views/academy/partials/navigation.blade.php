@@ -1,110 +1,127 @@
-<nav class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <!-- Logo and Academy Name -->
-            <div class="flex items-center">
-                <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="flex items-center space-x-3 rtl:space-x-reverse">
-                    @if($academy->logo_url)
-                        <img src="{{ $academy->logo_url }}" alt="{{ $academy->name }}" class="h-8 w-8 rounded-lg">
-                    @else
-                        <div class="h-8 w-8 academy-bg-primary rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold text-sm">{{ substr($academy->name, 0, 1) }}</span>
-                        </div>
-                    @endif
-                    <span class="text-xl font-semibold academy-primary">{{ $academy->name }}</span>
-                </a>
+<nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-20">
+      <!-- Logo and Brand -->
+      <div class="flex items-center space-x-8 space-x-reverse">
+        <div class="flex items-center">
+          @if($academy->logo ?? null)
+            <img src="{{ $academy->logo_url }}" alt="{{ $academy->name }}" class="w-8 h-8 ml-2">
+          @else
+            <div class="w-8 h-8 flex items-center justify-center">
+              <svg class="w-8 h-8 text-primary-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82Z"/>
+              </svg>
             </div>
-
-            <!-- Desktop Navigation Links -->
-            <div class="hidden md:flex items-center space-x-8 rtl:space-x-reverse">
-                <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors">
-                    الرئيسية
-                </a>
-                <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors">
-                    الدورات المسجلة
-                </a>
-                <a href="#quran-services" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors">
-                    خدمات القرآن
-                </a>
-                <a href="#academic-services" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors">
-                    الخدمات الأكاديمية
-                </a>
-                <a href="#footer" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors">
-                    تواصل معنا
-                </a>
-                
-                <!-- Authentication Links -->
-                @auth
-                    <div class="relative">
-                        <button type="button" class="flex items-center text-sm rounded-full text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
-                            <span class="sr-only">فتح قائمة المستخدم</span>
-                            <div class="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                                <span class="text-sm font-medium">{{ substr(auth()->user()->name, 0, 1) }}</span>
-                            </div>
-                        </button>
-                        <!-- Dropdown menu would go here -->
-                    </div>
-                @else
-                    <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}" class="academy-bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-                        تسجيل الدخول
-                    </a>
-                @endauth
-            </div>
-
-            <!-- Mobile menu button -->
-            <div class="md:hidden flex items-center">
-                <button type="button" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-button">
-                    <span class="sr-only">فتح القائمة الرئيسية</span>
-                    <!-- Menu icon -->
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-            </div>
+          @endif
+          <span class="mr-2 text-xl font-bold text-primary-500 font-arabic">{{ $academy->name }}</span>
         </div>
+        
+        <!-- Desktop Navigation Links -->
+        <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+          @if($academy->quran_enabled ?? true)
+            <a href="#quran" class="text-gray-700 hover:text-primary-600 transition-colors duration-200 font-arabic">
+              القرآن الكريم
+            </a>
+          @endif
+          @if($academy->academic_enabled ?? true)
+            <a href="#academic" class="text-gray-700 hover:text-primary-600 transition-colors duration-200 font-arabic">
+              الأكاديمي
+            </a>
+          @endif
+          @if($academy->recorded_courses_enabled ?? true)
+            <a href="#courses" class="text-gray-700 hover:text-primary-600 transition-colors duration-200 font-arabic">
+              الكورسات المسجلة
+            </a>
+          @endif
+          <a href="#about" class="text-gray-700 hover:text-primary-600 transition-colors duration-200 font-arabic">
+            من نحن
+          </a>
+          <a href="#contact" class="text-gray-700 hover:text-primary-600 transition-colors duration-200 font-arabic">
+            اتصل بنا
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Side Actions -->
+      <div class="flex items-center space-x-4 space-x-reverse">
+        <!-- Language Selector -->
+        <div class="relative">
+          <button class="flex items-center space-x-2 space-x-reverse text-gray-700 hover:text-primary-600 transition-colors duration-200">
+            <span class="font-arabic">العربية</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Login Button -->
+        <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}" 
+           class="inline-flex items-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-arabic">
+          تسجيل الدخول
+        </a>
+
+        <!-- Mobile Menu Button -->
+        <button class="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" 
+                id="mobile-menu-button"
+                aria-expanded="false"
+                aria-controls="mobile-menu">
+          <span class="sr-only">فتح القائمة الرئيسية</span>
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <!-- Mobile menu -->
+    <!-- Mobile Menu -->
     <div class="md:hidden hidden" id="mobile-menu">
-        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-            <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                الرئيسية
-            </a>
-            <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}" class="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                الدورات المسجلة
-            </a>
-            <a href="#quran-services" class="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                خدمات القرآن
-            </a>
-            <a href="#academic-services" class="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                الخدمات الأكاديمية
-            </a>
-            <a href="#footer" class="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                تواصل معنا
-            </a>
-            
-            @auth
-                <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <div class="px-3 py-2">
-                        <div class="text-base font-medium text-gray-800 dark:text-gray-200">{{ auth()->user()->name }}</div>
-                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ auth()->user()->email }}</div>
-                    </div>
-                </div>
-            @else
-                <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}" class="block px-3 py-2 text-base font-medium academy-primary">
-                        تسجيل الدخول
-                    </a>
-                </div>
-            @endauth
-        </div>
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+        @if($academy->quran_enabled ?? true)
+          <a href="#quran" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md font-arabic">
+            القرآن الكريم
+          </a>
+        @endif
+        @if($academy->academic_enabled ?? true)
+          <a href="#academic" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md font-arabic">
+            الأكاديمي
+          </a>
+        @endif
+        @if($academy->recorded_courses_enabled ?? true)
+          <a href="#courses" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md font-arabic">
+            الكورسات المسجلة
+          </a>
+        @endif
+        <a href="#about" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md font-arabic">
+          من نحن
+        </a>
+        <a href="#contact" class="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md font-arabic">
+          اتصل بنا
+        </a>
+      </div>
     </div>
+  </div>
 </nav>
 
 <script>
-    // Mobile menu toggle
-    document.getElementById('mobile-menu-button').addEventListener('click', function() {
-        const mobileMenu = document.getElementById('mobile-menu');
-        mobileMenu.classList.toggle('hidden');
+document.addEventListener("DOMContentLoaded", function () {
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+  
+  if (mobileMenuButton && mobileMenu) {
+    mobileMenuButton.addEventListener('click', function() {
+      const expanded = this.getAttribute('aria-expanded') === 'true';
+      this.setAttribute('aria-expanded', !expanded);
+      mobileMenu.classList.toggle('hidden');
     });
+
+    // Close mobile menu when clicking on links
+    const mobileLinks = mobileMenu.querySelectorAll('a');
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        mobileMenuButton.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+});
 </script>

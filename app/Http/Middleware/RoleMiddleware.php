@@ -17,7 +17,9 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, string $role): Response
     {
         if (!Auth::check()) {
-            return redirect()->route('login');
+            // Get subdomain from request or use default
+            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();
@@ -25,7 +27,9 @@ class RoleMiddleware
         // Check if user is active
         if (!$user->isActive()) {
             Auth::logout();
-            return redirect()->route('login')->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة']);
+            // Get subdomain from request or use default
+            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain])->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة']);
         }
 
         // Check role permissions

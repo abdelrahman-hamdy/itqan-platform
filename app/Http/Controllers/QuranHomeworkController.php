@@ -151,7 +151,7 @@ class QuranHomeworkController extends Controller
         $academy = $this->getCurrentAcademy();
         
         $validated = $request->validate([
-            'quran_teacher_id' => 'required|exists:quran_teachers,id',
+            'quran_teacher_id' => 'required|exists:users,id',
             'student_id' => 'required|exists:users,id',
             'subscription_id' => 'nullable|exists:quran_subscriptions,id',
             'circle_id' => 'nullable|exists:quran_circles,id',

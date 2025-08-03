@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Traits\ScopedToAcademy;
 
 class ParentProfile extends Model
 {
-    use HasFactory;
+    use HasFactory, ScopedToAcademy;
 
     protected $fillable = [
+        'academy_id', // Direct academy relationship
         'user_id',
         'email',
         'first_name',
@@ -41,18 +43,32 @@ class ParentProfile extends Model
 
         static::creating(function ($model) {
             if (empty($model->parent_code)) {
-                $academyId = $model->user->academy_id ?? 1;
-                $count = static::whereHas('user', function ($query) use ($academyId) {
-                    $query->where('academy_id', $academyId);
-                })->count() + 1;
+                // Use academy_id from the model, or fallback to 1 if not set
+                $academyId = $model->academy_id ?: 1;
+                
+                // Count existing profiles in the same academy for proper numbering
+                $count = static::where('academy_id', $academyId)->count() + 1;
                 $model->parent_code = 'PAR-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
             }
         });
     }
 
     /**
+     * Academy relationship path for trait
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy'; // ParentProfile -> Academy (direct relationship)
+    }
+
+    /**
      * Relationships
      */
+    public function academy(): BelongsTo
+    {
+        return $this->belongsTo(Academy::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

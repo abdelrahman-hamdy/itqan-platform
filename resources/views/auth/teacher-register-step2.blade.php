@@ -39,7 +39,7 @@
             </div>
 
             <!-- Registration Form -->
-            <form class="mt-8 space-y-6" method="POST" action="{{ route('teacher.register.step2.post', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}">
+            <form class="mt-8 space-y-6" method="POST" action="{{ route('teacher.register.step2.post', ['subdomain' => request()->route('subdomain')]) }}">
                 @csrf
                 
                 <!-- Personal Information Section -->

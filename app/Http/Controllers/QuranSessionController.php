@@ -149,7 +149,7 @@ class QuranSessionController extends Controller
         $academy = $this->getCurrentAcademy();
         
         $validated = $request->validate([
-            'quran_teacher_id' => 'required|exists:quran_teachers,id',
+            'quran_teacher_id' => 'required|exists:users,id',
             'session_type' => 'required|in:individual,group',
             'quran_subscription_id' => 'nullable|exists:quran_subscriptions,id',
             'circle_id' => 'nullable|exists:quran_circles,id',

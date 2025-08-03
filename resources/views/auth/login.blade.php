@@ -114,7 +114,7 @@
                             </a>
                         </div>
                         <div class="mt-2">
-                            <a href="{{ route('teacher.register', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}" 
+                            <a href="{{ route('teacher.register', ['subdomain' => request()->route('subdomain')]) }}" 
                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-green-700 bg-green-100 hover:bg-green-200 transition duration-150 ease-in-out">
                                 <i class="fas fa-chalkboard-teacher ml-2"></i>
                                 تسجيل معلم جديد

@@ -189,7 +189,7 @@ class ProfileLinkingService
     {
         return [
             'students' => StudentProfile::unlinked()->count(),
-            'quran_teachers' => QuranTeacherProfile::unlinked()->count(),
+            'quran_teacher_profiles' => QuranTeacherProfile::unlinked()->count(),
             'academic_teachers' => AcademicTeacherProfile::unlinked()->count(),
             'parents' => class_exists(ParentProfile::class) ? ParentProfile::unlinked()->count() : 0,
             'supervisors' => class_exists(SupervisorProfile::class) ? SupervisorProfile::unlinked()->count() : 0,

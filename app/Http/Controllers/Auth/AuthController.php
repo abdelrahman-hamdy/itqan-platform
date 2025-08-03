@@ -12,6 +12,7 @@ use App\Models\AcademicTeacherProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -119,7 +120,8 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+        return redirect()->route('login', ['subdomain' => $subdomain]);
     }
 
     /**
@@ -134,7 +136,13 @@ class AuthController extends Controller
             abort(404, 'Academy not found or inactive');
         }
 
-        return view('auth.student-register', compact('academy'));
+        // Get grade levels for the academy
+        $gradeLevels = \App\Models\GradeLevel::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('level')
+            ->get();
+
+        return view('auth.student-register', compact('academy', 'gradeLevels'));
     }
 
     /**
@@ -158,7 +166,7 @@ class AuthController extends Controller
             'parent_phone' => 'nullable|string|max:20',
             'birth_date' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
-            'grade_level' => 'required|exists:academic_grade_levels,id',
+            'grade_level' => 'required|exists:grade_levels,id',
         ], [
             'first_name.required' => 'الاسم الأول مطلوب',
             'last_name.required' => 'اسم العائلة مطلوب',
@@ -180,29 +188,70 @@ class AuthController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        // Create user
-        $user = User::create([
-            'academy_id' => $academy->id,
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'user_type' => 'student',
-            'status' => 'active',
-            'is_active' => true,
-            'email_verification_token' => Str::random(64),
-        ]);
+        // Create or get existing user
+        $user = User::where('email', $request->email)->first();
+        
+        if ($user) {
+            // Update existing user if found
+            $user->update([
+                'academy_id' => $academy->id,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+                'user_type' => 'student',
+                'status' => 'active',
+                'active_status' => true,
+            ]);
+        } else {
+            // Create new user
+            $user = User::create([
+                'academy_id' => $academy->id,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+                'user_type' => 'student',
+                'status' => 'active',
+                'active_status' => true,
+            ]);
+        }
 
-        // Create student profile
-        StudentProfile::create([
-            'user_id' => $user->id,
-            'academy_id' => $academy->id,
-            'birth_date' => $request->birth_date,
-            'gender' => $request->gender,
-            'grade_level_id' => $request->grade_level,
-            'parent_phone' => $request->parent_phone,
-        ]);
+        // Create or update student profile
+        $existingProfile = StudentProfile::withoutGlobalScopes()
+            ->where(function($query) use ($user, $request) {
+                $query->where('user_id', $user->id)
+                      ->orWhere('email', $request->email);
+            })->first();
+        
+        if ($existingProfile) {
+            // Update existing profile
+            $existingProfile->update([
+                'user_id' => $user->id,
+                'email' => $request->email,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone' => $request->phone,
+                'birth_date' => $request->birth_date,
+                'gender' => $request->gender,
+                'grade_level_id' => $request->grade_level,
+                'parent_phone' => $request->parent_phone,
+            ]);
+        } else {
+            // Create new student profile
+            StudentProfile::create([
+                'user_id' => $user->id,
+                'email' => $request->email,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone' => $request->phone,
+                'birth_date' => $request->birth_date,
+                'gender' => $request->gender,
+                'grade_level_id' => $request->grade_level,
+                'parent_phone' => $request->parent_phone,
+            ]);
+        }
 
         // Send email verification
         // TODO: Implement email verification
@@ -210,7 +259,8 @@ class AuthController extends Controller
         // Auto-login the user
         Auth::login($user);
 
-        return redirect()->route('student.profile')->with('success', 'تم التسجيل بنجاح! مرحباً بك في منصة إتقان');
+                    $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+            return redirect()->route('student.profile', ['subdomain' => $subdomain])->with('success', 'تم التسجيل بنجاح! مرحباً بك في منصة إتقان');
     }
 
     /**
@@ -243,7 +293,7 @@ class AuthController extends Controller
 
         $request->session()->put('teacher_type', $request->teacher_type);
         
-        return redirect()->route('teacher.register.step2');
+        return redirect()->route('teacher.register.step2', ['subdomain' => $request->route('subdomain')]);
     }
 
     /**
@@ -297,14 +347,9 @@ class AuthController extends Controller
             'years_experience' => 'required|integer|min:0|max:50',
         ];
 
-        if ($teacherType === 'quran_teacher') {
-            $rules['has_ijazah'] = 'required|boolean';
-            $rules['ijazah_details'] = 'required_if:has_ijazah,1|nullable|string|max:500';
-        } else {
+        if ($teacherType === 'academic_teacher') {
             $rules['subjects'] = 'required|array|min:1';
-            $rules['subjects.*'] = 'exists:academic_subjects,id';
             $rules['grade_levels'] = 'required|array|min:1';
-            $rules['grade_levels.*'] = 'exists:academic_grade_levels,id';
         }
 
         $validator = Validator::make($request->all(), $rules, [
@@ -320,8 +365,6 @@ class AuthController extends Controller
             'qualification_degree.required' => 'الدرجة العلمية مطلوبة',
             'university.required' => 'الجامعة مطلوبة',
             'years_experience.required' => 'سنوات الخبرة مطلوبة',
-            'has_ijazah.required' => 'هل لديك إجازة؟',
-            'ijazah_details.required_if' => 'تفاصيل الإجازة مطلوبة',
             'subjects.required' => 'المواد الدراسية مطلوبة',
             'subjects.min' => 'يجب اختيار مادة واحدة على الأقل',
             'grade_levels.required' => 'المستويات الدراسية مطلوبة',
@@ -342,46 +385,91 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'user_type' => $teacherType,
             'status' => 'pending', // Requires approval
-            'is_active' => false, // Will be activated after approval
-            'email_verification_token' => Str::random(64),
+            'active_status' => false, // Will be activated after approval
             'qualification_degree' => $request->qualification_degree,
             'university' => $request->university,
             'years_experience' => $request->years_experience,
         ]);
 
-        // Create teacher profile based on type
-        if ($teacherType === 'quran_teacher') {
-            QuranTeacherProfile::create([
+        // Create teacher profile manually (automatic creation is disabled for teachers)
+        try {
+            if ($teacherType === 'quran_teacher') {
+                QuranTeacherProfile::create([
+                    'user_id' => $user->id,
+                    'academy_id' => $academy->id,
+                    'email' => $request->email,
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                    'phone' => $request->phone,
+                    'educational_qualification' => 'bachelor', // Use ENUM value
+                    'teaching_experience_years' => $request->years_experience,
+                    'approval_status' => 'pending',
+                    'is_active' => false,
+                    // teacher_code will be auto-generated by model boot method
+                    'certifications' => json_encode([
+                        'qualification_degree' => $request->qualification_degree,
+                        'university' => $request->university,
+                    ]),
+                ]);
+            } else {
+                AcademicTeacherProfile::create([
+                    'user_id' => $user->id,
+                    'academy_id' => $academy->id,
+                    'email' => $request->email,
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                    'phone' => $request->phone,
+                    'education_level' => 'bachelor',
+                    'qualification_degree' => $request->qualification_degree,
+                    'university' => $request->university,
+                    'teaching_experience_years' => $request->years_experience,
+                    'subject_ids' => json_encode($request->subjects),
+                    'grade_level_ids' => json_encode($request->grade_levels),
+                    'approval_status' => 'pending',
+                    'is_active' => false,
+                    // teacher_code will be auto-generated by model boot method
+                ]);
+            }
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Log the error for debugging
+            Log::error('Teacher registration failed: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'academy_id' => $academy->id,
-                'qualification_degree' => $request->qualification_degree,
-                'university' => $request->university,
-                'years_experience' => $request->years_experience,
-                'has_ijazah' => $request->has_ijazah,
-                'ijazah_details' => $request->ijazah_details,
+                'email' => $request->email,
+                'teacher_type' => $teacherType
             ]);
-        } else {
-            AcademicTeacherProfile::create([
-                'user_id' => $user->id,
-                'academy_id' => $academy->id,
-                'qualification_degree' => $request->qualification_degree,
-                'university' => $request->university,
-                'years_experience' => $request->years_experience,
-            ]);
+            
+            // Delete the user since profile creation failed
+            $user->delete();
+            
+            // Check if it's a duplicate teacher code error
+            if (str_contains($e->getMessage(), 'teacher_code_unique') || $e->getCode() === '23000') {
+                return back()->withErrors(['error' => 'حدث خطأ في إنشاء رمز المعلم. يرجى المحاولة مرة أخرى.'])->withInput();
+            }
+            
+            // Generic error message for other database issues
+            return back()->withErrors(['error' => 'حدث خطأ في التسجيل. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.'])->withInput();
         }
 
         // Clear session
         $request->session()->forget('teacher_type');
 
-        return redirect()->route('teacher.register.success')->with('success', 'تم تقديم طلب التسجيل بنجاح! سنتواصل معك قريباً');
+        return redirect()->route('teacher.register.success', ['subdomain' => $request->route('subdomain')])->with('success', 'تم تقديم طلب التسجيل بنجاح! سنتواصل معك قريباً');
     }
 
     /**
      * Show teacher registration success page
      */
-    public function showTeacherRegistrationSuccess()
+    public function showTeacherRegistrationSuccess(Request $request)
     {
-        return view('auth.teacher-register-success');
+        $subdomain = $request->route('subdomain');
+        $academy = Academy::where('subdomain', $subdomain)->first();
+        
+        if (!$academy || !$academy->is_active) {
+            abort(404, 'Academy not found or inactive');
+        }
+
+        return view('auth.teacher-register-success', compact('academy'));
     }
 
     /**
@@ -477,11 +565,15 @@ class AuthController extends Controller
 
         // Students and parents go to profile page (no dashboard)
         if ($user->isStudent()) {
-            return redirect()->route('student.profile');
+            // Get the subdomain from the user's academy
+            $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+            return redirect()->route('student.profile', ['subdomain' => $subdomain]);
         }
 
         if ($user->isParent()) {
-            return redirect()->route('parent.profile');
+            // Get the subdomain from the user's academy
+            $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+            return redirect()->route('parent.profile', ['subdomain' => $subdomain]);
         }
 
         // Fallback

@@ -143,18 +143,11 @@
                         <select id="grade_level" name="grade_level" required 
                                 class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('grade_level') border-red-500 @enderror">
                             <option value="">اختر المستوى الدراسي</option>
-                            <option value="1" {{ old('grade_level') == '1' ? 'selected' : '' }}>الصف الأول</option>
-                            <option value="2" {{ old('grade_level') == '2' ? 'selected' : '' }}>الصف الثاني</option>
-                            <option value="3" {{ old('grade_level') == '3' ? 'selected' : '' }}>الصف الثالث</option>
-                            <option value="4" {{ old('grade_level') == '4' ? 'selected' : '' }}>الصف الرابع</option>
-                            <option value="5" {{ old('grade_level') == '5' ? 'selected' : '' }}>الصف الخامس</option>
-                            <option value="6" {{ old('grade_level') == '6' ? 'selected' : '' }}>الصف السادس</option>
-                            <option value="7" {{ old('grade_level') == '7' ? 'selected' : '' }}>الصف السابع</option>
-                            <option value="8" {{ old('grade_level') == '8' ? 'selected' : '' }}>الصف الثامن</option>
-                            <option value="9" {{ old('grade_level') == '9' ? 'selected' : '' }}>الصف التاسع</option>
-                            <option value="10" {{ old('grade_level') == '10' ? 'selected' : '' }}>الصف العاشر</option>
-                            <option value="11" {{ old('grade_level') == '11' ? 'selected' : '' }}>الصف الحادي عشر</option>
-                            <option value="12" {{ old('grade_level') == '12' ? 'selected' : '' }}>الصف الثاني عشر</option>
+                            @foreach($gradeLevels as $gradeLevel)
+                                <option value="{{ $gradeLevel->id }}" {{ old('grade_level') == $gradeLevel->id ? 'selected' : '' }}>
+                                    {{ $gradeLevel->name }}
+                                </option>
+                            @endforeach
                         </select>
                         @error('grade_level')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

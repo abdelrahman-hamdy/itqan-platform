@@ -122,7 +122,7 @@ class QuranCircle extends Model
 
     public function quranTeacher(): BelongsTo
     {
-        return $this->belongsTo(QuranTeacher::class);
+        return $this->belongsTo(QuranTeacherProfile::class);
     }
 
     public function supervisor(): BelongsTo

@@ -18,7 +18,8 @@ class LessonController extends Controller
     public function show(RecordedCourse $course, Lesson $lesson)
     {
         if (!Auth::check()) {
-            return redirect()->route('login');
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();
@@ -276,7 +277,8 @@ class LessonController extends Controller
     public function downloadMaterials(RecordedCourse $course, Lesson $lesson)
     {
         if (!Auth::check()) {
-            return redirect()->route('login');
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();

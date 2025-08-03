@@ -32,7 +32,7 @@
             </div>
 
             <!-- Teacher Type Selection Form -->
-            <form class="mt-8 space-y-6" method="POST" action="{{ route('teacher.register.step1', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}">
+            <form class="mt-8 space-y-6" method="POST" action="{{ route('teacher.register.step1', ['subdomain' => request()->route('subdomain')]) }}">
                 @csrf
                 
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\ScopedToAcademy;
 
 class SupervisorProfile extends Model
 {
-    use HasFactory;
+    use HasFactory, ScopedToAcademy;
 
     protected $fillable = [
+        'academy_id', // Direct academy relationship
         'user_id',
         'email',
         'first_name',
@@ -48,18 +50,32 @@ class SupervisorProfile extends Model
 
         static::creating(function ($model) {
             if (empty($model->supervisor_code)) {
-                $academyId = $model->user->academy_id ?? 1;
-                $count = static::whereHas('user', function ($query) use ($academyId) {
-                    $query->where('academy_id', $academyId);
-                })->count() + 1;
+                // Use academy_id from the model, or fallback to 1 if not set
+                $academyId = $model->academy_id ?: 1;
+                
+                // Count existing profiles in the same academy for proper numbering
+                $count = static::where('academy_id', $academyId)->count() + 1;
                 $model->supervisor_code = 'SUP-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
             }
         });
     }
 
     /**
+     * Academy relationship path for trait
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy'; // SupervisorProfile -> Academy (direct relationship)
+    }
+
+    /**
      * Relationships
      */
+    public function academy(): BelongsTo
+    {
+        return $this->belongsTo(Academy::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -73,12 +89,21 @@ class SupervisorProfile extends Model
         return $this->user->name . ' (' . $this->supervisor_code . ')';
     }
 
+    /**
+     * Check if profile is linked to a user account
+     */
+    public function isLinked(): bool
+    {
+        return !is_null($this->user_id);
+    }
+
     public function getDepartmentInArabicAttribute(): string
     {
         return match($this->department) {
             'quran' => 'قسم القرآن الكريم',
             'academic' => 'القسم الأكاديمي',
-            'both' => 'جميع الأقسام',
+            'recorded_courses' => 'قسم الدورات المسجلة',
+            'general' => 'الإشراف العام',
             default => $this->department,
         };
     }
@@ -108,7 +133,7 @@ class SupervisorProfile extends Model
      */
     public function canAccessDepartment(string $department): bool
     {
-        return $this->department === 'both' || $this->department === $department;
+        return $this->department === 'general' || $this->department === $department;
     }
 
     /**
@@ -122,6 +147,16 @@ class SupervisorProfile extends Model
     /**
      * Scopes
      */
+    public function scopeUnlinked($query)
+    {
+        return $query->whereNull('user_id');
+    }
+
+    public function scopeLinked($query)
+    {
+        return $query->whereNotNull('user_id');
+    }
+
     public function scopeForAcademy($query, int $academyId)
     {
         return $query->whereHas('user', function ($q) use ($academyId) {
@@ -133,7 +168,7 @@ class SupervisorProfile extends Model
     {
         return $query->where(function ($q) use ($department) {
             $q->where('department', $department)
-              ->orWhere('department', 'both');
+              ->orWhere('department', 'general');
         });
     }
 }

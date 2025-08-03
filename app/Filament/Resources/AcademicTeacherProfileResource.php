@@ -48,6 +48,21 @@ class AcademicTeacherProfileResource extends BaseResource
             ->schema([
                 Forms\Components\Section::make('المعلومات الشخصية')
                     ->schema([
+                        // Academy selection field for super admin when in global view or creating new records
+                        Forms\Components\Select::make('academy_id')
+                            ->label('الأكاديمية')
+                            ->options(Academy::active()->pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->default(fn () => AcademyContextService::getCurrentAcademy()?->id)
+                            ->visible(function () {
+                                $user = auth()->user();
+                                return $user && $user->isSuperAdmin() && !AcademyContextService::getCurrentAcademy();
+                            })
+                            ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المدرس')
+                            ->live(), // Make it reactive so subjects and grade levels update when changed
+                        
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('first_name')
@@ -154,31 +169,71 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->schema([
                         Forms\Components\CheckboxList::make('subject_ids')
                             ->label('المواد التي يمكن تدريسها')
-                            ->options(function () {
-                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                            ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
+                                // Get academy_id from the record being edited, or from the form data for new records
+                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
+                                
                                 if (!$academyId) {
                                     return [];
                                 }
-                                return Subject::forAcademy($academyId)
+                                
+                                $subjects = Subject::forAcademy($academyId)
                                     ->active()
                                     ->pluck('name', 'id')
                                     ->toArray();
+                                
+                                return $subjects;
+                            })
+                            ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
+                                // Get academy_id from the record being edited, or from the form data for new records
+                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
+                                
+                                if (!$academyId) {
+                                    return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
+                                }
+                                
+                                $count = Subject::forAcademy($academyId)->active()->count();
+                                if ($count === 0) {
+                                    return 'لا توجد مواد متاحة في هذه الأكاديمية. يرجى إضافة المواد أولاً من قسم إدارة المواد.';
+                                }
+                                
+                                return "يوجد {$count} مادة متاحة للاختيار";
                             })
                             ->required()
                             ->columns(3),
                         Forms\Components\CheckboxList::make('grade_level_ids')
                             ->label('المراحل الدراسية')
-                            ->options(function () {
-                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                            ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
+                                // Get academy_id from the record being edited, or from the form data for new records
+                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
+                                
                                 if (!$academyId) {
                                     return [];
                                 }
-                                return GradeLevel::forAcademy($academyId)
+                                
+                                $gradeLevels = GradeLevel::forAcademy($academyId)
                                     ->active()
                                     ->orderBy('level')
                                     ->get()
                                     ->pluck('name', 'id')
                                     ->toArray();
+                                
+                                return $gradeLevels;
+                            })
+                            ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
+                                // Get academy_id from the record being edited, or from the form data for new records
+                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
+                                
+                                if (!$academyId) {
+                                    return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
+                                }
+                                
+                                $count = GradeLevel::forAcademy($academyId)->active()->count();
+                                if ($count === 0) {
+                                    return 'لا توجد مراحل دراسية متاحة في هذه الأكاديمية. يرجى إضافة المراحل الدراسية أولاً من قسم إدارة المراحل.';
+                                }
+                                
+                                return "يوجد {$count} مرحلة دراسية متاحة للاختيار";
                             })
                             ->required()
                             ->columns(3),
@@ -241,18 +296,23 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('approval_status')
+                                Forms\Components\Placeholder::make('approval_status_display')
                                     ->label('حالة الموافقة')
-                                    ->options([
-                                        'pending' => 'في الانتظار',
-                                        'approved' => 'معتمد',
-                                        'rejected' => 'مرفوض',
-                                    ])
-                                    ->default('pending')
-                                    ->required(),
-                                Forms\Components\Toggle::make('is_active')
-                                    ->label('نشط')
-                                    ->default(true),
+                                    ->content(function ($record) {
+                                        if (!$record) return 'في الانتظار';
+                                        return match($record->approval_status) {
+                                            'pending' => '⏳ في الانتظار',
+                                            'approved' => '✅ معتمد',
+                                            'rejected' => '❌ مرفوض',
+                                            default => $record->approval_status,
+                                        };
+                                    }),
+                                Forms\Components\Placeholder::make('is_active_display')
+                                    ->label('حالة النشاط')
+                                    ->content(function ($record) {
+                                        if (!$record) return 'نشط';
+                                        return $record->is_active ? '🟢 نشط' : '🔴 غير نشط';
+                                    }),
                             ]),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات إدارية')
@@ -260,7 +320,10 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->rows(3)
                             ->columnSpanFull(),
                     ])
-                    ->visible(fn () => auth()->user()->isAdmin()),
+                    ->visible(function () {
+                        $user = auth()->user();
+                        return $user && $user->isAdmin();
+                    }),
             ]);
     }
 
@@ -343,6 +406,64 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->falseLabel('غير مربوط'),
             ])
             ->actions([
+                Tables\Actions\Action::make('approve')
+                    ->label('اعتماد')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->approval_status === 'pending')
+                    ->requiresConfirmation()
+                    ->modalHeading('اعتماد المدرس')
+                    ->modalDescription('هل أنت متأكد من اعتماد هذا المدرس؟ سيتم تفعيل حسابه تلقائياً.')
+                    ->action(function ($record) {
+                        $record->approve(auth()->user()->id);
+                        $this->notify('success', 'تم اعتماد المدرس بنجاح');
+                    }),
+                    
+                Tables\Actions\Action::make('reject')
+                    ->label('رفض')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn ($record) => $record->approval_status === 'pending')
+                    ->requiresConfirmation()
+                    ->modalHeading('رفض المدرس')
+                    ->modalDescription('هل أنت متأكد من رفض هذا المدرس؟ سيتم إلغاء تفعيل حسابه.')
+                    ->action(function ($record) {
+                        $record->reject(auth()->user()->id);
+                        $this->notify('success', 'تم رفض المدرس');
+                    }),
+                    
+                Tables\Actions\Action::make('suspend')
+                    ->label('إيقاف')
+                    ->icon('heroicon-o-pause-circle')
+                    ->color('warning')
+                    ->visible(fn ($record) => $record->approval_status === 'approved' && $record->is_active)
+                    ->requiresConfirmation()
+                    ->modalHeading('إيقاف المدرس')
+                    ->modalDescription('هل أنت متأكد من إيقاف هذا المدرس؟ سيتم إلغاء تفعيل حسابه مؤقتاً.')
+                    ->action(function ($record) {
+                        $record->suspend();
+                        $this->notify('success', 'تم إيقاف المدرس');
+                    }),
+                    
+                Tables\Actions\Action::make('reactivate')
+                    ->label('إعادة تفعيل')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->visible(fn ($record) => $record->approval_status === 'approved' && !$record->is_active)
+                    ->requiresConfirmation()
+                    ->modalHeading('إعادة تفعيل المدرس')
+                    ->modalDescription('هل أنت متأكد من إعادة تفعيل هذا المدرس؟')
+                    ->action(function ($record) {
+                        $record->update(['is_active' => true]);
+                        if ($record->user) {
+                            $record->user->update([
+                                'status' => 'active',
+                                'active_status' => true,
+                            ]);
+                        }
+                        $this->notify('success', 'تم إعادة تفعيل المدرس');
+                    }),
+                    
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

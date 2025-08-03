@@ -44,7 +44,7 @@ class RecordedCourseResource extends BaseResource
                             ->schema([
                                 Forms\Components\Section::make('معلومات الدورة')
                                     ->schema([
-                        Forms\Components\TextInput::make('title_ar')
+                        Forms\Components\TextInput::make('title')
                             ->label('عنوان الدورة (عربي)')
                             ->required()
                             ->maxLength(255),
@@ -53,7 +53,7 @@ class RecordedCourseResource extends BaseResource
                             ->label('عنوان الدورة (إنجليزي)')
                             ->maxLength(255),
 
-                        Forms\Components\Textarea::make('description_ar')
+                        Forms\Components\Textarea::make('description')
                             ->label('وصف الدورة (عربي)')
                             ->rows(3)
                             ->maxLength(1000),
@@ -225,7 +225,7 @@ class RecordedCourseResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title_ar')
+                Tables\Columns\TextColumn::make('title')
                     ->label('العنوان')
                     ->searchable()
                     ->sortable(),

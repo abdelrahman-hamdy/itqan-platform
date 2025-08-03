@@ -209,10 +209,10 @@ class SuperAdminDemoSeeder extends Seeder
         $academies = Academy::all();
         
         $gradeLevels = [
-            ['name' => 'ابتدائي', 'name_en' => 'Primary', 'level' => 1, 'min_age' => 6, 'max_age' => 12],
-            ['name' => 'إعدادي', 'name_en' => 'Preparatory', 'level' => 2, 'min_age' => 12, 'max_age' => 15],
-            ['name' => 'ثانوي', 'name_en' => 'Secondary', 'level' => 3, 'min_age' => 15, 'max_age' => 18],
-            ['name' => 'جامعي', 'name_en' => 'University', 'level' => 4, 'min_age' => 18, 'max_age' => 25],
+            ['name' => 'ابتدائي', 'name_en' => 'Primary', 'level' => 1],
+            ['name' => 'إعدادي', 'name_en' => 'Preparatory', 'level' => 2],
+            ['name' => 'ثانوي', 'name_en' => 'Secondary', 'level' => 3],
+            ['name' => 'جامعي', 'name_en' => 'University', 'level' => 4],
         ];
 
         foreach ($academies as $academy) {

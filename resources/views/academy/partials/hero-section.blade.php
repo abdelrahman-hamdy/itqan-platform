@@ -1,122 +1,81 @@
 <!-- Hero Section -->
-<section class="relative bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
-    <!-- Background Pattern -->
-    <div class="absolute inset-0 opacity-10">
-        <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-            <defs>
-                <pattern id="hero-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                    <circle cx="10" cy="10" r="1" fill="currentColor"/>
-                </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#hero-pattern)"/>
+<section class="relative overflow-hidden min-h-screen flex items-center hero-gradient">
+  <!-- Background Decorative Elements -->
+  <div class="absolute top-20 right-20 w-96 h-96 bg-primary-500/5 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-20 left-20 w-96 h-96 bg-primary-600/5 rounded-full blur-3xl"></div>
+  
+  <!-- Content Container -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center py-20">
+    <!-- Main Heading -->
+    <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-8 leading-tight text-gray-900 font-arabic">
+      {{ $academy->name }}
+      <span class="block text-2xl sm:text-3xl lg:text-4xl xl:text-5xl mt-4 text-primary-500/80">
+        {{ $academy->tagline ?? 'للتعليم الشامل' }}
+      </span>
+    </h1>
+    
+    <!-- Description -->
+    <p class="text-lg sm:text-xl lg:text-2xl mb-12 text-gray-600 leading-relaxed max-w-4xl mx-auto font-arabic">
+      {{ $academy->description ?? 'منصة تعليمية متكاملة تجمع بين تحفيظ القرآن الكريم والمواد الأكاديمية لجميع المراحل الدراسية، مع معلمين متخصصين وكورسات تفاعلية تناسب احتياجاتك التعليمية' }}
+    </p>
+    
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-6 justify-center">
+      <a href="#quran" 
+         class="inline-flex items-center px-8 py-4 bg-primary-500 hover:bg-primary-600 text-white text-lg font-semibold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-arabic">
+        <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
         </svg>
+        ابدأ التعلم الآن
+      </a>
+      
+      <a href="#about" 
+         class="inline-flex items-center px-8 py-4 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 text-lg font-semibold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-arabic">
+        <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        تعرف على خدماتنا
+      </a>
     </div>
 
-    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <!-- Content -->
-            <div class="text-center lg:text-start animate-on-scroll">
-                <!-- Academy Logo (if available) -->
-                @if($academy->logo_url)
-                    <div class="mb-8 flex justify-center lg:justify-start">
-                        <img src="{{ $academy->logo_url }}" alt="{{ $academy->name }}" class="h-20 w-20 rounded-xl shadow-lg academy-border-primary border-2">
-                    </div>
-                @endif
-
-                <!-- Main Heading -->
-                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-                    مرحباً بكم في
-                    <span class="academy-primary block mt-2">{{ $academy->name }}</span>
-                </h1>
-
-                <!-- Academy Description -->
-                @if($academy->description)
-                    <p class="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                        {{ $academy->description }}
-                    </p>
-                @endif
-
-                <!-- Call-to-Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                    <a href="#services" class="academy-bg-primary text-white px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 hover:transform hover:scale-105 text-center">
-                        استكشف خدماتنا
-                    </a>
-                    <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}" class="border-2 academy-border-primary academy-primary px-8 py-3 rounded-lg font-medium hover:academy-bg-primary hover:text-white transition-all duration-300 text-center">
-                        تصفح الدورات
-                    </a>
-                </div>
-
-                <!-- Academy Features -->
-                <div class="mt-12 grid grid-cols-3 gap-4">
-                    <div class="text-center">
-                        <div class="academy-primary text-2xl font-bold">{{ $stats['total_students'] }}+</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300">طالب وطالبة</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="academy-primary text-2xl font-bold">{{ $stats['total_teachers'] }}+</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300">معلم ومعلمة</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="academy-primary text-2xl font-bold">{{ $stats['active_courses'] }}+</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300">دورة تعليمية</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Hero Image/Visual -->
-            <div class="relative animate-on-scroll order-first lg:order-last">
-                <div class="relative">
-                    <!-- Main Visual Container -->
-                    <div class="relative h-96 lg:h-[500px] bg-gradient-to-br academy-bg-primary rounded-2xl overflow-hidden shadow-2xl">
-                        <!-- Islamic Pattern Overlay -->
-                        <div class="absolute inset-0 opacity-20">
-                            <svg class="w-full h-full" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <pattern id="islamic-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                                        <g fill="white">
-                                            <circle cx="20" cy="20" r="2"/>
-                                            <path d="M20 10 L30 20 L20 30 L10 20 Z" fill="none" stroke="white" stroke-width="1"/>
-                                        </g>
-                                    </pattern>
-                                </defs>
-                                <rect width="100%" height="100%" fill="url(#islamic-pattern)"/>
-                            </svg>
-                        </div>
-
-                        <!-- Content Overlay -->
-                        <div class="absolute inset-0 flex items-center justify-center p-8">
-                            <div class="text-center text-white">
-                                <!-- Quran Icon -->
-                                <div class="mx-auto mb-6 w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                                    <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2L13.5 8.5L20 7L14.5 12.5L21 14L13.5 15.5L12 22L10.5 15.5L4 14L9.5 12.5L3 7L9.5 8.5L12 2Z"/>
-                                    </svg>
-                                </div>
-
-                                <!-- Academy Vision -->
-                                <h3 class="text-2xl font-bold mb-4">رؤيتنا</h3>
-                                <p class="text-lg opacity-90">
-                                    نسعى لتقديم تعليم إسلامي متميز يجمع بين الأصالة والمعاصرة
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Floating Elements -->
-                    <div class="absolute -top-4 -right-4 w-20 h-20 academy-bg-secondary rounded-full opacity-80 animate-pulse"></div>
-                    <div class="absolute -bottom-4 -left-4 w-16 h-16 bg-yellow-400 rounded-full opacity-80 animate-pulse"></div>
-                    <div class="absolute top-1/2 -left-8 w-12 h-12 bg-green-400 rounded-full opacity-80 animate-pulse"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scroll Down Indicator -->
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div class="w-8 h-8 border-2 academy-border-primary rounded-full flex items-center justify-center">
-            <svg class="w-4 h-4 academy-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+    <!-- Feature Highlights -->
+    <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
+      @if($academy->quran_enabled ?? true)
+        <div class="text-center">
+          <div class="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-success-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82Z"/>
             </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2 font-arabic">تحفيظ القرآن الكريم</h3>
+          <p class="text-sm text-gray-600 font-arabic">حلقات تحفيظ مع أفضل المعلمين المتخصصين</p>
         </div>
+      @endif
+
+      @if($academy->academic_enabled ?? true)
+        <div class="text-center">
+          <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2 font-arabic">التعليم الأكاديمي</h3>
+          <p class="text-sm text-gray-600 font-arabic">مناهج شاملة لجميع المراحل التعليمية</p>
+        </div>
+      @endif
+
+      @if($academy->recorded_courses_enabled ?? true)
+        <div class="text-center">
+          <div class="w-16 h-16 bg-warning-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-warning-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a2.5 2.5 0 110 5H9m4.5-1.206a11.955 11.955 0 01-2.5 2.829 11.955 11.955 0 01-2.5-2.829m0 0V11m0 3.207L6.707 21A2 2 0 014 19.293V7a2 2 0 012.293-1.707L9 7h6l2.293-1.707A2 2 0 0119 7v12.293A2 2 0 0116.707 21L14 18.207"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2 font-arabic">دورات مسجلة</h3>
+          <p class="text-sm text-gray-600 font-arabic">تعلم في أي وقت وبالسرعة التي تناسبك</p>
+        </div>
+      @endif
     </div>
+  </div>
 </section>

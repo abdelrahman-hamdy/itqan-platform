@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Services\AcademyContextService;
 
-class AdminResource extends Resource
+class AdminResource extends BaseResource
 {
     protected static ?string $model = User::class;
 

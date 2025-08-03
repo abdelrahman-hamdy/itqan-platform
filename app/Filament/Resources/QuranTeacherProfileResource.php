@@ -10,12 +10,10 @@ use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 
 class QuranTeacherProfileResource extends BaseResource
 {
-    use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = QuranTeacherProfile::class;
     
@@ -35,11 +33,10 @@ class QuranTeacherProfileResource extends BaseResource
 
     protected static function getAcademyRelationshipPath(): string
     {
-        return 'user'; // QuranTeacherProfile -> User -> academy_id
+        return 'academy'; // QuranTeacherProfile -> Academy (direct relationship)
     }
 
-    // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
-public static function form(Form $form): Form
+    public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -187,6 +184,7 @@ public static function form(Form $form): Form
     {
         return $table
             ->columns([
+                static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular(),
@@ -251,11 +249,6 @@ public static function form(Form $form): Form
                     ->label('التقييم')
                     ->formatStateUsing(fn ($state) => $state ? number_format($state, 1) . ' ⭐' : 'غير مقيم')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('academy.name')
-                    ->label('الأكاديمية')
-                    ->badge()
-                    ->color('info')
-                    ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('approval_status')

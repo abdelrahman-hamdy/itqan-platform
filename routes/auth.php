@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\AuthController;
 
 /*
@@ -57,25 +58,23 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     
     // Student routes (profile-based, no dashboard)
     Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/profile', function () {
-            return view('student.profile');
-        })->name('student.profile');
+        Route::get('/profile', [App\Http\Controllers\StudentProfileController::class, 'index'])->name('student.profile');
+        Route::get('/profile/edit', [App\Http\Controllers\StudentProfileController::class, 'edit'])->name('student.profile.edit');
+        Route::put('/profile/update', [App\Http\Controllers\StudentProfileController::class, 'update'])->name('student.profile.update');
+        Route::get('/settings', [App\Http\Controllers\StudentProfileController::class, 'settings'])->name('student.settings');
+        Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
+        Route::get('/payments', [App\Http\Controllers\StudentProfileController::class, 'payments'])->name('student.payments');
+        Route::get('/progress', [App\Http\Controllers\StudentProfileController::class, 'progress'])->name('student.progress');
+        Route::get('/certificates', [App\Http\Controllers\StudentProfileController::class, 'certificates'])->name('student.certificates');
         
+        // Legacy routes for backward compatibility
         Route::get('/my-courses', function () {
             return view('student.courses');
         })->name('student.courses');
         
-        Route::get('/my-progress', function () {
-            return view('student.progress');
-        })->name('student.progress');
-        
         Route::get('/my-assignments', function () {
             return view('student.assignments');
         })->name('student.assignments');
-        
-        Route::get('/my-payments', function () {
-            return view('student.payments');
-        })->name('student.payments');
     });
 
     // Parent routes (profile-based, no dashboard)
@@ -97,27 +96,35 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         })->name('parent.reports');
     });
 
-    // Staff routes (dashboard access)
-    Route::middleware(['auth', 'role:staff'])->group(function () {
-        // Academy Admin routes
-        Route::middleware(['role:academy_admin'])->group(function () {
-            Route::get('/panel', function () {
-                return redirect('/panel/dashboard');
-            })->name('academy.admin.dashboard');
-        });
+    // Academy Admin routes (dashboard access)
+    Route::middleware(['auth', 'role:academy_admin'])->group(function () {
+        Route::get('/panel', function () {
+            return redirect('/panel/dashboard');
+        })->name('academy.admin.dashboard');
+    });
 
-        // Teacher routes
-        Route::middleware(['role:teacher'])->group(function () {
-            Route::get('/teacher', function () {
-                return redirect('/teacher/dashboard');
-            })->name('teacher.dashboard');
-        });
+    // Teacher routes (profile-based with dashboard access)
+    Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->group(function () {
+        // Main teacher route redirects to profile
+        Route::get('/', function () {
+            $subdomain = request()->route('subdomain') ?? Auth::user()->academy->subdomain ?? 'itqan-academy';
+            return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
+        })->name('teacher.dashboard');
+        
+        // Teacher profile routes
+        Route::get('/profile', [App\Http\Controllers\TeacherProfileController::class, 'index'])->name('teacher.profile');
+        Route::get('/profile/edit', [App\Http\Controllers\TeacherProfileController::class, 'edit'])->name('teacher.profile.edit');
+        Route::put('/profile/update', [App\Http\Controllers\TeacherProfileController::class, 'update'])->name('teacher.profile.update');
+        Route::get('/earnings', [App\Http\Controllers\TeacherProfileController::class, 'earnings'])->name('teacher.earnings');
+        Route::get('/schedule', [App\Http\Controllers\TeacherProfileController::class, 'schedule'])->name('teacher.schedule');
+        Route::get('/students', [App\Http\Controllers\TeacherProfileController::class, 'students'])->name('teacher.students');
+        Route::get('/settings', [App\Http\Controllers\TeacherProfileController::class, 'settings'])->name('teacher.settings');
+    });
 
-        // Supervisor routes
-        Route::middleware(['role:supervisor'])->group(function () {
-            Route::get('/supervisor', function () {
-                return redirect('/supervisor/dashboard');
-            })->name('supervisor.dashboard');
-        });
+    // Supervisor routes (dashboard access)
+    Route::middleware(['auth', 'role:supervisor'])->group(function () {
+        Route::get('/supervisor', function () {
+            return redirect('/supervisor/dashboard');
+        })->name('supervisor.dashboard');
     });
 }); 

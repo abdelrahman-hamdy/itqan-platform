@@ -87,7 +87,7 @@ class QuranProgressController extends Controller
         
         $validated = $request->validate([
             'student_id' => 'required|exists:users,id',
-            'quran_teacher_id' => 'required|exists:quran_teachers,id',
+            'quran_teacher_id' => 'required|exists:users,id',
             'quran_subscription_id' => 'nullable|exists:quran_subscriptions,id',
             'circle_id' => 'nullable|exists:quran_circles,id',
             'session_id' => 'nullable|exists:quran_sessions,id',

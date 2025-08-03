@@ -19,8 +19,6 @@ class AcademicGradeLevel extends Model
         'description',
         'level_number',
         'education_system',
-        'age_group_min',
-        'age_group_max',
         'academic_year_start',
         'academic_year_end',
         'total_subjects',
@@ -46,8 +44,6 @@ class AcademicGradeLevel extends Model
 
     protected $casts = [
         'level_number' => 'integer',
-        'age_group_min' => 'integer',
-        'age_group_max' => 'integer',
         'total_subjects' => 'integer',
         'core_subjects_count' => 'integer',
         'elective_subjects_count' => 'integer',
@@ -123,13 +119,7 @@ class AcademicGradeLevel extends Model
                     ->withTimestamps();
     }
 
-    /**
-     * الجلسات الخاصة لهذه المرحلة
-     */
-    public function privateSessions(): HasMany
-    {
-        return $this->hasMany(PrivateSession::class, 'grade_level_id');
-    }
+
 
     /**
      * الدورات التفاعلية لهذه المرحلة
@@ -179,14 +169,7 @@ class AcademicGradeLevel extends Model
         return $query->where('academy_id', $academyId);
     }
 
-    /**
-     * نطاق المراحل حسب الفئة العمرية
-     */
-    public function scopeByAgeGroup($query, $age)
-    {
-        return $query->where('age_group_min', '<=', $age)
-                    ->where('age_group_max', '>=', $age);
-    }
+
 
     /**
      * الحصول على النظام التعليمي بالعربية
@@ -206,13 +189,7 @@ class AcademicGradeLevel extends Model
         return $systems[$this->education_system] ?? $this->education_system;
     }
 
-    /**
-     * الحصول على الفئة العمرية المستهدفة
-     */
-    public function getTargetAgeGroupAttribute()
-    {
-        return "{$this->age_group_min} - {$this->age_group_max} سنة";
-    }
+
 
     /**
      * الحصول على عدد المواد
@@ -364,13 +341,7 @@ class AcademicGradeLevel extends Model
         ];
     }
 
-    /**
-     * تحديد ما إذا كان عمر الطالب مناسب لهذه المرحلة
-     */
-    public function isSuitableForAge($age)
-    {
-        return $age >= $this->age_group_min && $age <= $this->age_group_max;
-    }
+
 
     /**
      * تحديد ما إذا كانت المادة متاحة في هذه المرحلة
@@ -443,7 +414,6 @@ class AcademicGradeLevel extends Model
             'elective_subjects_count' => $this->elective_subjects->count(),
             'teachers_count' => $this->teachers_count,
             'active_students_count' => $this->active_students_count,
-            'private_sessions_count' => $this->privateSessions()->count(),
             'interactive_courses_count' => $this->interactiveCourses()->count(),
             'recorded_courses_count' => $this->recordedCourses()->count(),
         ];

@@ -7,12 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Traits\ScopedToAcademy;
+use Illuminate\Support\Facades\DB;
 
 class AcademicTeacherProfile extends Model
 {
-    use HasFactory;
+    use HasFactory, ScopedToAcademy;
 
     protected $fillable = [
+        'academy_id', // Direct academy relationship
         'user_id', // Nullable - will be linked during registration
         'email',
         'first_name',
@@ -20,8 +23,12 @@ class AcademicTeacherProfile extends Model
         'phone',
         'avatar',
         'teacher_code',
-        'educational_qualification',
-        'experience_years',
+        'education_level',
+        'university',
+        'graduation_year',
+        'qualification_degree',
+        'teaching_experience_years',
+        'certifications',
         'subject_ids',
         'grade_level_ids',
         'available_days',
@@ -54,6 +61,42 @@ class AcademicTeacherProfile extends Model
     ];
 
     /**
+     * Generate a unique teacher code for the academy
+     */
+    public static function generateTeacherCode($academyId)
+    {
+        $academyId = $academyId ?: 1;
+        $prefix = 'AT-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+        
+        // Use a simple approach with multiple attempts for concurrent requests
+        $maxRetries = 20;
+        
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+            // Get the highest existing sequence number for this academy
+            $maxNumber = static::where('academy_id', $academyId)
+                ->where('teacher_code', 'LIKE', $prefix . '%')
+                ->selectRaw('MAX(CAST(SUBSTRING(teacher_code, -4) AS UNSIGNED)) as max_num')
+                ->value('max_num') ?: 0;
+            
+            // Generate next sequence number (add random offset for concurrent requests)
+            $nextNumber = $maxNumber + 1 + $attempt + mt_rand(0, 5);
+            $newCode = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            
+            // Check if this code already exists
+            if (!static::where('teacher_code', $newCode)->exists()) {
+                return $newCode;
+            }
+            
+            // Add a small delay to reduce contention
+            usleep(5000 + ($attempt * 2000)); // 5ms + increasing delay
+        }
+        
+        // Fallback: use timestamp-based suffix if all retries failed
+        $timestamp = substr(str_replace('.', '', microtime(true)), -4);
+        return $prefix . $timestamp;
+    }
+
+    /**
      * Boot method to auto-generate teacher code
      */
     protected static function boot()
@@ -62,17 +105,27 @@ class AcademicTeacherProfile extends Model
 
         static::creating(function ($model) {
             if (empty($model->teacher_code)) {
-                // Extract academy from email or use default academy ID 1
-                $academyId = 1; // TODO: Extract from email domain or admin context
-                $count = static::count() + 1;
-                $model->teacher_code = 'AT-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $model->teacher_code = static::generateTeacherCode($model->academy_id);
             }
         });
     }
 
     /**
+     * Academy relationship path for trait
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy'; // AcademicTeacherProfile -> Academy (direct relationship)
+    }
+
+    /**
      * Relationships
      */
+    public function academy(): BelongsTo
+    {
+        return $this->belongsTo(Academy::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -143,6 +196,14 @@ class AcademicTeacherProfile extends Model
             'approved_at' => now(),
             'is_active' => true,
         ]);
+
+        // Also activate the related User account
+        if ($this->user) {
+            $this->user->update([
+                'status' => 'active',
+                'active_status' => true,
+            ]);
+        }
     }
 
     public function reject(int $rejectedBy, ?string $reason = null): void
@@ -153,6 +214,14 @@ class AcademicTeacherProfile extends Model
             'approved_at' => now(),
             'is_active' => false,
         ]);
+
+        // Also deactivate the related User account
+        if ($this->user) {
+            $this->user->update([
+                'status' => 'inactive',
+                'active_status' => false,
+            ]);
+        }
     }
 
     public function suspend(?string $reason = null): void
@@ -160,6 +229,14 @@ class AcademicTeacherProfile extends Model
         $this->update([
             'is_active' => false,
         ]);
+
+        // Also suspend the related User account
+        if ($this->user) {
+            $this->user->update([
+                'status' => 'suspended',
+                'active_status' => false,
+            ]);
+        }
     }
 
     /**

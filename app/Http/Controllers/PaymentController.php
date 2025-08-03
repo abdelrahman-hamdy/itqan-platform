@@ -18,7 +18,8 @@ class PaymentController extends Controller
     public function create(RecordedCourse $course)
     {
         if (!Auth::check()) {
-            return redirect()->route('login');
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();
@@ -214,7 +215,8 @@ class PaymentController extends Controller
     public function history()
     {
         if (!Auth::check()) {
-            return redirect()->route('login');
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();

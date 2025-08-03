@@ -6,13 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Carbon\Carbon;
+use App\Traits\ScopedToAcademy;
+use Illuminate\Support\Facades\DB;
 
 class QuranTeacherProfile extends Model
 {
-    use HasFactory;
+    use HasFactory, ScopedToAcademy;
 
     protected $fillable = [
+        'academy_id', // Direct academy relationship
         'user_id', // Nullable - will be linked during registration
         'email',
         'first_name',
@@ -22,16 +26,20 @@ class QuranTeacherProfile extends Model
         'teacher_code',
         'educational_qualification',
         'certifications',
-        'experience_years',
-        'specialization',
+        'teaching_experience_years',
         'available_days',
         'available_time_start',
         'available_time_end',
-        'session_price_individual',
-        'session_price_group',
+        'languages',
+        'bio_arabic',
+        'bio_english',
         'approval_status',
+        'approved_by',
+        'approved_at',
         'is_active',
-        'notes',
+        'rating',
+        'total_students',
+        'total_sessions',
     ];
 
     protected $casts = [
@@ -48,6 +56,42 @@ class QuranTeacherProfile extends Model
         'available_time_end' => 'datetime:H:i',
     ];
 
+        /**
+     * Generate a unique teacher code for the academy
+     */
+    public static function generateTeacherCode($academyId)
+    {
+        $academyId = $academyId ?: 1;
+        $prefix = 'QT-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+        
+        // Use a simple approach with multiple attempts for concurrent requests
+        $maxRetries = 20;
+        
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+            // Get the highest existing sequence number for this academy
+            $maxNumber = static::where('academy_id', $academyId)
+                ->where('teacher_code', 'LIKE', $prefix . '%')
+                ->selectRaw('MAX(CAST(SUBSTRING(teacher_code, -4) AS UNSIGNED)) as max_num')
+                ->value('max_num') ?: 0;
+            
+            // Generate next sequence number (add random offset for concurrent requests)
+            $nextNumber = $maxNumber + 1 + $attempt + mt_rand(0, 5);
+            $newCode = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            
+            // Check if this code already exists
+            if (!static::where('teacher_code', $newCode)->exists()) {
+                return $newCode;
+            }
+            
+            // Add a small delay to reduce contention
+            usleep(5000 + ($attempt * 2000)); // 5ms + increasing delay
+        }
+        
+        // Fallback: use timestamp-based suffix if all retries failed
+        $timestamp = substr(str_replace('.', '', microtime(true)), -4);
+        return $prefix . $timestamp;
+    }
+
     /**
      * Boot method to auto-generate teacher code
      */
@@ -57,17 +101,27 @@ class QuranTeacherProfile extends Model
 
         static::creating(function ($model) {
             if (empty($model->teacher_code)) {
-                // Extract academy from email or use default academy ID 1
-                $academyId = 1; // TODO: Extract from email domain or admin context
-                $count = static::count() + 1;
-                $model->teacher_code = 'QT-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $model->teacher_code = static::generateTeacherCode($model->academy_id);
             }
         });
     }
 
     /**
+     * Academy relationship path for trait
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy'; // QuranTeacherProfile -> Academy (direct relationship)
+    }
+
+    /**
      * Relationships
      */
+    public function academy(): BelongsTo
+    {
+        return $this->belongsTo(Academy::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -78,12 +132,12 @@ class QuranTeacherProfile extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function quranSessions(): HasMany
+    public function quranSessions(): HasManyThrough
     {
         return $this->hasManyThrough(QuranSession::class, User::class, 'id', 'teacher_id', 'user_id', 'id');
     }
 
-    public function quranCircles(): HasMany
+    public function quranCircles(): HasManyThrough
     {
         return $this->hasManyThrough(QuranCircle::class, User::class, 'id', 'teacher_id', 'user_id', 'id');
     }
@@ -143,6 +197,14 @@ class QuranTeacherProfile extends Model
             'approved_at' => Carbon::now(),
             'is_active' => true,
         ]);
+
+        // Also activate the related User account
+        if ($this->user) {
+            $this->user->update([
+                'status' => 'active',
+                'active_status' => true,
+            ]);
+        }
     }
 
     public function reject(int $rejectedBy, ?string $reason = null): void
@@ -153,6 +215,14 @@ class QuranTeacherProfile extends Model
             'approved_at' => Carbon::now(),
             'is_active' => false,
         ]);
+
+        // Also deactivate the related User account
+        if ($this->user) {
+            $this->user->update([
+                'status' => 'inactive',
+                'active_status' => false,
+            ]);
+        }
     }
 
     public function suspend(?string $reason = null): void
@@ -160,6 +230,14 @@ class QuranTeacherProfile extends Model
         $this->update([
             'is_active' => false,
         ]);
+
+        // Also suspend the related User account
+        if ($this->user) {
+            $this->user->update([
+                'status' => 'suspended',
+                'active_status' => false,
+            ]);
+        }
     }
 
     /**
@@ -192,8 +270,6 @@ class QuranTeacherProfile extends Model
 
     public function scopeForAcademy($query, int $academyId)
     {
-        // Since we don't have direct academy relationship, we'll need to determine this differently
-        // For now, we can use a TODO comment and implement based on email domain or other logic
-        return $query; // TODO: Implement academy scoping for registration flow
+        return $query->where('academy_id', $academyId);
     }
 }

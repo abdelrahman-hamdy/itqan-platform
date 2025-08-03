@@ -1,214 +1,221 @@
 <!-- Footer -->
-<footer class="bg-gray-900 dark:bg-black text-white" id="footer">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Main Footer Content -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-16">
-            <!-- Academy Information -->
-            <div class="lg:col-span-2">
-                <!-- Academy Logo & Name -->
-                <div class="flex items-center gap-3 mb-6">
-                    @if($academy->logo_url)
-                        <img src="{{ $academy->logo_url }}" alt="{{ $academy->name }}" class="h-12 w-12 rounded-lg">
-                    @else
-                        <div class="h-12 w-12 academy-bg-primary rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold text-lg">{{ substr($academy->name, 0, 1) }}</span>
-                        </div>
-                    @endif
-                    <h3 class="text-2xl font-bold">{{ $academy->name }}</h3>
-                </div>
-
-                <!-- Academy Description -->
-                @if($academy->description)
-                    <p class="text-gray-300 mb-6 leading-relaxed max-w-md">
-                        {{ $academy->description }}
-                    </p>
-                @endif
-
-                <!-- Contact Information -->
-                <div class="space-y-3">
-                    @if($academy->email)
-                        <div class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
-                            </svg>
-                            <a href="mailto:{{ $academy->email }}" class="text-gray-300 hover:text-white transition-colors">
-                                {{ $academy->email }}
-                            </a>
-                        </div>
-                    @endif
-
-                    @if($academy->phone)
-                        <div class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6.62 10.79C8.06 13.62 10.38 15.94 13.21 17.38L15.41 15.18C15.69 14.9 16.08 14.82 16.43 14.93C17.55 15.3 18.75 15.5 20 15.5C20.55 15.5 21 15.95 21 16.5V20C21 20.55 20.55 21 20 21C10.61 21 3 13.39 3 4C3 3.45 3.45 3 4 3H7.5C8.05 3 8.5 3.45 8.5 4C8.5 5.25 8.7 6.45 9.07 7.57C9.18 7.92 9.1 8.31 8.82 8.59L6.62 10.79Z"/>
-                            </svg>
-                            <a href="tel:{{ $academy->phone }}" class="text-gray-300 hover:text-white transition-colors">
-                                {{ $academy->phone }}
-                            </a>
-                        </div>
-                    @endif
-
-                    @if($academy->website)
-                        <div class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.52 2 12 2ZM11 19.93C7.05 19.44 4 16.08 4 12C4 11.38 4.08 10.79 4.21 10.21L9 15V16C9 17.1 9.9 18 11 18V19.93ZM17.9 17.39C17.64 16.58 16.9 16 16 16H15V13C15 12.45 14.55 12 14 12H8V10H10C10.55 10 11 9.55 11 9V7H13C14.1 7 15 6.1 15 5V4.59C17.93 5.77 20 8.65 20 12C20 14.08 19.2 15.97 17.9 17.39Z"/>
-                            </svg>
-                            <a href="{{ $academy->website }}" target="_blank" class="text-gray-300 hover:text-white transition-colors">
-                                {{ str_replace(['http://', 'https://'], '', $academy->website) }}
-                            </a>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Social Media Links (if available) -->
-                <div class="flex gap-4 mt-6">
-                    <!-- Example social media icons - you can make these configurable -->
-                    <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:academy-bg-primary transition-colors">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M24 4.557C23.117 4.949 22.168 5.213 21.172 5.332C22.189 4.723 22.97 3.758 23.337 2.608C22.386 3.172 21.332 3.582 20.21 3.803C19.313 2.846 18.032 2.248 16.616 2.248C13.437 2.248 11.101 5.214 11.819 8.293C7.728 8.088 4.1 6.128 1.671 3.149C0.381 5.362 1.002 8.257 3.194 9.723C2.388 9.697 1.628 9.476 0.965 9.107C0.911 11.388 2.546 13.522 4.914 13.997C4.221 14.185 3.462 14.229 2.69 14.081C3.316 16.037 5.134 17.46 7.29 17.5C5.22 19.123 2.612 19.848 0 19.54C2.179 20.937 4.768 21.752 7.548 21.752C16.69 21.752 21.855 14.031 21.543 7.106C22.505 6.411 23.34 5.544 24 4.557Z"/>
-                        </svg>
-                    </a>
-                    <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:academy-bg-primary transition-colors">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M22.46 6C21.69 6.35 20.86 6.58 20 6.69C20.88 6.16 21.56 5.32 21.88 4.31C21.05 4.81 20.13 5.16 19.16 5.36C18.37 4.5 17.26 4 16 4C13.65 4 11.73 5.92 11.73 8.29C11.73 8.63 11.77 8.96 11.84 9.27C8.28 9.09 5.11 7.38 3 4.79C2.63 5.42 2.42 6.16 2.42 6.94C2.42 8.43 3.17 9.75 4.33 10.5C3.62 10.5 2.96 10.3 2.38 10C2.38 10 2.38 10 2.38 10.03C2.38 12.11 3.86 13.85 5.82 14.24C5.46 14.34 5.08 14.39 4.69 14.39C4.42 14.39 4.15 14.36 3.89 14.31C4.43 16 6 17.26 7.89 17.29C6.43 18.45 4.58 19.13 2.56 19.13C2.22 19.13 1.88 19.11 1.54 19.07C3.44 20.29 5.7 21 8.12 21C16 21 20.33 14.46 20.33 8.79C20.33 8.6 20.33 8.42 20.32 8.23C21.16 7.63 21.88 6.87 22.46 6Z"/>
-                        </svg>
-                    </a>
-                    <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:academy-bg-primary transition-colors">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12.017 0C5.396 0 .029 5.367.029 11.987C.029 17.396 3.542 21.983 8.369 23.439V15.188H6.18V11.987H8.369V9.348C8.369 7.189 9.915 5.756 11.839 5.756C12.761 5.756 13.726 5.931 13.726 5.931V8.058H12.663C11.617 8.058 11.268 8.706 11.268 9.372V11.987H13.627L13.227 15.188H11.268V23.439C16.095 21.983 19.608 17.396 19.608 11.987C19.608 5.367 14.241.001 12.017.001Z"/>
-                        </svg>
-                    </a>
-                </div>
+<footer id="contact" class="bg-gray-900 text-white py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Main Footer Content -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+      <!-- Academy Info -->
+      <div>
+        <!-- Logo and Brand -->
+        <div class="flex items-center mb-6">
+          @if($academy->logo ?? null)
+            <img src="{{ $academy->logo_url }}" alt="{{ $academy->name }}" class="w-8 h-8 ml-2">
+          @else
+            <div class="w-8 h-8 flex items-center justify-center">
+              <svg class="w-8 h-8 text-primary-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82Z"/>
+              </svg>
             </div>
-
-            <!-- Quick Links -->
-            <div>
-                <h4 class="text-lg font-semibold mb-6">روابط سريعة</h4>
-                <ul class="space-y-3">
-                    <li>
-                        <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="text-gray-300 hover:text-white transition-colors">
-                            الرئيسية
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#quran-services" class="text-gray-300 hover:text-white transition-colors">
-                            خدمات القرآن
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#academic-services" class="text-gray-300 hover:text-white transition-colors">
-                            الخدمات الأكاديمية
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}" class="text-gray-300 hover:text-white transition-colors">
-                            الدورات المسجلة
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}" class="text-gray-300 hover:text-white transition-colors">
-                            تسجيل الدخول
-                        </a>
-                    </li>
-                    @auth
-                    <li>
-                        <a href="{{ route('student.dashboard') }}" class="text-gray-300 hover:text-white transition-colors">
-                            لوحة التحكم
-                        </a>
-                    </li>
-                    @endauth
-                </ul>
-            </div>
-
-            <!-- Services -->
-            <div>
-                <h4 class="text-lg font-semibold mb-6">خدماتنا</h4>
-                <ul class="space-y-3">
-                    <li class="text-gray-300">تحفيظ القرآن الكريم</li>
-                    <li class="text-gray-300">دورات أكاديمية تفاعلية</li>
-                    <li class="text-gray-300">معلمون خصوصيون</li>
-                    <li class="text-gray-300">دورات مسجلة</li>
-                    <li class="text-gray-300">حلقات قرآنية جماعية</li>
-                    <li class="text-gray-300">متابعة أكاديمية</li>
-                </ul>
-
-                <!-- Download App Section -->
-                <div class="mt-8">
-                    <h5 class="text-sm font-semibold mb-4 text-gray-400">حمل التطبيق</h5>
-                    <div class="space-y-2">
-                        <a href="#" class="block">
-                            <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on App Store" class="h-10 opacity-80 hover:opacity-100 transition-opacity">
-                        </a>
-                        <a href="#" class="block">
-                            <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" class="h-10 opacity-80 hover:opacity-100 transition-opacity">
-                        </a>
-                    </div>
-                </div>
-            </div>
+          @endif
+          <span class="mr-2 text-xl font-bold font-arabic">{{ $academy->name }}</span>
         </div>
-
-        <!-- Bottom Footer -->
-        <div class="border-t border-gray-800 py-8">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <!-- Copyright -->
-                <div class="text-gray-400 text-sm">
-                    <p>© {{ date('Y') }} {{ $academy->name }}. جميع الحقوق محفوظة.</p>
-                </div>
-
-                <!-- Platform Credit -->
-                <div class="text-gray-400 text-sm">
-                    <p>مدعوم بمنصة <span class="academy-primary font-semibold">إتقان</span> التعليمية</p>
-                </div>
-
-                <!-- Footer Links -->
-                <div class="flex gap-6 text-sm">
-                    <a href="#" class="text-gray-400 hover:text-white transition-colors">سياسة الخصوصية</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition-colors">شروط الاستخدام</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition-colors">الدعم الفني</a>
-                </div>
-            </div>
+        
+        <!-- Academy Description -->
+        <p class="text-gray-400 mb-6 leading-relaxed font-arabic">
+          {{ $academy->description ?? 'منصة تعليمية شاملة تهدف إلى تقديم أفضل تجربة تعليمية في القرآن الكريم والمواد الأكاديمية' }}
+        </p>
+        
+        <!-- Social Media Links -->
+        <div class="flex space-x-4 space-x-reverse">
+          @if($academy->facebook_url)
+            <a href="{{ $academy->facebook_url }}" target="_blank" rel="noopener" 
+               class="w-10 h-10 flex items-center justify-center bg-primary-500/20 rounded-full hover:bg-primary-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+            </a>
+          @endif
+          
+          @if($academy->twitter_url)
+            <a href="{{ $academy->twitter_url }}" target="_blank" rel="noopener"
+               class="w-10 h-10 flex items-center justify-center bg-primary-500/20 rounded-full hover:bg-primary-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+              </svg>
+            </a>
+          @endif
+          
+          @if($academy->instagram_url)
+            <a href="{{ $academy->instagram_url }}" target="_blank" rel="noopener"
+               class="w-10 h-10 flex items-center justify-center bg-primary-500/20 rounded-full hover:bg-primary-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.73-3.016-1.8L4.27 17.339l-1.151-1.151 2.151-2.151c-.365-.934-.282-1.998.282-2.849.848-.927 2.282-.927 3.13 0l2.151 2.151-1.151 1.151-1.153-2.151c-.566-1.07-1.719-1.8-3.016-1.8-.565 0-1.131.282-1.414.565-.565.565-.565 1.414 0 1.979.565.565 1.414.565 1.979 0l2.151-2.151 1.151 1.151-2.151 2.151c-.848.927-2.282.927-3.13 0z"/>
+              </svg>
+            </a>
+          @endif
+          
+          @if($academy->youtube_url)
+            <a href="{{ $academy->youtube_url }}" target="_blank" rel="noopener"
+               class="w-10 h-10 flex items-center justify-center bg-primary-500/20 rounded-full hover:bg-primary-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+            </a>
+          @endif
         </div>
+      </div>
+
+      <!-- Main Sections -->
+      <div>
+        <h3 class="text-lg font-bold mb-6 font-arabic">الأقسام الرئيسية</h3>
+        <ul class="space-y-3">
+          @if($academy->quran_enabled ?? true)
+            <li>
+              <a href="#quran" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+                قسم القرآن الكريم
+              </a>
+            </li>
+          @endif
+          
+          @if($academy->academic_enabled ?? true)
+            <li>
+              <a href="#academic" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+                القسم الأكاديمي
+              </a>
+            </li>
+          @endif
+          
+          @if($academy->recorded_courses_enabled ?? true)
+            <li>
+              <a href="#courses" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+                الكورسات المسجلة
+              </a>
+            </li>
+          @endif
+          
+          <li>
+            <a href="#about" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+              المعلمون
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Important Links -->
+      <div>
+        <h3 class="text-lg font-bold mb-6 font-arabic">روابط مهمة</h3>
+        <ul class="space-y-3">
+          <li>
+            <a href="#about" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+              من نحن
+            </a>
+          </li>
+          <li>
+            <a href="{{ Route::has('privacy') ? route('privacy', ['subdomain' => $academy->subdomain]) : '#' }}" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+              سياسة الخصوصية
+            </a>
+          </li>
+          <li>
+            <a href="{{ Route::has('terms') ? route('terms', ['subdomain' => $academy->subdomain]) : '#' }}" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+              شروط الاستخدام
+            </a>
+          </li>
+          <li>
+            <a href="{{ Route::has('faq') ? route('faq', ['subdomain' => $academy->subdomain]) : '#' }}" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+              الأسئلة الشائعة
+            </a>
+          </li>
+          <li>
+            <a href="{{ Route::has('support') ? route('support', ['subdomain' => $academy->subdomain]) : '#' }}" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
+              الدعم الفني
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Contact Information -->
+      <div>
+        <h3 class="text-lg font-bold mb-6 font-arabic">تواصل معنا</h3>
+        <ul class="space-y-4">
+          @if($academy->phone)
+            <li class="flex items-start text-gray-400">
+              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              <div>
+                <span class="block font-arabic">{{ $academy->phone }}</span>
+              </div>
+            </li>
+          @endif
+          
+          @if($academy->email)
+            <li class="flex items-start text-gray-400">
+              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              <div>
+                <span class="block">{{ $academy->email }}</span>
+              </div>
+            </li>
+          @endif
+          
+          @if($academy->address)
+            <li class="flex items-start text-gray-400">
+              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <div>
+                <span class="block font-arabic">{{ $academy->address }}</span>
+              </div>
+            </li>
+          @endif
+          
+          <!-- Default contact info if academy doesn't have specific details -->
+          @if(!$academy->phone && !$academy->email && !$academy->address)
+            <li class="flex items-start text-gray-400">
+              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              <span class="font-arabic">+966 11 234 5678</span>
+            </li>
+            <li class="flex items-start text-gray-400">
+              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              <span>info@{{ $academy->subdomain }}.itqan.com</span>
+            </li>
+            <li class="flex items-start text-gray-400">
+              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <span class="font-arabic">الرياض، المملكة العربية السعودية</span>
+            </li>
+          @endif
+        </ul>
+
+        <!-- Contact Form Button -->
+        <div class="mt-6">
+          <a href="{{ Route::has('contact') ? route('contact', ['subdomain' => $academy->subdomain]) : '#contact' }}" 
+             class="inline-flex items-center px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-gray-900 font-arabic">
+            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+            </svg>
+            أرسل رسالة
+          </a>
+        </div>
+      </div>
     </div>
 
-    <!-- Back to Top Button -->
-    <button id="back-to-top" class="fixed bottom-8 right-8 w-12 h-12 academy-bg-primary rounded-full flex items-center justify-center text-white shadow-lg hover:opacity-90 transition-all duration-300 opacity-0 pointer-events-none">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-        </svg>
-    </button>
+    <!-- Footer Bottom -->
+    <div class="border-t border-gray-800 pt-8 text-center">
+      <p class="text-gray-400 font-arabic">
+        © {{ date('Y') }} {{ $academy->name }}. جميع الحقوق محفوظة.
+        <span class="mx-2">|</span>
+        <a href="https://itqan.com" target="_blank" rel="noopener" class="hover:text-white transition-colors duration-200">
+          مدعوم من منصة إتقان
+        </a>
+      </p>
+    </div>
+  </div>
 </footer>
-
-<script>
-    // Back to top functionality
-    window.addEventListener('scroll', function() {
-        const backToTopButton = document.getElementById('back-to-top');
-        if (window.pageYOffset > 300) {
-            backToTopButton.classList.remove('opacity-0', 'pointer-events-none');
-            backToTopButton.classList.add('opacity-100', 'pointer-events-auto');
-        } else {
-            backToTopButton.classList.add('opacity-0', 'pointer-events-none');
-            backToTopButton.classList.remove('opacity-100', 'pointer-events-auto');
-        }
-    });
-
-    document.getElementById('back-to-top').addEventListener('click', function() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    });
-
-    // Smooth scrolling for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-</script>

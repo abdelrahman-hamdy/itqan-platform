@@ -11,13 +11,14 @@ use App\Models\RecordedCourse;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranSubscription;
 use App\Models\AcademicProgress;
+use App\Models\StudentProfile;
 
 class StudentProfileController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
-        $studentProfile = $user->studentProfile;
+        $studentProfile = $user->studentProfileUnscoped;
         $academy = $user->academy;
 
         // Get student's Quran circles
@@ -119,7 +120,18 @@ class StudentProfileController extends Controller
     public function edit()
     {
         $user = Auth::user();
-        $studentProfile = $user->studentProfile;
+        $studentProfile = $user->studentProfileUnscoped;
+        
+        // Handle case where student profile doesn't exist or was orphaned
+        if (!$studentProfile) {
+            // Try to create a basic student profile if one doesn't exist
+            $studentProfile = $this->createBasicStudentProfile($user);
+            
+            if (!$studentProfile) {
+                return redirect()->route('student.profile')
+                    ->with('error', 'لم يتم العثور على الملف الشخصي للطالب. يرجى التواصل مع الدعم الفني.');
+            }
+        }
         
         return view('student.edit-profile', compact('studentProfile'));
     }
@@ -127,7 +139,17 @@ class StudentProfileController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
-        $studentProfile = $user->studentProfile;
+        $studentProfile = $user->studentProfileUnscoped;
+        
+        // Handle case where student profile doesn't exist or was orphaned
+        if (!$studentProfile) {
+            $studentProfile = $this->createBasicStudentProfile($user);
+            
+            if (!$studentProfile) {
+                return redirect()->back()
+                    ->with('error', 'لم يتم العثور على الملف الشخصي للطالب. يرجى التواصل مع الدعم الفني.');
+            }
+        }
 
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -249,5 +271,59 @@ class StudentProfileController extends Controller
         ]);
 
         return view('student.certificates', compact('certificates'));
+    }
+    
+    /**
+     * Create a basic student profile for users who don't have one
+     * This can happen when grade levels are deleted and relationships become orphaned
+     */
+    private function createBasicStudentProfile($user)
+    {
+        try {
+            // Check if a profile already exists but might be orphaned
+            $existingProfile = StudentProfile::withoutGlobalScopes()
+                ->where('user_id', $user->id)
+                ->first();
+                
+            if ($existingProfile) {
+                return $existingProfile;
+            }
+            
+            // Generate a unique student code
+            $studentCode = 'STU' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+            
+            // Check for existing student code and make it unique
+            $counter = 1;
+            $originalCode = $studentCode;
+            while (StudentProfile::where('student_code', $studentCode)->exists()) {
+                $studentCode = $originalCode . '-' . $counter;
+                $counter++;
+            }
+            
+            // Find the default grade level for the user's academy
+            $defaultGradeLevel = \App\Models\GradeLevel::where('academy_id', $user->academy_id)
+                ->where('is_active', true)
+                ->orderBy('level')
+                ->first();
+            
+            // Create a basic student profile
+            $studentProfile = StudentProfile::create([
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'first_name' => $user->first_name ?? 'طالب',
+                'last_name' => $user->last_name ?? 'جديد',
+                'student_code' => $studentCode,
+                'grade_level_id' => $defaultGradeLevel?->id, // Can be null initially
+                'enrollment_date' => now(),
+                'academic_status' => 'enrolled',
+                'notes' => 'تم إنشاء الملف الشخصي تلقائياً بعد حل مشكلة البيانات المفقودة'
+            ]);
+            
+            return $studentProfile;
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to create basic student profile for user ' . $user->id . ': ' . $e->getMessage());
+            return null;
+        }
     }
 } 

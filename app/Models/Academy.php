@@ -163,6 +163,22 @@ class Academy extends Model
     }
 
     /**
+     * Get subjects in this academy
+     */
+    public function subjects(): HasMany
+    {
+        return $this->hasMany(Subject::class);
+    }
+
+    /**
+     * Get grade levels in this academy
+     */
+    public function gradeLevels(): HasMany
+    {
+        return $this->hasMany(GradeLevel::class);
+    }
+
+    /**
      * Get the full domain URL
      */
     public function getFullDomainAttribute(): string

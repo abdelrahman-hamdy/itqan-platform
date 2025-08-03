@@ -101,7 +101,7 @@ class QuranSubscription extends Model
 
     public function quranTeacher(): BelongsTo
     {
-        return $this->belongsTo(QuranTeacher::class);
+        return $this->belongsTo(QuranTeacherProfile::class);
     }
 
     public function package(): BelongsTo

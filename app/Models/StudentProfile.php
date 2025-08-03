@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\ScopedToAcademyViaRelationship;
 
 class StudentProfile extends Model
 {
-    use HasFactory;
+    use HasFactory, ScopedToAcademyViaRelationship;
 
     protected $fillable = [
         'user_id', // Nullable - will be linked during registration
@@ -48,12 +49,30 @@ class StudentProfile extends Model
 
         static::creating(function ($model) {
             if (empty($model->student_code)) {
-                // Extract academy from email or use default academy ID 1
-                $academyId = 1; // TODO: Extract from email domain or admin context
-                $count = static::count() + 1;
-                $model->student_code = 'ST-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                // Get academy ID from grade level or user
+                $academyId = 1; // Default fallback
+                if ($model->grade_level_id) {
+                    $gradeLevel = \App\Models\GradeLevel::find($model->grade_level_id);
+                    $academyId = $gradeLevel ? $gradeLevel->academy_id : 1;
+                } elseif ($model->user_id) {
+                    $user = \App\Models\User::find($model->user_id);
+                    $academyId = $user ? $user->academy_id : 1;
+                }
+                
+                // Generate unique code with timestamp
+                $timestamp = now()->format('His'); // HHMMSS
+                $random = rand(100, 999);
+                $model->student_code = 'ST-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . $timestamp . $random;
             }
         });
+    }
+
+    /**
+     * Academy relationship path for trait
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'gradeLevel.academy'; // StudentProfile -> GradeLevel -> Academy
     }
 
     /**

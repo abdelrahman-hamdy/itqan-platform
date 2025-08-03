@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
@@ -24,9 +25,30 @@ use App\Models\ParentProfile;
 use App\Models\SupervisorProfile;
 use App\Models\AcademicSubject;
 
+// Course and Circle Models
+use App\Models\QuranCircle;
+use App\Models\InteractiveCourseEnrollment;
+use App\Models\CourseSubscription;
+
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     use HasFactory, Notifiable;
+
+    /**
+     * Boot method to add observers
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($user) {
+            // Automatically create profile based on user_type
+            // Skip teachers as they are handled manually during registration
+            if ($user->user_type && $user->academy_id && !in_array($user->user_type, ['quran_teacher', 'academic_teacher'])) {
+                $user->createProfile();
+            }
+        });
+    }
 
     /**
      * User roles constants
@@ -67,8 +89,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'last_login_at',
         'avatar',
         'profile_completed_at',
-        'is_active',
-        'email_verification_token',
+        'active_status',
         'phone_verification_token',
         'password_reset_token',
         'remember_token',
@@ -82,7 +103,6 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     protected $hidden = [
         'password',
         'remember_token',
-        'email_verification_token',
         'phone_verification_token',
         'password_reset_token',
     ];
@@ -100,7 +120,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             'last_login_at' => 'datetime',
             'profile_completed_at' => 'datetime',
             'password' => 'hashed',
-            'is_active' => 'boolean',
+            'active_status' => 'boolean',
         ];
     }
 
@@ -115,14 +135,14 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     /**
      * Get the user's profile based on user_type
      */
-    public function profile()
+    public function getProfile()
     {
         return match($this->user_type) {
-            'student' => $this->hasOne(StudentProfile::class),
-            'quran_teacher' => $this->hasOne(QuranTeacherProfile::class),
-            'academic_teacher' => $this->hasOne(AcademicTeacherProfile::class),
-            'parent' => $this->hasOne(ParentProfile::class),
-            'supervisor' => $this->hasOne(SupervisorProfile::class),
+            'student' => $this->studentProfile,
+            'quran_teacher' => $this->quranTeacherProfile,
+            'academic_teacher' => $this->academicTeacherProfile,
+            'parent' => $this->parentProfile,
+            'supervisor' => $this->supervisorProfile,
             'admin' => null, // Admins use basic user info only
             default => null,
         };
@@ -144,6 +164,15 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     public function studentProfile(): HasOne
     {
         return $this->hasOne(StudentProfile::class);
+    }
+
+    /**
+     * Get student profile without global scopes (for internal use)
+     * This ensures students can always access their own profile regardless of academy context
+     */
+    public function studentProfileUnscoped(): HasOne
+    {
+        return $this->hasOne(StudentProfile::class)->withoutGlobalScopes();
     }
 
     public function parentProfile(): HasOne
@@ -189,6 +218,44 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     }
 
     /**
+     * Quran circles that this user (student) is enrolled in
+     */
+    public function quranCircles(): BelongsToMany
+    {
+        return $this->belongsToMany(QuranCircle::class, 'quran_circle_students', 'student_id', 'circle_id')
+                    ->withPivot([
+                        'enrolled_at',
+                        'status',
+                        'attendance_count',
+                        'missed_sessions',
+                        'makeup_sessions_used',
+                        'current_level',
+                        'progress_notes',
+                        'parent_rating',
+                        'student_rating',
+                        'completion_date',
+                        'certificate_issued'
+                    ])
+                    ->withTimestamps();
+    }
+
+    /**
+     * Interactive course enrollments for this user (student)
+     */
+    public function interactiveCourseEnrollments(): HasMany
+    {
+        return $this->hasMany(InteractiveCourseEnrollment::class, 'student_id');
+    }
+
+    /**
+     * Recorded course enrollments for this user (student)
+     */
+    public function recordedCourseEnrollments(): HasMany
+    {
+        return $this->hasMany(CourseSubscription::class, 'student_id');
+    }
+
+    /**
      * Get full name attribute
      */
     public function getNameAttribute(): string
@@ -201,7 +268,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
      */
     public function getDisplayNameAttribute(): string
     {
-        $profile = $this->profile;
+        $profile = $this->getProfile();
         
         if ($profile && method_exists($profile, 'getDisplayName')) {
             return $profile->getDisplayName();
@@ -235,11 +302,84 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     }
 
     /**
+     * Create profile based on user type
+     */
+    public function createProfile(): void
+    {
+        // Skip if user already has a profile or if user_type is admin/super_admin
+        if ($this->getProfile() || in_array($this->user_type, ['admin', 'super_admin'])) {
+            return;
+        }
+
+        $profileData = [
+            'user_id' => $this->id,
+            'email' => $this->email,
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
+            'phone' => $this->phone,
+        ];
+
+        $profileDataWithAcademy = array_merge($profileData, [
+            'academy_id' => $this->academy_id,
+        ]);
+
+        switch ($this->user_type) {
+            case 'student':
+                // Get a random grade level from the user's academy
+                $gradeLevel = \App\Models\GradeLevel::where('academy_id', $this->academy_id)->inRandomOrder()->first();
+                
+                StudentProfile::create(array_merge($profileData, [
+                    'grade_level_id' => $gradeLevel ? $gradeLevel->id : null,
+                    'birth_date' => now()->subYears(rand(8, 18)),
+                    'gender' => rand(0, 1) ? 'male' : 'female',
+                    'nationality' => 'Saudi',
+                    'parent_id' => $this->parent_id,
+                    'academic_status' => 'enrolled',
+                    'enrollment_date' => now()->subMonths(rand(1, 12)),
+                ]));
+                break;
+
+            case 'quran_teacher':
+                QuranTeacherProfile::create(array_merge($profileDataWithAcademy, [
+                    'educational_qualification' => 'bachelor',
+                    'teaching_experience_years' => 1,
+                    'approval_status' => 'pending',
+                ]));
+                break;
+
+            case 'academic_teacher':
+                AcademicTeacherProfile::create(array_merge($profileDataWithAcademy, [
+                    'education_level' => 'bachelor',
+                    'qualification_degree' => 'بكالوريوس في التربية',
+                    'teaching_experience_years' => 1,
+                    'session_price_individual' => 60,
+                    'approval_status' => 'pending',
+                ]));
+                break;
+
+            case 'parent':
+                ParentProfile::create(array_merge($profileDataWithAcademy, [
+                    'relationship_type' => 'father',
+                    'preferred_contact_method' => 'phone',
+                ]));
+                break;
+
+            case 'supervisor':
+                SupervisorProfile::create(array_merge($profileDataWithAcademy, [
+                    'department' => 'general',
+                    'supervision_level' => 'junior',
+                    'hired_date' => now()->toDateString(),
+                ]));
+                break;
+        }
+    }
+
+    /**
      * Check if user is active
      */
     public function isActive(): bool
     {
-        return $this->is_active && $this->status === self::STATUS_ACTIVE;
+        return $this->active_status && $this->status === self::STATUS_ACTIVE;
     }
 
     /**
@@ -356,7 +496,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
      */
     public function scopeActive($query): Builder
     {
-        return $query->where('status', self::STATUS_ACTIVE)->where('is_active', true);
+        return $query->where('status', self::STATUS_ACTIVE)->where('active_status', true);
     }
 
     /**

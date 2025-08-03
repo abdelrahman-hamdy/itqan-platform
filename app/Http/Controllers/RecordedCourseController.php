@@ -189,7 +189,8 @@ class RecordedCourseController extends Controller
     public function enroll(Request $request, RecordedCourse $course)
     {
         if (!Auth::check()) {
-            return redirect()->route('login')
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain])
                 ->with('message', 'يجب تسجيل الدخول أولاً للتسجيل في الدورة');
         }
 
@@ -255,7 +256,8 @@ class RecordedCourseController extends Controller
     public function learn(RecordedCourse $course)
     {
         if (!Auth::check()) {
-            return redirect()->route('login');
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();
@@ -291,7 +293,8 @@ class RecordedCourseController extends Controller
     public function checkout(RecordedCourse $course)
     {
         if (!Auth::check()) {
-            return redirect()->route('login');
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         if ($course->is_free) {
