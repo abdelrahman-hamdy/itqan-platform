@@ -218,7 +218,10 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     
     // Main Dashboard
     Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
-    Route::get('/my-courses', [StudentDashboardController::class, 'courses'])->name('student.courses');
+            // Note: student.courses functionality is now handled by student.recorded-courses route
+        // Route::get('/my-courses', function () {
+        //     return redirect()->route('courses.index', ['subdomain' => request()->route('subdomain')]);
+        // })->name('student.courses');
     Route::get('/enrollments/{enrollment}/progress', [StudentDashboardController::class, 'courseProgress'])->name('student.course-progress');
     
     // Learning Resources
@@ -234,18 +237,14 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     | Student Profile Routes
     |--------------------------------------------------------------------------
+    | Note: Some routes defined here due to route registration issues in auth.php
     */
     
-    // Student Profile Routes (Protected)
+    // Missing student routes that weren't registering from auth.php
     Route::middleware(['auth', 'role:student'])->group(function () {
         Route::get('/profile', [App\Http\Controllers\StudentProfileController::class, 'index'])->name('student.profile');
-        Route::get('/profile/edit', [App\Http\Controllers\StudentProfileController::class, 'edit'])->name('student.profile.edit');
-        Route::put('/profile/update', [App\Http\Controllers\StudentProfileController::class, 'update'])->name('student.profile.update');
-        Route::get('/settings', [App\Http\Controllers\StudentProfileController::class, 'settings'])->name('student.settings');
-        Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
+        Route::get('/my-quran-teachers', [App\Http\Controllers\StudentProfileController::class, 'quranTeachers'])->name('student.quran-teachers');
         Route::get('/payments', [App\Http\Controllers\StudentProfileController::class, 'payments'])->name('student.payments');
-        Route::get('/progress', [App\Http\Controllers\StudentProfileController::class, 'progress'])->name('student.progress');
-        Route::get('/certificates', [App\Http\Controllers\StudentProfileController::class, 'certificates'])->name('student.certificates');
     });
 
     /*
@@ -259,4 +258,29 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     // Route::get('/subjects', [SubjectsController::class, 'index'])->name('subjects.index');
     // Route::get('/about', [AcademyController::class, 'about'])->name('academy.about');
     // Route::get('/contact', [AcademyController::class, 'contact'])->name('academy.contact');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Quran Teacher Profile Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Public Quran Teachers Listing
+    Route::get('/quran-teachers', [App\Http\Controllers\PublicQuranTeacherController::class, 'index'])->name('public.quran-teachers.index');
+    
+    // Individual Teacher Profile Pages
+    Route::get('/quran-teachers/{teacherCode}', [App\Http\Controllers\PublicQuranTeacherController::class, 'show'])->name('public.quran-teachers.show');
+    
+    // Trial Session Booking (requires auth)
+    Route::middleware(['auth', 'role:student'])->group(function () {
+        Route::get('/quran-teachers/{teacherCode}/trial', [App\Http\Controllers\PublicQuranTeacherController::class, 'showTrialBooking'])->name('public.quran-teachers.trial');
+        Route::post('/quran-teachers/{teacherCode}/trial', [App\Http\Controllers\PublicQuranTeacherController::class, 'submitTrialRequest'])->name('public.quran-teachers.trial.submit');
+        
+        Route::get('/quran-teachers/{teacherCode}/subscribe/{packageId}', [App\Http\Controllers\PublicQuranTeacherController::class, 'showSubscriptionBooking'])->name('public.quran-teachers.subscribe');
+        Route::post('/quran-teachers/{teacherCode}/subscribe/{packageId}', [App\Http\Controllers\PublicQuranTeacherController::class, 'submitSubscriptionRequest'])->name('public.quran-teachers.subscribe.submit');
+        
+        // Quran Subscription Payment
+        Route::get('/quran/subscription/{subscription}/payment', [App\Http\Controllers\QuranSubscriptionPaymentController::class, 'create'])->name('quran.subscription.payment');
+        Route::post('/quran/subscription/{subscription}/payment', [App\Http\Controllers\QuranSubscriptionPaymentController::class, 'store'])->name('quran.subscription.payment.submit');
+    });
 });

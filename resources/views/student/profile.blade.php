@@ -96,33 +96,25 @@
             'subtitle' => 'انضم إلى دوائر القرآن وشارك في حفظ وتلاوة القرآن الكريم',
             'icon' => 'ri-book-mark-line',
             'iconBgColor' => 'bg-green-500',
-            'badge' => 'نشط',
-            'badgeColor' => 'bg-green-100 text-green-800',
-            'items' => [
-              [
-                'title' => 'دائرة الحفظ المتقدم',
-                'description' => 'مع الأستاذ أحمد محمد - كل يوم الأحد والثلاثاء',
+            'badge' => $quranCircles->count() > 0 ? 'نشط' : 'متاح',
+            'badgeColor' => $quranCircles->count() > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800',
+            'items' => $quranCircles->take(3)->map(function($circle) {
+              return [
+                'title' => $circle->name,
+                'description' => 'مع ' . $circle->teacher->full_name . 
+                                 ($circle->schedule_days_text ? ' - ' . $circle->schedule_days_text : ''),
                 'icon' => 'ri-group-line',
                 'iconBgColor' => 'bg-green-100',
-                'progress' => 75,
                 'status' => 'active'
-              ],
-              [
-                'title' => 'دائرة التلاوة والتجويد',
-                'description' => 'مع الأستاذة فاطمة علي - كل يوم الاثنين والأربعاء',
-                'icon' => 'ri-mic-line',
-                'iconBgColor' => 'bg-blue-100',
-                'progress' => 45,
-                'status' => 'active'
-              ]
-            ],
+              ];
+            })->toArray(),
             'footer' => [
               'text' => 'عرض جميع الدوائر',
-              'link' => '#'
+              'link' => route('student.quran', ['subdomain' => auth()->user()->academy->subdomain])
             ],
             'stats' => [
-              ['icon' => 'ri-group-line', 'value' => '2 دائرة نشطة'],
-              ['icon' => 'ri-time-line', 'value' => '6 ساعات أسبوعياً']
+              ['icon' => 'ri-group-line', 'value' => $stats['quranCirclesCount'] . ' دائرة نشطة'],
+              ['icon' => 'ri-book-line', 'value' => $stats['quranPages'] . ' آية محفوظة']
             ]
           ])
         </div>
@@ -134,31 +126,27 @@
             'subtitle' => 'دروس فردية مع معلمي القرآن المؤهلين',
             'icon' => 'ri-user-star-line',
             'iconBgColor' => 'bg-purple-500',
-            'badge' => 'متاح',
-            'badgeColor' => 'bg-purple-100 text-purple-800',
-            'items' => [
-              [
-                'title' => 'درس حفظ سورة البقرة',
-                'description' => 'مع الأستاذ محمد عبدالله - غداً الساعة 4 مساءً',
-                'icon' => 'ri-calendar-check-line',
-                'iconBgColor' => 'bg-purple-100',
-                'status' => 'active'
-              ],
-              [
-                'title' => 'درس تجويد سورة الرحمن',
-                'description' => 'مع الأستاذة سارة أحمد - الخميس الساعة 6 مساءً',
-                'icon' => 'ri-mic-line',
-                'iconBgColor' => 'bg-yellow-100',
-                'status' => 'pending'
-              ]
-            ],
+            'badge' => $quranPrivateSessions->where('subscription_status', 'active')->count() > 0 ? 'نشط' : 'متاح',
+            'badgeColor' => $quranPrivateSessions->where('subscription_status', 'active')->count() > 0 ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800',
+            'items' => $quranPrivateSessions->take(3)->map(function($subscription) {
+              $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
+              return [
+                'title' => $subscription->package->getDisplayName() ?? 'اشتراك مخصص',
+                'description' => 'مع ' . $subscription->quranTeacher->full_name . 
+                                 ($nextSession ? ' - ' . $nextSession->scheduled_at->format('l، d F H:i') : ''),
+                'icon' => $subscription->subscription_status === 'active' ? 'ri-calendar-check-line' : 'ri-time-line',
+                'iconBgColor' => $subscription->subscription_status === 'active' ? 'bg-green-100' : 'bg-yellow-100',
+                'progress' => $subscription->progress_percentage,
+                'status' => $subscription->subscription_status
+              ];
+            })->toArray(),
             'footer' => [
-              'text' => 'حجز درس جديد',
-              'link' => '#'
+              'text' => 'عرض جميع الاشتراكات',
+              'link' => route('student.quran', ['subdomain' => auth()->user()->academy->subdomain])
             ],
             'stats' => [
-              ['icon' => 'ri-calendar-line', 'value' => '2 درس محجوز'],
-              ['icon' => 'ri-time-line', 'value' => '4 ساعات هذا الأسبوع']
+              ['icon' => 'ri-user-star-line', 'value' => $stats['activeQuranSubscriptions'] . ' اشتراك نشط'],
+              ['icon' => 'ri-calendar-line', 'value' => $quranTrialRequests->where('status', 'scheduled')->count() . ' جلسة تجريبية']
             ]
           ])
         </div>
@@ -211,40 +199,79 @@
 
         <!-- Recorded Courses -->
         <div id="recorded-courses">
-          @include('components.cards.learning-section-card', [
-            'title' => 'الكورسات المسجلة',
-            'subtitle' => 'دورات مسجلة يمكنك مشاهدتها في أي وقت',
-            'icon' => 'ri-video-line',
-            'iconBgColor' => 'bg-red-500',
-            'badge' => 'متاح',
-            'badgeColor' => 'bg-red-100 text-red-800',
-            'items' => [
-              [
-                'title' => 'أساسيات البرمجة للأطفال',
-                'description' => 'دورة شاملة في البرمجة - 8 درس من 10 مكتمل',
-                'icon' => 'ri-code-line',
-                'iconBgColor' => 'bg-red-100',
-                'progress' => 80,
-                'status' => 'active'
+          @php
+            // Debug: Check if recordedCourses exists and what data it contains
+            $debugRecordedCourses = isset($recordedCourses) ? $recordedCourses : collect();
+            $debugCount = $debugRecordedCourses->count();
+          @endphp
+          
+          @if($debugCount === 0)
+            <!-- Show static content when no enrolled courses -->
+            @include('components.cards.learning-section-card', [
+              'title' => 'الكورسات المسجلة',
+              'subtitle' => 'دورات مسجلة يمكنك مشاهدتها في أي وقت',
+              'icon' => 'ri-video-line',
+              'iconBgColor' => 'bg-red-500',
+              'badge' => 'متاح',
+              'badgeColor' => 'bg-red-100 text-red-800',
+              'items' => [
+                [
+                  'title' => 'أساسيات البرمجة للأطفال',
+                  'description' => 'دورة شاملة في البرمجة - متاحة للتسجيل',
+                  'icon' => 'ri-code-line',
+                  'iconBgColor' => 'bg-red-100',
+                  'progress' => 0,
+                  'status' => 'available'
+                ],
+                [
+                  'title' => 'تعلم اللغة الإنجليزية',
+                  'description' => 'دورة تفاعلية في اللغة الإنجليزية - متاحة للتسجيل',
+                  'icon' => 'ri-translate-2',
+                  'iconBgColor' => 'bg-blue-100',
+                  'progress' => 0,
+                  'status' => 'available'
+                ]
               ],
-              [
-                'title' => 'تعلم اللغة الإنجليزية',
-                'description' => 'دورة تفاعلية في اللغة الإنجليزية - 12 درس من 20',
-                'icon' => 'ri-translate-2',
-                'iconBgColor' => 'bg-blue-100',
-                'progress' => 60,
-                'status' => 'active'
+              'footer' => [
+                'text' => 'استكشاف المزيد',
+                'link' => route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain])
+              ],
+              'stats' => [
+                ['icon' => 'ri-video-line', 'value' => 'لا توجد كورسات مسجلة'],
+                ['icon' => 'ri-time-line', 'value' => '0 ساعات مشاهدة']
               ]
-            ],
-            'footer' => [
-              'text' => 'استكشاف المزيد',
-              'link' => '#'
-            ],
-            'stats' => [
-              ['icon' => 'ri-video-line', 'value' => '2 كورسات نشطة'],
-              ['icon' => 'ri-time-line', 'value' => '6 ساعات مشاهدة']
-            ]
-          ])
+            ])
+          @else
+            <!-- Show dynamic content when enrolled courses exist -->
+            @include('components.cards.learning-section-card', [
+              'title' => 'الكورسات المسجلة',
+              'subtitle' => 'دورات مسجلة يمكنك مشاهدتها في أي وقت',
+              'icon' => 'ri-video-line',
+              'iconBgColor' => 'bg-red-500',
+              'badge' => 'مسجل',
+              'badgeColor' => 'bg-green-100 text-green-800',
+              'items' => $debugRecordedCourses->take(3)->map(function($course) {
+                $enrollment = $course->enrollments->first();
+                return [
+                  'title' => $course->title ?? 'كورس مسجل',
+                  'description' => 'كورس مسجل' . 
+                                   ($enrollment ? ' - تقدم: ' . ($enrollment->progress_percentage ?? 0) . '%' : ''),
+                  'icon' => 'ri-video-line',
+                  'iconBgColor' => 'bg-red-100',
+                  'progress' => $enrollment ? ($enrollment->progress_percentage ?? 0) : 0,
+                  'status' => $enrollment ? ($enrollment->status ?? 'available') : 'available'
+                ];
+              })->toArray(),
+              'footer' => [
+                'text' => 'عرض جميع كورساتي',
+                'link' => route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain])
+              ],
+              'stats' => [
+                ['icon' => 'ri-video-line', 'value' => $debugCount . ' كورس مسجل'],
+                ['icon' => 'ri-time-line', 'value' => '0 ساعات مشاهدة']
+              ]
+            ])
+          @endif
         </div>
 
       </div>

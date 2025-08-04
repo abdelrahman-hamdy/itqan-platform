@@ -70,6 +70,16 @@
       <div class="mb-6">
         <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">التقدم الدراسي</h4>
         <div class="space-y-1">
+          <a href="{{ route('student.quran', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.quran') ? 'bg-primary text-white' : '' }}">
+            <i class="ri-book-mark-line ml-3"></i>
+            ملف القرآن الكريم
+          </a>
+          <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.recorded-courses') ? 'bg-primary text-white' : '' }}">
+            <i class="ri-video-line ml-3"></i>
+            الكورسات المسجلة
+          </a>
                      <a href="{{ route('student.progress', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
               class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">
              <i class="ri-bar-chart-line ml-3"></i>

@@ -132,14 +132,19 @@ class QuranTeacherProfile extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function quranSessions(): HasManyThrough
+    public function quranSessions(): HasMany
     {
-        return $this->hasManyThrough(QuranSession::class, User::class, 'id', 'teacher_id', 'user_id', 'id');
+        return $this->hasMany(QuranSession::class, 'quran_teacher_id');
     }
 
-    public function quranCircles(): HasManyThrough
+    public function quranCircles(): HasMany
     {
-        return $this->hasManyThrough(QuranCircle::class, User::class, 'id', 'teacher_id', 'user_id', 'id');
+        return $this->hasMany(QuranCircle::class, 'quran_teacher_id');
+    }
+
+    public function trialRequests(): HasMany
+    {
+        return $this->hasMany(QuranTrialRequest::class, 'teacher_id');
     }
 
     /**

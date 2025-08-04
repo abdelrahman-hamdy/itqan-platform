@@ -39,8 +39,9 @@ class TeacherPanelProvider extends PanelProvider
             ->brandName('لوحة المعلم')
             ->brandLogo(asset('images/itqan-logo.svg'))
             ->navigationGroups([
-                'جدولي',
+                'لوحة التحكم',
                 'جلساتي',
+                'طلبات القرآن',
                 'الواجبات',
                 'الاختبارات',
                 'دوراتي',
@@ -54,6 +55,7 @@ class TeacherPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
+                \App\Filament\Teacher\Widgets\QuranTeacherOverviewWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

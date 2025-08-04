@@ -57,20 +57,22 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     */
     
     // Student routes (profile-based, no dashboard)
+    // Note: Main student routes moved to web.php due to registration issues
     Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/profile', [App\Http\Controllers\StudentProfileController::class, 'index'])->name('student.profile');
+        // Only non-conflicting routes remain here
         Route::get('/profile/edit', [App\Http\Controllers\StudentProfileController::class, 'edit'])->name('student.profile.edit');
         Route::put('/profile/update', [App\Http\Controllers\StudentProfileController::class, 'update'])->name('student.profile.update');
         Route::get('/settings', [App\Http\Controllers\StudentProfileController::class, 'settings'])->name('student.settings');
         Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
-        Route::get('/payments', [App\Http\Controllers\StudentProfileController::class, 'payments'])->name('student.payments');
         Route::get('/progress', [App\Http\Controllers\StudentProfileController::class, 'progress'])->name('student.progress');
         Route::get('/certificates', [App\Http\Controllers\StudentProfileController::class, 'certificates'])->name('student.certificates');
+        Route::get('/quran', [App\Http\Controllers\StudentProfileController::class, 'quranProfile'])->name('student.quran');
+        Route::get('/quran-circles', [App\Http\Controllers\StudentProfileController::class, 'quranCircles'])->name('student.quran-circles');
+        Route::get('/recorded-courses', [App\Http\Controllers\StudentProfileController::class, 'recordedCourses'])->name('student.recorded-courses');
+        Route::get('/interactive-courses', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
+        Route::get('/academic-teachers', [App\Http\Controllers\StudentProfileController::class, 'academicTeachers'])->name('student.academic-teachers');
         
-        // Legacy routes for backward compatibility
-        Route::get('/my-courses', function () {
-            return view('student.courses');
-        })->name('student.courses');
+        // Note: student.courses route is now handled in web.php
         
         Route::get('/my-assignments', function () {
             return view('student.assignments');
@@ -119,6 +121,28 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         Route::get('/schedule', [App\Http\Controllers\TeacherProfileController::class, 'schedule'])->name('teacher.schedule');
         Route::get('/students', [App\Http\Controllers\TeacherProfileController::class, 'students'])->name('teacher.students');
         Route::get('/settings', [App\Http\Controllers\TeacherProfileController::class, 'settings'])->name('teacher.settings');
+        
+        // Enhanced Schedule Management Routes
+        Route::prefix('schedule')->name('teacher.schedule.')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\TeacherScheduleController::class, 'index'])->name('dashboard');
+            Route::put('/availability', [App\Http\Controllers\TeacherScheduleController::class, 'updateAvailability'])->name('availability.update');
+            
+            // Trial Session Scheduling
+            Route::get('/trial/{trialRequest}', [App\Http\Controllers\TeacherScheduleController::class, 'showTrialScheduling'])->name('trial.show');
+            Route::post('/trial/{trialRequest}', [App\Http\Controllers\TeacherScheduleController::class, 'scheduleTrialSession'])->name('trial.schedule');
+            
+            // Subscription Session Scheduling
+            Route::get('/subscription/{subscription}', [App\Http\Controllers\TeacherScheduleController::class, 'showSubscriptionScheduling'])->name('subscription.show');
+            Route::post('/subscription/{subscription}', [App\Http\Controllers\TeacherScheduleController::class, 'setupSubscriptionSessions'])->name('subscription.setup');
+        });
+        
+        // Meeting Link Management Routes
+        Route::prefix('meetings')->name('teacher.meetings.')->group(function () {
+            Route::get('/platforms', [App\Http\Controllers\MeetingLinkController::class, 'getMeetingPlatforms'])->name('platforms');
+            Route::put('/session/{session}/link', [App\Http\Controllers\MeetingLinkController::class, 'updateSessionMeetingLink'])->name('session.update');
+            Route::put('/trial/{trialRequest}/link', [App\Http\Controllers\MeetingLinkController::class, 'updateTrialMeetingLink'])->name('trial.update');
+            Route::post('/session/{session}/generate', [App\Http\Controllers\MeetingLinkController::class, 'generateMeetingLink'])->name('session.generate');
+        });
     });
 
     // Supervisor routes (dashboard access)

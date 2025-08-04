@@ -48,6 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 \App\Filament\Widgets\PlatformOverviewWidget::class,
+                \App\Filament\Widgets\QuranOverviewWidget::class,
                 \App\Filament\Widgets\AcademyStatsWidget::class,
                 \App\Filament\Widgets\AcademyContextWidget::class,
                 \App\Filament\Widgets\RecentActivitiesWidget::class,

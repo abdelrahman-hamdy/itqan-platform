@@ -6,12 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\QuranCircle;
 use App\Models\QuranTeacherProfile;
+use App\Models\QuranPackage;
 use App\Models\InteractiveCourse;
 use App\Models\RecordedCourse;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranSubscription;
+use App\Models\QuranTrialRequest;
 use App\Models\AcademicProgress;
 use App\Models\StudentProfile;
+use Illuminate\Support\Facades\Log;
 
 class StudentProfileController extends Controller
 {
@@ -33,7 +36,17 @@ class StudentProfileController extends Controller
         $quranPrivateSessions = QuranSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
             ->where('subscription_type', 'private')
-            ->with(['teacher', 'student'])
+            ->with(['quranTeacher', 'package', 'sessions' => function($query) {
+                $query->orderBy('scheduled_at', 'desc')->limit(5);
+            }])
+            ->get();
+
+        // Get student's Quran trial requests
+        $quranTrialRequests = QuranTrialRequest::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->with(['teacher'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
             ->get();
 
         // Get student's interactive courses
@@ -51,9 +64,20 @@ class StudentProfileController extends Controller
             ->whereHas('enrollments', function($query) use ($user) {
                 $query->where('student_id', $user->id);
             })
-            ->with(['enrollments' => function($query) use ($user) {
-                $query->where('student_id', $user->id);
-            }])
+            ->with([
+                'enrollments' => function($query) use ($user) {
+                    $query->where('student_id', $user->id)
+                          ->select('id', 'recorded_course_id', 'student_id', 'status', 'progress_percentage', 
+                                   'completed_lessons', 'total_lessons', 'watch_time_minutes');
+                },
+                'instructor' => function($query) {
+                    $query->select('id', 'user_id');
+                },
+                'instructor.user' => function($query) {
+                    $query->select('id', 'first_name', 'last_name');
+                }
+            ])
+            ->select('id', 'academy_id', 'instructor_id', 'title', 'total_lessons')
             ->get();
 
         // Calculate statistics
@@ -61,7 +85,8 @@ class StudentProfileController extends Controller
 
         return view('student.profile', compact(
             'quranCircles',
-            'quranPrivateSessions', 
+            'quranPrivateSessions',
+            'quranTrialRequests',
             'interactiveCourses',
             'recordedCourses',
             'stats'
@@ -76,12 +101,22 @@ class StudentProfileController extends Controller
         $totalHours = 24; // This would be calculated from actual session data
         $hoursGrowth = 12; // Percentage growth this month
 
-        // Count active courses
-        $activeCourses = InteractiveCourse::where('academy_id', $academy->id)
+        // Count active interactive courses
+        $activeInteractiveCourses = InteractiveCourse::where('academy_id', $academy->id)
             ->whereHas('enrollments', function($query) use ($user) {
                 $query->where('student_id', $user->id);
             })
             ->count();
+
+        // Count active recorded courses
+        $activeRecordedCourses = RecordedCourse::where('academy_id', $academy->id)
+            ->whereHas('enrollments', function($query) use ($user) {
+                $query->where('student_id', $user->id)->where('status', 'active');
+            })
+            ->count();
+
+        // Total active courses
+        $activeCourses = $activeInteractiveCourses + $activeRecordedCourses;
 
         // Count completed lessons
         $completedLessons = AcademicProgress::where('student_id', $user->id)
@@ -89,13 +124,24 @@ class StudentProfileController extends Controller
             ->where('progress_status', 'completed')
             ->count();
 
-        // Calculate Quran progress (simplified)
-        $quranProgress = 75; // This would be calculated from actual Quran progress data
-        $quranPages = 12; // Number of pages memorized
+        // Calculate real Quran progress
+        $quranSubscriptions = QuranSubscription::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->get();
+        
+        $quranProgress = $quranSubscriptions->avg('progress_percentage') ?? 0;
+        $quranPages = $quranSubscriptions->sum('verses_memorized') ?? 0;
 
-        // Achievement points (simplified)
-        $achievementPoints = 850;
-        $achievementsCount = 8;
+        // Count Quran trial requests
+        $quranTrialRequestsCount = QuranTrialRequest::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->count();
+
+        // Count active Quran subscriptions  
+        $activeQuranSubscriptions = QuranSubscription::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->where('subscription_status', 'active')
+            ->count();
 
         // Count active Quran circles
         $quranCirclesCount = QuranCircle::where('academy_id', $academy->id)
@@ -108,11 +154,13 @@ class StudentProfileController extends Controller
             'totalHours' => $totalHours,
             'hoursGrowth' => $hoursGrowth,
             'activeCourses' => $activeCourses,
+            'activeInteractiveCourses' => $activeInteractiveCourses,
+            'activeRecordedCourses' => $activeRecordedCourses,
             'completedLessons' => $completedLessons,
-            'quranProgress' => $quranProgress,
+            'quranProgress' => round($quranProgress, 1),
             'quranPages' => $quranPages,
-            'achievementPoints' => $achievementPoints,
-            'achievementsCount' => $achievementsCount,
+            'quranTrialRequestsCount' => $quranTrialRequestsCount,
+            'activeQuranSubscriptions' => $activeQuranSubscriptions,
             'quranCirclesCount' => $quranCirclesCount,
         ];
     }
@@ -182,7 +230,16 @@ class StudentProfileController extends Controller
 
         $quranSubscriptions = QuranSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['teacher', 'package'])
+            ->with(['quranTeacher', 'package', 'sessions' => function($query) {
+                $query->orderBy('scheduled_at', 'desc');
+            }])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $quranTrialRequests = QuranTrialRequest::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->with(['teacher'])
+            ->orderBy('created_at', 'desc')
             ->get();
 
         $courseEnrollments = InteractiveCourse::where('academy_id', $academy->id)
@@ -194,7 +251,7 @@ class StudentProfileController extends Controller
             }])
             ->get();
 
-        return view('student.subscriptions', compact('quranSubscriptions', 'courseEnrollments'));
+        return view('student.subscriptions', compact('quranSubscriptions', 'quranTrialRequests', 'courseEnrollments'));
     }
 
     public function payments()
@@ -322,8 +379,265 @@ class StudentProfileController extends Controller
             return $studentProfile;
             
         } catch (\Exception $e) {
-            \Log::error('Failed to create basic student profile for user ' . $user->id . ': ' . $e->getMessage());
+            Log::error('Failed to create basic student profile for user ' . $user->id . ': ' . $e->getMessage());
             return null;
         }
+    }
+
+    public function quranProfile()
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        // Get student's Quran circles
+        $quranCircles = QuranCircle::where('academy_id', $academy->id)
+            ->whereHas('students', function($query) use ($user) {
+                $query->where('users.id', $user->id);
+            })
+            ->with(['teacher', 'students', 'sessions' => function($query) {
+                $query->orderBy('scheduled_at', 'desc')->limit(5);
+            }])
+            ->get();
+
+        // Get student's Quran subscriptions
+        $quranSubscriptions = QuranSubscription::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->with(['quranTeacher', 'package', 'sessions' => function($query) {
+                $query->orderBy('scheduled_at', 'desc')->limit(10);
+            }])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get student's Quran trial requests
+        $quranTrialRequests = QuranTrialRequest::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->with(['teacher'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate Quran-specific statistics
+        $quranStats = [
+            'totalCircles' => $quranCircles->count(),
+            'activeSubscriptions' => $quranSubscriptions->where('subscription_status', 'active')->count(),
+            'completedSessions' => $quranSubscriptions->sum(function($subscription) {
+                return $subscription->sessions->where('status', 'completed')->count();
+            }),
+            'totalTrialRequests' => $quranTrialRequests->count(),
+            'averageProgress' => round($quranSubscriptions->avg('progress_percentage') ?? 0, 1),
+            'totalVersesMemorized' => $quranSubscriptions->sum('verses_memorized'),
+            'upcomingSessions' => $quranSubscriptions->sum(function($subscription) {
+                return $subscription->sessions->where('scheduled_at', '>', now())->where('status', 'scheduled')->count();
+            }),
+        ];
+
+        return view('student.quran-profile', compact(
+            'quranCircles',
+            'quranSubscriptions', 
+            'quranTrialRequests',
+            'quranStats'
+        ));
+    }
+
+    public function quranCircles()
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        // Get all available Quran circles for this academy
+        $availableCircles = QuranCircle::where('academy_id', $academy->id)
+            ->where('status', 'available')
+            ->with(['teacher', 'students'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        // Get student's enrolled circles
+        $enrolledCircles = QuranCircle::where('academy_id', $academy->id)
+            ->whereHas('students', function($query) use ($user) {
+                $query->where('users.id', $user->id);
+            })
+            ->with(['teacher', 'students'])
+            ->get();
+
+        return view('student.quran-circles', compact(
+            'availableCircles',
+            'enrolledCircles'
+        ));
+    }
+
+    public function quranTeachers()
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        // Get all active Quran teachers for this academy
+        $quranTeachers = QuranTeacherProfile::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->with(['user', 'quranCircles'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        // Get student's active subscriptions to show which teachers they're already learning with
+        $activeSubscriptions = QuranSubscription::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->where('subscription_status', 'active')
+            ->with('quranTeacher')
+            ->get();
+
+        // Get available packages for this academy
+        $availablePackages = QuranPackage::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('monthly_price')
+            ->get();
+
+        return view('student.quran-teachers', compact(
+            'quranTeachers',
+            'activeSubscriptions',
+            'availablePackages'
+        ));
+    }
+
+    public function interactiveCourses()
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        // Get all available interactive courses for this academy
+        $availableCourses = InteractiveCourse::where('academy_id', $academy->id)
+            ->where('status', 'available')
+            ->with(['teacher', 'subject', 'gradeLevel'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        // Get student's enrolled courses
+        $enrolledCourses = InteractiveCourse::where('academy_id', $academy->id)
+            ->whereHas('enrollments', function($query) use ($user) {
+                $query->where('student_id', $user->id);
+            })
+            ->with(['teacher', 'subject', 'gradeLevel', 'enrollments' => function($query) use ($user) {
+                $query->where('student_id', $user->id);
+            }])
+            ->get();
+
+        return view('student.interactive-courses', compact(
+            'availableCourses',
+            'enrolledCourses'
+        ));
+    }
+
+    public function academicTeachers()
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        // Get all active academic teachers for this academy
+        $academicTeachers = AcademicTeacherProfile::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->with(['user'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        // Get student's academic progress to show which teachers they're learning with
+        $academicProgress = AcademicProgress::where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
+            ->with(['teacher', 'course'])
+            ->get();
+
+        return view('student.academic-teachers', compact(
+            'academicTeachers',
+            'academicProgress'
+        ));
+    }
+
+    public function recordedCourses()
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        // Get search and filter parameters
+        $search = request('search');
+        $category = request('category');
+        $level = request('level');
+        $instructor = request('instructor');
+        $status = request('status', 'all');
+
+        // Base query for recorded courses
+        $query = RecordedCourse::where('academy_id', $academy->id)
+            ->where('status', 'published')
+            ->with([
+                'instructor.user',
+                'enrollments' => function($enrollmentQuery) use ($user) {
+                    $enrollmentQuery->where('student_id', $user->id);
+                }
+            ]);
+
+        // Apply search filter
+        if ($search) {
+            $query->where(function($searchQuery) use ($search) {
+                $searchQuery->where('title', 'like', "%{$search}%")
+                          ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply category filter
+        if ($category) {
+            $query->where('category', $category);
+        }
+
+        // Apply level filter
+        if ($level) {
+            $query->where('level', $level);
+        }
+
+        // Apply instructor filter
+        if ($instructor) {
+            $query->where('instructor_id', $instructor);
+        }
+
+        // Apply enrollment status filter
+        if ($status !== 'all') {
+            if ($status === 'enrolled') {
+                $query->whereHas('enrollments', function($enrollmentQuery) use ($user) {
+                    $enrollmentQuery->where('student_id', $user->id);
+                });
+            } elseif ($status === 'not_enrolled') {
+                $query->whereDoesntHave('enrollments', function($enrollmentQuery) use ($user) {
+                    $enrollmentQuery->where('student_id', $user->id);
+                });
+            }
+        }
+
+        // Get paginated results
+        $courses = $query->orderBy('created_at', 'desc')->paginate(12);
+
+        // Get filter options
+        $categories = RecordedCourse::where('academy_id', $academy->id)
+            ->where('status', 'published')
+            ->distinct()
+            ->pluck('category')
+            ->filter()
+            ->sort();
+
+        $levels = RecordedCourse::where('academy_id', $academy->id)
+            ->where('status', 'published')
+            ->distinct()
+            ->pluck('level')
+            ->filter()
+            ->sort();
+
+        $instructors = \App\Models\AcademicTeacherProfile::where('academy_id', $academy->id)
+            ->whereHas('recordedCourses', function($courseQuery) {
+                $courseQuery->where('status', 'published');
+            })
+            ->with('user')
+            ->get();
+
+        return view('student.recorded-courses', compact(
+            'courses',
+            'categories',
+            'levels',
+            'instructors',
+            'academy'
+        ));
     }
 } 

@@ -76,6 +76,7 @@ class AcademyPanelProvider extends PanelProvider
                 QuranCircleResource::class,
                 QuranSubscriptionResource::class,
                 QuranPackageResource::class,
+                \App\Filament\Resources\QuranTrialRequestResource::class,
                 
                 // إدارة التعليم الأكاديمي
                 InteractiveCourseResource::class,
@@ -95,6 +96,7 @@ class AcademyPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Academy/Widgets'), for: 'App\\Filament\\Academy\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
+                \App\Filament\Academy\Widgets\QuranAcademyOverviewWidget::class,
                 \App\Filament\Widgets\AcademyStatsWidget::class,
                 \App\Filament\Widgets\AcademyContextWidget::class,
             ])

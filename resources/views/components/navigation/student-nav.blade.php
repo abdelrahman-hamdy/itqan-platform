@@ -11,10 +11,11 @@
           <span class="mr-2 text-xl font-bold text-primary">{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</span>
         </div>
         <div class="hidden md:flex items-center space-x-6 space-x-reverse">
-          <a href="#quran-circles" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى دوائر القرآن">دوائر القرآن</a>
-          <a href="#quran-private" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى الدروس الخاصة">الدروس الخاصة</a>
-          <a href="#interactive-courses" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى الكورسات التفاعلية">الكورسات التفاعلية</a>
-          <a href="#recorded-courses" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى الكورسات المسجلة">الكورسات المسجلة</a>
+          <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض دوائر القرآن المتاحة">دوائر القرآن</a>
+          <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض معلمي القرآن">معلمو القرآن</a>
+          <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض الكورسات التفاعلية">الكورسات التفاعلية</a>
+          <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض المعلمين الأكاديميين">المعلمون الأكاديميون</a>
+          <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض الكورسات المسجلة">الكورسات المسجلة</a>
         </div>
       </div>
 
@@ -135,10 +136,11 @@
     <!-- Mobile Navigation Menu -->
     <div class="md:hidden hidden" id="mobile-menu">
       <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-        <a href="#quran-circles" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">دوائر القرآن</a>
-        <a href="#quran-private" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الدروس الخاصة</a>
-        <a href="#interactive-courses" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات التفاعلية</a>
-        <a href="#recorded-courses" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات المسجلة</a>
+        <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">دوائر القرآن</a>
+        <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">معلمو القرآن</a>
+        <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات التفاعلية</a>
+        <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">المعلمون الأكاديميون</a>
+            <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات المسجلة</a>
       </div>
     </div>
   </div>
