@@ -625,7 +625,7 @@ class StudentProfileController extends Controller
             ->filter()
             ->sort();
 
-        $instructors = \App\Models\AcademicTeacherProfile::where('academy_id', $academy->id)
+        $instructors = \App\Models\AcademicTeacher::where('academy_id', $academy->id)
             ->whereHas('recordedCourses', function($courseQuery) {
                 $courseQuery->where('status', 'published');
             })
