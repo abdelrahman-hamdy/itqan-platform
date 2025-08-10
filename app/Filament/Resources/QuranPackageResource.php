@@ -76,27 +76,13 @@ public static function form(Form $form): Form
                                     ->maxValue(30)
                                     ->default(8),
 
-                                Forms\Components\TextInput::make('session_duration_minutes')
+                                Forms\Components\Select::make('session_duration_minutes')
                                     ->label('مدة الحصة (دقيقة)')
-                                    ->required()
-                                    ->numeric()
-                                    ->minValue(15)
-                                    ->maxValue(120)
-                                    ->default(45),
-
-                                Forms\Components\Select::make('currency')
-                                    ->label('العملة')
                                     ->options([
-                                        'SAR' => 'ريال سعودي (SAR)',
-                                        'AED' => 'درهم إماراتي (AED)',
-                                        'KWD' => 'دينار كويتي (KWD)',
-                                        'QAR' => 'ريال قطري (QAR)',
-                                        'BHD' => 'دينار بحريني (BHD)',
-                                        'OMR' => 'ريال عماني (OMR)',
-                                        'USD' => 'دولار أمريكي (USD)',
-                                        'EUR' => 'يورو (EUR)',
+                                        30 => '30 دقيقة',
+                                        60 => '60 دقيقة',
                                     ])
-                                    ->default('SAR')
+                                    ->default(30)
                                     ->required(),
                             ]),
                     ]),
@@ -224,14 +210,6 @@ public static function form(Form $form): Form
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('حالة الباقة'),
-                
-                Tables\Filters\SelectFilter::make('currency')
-                    ->label('العملة')
-                    ->options([
-                        'SAR' => 'ريال سعودي',
-                        'AED' => 'درهم إماراتي',
-                        'USD' => 'دولار أمريكي',
-                    ]),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -272,7 +250,7 @@ public static function form(Form $form): Form
 
                 Components\Section::make('تفاصيل الحصص')
                     ->schema([
-                        Components\Grid::make(3)
+                        Components\Grid::make(2)
                             ->schema([
                                 Components\TextEntry::make('sessions_per_month')
                                     ->label('عدد الحصص في الشهر'),
@@ -280,9 +258,6 @@ public static function form(Form $form): Form
                                 Components\TextEntry::make('session_duration_minutes')
                                     ->label('مدة الحصة')
                                     ->formatStateUsing(fn (string $state): string => $state . ' دقيقة'),
-
-                                Components\TextEntry::make('currency')
-                                    ->label('العملة'),
                             ]),
                     ]),
 

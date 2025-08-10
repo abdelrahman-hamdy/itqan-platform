@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\QuranSubscription;
 use App\Models\Payment;
 use App\Models\Academy;
+use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,13 @@ use Illuminate\Support\Facades\Log;
 
 class QuranSubscriptionPaymentController extends Controller
 {
+    protected $paymentService;
+
+    public function __construct(PaymentService $paymentService)
+    {
+        $this->paymentService = $paymentService;
+    }
+
     /**
      * Show payment form for Quran subscription
      */
@@ -50,6 +58,9 @@ class QuranSubscriptionPaymentController extends Controller
         $taxAmount = $this->calculateTax((float) $finalPrice);
         $totalAmount = $finalPrice + $taxAmount;
 
+        // Get available payment methods
+        $paymentMethods = $this->paymentService->getAvailablePaymentMethods($academy);
+
         return view('payments.quran-subscription', compact(
             'academy',
             'subscription',
@@ -57,7 +68,8 @@ class QuranSubscriptionPaymentController extends Controller
             'discountAmount',
             'finalPrice',
             'taxAmount',
-            'totalAmount'
+            'totalAmount',
+            'paymentMethods'
         ));
     }
 
@@ -79,12 +91,13 @@ class QuranSubscriptionPaymentController extends Controller
         $user = Auth::user();
         
         $validated = $request->validate([
-            'payment_method' => 'required|in:credit_card,mada,stc_pay,bank_transfer',
-            'card_number' => 'required_if:payment_method,credit_card,mada|string',
-            'expiry_month' => 'required_if:payment_method,credit_card,mada|integer|min:1|max:12',
-            'expiry_year' => 'required_if:payment_method,credit_card,mada|integer|min:2024',
-            'cvv' => 'required_if:payment_method,credit_card,mada|string|size:3',
-            'cardholder_name' => 'required_if:payment_method,credit_card,mada|string|max:255'
+            'payment_method' => 'required|in:credit_card,mada,stc_pay,paymob,tapay,bank_transfer',
+            'card_number' => 'required_if:payment_method,credit_card,mada,paymob,tapay|string',
+            'expiry_month' => 'required_if:payment_method,credit_card,mada,paymob,tapay|integer|min:1|max:12',
+            'expiry_year' => 'required_if:payment_method,credit_card,mada,paymob,tapay|integer|min:2024',
+            'cvv' => 'required_if:payment_method,credit_card,mada,paymob,tapay|string|size:3',
+            'cardholder_name' => 'required_if:payment_method,credit_card,mada,paymob,tapay|string|max:255',
+            'phone' => 'required_if:payment_method,stc_pay|string'
         ]);
 
         // Get subscription
@@ -125,7 +138,7 @@ class QuranSubscriptionPaymentController extends Controller
                 ]);
 
                 // Process payment with gateway
-                $gatewayResult = $this->processWithGateway($payment, $validated);
+                $gatewayResult = $this->paymentService->processPayment($payment, $validated);
 
                 if ($gatewayResult['success']) {
                     // Mark payment as completed
@@ -210,64 +223,13 @@ class QuranSubscriptionPaymentController extends Controller
             'credit_card' => 'moyasar',
             'mada' => 'moyasar',
             'stc_pay' => 'stc_pay',
+            'paymob' => 'paymob',
+            'tapay' => 'tapay',
             'bank_transfer' => 'manual'
         ];
 
         return $gateways[$method] ?? 'moyasar';
     }
 
-    /**
-     * Process payment with external gateway
-     */
-    private function processWithGateway(Payment $payment, array $paymentData): array
-    {
-        // This is a mock implementation
-        // In real application, you would integrate with actual payment gateways
-        
-        switch ($payment->payment_gateway) {
-            case 'moyasar':
-                return $this->processMoyasarPayment($payment, $paymentData);
-            case 'stc_pay':
-                return $this->processStcPayPayment($payment, $paymentData);
-            default:
-                return [
-                    'success' => false,
-                    'error' => 'Payment gateway not supported'
-                ];
-        }
-    }
 
-    /**
-     * Mock Moyasar payment processing
-     */
-    private function processMoyasarPayment(Payment $payment, array $paymentData): array
-    {
-        // Mock successful payment
-        // In real implementation, you would call Moyasar API
-        
-        return [
-            'success' => true,
-            'data' => [
-                'transaction_id' => 'QS_TXN_' . time(),
-                'receipt_number' => 'QS_REC_' . $payment->id . '_' . time(),
-                'gateway_response' => 'Quran subscription payment processed successfully'
-            ]
-        ];
-    }
-
-    /**
-     * Mock STC Pay payment processing
-     */
-    private function processStcPayPayment(Payment $payment, array $paymentData): array
-    {
-        // Mock successful payment
-        return [
-            'success' => true,
-            'data' => [
-                'transaction_id' => 'QS_STC_' . time(),
-                'receipt_number' => 'QS_STC_REC_' . $payment->id . '_' . time(),
-                'gateway_response' => 'Quran subscription payment via STC Pay processed successfully'
-            ]
-        ];
-    }
 }

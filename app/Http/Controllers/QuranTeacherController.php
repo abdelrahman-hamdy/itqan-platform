@@ -111,7 +111,7 @@ class QuranTeacherController extends Controller
             'hourly_rate_individual' => 'required|numeric|min:0|max:1000',
             'hourly_rate_group' => 'required|numeric|min:0|max:1000',
             'currency' => 'required|string|size:3',
-            'max_students_per_circle' => 'required|integer|min:3|max:15',
+            'max_students_per_circle' => 'required|integer|min:3|max:100',
             'preferred_session_duration' => 'required|integer|min:30|max:120',
             'available_days' => 'nullable|array',
             'available_times' => 'nullable|array',
@@ -240,7 +240,7 @@ class QuranTeacherController extends Controller
             'hourly_rate_individual' => 'required|numeric|min:0|max:1000',
             'hourly_rate_group' => 'required|numeric|min:0|max:1000',
             'currency' => 'required|string|size:3',
-            'max_students_per_circle' => 'required|integer|min:3|max:15',
+            'max_students_per_circle' => 'required|integer|min:3|max:100',
             'preferred_session_duration' => 'required|integer|min:30|max:120',
             'available_days' => 'nullable|array',
             'available_times' => 'nullable|array',
@@ -302,11 +302,11 @@ class QuranTeacherController extends Controller
                 if (request()->expectsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'لا يمكن حذف المعلم لوجود اشتراكات أو دوائر نشطة'
+                        'message' => 'لا يمكن حذف المعلم لوجود اشتراكات أو حلقات نشطة'
                     ], 422);
                 }
 
-                return back()->withErrors(['error' => 'لا يمكن حذف المعلم لوجود اشتراكات أو دوائر نشطة']);
+                return back()->withErrors(['error' => 'لا يمكن حذف المعلم لوجود اشتراكات أو حلقات نشطة']);
             }
 
             $teacher->delete();

@@ -109,7 +109,7 @@
             <div class="space-y-2">
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-user-star-line ml-2"></i>
-                <span>{{ $course->teacher->full_name ?? 'غير محدد' }}</span>
+                <span>{{ $course->assignedTeacher->full_name ?? 'غير محدد' }}</span>
               </div>
               @if($course->subject)
               <div class="flex items-center text-sm text-gray-600">
@@ -196,7 +196,7 @@
             <div class="space-y-2">
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-user-star-line ml-2"></i>
-                <span>{{ $course->teacher->full_name ?? 'غير محدد' }}</span>
+                <span>{{ $course->assignedTeacher->full_name ?? 'غير محدد' }}</span>
               </div>
               @if($course->subject)
               <div class="flex items-center text-sm text-gray-600">

@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - دوائر القرآن الكريم</title>
-  <meta name="description" content="استكشف دوائر القرآن الكريم المتاحة - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
+  <title>{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - حلقات القرآن الكريم</title>
+  <meta name="description" content="استكشف حلقات القرآن الكريم المتاحة - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
   <script src="https://cdn.tailwindcss.com/3.4.16"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,15 +64,15 @@
           <div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">
               <i class="ri-book-mark-line text-primary ml-2"></i>
-              دوائر القرآن الكريم
+              حلقات القرآن الكريم
             </h1>
             <p class="text-gray-600">
-              انضم إلى دوائر القرآن الكريم وشارك في حفظ وتلاوة كتاب الله مع مجموعة من الطلاب
+              انضم إلى حلقات القرآن الكريم وشارك في حفظ وتلاوة كتاب الله مع مجموعة من الطلاب
             </p>
           </div>
           <div class="flex items-center space-x-4 space-x-reverse">
             <div class="bg-white rounded-lg px-4 py-2 border border-gray-200">
-              <span class="text-sm text-gray-600">دوائري النشطة: </span>
+              <span class="text-sm text-gray-600">حلقاتي النشطة: </span>
               <span class="font-semibold text-primary">{{ $enrolledCircles->count() }}</span>
             </div>
           </div>
@@ -82,7 +82,7 @@
       @if($enrolledCircles->count() > 0)
       <!-- My Active Circles -->
       <div class="mb-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">دوائري النشطة</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">حلقاتي النشطة</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           @foreach($enrolledCircles as $circle)
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
@@ -101,7 +101,7 @@
             <div class="space-y-2">
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-user-star-line ml-2"></i>
-                <span>{{ $circle->teacher->full_name }}</span>
+                <span>{{ $circle->quranTeacher?->full_name ?? 'معلم غير محدد' }}</span>
               </div>
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-group-line ml-2"></i>
@@ -116,13 +116,17 @@
             </div>
 
             <div class="mt-6 flex space-x-2 space-x-reverse">
-              <button class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+              @if($circle->room_link)
+              <a href="{{ $circle->room_link }}" target="_blank"
+                 class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
                 <i class="ri-video-line ml-1"></i>
                 دخول الجلسة
-              </button>
-              <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              </a>
+              @endif
+              <a href="{{ route('student.circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}"
+                 class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="ri-information-line"></i>
-              </button>
+              </a>
             </div>
           </div>
           @endforeach
@@ -133,7 +137,7 @@
       <!-- Available Circles -->
       <div>
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">الدوائر المتاحة</h2>
+          <h2 class="text-2xl font-bold text-gray-900">الحلقات المتاحة</h2>
           <div class="flex items-center space-x-4 space-x-reverse">
             <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
               <option>جميع المستويات</option>
@@ -153,8 +157,8 @@
                 <i class="ri-book-mark-line text-blue-600 text-xl"></i>
               </div>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                {{ $circle->status === 'available' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                {{ $circle->status === 'available' ? 'متاح' : 'مكتمل' }}
+                {{ $circle->enrollment_status === 'open' ? 'bg-green-100 text-green-800' : ($circle->enrollment_status === 'full' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800') }}">
+                {{ $circle->enrollment_status === 'open' ? 'متاح للتسجيل' : ($circle->enrollment_status === 'full' ? 'مكتمل' : 'مغلق') }}
               </span>
             </div>
             
@@ -164,7 +168,7 @@
             <div class="space-y-2">
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-user-star-line ml-2"></i>
-                <span>{{ $circle->teacher->full_name }}</span>
+                <span>{{ $circle->quranTeacher?->full_name ?? 'معلم غير محدد' }}</span>
               </div>
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-group-line ml-2"></i>
@@ -185,16 +189,11 @@
             </div>
 
             <div class="mt-6">
-              @if($circle->status === 'available' && $circle->students_count < $circle->max_students)
-              <button class="w-full bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-                <i class="ri-add-line ml-1"></i>
-                انضم للدائرة
-              </button>
-              @else
-              <button class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed">
-                غير متاح
-              </button>
-              @endif
+              <a href="{{ route('student.circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}"
+                 class="w-full bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center block">
+                <i class="ri-information-line ml-1"></i>
+                عرض التفاصيل
+              </a>
             </div>
           </div>
           @endforeach
@@ -210,8 +209,8 @@
           <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="ri-book-mark-line text-gray-400 text-3xl"></i>
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد دوائر متاحة حالياً</h3>
-          <p class="text-gray-600 mb-6">ستتم إضافة دوائر جديدة قريباً. تابع معنا للحصول على التحديثات</p>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد حلقات متاحة حالياً</h3>
+          <p class="text-gray-600 mb-6">ستتم إضافة حلقات جديدة قريباً. تابع معنا للحصول على التحديثات</p>
           <a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
              class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors">
             <i class="ri-arrow-right-line ml-2"></i>

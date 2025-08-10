@@ -50,7 +50,7 @@
               <i class="ri-group-line text-2xl text-green-600"></i>
             </div>
             <div class="mr-4">
-              <p class="text-sm text-gray-600">دوائر القرآن</p>
+              <p class="text-sm text-gray-600">حلقات القرآن</p>
               <p class="text-2xl font-bold text-green-600">{{ $quranStats['totalCircles'] }}</p>
             </div>
           </div>
@@ -193,7 +193,7 @@
                 <div class="border border-gray-200 rounded-lg p-6 hover:border-primary transition-colors">
                   <div class="flex items-start justify-between mb-4">
                     <div>
-                      <h4 class="font-bold text-gray-900">{{ $subscription->quranTeacher->full_name }}</h4>
+                      <h4 class="font-bold text-gray-900">{{ $subscription->quranTeacher?->full_name ?? 'معلم غير محدد' }}</h4>
                       <p class="text-sm text-gray-600">{{ $subscription->package->getDisplayName() ?? 'اشتراك مخصص' }}</p>
                     </div>
                     <span class="px-2 py-1 text-xs font-medium rounded-full
@@ -273,9 +273,9 @@
           <div class="p-6 border-b border-gray-200">
             <h3 class="text-lg font-bold text-gray-900">
               <i class="ri-group-line text-green-600 ml-2"></i>
-              دوائر القرآن الكريم
+              حلقات القرآن الكريم
             </h3>
-            <p class="text-sm text-gray-600 mt-1">الدوائر الجماعية للحفظ والتلاوة</p>
+            <p class="text-sm text-gray-600 mt-1">الحلقات الجماعية للحفظ والتلاوة</p>
           </div>
           
           <div class="p-6">
@@ -285,7 +285,7 @@
                   <div class="flex items-start justify-between mb-4">
                     <div>
                       <h4 class="font-bold text-gray-900">{{ $circle->name }}</h4>
-                      <p class="text-sm text-gray-600">مع {{ $circle->teacher->full_name }}</p>
+                      <p class="text-sm text-gray-600">مع {{ $circle->quranTeacher->user->full_name }}</p>
                     </div>
                     <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                       نشط
@@ -327,7 +327,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-2">ابدأ رحلتك مع القرآن الكريم</h3>
           <p class="text-gray-600 mb-6">
-            لم تبدأ بعد في رحلة تعلم القرآن الكريم. ابدأ الآن واختر معلمك المفضل أو انضم لإحدى الدوائر.
+            لم تبدأ بعد في رحلة تعلم القرآن الكريم. ابدأ الآن واختر معلمك المفضل أو انضم لإحدى الحلقات.
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="{{ route('public.quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
@@ -338,7 +338,7 @@
             <a href="{{ route('public.quran-circles.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
                class="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors">
               <i class="ri-group-line ml-2"></i>
-              تصفح دوائر القرآن
+              تصفح حلقات القرآن
             </a>
           </div>
         </div>

@@ -30,7 +30,7 @@ class CreateQuranCircle extends CreateRecord
         // Set initial values
         $data['enrolled_students'] = 0;
         $data['sessions_completed'] = 0;
-        $data['status'] = 'draft';
+        $data['status'] = 'planning';
         $data['enrollment_status'] = 'closed';
         
         return $data;

@@ -577,4 +577,10 @@ class SuperAdminQuranSubscriptionResource extends Resource
             'edit' => Pages\EditSuperAdminQuranSubscription::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        // Only super admin can access global Quran subscription management
+        return \App\Services\AcademyContextService::isSuperAdmin();
+    }
 }

@@ -1,0 +1,41 @@
+# Simple LiveKit Configuration - Local Development
+port: 7880
+
+# Simple API keys for local development - NO COMPLEXITY!
+keys:
+  devkey: devsecret
+
+# Redis for session storage
+redis:
+  address: redis:6379
+
+# Basic room settings
+room:
+  auto_create: true
+  empty_timeout: 300
+
+# WebRTC settings for local network
+rtc:
+  port_range_start: 50000
+  port_range_end: 50100
+  ice_servers:
+    - urls: stun:stun.l.google.com:19302
+
+# Enable CORS for your local domains
+cors:
+  allow_origins: 
+    - "http://localhost:8000"
+    - "http://itqan-academy.itqan-platform.test"
+  allow_credentials: true
+
+# Webhook to Laravel (optional)
+webhook:
+  urls:
+    - http://host.docker.internal:8000/webhooks/livekit
+
+# Simple logging
+logging:
+  level: info
+
+# Development mode
+development: true

@@ -202,9 +202,7 @@
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                   <option value="">اختر مدة الجلسة</option>
                   <option value="30" {{ old('duration') == '30' ? 'selected' : '' }}>30 دقيقة</option>
-                  <option value="45" {{ old('duration', '45') == '45' ? 'selected' : '' }}>45 دقيقة</option>
                   <option value="60" {{ old('duration') == '60' ? 'selected' : '' }}>60 دقيقة</option>
-                  <option value="90" {{ old('duration') == '90' ? 'selected' : '' }}>90 دقيقة</option>
                 </select>
               </div>
 

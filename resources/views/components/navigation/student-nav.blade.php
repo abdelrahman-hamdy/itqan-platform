@@ -1,6 +1,6 @@
 <!-- Student Navigation Component -->
-<nav id="navigation" class="bg-white shadow-lg sticky top-0 z-50" role="navigation" aria-label="التنقل الرئيسي للطالب">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<nav id="navigation" class="bg-white shadow-lg fixed top-0 left-0 right-0 z-50" role="navigation" aria-label="التنقل الرئيسي للطالب">
+  <div class="w-full px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-20">
       <!-- Logo and Main Navigation -->
       <div class="flex items-center space-x-8 space-x-reverse">
@@ -11,11 +11,29 @@
           <span class="mr-2 text-xl font-bold text-primary">{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</span>
         </div>
         <div class="hidden md:flex items-center space-x-6 space-x-reverse">
-          <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض دوائر القرآن المتاحة">دوائر القرآن</a>
-          <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض معلمي القرآن">معلمو القرآن</a>
-          <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض الكورسات التفاعلية">الكورسات التفاعلية</a>
-          <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض المعلمين الأكاديميين">المعلمون الأكاديميون</a>
-          <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="استعرض الكورسات المسجلة">الكورسات المسجلة</a>
+          @php
+            $currentRoute = request()->route()->getName();
+            $isQuranCirclesActive = in_array($currentRoute, ['student.quran-circles', 'student.circles.show', 'student.quran']);
+            $isQuranTeachersActive = in_array($currentRoute, ['student.quran-teachers', 'public.quran-teachers.index', 'public.quran-teachers.show', 'public.quran-teachers.trial', 'public.quran-teachers.subscribe']);
+            $isInteractiveCoursesActive = in_array($currentRoute, ['student.interactive-courses']);
+            $isAcademicTeachersActive = in_array($currentRoute, ['student.academic-teachers']);
+            $isRecordedCoursesActive = in_array($currentRoute, ['student.recorded-courses', 'student.courses.show', 'courses.show', 'courses.learn']);
+          @endphp
+          <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+             class="{{ $isQuranCirclesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
+             aria-label="استعرض حلقات القرآن المتاحة">حلقات القرآن الجماعية</a>
+          <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+             class="{{ $isQuranTeachersActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
+             aria-label="استعرض معلمي القرآن">معلمو القرآن</a>
+          <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+             class="{{ $isInteractiveCoursesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
+             aria-label="استعرض الكورسات التفاعلية">الكورسات التفاعلية</a>
+          <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+             class="{{ $isAcademicTeachersActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
+             aria-label="استعرض المعلمين الأكاديميين">المعلمون الأكاديميون</a>
+          <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+             class="{{ $isRecordedCoursesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
+             aria-label="استعرض الكورسات المسجلة">الكورسات المسجلة</a>
         </div>
       </div>
 
@@ -28,92 +46,77 @@
           </div>
           <input type="text" 
                  placeholder="البحث في الكورسات والدروس..." 
-                 class="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                 class="w-64 p4-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                  aria-label="البحث في المحتوى">
         </div>
 
         <!-- Notifications -->
-        <div class="relative">
-          <button class="relative p-2 text-gray-700 hover:text-primary focus:ring-custom" 
-                  aria-label="الإشعارات" 
-                  aria-expanded="false"
-                  id="notifications-button">
-            <i class="ri-notification-3-line text-xl"></i>
-            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
-          </button>
-          <!-- Notifications Dropdown -->
-          <div class="absolute left-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg hidden" 
-               role="menu" 
-               id="notifications-dropdown">
-            <div class="p-4">
-              <h3 class="text-lg font-semibold mb-3">الإشعارات</h3>
-              <div class="space-y-3">
-                <div class="flex items-start space-x-3 space-x-reverse">
-                  <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium">درس جديد متاح</p>
-                    <p class="text-xs text-gray-500">تم إضافة درس جديد في دورة القرآن الكريم</p>
-                    <p class="text-xs text-gray-400 mt-1">منذ 5 دقائق</p>
-                  </div>
-                </div>
-                <div class="flex items-start space-x-3 space-x-reverse">
-                  <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium">تم إكمال الواجب</p>
-                    <p class="text-xs text-gray-500">تم تقييم واجبك في الرياضيات</p>
-                    <p class="text-xs text-gray-400 mt-1">منذ ساعة</p>
-                  </div>
-                </div>
-                <div class="flex items-start space-x-3 space-x-reverse">
-                  <div class="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium">تذكير بالدرس</p>
-                    <p class="text-xs text-gray-500">درس القرآن غداً الساعة 4 مساءً</p>
-                    <p class="text-xs text-gray-400 mt-1">منذ 3 ساعات</p>
-                  </div>
-                </div>
-              </div>
-              <a href="#" class="block text-center text-primary text-sm mt-3 hover:underline">عرض جميع الإشعارات</a>
-            </div>
-          </div>
-        </div>
+        <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="ri-notification-3-line text-xl"></i>
+          <span class="absolute top-0 left-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+            3
+          </span>
+        </button>
 
-        <!-- User Profile Dropdown -->
-        <div class="relative">
-          <button class="flex items-center space-x-2 space-x-reverse text-gray-700 hover:text-primary focus:ring-custom" 
-                  aria-label="قائمة المستخدم" 
-                  aria-expanded="false"
-                  id="user-menu-button">
-            <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <span class="text-white text-sm font-medium">
-                {{ substr(auth()->user()->studentProfile->first_name ?? auth()->user()->name, 0, 1) }}
-              </span>
+        <!-- Messages -->
+        <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="ri-message-3-line text-xl"></i>
+          <span class="absolute top-0 left-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full">
+            2
+          </span>
+        </button>
+
+        <!-- User Dropdown -->
+        <div class="relative" x-data="{ open: false }">
+          <button @click="open = !open" 
+                  class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  aria-expanded="false" 
+                  aria-haspopup="true">
+            <div class="flex items-center space-x-3 space-x-reverse">
+              @php
+                $student = auth()->user()->studentProfile;
+                $studentName = $student ? 
+                             ($student->first_name && $student->last_name ? $student->first_name . ' ' . $student->last_name : $student->first_name) :
+                             auth()->user()->name;
+              @endphp
+              <x-student-avatar :student="$student" size="sm" />
+              <div class="hidden md:block text-right">
+                <p class="text-sm font-medium text-gray-900">
+                  {{ $student->first_name ?? auth()->user()->name }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  طالب
+                </p>
+              </div>
+              <i class="ri-arrow-down-s-line text-gray-400"></i>
             </div>
-            <span class="hidden md:block">{{ auth()->user()->studentProfile->first_name ?? auth()->user()->name }}</span>
-            <i class="ri-arrow-down-s-line"></i>
           </button>
-          <!-- User Menu Dropdown -->
-          <div class="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden" 
+
+          <!-- Dropdown menu -->
+          <div x-show="open" 
+               @click.away="open = false"
+               x-transition:enter="transition ease-out duration-100"
+               x-transition:enter-start="transform opacity-0 scale-95"
+               x-transition:enter-end="transform opacity-100 scale-100"
+               x-transition:leave="transition ease-in duration-75"
+               x-transition:leave-start="transform opacity-100 scale-100"
+               x-transition:leave-end="transform opacity-0 scale-95"
+               class="origin-top-left absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
                role="menu" 
-               id="user-menu-dropdown">
-            <div class="py-1">
-                             <a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50" role="menuitem">
+               aria-orientation="vertical">
+            <div class="py-1" role="none">
+              <a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" role="menuitem">
                 <i class="ri-user-line ml-2"></i>
                 الملف الشخصي
               </a>
-              <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-50" role="menuitem">
-                <i class="ri-settings-3-line ml-2"></i>
-                الإعدادات
-              </a>
-              <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-50" role="menuitem">
-                <i class="ri-wallet-3-line ml-2"></i>
-                الاشتراكات
-              </a>
-              <hr class="my-1">
+              <div class="border-t border-gray-100"></div>
               <form method="POST" action="{{ route('logout', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}">
                 @csrf
-                <button type="submit" class="block w-full text-right px-4 py-2 text-gray-700 hover:bg-gray-50" role="menuitem">
-                  <i class="ri-logout-box-r-line ml-2"></i>
+                <button type="submit" 
+                        class="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50" 
+                        role="menuitem">
+                  <i class="ri-logout-box-line ml-2"></i>
                   تسجيل الخروج
                 </button>
               </form>
@@ -136,15 +139,23 @@
     <!-- Mobile Navigation Menu -->
     <div class="md:hidden hidden" id="mobile-menu">
       <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-        <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">دوائر القرآن</a>
-        <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">معلمو القرآن</a>
-        <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات التفاعلية</a>
-        <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">المعلمون الأكاديميون</a>
-            <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات المسجلة</a>
+        <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+           class="block px-3 py-2 {{ $isQuranCirclesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">حلقات القرآن</a>
+        <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+           class="block px-3 py-2 {{ $isQuranTeachersActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">معلمو القرآن</a>
+        <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+           class="block px-3 py-2 {{ $isInteractiveCoursesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات التفاعلية</a>
+        <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+           class="block px-3 py-2 {{ $isAcademicTeachersActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">المعلمون الأكاديميون</a>
+        <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+           class="block px-3 py-2 {{ $isRecordedCoursesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات المسجلة</a>
       </div>
     </div>
   </div>
 </nav>
+
+<!-- Alpine.js for dropdown functionality -->
+<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -156,39 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const isExpanded = this.getAttribute('aria-expanded') === 'true';
     this.setAttribute('aria-expanded', !isExpanded);
     mobileMenu.classList.toggle('hidden');
-  });
-
-  // Notifications dropdown
-  const notificationsButton = document.getElementById('notifications-button');
-  const notificationsDropdown = document.getElementById('notifications-dropdown');
-  
-  notificationsButton?.addEventListener('click', function() {
-    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-    this.setAttribute('aria-expanded', !isExpanded);
-    notificationsDropdown.classList.toggle('hidden');
-  });
-
-  // User menu dropdown
-  const userMenuButton = document.getElementById('user-menu-button');
-  const userMenuDropdown = document.getElementById('user-menu-dropdown');
-  
-  userMenuButton?.addEventListener('click', function() {
-    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-    this.setAttribute('aria-expanded', !isExpanded);
-    userMenuDropdown.classList.toggle('hidden');
-  });
-
-  // Close dropdowns when clicking outside
-  document.addEventListener('click', function(event) {
-    if (!notificationsButton?.contains(event.target)) {
-      notificationsDropdown?.classList.add('hidden');
-      notificationsButton?.setAttribute('aria-expanded', 'false');
-    }
-    
-    if (!userMenuButton?.contains(event.target)) {
-      userMenuDropdown?.classList.add('hidden');
-      userMenuButton?.setAttribute('aria-expanded', 'false');
-    }
   });
 });
 </script> 

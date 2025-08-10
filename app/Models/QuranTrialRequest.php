@@ -214,6 +214,10 @@ class QuranTrialRequest extends Model
 
     public function getTimeLabelAttribute(): string
     {
+        if (!$this->preferred_time) {
+            return 'غير محدد';
+        }
+        
         return self::TIMES[$this->preferred_time] ?? $this->preferred_time;
     }
 

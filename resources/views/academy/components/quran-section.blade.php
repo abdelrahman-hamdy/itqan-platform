@@ -78,7 +78,7 @@
                   يبدأ {{ $circle->start_date ?? '15 أغسطس 2025' }}
                 </div>
               </div>
-              <a href="{{ route('quran.circles.join', $circle->id) }}" 
+              <a href="{{ route('public.quran-circles.show', ['subdomain' => $academy->subdomain, 'circle' => $circle->id]) }}" 
                  class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
                  aria-label="انضم لحلقة {{ $circle->name }}">
                 {{ $circle->status === 'available' ? 'انضم للحلقة' : 'سجل اهتمامك' }}
@@ -114,9 +114,11 @@
                   يبدأ 15 أغسطس 2025
                 </div>
               </div>
-              <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="انضم لحلقة سورة البقرة">
+              <a href="{{ route('public.quran-circles.index', ['subdomain' => $academy->subdomain]) }}" 
+                 class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
+                 aria-label="انضم لحلقة سورة البقرة">
                 انضم للحلقة
-              </button>
+              </a>
             </div>
             
             <div class="bg-white rounded-xl shadow-lg p-6 min-w-[300px] card-hover">
@@ -147,9 +149,10 @@
                   يبدأ 20 أغسطس 2025
                 </div>
               </div>
-              <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap">
+              <a href="{{ route('public.quran-circles.index', ['subdomain' => $academy->subdomain]) }}" 
+                 class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap text-center block">
                 انضم للحلقة
-              </button>
+              </a>
             </div>
             
             <div class="bg-white rounded-xl shadow-lg p-6 min-w-[300px] card-hover">
@@ -180,9 +183,10 @@
                   يبدأ 25 أغسطس 2025
                 </div>
               </div>
-              <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap">
+              <a href="{{ route('public.quran-circles.index', ['subdomain' => $academy->subdomain]) }}" 
+                 class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap text-center block">
                 انضم للحلقة
-              </button>
+              </a>
             </div>
           @endforelse
         </div>
@@ -194,7 +198,7 @@
         </div>
       </div>
       <div class="text-center mb-16 mt-12">
-        <a href="#" 
+        <a href="{{ route('public.quran-circles.index', ['subdomain' => $academy->subdomain]) }}" 
            class="bg-white border-2 border-primary text-primary px-8 py-3 !rounded-button font-semibold hover:bg-primary hover:text-white transition-colors duration-200 whitespace-nowrap focus:ring-custom" 
            aria-label="عرض جميع حلقات التحفيظ المتاحة">
           عرض جميع حلقات التحفيظ
@@ -259,7 +263,7 @@
                     {{ $teacher->specialization ?? 'متخصص في تعليم الكبار' }}
                   </div>
                 </div>
-                <a href="#" 
+                <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" 
                    class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
                    aria-label="عرض تفاصيل {{ $teacher->name }}">
                   عرض التفاصيل
@@ -307,9 +311,11 @@
                     متخصص في تعليم الكبار
                   </div>
                 </div>
-                <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل المعلم">
+                <a href="{{ route('public.quran-teachers.index', ['subdomain' => $academy->subdomain]) }}" 
+                   class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
+                   aria-label="عرض تفاصيل المعلم">
                   عرض التفاصيل
-                </button>
+                </a>
               </div>
               
               <div class="bg-white rounded-xl shadow-lg p-6 min-w-[280px] card-hover">
@@ -352,9 +358,11 @@
                     متخصصة في تعليم الأطفال
                   </div>
                 </div>
-                <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل المعلم">
+                <a href="{{ route('public.quran-teachers.index', ['subdomain' => $academy->subdomain]) }}" 
+                   class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
+                   aria-label="عرض تفاصيل المعلم">
                   عرض التفاصيل
-                </button>
+                </a>
               </div>
               
               <div class="bg-white rounded-xl shadow-lg p-6 min-w-[280px] card-hover">
@@ -397,9 +405,11 @@
                     متخصص في القراءات
                   </div>
                 </div>
-                <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل المعلم">
+                <a href="{{ route('public.quran-teachers.index', ['subdomain' => $academy->subdomain]) }}" 
+                   class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
+                   aria-label="عرض تفاصيل المعلم">
                   عرض التفاصيل
-                </button>
+                </a>
               </div>
             @endforelse
           </div>
@@ -412,10 +422,10 @@
         </div>
       </div>
       <div class="text-center mt-8">
-        <a href="#" 
+        <a href="{{ route('public.quran-teachers.index', ['subdomain' => $academy->subdomain]) }}" 
            class="bg-white border-2 border-primary text-primary px-8 py-3 !rounded-button font-semibold hover:bg-primary hover:text-white transition-colors duration-200 whitespace-nowrap focus:ring-custom" 
-           aria-label="اعرض المزيد من خدمات القرآن الكريم">
-          اعرض المزيد من خدمات القرآن
+           aria-label="عرض جميع معلمي القرآن الكريم">
+          عرض جميع معلمي القرآن الكريم
         </a>
       </div>
     </div>

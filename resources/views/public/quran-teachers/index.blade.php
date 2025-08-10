@@ -164,7 +164,7 @@
 
               <!-- Action Button -->
               <div class="px-6 pb-6">
-                <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherCode' => $teacher->teacher_code]) }}" 
+                <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" 
                    class="w-full bg-primary text-white py-3 px-4 rounded-lg text-center font-medium hover:bg-secondary transition-colors block">
                   عرض الملف الشخصي
                 </a>

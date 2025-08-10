@@ -74,7 +74,7 @@ class SuperAdminQuranTrialRequestResource extends Resource
                             ])
                     ]),
 
-                Section::make('معلومات الطالب')
+                Section::make('تفاصيل الطلب')
                     ->schema([
                         Grid::make(2)
                             ->schema([
@@ -90,7 +90,6 @@ class SuperAdminQuranTrialRequestResource extends Resource
                                     ->options(function () {
                                         return QuranTeacherProfile::with('academy')
                                             ->where('is_active', true)
-                                            ->where('approval_status', 'approved')
                                             ->get()
                                             ->mapWithKeys(function ($teacher) {
                                                 return [$teacher->id => "{$teacher->full_name} ({$teacher->academy->name})"];
@@ -99,34 +98,6 @@ class SuperAdminQuranTrialRequestResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->required(),
-                            ]),
-
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('student_name')
-                                    ->label('اسم الطالب')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                TextInput::make('student_age')
-                                    ->label('عمر الطالب')
-                                    ->numeric()
-                                    ->minValue(5)
-                                    ->maxValue(100),
-                            ]),
-
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->required()
-                                    ->maxLength(20),
-
-                                TextInput::make('email')
-                                    ->label('البريد الإلكتروني')
-                                    ->email()
-                                    ->maxLength(255),
                             ]),
                     ]),
 
@@ -180,6 +151,33 @@ class SuperAdminQuranTrialRequestResource extends Resource
 
                         Textarea::make('teacher_response')
                             ->label('رد المعلم')
+                            ->rows(3),
+                    ]),
+
+                Section::make('تقييم الجلسة')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                Select::make('rating')
+                                    ->label('التقييم')
+                                    ->options([
+                                        1 => '1 - ضعيف',
+                                        2 => '2 - مقبول', 
+                                        3 => '3 - جيد',
+                                        4 => '4 - جيد جداً',
+                                        5 => '5 - ممتاز'
+                                    ])
+                                    ->native(false),
+
+                                DateTimePicker::make('completed_at')
+                                    ->label('تاريخ اكتمال الجلسة')
+                                    ->native(false)
+                                    ->disabled()
+                                    ->dehydrated(false),
+                            ]),
+
+                        Textarea::make('feedback')
+                            ->label('ملاحظات الجلسة')
                             ->rows(3),
                     ]),
             ]);
@@ -441,8 +439,15 @@ class SuperAdminQuranTrialRequestResource extends Resource
     {
         return [
             'index' => Pages\ListSuperAdminQuranTrialRequests::route('/'),
+            'create' => Pages\CreateSuperAdminQuranTrialRequest::route('/create'),
             'view' => Pages\ViewSuperAdminQuranTrialRequest::route('/{record}'),
             'edit' => Pages\EditSuperAdminQuranTrialRequest::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        // Only super admin can access global Quran trial request management
+        return \App\Services\AcademyContextService::isSuperAdmin();
     }
 }

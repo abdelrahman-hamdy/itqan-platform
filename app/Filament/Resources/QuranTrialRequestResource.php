@@ -69,7 +69,7 @@ class QuranTrialRequestResource extends BaseResource
                             ])
                     ]),
 
-                Section::make('معلومات الطالب')
+                Section::make('تفاصيل الطلب')
                     ->schema([
                         Grid::make(2)
                             ->schema([
@@ -86,41 +86,12 @@ class QuranTrialRequestResource extends BaseResource
                                         $academyId = AcademyContextService::getCurrentAcademyId();
                                         return QuranTeacherProfile::where('academy_id', $academyId)
                                             ->where('is_active', true)
-                                            ->where('approval_status', 'approved')
                                             ->get()
                                             ->pluck('display_name', 'id');
                                     })
                                     ->searchable()
                                     ->preload()
                                     ->required(),
-                            ]),
-
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('student_name')
-                                    ->label('اسم الطالب')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                TextInput::make('student_age')
-                                    ->label('عمر الطالب')
-                                    ->numeric()
-                                    ->minValue(5)
-                                    ->maxValue(100),
-                            ]),
-
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->required()
-                                    ->maxLength(20),
-
-                                TextInput::make('email')
-                                    ->label('البريد الإلكتروني')
-                                    ->email()
-                                    ->maxLength(255),
                             ]),
                     ]),
 
@@ -420,23 +391,10 @@ class QuranTrialRequestResource extends BaseResource
                         Infolists\Components\Grid::make(2)
                             ->schema([
                                 Infolists\Components\TextEntry::make('student.name')
-                                    ->label('الطالب المسجل'),
+                                    ->label('الطالب'),
 
                                 Infolists\Components\TextEntry::make('teacher.full_name')
                                     ->label('المعلم'),
-
-                                Infolists\Components\TextEntry::make('student_name')
-                                    ->label('اسم الطالب في الطلب'),
-
-                                Infolists\Components\TextEntry::make('student_age')
-                                    ->label('عمر الطالب')
-                                    ->suffix(' سنة'),
-
-                                Infolists\Components\TextEntry::make('phone')
-                                    ->label('رقم الهاتف'),
-
-                                Infolists\Components\TextEntry::make('email')
-                                    ->label('البريد الإلكتروني'),
                             ])
                     ]),
 

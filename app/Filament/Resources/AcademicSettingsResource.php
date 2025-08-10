@@ -44,7 +44,7 @@ class AcademicSettingsResource extends BaseSettingsResource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('إعدادات الجلسات الخاصة')
+                Forms\Components\Section::make('الإعدادات العامة')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -72,9 +72,15 @@ class AcademicSettingsResource extends BaseSettingsResource
                                     ->prefix('SAR'),
 
                                 Forms\Components\Select::make('currency')
-                                    ->label('العملة')
+                                    ->label('العملة الافتراضية للأكاديمية')
+                                    ->helperText('العملة المستخدمة في جميع الأسعار والمدفوعات')
                                     ->options([
                                         'SAR' => 'ريال سعودي (SAR)',
+                                        'AED' => 'درهم إماراتي (AED)',
+                                        'KWD' => 'دينار كويتي (KWD)',
+                                        'QAR' => 'ريال قطري (QAR)',
+                                        'BHD' => 'دينار بحريني (BHD)',
+                                        'OMR' => 'ريال عماني (OMR)',
                                         'USD' => 'دولار أمريكي (USD)',
                                         'EUR' => 'يورو (EUR)',
                                     ])

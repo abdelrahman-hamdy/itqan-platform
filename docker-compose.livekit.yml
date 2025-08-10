@@ -1,0 +1,45 @@
+# LiveKit Local Development Server
+# Run with: docker-compose -f docker-compose.livekit.yml up -d
+version: '3.8'
+
+services:
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: itqan-livekit-server
+    ports:
+      - "7880:7880"   # HTTP API port
+      - "7881:7881"   # HTTPS API port (if needed)
+      - "7882:7882"   # gRPC API port
+      - "50000-50100:50000-50100/udp"  # WebRTC UDP port range
+    volumes:
+      - ./livekit-config:/etc/livekit
+      - ./storage/livekit-recordings:/recordings
+    environment:
+      - LIVEKIT_CONFIG=/etc/livekit/livekit.yaml
+    networks:
+      - livekit-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7880/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: itqan-livekit-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - livekit-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+volumes:
+  redis-data:
+
+networks:
+  livekit-network:
+    driver: bridge

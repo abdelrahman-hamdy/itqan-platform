@@ -86,19 +86,27 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           @foreach($activeSubscriptions as $subscription)
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
-            <div class="flex items-start justify-between mb-4">
-              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span class="text-green-600 font-semibold">
-                  {{ substr($subscription->quranTeacher->user->first_name, 0, 1) }}{{ substr($subscription->quranTeacher->user->last_name, 0, 1) }}
+            <!-- Header with Avatar beside Name and Status -->
+            <div class="flex items-start gap-4 mb-4">
+              <!-- Teacher Avatar -->
+              <x-teacher-avatar :teacher="$subscription->quranTeacher" size="md" class="flex-shrink-0" />
+              
+              <!-- Name and Description -->
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-gray-900 mb-1 truncate">
+                  {{ $subscription->quranTeacher->user->full_name ?? $subscription->quranTeacher->user->name ?? 'معلم قرآن' }}
+                </h3>
+                <p class="text-sm text-gray-600 line-clamp-2">{{ $subscription->quranTeacher->bio ?? $subscription->quranTeacher->bio_arabic ?? 'معلم قرآن كريم' }}</p>
+              </div>
+              
+              <!-- Status Badge -->
+              <div class="flex-shrink-0">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                  {{ $subscription->subscription_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                  {{ $subscription->subscription_status === 'active' ? 'نشط' : 'في الانتظار' }}
                 </span>
               </div>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                نشط
-              </span>
             </div>
-            
-            <h3 class="font-semibold text-gray-900 mb-2">{{ $subscription->quranTeacher->user->full_name }}</h3>
-            <p class="text-sm text-gray-600 mb-4">{{ $subscription->quranTeacher->bio ?? 'معلم قرآن كريم' }}</p>
             
             <div class="space-y-2">
               <div class="flex items-center text-sm text-gray-600">
@@ -111,18 +119,17 @@
               </div>
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-time-line ml-2"></i>
-                <span>{{ $subscription->sessions_completed ?? 0 }} جلسة مكتملة</span>
+                <span>{{ $subscription->sessions_used ?? 0 }} جلسة مكتملة</span>
               </div>
             </div>
 
-            <div class="mt-6 flex space-x-2 space-x-reverse">
-              <button class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-                <i class="ri-video-line ml-1"></i>
-                الجلسة القادمة
-              </button>
-              <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                <i class="ri-message-3-line"></i>
-              </button>
+            <!-- Single Action Button -->
+            <div class="mt-6">
+              <a href="{{ route('student.quran.sessions', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'subscriptionId' => $subscription->id]) }}" 
+                 class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
+                <i class="ri-book-open-line ml-2"></i>
+                عرض حلقة القرآن
+              </a>
             </div>
           </div>
           @endforeach
@@ -155,32 +162,46 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
             <div class="flex items-start justify-between mb-4">
               <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span class="text-blue-600 font-semibold">
-                  {{ substr($teacher->user->first_name, 0, 1) }}{{ substr($teacher->user->last_name, 0, 1) }}
-                </span>
+                @if($teacher->avatar)
+                  <img src="{{ asset('storage/' . $teacher->avatar) }}" alt="{{ $teacher->full_name }}" class="w-full h-full rounded-lg object-cover">
+                @elseif($teacher->user)
+                  <span class="text-blue-600 font-semibold">
+                    {{ substr($teacher->user->first_name ?? $teacher->first_name, 0, 1) }}{{ substr($teacher->user->last_name ?? $teacher->last_name, 0, 1) }}
+                  </span>
+                @else
+                  <span class="text-blue-600 font-semibold">
+                    {{ substr($teacher->first_name, 0, 1) }}{{ substr($teacher->last_name, 0, 1) }}
+                  </span>
+                @endif
               </div>
               <div class="flex items-center">
                 <i class="ri-star-fill text-yellow-400 text-sm"></i>
-                <span class="text-sm text-gray-600 mr-1">{{ number_format($teacher->average_rating ?? 4.8, 1) }}</span>
+                <span class="text-sm text-gray-600 mr-1">{{ number_format($teacher->average_rating ?? $teacher->rating ?? 4.8, 1) }}</span>
               </div>
             </div>
             
-            <h3 class="font-semibold text-gray-900 mb-2">{{ $teacher->user->full_name }}</h3>
-            <p class="text-sm text-gray-600 mb-4">{{ $teacher->bio ?? 'معلم قرآن كريم مؤهل' }}</p>
+            <h3 class="font-semibold text-gray-900 mb-2">
+              {{ $teacher->user->name ?? $teacher->full_name }}
+            </h3>
+            <p class="text-sm text-gray-600 mb-4">{{ $teacher->bio_arabic ?? 'معلم قرآن كريم مؤهل' }}</p>
             
             <div class="space-y-2">
-              @if($teacher->experience_years)
+              @if($teacher->teaching_experience_years)
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-time-line ml-2"></i>
-                <span>{{ $teacher->experience_years }} سنوات خبرة</span>
+                <span>{{ $teacher->teaching_experience_years }} سنوات خبرة</span>
               </div>
               @endif
-              @if($teacher->students_count)
+              @if($teacher->active_students_count)
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-group-line ml-2"></i>
-                <span>{{ $teacher->students_count }} طالب نشط</span>
+                <span>{{ $teacher->active_students_count }} طالب نشط</span>
               </div>
               @endif
+              <div class="flex items-center text-sm text-gray-600">
+                <i class="ri-video-line ml-2"></i>
+                <span>{{ $teacher->total_sessions ?? 0 }} جلسة مكتملة</span>
+              </div>
               @if($availablePackages->count() > 0)
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-money-dollar-circle-line ml-2"></i>
@@ -189,27 +210,36 @@
               @endif
             </div>
 
-            <!-- Specializations -->
-            @if($teacher->specializations)
+            <!-- Qualifications -->
+            @if($teacher->educational_qualification)
             <div class="mt-4">
               <div class="flex flex-wrap gap-1">
-                @foreach(explode(',', $teacher->specializations) as $specialization)
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  {{ trim($specialization) }}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <i class="ri-graduation-cap-line ml-1"></i>
+                  {{ $teacher->educational_qualification }}
                 </span>
-                @endforeach
+                @if($teacher->certifications && is_array($teacher->certifications))
+                  @foreach($teacher->certifications as $cert)
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {{ $cert }}
+                    </span>
+                  @endforeach
+                @endif
               </div>
             </div>
             @endif
 
             <div class="mt-6 flex space-x-2 space-x-reverse">
-              <button class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-                <i class="ri-calendar-check-line ml-1"></i>
-                جلسة تجريبية
-              </button>
-              <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                <i class="ri-information-line"></i>
-              </button>
+              <a href="{{ route('public.quran-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) }}" 
+                 class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
+                <i class="ri-eye-line ml-1"></i>
+                عرض الملف الشخصي
+              </a>
+              <a href="{{ route('public.quran-teachers.trial', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) }}" 
+                 class="px-3 py-2 border-2 border-primary rounded-lg text-sm text-primary hover:bg-primary hover:text-white transition-colors" 
+                 title="احجز جلسة تجريبية">
+                <i class="ri-calendar-check-line"></i>
+              </a>
             </div>
           </div>
           @endforeach

@@ -18,13 +18,19 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\TimePicker;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\Facades\Auth;
 
 class SuperAdminQuranTeacherResource extends Resource
 {
@@ -48,7 +54,7 @@ class SuperAdminQuranTeacherResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('المعلومات الأساسية')
+                Section::make('الأكاديمية')
                     ->schema([
                         Grid::make(2)
                             ->schema([
@@ -58,48 +64,40 @@ class SuperAdminQuranTeacherResource extends Resource
                                     ->required()
                                     ->searchable()
                                     ->preload(),
-
-                                Select::make('approval_status')
-                                    ->label('حالة الموافقة')
-                                    ->options([
-                                        'pending' => 'في الانتظار',
-                                        'approved' => 'معتمد',
-                                        'rejected' => 'مرفوض',
-                                    ])
-                                    ->required()
-                                    ->native(false),
                             ]),
+                    ]),
 
+                Section::make('المعلومات الشخصية')
+                    ->schema([
                         Grid::make(2)
                             ->schema([
                                 TextInput::make('first_name')
                                     ->label('الاسم الأول')
                                     ->required()
                                     ->maxLength(255),
-
                                 TextInput::make('last_name')
                                     ->label('الاسم الأخير')
                                     ->required()
                                     ->maxLength(255),
-                            ]),
-
-                        Grid::make(2)
-                            ->schema([
                                 TextInput::make('email')
                                     ->label('البريد الإلكتروني')
                                     ->email()
                                     ->required()
-                                    ->maxLength(255),
-
+                                    ->unique(ignoreRecord: true)
+                                    ->maxLength(255)
+                                    ->helperText('سيستخدم المعلم هذا البريد للدخول إلى المنصة'),
                                 TextInput::make('phone')
                                     ->label('رقم الهاتف')
                                     ->tel()
                                     ->maxLength(20),
                             ]),
-
-                        Toggle::make('is_active')
-                            ->label('نشط')
-                            ->default(true),
+                        Forms\Components\FileUpload::make('avatar')
+                            ->label('الصورة الشخصية')
+                            ->image()
+                            ->imageEditor()
+                            ->circleCropper()
+                            ->directory('avatars/quran-teachers')
+                            ->maxSize(2048),
                     ]),
 
                 Section::make('المؤهلات والخبرة')
@@ -112,43 +110,89 @@ class SuperAdminQuranTeacherResource extends Resource
                                         'bachelor' => 'بكالوريوس',
                                         'master' => 'ماجستير',
                                         'phd' => 'دكتوراه',
-                                        'ijazah' => 'إجازة في القرآن',
                                         'diploma' => 'دبلوم',
                                         'other' => 'أخرى',
                                     ])
-                                    ->native(false),
-
-                                TextInput::make('years_of_experience')
-                                    ->label('سنوات الخبرة')
+                                    ->default('bachelor')
+                                    ->required(),
+                                TextInput::make('teaching_experience_years')
+                                    ->label('سنوات الخبرة في تدريس القرآن')
                                     ->numeric()
                                     ->minValue(0)
-                                    ->maxValue(50),
+                                    ->maxValue(50)
+                                    ->default(0),
                             ]),
-
-                        Textarea::make('bio_arabic')
-                            ->label('السيرة الذاتية (عربي)')
-                            ->rows(3),
-
-                        Textarea::make('bio_english')
-                            ->label('السيرة الذاتية (إنجليزي)')
-                            ->rows(3),
+                        Forms\Components\TagsInput::make('certifications')
+                            ->label('الشهادات والإجازات')
+                            ->placeholder('أضف شهادة أو إجازة')
+                            ->helperText('مثل: إجازة في القراءات، شهادة تجويد، إلخ'),
+                        Forms\Components\CheckboxList::make('languages')
+                            ->label('اللغات التي يجيدها')
+                            ->options([
+                                'arabic' => 'العربية',
+                                'english' => 'الإنجليزية',
+                                'french' => 'الفرنسية',
+                                'urdu' => 'الأردو',
+                                'turkish' => 'التركية',
+                                'malay' => 'الماليزية',
+                            ])
+                            ->default(['arabic'])
+                            ->columns(2),
                     ]),
 
-                Section::make('إعدادات التدريس')
+                Section::make('الأوقات المتاحة')
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('hourly_rate_individual')
-                                    ->label('سعر الساعة (فردي)')
-                                    ->numeric()
-                                    ->prefix('ر.س'),
+                                Forms\Components\TimePicker::make('available_time_start')
+                                    ->label('وقت البدء')
+                                    ->default('08:00')
+                                    ->required(),
+                                Forms\Components\TimePicker::make('available_time_end')
+                                    ->label('وقت الانتهاء')
+                                    ->default('18:00')
+                                    ->required(),
+                            ]),
+                        Forms\Components\CheckboxList::make('available_days')
+                            ->label('الأيام المتاحة')
+                            ->options([
+                                'sunday' => 'الأحد',
+                                'monday' => 'الاثنين',
+                                'tuesday' => 'الثلاثاء',
+                                'wednesday' => 'الأربعاء',
+                                'thursday' => 'الخميس',
+                                'friday' => 'الجمعة',
+                                'saturday' => 'السبت',
+                            ])
+                            ->columns(2)
+                            ->required(),
+                    ]),
 
-                                TextInput::make('hourly_rate_group')
-                                    ->label('سعر الساعة (جماعي)')
-                                    ->numeric()
-                                    ->prefix('ر.س'),
+                Section::make('السيرة الذاتية')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                Textarea::make('bio_arabic')
+                                    ->label('السيرة الذاتية (عربي)')
+                                    ->maxLength(1000)
+                                    ->rows(4)
+                                    ->helperText('اكتب نبذة عن خبرتك في تدريس القرآن الكريم'),
+                                Textarea::make('bio_english')
+                                    ->label('السيرة الذاتية (إنجليزي)')
+                                    ->maxLength(1000)
+                                    ->rows(4),
                             ]),
                     ]),
+
+                Section::make('الحالة والإعدادات')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                Toggle::make('is_active')
+                                    ->label('نشط')
+                                    ->default(true),
+                            ]),
+                    ])
             ]);
     }
 
@@ -185,19 +229,13 @@ class SuperAdminQuranTeacherResource extends Resource
                     ->searchable()
                     ->copyable(),
 
-                BadgeColumn::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'في الانتظار',
-                        'approved' => 'معتمد',
-                        'rejected' => 'مرفوض',
-                        default => $state,
-                    })
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'approved',
-                        'danger' => 'rejected',
-                    ]),
+                Tables\Columns\IconColumn::make('user_id')
+                    ->label('مربوط بحساب')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
 
                 BadgeColumn::make('is_active')
                     ->label('نشط')
@@ -224,6 +262,53 @@ class SuperAdminQuranTeacherResource extends Resource
                         return str_repeat('⭐', round($state)) . " ({$state}/5)";
                     }),
 
+                TextColumn::make('languages')
+                    ->label('اللغات')
+                    ->badge()
+                    ->formatStateUsing(function ($state) {
+                        if (!is_array($state)) return '-';
+                        $languageNames = [
+                            'arabic' => 'العربية',
+                            'english' => 'الإنجليزية',
+                            'french' => 'الفرنسية',
+                            'urdu' => 'الأردو',
+                            'turkish' => 'التركية',
+                            'malay' => 'الماليزية',
+                        ];
+                        return collect($state)->map(fn($lang) => $languageNames[$lang] ?? $lang)->implode(', ');
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('certifications')
+                    ->label('الشهادات')
+                    ->badge()
+                    ->formatStateUsing(function ($state) {
+                        if (!is_array($state)) return '-';
+                        return collect($state)->take(2)->implode(', ') . (count($state) > 2 ? '...' : '');
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('educational_qualification')
+                    ->label('المؤهل التعليمي')
+                    ->formatStateUsing(function (string $state): string {
+                        return match ($state) {
+                            'bachelor' => 'بكالوريوس',
+                            'master' => 'ماجستير',
+                            'phd' => 'دكتوراه',
+                            'diploma' => 'دبلوم',
+                            'other' => 'أخرى',
+                            default => $state,
+                        };
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('teaching_experience_years')
+                    ->label('سنوات الخبرة')
+                    ->numeric()
+                    ->suffix(' سنة')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('created_at')
                     ->label('تاريخ التسجيل')
                     ->dateTime()
@@ -237,13 +322,7 @@ class SuperAdminQuranTeacherResource extends Resource
                     ->searchable()
                     ->preload(),
 
-                SelectFilter::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->options([
-                        'pending' => 'في الانتظار',
-                        'approved' => 'معتمد',
-                        'rejected' => 'مرفوض',
-                    ]),
+
 
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('نشط'),
@@ -254,7 +333,6 @@ class SuperAdminQuranTeacherResource extends Resource
                         'bachelor' => 'بكالوريوس',
                         'master' => 'ماجستير',
                         'phd' => 'دكتوراه',
-                        'ijazah' => 'إجازة في القرآن',
                         'diploma' => 'دبلوم',
                         'other' => 'أخرى',
                     ]),
@@ -264,31 +342,26 @@ class SuperAdminQuranTeacherResource extends Resource
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     
-                    Tables\Actions\Action::make('approve')
-                        ->label('اعتماد')
+                    Tables\Actions\Action::make('activate')
+                        ->label('تفعيل')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
-                        ->visible(fn (QuranTeacherProfile $record) => $record->approval_status === 'pending')
-                        ->action(function (QuranTeacherProfile $record) {
-                            $record->approve();
+                        ->visible(fn ($record) => !$record->is_active)
+                        ->action(function ($record) {
+                            $record->update(['is_active' => true]);
                         })
-                        ->successNotificationTitle('تم اعتماد المعلم بنجاح'),
-
-                    Tables\Actions\Action::make('reject')
-                        ->label('رفض')
+                        ->successNotificationTitle('تم تفعيل المعلم بنجاح'),
+                        
+                    Tables\Actions\Action::make('deactivate')
+                        ->label('إلغاء تفعيل')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
-                        ->visible(fn (QuranTeacherProfile $record) => $record->approval_status === 'pending')
-                        ->form([
-                            Textarea::make('rejection_reason')
-                                ->label('سبب الرفض')
-                                ->required()
-                                ->rows(3),
-                        ])
-                        ->action(function (QuranTeacherProfile $record, array $data) {
-                            $record->reject($data['rejection_reason']);
+                        ->visible(fn ($record) => $record->is_active)
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $record->update(['is_active' => false]);
                         })
-                        ->successNotificationTitle('تم رفض طلب المعلم'),
+                        ->successNotificationTitle('تم إلغاء تفعيل المعلم بنجاح'),
 
                     Tables\Actions\Action::make('suspend')
                         ->label('إيقاف')
@@ -355,21 +428,7 @@ class SuperAdminQuranTeacherResource extends Resource
                                 Infolists\Components\TextEntry::make('phone')
                                     ->label('رقم الهاتف'),
 
-                                Infolists\Components\TextEntry::make('approval_status')
-                                    ->label('حالة الموافقة')
-                                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                                        'pending' => 'في الانتظار',
-                                        'approved' => 'معتمد',
-                                        'rejected' => 'مرفوض',
-                                        default => $state,
-                                    })
-                                    ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        'pending' => 'warning',
-                                        'approved' => 'success',
-                                        'rejected' => 'danger',
-                                        default => 'gray',
-                                    }),
+
                             ])
                     ]),
 
@@ -415,5 +474,11 @@ class SuperAdminQuranTeacherResource extends Resource
             'view' => Pages\ViewSuperAdminQuranTeacher::route('/{record}'),
             'edit' => Pages\EditSuperAdminQuranTeacher::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        // Only super admin can access global Quran teacher management
+        return \App\Services\AcademyContextService::isSuperAdmin();
     }
 }

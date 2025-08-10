@@ -37,6 +37,7 @@ class QuranTeacherProfile extends Model
         'approved_by',
         'approved_at',
         'is_active',
+        'offers_trial_sessions',
         'rating',
         'total_students',
         'total_sessions',
@@ -48,6 +49,7 @@ class QuranTeacherProfile extends Model
         'languages' => 'array',
         'approved_at' => 'datetime',
         'is_active' => 'boolean',
+        'offers_trial_sessions' => 'boolean',
         'rating' => 'decimal:2',
         'total_students' => 'integer',
         'total_sessions' => 'integer',
@@ -145,6 +147,11 @@ class QuranTeacherProfile extends Model
     public function trialRequests(): HasMany
     {
         return $this->hasMany(QuranTrialRequest::class, 'teacher_id');
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(QuranSubscription::class, 'quran_teacher_id');
     }
 
     /**

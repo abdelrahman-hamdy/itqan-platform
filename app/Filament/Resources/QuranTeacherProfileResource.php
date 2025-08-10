@@ -11,6 +11,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use App\Services\AcademyContextService;
+use Illuminate\Support\Facades\Auth;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables\Columns\BadgeColumn;
 
 class QuranTeacherProfileResource extends BaseResource
 {
@@ -83,7 +86,6 @@ class QuranTeacherProfileResource extends BaseResource
                                         'bachelor' => 'بكالوريوس',
                                         'master' => 'ماجستير',
                                         'phd' => 'دكتوراه',
-                                        'ijazah' => 'إجازة في القرآن',
                                         'diploma' => 'دبلوم',
                                         'other' => 'أخرى',
                                     ])
@@ -158,25 +160,17 @@ class QuranTeacherProfileResource extends BaseResource
                             ]),
                     ]),
 
-                Forms\Components\Section::make('الحالة والموافقة')
+                Forms\Components\Section::make('الحالة')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Select::make('approval_status')
-                                    ->label('حالة الموافقة')
-                                    ->options([
-                                        'pending' => 'في الانتظار',
-                                        'approved' => 'معتمد',
-                                        'rejected' => 'مرفوض',
-                                    ])
-                                    ->default('pending')
-                                    ->required(),
-                                Forms\Components\Toggle::make('is_active')
-                                    ->label('نشط')
-                                    ->default(true),
-                            ]),
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('نشط')
+                            ->default(true),
+                        Forms\Components\Toggle::make('offers_trial_sessions')
+                            ->label('يقدم جلسات تجريبية')
+                            ->default(true)
+                            ->helperText('عند تفعيل هذا الخيار، سيتمكن الطلاب من طلب جلسات تجريبية مع هذا المعلم'),
                     ])
-                    ->visible(fn () => auth()->user()->isAdmin()),
+                    ->visible(fn () => Auth::check() && Auth::user()->isAdmin()),
             ]);
     }
 
@@ -187,19 +181,26 @@ class QuranTeacherProfileResource extends BaseResource
                 static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
-                    ->circular(),
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name) . '&background=4169E1&color=fff'),
+
                 Tables\Columns\TextColumn::make('teacher_code')
                     ->label('رمز المعلم')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable(),
+
                 Tables\Columns\TextColumn::make('full_name')
-                    ->label('الاسم')
+                    ->label('اسم المعلم')
                     ->searchable(['first_name', 'last_name'])
-                    ->sortable(),
+                    ->sortable()
+                    ->weight(FontWeight::Bold),
+
                 Tables\Columns\TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
                     ->copyable(),
+
                 Tables\Columns\IconColumn::make('user_id')
                     ->label('مربوط بحساب')
                     ->boolean()
@@ -207,28 +208,66 @@ class QuranTeacherProfileResource extends BaseResource
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                Tables\Columns\BadgeColumn::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'approved',
-                        'danger' => 'rejected',
-                    ])
-                    ->formatStateUsing(function (string $state): string {
-                        return match ($state) {
-                            'pending' => 'في الانتظار',
-                            'approved' => 'معتمد',
-                            'rejected' => 'مرفوض',
-                            default => $state,
-                        };
-                    }),
-                Tables\Columns\IconColumn::make('is_active')
+
+                Tables\Columns\BadgeColumn::make('is_active')
                     ->label('نشط')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'نشط' : 'غير نشط')
+                    ->colors([
+                        'success' => true,
+                        'gray' => false,
+                    ]),
+
+                Tables\Columns\BadgeColumn::make('offers_trial_sessions')
+                    ->label('الجلسات التجريبية')
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'متاحة' : 'غير متاحة')
+                    ->colors([
+                        'success' => true,
+                        'gray' => false,
+                    ]),
+
+                Tables\Columns\TextColumn::make('total_students')
+                    ->label('عدد الطلاب')
+                    ->numeric()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('total_sessions')
+                    ->label('عدد الجلسات')
+                    ->numeric()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('rating')
+                    ->label('التقييم')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '-';
+                        return str_repeat('⭐', round($state)) . " ({$state}/5)";
+                    }),
+
+                Tables\Columns\TextColumn::make('languages')
+                    ->label('اللغات')
+                    ->badge()
+                    ->formatStateUsing(function ($state) {
+                        if (!is_array($state)) return '-';
+                        $languageNames = [
+                            'arabic' => 'العربية',
+                            'english' => 'الإنجليزية',
+                            'french' => 'الفرنسية',
+                            'urdu' => 'الأردو',
+                            'turkish' => 'التركية',
+                            'malay' => 'الماليزية',
+                        ];
+                        return collect($state)->map(fn($lang) => $languageNames[$lang] ?? $lang)->implode(', ');
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('certifications')
+                    ->label('الشهادات')
+                    ->badge()
+                    ->formatStateUsing(function ($state) {
+                        if (!is_array($state)) return '-';
+                        return collect($state)->take(2)->implode(', ') . (count($state) > 2 ? '...' : '');
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('educational_qualification')
                     ->label('المؤهل التعليمي')
                     ->formatStateUsing(function (string $state): string {
@@ -236,30 +275,34 @@ class QuranTeacherProfileResource extends BaseResource
                             'bachelor' => 'بكالوريوس',
                             'master' => 'ماجستير',
                             'phd' => 'دكتوراه',
-                            'ijazah' => 'إجازة في القرآن',
                             'diploma' => 'دبلوم',
                             'other' => 'أخرى',
                             default => $state,
                         };
-                    }),
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('teaching_experience_years')
                     ->label('سنوات الخبرة')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('rating')
-                    ->label('التقييم')
-                    ->formatStateUsing(fn ($state) => $state ? number_format($state, 1) . ' ⭐' : 'غير مقيم')
-                    ->sortable(),
+                    ->numeric()
+                    ->suffix(' سنة')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('تاريخ التسجيل')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->options([
-                        'pending' => 'في الانتظار',
-                        'approved' => 'معتمد',
-                        'rejected' => 'مرفوض',
-                    ]),
+
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('نشط'),
+                Tables\Filters\TernaryFilter::make('offers_trial_sessions')
+                    ->label('الجلسات التجريبية')
+                    ->trueLabel('متاحة')
+                    ->falseLabel('غير متاحة'),
                 Tables\Filters\TernaryFilter::make('user_id')
                     ->label('مربوط بحساب')
                     ->nullable()
@@ -271,13 +314,34 @@ class QuranTeacherProfileResource extends BaseResource
                         'bachelor' => 'بكالوريوس',
                         'master' => 'ماجستير',
                         'phd' => 'دكتوراه',
-                        'ijazah' => 'إجازة في القرآن',
                         'diploma' => 'دبلوم',
                         'other' => 'أخرى',
                     ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                
+                Tables\Actions\Action::make('activate')
+                    ->label('تفعيل')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn ($record) => !$record->is_active)
+                    ->action(function ($record) {
+                        $record->update(['is_active' => true]);
+                    })
+                    ->successNotificationTitle('تم تفعيل المعلم بنجاح'),
+                    
+                Tables\Actions\Action::make('deactivate')
+                    ->label('إلغاء تفعيل')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn ($record) => $record->is_active)
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->update(['is_active' => false]);
+                    })
+                    ->successNotificationTitle('تم إلغاء تفعيل المعلم بنجاح'),
+                    
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
@@ -292,6 +356,7 @@ class QuranTeacherProfileResource extends BaseResource
         return [
             'index' => Pages\ListQuranTeacherProfiles::route('/'),
             'create' => Pages\CreateQuranTeacherProfile::route('/create'),
+            'view' => Pages\ViewQuranTeacherProfile::route('/{record}'),
             'edit' => Pages\EditQuranTeacherProfile::route('/{record}/edit'),
         ];
     }

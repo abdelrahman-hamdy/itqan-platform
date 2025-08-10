@@ -153,7 +153,7 @@ class QuranSubscriptionController extends Controller
 
             $subscriptionData = array_merge($validated, [
                 'academy_id' => $academy->id,
-                'subscription_code' => $this->generateSubscriptionCode($academy->id),
+                'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
                 'subscription_type' => 'individual',
                 'sessions_used' => 0,
                 'sessions_remaining' => $validated['total_sessions'],
@@ -611,11 +611,7 @@ class QuranSubscriptionController extends Controller
         }
     }
 
-    private function generateSubscriptionCode(int $academyId): string
-    {
-        $count = QuranSubscription::where('academy_id', $academyId)->count() + 1;
-        return 'QS-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
-    }
+
 
     private function calculateNextPaymentDate(QuranSubscription $subscription, Carbon $baseDate = null): Carbon
     {

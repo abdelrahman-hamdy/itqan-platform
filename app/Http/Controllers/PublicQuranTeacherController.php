@@ -9,18 +9,18 @@ use App\Models\QuranSubscription;
 use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class PublicQuranTeacherController extends Controller
 {
     /**
      * Display a listing of Quran teachers for an academy
      */
-    public function index(Request $request)
+    public function index(Request $request, $subdomain)
     {
-        // Get the current academy from the request
-        $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+        // Get the current academy from subdomain
+        $academy = Academy::where('subdomain', $subdomain)->first();
         
         if (!$academy) {
             abort(404, 'Academy not found');
@@ -37,21 +37,21 @@ class PublicQuranTeacherController extends Controller
         return view('public.quran-teachers.index', compact('academy', 'teachers'));
     }
 
-    /**
+        /**
      * Display the specified teacher profile
      */
-    public function show(Request $request, $teacherCode)
+    public function show(Request $request, $subdomain, $teacherId)
     {
-        // Get the current academy from the request
-        $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+        // Get the current academy from subdomain
+        $academy = Academy::where('subdomain', $subdomain)->first();
         
         if (!$academy) {
             abort(404, 'Academy not found');
         }
 
-        // Find the teacher by code within the academy
-        $teacher = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('teacher_code', $teacherCode)
+        // Find the teacher by ID within the academy
+        $teacher = QuranTeacherProfile::where('id', $teacherId)
+            ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->with(['academy', 'user'])
@@ -59,6 +59,12 @@ class PublicQuranTeacherController extends Controller
 
         if (!$teacher) {
             abort(404, 'Teacher not found');
+        }
+
+        // Check if teacher offers trial sessions
+        if (!$teacher->offers_trial_sessions) {
+            return redirect()->route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])
+                ->with('error', 'هذا المعلم لا يقدم جلسات تجريبية حالياً');
         }
 
         // Get available packages for this academy
@@ -76,31 +82,42 @@ class PublicQuranTeacherController extends Controller
             'rating' => $teacher->rating ?? 0,
         ];
 
-        // Check if teacher offers trial sessions (this would be a setting)
-        $offersTrialSessions = true; // This could be a teacher setting later
+        // Check if teacher offers trial sessions
+        $offersTrialSessions = $teacher->offers_trial_sessions;
+
+        // Check if user has existing trial request with this teacher
+        $existingTrialRequest = null;
+        if (Auth::check() && Auth::user()->user_type === 'student') {
+            $existingTrialRequest = QuranTrialRequest::where('academy_id', $academy->id)
+                ->where('student_id', Auth::id())
+                ->where('teacher_id', $teacher->id)
+                ->whereIn('status', ['pending', 'approved', 'scheduled', 'completed'])
+                ->first();
+        }
 
         return view('public.quran-teachers.show', compact(
             'academy', 
             'teacher', 
             'packages', 
             'stats', 
-            'offersTrialSessions'
+            'offersTrialSessions',
+            'existingTrialRequest'
         ));
     }
 
     /**
      * Show trial session booking form
      */
-    public function showTrialBooking(Request $request, $teacherCode)
+    public function showTrialBooking(Request $request, $subdomain, $teacherId)
     {
-        $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+        $academy = Academy::where('subdomain', $subdomain)->first();
         
         if (!$academy) {
             abort(404, 'Academy not found');
         }
 
-        $teacher = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('teacher_code', $teacherCode)
+        $teacher = QuranTeacherProfile::where('id', $teacherId)
+            ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->first();
@@ -109,22 +126,28 @@ class PublicQuranTeacherController extends Controller
             abort(404, 'Teacher not found');
         }
 
+        // Load student profile for the authenticated user
+        $user = Auth::user();
+        if ($user) {
+            $user->load('studentProfile');
+        }
+
         return view('public.quran-teachers.trial-booking', compact('academy', 'teacher'));
     }
 
     /**
      * Show subscription booking form
      */
-    public function showSubscriptionBooking(Request $request, $teacherCode, $packageId)
+    public function showSubscriptionBooking(Request $request, $subdomain, $teacherId, $packageId)
     {
-        $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+        $academy = Academy::where('subdomain', $subdomain)->first();
         
         if (!$academy) {
             abort(404, 'Academy not found');
         }
 
-        $teacher = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('teacher_code', $teacherCode)
+        $teacher = QuranTeacherProfile::where('id', $teacherId)
+            ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->first();
@@ -142,22 +165,28 @@ class PublicQuranTeacherController extends Controller
             abort(404, 'Package not found');
         }
 
+        // Load student profile for the authenticated user
+        $user = Auth::user();
+        if ($user) {
+            $user->load('studentProfile');
+        }
+
         return view('public.quran-teachers.subscription-booking', compact('academy', 'teacher', 'package'));
     }
 
     /**
      * Process trial session booking request
      */
-    public function submitTrialRequest(Request $request, $teacherCode)
+    public function submitTrialRequest(Request $request, $subdomain, $teacherId)
     {
-        $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+        $academy = Academy::where('subdomain', $subdomain)->first();
         
         if (!$academy) {
             abort(404, 'Academy not found');
         }
 
-        $teacher = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('teacher_code', $teacherCode)
+        $teacher = QuranTeacherProfile::where('id', $teacherId)
+            ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->first();
@@ -174,6 +203,13 @@ class PublicQuranTeacherController extends Controller
 
         $user = Auth::user();
 
+        // Debug: Log form submission
+        Log::info('Trial form submitted', [
+            'user_id' => $user->id,
+            'teacher_id' => $teacherId,
+            'form_data' => $request->all()
+        ]);
+
         // Check if student already has a trial request with this teacher
         $existingRequest = QuranTrialRequest::where('academy_id', $academy->id)
             ->where('student_id', $user->id)
@@ -188,23 +224,15 @@ class PublicQuranTeacherController extends Controller
 
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'student_name' => 'required|string|max:255',
-            'student_age' => 'nullable|integer|min:5|max:100',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'current_level' => 'required|in:beginner,basic,intermediate,advanced,expert',
+            'current_level' => 'required|in:beginner,elementary,intermediate,advanced,expert,hafiz',
             'learning_goals' => 'required|array|min:1',
             'learning_goals.*' => 'in:reading,tajweed,memorization,improvement',
             'preferred_time' => 'nullable|in:morning,afternoon,evening',
             'notes' => 'nullable|string|max:1000',
-            'agree_terms' => 'required|accepted',
         ], [
-            'student_name.required' => 'اسم الطالب مطلوب',
-            'phone.required' => 'رقم الهاتف مطلوب',
             'current_level.required' => 'المستوى الحالي مطلوب',
             'learning_goals.required' => 'يجب اختيار هدف واحد على الأقل',
             'learning_goals.min' => 'يجب اختيار هدف واحد على الأقل',
-            'agree_terms.required' => 'يجب الموافقة على الشروط والأحكام',
         ]);
 
         if ($validator->fails()) {
@@ -214,15 +242,18 @@ class PublicQuranTeacherController extends Controller
         }
 
         try {
+            // Get student profile for data
+            $studentProfile = $user->studentProfile;
+            
             // Create the trial request
             $trialRequest = QuranTrialRequest::create([
                 'academy_id' => $academy->id,
                 'student_id' => $user->id,
                 'teacher_id' => $teacher->id,
-                'student_name' => $request->student_name,
-                'student_age' => $request->student_age,
-                'phone' => $request->phone,
-                'email' => $request->email ?: $user->email,
+                'student_name' => $studentProfile->full_name ?? $user->name,
+                'student_age' => $studentProfile && $studentProfile->birth_date ? $studentProfile->birth_date->diffInYears(now()) : null,
+                'phone' => $studentProfile->phone ?? $user->phone,
+                'email' => $user->email,
                 'current_level' => $request->current_level,
                 'learning_goals' => $request->learning_goals,
                 'preferred_time' => $request->preferred_time,
@@ -234,12 +265,10 @@ class PublicQuranTeacherController extends Controller
             // TODO: Send notification to teacher
             // TODO: Send confirmation email to student
 
-            return redirect()->route('student.profile', ['subdomain' => $academy->subdomain])
+            return redirect()->route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])
                 ->with('success', 'تم إرسال طلب الجلسة التجريبية بنجاح! سيتواصل معك المعلم خلال 24 ساعة');
 
         } catch (\Exception $e) {
-            Log::error('Error creating trial request: ' . $e->getMessage());
-            
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى')
                 ->withInput();
@@ -249,16 +278,16 @@ class PublicQuranTeacherController extends Controller
     /**
      * Process subscription booking request
      */
-    public function submitSubscriptionRequest(Request $request, $teacherCode, $packageId)
+    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId)
     {
-        $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+        $academy = Academy::where('subdomain', $subdomain)->first();
         
         if (!$academy) {
             abort(404, 'Academy not found');
         }
 
-        $teacher = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('teacher_code', $teacherCode)
+        $teacher = QuranTeacherProfile::where('id', $teacherId)
+            ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->first();
@@ -284,29 +313,29 @@ class PublicQuranTeacherController extends Controller
 
         $user = Auth::user();
 
+        // Debug: Log form submission
+        Log::info('Subscription form submitted', [
+            'user_id' => $user->id,
+            'teacher_id' => $teacherId,
+            'package_id' => $packageId,
+            'form_data' => $request->all()
+        ]);
+
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'student_name' => 'required|string|max:255',
-            'student_age' => 'nullable|integer|min:5|max:100',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:255',
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
-            'current_level' => 'required|in:beginner,basic,intermediate,advanced,expert',
+            'current_level' => 'required|in:beginner,elementary,intermediate,advanced,expert,hafiz',
             'learning_goals' => 'required|array|min:1',
             'learning_goals.*' => 'in:reading,tajweed,memorization,improvement',
             'preferred_days' => 'nullable|array',
             'preferred_days.*' => 'in:saturday,sunday,monday,tuesday,wednesday,thursday,friday',
             'preferred_time' => 'nullable|in:morning,afternoon,evening',
             'notes' => 'nullable|string|max:1000',
-            'agree_terms' => 'required|accepted',
         ], [
-            'student_name.required' => 'اسم الطالب مطلوب',
-            'phone.required' => 'رقم الهاتف مطلوب',
             'billing_cycle.required' => 'دورة الفوترة مطلوبة',
             'current_level.required' => 'المستوى الحالي مطلوب',
             'learning_goals.required' => 'يجب اختيار هدف واحد على الأقل',
             'learning_goals.min' => 'يجب اختيار هدف واحد على الأقل',
-            'agree_terms.required' => 'يجب الموافقة على الشروط والأحكام',
         ]);
 
         if ($validator->fails()) {
@@ -316,24 +345,49 @@ class PublicQuranTeacherController extends Controller
         }
 
         try {
+            // Log start of subscription process
+            Log::info('Starting subscription creation process', [
+                'user_id' => $user->id,
+                'teacher_id' => $teacherId,
+                'package_id' => $packageId,
+                'billing_cycle' => $request->billing_cycle,
+                'current_level' => $request->current_level
+            ]);
+
             // Calculate the price based on billing cycle
             $price = $package->getPriceForBillingCycle($request->billing_cycle);
             
             if (!$price) {
+                Log::warning('Invalid billing cycle for package', [
+                    'package_id' => $packageId,
+                    'billing_cycle' => $request->billing_cycle,
+                    'available_prices' => [
+                        'monthly' => $package->monthly_price,
+                        'quarterly' => $package->quarterly_price,
+                        'yearly' => $package->yearly_price
+                    ]
+                ]);
                 return redirect()->back()
                     ->with('error', 'دورة الفوترة المختارة غير متاحة لهذه الباقة')
                     ->withInput();
             }
+
+            Log::info('Price calculated successfully', ['price' => $price, 'billing_cycle' => $request->billing_cycle]);
 
             // Check if student already has active subscription with this teacher
             $existingSubscription = QuranSubscription::where('academy_id', $academy->id)
                 ->where('student_id', $user->id)
                 ->where('quran_teacher_id', $teacher->id)
                 ->whereIn('subscription_status', ['active', 'pending'])
-                ->whereIn('payment_status', ['current', 'pending'])
+                ->whereIn('payment_status', ['paid', 'current', 'pending'])
                 ->first();
 
             if ($existingSubscription) {
+                Log::warning('Student already has active subscription', [
+                    'existing_subscription_id' => $existingSubscription->id,
+                    'student_id' => $user->id,
+                    'teacher_id' => $teacherId
+                ]);
                 return redirect()->back()
                     ->with('error', 'لديك اشتراك نشط أو معلق مع هذا المعلم')
                     ->withInput();
@@ -348,23 +402,32 @@ class PublicQuranTeacherController extends Controller
                 default => $startDate->copy()->addMonth(),
             };
 
-            // Create the subscription
-            $subscription = QuranSubscription::create([
+            Log::info('Subscription dates calculated', [
+                'start_date' => $startDate->toDateTimeString(),
+                'end_date' => $endDate->toDateTimeString()
+            ]);
+
+            // Get student profile for data
+            $studentProfile = $user->studentProfile;
+            
+            // Prepare subscription data
+            $subscriptionData = [
                 'academy_id' => $academy->id,
                 'student_id' => $user->id,
                 'quran_teacher_id' => $teacher->id,
                 'package_id' => $package->id,
-                'subscription_type' => 'private', // Default to private sessions
+                'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
+                'subscription_type' => 'individual', // Default to individual sessions
                 'total_sessions' => $package->sessions_per_month,
                 'sessions_used' => 0,
                 'sessions_remaining' => $package->sessions_per_month,
                 'total_price' => $price,
                 'discount_amount' => 0,
                 'final_price' => $price,
-                'currency' => $package->currency ?? $academy->currency ?? 'SAR',
+                'currency' => $package->getFormattedCurrency(),
                 'billing_cycle' => $request->billing_cycle,
-                'payment_status' => 'pending',
-                'subscription_status' => 'pending',
+                'payment_status' => 'pending', // Start with pending, then update to paid after fake payment
+                'subscription_status' => 'pending', // Start with pending
                 'trial_sessions' => 0,
                 'trial_used' => 0,
                 'is_trial_active' => false,
@@ -379,28 +442,68 @@ class PublicQuranTeacherController extends Controller
                 'next_payment_at' => $endDate,
                 'notes' => $request->notes,
                 'metadata' => [
-                    'student_name' => $request->student_name,
-                    'student_age' => $request->student_age,
-                    'phone' => $request->phone,
-                    'email' => $request->email ?: $user->email,
+                    'student_name' => $studentProfile->full_name ?? $user->name,
+                    'student_age' => $studentProfile && $studentProfile->birth_date ? $studentProfile->birth_date->diffInYears(now()) : null,
+                    'phone' => $studentProfile->phone ?? $user->phone,
+                    'email' => $user->email,
                     'learning_goals' => $request->learning_goals,
                     'preferred_days' => $request->preferred_days,
                     'preferred_time' => $request->preferred_time,
                 ],
                 'created_by' => $user->id,
+            ];
+
+            Log::info('Creating subscription with data', ['subscription_data' => $subscriptionData]);
+            
+            // Create the subscription
+            $subscription = QuranSubscription::create($subscriptionData);
+
+            Log::info('Subscription created successfully', ['subscription_id' => $subscription->id]);
+
+            // Simulate fake payment processing
+            Log::info('Simulating payment processing for subscription', ['subscription_id' => $subscription->id]);
+            
+            // Update subscription to mark as paid and active (fake payment success)
+            $subscription->update([
+                'payment_status' => 'paid',
+                'subscription_status' => 'active',
+                'last_payment_at' => now()
             ]);
 
-            // Redirect to payment page
-            return redirect()->route('quran.subscription.payment', [
+            Log::info('Fake payment processed successfully', [
+                'subscription_id' => $subscription->id,
+                'final_status' => 'active',
+                'payment_status' => 'paid'
+            ]);
+
+            // Redirect back to teacher profile with success message
+            return redirect()->route('public.quran-teachers.show', [
                 'subdomain' => $academy->subdomain, 
-                'subscription' => $subscription->id
-            ])->with('success', 'تم إنشاء الاشتراك بنجاح! يرجى إكمال عملية الدفع');
+                'teacher' => $teacher->id
+            ])->with('success', 'تم إنشاء الاشتراك بنجاح! تم قبول الدفع وأصبح الاشتراك نشطاً. يمكنك الآن حجز الجلسات مع المعلم');
 
         } catch (\Exception $e) {
-            Log::error('Error creating subscription request: ' . $e->getMessage());
+            // Log the actual error for debugging with more context
+            Log::error('Subscription creation failed', [
+                'user_id' => $user->id,
+                'teacher_id' => $teacherId,
+                'package_id' => $packageId,
+                'academy_id' => $academy->id,
+                'request_data' => $request->all(),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+            
+            // Return a more helpful error message in development
+            $errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى';
+            if (config('app.debug')) {
+                $errorMessage .= ' - ' . $e->getMessage();
+            }
             
             return redirect()->back()
-                ->with('error', 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى')
+                ->with('error', $errorMessage)
                 ->withInput();
         }
     }

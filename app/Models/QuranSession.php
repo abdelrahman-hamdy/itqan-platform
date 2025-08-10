@@ -72,7 +72,23 @@ class QuranSession extends Model
         'follow_up_required',
         'follow_up_notes',
         'created_by',
-        'updated_by'
+        'updated_by',
+        // New fields for individual circles and templates
+        'individual_circle_id',
+        'is_template',
+        'is_generated',
+        'generated_from_schedule_id',
+        'is_scheduled',
+        'teacher_scheduled_at',
+        'scheduled_by',
+        'session_sequence',
+        // New meeting platform fields
+        'meeting_source',
+        'meeting_platform',
+        'meeting_data',
+        'meeting_room_name',
+        'meeting_auto_generated',
+        'meeting_expires_at',
     ];
 
     protected $casts = [
@@ -82,6 +98,8 @@ class QuranSession extends Model
         'cancelled_at' => 'datetime',
         'rescheduled_from' => 'datetime',
         'rescheduled_to' => 'datetime',
+        'teacher_scheduled_at' => 'datetime',
+        'meeting_expires_at' => 'datetime',
         'duration_minutes' => 'integer',
         'actual_duration_minutes' => 'integer',
         'participants_count' => 'integer',
@@ -90,6 +108,7 @@ class QuranSession extends Model
         'verses_covered_start' => 'integer',
         'verses_covered_end' => 'integer',
         'verses_memorized_today' => 'integer',
+        'session_sequence' => 'integer',
         'recitation_quality' => 'decimal:1',
         'tajweed_accuracy' => 'decimal:1',
         'mistakes_count' => 'integer',
@@ -97,13 +116,18 @@ class QuranSession extends Model
         'recording_enabled' => 'boolean',
         'is_makeup_session' => 'boolean',
         'follow_up_required' => 'boolean',
+        'is_template' => 'boolean',
+        'is_generated' => 'boolean',
+        'is_scheduled' => 'boolean',
+        'meeting_auto_generated' => 'boolean',
         'lesson_objectives' => 'array',
         'common_mistakes' => 'array',
         'areas_for_improvement' => 'array',
         'homework_assigned' => 'array',
         'materials_used' => 'array',
         'learning_outcomes' => 'array',
-        'assessment_results' => 'array'
+        'assessment_results' => 'array',
+        'meeting_data' => 'array'
     ];
 
     // Relationships
@@ -125,6 +149,21 @@ class QuranSession extends Model
     public function circle(): BelongsTo
     {
         return $this->belongsTo(QuranCircle::class);
+    }
+
+    public function individualCircle(): BelongsTo
+    {
+        return $this->belongsTo(QuranIndividualCircle::class, 'individual_circle_id');
+    }
+
+    public function generatedFromSchedule(): BelongsTo
+    {
+        return $this->belongsTo(QuranCircleSchedule::class, 'generated_from_schedule_id');
+    }
+
+    public function scheduledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'scheduled_by');
     }
 
     public function student(): BelongsTo
@@ -474,7 +513,7 @@ class QuranSession extends Model
         return $this;
     }
 
-    public function cancel(string $reason, User $cancelledBy = null): self
+    public function cancel(string $reason, ?User $cancelledBy = null): self
     {
         if (!$this->can_cancel) {
             throw new \Exception('لا يمكن إلغاء الجلسة في هذا الوقت');
@@ -573,19 +612,264 @@ class QuranSession extends Model
         ]));
     }
 
-    public function generateMeetingLink(): string
+    public function generateMeetingLink(array $options = []): string
     {
-        // This would integrate with Google Meet API or similar
-        // For now, return a placeholder
-        $meetingId = 'meet-' . $this->session_code . '-' . uniqid();
-        $meetingLink = "https://meet.google.com/{$meetingId}";
+        $livekitService = app(\App\Services\LiveKitService::class);
         
+        // Set default options
+        $defaultOptions = [
+            'recording_enabled' => $this->recording_enabled ?? false,
+            'max_participants' => $options['max_participants'] ?? 50,
+            'max_duration' => $this->duration_minutes ?? 120, // Use session duration
+            'session_type' => $this->session_type,
+        ];
+        
+        $mergedOptions = array_merge($defaultOptions, $options);
+        
+        // Generate meeting using LiveKit service
+        $meetingInfo = $livekitService->createMeeting(
+            $this->academy,
+            $this->session_type ?? 'quran',
+            $this->id,
+            $this->scheduled_at ?? now(),
+            $mergedOptions
+        );
+        
+        // Update session with meeting info
         $this->update([
-            'meeting_id' => $meetingId,
-            'meeting_link' => $meetingLink
+            'meeting_link' => $meetingInfo['meeting_url'],
+            'meeting_id' => $meetingInfo['meeting_id'],
+            'meeting_platform' => $meetingInfo['platform'],
+            'meeting_source' => $meetingInfo['platform'],
+            'meeting_data' => $meetingInfo,
+            'meeting_room_name' => $meetingInfo['room_name'],
+            'meeting_auto_generated' => true,
+            'meeting_expires_at' => $meetingInfo['expires_at'],
         ]);
 
-        return $meetingLink;
+        return $meetingInfo['meeting_url'];
+    }
+
+    /**
+     * Get meeting join information
+     */
+    public function getMeetingInfo(): ?array
+    {
+        if (!$this->meeting_data) {
+            return null;
+        }
+
+        return $this->meeting_data;
+    }
+
+    /**
+     * Check if meeting is still valid
+     */
+    public function isMeetingValid(): bool
+    {
+        if (!$this->meeting_link) {
+            return false;
+        }
+
+        if ($this->meeting_expires_at && $this->meeting_expires_at->isPast()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get meeting join URL for display
+     */
+    public function getMeetingJoinUrl(): ?string
+    {
+        if (!$this->isMeetingValid()) {
+            return null;
+        }
+
+        return $this->meeting_link;
+    }
+
+    /**
+     * Generate participant access token for LiveKit room
+     */
+    public function generateParticipantToken(User $user, array $permissions = []): string
+    {
+        if (!$this->meeting_room_name) {
+            throw new \Exception('Meeting room not created yet');
+        }
+
+        $livekitService = app(\App\Services\LiveKitService::class);
+        
+        // Set permissions based on user role
+        $defaultPermissions = [
+            'can_publish' => true,
+            'can_subscribe' => true,
+            'can_update_metadata' => in_array($user->user_type, ['quran_teacher', 'academic_teacher']),
+        ];
+        
+        $mergedPermissions = array_merge($defaultPermissions, $permissions);
+        
+        return $livekitService->generateParticipantToken(
+            $this->meeting_room_name,
+            $user,
+            $mergedPermissions
+        );
+    }
+
+    /**
+     * Start recording for this session
+     */
+    public function startRecording(array $options = []): array
+    {
+        if (!$this->meeting_room_name) {
+            throw new \Exception('Meeting room not created yet');
+        }
+
+        $livekitService = app(\App\Services\LiveKitService::class);
+        
+        $recordingOptions = [
+            'layout' => $options['layout'] ?? 'grid',
+            'video_quality' => $options['video_quality'] ?? 'high',
+            'audio_only' => $options['audio_only'] ?? false,
+        ];
+        
+        $recordingInfo = $livekitService->startRecording($this->meeting_room_name, $recordingOptions);
+        
+        // Update session with recording info
+        $meetingData = $this->meeting_data ?? [];
+        $meetingData['recording'] = $recordingInfo;
+        
+        $this->update([
+            'recording_url' => $recordingInfo['recording_id'], // Temporary until file is ready
+            'meeting_data' => $meetingData,
+        ]);
+        
+        return $recordingInfo;
+    }
+
+    /**
+     * Stop recording for this session
+     */
+    public function stopRecording(): array
+    {
+        if (!$this->meeting_data || !isset($this->meeting_data['recording'])) {
+            throw new \Exception('No active recording found');
+        }
+
+        $livekitService = app(\App\Services\LiveKitService::class);
+        $recordingId = $this->meeting_data['recording']['recording_id'];
+        
+        $result = $livekitService->stopRecording($recordingId);
+        
+        // Update session with final recording info
+        $meetingData = $this->meeting_data;
+        $meetingData['recording'] = array_merge($meetingData['recording'], $result);
+        
+        $this->update([
+            'recording_url' => $result['file_info']['download_url'] ?? null,
+            'meeting_data' => $meetingData,
+        ]);
+        
+        return $result;
+    }
+
+    /**
+     * Get current room information and participants
+     */
+    public function getRoomInfo(): ?array
+    {
+        if (!$this->meeting_room_name) {
+            return null;
+        }
+
+        $livekitService = app(\App\Services\LiveKitService::class);
+        
+        return $livekitService->getRoomInfo($this->meeting_room_name);
+    }
+
+    /**
+     * End the meeting and clean up room
+     */
+    public function endMeeting(): bool
+    {
+        if (!$this->meeting_room_name) {
+            return false;
+        }
+
+        $livekitService = app(\App\Services\LiveKitService::class);
+        
+        $success = $livekitService->endMeeting($this->meeting_room_name);
+        
+        if ($success) {
+            $this->update([
+                'ended_at' => now(),
+                'status' => 'completed',
+            ]);
+        }
+        
+        return $success;
+    }
+
+    /**
+     * Set meeting duration limit
+     */
+    public function setMeetingDuration(int $durationMinutes): bool
+    {
+        if (!$this->meeting_room_name) {
+            return false;
+        }
+
+        $livekitService = app(\App\Services\LiveKitService::class);
+        
+        $success = $livekitService->setMeetingDuration($this->meeting_room_name, $durationMinutes);
+        
+        if ($success) {
+            $this->update(['duration_minutes' => $durationMinutes]);
+        }
+        
+        return $success;
+    }
+
+    /**
+     * Check if user is currently in the meeting room
+     */
+    public function isUserInMeeting(User $user): bool
+    {
+        $roomInfo = $this->getRoomInfo();
+        
+        if (!$roomInfo || !isset($roomInfo['participants'])) {
+            return false;
+        }
+        
+        $userIdentity = $user->id . '_' . \Str::slug($user->first_name . '_' . $user->last_name);
+        
+        foreach ($roomInfo['participants'] as $participant) {
+            if ($participant['id'] === $userIdentity) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Get meeting statistics
+     */
+    public function getMeetingStats(): array
+    {
+        $roomInfo = $this->getRoomInfo();
+        $meetingData = $this->meeting_data ?? [];
+        
+        return [
+            'is_active' => $roomInfo ? $roomInfo['is_active'] : false,
+            'participant_count' => $roomInfo ? $roomInfo['participant_count'] : 0,
+            'participants' => $roomInfo ? $roomInfo['participants'] : [],
+            'duration_so_far' => $this->started_at ? now()->diffInMinutes($this->started_at) : 0,
+            'scheduled_duration' => $this->duration_minutes,
+            'recording_active' => isset($meetingData['recording']) && $meetingData['recording']['status'] === 'recording',
+            'room_created_at' => $roomInfo ? $roomInfo['created_at'] : null,
+        ];
     }
 
     public function addFeedback(string $feedbackType, string $feedback, User $feedbackBy = null): self
@@ -640,8 +924,18 @@ class QuranSession extends Model
 
     private static function generateSessionCode(int $academyId): string
     {
-        $count = self::where('academy_id', $academyId)->count() + 1;
-        return 'QSE-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+        $attempt = 0;
+        do {
+            $attempt++;
+            $count = self::where('academy_id', $academyId)->count() + $attempt;
+            $sessionCode = 'QSE-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+        } while (
+            self::where('academy_id', $academyId)
+                ->where('session_code', $sessionCode)
+                ->exists() && $attempt < 100
+        );
+        
+        return $sessionCode;
     }
 
     public static function getTodaysSessions(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection

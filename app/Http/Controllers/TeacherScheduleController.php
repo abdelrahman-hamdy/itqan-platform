@@ -94,7 +94,7 @@ class TeacherScheduleController extends Controller
             ->first();
 
         if (!$trialRequest) {
-            return redirect()->route('teacher.schedule.index')
+            return redirect()->route('teacher.schedule.dashboard', ['subdomain' => $academy->subdomain])
                 ->with('error', 'لم يتم العثور على طلب الجلسة التجريبية');
         }
 
@@ -195,7 +195,7 @@ class TeacherScheduleController extends Controller
                 $trialRequest->update(['trial_session_id' => $session->id]);
             });
 
-            return redirect()->route('teacher.schedule.index')
+            return redirect()->route('teacher.schedule.dashboard', ['subdomain' => $academy->subdomain])
                 ->with('success', 'تم جدولة الجلسة التجريبية بنجاح! سيتم إرسال تنبيه للطالب');
 
         } catch (\Exception $e) {
@@ -223,7 +223,7 @@ class TeacherScheduleController extends Controller
             ->first();
 
         if (!$subscription) {
-            return redirect()->route('teacher.schedule.index')
+            return redirect()->route('teacher.schedule.dashboard', ['subdomain' => $academy->subdomain])
                 ->with('error', 'لم يتم العثور على الاشتراك');
         }
 
@@ -340,7 +340,7 @@ class TeacherScheduleController extends Controller
                 }
             });
 
-            return redirect()->route('teacher.schedule.index')
+            return redirect()->route('teacher.schedule.dashboard', ['subdomain' => $academy->subdomain])
                 ->with('success', 'تم إعداد جدول الجلسات بنجاح! تم إنشاء ' . count($request->sessions) . ' جلسة منتظمة');
 
         } catch (\Exception $e) {
@@ -422,5 +422,83 @@ class TeacherScheduleController extends Controller
         ];
 
         return $days[$day] ?? 0;
+    }
+
+    /**
+     * Approve a trial request
+     */
+    public function approveTrialRequest(Request $request, $trialRequestId)
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        if (!$user->isQuranTeacher()) {
+            abort(403, 'Access denied');
+        }
+
+        $teacherProfile = $user->quranTeacherProfile;
+        if (!$teacherProfile) {
+            abort(404, 'Teacher profile not found');
+        }
+
+        $trialRequest = QuranTrialRequest::where('id', $trialRequestId)
+            ->where('teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->first();
+
+        if (!$trialRequest) {
+            abort(404, 'Trial request not found');
+        }
+
+        if ($trialRequest->status !== 'pending') {
+            return back()->with('error', 'لا يمكن تعديل هذا الطلب');
+        }
+
+        $trialRequest->update([
+            'status' => 'approved',
+            'teacher_response' => 'تم قبول الطلب',
+            'responded_at' => now()
+        ]);
+
+        return back()->with('success', 'تم قبول طلب الجلسة التجريبية بنجاح');
+    }
+
+    /**
+     * Reject a trial request
+     */
+    public function rejectTrialRequest(Request $request, $trialRequestId)
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        if (!$user->isQuranTeacher()) {
+            abort(403, 'Access denied');
+        }
+
+        $teacherProfile = $user->quranTeacherProfile;
+        if (!$teacherProfile) {
+            abort(404, 'Teacher profile not found');
+        }
+
+        $trialRequest = QuranTrialRequest::where('id', $trialRequestId)
+            ->where('teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->first();
+
+        if (!$trialRequest) {
+            abort(404, 'Trial request not found');
+        }
+
+        if ($trialRequest->status !== 'pending') {
+            return back()->with('error', 'لا يمكن تعديل هذا الطلب');
+        }
+
+        $trialRequest->update([
+            'status' => 'rejected',
+            'teacher_response' => 'تم رفض الطلب',
+            'responded_at' => now()
+        ]);
+
+        return back()->with('success', 'تم رفض طلب الجلسة التجريبية');
     }
 }

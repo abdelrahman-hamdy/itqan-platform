@@ -24,9 +24,7 @@ class CreateQuranSubscription extends CreateRecord
         $data['created_by'] = Auth::id();
         
         // Generate subscription code
-        $academyId = $data['academy_id'];
-        $count = \App\Models\QuranSubscription::where('academy_id', $academyId)->count() + 1;
-        $data['subscription_code'] = 'QS-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+        $data['subscription_code'] = \App\Models\QuranSubscription::generateSubscriptionCode($data['academy_id']);
         
         // Calculate derived fields
         $data['total_price'] = $data['price_per_session'] * $data['total_sessions'];

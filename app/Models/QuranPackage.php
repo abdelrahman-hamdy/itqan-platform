@@ -94,4 +94,14 @@ class QuranPackage extends Model
     {
         return app()->getLocale() === 'ar' ? $this->description_ar : $this->description_en;
     }
+
+    public function getFormattedCurrency(): string
+    {
+        return 'SAR';
+    }
+
+    public function getDisplayCurrency(): string
+    {
+        return 'ريال';
+    }
 } 

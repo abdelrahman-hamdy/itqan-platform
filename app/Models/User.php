@@ -27,6 +27,7 @@ use App\Models\AcademicSubject;
 
 // Course and Circle Models
 use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\CourseSubscription;
 
@@ -70,6 +71,18 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     const STATUS_SUSPENDED = 'suspended';
 
     /**
+     * Check if user has any of the specified roles
+     */
+    public function hasRole($roles): bool
+    {
+        if (is_string($roles)) {
+            $roles = [$roles];
+        }
+        
+        return in_array($this->user_type, $roles);
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -93,6 +106,32 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'phone_verification_token',
         'password_reset_token',
         'remember_token',
+        
+        // Google OAuth and integration fields
+        'google_id',
+        'google_email',
+        'google_connected_at',
+        'google_disconnected_at',
+        'google_calendar_enabled',
+        'google_permissions',
+        'meeting_preferences',
+        'auto_create_meetings',
+        'meeting_prep_minutes',
+        'notify_on_google_disconnect',
+        'notify_admin_on_disconnect',
+        
+        // Teacher Google preferences
+        'teacher_auto_record',
+        'teacher_default_duration',
+        'teacher_meeting_prep_minutes',
+        'teacher_send_reminders',
+        'teacher_reminder_times',
+        'sync_to_google_calendar',
+        'allow_calendar_conflicts',
+        'calendar_visibility',
+        'notify_on_student_join',
+        'notify_on_session_end',
+        'notification_method',
     ];
 
     /**
@@ -121,6 +160,28 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             'profile_completed_at' => 'datetime',
             'password' => 'hashed',
             'active_status' => 'boolean',
+            
+            // Google OAuth fields
+            'google_connected_at' => 'datetime',
+            'google_disconnected_at' => 'datetime',
+            'google_calendar_enabled' => 'boolean',
+            'google_permissions' => 'array',
+            'meeting_preferences' => 'array',
+            'auto_create_meetings' => 'boolean',
+            'meeting_prep_minutes' => 'integer',
+            'notify_on_google_disconnect' => 'boolean',
+            'notify_admin_on_disconnect' => 'boolean',
+            
+            // Teacher Google preferences
+            'teacher_auto_record' => 'boolean',
+            'teacher_default_duration' => 'integer',
+            'teacher_meeting_prep_minutes' => 'integer',
+            'teacher_send_reminders' => 'boolean',
+            'teacher_reminder_times' => 'array',
+            'sync_to_google_calendar' => 'boolean',
+            'allow_calendar_conflicts' => 'boolean',
+            'notify_on_student_join' => 'boolean',
+            'notify_on_session_end' => 'boolean',
         ];
     }
 
@@ -237,6 +298,14 @@ class User extends Authenticatable implements FilamentUser, HasTenants
                         'certificate_issued'
                     ])
                     ->withTimestamps();
+    }
+
+    /**
+     * Individual Quran circles that this user (student) is enrolled in
+     */
+    public function quranIndividualCircles(): HasMany
+    {
+        return $this->hasMany(QuranIndividualCircle::class, 'student_id');
     }
 
     /**

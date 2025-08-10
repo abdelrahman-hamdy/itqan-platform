@@ -69,7 +69,7 @@ class QuranCircleController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $circles,
-                'message' => 'قائمة دوائر القرآن تم جلبها بنجاح'
+                'message' => 'قائمة حلقات القرآن تم جلبها بنجاح'
             ]);
         }
 
@@ -109,13 +109,13 @@ class QuranCircleController extends Controller
             'target_age_group' => 'required|in:children,teenagers,adults,seniors,mixed',
             'min_age' => 'required|integer|min:5|max:80',
             'max_age' => 'required|integer|min:5|max:80|gte:min_age',
-            'max_students' => 'required|integer|min:3|max:15',
+            'max_students' => 'required|integer|min:3|max:100',
             'price_per_student' => 'required|numeric|min:0|max:300',
             'billing_cycle' => 'required|in:weekly,monthly,quarterly,yearly',
             'day_of_week' => 'required|in:saturday,sunday,monday,tuesday,wednesday,thursday,friday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'duration_minutes' => 'required|integer|min:30|max:120',
+            'duration_minutes' => 'required|integer|in:30,60',
             'circle_type' => 'required|in:memorization,recitation,interpretation,general',
             'curriculum_focus' => 'nullable|array',
             'learning_objectives' => 'nullable|array',
@@ -164,7 +164,7 @@ class QuranCircleController extends Controller
                 'enrolled_students' => 0,
                 'sessions_completed' => 0,
                 'currency' => $teacher->currency,
-                'status' => 'draft',
+                'status' => 'planning',
                 'enrollment_status' => 'closed',
                 'completion_rate' => 0,
                 'average_rating' => 0,
@@ -290,13 +290,13 @@ class QuranCircleController extends Controller
             'target_age_group' => 'required|in:children,teenagers,adults,seniors,mixed',
             'min_age' => 'required|integer|min:5|max:80',
             'max_age' => 'required|integer|min:5|max:80|gte:min_age',
-            'max_students' => 'required|integer|min:3|max:15',
+            'max_students' => 'required|integer|min:3|max:100',
             'price_per_student' => 'required|numeric|min:0|max:300',
             'billing_cycle' => 'required|in:weekly,monthly,quarterly,yearly',
             'day_of_week' => 'required|in:saturday,sunday,monday,tuesday,wednesday,thursday,friday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'duration_minutes' => 'required|integer|min:30|max:120',
+            'duration_minutes' => 'required|integer|in:30,60',
             'curriculum_focus' => 'nullable|array',
             'learning_objectives' => 'nullable|array',
             'prerequisites' => 'nullable|string|max:500',
@@ -308,7 +308,7 @@ class QuranCircleController extends Controller
             'meeting_link' => 'nullable|url',
             'materials_required' => 'nullable|array',
             'notes' => 'nullable|string|max:1000',
-            'status' => 'nullable|in:draft,published,active,completed,cancelled,suspended',
+            'status' => 'nullable|in:planning,inactive,pending,active,ongoing,completed,cancelled,suspended',
         ]);
 
         try {
@@ -350,12 +350,12 @@ class QuranCircleController extends Controller
         $this->ensureCircleBelongsToAcademy($circle);
         
         try {
-            if ($circle->status !== 'draft') {
-                throw new \Exception('لا يمكن نشر هذه الدائرة في حالتها الحالية');
+            if ($circle->status !== 'planning') {
+                throw new \Exception('لا يمكن تفعيل هذه الدائرة في حالتها الحالية');
             }
 
             $circle->update([
-                'status' => 'published',
+                'status' => 'pending',
                 'enrollment_status' => 'open',
             ]);
 
@@ -389,7 +389,7 @@ class QuranCircleController extends Controller
         $this->ensureCircleBelongsToAcademy($circle);
         
         try {
-            if (!in_array($circle->status, ['published', 'draft'])) {
+            if (!in_array($circle->status, ['pending', 'planning'])) {
                 throw new \Exception('لا يمكن بدء هذه الدائرة في حالتها الحالية');
             }
 
@@ -622,7 +622,7 @@ class QuranCircleController extends Controller
         
         $query = QuranCircle::with('quranTeacher.user')
             ->where('academy_id', $academy->id)
-            ->where('status', 'published')
+            ->where('status', 'pending')
             ->where('enrollment_status', 'open')
             ->whereRaw('enrolled_students < max_students');
 
@@ -643,7 +643,7 @@ class QuranCircleController extends Controller
         return response()->json([
             'success' => true,
             'data' => $circles,
-            'message' => 'تم جلب الدوائر المتاحة للتسجيل بنجاح'
+            'message' => 'تم جلب الحلقات المتاحة للتسجيل بنجاح'
         ]);
     }
 

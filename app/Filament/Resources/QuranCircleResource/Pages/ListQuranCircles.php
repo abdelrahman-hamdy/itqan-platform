@@ -20,6 +20,6 @@ class ListQuranCircles extends ListRecords
 
     public function getTitle(): string
     {
-        return 'دوائر القرآن الكريم';
+        return 'حلقات القرآن الكريم';
     }
 } 

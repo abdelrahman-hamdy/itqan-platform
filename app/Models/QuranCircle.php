@@ -31,6 +31,7 @@ class QuranCircle extends Model
         'enrolled_students',
         'min_students_to_start',
         'session_duration_minutes',
+        'monthly_sessions_count',
         'schedule_days',
         'schedule_time',
         'timezone',
@@ -154,6 +155,11 @@ class QuranCircle extends Model
         return $this->hasMany(QuranSession::class, 'circle_id');
     }
 
+    public function schedule(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(QuranCircleSchedule::class, 'circle_id');
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(QuranCircleEnrollment::class);
@@ -243,12 +249,20 @@ class QuranCircle extends Model
     // Accessors
     public function getNameAttribute(): string
     {
-        return app()->getLocale() === 'ar' ? $this->name_ar : $this->name_en;
+        $locale = app()->getLocale();
+        if ($locale === 'ar') {
+            return $this->name_ar ?? $this->name_en ?? 'حلقة غير محددة';
+        }
+        return $this->name_en ?? $this->name_ar ?? 'Unnamed Circle';
     }
 
     public function getDescriptionAttribute(): string
     {
-        return app()->getLocale() === 'ar' ? $this->description_ar : $this->description_en;
+        $locale = app()->getLocale();
+        if ($locale === 'ar') {
+            return $this->description_ar ?? $this->description_en ?? 'لا يوجد وصف';
+        }
+        return $this->description_en ?? $this->description_ar ?? 'No description';
     }
 
     public function getStatusTextAttribute(): string
@@ -685,7 +699,7 @@ class QuranCircle extends Model
     {
         return self::create(array_merge($data, [
             'circle_code' => self::generateCircleCode($data['academy_id']),
-            'current_students' => 0,
+            'enrolled_students' => 0,
             'sessions_completed' => 0,
             'avg_rating' => 0,
             'total_reviews' => 0,

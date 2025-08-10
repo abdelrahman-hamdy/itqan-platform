@@ -39,7 +39,7 @@
         </div>
 
         <!-- Back Button -->
-        <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherCode' => $teacher->teacher_code]) }}" 
+        <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" 
            class="text-gray-600 hover:text-primary transition-colors">
           <i class="ri-arrow-right-line text-xl"></i>
         </a>
@@ -54,13 +54,7 @@
       <!-- Teacher Info -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
         <div class="flex items-center gap-4">
-          <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xl font-bold">
-            @if($teacher->avatar)
-              <img src="{{ asset('storage/' . $teacher->avatar) }}" alt="{{ $teacher->full_name }}" class="w-full h-full rounded-full object-cover">
-            @else
-              {{ substr($teacher->first_name, 0, 1) }}{{ substr($teacher->last_name, 0, 1) }}
-            @endif
-          </div>
+          <x-teacher-avatar :teacher="$teacher" size="lg" />
           <div>
             <h2 class="text-xl font-bold text-gray-900">{{ $teacher->full_name }}</h2>
             <p class="text-gray-600">معلم القرآن الكريم المعتمد</p>
@@ -79,46 +73,72 @@
           <p class="text-gray-600">املأ النموذج أدناه وسيقوم المعلم بالتواصل معك لتحديد موعد الجلسة التجريبية</p>
         </div>
 
-        <form action="{{ route('public.quran-teachers.trial.submit', ['subdomain' => $academy->subdomain, 'teacherCode' => $teacher->teacher_code]) }}" method="POST" class="space-y-6">
+        <form action="{{ route('public.quran-teachers.trial.submit', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" method="POST" class="space-y-6">
           @csrf
           <input type="hidden" name="teacher_id" value="{{ $teacher->id }}">
           <input type="hidden" name="academy_id" value="{{ $academy->id }}">
 
-          <!-- Student Info -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label for="student_name" class="block text-sm font-medium text-gray-700 mb-2">اسم الطالب *</label>
-              <input type="text" id="student_name" name="student_name" required
-                     value="{{ auth()->user()->name ?? '' }}"
-                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+          <!-- Error Messages -->
+          @if ($errors->any())
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              <div class="flex">
+                <i class="ri-error-warning-line text-red-500 mt-0.5 ml-2"></i>
+                <div>
+                  <h4 class="font-medium mb-1">يرجى تصحيح الأخطاء التالية:</h4>
+                  <ul class="text-sm space-y-1">
+                    @foreach ($errors->all() as $error)
+                      <li>• {{ $error }}</li>
+                    @endforeach
+                  </ul>
+                </div>
+              </div>
             </div>
-            
-            <div>
-              <label for="student_age" class="block text-sm font-medium text-gray-700 mb-2">عمر الطالب</label>
-              <select id="student_age" name="student_age"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-                <option value="">اختر العمر</option>
-                @for($i = 5; $i <= 50; $i++)
-                  <option value="{{ $i }}">{{ $i }} سنة</option>
-                @endfor
-              </select>
-            </div>
-          </div>
+          @endif
 
-          <!-- Contact Info -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف *</label>
-              <input type="tel" id="phone" name="phone" required
-                     value="{{ auth()->user()->phone ?? '' }}"
-                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+          <!-- Success Messages -->
+          @if (session('success'))
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
+              <div class="flex">
+                <i class="ri-check-line text-green-500 mt-0.5 ml-2"></i>
+                <div>{{ session('success') }}</div>
+              </div>
             </div>
-            
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
-              <input type="email" id="email" name="email"
-                     value="{{ auth()->user()->email ?? '' }}"
-                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+          @endif
+
+          <!-- Error Messages -->
+          @if (session('error'))
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              <div class="flex">
+                <i class="ri-error-warning-line text-red-500 mt-0.5 ml-2"></i>
+                <div>{{ session('error') }}</div>
+              </div>
+            </div>
+          @endif
+
+          <!-- Student Info Display -->
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+            <h4 class="font-semibold text-gray-900 mb-3">معلومات الطالب</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-gray-600">الاسم:</span>
+                <span class="font-medium">{{ auth()->user()->studentProfile?->full_name ?? auth()->user()->name }}</span>
+              </div>
+              <div>
+                <span class="text-gray-600">البريد الإلكتروني:</span>
+                <span class="font-medium">{{ auth()->user()->email }}</span>
+              </div>
+              @if(auth()->user()->studentProfile?->phone)
+              <div>
+                <span class="text-gray-600">رقم الهاتف:</span>
+                <span class="font-medium">{{ auth()->user()->studentProfile->phone }}</span>
+              </div>
+              @endif
+              @if(auth()->user()->studentProfile?->birth_date)
+              <div>
+                <span class="text-gray-600">العمر:</span>
+                <span class="font-medium">{{ auth()->user()->studentProfile->birth_date->diffInYears(now()) }} سنة</span>
+              </div>
+              @endif
             </div>
           </div>
 
@@ -129,10 +149,11 @@
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
               <option value="">اختر مستواك</option>
               <option value="beginner">مبتدئ (لا أعرف القراءة)</option>
-              <option value="basic">أساسي (أقرأ ببطء)</option>
+              <option value="elementary">أساسي (أقرأ ببطء)</option>
               <option value="intermediate">متوسط (أقرأ بطلاقة)</option>
               <option value="advanced">متقدم (أحفظ أجزاء من القرآن)</option>
               <option value="expert">متمكن (أحفظ أكثر من 10 أجزاء)</option>
+              <option value="hafiz">حافظ (أحفظ القرآن كاملاً)</option>
             </select>
           </div>
 
@@ -190,25 +211,18 @@
             </ul>
           </div>
 
-          <!-- Agreement -->
-          <div class="flex items-start">
-            <input type="checkbox" id="agree_terms" name="agree_terms" required
-                   class="mt-1 text-primary focus:ring-primary border-gray-300 rounded">
-            <label for="agree_terms" class="mr-2 text-sm text-gray-700">
-              أوافق على <a href="#" class="text-primary hover:underline">شروط الخدمة</a> و 
-              <a href="#" class="text-primary hover:underline">سياسة الخصوصية</a>
-            </label>
-          </div>
+
 
           <!-- Submit Button -->
           <div class="flex gap-4">
             <button type="submit" 
+                    onclick="console.log('Trial form submit clicked'); return true;"
                     class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors">
               <i class="ri-send-plane-line ml-2"></i>
               إرسال طلب الجلسة التجريبية
             </button>
             
-            <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherCode' => $teacher->teacher_code]) }}" 
+            <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" 
                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               إلغاء
             </a>
@@ -218,6 +232,34 @@
 
     </div>
   </section>
+
+  <script>
+    // Debug form submission
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.querySelector('form');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          console.log('Form submit event fired');
+          console.log('Form data:', new FormData(form));
+          
+          // Check if required fields are filled
+          const currentLevel = form.querySelector('[name="current_level"]');
+          const learningGoals = form.querySelectorAll('[name="learning_goals[]"]:checked');
+          
+          console.log('Current level:', currentLevel ? currentLevel.value : 'not found');
+          console.log('Learning goals checked:', learningGoals.length);
+          
+          if (!currentLevel || !currentLevel.value) {
+            console.error('Current level not selected');
+          }
+          
+          if (learningGoals.length === 0) {
+            console.error('No learning goals selected');
+          }
+        });
+      }
+    });
+  </script>
 
 </body>
 </html>

@@ -39,7 +39,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Cairo')
             ->favicon(asset('images/favicon.ico'))
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+            ->resources($this->getResources())
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Pages\Dashboard::class,
@@ -75,6 +75,7 @@ class AdminPanelProvider extends PanelProvider
                 'إدارة التعليم الأكاديمي',
                 'إدارة الدورات المسجلة',
                 'الإعدادات',
+                'الإعدادات العامة',
             ])
             ->authMiddleware([
                 Authenticate::class,
@@ -85,6 +86,54 @@ class AdminPanelProvider extends PanelProvider
             );
     }
     
+    protected function getResources(): array
+    {
+        $resources = [
+            // إدارة المستخدمين - Academy Level
+            \App\Filament\Resources\UserResource::class,
+            \App\Filament\Resources\AdminResource::class,
+            \App\Filament\Resources\StudentProfileResource::class,
+            \App\Filament\Resources\ParentProfileResource::class,
+            \App\Filament\Resources\SupervisorProfileResource::class,
+            \App\Filament\Resources\AcademicTeacherProfileResource::class,
+            
+            // إدارة التعليم الأكاديمي
+            \App\Filament\Resources\InteractiveCourseResource::class,
+            \App\Filament\Resources\GradeLevelResource::class,
+            \App\Filament\Resources\SubjectResource::class,
+            \App\Filament\Resources\RecordedCourseResource::class,
+            
+            // الإعدادات
+            \App\Filament\Resources\AcademicSettingsResource::class,
+            \App\Filament\Resources\GoogleSettingsResource::class,
+            \App\Filament\Resources\VideoSettingsResource::class,
+        ];
+
+        // Add resources based on user role
+        if (AcademyContextService::isSuperAdmin()) {
+            // Super Admin sees global resources
+            $resources = array_merge($resources, [
+                \App\Filament\Resources\SuperAdminQuranTeacherResource::class,
+                \App\Filament\Resources\SuperAdminQuranSubscriptionResource::class,
+                \App\Filament\Resources\SuperAdminQuranTrialRequestResource::class,
+                \App\Filament\Resources\AcademyManagementResource::class,
+                \App\Filament\Resources\QuranCircleResource::class,
+                \App\Filament\Resources\QuranPackageResource::class,
+            ]);
+        } else {
+            // Regular admins see academy-scoped resources
+            $resources = array_merge($resources, [
+                \App\Filament\Resources\QuranTeacherProfileResource::class,
+                \App\Filament\Resources\QuranSubscriptionResource::class,
+                \App\Filament\Resources\QuranTrialRequestResource::class,
+                \App\Filament\Resources\QuranCircleResource::class,
+                \App\Filament\Resources\QuranPackageResource::class,
+            ]);
+        }
+
+        return $resources;
+    }
+
     public function boot(): void
     {
         // Temporarily increase memory limit to debug memory exhaustion

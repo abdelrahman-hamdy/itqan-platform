@@ -72,7 +72,7 @@
       <!-- Edit Profile Form -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-8">
-                     <form action="{{ route('student.profile.update', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" method="POST">
+                     <form action="{{ route('student.profile.update', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             
@@ -103,6 +103,32 @@
                 @error('last_name')
                   <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
+              </div>
+
+              <!-- Email (Non-editable) -->
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
+                <input type="email" 
+                       id="email" 
+                       name="email" 
+                       value="{{ auth()->user()->email }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                       readonly
+                       disabled
+                       tabindex="-1">
+              </div>
+
+              <!-- Student Code (Non-editable) -->
+              <div>
+                <label for="student_code" class="block text-sm font-medium text-gray-700 mb-2">رقم الطالب</label>
+                <input type="text" 
+                       id="student_code" 
+                       name="student_code" 
+                       value="{{ $studentProfile?->student_code ?? '' }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                       readonly
+                       disabled
+                       tabindex="-1">
               </div>
 
               <!-- Phone -->
@@ -183,6 +209,45 @@
                   <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
               </div>
+
+              <!-- Grade Level -->
+              <div>
+                <label for="grade_level_id" class="block text-sm font-medium text-gray-700 mb-2">المرحلة الدراسية</label>
+                <select id="grade_level_id" 
+                        name="grade_level_id" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                  <option value="">اختر المرحلة الدراسية</option>
+                  @foreach($gradeLevels as $gradeLevel)
+                    <option value="{{ $gradeLevel->id }}" {{ old('grade_level_id', $studentProfile?->grade_level_id) == $gradeLevel->id ? 'selected' : '' }}>
+                      {{ $gradeLevel->name }}
+                    </option>
+                  @endforeach
+                </select>
+                @error('grade_level_id')
+                  <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+              </div>
+
+              <!-- Avatar -->
+              <div>
+                <label for="avatar" class="block text-sm font-medium text-gray-700 mb-2">صورة الملف الشخصي</label>
+                <input type="file" 
+                       id="avatar" 
+                       name="avatar" 
+                       accept="image/*"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-secondary">
+                @if($studentProfile?->avatar)
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-600">الصورة الحالية:</p>
+                    <img src="{{ asset('storage/' . $studentProfile->avatar) }}" alt="الصورة الحالية" class="w-16 h-16 rounded-full object-cover mt-1">
+                  </div>
+                @endif
+                @error('avatar')
+                  <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+              </div>
+
+
             </div>
 
             <!-- Form Actions -->

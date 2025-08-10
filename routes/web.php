@@ -11,6 +11,29 @@ use App\Http\Controllers\StudentDashboardController;
 // Include authentication routes
 require __DIR__.'/auth.php';
 
+/*
+|--------------------------------------------------------------------------
+| Google OAuth Routes (Local Development)
+|--------------------------------------------------------------------------
+| These routes handle Google OAuth for local development (localhost:8000)
+| For production, the subdomain-based routes below are used instead.
+*/
+
+if (config('app.env') === 'local') {
+    // Google OAuth for teachers (local development only)
+    
+    // Routes that require authentication
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/google/auth', [App\Http\Controllers\GoogleAuthController::class, 'redirect'])->name('google.auth.local');
+        Route::post('/google/disconnect', [App\Http\Controllers\GoogleAuthController::class, 'disconnect'])->name('google.disconnect.local');
+        Route::get('/google/status', [App\Http\Controllers\GoogleAuthController::class, 'status'])->name('google.status.local');
+        Route::get('/google/test', [App\Http\Controllers\GoogleAuthController::class, 'test'])->name('google.test.local');
+    });
+    
+    // Callback route should NOT require authentication (Google redirects here)
+    Route::get('/google/callback', [App\Http\Controllers\GoogleAuthController::class, 'callback'])->name('google.callback.local');
+}
+
 // Test routes for academy styling verification
 Route::get('/test-academy', function () {
     $academy = \App\Models\Academy::where('subdomain', 'itqan-academy')->first();
@@ -245,6 +268,7 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         Route::get('/profile', [App\Http\Controllers\StudentProfileController::class, 'index'])->name('student.profile');
         Route::get('/my-quran-teachers', [App\Http\Controllers\StudentProfileController::class, 'quranTeachers'])->name('student.quran-teachers');
         Route::get('/payments', [App\Http\Controllers\StudentProfileController::class, 'payments'])->name('student.payments');
+        Route::get('/my-quran-circles', [App\Http\Controllers\StudentProfileController::class, 'quranCircles'])->name('student.quran-circles');
     });
 
     /*
@@ -269,18 +293,160 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     Route::get('/quran-teachers', [App\Http\Controllers\PublicQuranTeacherController::class, 'index'])->name('public.quran-teachers.index');
     
     // Individual Teacher Profile Pages
-    Route::get('/quran-teachers/{teacherCode}', [App\Http\Controllers\PublicQuranTeacherController::class, 'show'])->name('public.quran-teachers.show');
+    Route::get('/quran-teachers/{teacher}', [App\Http\Controllers\PublicQuranTeacherController::class, 'show'])->name('public.quran-teachers.show');
     
     // Trial Session Booking (requires auth)
     Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/quran-teachers/{teacherCode}/trial', [App\Http\Controllers\PublicQuranTeacherController::class, 'showTrialBooking'])->name('public.quran-teachers.trial');
-        Route::post('/quran-teachers/{teacherCode}/trial', [App\Http\Controllers\PublicQuranTeacherController::class, 'submitTrialRequest'])->name('public.quran-teachers.trial.submit');
+        Route::get('/quran-teachers/{teacher}/trial', [App\Http\Controllers\PublicQuranTeacherController::class, 'showTrialBooking'])->name('public.quran-teachers.trial');
+        Route::post('/quran-teachers/{teacher}/trial', [App\Http\Controllers\PublicQuranTeacherController::class, 'submitTrialRequest'])->name('public.quran-teachers.trial.submit');
         
-        Route::get('/quran-teachers/{teacherCode}/subscribe/{packageId}', [App\Http\Controllers\PublicQuranTeacherController::class, 'showSubscriptionBooking'])->name('public.quran-teachers.subscribe');
-        Route::post('/quran-teachers/{teacherCode}/subscribe/{packageId}', [App\Http\Controllers\PublicQuranTeacherController::class, 'submitSubscriptionRequest'])->name('public.quran-teachers.subscribe.submit');
+        Route::get('/quran-teachers/{teacher}/subscribe/{packageId}', [App\Http\Controllers\PublicQuranTeacherController::class, 'showSubscriptionBooking'])->name('public.quran-teachers.subscribe');
+        Route::post('/quran-teachers/{teacher}/subscribe/{packageId}', [App\Http\Controllers\PublicQuranTeacherController::class, 'submitSubscriptionRequest'])->name('public.quran-teachers.subscribe.submit');
         
         // Quran Subscription Payment
         Route::get('/quran/subscription/{subscription}/payment', [App\Http\Controllers\QuranSubscriptionPaymentController::class, 'create'])->name('quran.subscription.payment');
         Route::post('/quran/subscription/{subscription}/payment', [App\Http\Controllers\QuranSubscriptionPaymentController::class, 'store'])->name('quran.subscription.payment.submit');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Quran Circle Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Public Quran Circles Listing
+    Route::get('/quran-circles', [App\Http\Controllers\PublicQuranCircleController::class, 'index'])->name('public.quran-circles.index');
+    
+    // Individual Circle Details Pages
+    Route::get('/quran-circles/{circle}', [App\Http\Controllers\PublicQuranCircleController::class, 'show'])->name('public.quran-circles.show');
+    
+    // Circle Enrollment (requires auth)
+    Route::middleware(['auth', 'role:student'])->group(function () {
+        Route::get('/quran-circles/{circle}/enroll', [App\Http\Controllers\PublicQuranCircleController::class, 'showEnrollment'])->name('public.quran-circles.enroll');
+        Route::post('/quran-circles/{circle}/enroll', [App\Http\Controllers\PublicQuranCircleController::class, 'submitEnrollment'])->name('public.quran-circles.enroll.submit');
+    });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Calendar Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Teacher calendar routes
+    Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->group(function () {
+        Route::get('/teacher/calendar', [App\Http\Controllers\TeacherCalendarController::class, 'index'])->name('teacher.calendar');
+        Route::get('/teacher/calendar/events', [App\Http\Controllers\TeacherCalendarController::class, 'getEvents'])->name('teacher.calendar.events');
+        Route::post('/teacher/calendar/sessions', [App\Http\Controllers\TeacherCalendarController::class, 'createSession'])->name('teacher.calendar.create-session');
+        Route::put('/teacher/calendar/sessions/{session}', [App\Http\Controllers\TeacherCalendarController::class, 'updateSession'])->name('teacher.calendar.update-session');
+        Route::delete('/teacher/calendar/sessions/{session}', [App\Http\Controllers\TeacherCalendarController::class, 'deleteSession'])->name('teacher.calendar.delete-session');
+        Route::post('/teacher/calendar/bulk-update', [App\Http\Controllers\TeacherCalendarController::class, 'bulkUpdate'])->name('teacher.calendar.bulk-update');
+        
+        // New Calendar API routes
+        Route::get('/teacher/api/circles', [App\Http\Controllers\Teacher\CalendarApiController::class, 'getCircles'])->name('teacher.api.circles');
+        Route::post('/teacher/api/bulk-schedule', [App\Http\Controllers\Teacher\CalendarApiController::class, 'bulkSchedule'])->name('teacher.api.bulk-schedule');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Individual Circles Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    Route::middleware(['auth', 'role:quran_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        // Individual Circles Management
+        Route::get('/individual-circles', [App\Http\Controllers\QuranIndividualCircleController::class, 'index'])->name('individual-circles.index');
+        Route::get('/individual-circles/{circle}', [App\Http\Controllers\QuranIndividualCircleController::class, 'show'])->name('individual-circles.show');
+        Route::get('/individual-circles/{circle}/progress', [App\Http\Controllers\QuranIndividualCircleController::class, 'progressReport'])->name('individual-circles.progress');
+        
+        // AJAX routes for individual circles
+        Route::get('/individual-circles/{circle}/template-sessions', [App\Http\Controllers\QuranIndividualCircleController::class, 'getTemplateSessions'])->name('individual-circles.template-sessions');
+        Route::post('/individual-circles/{circle}/schedule-session', [App\Http\Controllers\QuranIndividualCircleController::class, 'scheduleSession'])->name('individual-circles.schedule-session');
+        Route::post('/individual-circles/{circle}/bulk-schedule', [App\Http\Controllers\QuranIndividualCircleController::class, 'bulkSchedule'])->name('individual-circles.bulk-schedule');
+        Route::get('/individual-circles/{circle}/available-slots', [App\Http\Controllers\QuranIndividualCircleController::class, 'getAvailableTimeSlots'])->name('individual-circles.available-slots');
+        Route::put('/individual-circles/{circle}/settings', [App\Http\Controllers\QuranIndividualCircleController::class, 'updateSettings'])->name('individual-circles.update-settings');
+        
+        // Session management routes
+        Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForTeacher'])->name('sessions.show');
+        Route::put('/sessions/{sessionId}/notes', [App\Http\Controllers\QuranSessionController::class, 'updateNotes'])->name('sessions.update-notes');
+        Route::put('/sessions/{sessionId}/complete', [App\Http\Controllers\QuranSessionController::class, 'markCompleted'])->name('sessions.complete');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Group Circles Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    Route::middleware(['auth', 'role:quran_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        // Group Circles Management  
+        Route::get('/group-circles', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'index'])->name('group-circles.index');
+        Route::get('/group-circles/{circle}', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'show'])->name('group-circles.show');
+        Route::get('/group-circles/{circle}/schedule', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'create'])->name('group-circles.schedule');
+        
+        // AJAX routes for group circle schedules
+        Route::post('/group-circles/{circle}/schedule', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'store'])->name('group-circles.store-schedule');
+        Route::post('/group-circles/{circle}/activate', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'activate'])->name('group-circles.activate');
+        Route::post('/group-circles/{circle}/deactivate', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'deactivate'])->name('group-circles.deactivate');
+        Route::post('/group-circles/{circle}/preview-sessions', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'previewSessions'])->name('group-circles.preview-sessions');
+        Route::post('/group-circles/{circle}/generate-sessions', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'generateSessions'])->name('group-circles.generate-sessions');
+        Route::get('/group-circles/{circle}/stats', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'getStats'])->name('group-circles.stats');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Calendar Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Student calendar routes
+    Route::middleware(['auth', 'role:student'])->group(function () {
+        Route::get('/student/calendar', [App\Http\Controllers\StudentCalendarController::class, 'index'])->name('student.calendar');
+        Route::get('/student/calendar/events', [App\Http\Controllers\StudentCalendarController::class, 'getEvents'])->name('student.calendar.events');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google OAuth Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Google OAuth for teachers
+    Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->group(function () {
+        Route::get('/google/auth', [App\Http\Controllers\GoogleAuthController::class, 'redirect'])->name('google.auth');
+        Route::get('/google/callback', [App\Http\Controllers\GoogleAuthController::class, 'callback'])->name('google.callback');
+        Route::post('/google/disconnect', [App\Http\Controllers\GoogleAuthController::class, 'disconnect'])->name('google.disconnect');
+    });
+});
+
+
+
+/*
+|--------------------------------------------------------------------------
+| LiveKit Webhooks and API Routes
+|--------------------------------------------------------------------------
+| These routes handle LiveKit webhooks and meeting management API
+*/
+
+// LiveKit Webhooks (no authentication required for webhooks from LiveKit server)
+Route::prefix('webhooks')->group(function () {
+    Route::post('livekit', [\App\Http\Controllers\LiveKitWebhookController::class, 'handleWebhook'])->name('webhooks.livekit');
+    Route::get('livekit/health', [\App\Http\Controllers\LiveKitWebhookController::class, 'health'])->name('webhooks.livekit.health');
+});
+
+// LiveKit Meeting API routes (requires authentication)
+Route::middleware(['auth'])->prefix('api/meetings')->group(function () {
+    Route::post('create', [\App\Http\Controllers\LiveKitMeetingController::class, 'createMeeting'])->name('api.meetings.create');
+    Route::get('{sessionId}/token', [\App\Http\Controllers\LiveKitMeetingController::class, 'getParticipantToken'])->name('api.meetings.token');
+    Route::post('{sessionId}/recording/start', [\App\Http\Controllers\LiveKitMeetingController::class, 'startRecording'])->name('api.meetings.recording.start');
+    Route::post('{sessionId}/recording/stop', [\App\Http\Controllers\LiveKitMeetingController::class, 'stopRecording'])->name('api.meetings.recording.stop');
+    Route::get('{sessionId}/info', [\App\Http\Controllers\LiveKitMeetingController::class, 'getRoomInfo'])->name('api.meetings.info');
+    Route::post('{sessionId}/end', [\App\Http\Controllers\LiveKitMeetingController::class, 'endMeeting'])->name('api.meetings.end');
+});
+
+// Meeting join routes (for students/teachers)
+Route::middleware(['auth'])->group(function () {
+    Route::get('meetings/{session}/join', [\App\Http\Controllers\MeetingJoinController::class, 'join'])->name('meetings.join');
 });

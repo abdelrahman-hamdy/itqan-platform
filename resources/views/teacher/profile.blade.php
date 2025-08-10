@@ -81,18 +81,7 @@
         <p class="text-gray-600">
           إدارة جلساتك وطلابك ومتابعة أرباحك من خلال لوحة التحكم المخصصة للمعلمين
         </p>
-        <div class="mt-4">
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            <i class="ri-shield-check-line ml-2"></i>
-            {{ $teacherProfile->teacher_code ?? 'معلم معتمد' }}
-          </span>
-          @if($teacherProfile->is_active)
-            <span class="mr-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-              <i class="ri-check-line ml-2"></i>
-              نشط
-            </span>
-          @endif
-        </div>
+
       </div>
 
       <!-- Quick Stats -->
@@ -109,7 +98,7 @@
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold text-gray-900">
                 <i class="ri-group-line text-purple-600 ml-2"></i>
-                دوائر القرآن المكلف بها
+                حلقات القرآن المكلف بها
               </h3>
               <span class="text-sm text-gray-500">{{ $assignedCircles->count() }} دائرة</span>
             </div>
@@ -133,7 +122,7 @@
                   <div class="text-center pt-2">
                     <a href="{{ route('teacher.students', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
                        class="text-primary hover:text-secondary text-sm font-medium">
-                      عرض جميع الدوائر ({{ $assignedCircles->count() }})
+                      عرض جميع الحلقات ({{ $assignedCircles->count() }})
                     </a>
                   </div>
                 @endif
@@ -141,8 +130,147 @@
             @else
               <div class="text-center py-8">
                 <i class="ri-group-line text-4xl text-gray-300 mb-3"></i>
-                <p class="text-gray-500">لم يتم تعيين دوائر قرآن بعد</p>
-                <p class="text-sm text-gray-400">سيقوم المشرف بتعيين الدوائر لك</p>
+                <p class="text-gray-500">لم يتم تعيين حلقات قرآن بعد</p>
+                <p class="text-sm text-gray-400">سيقوم المشرف بتعيين الحلقات لك</p>
+              </div>
+            @endif
+          </div>
+
+          <!-- Trial Requests for Quran Teachers -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">
+                <i class="ri-user-add-line text-orange-600 ml-2"></i>
+                طلبات الجلسات التجريبية
+              </h3>
+              <span class="text-sm text-gray-500">{{ $pendingTrialRequests->count() }} طلب معلق</span>
+            </div>
+            
+            @if($pendingTrialRequests->count() > 0)
+              <div class="space-y-3">
+                @foreach($pendingTrialRequests->take(3) as $request)
+                  <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                    <div>
+                      <h4 class="font-medium text-gray-900">{{ $request->student->name ?? 'طالب جديد' }}</h4>
+                      <p class="text-sm text-gray-500">
+                        المستوى المطلوب: {{ $request->current_level }}
+                        • {{ $request->created_at->diffForHumans() }}
+                      </p>
+                    </div>
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                      @if($request->status === 'pending')
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="text-sm text-yellow-600">في الانتظار</span>
+                      @elseif($request->status === 'approved')
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="text-sm text-green-600">معتمد</span>
+                      @endif
+                    </div>
+                  </div>
+                @endforeach
+                
+                @if($pendingTrialRequests->count() > 3)
+                  <div class="text-center pt-2">
+                    <a href="{{ route('teacher.schedule.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+                       class="text-primary hover:text-secondary text-sm font-medium">
+                      عرض جميع الطلبات ({{ $pendingTrialRequests->count() }})
+                    </a>
+                  </div>
+                @endif
+              </div>
+            @else
+              <div class="text-center py-8">
+                <i class="ri-user-add-line text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">لا توجد طلبات جلسات تجريبية</p>
+                <p class="text-sm text-gray-400">ستظهر الطلبات الجديدة هنا</p>
+              </div>
+            @endif
+          </div>
+
+          <!-- Active Subscriptions for Quran Teachers -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">
+                <i class="ri-book-open-line text-green-600 ml-2"></i>
+                الاشتراكات النشطة
+              </h3>
+              <span class="text-sm text-gray-500">{{ $activeSubscriptions->count() }} اشتراك نشط</span>
+            </div>
+            
+            @if($activeSubscriptions->count() > 0)
+              <div class="space-y-3">
+                @foreach($activeSubscriptions->take(3) as $subscription)
+                  <x-cards.subscription-card 
+                    :subscription="$subscription" 
+                    view-type="teacher" 
+                    :compact="true" 
+                    :show-actions="false" />
+                @endforeach
+                
+                @if($activeSubscriptions->count() > 3)
+                  <div class="text-center pt-2">
+                    <a href="{{ route('teacher.schedule.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+                       class="text-primary hover:text-secondary text-sm font-medium">
+                      عرض جميع الاشتراكات ({{ $activeSubscriptions->count() }})
+                    </a>
+                  </div>
+                @endif
+              </div>
+            @else
+              <div class="text-center py-8">
+                <i class="ri-book-open-line text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">لا توجد اشتراكات نشطة</p>
+                <p class="text-sm text-gray-400">ستظهر الاشتراكات الجديدة هنا</p>
+              </div>
+            @endif
+          </div>
+
+          <!-- Recent Sessions for Quran Teachers -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">
+                <i class="ri-time-line text-blue-600 ml-2"></i>
+                الجلسات الأخيرة
+              </h3>
+              <span class="text-sm text-gray-500">{{ $recentSessions->count() }} جلسة</span>
+            </div>
+            
+            @if($recentSessions->count() > 0)
+              <div class="space-y-3">
+                @foreach($recentSessions->take(3) as $session)
+                  <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <div>
+                      <h4 class="font-medium text-gray-900">{{ $session->student->name ?? 'طالب' }}</h4>
+                      <p class="text-sm text-gray-500">
+                        {{ $session->scheduled_at ? $session->scheduled_at->format('d/m/Y H:i') : 'غير محدد' }}
+                      </p>
+                    </div>
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                      @if($session->status === 'scheduled')
+                        <span class="w-3 h-3 bg-blue-400 rounded-full"></span>
+                        <span class="text-sm text-blue-600">مجدولة</span>
+                      @elseif($session->status === 'completed')
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="text-sm text-green-600">مكتملة</span>
+                      @endif
+                    </div>
+                  </div>
+                @endforeach
+                
+                @if($recentSessions->count() > 3)
+                  <div class="text-center pt-2">
+                    <a href="/teacher-panel/quran-sessions" target="_blank"
+                       class="text-primary hover:text-secondary text-sm font-medium">
+                      عرض جميع الجلسات ({{ $recentSessions->count() }})
+                    </a>
+                  </div>
+                @endif
+              </div>
+            @else
+              <div class="text-center py-8">
+                <i class="ri-time-line text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">لا توجد جلسات حديثة</p>
+                <p class="text-sm text-gray-400">ستظهر الجلسات هنا</p>
               </div>
             @endif
           </div>
@@ -259,87 +387,14 @@
           </div>
         @endif
 
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            <i class="ri-flash-line text-yellow-600 ml-2"></i>
-            إجراءات سريعة
-          </h3>
-          
-          <div class="space-y-3">
-            <!-- Dashboard Access -->
-            <a href="/teacher-panel" target="_blank"
-               class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors flex items-center justify-center card-hover">
-              <i class="ri-dashboard-line ml-2"></i>
-              الذهاب إلى لوحة التحكم
-            </a>
-            
-            <!-- Earnings -->
-            <a href="{{ route('teacher.earnings', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
-               class="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center card-hover">
-              <i class="ri-money-dollar-circle-line ml-2"></i>
-              عرض الأرباح
-            </a>
-            
-            <!-- Schedule -->
-            <a href="{{ route('teacher.schedule', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
-               class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center card-hover">
-              <i class="ri-calendar-line ml-2"></i>
-              جدول المواعيد
-            </a>
-            
-            <!-- Students -->
-            <a href="{{ route('teacher.students', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
-               class="w-full bg-purple-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center justify-center card-hover">
-              <i class="ri-group-line ml-2"></i>
-              إدارة الطلاب
-            </a>
-          </div>
-        </div>
 
-        <!-- Recent Activity -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            <i class="ri-time-line text-gray-600 ml-2"></i>
-            النشاط الأخير
-          </h3>
-          
-          <div class="space-y-4">
-            <!-- Sample activities - would be dynamic -->
-            <div class="flex items-start space-x-3 space-x-reverse">
-              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <i class="ri-check-line text-green-600 text-sm"></i>
-              </div>
-              <div class="flex-1">
-                <p class="text-sm text-gray-900">تم إنهاء جلسة مع الطالب أحمد</p>
-                <p class="text-xs text-gray-500">منذ ساعتين</p>
-              </div>
-            </div>
-            
-            <div class="flex items-start space-x-3 space-x-reverse">
-              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <i class="ri-user-add-line text-blue-600 text-sm"></i>
-              </div>
-              <div class="flex-1">
-                <p class="text-sm text-gray-900">انضم طالب جديد لدورة الرياضيات</p>
-                <p class="text-xs text-gray-500">أمس</p>
-              </div>
-            </div>
-            
-            <div class="flex items-start space-x-3 space-x-reverse">
-              <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <i class="ri-money-dollar-circle-line text-yellow-600 text-sm"></i>
-              </div>
-              <div class="flex-1">
-                <p class="text-sm text-gray-900">تم استلام دفعة الراتب الشهري</p>
-                <p class="text-xs text-gray-500">الأسبوع الماضي</p>
-              </div>
-            </div>
-          </div>
-        </div>
+
+
 
       </div>
     </div>
   </main>
 </body>
 </html>
+
+

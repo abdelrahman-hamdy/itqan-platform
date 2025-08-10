@@ -101,7 +101,7 @@ class QuranSubscription extends Model
 
     public function quranTeacher(): BelongsTo
     {
-        return $this->belongsTo(QuranTeacherProfile::class);
+        return $this->belongsTo(QuranTeacherProfile::class, 'quran_teacher_id');
     }
 
     public function package(): BelongsTo
@@ -111,7 +111,12 @@ class QuranSubscription extends Model
 
     public function sessions(): HasMany
     {
-        return $this->hasMany(QuranSession::class);
+        return $this->hasMany(QuranSession::class, 'quran_subscription_id');
+    }
+
+    public function individualCircle(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(QuranIndividualCircle::class, 'subscription_id');
     }
 
     public function progress(): HasMany
@@ -232,12 +237,12 @@ class QuranSubscription extends Model
 
     public function getFormattedPriceAttribute(): string
     {
-        return number_format($this->total_price, 2) . ' ' . $this->currency;
+        return number_format((float)$this->total_price, 2) . ' ' . $this->currency;
     }
 
     public function getFormattedPricePerSessionAttribute(): string
     {
-        return number_format($this->price_per_session, 2) . ' ' . $this->currency;
+        return number_format((float)$this->price_per_session, 2) . ' ' . $this->currency;
     }
 
     public function getCurrentSurahFormattedAttribute(): string
@@ -350,7 +355,7 @@ class QuranSubscription extends Model
         return $this;
     }
 
-    public function addSessions(int $sessionsCount, float $price = null): self
+    public function addSessions(int $sessionsCount, ?float $price = null): self
     {
         $this->update([
             'total_sessions' => $this->total_sessions + $sessionsCount,
@@ -361,7 +366,7 @@ class QuranSubscription extends Model
         return $this;
     }
 
-    public function pause(string $reason = null): self
+    public function pause(?string $reason = null): self
     {
         $this->update([
             'subscription_status' => 'paused',
@@ -386,7 +391,7 @@ class QuranSubscription extends Model
         return $this;
     }
 
-    public function cancel(string $reason = null): self
+    public function cancel(?string $reason = null): self
     {
         $this->update([
             'subscription_status' => 'cancelled',
@@ -427,7 +432,7 @@ class QuranSubscription extends Model
         return $this;
     }
 
-    public function updateProgress(int $currentVerse = null, int $versesMemorized = null, float $progressPercentage = null): self
+    public function updateProgress(?int $currentVerse = null, ?int $versesMemorized = null, ?float $progressPercentage = null): self
     {
         $updateData = [];
 
@@ -450,7 +455,7 @@ class QuranSubscription extends Model
         return $this;
     }
 
-    public function addRating(int $rating, string $reviewText = null): self
+    public function addRating(int $rating, ?string $reviewText = null): self
     {
         $this->update([
             'rating' => $rating,
@@ -520,10 +525,38 @@ class QuranSubscription extends Model
         ]));
     }
 
-    private static function generateSubscriptionCode(int $academyId): string
+    public static function generateSubscriptionCode(int $academyId): string
     {
-        $count = self::where('academy_id', $academyId)->count() + 1;
-        return 'QS-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+        $academyId = $academyId ?: 1;
+        $prefix = 'QS-' . $academyId . '-';
+        
+        // Use a retry approach with randomization for concurrent requests
+        $maxRetries = 20;
+        
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+            // Get the highest existing sequence number for this academy (including soft deleted)
+            $maxNumber = static::withTrashed()
+                ->where('academy_id', $academyId)
+                ->where('subscription_code', 'LIKE', $prefix . '%')
+                ->selectRaw('MAX(CAST(SUBSTRING(subscription_code, -6) AS UNSIGNED)) as max_num')
+                ->value('max_num') ?: 0;
+            
+            // Generate next sequence number (add random offset for concurrent requests)
+            $nextNumber = $maxNumber + 1 + $attempt + mt_rand(0, 5);
+            $newCode = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            
+            // Check if this code already exists (including soft deleted)
+            if (!static::withTrashed()->where('subscription_code', $newCode)->exists()) {
+                return $newCode;
+            }
+            
+            // Add a small delay to reduce contention
+            usleep(5000 + ($attempt * 2000)); // 5ms + increasing delay
+        }
+        
+        // Fallback: use timestamp-based suffix if all retries failed
+        $timestamp = substr(str_replace('.', '', microtime(true)), -6);
+        return $prefix . $timestamp;
     }
 
     public static function getExpiringSoon(int $academyId, int $days = 7): \Illuminate\Database\Eloquent\Collection
@@ -540,5 +573,91 @@ class QuranSubscription extends Model
             ->needsRenewal()
             ->with(['student', 'quranTeacher.user'])
             ->get();
+    }
+
+    /**
+     * Create individual circle for individual subscriptions
+     */
+    public function createIndividualCircle(): ?QuranIndividualCircle
+    {
+        // Only create for individual subscriptions
+        if ($this->subscription_type !== 'individual') {
+            return null;
+        }
+
+        // Don't create if already exists
+        if ($this->individualCircle) {
+            return $this->individualCircle;
+        }
+
+        // Ensure we have required data
+        if (!$this->quran_teacher_id || !$this->student_id || !$this->package) {
+            return null;
+        }
+
+        $circle = QuranIndividualCircle::create([
+            'academy_id' => $this->academy_id,
+            'quran_teacher_id' => $this->quran_teacher_id,
+            'student_id' => $this->student_id,
+            'subscription_id' => $this->id,
+            'specialization' => $this->package->specialization ?? 'memorization',
+            'memorization_level' => $this->memorization_level ?? 'beginner',
+            'total_sessions' => $this->total_sessions,
+            'sessions_remaining' => $this->total_sessions,
+            'default_duration_minutes' => $this->package->session_duration ?? 45,
+            'status' => $this->subscription_status === 'active' ? 'active' : 'pending',
+            'created_by' => $this->created_by,
+        ]);
+
+        // Create template sessions immediately
+        $circle->createTemplateSessions();
+
+        return $circle;
+    }
+
+    /**
+     * Update individual circle when subscription is updated
+     */
+    public function updateIndividualCircle(): void
+    {
+        if ($this->subscription_type === 'individual' && $this->individualCircle) {
+            $this->individualCircle->update([
+                'total_sessions' => $this->total_sessions,
+                'sessions_remaining' => $this->total_sessions - $this->individualCircle->sessions_completed,
+                'status' => $this->subscription_status === 'active' ? 'active' : 
+                           ($this->subscription_status === 'cancelled' ? 'cancelled' : 'pending'),
+            ]);
+        }
+    }
+
+    // Boot method to handle model events
+    protected static function booted()
+    {
+        // Create individual circle after subscription is created
+        static::created(function ($subscription) {
+            if ($subscription->subscription_type === 'individual') {
+                $circle = $subscription->createIndividualCircle();
+                
+                // If subscription is already active, ensure circle is also active
+                if ($circle && $subscription->subscription_status === 'active' && $circle->status !== 'active') {
+                    $circle->update(['status' => 'active']);
+                }
+            }
+        });
+
+        // Update individual circle when subscription status changes
+        static::updated(function ($subscription) {
+            if ($subscription->subscription_type === 'individual' && 
+                $subscription->isDirty(['subscription_status', 'total_sessions'])) {
+                $subscription->updateIndividualCircle();
+            }
+        });
+
+        // Update sessions remaining when sessions are used
+        static::updating(function ($subscription) {
+            if ($subscription->isDirty('sessions_used')) {
+                $subscription->sessions_remaining = $subscription->total_sessions - $subscription->sessions_used;
+            }
+        });
     }
 } 

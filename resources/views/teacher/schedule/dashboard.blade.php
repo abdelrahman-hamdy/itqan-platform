@@ -60,6 +60,83 @@
         </div>
       @endif
 
+      <!-- Availability Settings -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          <i class="ri-time-line text-green-600 ml-2"></i>
+          إدارة أوقاتي المتاحة
+        </h3>
+        
+        <form action="{{ route('teacher.schedule.availability.update', ['subdomain' => $academy->subdomain]) }}" method="POST">
+          @csrf
+          @method('PUT')
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Available Days -->
+            <div>
+              <h4 class="font-medium text-gray-900 mb-3">الأيام المتاحة</h4>
+              <div class="space-y-2">
+                @php
+                  $days = [
+                    'sunday' => 'الأحد',
+                    'monday' => 'الاثنين', 
+                    'tuesday' => 'الثلاثاء',
+                    'wednesday' => 'الأربعاء',
+                    'thursday' => 'الخميس',
+                    'friday' => 'الجمعة',
+                    'saturday' => 'السبت'
+                  ];
+                @endphp
+                
+                @foreach($days as $key => $day)
+                  <div class="flex items-center">
+                    <input type="checkbox" 
+                           name="available_days[]"
+                           value="{{ $key }}"
+                           id="{{ $key }}" 
+                           {{ in_array($key, $teacherProfile->available_days ?? []) ? 'checked' : '' }}
+                           class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                    <label for="{{ $key }}" class="mr-2 text-sm text-gray-700">{{ $day }}</label>
+                  </div>
+                @endforeach
+              </div>
+            </div>
+            
+            <!-- Available Hours -->
+            <div>
+              <h4 class="font-medium text-gray-900 mb-3">الساعات المتاحة</h4>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm text-gray-700 mb-1">من الساعة</label>
+                  <input type="time" 
+                         name="available_time_start"
+                         value="{{ $teacherProfile->available_time_start ? \Carbon\Carbon::parse($teacherProfile->available_time_start)->format('H:i') : '08:00' }}"
+                         class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-700 mb-1">إلى الساعة</label>
+                  <input type="time" 
+                         name="available_time_end"
+                         value="{{ $teacherProfile->available_time_end ? \Carbon\Carbon::parse($teacherProfile->available_time_end)->format('H:i') : '18:00' }}"
+                         class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-700 mb-1">مدة الجلسة (بالدقائق)</label>
+                  <select name="session_duration" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                                                    <option value="30" {{ ($teacherProfile->session_duration ?? 30) == 30 ? 'selected' : '' }}>30 دقيقة</option>
+                                <option value="60" {{ ($teacherProfile->session_duration ?? 30) == 60 ? 'selected' : '' }}>60 دقيقة</option>
+                  </select>
+                </div>
+                <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                  <i class="ri-save-line ml-2"></i>
+                  حفظ الأوقات المتاحة
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
       <!-- Quick Stats -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -171,7 +248,22 @@
                       
                       <div class="flex flex-col space-y-2 mr-4">
                         @if($request->status === 'pending')
-                          <!-- Approve/Reject actions would go here if needed -->
+                          <div class="flex space-x-2 space-x-reverse">
+                            <form action="{{ route('teacher.schedule.trial.approve', ['subdomain' => $academy->subdomain, 'trialRequest' => $request->id]) }}" method="POST" class="inline">
+                              @csrf
+                              <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                                <i class="ri-check-line ml-1"></i>
+                                قبول
+                              </button>
+                            </form>
+                            <form action="{{ route('teacher.schedule.trial.reject', ['subdomain' => $academy->subdomain, 'trialRequest' => $request->id]) }}" method="POST" class="inline">
+                              @csrf
+                              <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                                <i class="ri-close-line ml-1"></i>
+                                رفض
+                              </button>
+                            </form>
+                          </div>
                         @endif
                         
                         @if($request->canBeScheduled())
@@ -181,6 +273,12 @@
                             جدولة
                           </a>
                         @endif
+                        
+                        <a href="/teacher-panel/quran-trial-requests/{{ $request->id }}" target="_blank"
+                           class="bg-gray-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors text-center">
+                          <i class="ri-external-link-line ml-1"></i>
+                          التفاصيل
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -246,9 +344,29 @@
                       <div class="flex flex-col space-y-2 mr-4">
                         <a href="{{ route('teacher.schedule.subscription.show', ['subdomain' => $academy->subdomain, 'subscription' => $subscription->id]) }}" 
                            class="bg-primary text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
-                          <i class="ri-settings-line ml-1"></i>
-                          إدارة الجدول
+                          <i class="ri-calendar-event-line ml-1"></i>
+                          جدولة جلسات
                         </a>
+                        
+                        <a href="/teacher-panel/quran-sessions?tableFilters[subscription_id][value]={{ $subscription->id }}" target="_blank"
+                           class="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors text-center">
+                          <i class="ri-time-line ml-1"></i>
+                          عرض الجلسات
+                        </a>
+                        
+                        <a href="/teacher-panel/quran-subscriptions/{{ $subscription->id }}" target="_blank"
+                           class="bg-gray-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors text-center">
+                          <i class="ri-external-link-line ml-1"></i>
+                          التفاصيل
+                        </a>
+                        
+                        @if($subscription->sessions_remaining > 0)
+                          <button onclick="quickScheduleSession({{ $subscription->id }})" 
+                                  class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors text-center">
+                            <i class="ri-add-line ml-1"></i>
+                            جلسة سريعة
+                          </button>
+                        @endif
                       </div>
                     </div>
                   </div>
@@ -364,6 +482,36 @@
 
     </div>
   </main>
+
+  <script>
+    function quickScheduleSession(subscriptionId) {
+      // Simple implementation - you can enhance this with a modal or more sophisticated scheduling
+      if (confirm('هل تريد جدولة جلسة سريعة لهذا الاشتراك؟')) {
+        // For now, just redirect to the subscription scheduling page
+        window.location.href = `/teacher/schedule/subscription/${subscriptionId}`;
+      }
+    }
+
+    // Add confirmation to approve/reject buttons
+    document.addEventListener('DOMContentLoaded', function() {
+      // Approve buttons
+      document.querySelectorAll('button[type="submit"]').forEach(button => {
+        if (button.textContent.includes('قبول')) {
+          button.addEventListener('click', function(e) {
+            if (!confirm('هل أنت متأكد من قبول هذا الطلب؟')) {
+              e.preventDefault();
+            }
+          });
+        } else if (button.textContent.includes('رفض')) {
+          button.addEventListener('click', function(e) {
+            if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) {
+              e.preventDefault();
+            }
+          });
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

@@ -65,23 +65,9 @@ class TeacherProfileController extends Controller
     
     public function schedule()
     {
-        $user = Auth::user();
-        $teacherProfile = $this->getTeacherProfile($user);
-        
-        if (!$teacherProfile) {
-            abort(404, 'Teacher profile not found');
-        }
-        
-        // Get upcoming sessions
-        $upcomingSessions = $this->getUpcomingSessions($user, $teacherProfile);
-        
-        return view('teacher.schedule', [
-            'teacherProfile' => $teacherProfile,
-            'upcomingSessions' => $upcomingSessions,
-            'availableDays' => $teacherProfile->available_days ?? [],
-            'availableTimeStart' => $teacherProfile->available_time_start,
-            'availableTimeEnd' => $teacherProfile->available_time_end,
-        ]);
+        // Redirect to the unified schedule dashboard
+        $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+        return redirect()->route('teacher.schedule.dashboard', ['subdomain' => $subdomain]);
     }
     
     public function students()
@@ -104,6 +90,135 @@ class TeacherProfileController extends Controller
             'teacherProfile' => $teacherProfile,
             'students' => $students
         ]);
+    }
+
+    public function showStudent($subdomain, User $student)
+    {
+        $user = Auth::user();
+        $teacherProfile = $this->getTeacherProfile($user);
+        
+        if (!$teacherProfile) {
+            abort(404, 'Teacher profile not found');
+        }
+
+        // Verify this teacher can access this student
+        $canAccessStudent = false;
+        
+        if ($user->isQuranTeacher()) {
+            // Check if teacher has any circles with this student
+            $canAccessStudent = \App\Models\QuranIndividualCircle::where('quran_teacher_id', $teacherProfile->id)
+                ->where('student_id', $student->id)
+                ->exists();
+                
+            // Also check group circles
+            if (!$canAccessStudent) {
+                $canAccessStudent = \App\Models\QuranCircle::where('quran_teacher_id', $teacherProfile->id)
+                    ->whereHas('students', function($query) use ($student) {
+                        $query->where('student_id', $student->id);
+                    })
+                    ->exists();
+            }
+        } else {
+            // For academic teachers, check if they have any subjects with this student
+            // This is a simplified check - you may need to implement proper academic class relationships
+            $canAccessStudent = false; // For now, only Quran teachers can access student profiles
+        }
+
+        if (!$canAccessStudent) {
+            abort(403, 'غير مسموح لك بالوصول لملف هذا الطالب');
+        }
+
+        // Load student with profile and relationships
+        $student->load([
+            'studentProfile',
+            'academy',
+            'quranCircles' => function($query) use ($teacherProfile, $user) {
+                if ($user->isQuranTeacher()) {
+                    $query->where('quran_teacher_id', $teacherProfile->id);
+                }
+            },
+            'quranIndividualCircles' => function($query) use ($teacherProfile, $user) {
+                if ($user->isQuranTeacher()) {
+                    $query->where('quran_teacher_id', $teacherProfile->id)
+                          ->with(['sessions' => function($sessionQuery) {
+                              $sessionQuery->orderBy('scheduled_at', 'desc');
+                          }]);
+                }
+            }
+        ]);
+
+        // Get student's progress and performance data
+        $progressData = $this->getStudentProgressData($student, $teacherProfile, $user);
+
+        return view('teacher.student-profile', [
+            'student' => $student,
+            'teacherProfile' => $teacherProfile,
+            'progressData' => $progressData
+        ]);
+    }
+
+    private function getStudentProgressData($student, $teacherProfile, $user)
+    {
+        $progressData = [
+            'totalSessions' => 0,
+            'completedSessions' => 0,
+            'upcomingSessions' => 0,
+            'circles' => [],
+            'recentActivity' => []
+        ];
+
+        if ($user->isQuranTeacher()) {
+            // Use already loaded individual circles (filtered by teacher in showStudent method)
+            $individualCircles = $student->quranIndividualCircles;
+
+            foreach ($individualCircles as $circle) {
+                $progressData['totalSessions'] += $circle->total_sessions;
+                $progressData['completedSessions'] += $circle->sessions_completed;
+                
+                $progressData['circles'][] = [
+                    'id' => $circle->id,
+                    'type' => 'individual',
+                    'name' => $circle->name ?? 'الحلقة الفردية',
+                    'progress_percentage' => $circle->progress_percentage,
+                    'status' => $circle->status,
+                    'sessions_completed' => $circle->sessions_completed,
+                    'total_sessions' => $circle->total_sessions,
+                    'current_surah' => $circle->current_surah,
+                    'verses_memorized' => $circle->verses_memorized
+                ];
+
+                // Add recent sessions to activity (use already loaded sessions)
+                $completedSessions = $circle->sessions->where('status', 'completed')->take(5);
+                foreach ($completedSessions as $session) {
+                    $progressData['recentActivity'][] = [
+                        'type' => 'session_completed',
+                        'title' => $session->title ?? 'جلسة مكتملة',
+                        'date' => $session->completed_at ?? $session->scheduled_at,
+                        'circle_name' => $circle->name ?? 'الحلقة الفردية'
+                    ];
+                }
+            }
+
+            // Use already loaded group circles (filtered by teacher in showStudent method)
+            $groupCircles = $student->quranCircles;
+
+            foreach ($groupCircles as $circle) {
+                $progressData['circles'][] = [
+                    'id' => $circle->id,
+                    'type' => 'group',
+                    'name' => $circle->name,
+                    'level' => $circle->level,
+                    'status' => $circle->status
+                ];
+            }
+        }
+
+        // Sort recent activity by date
+        usort($progressData['recentActivity'], function($a, $b) {
+            return $b['date'] <=> $a['date'];
+        });
+
+        return $progressData;
     }
     
     public function edit()
@@ -151,20 +266,7 @@ class TeacherProfileController extends Controller
         
         return back()->with('success', 'تم تحديث الملف الشخصي بنجاح');
     }
-    
-    public function settings()
-    {
-        $user = Auth::user();
-        $teacherProfile = $this->getTeacherProfile($user);
-        
-        if (!$teacherProfile) {
-            abort(404, 'Teacher profile not found');
-        }
-        
-        return view('teacher.settings', [
-            'teacherProfile' => $teacherProfile
-        ]);
-    }
+
     
     /**
      * Get teacher profile based on user type
@@ -185,14 +287,47 @@ class TeacherProfileController extends Controller
      */
     private function getQuranTeacherData($user, $teacherProfile)
     {
+        $academy = $user->academy;
+        
         // Get assigned Quran circles (admin creates and assigns)
         $assignedCircles = QuranCircle::where('quran_teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
             ->with(['students', 'academy'])
             ->get();
+
+        // Get pending trial requests
+        $pendingTrialRequests = \App\Models\QuranTrialRequest::where('teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->with(['student', 'academy'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Get active subscriptions
+        $activeSubscriptions = \App\Models\QuranSubscription::where('quran_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->whereIn('subscription_status', ['active', 'pending'])
+            ->whereIn('payment_status', ['paid', 'pending'])
+            ->with(['student', 'package', 'individualCircle'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Get recent sessions
+        $recentSessions = \App\Models\QuranSession::where('quran_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->whereIn('status', ['scheduled', 'completed'])
+            ->with(['student', 'subscription'])
+            ->orderBy('scheduled_at', 'desc')
+            ->limit(5)
+            ->get();
             
         return [
             'assignedCircles' => $assignedCircles,
+            'pendingTrialRequests' => $pendingTrialRequests,
+            'activeSubscriptions' => $activeSubscriptions,
+            'recentSessions' => $recentSessions,
             'teacherType' => 'quran'
         ];
     }

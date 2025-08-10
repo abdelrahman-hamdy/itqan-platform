@@ -43,14 +43,14 @@
             <h1 class="text-3xl font-bold text-gray-900 mb-2">
               <i class="ri-group-line text-blue-600 ml-2"></i>
               @if(auth()->user()->isQuranTeacher())
-                طلاب دوائر القرآن
+                طلاب حلقات القرآن
               @else
                 طلاب الدورات
               @endif
             </h1>
             <p class="text-gray-600">
               @if(auth()->user()->isQuranTeacher())
-                إدارة ومتابعة تقدم طلابك في دوائر القرآن المكلف بها
+                إدارة ومتابعة تقدم طلابك في حلقات القرآن المكلف بها
               @else
                 إدارة ومتابعة تقدم طلابك في الدورات التي تدرسها
               @endif
@@ -112,7 +112,7 @@
             <div>
               <p class="text-sm font-medium text-gray-500">
                 @if(auth()->user()->isQuranTeacher())
-                  دوائر نشطة
+                  حلقات نشطة
                 @else
                   دورات نشطة
                 @endif
@@ -131,7 +131,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">
             <i class="ri-group-2-line text-purple-600 ml-2"></i>
-            دوائر القرآن المكلف بها
+            حلقات القرآن المكلف بها
           </h3>
           
           <!-- Sample circles -->

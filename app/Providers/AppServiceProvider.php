@@ -29,10 +29,14 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('academy.context', \App\Http\Middleware\AcademyContext::class);
         Route::aliasMiddleware('resolve.tenant', \App\Http\Middleware\ResolveTenantFromSubdomain::class);
         
+        // Route model bindings handled manually in controllers
+        
         // Share academy context with all views
         View::composer('*', function ($view) {
             $view->with('currentAcademy', AcademyHelper::getCurrentAcademy());
             $view->with('hasAcademySelected', AcademyHelper::hasAcademySelected());
         });
+        
+        // Render hooks can be added here if needed
     }
 }
