@@ -332,6 +332,12 @@
                     <h3 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
                         ⭕ اختيار الحلقة والجدولة الجماعية
                     </h3>
+                    <!-- DEBUG BUTTON FOR CIRCLE HIGHLIGHTING -->
+                    <button onclick="highlightSelectedCircle(); testCircleHighlighting();" 
+                            class="bg-red-500 text-white px-3 py-1 rounded text-xs font-medium hover:bg-red-600 transition-colors"
+                            title="اختبار تمييز الحلقة المحددة">
+                        🔧 تطبيق التمييز
+                    </button>
                     <button id="bulkScheduleBtn" 
                             class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                             onclick="openBulkScheduleModal()" disabled>
@@ -353,7 +359,10 @@
                                        data-sessions="{{ $circle->subscription->package->sessions_per_month ?? 0 }}"
                                        data-duration="{{ $circle->subscription->package->session_duration_minutes ?? 60 }}"
                                        data-name="{{ $circle->name ?? 'حلقة فردية' }}"
-                                       class="mr-3" onchange="updateBulkScheduleButton()">
+                                       class="mr-3" 
+                                       onchange="updateBulkScheduleButton(); highlightSelectedCircle(); console.log('Individual radio change triggered');"
+                                       onclick="setTimeout(function(){ highlightSelectedCircle(); console.log('Individual radio click triggered'); }, 10);"
+                                       oninput="highlightSelectedCircle(); console.log('Individual radio input triggered');">
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
                                         <h5 class="font-semibold text-gray-900">{{ $circle->name ?? 'حلقة فردية' }}</h5>
@@ -396,13 +405,16 @@
                                        data-sessions="{{ $circle->monthly_sessions_count ?? 8 }}"
                                        data-duration="{{ $circle->session_duration_minutes ?? 60 }}"
                                        data-name="{{ $circle->name_ar ?? 'حلقة جماعية' }}"
-                                       class="mr-3" onchange="updateBulkScheduleButton()">
+                                       class="mr-3" 
+                                       onchange="updateBulkScheduleButton(); highlightSelectedCircle(); console.log('Radio change triggered');"
+                                       onclick="setTimeout(function(){ highlightSelectedCircle(); console.log('Radio click triggered'); }, 10);"
+                                       oninput="highlightSelectedCircle(); console.log('Radio input triggered');">
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
                                         <h5 class="font-semibold text-gray-900">{{ $circle->name_ar ?? 'حلقة جماعية' }}</h5>
                                         <p class="text-sm text-gray-600">{{ $circle->enrolled_students ?? 0 }} طالب - كود: {{ $circle->circle_code ?? 'غير محدد' }}</p>
                                         <p class="text-xs text-green-600 mt-1">
-                                            📊 {{ $circle->monthly_sessions_count ?? 8 }} جلسات/شهر - 
+                                            📊 {{ $circle->sessions_count ?? 0 }} جلسة مجدولة ({{ $circle->monthly_sessions_count ?? 8 }} شهرياً) - 
                                             ⏱️ {{ $circle->session_duration_minutes ?? 60 }} دقيقة
                                         </p>
                                     </div>
@@ -1899,24 +1911,26 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
         return;
     }
     
-            // Calculate maximum weekdays based on subscription
-            let maxWeekdays = 7; // Default to all days if no limit
+            // Calculate recommended weekdays based on subscription - not a hard limit
+            let recommendedWeekdays = 2; // Default recommendation
             if (monthlySessionsLimit > 0) {
-                // Calculate max weekdays per week based on monthly limit
+                // Calculate recommended weekdays per week based on monthly limit
                 // Monthly sessions / 4 weeks = sessions per week
-                const sessionsPerWeek = Math.ceil(monthlySessionsLimit / 4);
-                maxWeekdays = Math.min(sessionsPerWeek, 7);
-                debugLog('Calculated max weekdays based on subscription', { sessionsPerWeek, maxWeekdays });
+                recommendedWeekdays = Math.ceil(monthlySessionsLimit / 4);
+                debugLog('Calculated recommended weekdays based on subscription', { 
+                    monthlySessionsLimit, 
+                    recommendedWeekdays 
+                });
             }
             
-            showIndividualSchedulingModal(circleId, sessionPills, maxWeekdays, monthlySessionsLimit);
+            showIndividualSchedulingModal(circleId, sessionPills, recommendedWeekdays, monthlySessionsLimit);
         }
 
-        function showIndividualSchedulingModal(circleId, sessionPills, maxWeekdays = 7, monthlySessionsLimit = 0) {
+        function showIndividualSchedulingModal(circleId, sessionPills, recommendedWeekdays = 2, monthlySessionsLimit = 0) {
             debugLog('Creating individual scheduling modal', { 
                 circleId, 
                 sessionCount: sessionPills.length, 
-                maxWeekdays, 
+                recommendedWeekdays, 
                 monthlySessionsLimit 
             });
             
@@ -1935,7 +1949,7 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
             
             const weekdayCheckboxes = weekdayOptions.map(day => `
                 <label class="flex items-center space-x-2 space-x-reverse">
-                    <input type="checkbox" name="weekdays" value="${day.value}" class="rounded weekday-checkbox" onchange="checkWeekdayLimit(${maxWeekdays})">
+                    <input type="checkbox" name="weekdays" value="${day.value}" class="rounded weekday-checkbox" onchange="checkIndividualWeekdayRecommendation(${recommendedWeekdays})">
                     <span class="text-sm">${day.name}</span>
                 </label>
             `).join('');
@@ -1950,23 +1964,30 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                     </div>
                     
                     ${monthlySessionsLimit > 0 ? `
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                        <h4 class="text-sm font-semibold text-blue-800 mb-1">حدود الاشتراك</h4>
-                        <p class="text-xs text-blue-700">📊 ${monthlySessionsLimit} جلسة/شهر - الحد الأقصى: ${maxWeekdays} أيام/أسبوع</p>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                        <h4 class="text-sm font-semibold text-green-800 mb-1">💡 توصية ذكية</h4>
+                        <p class="text-xs text-green-700">📊 ${monthlySessionsLimit} جلسة/شهر - الموصى به: ${recommendedWeekdays} أيام/أسبوع</p>
+                        <p class="text-xs text-green-600 mt-1">يمكنك اختيار أكثر أو أقل حسب احتياجاتك</p>
                     </div>
                     ` : ''}
                     
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                أيام الأسبوع ${maxWeekdays < 7 ? `(الحد الأقصى: ${maxWeekdays})` : ''}
+                                أيام الأسبوع (مرن - يمكنك الاختيار بحرية)
                             </label>
                             <div class="grid grid-cols-2 gap-2">
                                 ${weekdayCheckboxes}
                             </div>
-                            <div id="weekday-limit-warning" class="text-xs text-red-600 mt-2 hidden">
-                                تجاوزت الحد المسموح من الأيام للاشتراك
+                            <div id="weekday-recommendation-info" class="text-xs text-blue-600 mt-2">
+                                💡 الموصى به: ${recommendedWeekdays} أيام في الأسبوع
                             </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ بداية الجدولة (اختياري)</label>
+                            <input type="date" id="individualStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="${new Date().toISOString().split('T')[0]}">
+                            <p class="text-xs text-gray-500 mt-1">اتركه فارغاً للبدء من اليوم</p>
                         </div>
                         
                         <div>
@@ -2017,6 +2038,32 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                 warning.classList.add('hidden');
             }
         }
+        
+        // New function for individual circles - provides recommendation instead of hard limit
+        function checkIndividualWeekdayRecommendation(recommendedWeekdays) {
+            const checkedBoxes = document.querySelectorAll('input[name="weekdays"]:checked');
+            const infoDiv = document.getElementById('weekday-recommendation-info');
+            const selectedCount = checkedBoxes.length;
+            
+            if (!infoDiv) return;
+            
+            if (selectedCount === 0) {
+                infoDiv.innerHTML = `💡 الموصى به: ${recommendedWeekdays} أيام في الأسبوع`;
+                infoDiv.className = 'text-xs text-blue-600 mt-2';
+            } else if (selectedCount === recommendedWeekdays) {
+                infoDiv.innerHTML = `✅ ممتاز! اخترت ${selectedCount} أيام (الموصى به)`;
+                infoDiv.className = 'text-xs text-green-600 mt-2';
+            } else if (selectedCount < recommendedWeekdays) {
+                infoDiv.innerHTML = `📉 اخترت ${selectedCount} أيام (أقل من الموصى به: ${recommendedWeekdays})`;
+                infoDiv.className = 'text-xs text-orange-600 mt-2';
+            } else if (selectedCount <= recommendedWeekdays + 2) {
+                infoDiv.innerHTML = `📈 اخترت ${selectedCount} أيام (أكثر من الموصى به: ${recommendedWeekdays} - ولكن لا بأس)`;
+                infoDiv.className = 'text-xs text-blue-600 mt-2';
+            } else {
+                infoDiv.innerHTML = `⚠️ اخترت ${selectedCount} أيام (أكثر بكثير من الموصى به: ${recommendedWeekdays}). تأكد من وجود جلسات كافية`;
+                infoDiv.className = 'text-xs text-amber-600 mt-2';
+            }
+        }
 
         function saveIndividualSchedule(circleId) {
             debugLog('saveIndividualSchedule called', { circleId });
@@ -2065,87 +2112,127 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
             const sessionPills = sessionContainer.querySelectorAll('.session-pill');
             debugLog(`Found ${sessionPills.length} session pills`);
             
-            if (sessionPills.length === 0) {
+            // For individual circles, allow flexible scheduling even if limited template sessions exist
+            let availableSessions = sessionPills.length;
+            let needsMoreSessions = false;
+            
+            // Calculate how many sessions we might need based on selected days
+            const selectedDaysCount = selectedDays.length;
+            const estimatedSessionsNeeded = selectedDaysCount * 4; // Roughly 4 weeks worth
+            
+            if (availableSessions === 0) {
                 showNotification('لا توجد جلسات للجدولة', 'warning');
                 modal.remove();
                 return;
             }
             
-            let sessionIndex = 0;
-            let week = 0;
-            const pillsToProcess = Array.from(sessionPills);
+            // If we have fewer sessions than selected days, we'll create more on-demand
+            if (availableSessions < selectedDaysCount) {
+                needsMoreSessions = true;
+                debugLog(`Will need to create additional sessions. Available: ${availableSessions}, Days selected: ${selectedDaysCount}`);
+            }
             
-            debugLog('Processing sessions...', { count: pillsToProcess.length });
-            
+            // NEW FLEXIBLE APPROACH: Schedule sessions for all selected days, not limited by available pills
             let scheduledCount = 0;
             let conflictCount = 0;
+            let sessionCounter = 0;
+            let week = 0;
             
-            pillsToProcess.forEach((pill, index) => {
-                const dayIndex = sessionIndex % selectedDays.length;
-                const sessionDate = new Date();
-                const duration = parseInt(pill.dataset.duration || '60');
-                
-                // Find next occurrence of the selected day
-                const today = new Date();
-                const targetDay = selectedDays[dayIndex];
-                let daysUntilTarget = (targetDay - today.getDay()) % 7;
-                if (daysUntilTarget <= 0) daysUntilTarget += 7; // Always schedule for future
-                
-                sessionDate.setDate(today.getDate() + daysUntilTarget + (week * 7));
-                sessionDate.setHours(parseInt(time.split(':')[0]), parseInt(time.split(':')[1]));
-                
-                debugLog(`Scheduling session ${index}:`, {
-                    targetDay,
-                    daysUntilTarget,
-                    sessionDate: sessionDate.toISOString()
+            // Create a pool of available sessions and extend it if needed
+            const pillsArray = Array.from(sessionPills);
+            const maxSessionsToSchedule = Math.max(selectedDaysCount * 8, pillsArray.length); // At least 8 weeks worth
+            
+            debugLog('Starting flexible individual scheduling...', { 
+                availablePills: pillsArray.length,
+                selectedDays: selectedDaysCount,
+                maxToSchedule: maxSessionsToSchedule
+            });
+            
+            // Schedule sessions for multiple weeks across all selected days
+            while (sessionCounter < maxSessionsToSchedule && week < 12) { // Max 12 weeks
+                selectedDays.forEach((targetDay, dayIndex) => {
+                    if (sessionCounter >= maxSessionsToSchedule) return;
+                    
+                    const sessionDate = new Date();
+                    const today = new Date();
+                    
+                    // Calculate the date for this specific day of the week
+                    let daysUntilTarget = (targetDay - today.getDay()) % 7;
+                    if (daysUntilTarget <= 0) daysUntilTarget += 7; // Always schedule for future
+                    
+                    sessionDate.setDate(today.getDate() + daysUntilTarget + (week * 7));
+                    sessionDate.setHours(parseInt(time.split(':')[0]), parseInt(time.split(':')[1]));
+                    
+                    // Use existing pill if available, otherwise create virtual session
+                    const pill = pillsArray[sessionCounter] || null;
+                    const duration = pill ? parseInt(pill.dataset.duration || '60') : 60;
+                    const sessionId = pill ? pill.dataset.sessionId : `virtual-${circleId}-${sessionCounter}`;
+                    const circleIdFromPill = pill ? pill.dataset.circleId : circleId;
+                    const title = pill ? (pill.dataset.title || pill.textContent.trim()) : `جلسة فردية ${sessionCounter + 1}`;
+                    
+                    debugLog(`Scheduling session ${sessionCounter}:`, {
+                        week,
+                        targetDay,
+                        sessionDate: sessionDate.toISOString(),
+                        isVirtual: !pill
+                    });
+                    
+                    // Check for time conflicts
+                    const conflictCheck = checkTimeConflict(sessionDate, duration);
+                    if (conflictCheck.hasConflict) {
+                        debugLog('Skipping individual session due to conflict', {
+                            sessionDate: sessionDate.toISOString(),
+                            conflictingSession: conflictCheck.conflictingEvent.title
+                        });
+                        conflictCount++;
+                    } else {
+                        const eventData = {
+                            id: 'temp-' + sessionId,
+                            title: title,
+                            start: sessionDate.toISOString(),
+                            duration: duration + ':00',
+                            backgroundColor: '#10b981',
+                            borderColor: '#059669',
+                            extendedProps: {
+                                is_temporary: true,
+                                session_id: sessionId,
+                                circle_id: circleIdFromPill,
+                                session_type: 'individual',
+                                duration_minutes: duration,
+                                is_virtual: !pill // Mark virtual sessions
+                            }
+                        };
+                        
+                        calendar.addEvent(eventData);
+                        
+                        addPendingChange({
+                            type: 'schedule',
+                            sessionId: 'temp-' + sessionId,
+                            date: sessionDate.toISOString(),
+                            circleId: circleIdFromPill,
+                            duration: duration,
+                            isVirtual: !pill
+                        });
+                        
+                        // Mark session as scheduled if it's a real session
+                        if (pill) {
+                            markSessionAsScheduled(sessionId);
+                            pill.remove();
+                        }
+                        
+                        scheduledCount++;
+                    }
+                    
+                    sessionCounter++;
                 });
                 
-                // Check for time conflicts
-                const conflictCheck = checkTimeConflict(sessionDate, duration);
-                if (conflictCheck.hasConflict) {
-                    debugLog('Skipping individual session due to conflict', {
-                        sessionDate: sessionDate.toISOString(),
-                        conflictingSession: conflictCheck.conflictingEvent.title
-                    });
-                    conflictCount++;
-                    // Skip this session but continue with others
-                } else {
-                    const eventData = {
-                        id: 'temp-' + pill.dataset.sessionId,
-                        title: pill.dataset.title || pill.textContent.trim(),
-                        start: sessionDate.toISOString(),
-                        duration: duration + ':00',
-                        backgroundColor: '#10b981',
-                        borderColor: '#059669',
-                        extendedProps: {
-                            is_temporary: true,
-                            session_id: pill.dataset.sessionId,
-                            circle_id: pill.dataset.circleId,
-                            session_type: 'individual',
-                            duration_minutes: duration
-                        }
-                    };
-                    
-                    calendar.addEvent(eventData);
-                    
-                    addPendingChange({
-                        type: 'schedule',
-                        sessionId: 'temp-' + pill.dataset.sessionId,
-                        date: sessionDate.toISOString(),
-                        circleId: pill.dataset.circleId,
-                        duration: duration
-                    });
-                    
-                    // Mark session as scheduled
-                    markSessionAsScheduled(pill.dataset.sessionId);
-                    scheduledCount++;
-                }
-                
-                pill.remove();
-                
-                sessionIndex++;
-                if (dayIndex === selectedDays.length - 1) {
-                    week++;
+                week++;
+            }
+            
+            // Remove any remaining unused pills
+            pillsArray.forEach(pill => {
+                if (pill.parentNode) {
+                    pill.remove();
                 }
             });
             
@@ -2171,7 +2258,7 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
         }
 
         // Recurring schedule for group circles  
-        function setupRecurringSchedule(circleId, monthlySessionsLimit = 8, sessionDuration = 60) {
+        function setupRecurringSchedule(circleId, monthlySessionsLimit = 8, sessionDuration = 60, overrideStartDate = null, overrideSessionCount = null) {
             debugLog('Creating recurring schedule modal', { circleId, monthlySessionsLimit, sessionDuration });
             
             const modal = document.createElement('div');
@@ -2208,14 +2295,14 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                     
                     <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                         <h4 class="text-sm font-semibold text-green-800 mb-1">إعدادات الحلقة</h4>
-                        <p class="text-xs text-green-700">📊 ${monthlySessionsLimit} جلسات/شهر - الحد الأقصى: ${maxGroupWeekdays} أيام/أسبوع</p>
+                        <p class="text-xs text-green-700">📊 ${monthlySessionsLimit} جلسات/شهر - حد إجباري: ${maxGroupWeekdays} أيام/أسبوع</p>
                         <p class="text-xs text-green-700">⏱️ مدة الجلسة: ${sessionDuration} دقيقة</p>
                     </div>
                     
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                أيام الأسبوع (الحد الأقصى: ${maxGroupWeekdays})
+                                أيام الأسبوع (حد إجباري: ${maxGroupWeekdays})
                             </label>
                             <div class="grid grid-cols-2 gap-2">
                                 ${weekdayCheckboxes}
@@ -2223,6 +2310,30 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                             <div id="group-weekday-limit-warning" class="text-xs text-red-600 mt-2 hidden">
                                 تجاوزت الحد المسموح من الأيام للحلقة
                             </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ بداية الجدولة</label>
+                            <input type="date" id="recurringStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" 
+                                   value="${new Date().toISOString().split('T')[0]}" min="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <label class="block text-sm font-semibold text-blue-800 mb-2">
+                                📊 عدد الجلسات المطلوب إنشاؤها (تحديد يدوي)
+                            </label>
+                            <input type="number" id="recurringSessionCount" 
+                                   class="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-lg font-medium text-center" 
+                                   value="${monthlySessionsLimit}" min="1" max="100" 
+                                   placeholder="أدخل العدد المطلوب"
+                                   onchange="updateSessionCountPreview('recurring')"
+                                   oninput="updateSessionCountPreview('recurring')">
+                            <p class="text-xs text-blue-600 mt-2 font-medium">
+                                💡 حدد بنفسك عدد الجلسات التي تريد إنشاءها (افتراضي: ${monthlySessionsLimit})
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                يمكنك إنشاء من 1 إلى 100 جلسة حسب احتياجاتك
+                            </p>
                         </div>
                         
                         <div>
@@ -2310,11 +2421,18 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
             
             const timeInput = modal.querySelector('#recurringTime');
             const durationInput = modal.querySelector('#recurringDuration');
+            const startDateInput = modal.querySelector('#recurringStartDate');
+            const sessionCountInput = modal.querySelector('#recurringSessionCount');
+            
             const time = timeInput ? timeInput.value : '16:00';
             const duration = durationInput ? durationInput.value : '60';
+            const startDate = overrideStartDate ? new Date(overrideStartDate) : (startDateInput ? new Date(startDateInput.value) : new Date());
+            const sessionCount = overrideSessionCount ? overrideSessionCount : (sessionCountInput ? parseInt(sessionCountInput.value) : 8);
             
             debugLog('Selected time:', time);
             debugLog('Selected duration:', duration);
+            debugLog('Selected start date:', startDate);
+            debugLog('Selected session count:', sessionCount);
             
             if (selectedDays.length === 0) {
                 debugLog('No days selected - showing warning');
@@ -2322,35 +2440,61 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                 return;
             }
             
-            // First, generate all potential sessions and check for conflicts
-            const today = new Date();
-            const weeksAhead = 52; // Generate for a full year
+            // Generate sessions based on user-specified count and start date
             const potentialSessions = [];
             const conflicts = [];
             
-            debugLog('Pre-checking conflicts for recurring sessions...', { weeksAhead });
+            debugLog('Pre-checking conflicts for recurring sessions...', { sessionCount, startDate, selectedDays });
             
-            // Generate all potential session dates first
-            for (let week = 0; week < weeksAhead; week++) {
+            // Validate session count
+            if (sessionCount <= 0 || sessionCount > 100) {
+                showNotification('عدد الجلسات يجب أن يكون بين 1 و 100', 'warning');
+                return;
+            }
+            
+            // Ensure start date is not in the past
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (startDate < today) {
+                showNotification('تاريخ البداية لا يمكن أن يكون في الماضي', 'warning');
+                return;
+            }
+            
+            // Generate sessions starting from the specified start date
+            let sessionsGenerated = 0;
+            let currentDate = new Date(startDate);
+            let searchWeeks = 0;
+            
+            while (sessionsGenerated < sessionCount && searchWeeks < 104) { // Max 2 years search
                 selectedDays.forEach(dayOfWeek => {
-                    const sessionDate = new Date();
+                    if (sessionsGenerated >= sessionCount) return;
                     
-                    // Find next occurrence of the selected day
-                    let daysUntilTarget = (dayOfWeek - today.getDay()) % 7;
-                    if (daysUntilTarget <= 0) daysUntilTarget += 7; // Always schedule for future
+                    // Find the next occurrence of this day of week from current date
+                    const sessionDate = new Date(currentDate);
+                    let daysUntilTarget = (dayOfWeek - sessionDate.getDay()) % 7;
+                    if (daysUntilTarget < 0) daysUntilTarget += 7;
                     
-                    sessionDate.setDate(today.getDate() + daysUntilTarget + (week * 7));
-                    sessionDate.setHours(parseInt(time.split(':')[0]), parseInt(time.split(':')[1]));
+                    sessionDate.setDate(sessionDate.getDate() + daysUntilTarget);
+                    sessionDate.setHours(parseInt(time.split(':')[0]), parseInt(time.split(':')[1]), 0, 0);
                     
-                    if (sessionDate > today) {
+                    // Only add if this session date is on or after start date
+                    if (sessionDate >= startDate) {
                         potentialSessions.push({
                             date: sessionDate,
                             dayOfWeek,
-                            week
+                            week: searchWeeks
                         });
+                        sessionsGenerated++;
                     }
                 });
+                
+                // Move to next week
+                currentDate.setDate(currentDate.getDate() + 7);
+                searchWeeks++;
             }
+            
+            // Sort sessions by date to ensure proper order
+            potentialSessions.sort((a, b) => a.date - b.date);
             
             debugLog(`Generated ${potentialSessions.length} potential sessions`);
             
@@ -2585,6 +2729,116 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
 
             // New functions for circle selection and bulk scheduling
 
+            // Update session count preview for group circles - provides real-time feedback
+            function updateSessionCountPreview(modalType) {
+                const sessionCountInput = modalType === 'recurring' 
+                    ? document.getElementById('recurringSessionCount')
+                    : document.getElementById('bulkGroupSessionCount');
+                
+                if (!sessionCountInput) return;
+                
+                const count = parseInt(sessionCountInput.value) || 0;
+                const modal = sessionCountInput.closest('.modal-overlay');
+                if (!modal) return;
+                
+                // Find the preview area (the blue info paragraph)
+                const previewArea = sessionCountInput.parentElement.querySelector('.text-blue-600');
+                if (!previewArea) return;
+                
+                // Update preview text based on the count
+                if (count === 0) {
+                    previewArea.innerHTML = '⚠️ يجب إدخال عدد الجلسات أولاً';
+                    previewArea.className = 'text-xs text-red-600 mt-2 font-medium';
+                    sessionCountInput.classList.add('border-red-300');
+                    sessionCountInput.classList.remove('border-blue-300');
+                } else if (count < 1) {
+                    previewArea.innerHTML = '❌ عدد الجلسات يجب أن يكون 1 على الأقل';
+                    previewArea.className = 'text-xs text-red-600 mt-2 font-medium';
+                    sessionCountInput.classList.add('border-red-300');
+                    sessionCountInput.classList.remove('border-blue-300');
+                } else if (count > 100) {
+                    previewArea.innerHTML = '⚠️ عدد الجلسات كبير جداً (الحد الأقصى: 100)';
+                    previewArea.className = 'text-xs text-orange-600 mt-2 font-medium';
+                    sessionCountInput.classList.add('border-orange-300');
+                    sessionCountInput.classList.remove('border-blue-300');
+                } else if (count <= 10) {
+                    previewArea.innerHTML = `✅ سيتم إنشاء ${count} جلسة - عدد مناسب`;
+                    previewArea.className = 'text-xs text-green-600 mt-2 font-medium';
+                    sessionCountInput.classList.add('border-green-300');
+                    sessionCountInput.classList.remove('border-blue-300', 'border-red-300', 'border-orange-300');
+                } else if (count <= 30) {
+                    previewArea.innerHTML = `📊 سيتم إنشاء ${count} جلسة - عدد جيد`;
+                    previewArea.className = 'text-xs text-blue-600 mt-2 font-medium';
+                    sessionCountInput.classList.add('border-blue-300');
+                    sessionCountInput.classList.remove('border-red-300', 'border-orange-300', 'border-green-300');
+                } else {
+                    previewArea.innerHTML = `📈 سيتم إنشاء ${count} جلسة - عدد كبير`;
+                    previewArea.className = 'text-xs text-indigo-600 mt-2 font-medium';
+                    sessionCountInput.classList.add('border-indigo-300');
+                    sessionCountInput.classList.remove('border-blue-300', 'border-red-300', 'border-orange-300', 'border-green-300');
+                }
+            }
+
+            // NEW BULLETPROOF CIRCLE SELECTION - MULTIPLE METHODS
+            function highlightSelectedCircle() {
+                console.log('🎯 Running circle highlight function');
+                
+                // METHOD 1: Remove all selected classes and inline styles
+                document.querySelectorAll('.circle-selection').forEach((label, index) => {
+                    console.log(`📝 Resetting circle ${index}`);
+                    
+                    // Remove all possible classes
+                    label.classList.remove('selected', 'circle-selected-force');
+                    
+                    // Clear inline styles
+                    label.style.border = '';
+                    label.style.backgroundColor = '';
+                    label.style.boxShadow = '';
+                    label.style.transform = '';
+                });
+                
+                // METHOD 2: Find selected radio and apply multiple styling approaches
+                const selectedRadio = document.querySelector('input[name="selectedCircle"]:checked');
+                console.log('🔍 Selected radio found:', !!selectedRadio);
+                
+                if (selectedRadio) {
+                    const selectedLabel = selectedRadio.closest('.circle-selection');
+                    console.log('🏷️ Selected label found:', !!selectedLabel);
+                    
+                    if (selectedLabel) {
+                        console.log('✅ Applying selection styles...');
+                        
+                        // APPROACH A: Add CSS class
+                        selectedLabel.classList.add('selected');
+                        selectedLabel.classList.add('circle-selected-force');
+                        
+                        // APPROACH B: Inline styles as backup
+                        selectedLabel.style.border = '4px solid #3b82f6 !important';
+                        selectedLabel.style.backgroundColor = '#eff6ff !important';
+                        selectedLabel.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.2) !important';
+                        selectedLabel.style.transform = 'scale(1.02) !important';
+                        
+                        // APPROACH C: Force CSS via setAttribute
+                        selectedLabel.setAttribute('style', 
+                            'border: 4px solid #3b82f6 !important; ' +
+                            'background-color: #eff6ff !important; ' +
+                            'box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important; ' +
+                            'transform: scale(1.02) !important;'
+                        );
+                        
+                        console.log('🎨 All styling methods applied!');
+                        
+                        // VERIFICATION: Check if styles were applied
+                        setTimeout(() => {
+                            const computedStyle = window.getComputedStyle(selectedLabel);
+                            console.log('🔍 Verification - Border:', computedStyle.border);
+                            console.log('🔍 Verification - Background:', computedStyle.backgroundColor);
+                            console.log('🔍 Verification - Classes:', selectedLabel.className);
+                        }, 100);
+                    }
+                }
+            }
+
             // Update bulk schedule button state based on selected circle
             function updateBulkScheduleButton() {
                 const selectedCircle = document.querySelector('input[name="selectedCircle"]:checked');
@@ -2604,6 +2858,9 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                     bulkScheduleBtn.disabled = true;
                     bulkScheduleBtn.textContent = '📅 جدولة جماعية للحلقة المحددة';
                 }
+                
+                // ALSO HIGHLIGHT THE SELECTED CIRCLE!
+                highlightSelectedCircle();
             }
 
             // Open bulk schedule modal for selected circle
@@ -2637,11 +2894,10 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                     return;
                 }
 
-                // Calculate maximum weekdays based on subscription
-                let maxWeekdays = 7; // Default to all days if no limit
+                // Calculate recommended weekdays based on subscription - flexible approach
+                let recommendedWeekdays = 2; // Default recommendation
                 if (sessionsPerMonth > 0) {
-                    const sessionsPerWeek = Math.ceil(sessionsPerMonth / 4);
-                    maxWeekdays = Math.min(sessionsPerWeek, 7);
+                    recommendedWeekdays = Math.ceil(sessionsPerMonth / 4);
                 }
 
                 const modal = document.createElement('div');
@@ -2659,7 +2915,7 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                 
                 const weekdayCheckboxes = weekdayOptions.map(day => `
                     <label class="flex items-center space-x-2 space-x-reverse">
-                        <input type="checkbox" name="weekdays" value="${day.value}" class="rounded weekday-checkbox" onchange="checkBulkWeekdayLimit(${maxWeekdays})">
+                        <input type="checkbox" name="weekdays" value="${day.value}" class="rounded weekday-checkbox" onchange="checkIndividualWeekdayRecommendation(${recommendedWeekdays})">
                         <span class="text-sm">${day.name}</span>
                     </label>
                 `).join('');
@@ -2679,23 +2935,30 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                         </div>
                         
                         ${sessionsPerMonth > 0 ? `
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                            <h4 class="text-sm font-semibold text-yellow-800 mb-1">حدود الاشتراك</h4>
-                            <p class="text-xs text-yellow-700">📊 ${sessionsPerMonth} جلسة/شهر - الحد الأقصى: ${maxWeekdays} أيام/أسبوع</p>
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                            <h4 class="text-sm font-semibold text-green-800 mb-1">💡 توصية ذكية</h4>
+                            <p class="text-xs text-green-700">📊 ${sessionsPerMonth} جلسة/شهر - الموصى به: ${recommendedWeekdays} أيام/أسبوع</p>
+                            <p class="text-xs text-green-600 mt-1">يمكنك اختيار أكثر أو أقل حسب احتياجاتك</p>
                         </div>
                         ` : ''}
                         
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    أيام الأسبوع ${maxWeekdays < 7 ? `(الحد الأقصى: ${maxWeekdays})` : ''}
+                                    أيام الأسبوع (مرن - يمكنك الاختيار بحرية)
                                 </label>
                                 <div class="grid grid-cols-2 gap-2">
                                     ${weekdayCheckboxes}
                                 </div>
-                                <div id="bulk-weekday-limit-warning" class="text-xs text-red-600 mt-2 hidden">
-                                    تجاوزت الحد المسموح من الأيام للاشتراك
+                                <div id="weekday-recommendation-info" class="text-xs text-blue-600 mt-2">
+                                    💡 الموصى به: ${recommendedWeekdays} أيام في الأسبوع
                                 </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ بداية الجدولة (اختياري)</label>
+                                <input type="date" id="bulkIndividualStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="${new Date().toISOString().split('T')[0]}">
+                                <p class="text-xs text-gray-500 mt-1">اتركه فارغاً للبدء من اليوم</p>
                             </div>
                             
                             <div>
@@ -2754,13 +3017,13 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                         <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                             <h4 class="text-sm font-semibold text-green-800 mb-1">الحلقة المحددة</h4>
                             <p class="text-xs text-green-700">📝 ${circleName}</p>
-                            <p class="text-xs text-green-700">📊 ${sessionsPerMonth} جلسات/شهر - ⏱️ ${sessionDuration} دقيقة</p>
+                            <p class="text-xs text-green-700">📊 ${sessionsPerMonth} جلسات/شهر - حد إجباري: ${maxWeekdays} أيام/أسبوع - ⏱️ ${sessionDuration} دقيقة</p>
                         </div>
                         
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    أيام الأسبوع (الحد الأقصى: ${maxWeekdays})
+                                    أيام الأسبوع (حد إجباري: ${maxWeekdays})
                                 </label>
                                 <div class="grid grid-cols-2 gap-2">
                                     ${weekdayCheckboxes}
@@ -2768,6 +3031,30 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                                 <div id="bulk-weekday-limit-warning" class="text-xs text-red-600 mt-2 hidden">
                                     تجاوزت الحد المسموح من الأيام للحلقة
                                 </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ بداية الجدولة</label>
+                                <input type="date" id="bulkGroupStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" 
+                                       value="${new Date().toISOString().split('T')[0]}" min="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                            
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <label class="block text-sm font-semibold text-blue-800 mb-2">
+                                    📊 عدد الجلسات المطلوب إنشاؤها (تحديد يدوي)
+                                </label>
+                                <input type="number" id="bulkGroupSessionCount" 
+                                       class="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-lg font-medium text-center" 
+                                       value="${sessionsPerMonth}" min="1" max="100" 
+                                       placeholder="أدخل العدد المطلوب"
+                                       onchange="updateSessionCountPreview('bulk')"
+                                       oninput="updateSessionCountPreview('bulk')">
+                                <p class="text-xs text-blue-600 mt-2 font-medium">
+                                    💡 حدد بنفسك عدد الجلسات التي تريد إنشاءها (افتراضي: ${sessionsPerMonth})
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    يمكنك إنشاء من 1 إلى 100 جلسة حسب احتياجاتك
+                                </p>
                             </div>
                             
                             <div>
@@ -2825,22 +3112,169 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
             // Execute bulk group schedule  
             function executeBulkGroupSchedule(circleId, sessionDuration) {
                 const modal = document.querySelector('.modal-overlay');
+                if (!modal) {
+                    showNotification('خطأ: النافذة غير موجودة', 'error');
+                    return;
+                }
+                
                 const weekdayCheckboxes = modal.querySelectorAll('input[name="weekdays"]:checked');
                 const selectedDays = Array.from(weekdayCheckboxes).map(cb => parseInt(cb.value));
                 const time = modal.querySelector('#bulkGroupTime').value;
+                const startDateInput = modal.querySelector('#bulkGroupStartDate');
+                const sessionCountInput = modal.querySelector('#bulkGroupSessionCount');
+                
+                const startDate = startDateInput ? startDateInput.value : new Date().toISOString().split('T')[0];
+                const sessionCount = sessionCountInput ? parseInt(sessionCountInput.value) : 8;
 
                 if (selectedDays.length === 0) {
                     showNotification('يرجى اختيار يوم واحد على الأقل', 'warning');
                     return;
                 }
 
+                // Validate session count
+                if (sessionCount <= 0 || sessionCount > 100) {
+                    showNotification('عدد الجلسات يجب أن يكون بين 1 و 100', 'warning');
+                    return;
+                }
+
+                // Validate start date
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const selectedStartDate = new Date(startDate);
+                if (selectedStartDate < today) {
+                    showNotification('تاريخ البداية لا يمكن أن يكون في الماضي', 'warning');
+                    return;
+                }
+
                 modal.remove();
-                setupRecurringSchedule(circleId, 8, sessionDuration); // Use existing function
-                showNotification('تم بدء الجدولة المتكررة للحلقة الجماعية', 'success');
+                
+                // Call setupRecurringSchedule with the actual user values
+                setupRecurringSchedule(circleId, sessionCount, sessionDuration, startDate, sessionCount);
+                showNotification(`تم بدء جدولة ${sessionCount} جلسة للحلقة الجماعية`, 'success');
             }
+
+            // Initialize circle selection highlighting when DOM is ready - ENHANCED VERSION
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM loaded, setting up circle highlighting'); // Debug
+                
+                // Add event listeners to all circle radio buttons - MULTIPLE EVENTS FOR RELIABILITY
+                document.querySelectorAll('input[name="selectedCircle"]').forEach((radio, index) => {
+                    console.log(`Setting up radio ${index}:`, radio); // Debug
+                    
+                    // Multiple event types to ensure it works
+                    radio.addEventListener('change', function() {
+                        console.log('Radio change event triggered'); // Debug
+                        updateBulkScheduleButton();
+                        highlightSelectedCircle();
+                    });
+                    
+                    radio.addEventListener('click', function() {
+                        console.log('Radio click event triggered'); // Debug
+                        setTimeout(() => {
+                            highlightSelectedCircle();
+                        }, 10); // Small delay to ensure radio is checked
+                    });
+                    
+                    radio.addEventListener('input', function() {
+                        console.log('Radio input event triggered'); // Debug
+                        highlightSelectedCircle();
+                    });
+                });
+                
+                // ALSO add click listeners to the entire label for better UX
+                document.querySelectorAll('.circle-selection').forEach((label, index) => {
+                    console.log(`Setting up label ${index}:`, label); // Debug
+                    
+                    label.addEventListener('click', function() {
+                        console.log('Label click event triggered'); // Debug
+                        setTimeout(() => {
+                            highlightSelectedCircle();
+                        }, 50); // Delay to ensure radio state is updated
+                    });
+                });
+                
+                // Highlight any pre-selected circle on page load
+                console.log('Running initial highlight check'); // Debug
+                highlightSelectedCircle();
+                
+                // EMERGENCY BACKUP: Run highlight check every 2 seconds for the first 10 seconds (debug)
+                let checkCount = 0;
+                const intervalId = setInterval(() => {
+                    console.log(`⚡ Emergency backup highlight check ${checkCount + 1}`);
+                    highlightSelectedCircle();
+                    checkCount++;
+                    if (checkCount >= 5) {
+                        clearInterval(intervalId);
+                        console.log('⏹️ Stopped emergency backup highlight checks');
+                    }
+                }, 2000);
+                
+                // CONTINUOUS BACKUP: Keep checking every 5 seconds indefinitely
+                setInterval(() => {
+                    console.log('🔄 Continuous backup highlight check');
+                    highlightSelectedCircle();
+                }, 5000);
+            });
+            
+            // MANUAL TEST FUNCTION - YOU CAN CALL THIS FROM BROWSER CONSOLE TO TEST
+            window.testCircleHighlighting = function() {
+                console.log('=== MANUAL CIRCLE HIGHLIGHTING TEST ===');
+                console.log('All circles:', document.querySelectorAll('.circle-selection').length);
+                console.log('All radios:', document.querySelectorAll('input[name="selectedCircle"]').length);
+                console.log('Selected radio:', document.querySelector('input[name="selectedCircle"]:checked'));
+                
+                // Force highlight the first circle for testing
+                const firstRadio = document.querySelector('input[name="selectedCircle"]');
+                if (firstRadio) {
+                    firstRadio.checked = true;
+                    console.log('Selected first radio for testing');
+                    highlightSelectedCircle();
+                    console.log('Applied highlighting');
+                } else {
+                    console.log('No radios found!');
+                }
+            };
 </script>
 
 <x-slot:scripts>
+    <!-- FUCKING WORKING CSS FOR CIRCLE SELECTION - DIRECT APPROACH -->
+    <style>
+        /* DEFAULT STATE FOR ALL CIRCLES */
+        .circle-selection {
+            border: 1px solid #d1d5db !important;
+            background-color: white !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        /* SELECTED STATE - MULTIPLE APPROACHES */
+        .circle-selection.selected {
+            border: 4px solid #3b82f6 !important;
+            background-color: #eff6ff !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
+            transform: scale(1.02) !important;
+        }
+        
+        .circle-selection:has(input[type="radio"]:checked) {
+            border: 4px solid #3b82f6 !important;
+            background-color: #eff6ff !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
+            transform: scale(1.02) !important;
+        }
+        
+        /* BACKUP APPROACH */
+        .circle-selection input[type="radio"]:checked + * {
+            border: 4px solid #3b82f6 !important;
+        }
+        
+        /* FORCE SELECTED STYLING */
+        .circle-selected-force {
+            border: 4px solid #3b82f6 !important;
+            background-color: #eff6ff !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
+            transform: scale(1.02) !important;
+        }
+    </style>
+    
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.8/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js'></script>
