@@ -32,6 +32,7 @@ class QuranCircle extends Model
         'min_students_to_start',
         'session_duration_minutes',
         'monthly_sessions_count',
+        'schedule_period',
         'schedule_days',
         'schedule_time',
         'timezone',
@@ -160,10 +161,11 @@ class QuranCircle extends Model
         return $this->hasOne(QuranCircleSchedule::class, 'circle_id');
     }
 
-    public function enrollments(): HasMany
-    {
-        return $this->hasMany(QuranCircleEnrollment::class);
-    }
+    // Note: QuranCircleEnrollment model doesn't exist, using students pivot relationship instead
+    // public function enrollments(): HasMany
+    // {
+    //     return $this->hasMany(QuranCircleEnrollment::class);
+    // }
 
     public function homework(): HasMany
     {
@@ -338,7 +340,7 @@ class QuranCircle extends Model
 
     public function getFormattedMonthlyFeeAttribute(): string
     {
-        return number_format($this->monthly_fee, 2) . ' ' . $this->currency;
+        return number_format((float) $this->monthly_fee, 2) . ' ' . $this->currency;
     }
 
     public function getTotalCostAttribute(): float
@@ -710,10 +712,90 @@ class QuranCircle extends Model
         ]));
     }
 
-    private static function generateCircleCode(int $academyId): string
+    public static function generateCircleCode(int $academyId): string
     {
-        $count = self::where('academy_id', $academyId)->count() + 1;
-        return 'QC-' . $academyId . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+        $prefix = 'QC';
+        $academyPart = $academyId;
+        
+        // Get all existing circle codes for this academy
+        $existingCodes = self::withTrashed()
+            ->where('academy_id', $academyId)
+            ->pluck('circle_code')
+            ->toArray();
+        
+        $maxSequence = 0;
+        
+        // Parse existing codes to find the highest sequence number
+        foreach ($existingCodes as $code) {
+            // Only process codes that match the standard format: QC-{academy}-{sequence}
+            if (preg_match("/^{$prefix}-{$academyPart}-(\d+)$/", $code, $matches)) {
+                $sequence = (int) $matches[1];
+                $maxSequence = max($maxSequence, $sequence);
+            }
+        }
+        
+        $nextSequence = $maxSequence + 1;
+        $code = "{$prefix}-{$academyPart}-" . str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
+        
+        // Double-check for uniqueness (fallback safety)
+        $attempt = 0;
+        while (in_array($code, $existingCodes) && $attempt < 100) {
+            $nextSequence++;
+            $code = "{$prefix}-{$academyPart}-" . str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
+            $attempt++;
+        }
+        
+        return $code;
+    }
+
+    // Boot method to handle model events
+    protected static function booted()
+    {
+        static::creating(function ($circle) {
+            if (empty($circle->circle_code)) {
+                $circle->circle_code = self::generateCircleCode($circle->academy_id);
+            }
+        });
+
+        // Clean up related data when circle is deleted
+        static::deleting(function ($circle) {
+            // Delete all sessions for this circle
+            $circle->sessions()->delete();
+            
+            // Delete schedule if exists
+            if ($circle->schedule) {
+                $circle->schedule->delete();
+            }
+            
+            // Clean up pivot table entries (students)
+            $circle->students()->detach();
+            
+            // Delete related homework
+            $circle->homework()->delete();
+            
+            // Delete related progress records
+            $circle->progress()->delete();
+        });
+
+        // Clean up when force deleting (hard delete)
+        static::forceDeleting(function ($circle) {
+            // Force delete all sessions for this circle
+            $circle->sessions()->forceDelete();
+            
+            // Force delete schedule if exists
+            if ($circle->schedule) {
+                $circle->schedule->forceDelete();
+            }
+            
+            // Clean up pivot table entries (students)
+            $circle->students()->detach();
+            
+            // Force delete related homework
+            $circle->homework()->forceDelete();
+            
+            // Force delete related progress records
+            $circle->progress()->forceDelete();
+        });
     }
 
     public static function getOpenForEnrollment(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection

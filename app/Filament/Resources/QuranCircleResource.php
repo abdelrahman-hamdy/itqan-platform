@@ -176,6 +176,17 @@ public static function form(Form $form): Form
                                     ->default(8)
                                     ->required()
                                     ->helperText('يحدد هذا الرقم عدد الجلسات التي يمكن للمعلم جدولتها شهرياً'),
+
+                                Select::make('schedule_period')
+                                    ->label('فترة الجدولة')
+                                    ->options([
+                                        'week' => 'أسبوع واحد',
+                                        'month' => 'شهر واحد', 
+                                        'two_months' => 'شهرين',
+                                    ])
+                                    ->default('month')
+                                    ->required()
+                                    ->helperText('تحدد كم من الوقت مقدماً يمكن جدولة الجلسات'),
                             ]),
                     ]),
 

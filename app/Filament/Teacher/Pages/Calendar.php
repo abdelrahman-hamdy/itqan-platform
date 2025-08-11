@@ -17,6 +17,8 @@ use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Support\Enums\Alignment;
+use App\Filament\Teacher\Actions\SessionSchedulingActions;
+use App\Services\SessionManagementService;
 
 
 class Calendar extends Page
@@ -40,6 +42,7 @@ class Calendar extends Page
     // Scheduling form properties
     public array $scheduleDays = [];
     public ?string $scheduleTime = null;
+    public ?string $scheduleStartDate = null;
 
     /**
      * Get the widgets for this page
@@ -64,28 +67,50 @@ class Calendar extends Page
      */
     public function getSessionStatistics(): array
     {
-        $teacherId = Auth::id();
+        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
+        if (!$teacherProfileId) {
+            return [
+                ['title' => 'جلسات اليوم', 'value' => 0, 'icon' => 'heroicon-o-calendar-days', 'color' => 'primary'],
+                ['title' => 'الجلسات القادمة', 'value' => 0, 'icon' => 'heroicon-o-clock', 'color' => 'warning'],
+                ['title' => 'مكتملة هذا الشهر', 'value' => 0, 'icon' => 'heroicon-o-check-circle', 'color' => 'success'],
+                ['title' => 'في الانتظار', 'value' => 0, 'icon' => 'heroicon-o-exclamation-triangle', 'color' => 'danger'],
+            ];
+        }
+        
+        $userId = Auth::id();
         
         // Get today's sessions
-        $todaySessions = QuranSession::where('quran_teacher_id', $teacherId)
+        $todaySessions = QuranSession::where(function($query) use ($teacherProfileId, $userId) {
+                $query->where('quran_teacher_id', $teacherProfileId)
+                      ->orWhere('quran_teacher_id', $userId);
+            })
             ->whereDate('scheduled_at', today())
             ->count();
 
         // Get upcoming sessions (next 7 days)
-        $upcomingSessions = QuranSession::where('quran_teacher_id', $teacherId)
+        $upcomingSessions = QuranSession::where(function($query) use ($teacherProfileId, $userId) {
+                $query->where('quran_teacher_id', $teacherProfileId)
+                      ->orWhere('quran_teacher_id', $userId);
+            })
             ->where('scheduled_at', '>', now())
             ->where('scheduled_at', '<=', now()->addDays(7))
             ->count();
 
         // Get completed sessions this month
-        $completedThisMonth = QuranSession::where('quran_teacher_id', $teacherId)
+        $completedThisMonth = QuranSession::where(function($query) use ($teacherProfileId, $userId) {
+                $query->where('quran_teacher_id', $teacherProfileId)
+                      ->orWhere('quran_teacher_id', $userId);
+            })
             ->whereMonth('scheduled_at', now()->month)
             ->whereYear('scheduled_at', now()->year)
             ->where('status', 'completed')
             ->count();
 
         // Get pending/unscheduled sessions
-        $pendingSessions = QuranSession::where('quran_teacher_id', $teacherId)
+        $pendingSessions = QuranSession::where(function($query) use ($teacherProfileId, $userId) {
+                $query->where('quran_teacher_id', $teacherProfileId)
+                      ->orWhere('quran_teacher_id', $userId);
+            })
             ->where('status', 'pending')
             ->count();
 
@@ -122,9 +147,13 @@ class Calendar extends Page
      */
     public function getGroupCircles(): Collection
     {
-        $teacherId = Auth::id();
+        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
+        if (!$teacherProfileId) {
+            return collect();
+        }
         
-        return QuranCircle::where('quran_teacher_id', $teacherId)
+        return QuranCircle::where('quran_teacher_id', $teacherProfileId)
+            ->whereIn('status', ['planning', 'active', 'pending', 'ongoing']) // Include circles that teachers should see
             ->with(['sessions' => function($query) {
                 $query->where('scheduled_at', '>=', now()->startOfWeek())
                       ->where('scheduled_at', '<=', now()->addMonths(2));
@@ -132,8 +161,28 @@ class Calendar extends Page
             ->get()
             ->map(function ($circle) {
                 $schedule = $circle->schedule;
-                $isScheduled = $schedule && $schedule->is_active && !empty($schedule->weekly_schedule);
                 $sessionsCount = $circle->sessions()->count();
+                
+                // Enhanced scheduling status logic
+                $upcomingSessions = $circle->sessions()
+                    ->where('scheduled_at', '>', now())
+                    ->whereIn('status', ['scheduled', 'in_progress'])
+                    ->count();
+                    
+                $currentMonthSessions = $circle->sessions()
+                    ->whereRaw("DATE_FORMAT(scheduled_at, '%Y-%m') = ?", [now()->format('Y-m')])
+                    ->count();
+                    
+                $monthlyLimit = $circle->monthly_sessions_count ?? 4;
+                $needsMoreSessions = $currentMonthSessions < $monthlyLimit;
+                
+                // Circle is considered scheduled if:
+                // 1. Has active schedule AND
+                // 2. Either has upcoming sessions OR current month is already full
+                $isScheduled = $schedule && 
+                              $schedule->is_active && 
+                              !empty($schedule->weekly_schedule) && 
+                              ($upcomingSessions > 0 || !$needsMoreSessions);
                 
                 // Format schedule days and time for display
                 $scheduleDays = [];
@@ -170,14 +219,16 @@ class Calendar extends Page
      */
     public function getIndividualCircles(): Collection
     {
-        $teacherId = Auth::id();
+        $teacherId = Auth::id(); // Individual circles use user ID, not teacher profile ID
         
         return QuranIndividualCircle::where('quran_teacher_id', $teacherId)
-            ->with(['subscription.package', 'sessions'])
+            ->with(['subscription.package', 'sessions', 'student'])
+            ->whereIn('status', ['pending', 'active'])
+            ->whereHas('student')
             ->get()
             ->map(function ($circle) {
                 $subscription = $circle->subscription;
-                $scheduledSessions = $circle->sessions()->where('is_scheduled', true)->count();
+                $scheduledSessions = $circle->sessions()->whereIn('status', ['scheduled', 'in_progress', 'completed'])->count();
                 $totalSessions = $circle->total_sessions;
                 $remainingSessions = max(0, $totalSessions - $scheduledSessions);
                 
@@ -248,6 +299,20 @@ class Calendar extends Page
 
 
     /**
+     * Get header actions for the page
+     */
+    protected function getActions(): array
+    {
+        return [
+            // No header actions - keep schedule action only under circles tabs
+        ];
+    }
+
+
+
+
+
+    /**
      * Get schedule action for the selected circle
      */
     public function scheduleAction(): Action
@@ -282,19 +347,80 @@ class Calendar extends Page
                         $circle = $this->getSelectedCircle();
                         if (!$circle) return '';
                         
-                        if ($circle['type'] === 'group') {
-                            $maxDays = ceil(($circle['monthly_sessions'] ?? 4) / 4);
-                            return "الحد الأقصى: {$maxDays} أيام في الأسبوع للحلقات الجماعية";
+                        if ($circle['type'] === 'individual') {
+                            // Calculate smart recommendation for individual circles
+                            $remainingSessions = $circle['sessions_remaining'] ?? 0;
+                            $monthlySessionsCount = $circle['monthly_sessions'] ?? 4;
+                            
+                            // Calculate recommended sessions per week
+                            $recommendedPerWeek = ceil($monthlySessionsCount / 4);
+                            
+                            if ($remainingSessions <= 0) {
+                                return '⚠️ لا توجد جلسات متبقية في الاشتراك';
+                            }
+                            
+                            return "💡 التوصية: {$recommendedPerWeek} أيام في الأسبوع (بناءً على {$monthlySessionsCount} جلسات شهرياً). يمكنك اختيار أكثر أو أقل حسب الحاجة. الجلسات المتبقية: {$remainingSessions}";
                         } else {
-                            $remaining = $circle['sessions_remaining'] ?? 0;
-                            $scheduled = $circle['sessions_scheduled'] ?? 0;
-                            return "الجلسات المجدولة: {$scheduled} | الجلسات المتبقية: {$remaining}";
+                            $monthlySessionsCount = $circle['monthly_sessions'] ?? 4;
+                            $recommendedDaysPerWeek = ceil($monthlySessionsCount / 4);
+                            return "💡 الموصى به: {$recommendedDaysPerWeek} أيام في الأسبوع للحلقات الجماعية (بناءً على {$monthlySessionsCount} جلسات شهرياً)";
                         }
                     })
-                    ->reactive()
-                    ->afterStateUpdated(function (callable $set, $state) {
-                        $this->validateDaysSelection();
-                    }),
+                    ->rules([
+                        function () {
+                            return function (string $attribute, $value, \Closure $fail) {
+                                $circle = $this->getSelectedCircle();
+                                if (!$circle || !$value) return;
+                                
+                                $selectedDaysCount = count($value);
+                                
+                                if ($circle['type'] === 'group') {
+                                    // For group circles: strict limit based on monthly sessions
+                                    $monthlySessionsCount = $circle['monthly_sessions'] ?? 4;
+                                    $maxDaysPerWeek = ceil($monthlySessionsCount / 4);
+                                    
+                                    if ($selectedDaysCount > $maxDaysPerWeek) {
+                                        $fail("الحد الأقصى للأيام المسموح بها للحلقات الجماعية هو {$maxDaysPerWeek} أيام بناءً على عدد الجلسات الشهرية ({$monthlySessionsCount})");
+                                    }
+                                } else {
+                                    // For individual circles: flexible limits with smart warnings
+                                    if ($selectedDaysCount > 7) {
+                                        $fail('لا يمكن اختيار أكثر من 7 أيام في الأسبوع');
+                                    }
+                                    
+                                    // Use SessionManagementService for accurate remaining sessions
+                                    $circleModel = \App\Models\QuranIndividualCircle::find($circle['id']);
+                                    if ($circleModel) {
+                                        $sessionService = app(\App\Services\SessionManagementService::class);
+                                        $remaining = $sessionService->getRemainingIndividualSessions($circleModel);
+                                        
+                                        if ($remaining <= 0) {
+                                            $fail('لا توجد جلسات متبقية لجدولتها في هذه الحلقة');
+                                        }
+                                        
+                                        // Smart warning for potentially excessive scheduling
+                                        $monthlySessionsCount = $circle['monthly_sessions'] ?? 4;
+                                        $recommendedPerWeek = ceil($monthlySessionsCount / 4);
+                                        
+                                        if ($selectedDaysCount > $recommendedPerWeek + 2) {
+                                            // Just a warning, not a failure
+                                            $fail("تحذير: اخترت {$selectedDaysCount} أيام، وهو أكثر من المعتاد للحلقات الفردية ({$recommendedPerWeek} موصى به). تأكد من وجود جلسات كافية ({$remaining} متبقية)");
+                                        }
+                                    }
+                                }
+                            };
+                        }
+                    ])
+                    ->reactive(),
+                    
+                Forms\Components\DatePicker::make('schedule_start_date')
+                    ->label('تاريخ بداية الجدولة')
+                    ->helperText('تاريخ البداية لجدولة الجلسات الجديدة (اتركه فارغاً للبدء من اليوم)')
+                    ->default(null)
+                    ->minDate(now()->format('Y-m-d'))
+                    ->native(false)
+                    ->displayFormat('Y/m/d')
+                    ->closeOnDateSelection(),
                     
                 Forms\Components\Select::make('schedule_time')
                     ->label('وقت الجلسة')
@@ -335,6 +461,7 @@ class Calendar extends Page
             ->action(function (array $data) {
                 $this->scheduleDays = $data['schedule_days'] ?? [];
                 $this->scheduleTime = $data['schedule_time'] ?? null;
+                $this->scheduleStartDate = $data['schedule_start_date'] ?? null;
                 
                 $this->createBulkSchedule();
             })
@@ -416,10 +543,11 @@ class Calendar extends Page
         }
         
         // Check if schedule already exists with same configuration
+        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
         $existingSchedule = QuranCircleSchedule::where([
             'academy_id' => $circle->academy_id,
             'circle_id' => $circle->id,
-            'quran_teacher_id' => Auth::id(),
+            'quran_teacher_id' => $teacherProfileId,
             'is_active' => true,
         ])->first();
         
@@ -447,13 +575,13 @@ class Calendar extends Page
             $schedule = QuranCircleSchedule::create([
                 'academy_id' => $circle->academy_id,
                 'circle_id' => $circle->id,
-                'quran_teacher_id' => Auth::id(),
+                'quran_teacher_id' => $teacherProfileId,
                 'weekly_schedule' => $weeklySchedule,
                 'timezone' => config('app.timezone', 'UTC'),
                 'default_duration_minutes' => 60,
                 'is_active' => true,
-                'schedule_starts_at' => Carbon::now()->startOfDay(),
-                'generate_ahead_days' => 180, // Generate 6 months ahead
+                'schedule_starts_at' => $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate)->startOfDay() : Carbon::now()->startOfDay(),
+                'generate_ahead_days' => 30, // Generate 1 month ahead
                 'generate_before_hours' => 1,
                 'session_title_template' => 'جلسة {circle_name} - {day} {time}',
                 'session_description_template' => 'جلسة حلقة القرآن المجدولة تلقائياً',
@@ -479,44 +607,60 @@ class Calendar extends Page
     {
         $circle = QuranIndividualCircle::findOrFail($circleData['id']);
         
-        // Get remaining sessions count
-        $remainingSessions = $circleData['sessions_remaining'] ?? 0;
-        
-        if ($remainingSessions <= 0) {
-            throw new \Exception('لا توجد جلسات متبقية للجدولة في هذه الحلقة');
-        }
-
-        // Validate subscription end date
-        if (!$circle->subscription || !$circle->subscription->ends_at) {
+        // Validate subscription exists and is active
+        if (!$circle->subscription) {
             throw new \Exception('لا يمكن جدولة جلسات لحلقة بدون اشتراك صالح');
         }
         
-        $subscriptionEndDate = $circle->subscription->ends_at->endOfDay();
-        if ($subscriptionEndDate->isPast()) {
+        // Check if subscription is active
+        if ($circle->subscription->subscription_status !== 'active') {
+            throw new \Exception('الاشتراك غير نشط. يجب تفعيل الاشتراك لجدولة الجلسات');
+        }
+        
+        // Check subscription end date if it exists
+        if ($circle->subscription->expires_at && $circle->subscription->expires_at->isPast()) {
             throw new \Exception('انتهى الاشتراك ولا يمكن جدولة جلسات جديدة');
+        }
+
+        // Use SessionManagementService to get ACCURATE remaining sessions count
+        $sessionService = app(\App\Services\SessionManagementService::class);
+        $remainingSessions = $sessionService->getRemainingIndividualSessions($circle);
+        
+        if ($remainingSessions <= 0) {
+            throw new \Exception('لا توجد جلسات متبقية للجدولة في هذه الحلقة. تم استنفاد جميع جلسات الاشتراك.');
         }
 
         // For individual circles, allow flexible scheduling
         // Calculate how many sessions to schedule per week cycle
         $selectedDaysCount = count($this->scheduleDays);
         $weeksToSchedule = 8; // Schedule for next 8 weeks
+        
+        // CRITICAL: Never exceed subscription remaining sessions limit
         $maxSessionsToSchedule = min($selectedDaysCount * $weeksToSchedule, $remainingSessions);
         
-        $startDate = Carbon::now();
+        // Use custom start date if provided, otherwise start from now
+        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
         $scheduledCount = 0;
         $weekCount = 0;
         
         // Schedule sessions across multiple weeks in the selected days
         while ($scheduledCount < $maxSessionsToSchedule && $weekCount < $weeksToSchedule) {
             foreach ($this->scheduleDays as $day) {
+                // CRITICAL: Double-check we haven't exceeded the limit
                 if ($scheduledCount >= $maxSessionsToSchedule) break;
+                
+                // CRITICAL: Re-check remaining sessions in real-time to prevent race conditions
+                $currentRemaining = $sessionService->getRemainingIndividualSessions($circle);
+                if ($currentRemaining <= 0) {
+                    break;
+                }
                 
                 // Find the next occurrence of this day
                 $sessionDate = $this->getNextDateForDay($startDate->copy()->addWeeks($weekCount), $day);
                 $sessionDateTime = $sessionDate->setTimeFromTimeString($this->scheduleTime);
                 
-                // Check if session date is beyond subscription end date
-                if ($sessionDateTime->isAfter($subscriptionEndDate)) {
+                // Check if session date is beyond subscription end date (if end date exists)
+                if ($circle->subscription->expires_at && $sessionDateTime->isAfter($circle->subscription->expires_at)) {
                     // Skip this session as it's beyond the subscription period
                     continue;
                 }
@@ -529,7 +673,7 @@ class Calendar extends Page
                     ->first();
                 
                 if (!$existingSession) {
-                    // Create new session
+                    // Create new session with counts_toward_subscription = true
                     QuranSession::create([
                         'academy_id' => $circle->academy_id,
                         'quran_teacher_id' => Auth::id(),
@@ -539,6 +683,7 @@ class Calendar extends Page
                         'session_type' => 'individual',
                         'status' => 'scheduled',
                         'is_scheduled' => true,
+                        'counts_toward_subscription' => true, // CRITICAL: Ensure this counts toward limits
                         'title' => "جلسة فردية - {$circle->student->name}",
                         'scheduled_at' => $sessionDateTime,
                         'duration_minutes' => $circle->session_duration_minutes ?? 60,
@@ -555,10 +700,10 @@ class Calendar extends Page
         }
         
         if ($scheduledCount === 0) {
-            throw new \Exception('لم يتم إنشاء أي جلسات. تأكد من عدم وجود تعارض في المواعيد');
+            throw new \Exception('لم يتم إنشاء أي جلسات. تأكد من عدم وجود تعارض في المواعيد أو أن الاشتراك يحتوي على جلسات متبقية');
         }
         
-        // Update circle session counts if method exists
+        // Update circle session counts
         if (method_exists($circle, 'updateSessionCounts')) {
             $circle->updateSessionCounts();
         }
@@ -618,51 +763,7 @@ class Calendar extends Page
         return $sessionCode;
     }
 
-    /**
-     * Validate selected days count based on circle type and available sessions
-     */
-    public function validateDaysSelection(): void
-    {
-        $selectedCircle = $this->getSelectedCircle();
-        if (!$selectedCircle) return;
-        
-        if ($selectedCircle['type'] === 'group') {
-            // For group circles: validate based on monthly sessions and weekly distribution
-            $monthlySessionsCount = $selectedCircle['monthly_sessions'] ?? 4;
-            $maxDaysPerWeek = ceil($monthlySessionsCount / 4);
-            
-            if (count($this->scheduleDays) > $maxDaysPerWeek) {
-                $this->scheduleDays = array_slice($this->scheduleDays, 0, $maxDaysPerWeek);
-                
-                Notification::make()
-                    ->title('تنبيه')
-                    ->body("الحد الأقصى للأيام المسموح بها هو {$maxDaysPerWeek} أيام بناءً على عدد الجلسات الشهرية")
-                    ->warning()
-                    ->send();
-            }
-        } else {
-            // For individual circles: more flexible, but warn if selecting too many days at once
-            $remainingSessions = $selectedCircle['sessions_remaining'] ?? 0;
-            $selectedDaysCount = count($this->scheduleDays);
-            
-            // Allow any number of days but warn if trying to schedule more than 7 days per week
-            if ($selectedDaysCount > 7) {
-                $this->scheduleDays = array_slice($this->scheduleDays, 0, 7);
-                
-                Notification::make()
-                    ->title('تنبيه')
-                    ->body("لا يمكن اختيار أكثر من 7 أيام في الأسبوع")
-                    ->warning()
-                    ->send();
-            } elseif ($remainingSessions <= 0) {
-                Notification::make()
-                    ->title('تنبيه')
-                    ->body("لا توجد جلسات متبقية لجدولتها في هذه الحلقة")
-                    ->warning()
-                    ->send();
-            }
-        }
-    }
+
 
     /**
      * Extend session generation for all teacher's group circles
@@ -679,9 +780,9 @@ class Calendar extends Page
                 ->get();
             
             foreach ($schedules as $schedule) {
-                // Update the generation period to 6 months if it's less
-                if ($schedule->generate_ahead_days < 180) {
-                    $schedule->update(['generate_ahead_days' => 180]);
+                // Update the generation period to 1 month if it's less
+                if ($schedule->generate_ahead_days < 30) {
+                    $schedule->update(['generate_ahead_days' => 30]);
                 }
                 
                 // Generate additional sessions
@@ -704,6 +805,8 @@ class Calendar extends Page
                 ->send();
         }
     }
+    
+
 
     /**
      * Get the footer widgets (includes calendar)

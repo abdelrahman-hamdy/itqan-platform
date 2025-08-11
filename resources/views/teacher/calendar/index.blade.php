@@ -332,11 +332,11 @@
                     <h3 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
                         ⭕ اختيار الحلقة والجدولة الجماعية
                     </h3>
-                    <!-- DEBUG BUTTON FOR CIRCLE HIGHLIGHTING -->
-                    <button onclick="highlightSelectedCircle(); testCircleHighlighting();" 
-                            class="bg-red-500 text-white px-3 py-1 rounded text-xs font-medium hover:bg-red-600 transition-colors"
-                            title="اختبار تمييز الحلقة المحددة">
-                        🔧 تطبيق التمييز
+                    <!-- SIMPLE TEST BUTTON -->
+                    <button onclick="makeCircleSelected(document.querySelector('input[name=selectedCircle]:checked')); alert('تم تطبيق التمييز!');" 
+                            class="bg-red-500 text-white px-4 py-2 rounded font-medium hover:bg-red-600 transition-colors"
+                            title="اضغط لاختبار تمييز الحلقة المحددة">
+                        🎯 اختبر التمييز
                     </button>
                     <button id="bulkScheduleBtn" 
                             class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -360,9 +360,8 @@
                                        data-duration="{{ $circle->subscription->package->session_duration_minutes ?? 60 }}"
                                        data-name="{{ $circle->name ?? 'حلقة فردية' }}"
                                        class="mr-3" 
-                                       onchange="updateBulkScheduleButton(); highlightSelectedCircle(); console.log('Individual radio change triggered');"
-                                       onclick="setTimeout(function(){ highlightSelectedCircle(); console.log('Individual radio click triggered'); }, 10);"
-                                       oninput="highlightSelectedCircle(); console.log('Individual radio input triggered');">
+                                       onchange="updateBulkScheduleButton(); makeCircleSelected(this);"
+                                       onclick="setTimeout(function(){ makeCircleSelected(document.querySelector('input[name=selectedCircle]:checked')); }, 10);">
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
                                         <h5 class="font-semibold text-gray-900">{{ $circle->name ?? 'حلقة فردية' }}</h5>
@@ -406,9 +405,8 @@
                                        data-duration="{{ $circle->session_duration_minutes ?? 60 }}"
                                        data-name="{{ $circle->name_ar ?? 'حلقة جماعية' }}"
                                        class="mr-3" 
-                                       onchange="updateBulkScheduleButton(); highlightSelectedCircle(); console.log('Radio change triggered');"
-                                       onclick="setTimeout(function(){ highlightSelectedCircle(); console.log('Radio click triggered'); }, 10);"
-                                       oninput="highlightSelectedCircle(); console.log('Radio input triggered');">
+                                       onchange="updateBulkScheduleButton(); makeCircleSelected(this);"
+                                       onclick="setTimeout(function(){ makeCircleSelected(document.querySelector('input[name=selectedCircle]:checked')); }, 10);">
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
                                         <h5 class="font-semibold text-gray-900">{{ $circle->name_ar ?? 'حلقة جماعية' }}</h5>
@@ -2336,6 +2334,20 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                             </p>
                         </div>
                         
+                        <!-- SESSION COUNT FIELD - WORKING VERSION -->
+                        <div style="background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 12px 0;">
+                            <label style="display: block; font-weight: bold; color: #92400e; margin-bottom: 8px; font-size: 16px;">
+                                🔢 عدد الجلسات المطلوب إنشاؤها (تحديد يدوي)
+                            </label>
+                            <input type="number" id="recurringSessionCount" 
+                                   style="width: 100%; padding: 12px; font-size: 18px; text-align: center; border: 2px solid #f59e0b; border-radius: 6px; font-weight: bold;"
+                                   value="${monthlySessionsLimit}" min="1" max="100" 
+                                   placeholder="ادخل العدد">
+                            <p style="color: #92400e; font-size: 12px; margin-top: 8px; font-weight: bold;">
+                                💡 اكتب الرقم الذي تريده من 1 إلى 100 جلسة
+                            </p>
+                        </div>
+                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">وقت البداية</label>
                             <input type="time" id="recurringTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="16:00">
@@ -2779,7 +2791,49 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                 }
             }
 
-            // NEW BULLETPROOF CIRCLE SELECTION - MULTIPLE METHODS
+            // SIMPLE AND DIRECT CIRCLE SELECTION - GUARANTEED TO WORK
+            function makeCircleSelected(radioInput) {
+                console.log('🎯 Making circle selected:', radioInput);
+                
+                // First: Remove highlighting from ALL circles
+                document.querySelectorAll('.circle-selection').forEach(function(label) {
+                    // Reset all circles to default gray border
+                    label.style.border = '1px solid #d1d5db';
+                    label.style.backgroundColor = 'white';
+                    label.style.boxShadow = 'none';
+                    label.style.transform = 'none';
+                });
+                
+                // Second: Highlight the selected circle
+                if (radioInput && radioInput.checked) {
+                    const selectedLabel = radioInput.closest('.circle-selection');
+                    if (selectedLabel) {
+                        // Apply VERY OBVIOUS styling
+                        selectedLabel.style.border = '4px solid #3b82f6';
+                        selectedLabel.style.backgroundColor = '#eff6ff';
+                        selectedLabel.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.3)';
+                        selectedLabel.style.transform = 'scale(1.05)';
+                        
+                        console.log('✅ Applied blue border to selected circle');
+                    }
+                } else {
+                    // Find checked radio if not provided
+                    const checkedRadio = document.querySelector('input[name="selectedCircle"]:checked');
+                    if (checkedRadio) {
+                        const selectedLabel = checkedRadio.closest('.circle-selection');
+                        if (selectedLabel) {
+                            selectedLabel.style.border = '4px solid #3b82f6';
+                            selectedLabel.style.backgroundColor = '#eff6ff';
+                            selectedLabel.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.3)';
+                            selectedLabel.style.transform = 'scale(1.05)';
+                            
+                            console.log('✅ Applied blue border to checked circle');
+                        }
+                    }
+                }
+            }
+            
+            // OLD COMPLEX FUNCTION - KEEPING FOR BACKUP
             function highlightSelectedCircle() {
                 console.log('🎯 Running circle highlight function');
                 
@@ -3153,7 +3207,30 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                 showNotification(`تم بدء جدولة ${sessionCount} جلسة للحلقة الجماعية`, 'success');
             }
 
-            // Initialize circle selection highlighting when DOM is ready - ENHANCED VERSION
+            // SIMPLE INITIALIZATION - GUARANTEED TO WORK  
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('🚀 Page loaded - Setting up circle selection');
+                
+                // Apply highlighting to any pre-selected circle
+                makeCircleSelected(document.querySelector('input[name="selectedCircle"]:checked'));
+                
+                // Set up simple event listeners
+                document.querySelectorAll('input[name="selectedCircle"]').forEach(function(radio) {
+                    radio.addEventListener('change', function() {
+                        makeCircleSelected(this);
+                    });
+                    
+                    radio.addEventListener('click', function() {
+                        setTimeout(function() {
+                            makeCircleSelected(document.querySelector('input[name="selectedCircle"]:checked'));
+                        }, 10);
+                    });
+                });
+                
+                console.log('✅ Circle selection setup complete');
+            });
+            
+            // BACKUP: Enhanced version
             document.addEventListener('DOMContentLoaded', function() {
                 console.log('DOM loaded, setting up circle highlighting'); // Debug
                 

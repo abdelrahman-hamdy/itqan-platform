@@ -19,8 +19,8 @@ class CreateQuranCircle extends CreateRecord
         $data['quran_teacher_id'] = $user->quranTeacherProfile->id;
         $data['academy_id'] = $user->academy_id;
         
-        // Generate circle code
-        $data['circle_code'] = 'QC-' . $user->academy_id . '-' . now()->format('Ymd') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
+        // Generate circle code using the model method
+        $data['circle_code'] = \App\Models\QuranCircle::generateCircleCode($user->academy_id);
         
         // Initialize current students count
         $data['current_students'] = 0;

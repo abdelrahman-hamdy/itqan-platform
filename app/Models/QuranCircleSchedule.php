@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\ScopedToAcademy;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class QuranCircleSchedule extends Model
 {
@@ -122,20 +123,55 @@ class QuranCircleSchedule extends Model
         }
 
         $generatedCount = 0;
-        $startDate = $this->last_generated_at ? 
-            Carbon::parse($this->last_generated_at)->addDay() : 
-            Carbon::parse($this->schedule_starts_at);
-            
-        $endDate = now()->addDays($this->generate_ahead_days);
+        
+        // Fix start date logic - start from now if last generated is in the future or null
+        $startDate = now();
+        if ($this->last_generated_at && Carbon::parse($this->last_generated_at)->isPast()) {
+            $startDate = Carbon::parse($this->last_generated_at)->addDay();
+        }
+        
+        // Calculate end date based on circle's schedule period
+        $schedulePeriod = $this->circle->schedule_period ?? 'month';
+        $daysToGenerate = match($schedulePeriod) {
+            'week' => 7,
+            'month' => 30,
+            'two_months' => 60,
+            default => 30
+        };
+        
+        $endDate = $startDate->copy()->addDays($daysToGenerate);
         
         // Don't generate beyond schedule end date if set
         if ($this->schedule_ends_at) {
             $endDate = $endDate->min(Carbon::parse($this->schedule_ends_at));
         }
 
+        // Allow flexible session generation - teachers can schedule additional sessions as needed
+        // We'll generate sessions for the time period without strict monthly limits
+        // This supports cases where teachers need to add extra sessions beyond the standard monthly count
+        
+        // Set a reasonable maximum to prevent excessive generation (e.g., 3 sessions per week max)
+        $maxSessionsPerGeneration = match($schedulePeriod) {
+            'week' => 21, // 3 sessions per day max for a week
+            'month' => 90, // 3 sessions per day max for a month  
+            'two_months' => 180, // 3 sessions per day max for two months
+            default => 90
+        };
+        
+        // Count existing sessions in the generation period to avoid duplicates
+        $existingSessionsInPeriod = QuranSession::where('circle_id', $this->circle_id)
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
+            ->count();
+        
+        $sessionsToGenerate = min($maxSessionsPerGeneration, $maxSessionsPerGeneration - $existingSessionsInPeriod);
+        
+        if ($sessionsToGenerate <= 0) {
+            return 0; // No sessions to generate in this period
+        }
+
         $currentDate = $startDate->copy();
 
-        while ($currentDate <= $endDate) {
+        while ($currentDate <= $endDate && $generatedCount < $sessionsToGenerate) {
             if ($this->shouldGenerateSessionForDate($currentDate)) {
                 $sessionTime = $this->getSessionTimeForDate($currentDate);
                 
@@ -149,7 +185,7 @@ class QuranCircleSchedule extends Model
         }
 
         if ($generatedCount > 0) {
-            $this->update(['last_generated_at' => $endDate]);
+            $this->update(['last_generated_at' => now()]);
         }
 
         return $generatedCount;
@@ -183,6 +219,17 @@ class QuranCircleSchedule extends Model
 
     private function createSessionForDateTime(Carbon $datetime): QuranSession
     {
+        // Check if session already exists to prevent duplicates
+        $existing = QuranSession::where([
+            'circle_id' => $this->circle_id,
+            'quran_teacher_id' => $this->quran_teacher_id,
+            'scheduled_at' => $datetime,
+        ])->first();
+        
+        if ($existing) {
+            return $existing;
+        }
+        
         return QuranSession::create([
             'academy_id' => $this->academy_id,
             'quran_teacher_id' => $this->quran_teacher_id,
@@ -191,7 +238,7 @@ class QuranCircleSchedule extends Model
             'session_code' => $this->generateSessionCode($datetime),
             'session_type' => 'group',
             'status' => 'scheduled',
-            'is_generated' => true,
+            'is_template' => false,
             'is_scheduled' => true,
             'title' => $this->generateSessionTitle($datetime),
             'description' => $this->generateSessionDescription($datetime),
@@ -203,6 +250,9 @@ class QuranCircleSchedule extends Model
             'meeting_password' => $this->meeting_password,
             'recording_enabled' => $this->recording_enabled,
             'created_by' => $this->created_by,
+            'scheduled_by' => $this->created_by,
+            'teacher_scheduled_at' => now(),
+            'location_type' => 'online',
         ]);
     }
 
@@ -257,7 +307,7 @@ class QuranCircleSchedule extends Model
         return "جلسة حلقة القرآن المجدولة تلقائياً";
     }
 
-    public function activateSchedule(): bool
+    public function activateSchedule(): int
     {
         // Update circle status and enrollment when schedule is activated
         $updated = $this->update(['is_active' => true]);
@@ -271,11 +321,11 @@ class QuranCircleSchedule extends Model
                 'schedule_configured_by' => $this->quran_teacher_id,
             ]);
             
-            // Generate initial sessions
-            $this->generateUpcomingSessions();
+            // Generate initial sessions and return count
+            return $this->generateUpcomingSessions();
         }
         
-        return $updated;
+        return 0;
     }
 
     public function deactivateSchedule(): bool
@@ -296,7 +346,7 @@ class QuranCircleSchedule extends Model
                 ->update([
                     'status' => 'cancelled',
                     'cancellation_reason' => 'تم إلغاء الجدول الزمني للحلقة',
-                    'cancelled_by' => auth()->id(),
+                    'cancelled_by' => Auth::id(),
                     'cancelled_at' => now(),
                 ]);
         }

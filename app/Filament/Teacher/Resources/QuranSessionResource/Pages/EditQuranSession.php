@@ -16,7 +16,14 @@ class EditQuranSession extends EditRecord
             Actions\ViewAction::make()
                 ->label('عرض'),
             Actions\DeleteAction::make()
-                ->label('حذف'),
+                ->label('حذف')
+                ->after(function () {
+                    // Update session counts for individual circles if needed
+                    $record = $this->getRecord();
+                    if ($record->individualCircle) {
+                        $record->individualCircle->updateSessionCounts();
+                    }
+                }),
         ];
     }
 }

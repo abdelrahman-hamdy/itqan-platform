@@ -595,9 +595,15 @@ class QuranSubscription extends Model
             return null;
         }
 
+        // Get the actual user ID from the teacher profile
+        $teacherUserId = $this->quranTeacher?->user_id;
+        if (!$teacherUserId) {
+            throw new \Exception('Teacher profile is not linked to a user account');
+        }
+
         $circle = QuranIndividualCircle::create([
             'academy_id' => $this->academy_id,
-            'quran_teacher_id' => $this->quran_teacher_id,
+            'quran_teacher_id' => $teacherUserId, // Use user ID, not teacher profile ID
             'student_id' => $this->student_id,
             'subscription_id' => $this->id,
             'specialization' => $this->package->specialization ?? 'memorization',
@@ -657,6 +663,22 @@ class QuranSubscription extends Model
         static::updating(function ($subscription) {
             if ($subscription->isDirty('sessions_used')) {
                 $subscription->sessions_remaining = $subscription->total_sessions - $subscription->sessions_used;
+            }
+        });
+
+        // Handle subscription deletion - clean up individual circles
+        static::deleting(function ($subscription) {
+            if ($subscription->subscription_type === 'individual' && $subscription->individualCircle) {
+                // Delete the individual circle and its sessions (cascade will handle sessions)
+                $subscription->individualCircle->delete();
+            }
+        });
+
+        // Handle force deletion (hard delete)
+        static::forceDeleting(function ($subscription) {
+            if ($subscription->subscription_type === 'individual') {
+                // Force delete individual circle and its sessions
+                $subscription->individualCircle()?->forceDelete();
             }
         });
     }

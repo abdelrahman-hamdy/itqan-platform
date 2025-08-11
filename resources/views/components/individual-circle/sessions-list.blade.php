@@ -42,7 +42,7 @@
     <div class="p-6">
         @if($sessions && $sessions->count() > 0)
             <div class="space-y-4" id="sessionsList">
-                @foreach($sessions->sortBy('session_sequence') as $session)
+                @foreach($sessions->sortBy('scheduled_at') as $session)
                     @php
                         $sessionType = $session->status === 'completed' ? 'completed' : 
                                       ($session->status === 'scheduled' ? 'scheduled' : 

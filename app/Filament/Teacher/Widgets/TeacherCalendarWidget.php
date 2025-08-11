@@ -28,6 +28,11 @@ class TeacherCalendarWidget extends FullCalendarWidget
     public ?int $selectedCircleId = null;
     public ?string $selectedCircleType = null;
 
+    // Event listeners
+    protected $listeners = [
+        'refresh-calendar' => 'refreshCalendar',
+    ];
+
     public function config(): array
     {
         return [
@@ -66,13 +71,25 @@ class TeacherCalendarWidget extends FullCalendarWidget
      */
     public function fetchEvents(array $fetchInfo): array
     {
-        $teacherId = Auth::id();
+        $userId = Auth::id();
+        if (!$userId) {
+            return [];
+        }
+        
+        // For sessions, we need to check both user ID (individual circles) and teacher profile ID (group circles)
+        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
         
         $query = QuranSession::query()
-            ->where('quran_teacher_id', $teacherId)
+            ->where(function($q) use ($userId, $teacherProfileId) {
+                $q->where('quran_teacher_id', $userId); // Individual circles use user ID
+                if ($teacherProfileId) {
+                    $q->orWhere('quran_teacher_id', $teacherProfileId); // Group circles use teacher profile ID
+                }
+            })
             ->where('scheduled_at', '>=', $fetchInfo['start'])
             ->where('scheduled_at', '<=', $fetchInfo['end'])
-            ->whereNotNull('scheduled_at');
+            ->whereNotNull('scheduled_at')
+            ->whereNull('deleted_at'); // Ensure we don't show deleted sessions
 
         // Apply circle filtering if selected
         if ($this->selectedCircleId && $this->selectedCircleType) {
@@ -85,6 +102,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
         
         return $query
             ->with(['circle', 'individualCircle', 'individualCircle.subscription', 'individualCircle.subscription.package', 'student'])
+            ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
             ->get()
             ->map(function (QuranSession $session) {
                 // Determine if this is a group or individual session
@@ -93,25 +111,26 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 
                 if ($isGroup) {
                     $circleName = $circle ? $circle->name : 'حلقة محذوفة';
-                    $title = "حلقة جماعية: {$circleName}";
+                    $sessionNumber = $session->monthly_session_number ? "({$session->monthly_session_number})" : '';
+                    $title = "حلقة جماعية: {$circleName} {$sessionNumber}";
                 } else {
                     $studentName = $session->student->name ?? ($circle ? $circle->name : null) ?? 'حلقة فردية';
-                    $title = "حلقة فردية: {$studentName}";
+                    $sessionNumber = $session->monthly_session_number ? "({$session->monthly_session_number})" : '';
+                    $title = "حلقة فردية: {$studentName} {$sessionNumber}";
                 }
                 
-                // Color coding based on session type and status
-                $color = match($session->session_type) {
-                    'group' => '#f59e0b', // amber for group
-                    'individual' => '#10b981', // green for individual
+                // Enhanced color coding based on status and type
+                $color = match($session->status) {
+                    'completed' => '#22c55e', // green for completed
+                    'cancelled' => '#ef4444', // red for cancelled
+                    'in_progress' => '#3b82f6', // blue for in progress
+                    'scheduled' => $session->session_type === 'group' ? '#f59e0b' : '#10b981', // amber for group, emerald for individual
                     default => '#6b7280' // gray default
                 };
 
-                if ($session->status === 'completed') {
-                    $color = '#22c55e'; // green for completed
-                } elseif ($session->status === 'cancelled') {
-                    $color = '#ef4444'; // red for cancelled
-                } elseif ($session->scheduled_at < now()) {
-                    $color = '#f97316'; // orange for past due
+                // Override for overdue sessions
+                if ($session->status === 'scheduled' && $session->scheduled_at < now()) {
+                    $color = '#f97316'; // orange for overdue
                 }
 
                 $eventData = EventData::make()
@@ -129,6 +148,9 @@ class TeacherCalendarWidget extends FullCalendarWidget
                         'individualCircleId' => $session->individual_circle_id,
                         'studentId' => $session->student_id,
                         'duration' => $session->duration_minutes,
+                        'monthlySessionNumber' => $session->monthly_session_number,
+                        'sessionMonth' => $session->session_month,
+                        'countsTowardSubscription' => $session->counts_toward_subscription,
                         'isMovable' => $session->session_type === 'individual', // Only individual sessions are movable
                     ]);
 
@@ -162,7 +184,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
             Forms\Components\DateTimePicker::make('scheduled_at')
                 ->label('موعد الجلسة')
                 ->required()
-                ->visible(fn (?QuranSession $record) => $record && $record->session_type === 'individual')
+                ->visible(fn (?QuranSession $record) => $record && in_array($record->session_type, ['individual', 'group']))
                 ->seconds(false)
                 ->minutesStep(15)
                 ->minDate(fn () => Carbon::now()->toDateString())
@@ -182,8 +204,8 @@ class TeacherCalendarWidget extends FullCalendarWidget
                             
                             $scheduledAt = Carbon::parse($value);
                             
-                            // Check if date is beyond subscription end date
-                            if ($record->individualCircle?->subscription?->ends_at) {
+                            // Check if date is beyond subscription end date (for individual sessions only)
+                            if ($record->session_type === 'individual' && $record->individualCircle?->subscription?->ends_at) {
                                 $subscriptionEnd = $record->individualCircle->subscription->ends_at->endOfDay();
                                 if ($scheduledAt->isAfter($subscriptionEnd)) {
                                     $endDate = $subscriptionEnd->format('Y-m-d');
@@ -256,8 +278,8 @@ class TeacherCalendarWidget extends FullCalendarWidget
                         'description' => $data['description'] ?? null,
                     ];
                     
-                    // Add date/time fields for individual sessions only
-                    if ($record->session_type === 'individual' && isset($data['scheduled_at'])) {
+                    // Add date/time fields for both individual and group sessions
+                    if (in_array($record->session_type, ['individual', 'group']) && isset($data['scheduled_at'])) {
                         $newScheduledAt = Carbon::parse($data['scheduled_at']);
                         
                         // Only update the scheduled time, not the duration
@@ -295,12 +317,14 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 ->requiresConfirmation()
                 ->modalDescription('هل أنت متأكد من حذف هذه الجلسة؟ لن يمكن التراجع عن هذا الإجراء.')
                 ->successNotificationTitle('تم حذف الجلسة بنجاح')
-                ->visible(fn (QuranSession $record) => $record->session_type === 'individual' && Auth::id() === $record->quran_teacher_id)
+                ->visible(fn (QuranSession $record) => in_array($record->session_type, ['individual', 'group']) && Auth::id() === $record->quran_teacher_id)
                 ->before(function (QuranSession $record) {
-                    // Update the individual circle to recalculate available sessions
+                    // Update the circle to recalculate available sessions
                     if ($record->individualCircle) {
                         $record->individualCircle->updateSessionCounts();
                     }
+                    // For group sessions, we don't need to update counts as they're tracked differently
+                    // Group circles use the schedule-based system for session management
                 }),
         ];
     }
@@ -327,24 +351,11 @@ class TeacherCalendarWidget extends FullCalendarWidget
             return false;
         }
 
-        // Check if this is a group session - should not be movable
-        if ($record->session_type === 'group') {
+        // Both individual and group sessions can now be moved
+        if (!in_array($record->session_type, ['individual', 'group'])) {
             Notification::make()
                 ->title('غير مسموح')
-                ->body('لا يمكن تحريك جلسات الحلقات الجماعية يدوياً. يتم إنشاؤها تلقائياً بناءً على الجدول المحدد.')
-                ->warning()
-                ->send();
-            
-            // Force calendar refresh to revert visual changes
-            $this->dispatch('refresh');
-            return false;
-        }
-
-        // Only individual sessions can be moved
-        if ($record->session_type !== 'individual') {
-            Notification::make()
-                ->title('غير مسموح')
-                ->body('يمكن تحريك الجلسات الفردية فقط.')
+                ->body('نوع الجلسة غير مدعوم للتحريك.')
                 ->warning()
                 ->send();
             
@@ -579,5 +590,14 @@ class TeacherCalendarWidget extends FullCalendarWidget
         if ($scheduledAt < now()) {
             throw new \Exception('لا يمكن جدولة جلسة في وقت ماضي');
         }
+    }
+
+    /**
+     * Handle calendar refresh event
+     */
+    public function refreshCalendar(): void
+    {
+        // Force the calendar to refresh its events
+        $this->dispatch('refresh');
     }
 }

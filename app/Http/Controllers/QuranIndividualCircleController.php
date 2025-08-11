@@ -61,13 +61,10 @@ class QuranIndividualCircleController extends Controller
             'student', 
             'subscription.package',
             'sessions' => function ($query) {
-                $query->orderBy('session_sequence');
-            },
-            'templateSessions' => function ($query) {
-                $query->where('is_scheduled', false)->orderBy('session_sequence');
+                $query->orderBy('scheduled_at');
             },
             'scheduledSessions' => function ($query) {
-                $query->where('is_scheduled', true)->orderBy('scheduled_at');
+                $query->whereIn('status', ['scheduled', 'in_progress'])->orderBy('scheduled_at');
             },
             'completedSessions' => function ($query) {
                 $query->where('status', 'completed')->orderBy('ended_at', 'desc');
@@ -96,9 +93,9 @@ class QuranIndividualCircleController extends Controller
 
         // Get unscheduled sessions instead of templates
         $unscheduledSessions = $circleModel->sessions()
-            ->where('status', 'unscheduled')
-            ->orderBy('session_sequence')
-            ->get(['id', 'title', 'session_sequence', 'duration_minutes']);
+            ->where('status', 'pending')
+            ->orderBy('monthly_session_number')
+            ->get(['id', 'title', 'monthly_session_number', 'duration_minutes']);
 
         return response()->json([
             'success' => true,
@@ -106,7 +103,7 @@ class QuranIndividualCircleController extends Controller
                 return [
                     'id' => $session->id,
                     'title' => $session->title,
-                    'sequence' => $session->session_sequence,
+                    'sequence' => $session->monthly_session_number ?? 0,
                     'duration' => $session->duration_minutes,
                 ];
             })
@@ -171,7 +168,7 @@ class QuranIndividualCircleController extends Controller
                     'id' => $unscheduledSession->id,
                     'title' => $unscheduledSession->title,
                     'scheduled_at' => $unscheduledSession->scheduled_at->format('Y-m-d H:i'),
-                    'sequence' => $unscheduledSession->session_sequence,
+                    'sequence' => $unscheduledSession->monthly_session_number ?? 0,
                     'status' => $unscheduledSession->status,
                 ]
             ]);
@@ -222,7 +219,7 @@ class QuranIndividualCircleController extends Controller
                         'id' => $session->id,
                         'title' => $session->title,
                         'scheduled_at' => $session->scheduled_at->format('Y-m-d H:i'),
-                        'sequence' => $session->session_sequence,
+                        'sequence' => $session->monthly_session_number ?? 0,
                     ];
                 })
             ]);

@@ -20,7 +20,7 @@
 
             <!-- All Sessions -->
             @php
-                $allSessions = $individualCircle->sessions()->orderBy('session_sequence')->get();
+                $allSessions = $individualCircle->sessions()->orderBy('scheduled_at', 'asc')->get();
             @endphp
             <x-individual-circle.sessions-list :circle="$individualCircle" :sessions="$allSessions" view-type="student" />
         </div>

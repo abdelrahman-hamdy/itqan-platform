@@ -119,14 +119,9 @@ class QuranIndividualCircle extends Model
         return $this->hasMany(QuranSession::class, 'individual_circle_id');
     }
 
-    public function templateSessions(): HasMany
-    {
-        return $this->sessions()->where('is_template', true);
-    }
-
     public function scheduledSessions(): HasMany
     {
-        return $this->sessions()->where('is_scheduled', true);
+        return $this->sessions()->whereIn('status', ['scheduled', 'in_progress']);
     }
 
     public function completedSessions(): HasMany
@@ -230,17 +225,18 @@ class QuranIndividualCircle extends Model
     {
         $baseCode = "{$this->circle_code}-S{$sequence}";
         
-        // Check if this session code already exists for this academy
+        // Check if this session code already exists for this academy (including soft deleted)
         $attempt = 0;
         $sessionCode = $baseCode;
         while (
-            QuranSession::where('academy_id', $this->academy_id)
+            QuranSession::withTrashed()
+                        ->where('academy_id', $this->academy_id)
                         ->where('session_code', $sessionCode)
                         ->exists() && $attempt < 10
         ) {
             $attempt++;
-            // Add attempt suffix if collision occurs
-            $sessionCode = $baseCode . "-A{$attempt}";
+            // Add timestamp suffix if collision occurs for better uniqueness
+            $sessionCode = $baseCode . "-" . now()->format('His') . "-A{$attempt}";
         }
         
         return $sessionCode;
@@ -248,10 +244,14 @@ class QuranIndividualCircle extends Model
 
     public function updateSessionCounts(): void
     {
+        $scheduled = $this->scheduledSessions()->count();
+        $completed = $this->completedSessions()->count();
+        $unscheduled = $this->sessions()->where('status', 'unscheduled')->count();
+        
         $this->update([
-            'sessions_scheduled' => $this->scheduledSessions()->count(),
-            'sessions_completed' => $this->completedSessions()->count(),
-            'sessions_remaining' => $this->total_sessions - $this->completedSessions()->count(),
+            'sessions_scheduled' => $scheduled,
+            'sessions_completed' => $completed,
+            'sessions_remaining' => $unscheduled, // Sessions that can still be scheduled
         ]);
     }
 

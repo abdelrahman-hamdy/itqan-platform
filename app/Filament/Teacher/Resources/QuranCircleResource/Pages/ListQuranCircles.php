@@ -24,6 +24,8 @@ class ListQuranCircles extends ListRecords
     {
         return [
             'all' => Tab::make('جميع الحلقات'),
+            'planning' => Tab::make('قيد التخطيط')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'planning')),
             'active' => Tab::make('النشطة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'active')),
             'accepting_registrations' => Tab::make('تقبل تسجيلات')

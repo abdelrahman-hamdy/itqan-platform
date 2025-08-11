@@ -38,16 +38,7 @@
                 اختر حلقة لجدولة جلساتها على التقويم
             </x-slot>
             
-            <x-slot name="headerActions">
-                <x-filament::button 
-                    wire:click="extendSessionGeneration"
-                    color="info"
-                    size="sm"
-                    icon="heroicon-o-calendar-days"
-                >
-                    تمديد جدول الجلسات (6 شهور)
-                </x-filament::button>
-            </x-slot>
+            
 
             {{-- Tabs using Filament --}}
             <x-filament::tabs label="أنواع الحلقات">
@@ -68,6 +59,8 @@
                 </x-filament::tabs.item>
             </x-filament::tabs>
 
+
+
             <div class="mt-6">
                 {{-- Group Circles Tab --}}
                 @if ($activeTab === 'group')
@@ -75,10 +68,13 @@
                         @forelse ($this->getGroupCircles() as $circle)
                             <div 
                                 wire:click="selectCircle({{ $circle['id'] }}, 'group')"
-                                class="cursor-pointer transition-all duration-200"
+                                class="cursor-pointer transition-all duration-200 circle-card"
+                                data-circle-id="{{ $circle['id'] }}"
+                                data-circle-type="group"
                             >
                                 <x-filament::card 
-                                    class="{{ $selectedCircleId === $circle['id'] ? 'ring-2 ring-primary-600 bg-primary-50 border-primary-600 shadow-lg' : 'hover:ring-2 hover:ring-primary-300 hover:shadow-md' }}"
+                                    class="border-2 border-gray-200 hover:ring-2 hover:ring-primary-300 hover:shadow-md transition-all duration-200"
+                                    style="{{ $selectedCircleId === $circle['id'] ? 'border: 4px solid #3b82f6 !important; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3) !important; background-color: #eff6ff !important;' : '' }}"
                                 >
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between">
@@ -110,6 +106,8 @@
                                             <span>الجلسات الشهرية: {{ $circle['monthly_sessions'] ?? 'غير محدد' }}</span>
                                         </div>
                                     </div>
+                                    
+
                                 </div>
                                 </x-filament::card>
                             </div>
@@ -127,6 +125,13 @@
                             </div>
                         @endforelse
                     </div>
+                    
+                    {{-- Schedule Action Button for Group Circles --}}
+                    @if($selectedCircleId && $selectedCircleType === 'group')
+                        <div class="mt-6 flex justify-center">
+                            {{ $this->scheduleAction }}
+                        </div>
+                    @endif
                 @endif
 
                 {{-- Individual Circles Tab --}}
@@ -135,10 +140,13 @@
                         @forelse ($this->getIndividualCircles() as $circle)
                             <div 
                                 wire:click="selectCircle({{ $circle['id'] }}, 'individual')"
-                                class="cursor-pointer transition-all duration-200"
+                                class="cursor-pointer transition-all duration-200 circle-card"
+                                data-circle-id="{{ $circle['id'] }}"
+                                data-circle-type="individual"
                             >
                                 <x-filament::card 
-                                    class="{{ $selectedCircleId === $circle['id'] ? 'ring-2 ring-primary-600 bg-primary-50 border-primary-600 shadow-lg' : 'hover:ring-2 hover:ring-primary-300 hover:shadow-md' }}"
+                                    class="border-2 border-gray-200 hover:ring-2 hover:ring-primary-300 hover:shadow-md transition-all duration-200"
+                                    style="{{ $selectedCircleId === $circle['id'] ? 'border: 4px solid #3b82f6 !important; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3) !important; background-color: #eff6ff !important;' : '' }}"
                                 >
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between">
@@ -186,6 +194,8 @@
                                             </div>
                                         @endif
                                     </div>
+                                    
+
                                 </div>
                                 </x-filament::card>
                             </div>
@@ -203,38 +213,73 @@
                             </div>
                         @endforelse
                     </div>
+                    
+                    {{-- Schedule Action Button for Individual Circles --}}
+                    @if($selectedCircleId && $selectedCircleType === 'individual')
+                        <div class="mt-6 flex justify-center">
+                            {{ $this->scheduleAction }}
+                        </div>
+                    @endif
                 @endif
 
-                {{-- Schedule Button --}}
-                @if ($selectedCircleId)
-                    @php
-                        $selectedCircle = $this->getSelectedCircle();
-                        $canSchedule = $selectedCircle['type'] === 'group' || ($selectedCircle['can_schedule'] ?? false);
-                        $buttonText = 'جدولة جلسات';
-                        if ($selectedCircle['type'] === 'individual') {
-                            if ($selectedCircle['status'] === 'partially_scheduled') {
-                                $buttonText = 'جدولة الجلسات المتبقية';
-                            } elseif ($selectedCircle['status'] === 'fully_scheduled') {
-                                $buttonText = 'الجلسات مكتملة';
-                            }
-                        }
-                    @endphp
-                    
-                    <div class="mt-6 flex justify-center">
-                        {{ $this->scheduleAction }}
-                        
-                        @if (!$canSchedule && $selectedCircle['type'] === 'individual')
-                            <div class="ml-4 text-sm text-gray-500 self-center">
-                                لا توجد جلسات متبقية للجدولة
-                            </div>
-                        @endif
-                    </div>
-                @endif
+
             </div>
         </x-filament::section>
 
         {{-- Calendar widget will render in footer widgets automatically --}}
     </div>
+
+    {{-- JavaScript for enhanced circle selection --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enhanced circle selection with immediate visual feedback
+            document.addEventListener('click', function(e) {
+                const circleCard = e.target.closest('.circle-card');
+                if (circleCard) {
+                    // Remove previous selections
+                    document.querySelectorAll('.circle-card').forEach(card => {
+                        const cardElement = card.querySelector('.fi-card');
+                        if (cardElement) {
+                            cardElement.style.border = '2px solid #d1d5db';
+                            cardElement.style.boxShadow = '';
+                            cardElement.style.backgroundColor = '';
+                        }
+                    });
+                    
+                    // Add bold border to selected circle immediately
+                    const selectedCard = circleCard.querySelector('.fi-card');
+                    if (selectedCard) {
+                        selectedCard.style.border = '4px solid #3b82f6';
+                        selectedCard.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.3)';
+                        selectedCard.style.backgroundColor = '#eff6ff';
+                    }
+                }
+            });
+            
+            // Debug: Log when individual circles tab is clicked
+            const individualTab = document.querySelector('[wire\\:click="setActiveTab(\'individual\')"]');
+            if (individualTab) {
+                individualTab.addEventListener('click', function() {
+                    console.log('Individual circles tab clicked');
+                    setTimeout(() => {
+                        const individualCircles = document.querySelectorAll('[data-circle-type="individual"]');
+                        console.log('Individual circles found:', individualCircles.length);
+                    }, 100);
+                });
+            }
+        });
+        
+        // Livewire hook for when the page updates
+        document.addEventListener('livewire:navigated', function() {
+            console.log('Livewire navigated - checking circles');
+            setTimeout(() => {
+                const groupCircles = document.querySelectorAll('[data-circle-type="group"]');
+                const individualCircles = document.querySelectorAll('[data-circle-type="individual"]');
+                console.log('Group circles:', groupCircles.length);
+                console.log('Individual circles:', individualCircles.length);
+            }, 100);
+        });
+    </script>
 
     {{-- Modal is handled by the Filament Action --}}
 </x-filament-panels::page>

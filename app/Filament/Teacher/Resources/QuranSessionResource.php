@@ -21,9 +21,10 @@ use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\Toggle;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\TimePicker;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
@@ -54,8 +55,15 @@ class QuranSessionResource extends Resource
             return parent::getEloquentQuery()->whereRaw('1 = 0'); // Return no results
         }
 
+        $teacherProfileId = $user->quranTeacherProfile->id;
+        $userId = $user->id;
+
         return parent::getEloquentQuery()
-            ->where('quran_teacher_id', $user->quranTeacherProfile->id)
+            ->where(function($query) use ($teacherProfileId, $userId) {
+                // Include both teacher profile ID (group sessions) and user ID (individual sessions)
+                $query->where('quran_teacher_id', $teacherProfileId)
+                      ->orWhere('quran_teacher_id', $userId);
+            })
             ->where('academy_id', $user->academy_id);
     }
 
@@ -103,6 +111,29 @@ class QuranSessionResource extends Resource
                         Textarea::make('lesson_objectives')
                             ->label('أهداف الدرس')
                             ->rows(3),
+                            
+                        Grid::make(3)
+                            ->schema([
+                                TextInput::make('monthly_session_number')
+                                    ->label('رقم الجلسة الشهرية')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(31)
+                                    ->helperText('رقم الجلسة ضمن الشهر (1، 2، 3...)')
+                                    ->placeholder('سيتم تعيينه تلقائياً'),
+                                    
+                                DatePicker::make('session_month')
+                                    ->label('شهر الجلسة')
+                                    ->displayFormat('Y-m')
+                                    ->format('Y-m-01')
+                                    ->helperText('الشهر الذي تنتمي إليه الجلسة')
+                                    ->default(now()->format('Y-m-01')),
+                                    
+                                Toggle::make('counts_toward_subscription')
+                                    ->label('تحتسب ضمن الاشتراك')
+                                    ->helperText('هل تحتسب هذه الجلسة ضمن جلسات الاشتراك؟')
+                                    ->default(true),
+                            ]),
                     ]),
 
                 Section::make('معلومات الاجتماع')
@@ -261,6 +292,24 @@ class QuranSessionResource extends Resource
                     ->suffix(' دقيقة')
                     ->sortable(),
                     
+                TextColumn::make('monthly_session_number')
+                    ->label('رقم الجلسة')
+                    ->sortable()
+                    ->toggleable(),
+                    
+                TextColumn::make('session_month')
+                    ->label('الشهر')
+                    ->date('Y-m')
+                    ->sortable()
+                    ->toggleable(),
+                    
+                TextColumn::make('counts_toward_subscription')
+                    ->label('تحتسب ضمن الاشتراك')
+                    ->badge()
+                    ->color(fn (bool $state): string => $state ? 'success' : 'gray')
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'نعم' : 'لا')
+                    ->toggleable(),
+                    
                 BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
@@ -352,6 +401,14 @@ class QuranSessionResource extends Resource
                         ->label('عرض'),
                     Tables\Actions\EditAction::make()
                         ->label('تعديل'),
+                    Tables\Actions\DeleteAction::make()
+                        ->label('حذف')
+                        ->after(function (QuranSession $record) {
+                            // Update session counts for individual circles
+                            if ($record->individualCircle) {
+                                $record->individualCircle->updateSessionCounts();
+                            }
+                        }),
                     Tables\Actions\Action::make('start_session')
                         ->label('بدء الجلسة')
                         ->icon('heroicon-o-play')
@@ -379,7 +436,17 @@ class QuranSessionResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->after(function (\Illuminate\Support\Collection $records) {
+                            // Update session counts for affected individual circles
+                            $individualCircleIds = $records->pluck('individual_circle_id')->filter()->unique();
+                            foreach ($individualCircleIds as $circleId) {
+                                $circle = \App\Models\QuranIndividualCircle::find($circleId);
+                                if ($circle) {
+                                    $circle->updateSessionCounts();
+                                }
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('scheduled_at', 'desc');

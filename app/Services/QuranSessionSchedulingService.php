@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 class QuranSessionSchedulingService
 {
@@ -28,12 +29,16 @@ class QuranSessionSchedulingService
 
         // Validate the scheduled time is in the future
         if ($scheduledAt->isPast()) {
-            throw new ValidationException('Cannot schedule session in the past');
+            throw ValidationException::withMessages([
+                'scheduled_at' => ['Cannot schedule session in the past']
+            ]);
         }
 
         // Check for teacher conflicts
         if ($this->hasTeacherConflict($templateSession->quran_teacher_id, $scheduledAt, $templateSession->duration_minutes)) {
-            throw new ValidationException('Teacher has a conflicting session at this time');
+            throw ValidationException::withMessages([
+                'scheduled_at' => ['Teacher has a conflicting session at this time']
+            ]);
         }
 
         // Update the template session to be scheduled
@@ -42,7 +47,7 @@ class QuranSessionSchedulingService
             'status' => 'scheduled',
             'is_scheduled' => true,
             'teacher_scheduled_at' => now(),
-            'scheduled_by' => auth()->id(),
+            'scheduled_by' => Auth::id(),
             ...$additionalData ?? []
         ]);
 
@@ -64,7 +69,9 @@ class QuranSessionSchedulingService
     ): QuranCircleSchedule {
         // Validate that circle doesn't already have an active schedule
         if ($circle->schedule && $circle->schedule->is_active) {
-            throw new ValidationException('Circle already has an active schedule');
+            throw ValidationException::withMessages([
+                'circle_id' => ['Circle already has an active schedule']
+            ]);
         }
 
         // Validate weekly schedule format
@@ -74,7 +81,7 @@ class QuranSessionSchedulingService
         $schedule = QuranCircleSchedule::create([
             'academy_id' => $circle->academy_id,
             'circle_id' => $circle->id,
-            'quran_teacher_id' => auth()->id(),
+            'quran_teacher_id' => Auth::id(),
             'weekly_schedule' => $weeklySchedule,
             'timezone' => $options['timezone'] ?? 'Asia/Riyadh',
             'default_duration_minutes' => $options['duration'] ?? 60,
@@ -89,7 +96,7 @@ class QuranSessionSchedulingService
             'meeting_id' => $options['meeting_id'] ?? null,
             'meeting_password' => $options['meeting_password'] ?? null,
             'recording_enabled' => $options['recording_enabled'] ?? false,
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ]);
 
         // Activate the schedule
@@ -134,11 +141,15 @@ class QuranSessionSchedulingService
 
         foreach ($weeklySchedule as $schedule) {
             if (!isset($schedule['day']) || !in_array($schedule['day'], $validDays)) {
-                throw new ValidationException('Invalid day in weekly schedule');
+                throw ValidationException::withMessages([
+                    'weekly_schedule' => ['Invalid day in weekly schedule']
+                ]);
             }
 
             if (!isset($schedule['time']) || !preg_match('/^\d{2}:\d{2}$/', $schedule['time'])) {
-                throw new ValidationException('Invalid time format in weekly schedule (use HH:MM)');
+                throw ValidationException::withMessages([
+                    'weekly_schedule' => ['Invalid time format in weekly schedule (use HH:MM)']
+                ]);
             }
         }
     }
@@ -229,7 +240,7 @@ class QuranSessionSchedulingService
         array $data
     ): QuranCircleSchedule {
         $schedule->update(array_merge($data, [
-            'updated_by' => auth()->id(),
+            'updated_by' => Auth::id(),
         ]));
 
         return $schedule->fresh();

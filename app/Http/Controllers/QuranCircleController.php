@@ -160,7 +160,7 @@ class QuranCircleController extends Controller
 
             $circleData = array_merge($validated, [
                 'academy_id' => $academy->id,
-                'circle_code' => $this->generateCircleCode($academy->id),
+                'circle_code' => QuranCircle::generateCircleCode($academy->id),
                 'enrolled_students' => 0,
                 'sessions_completed' => 0,
                 'currency' => $teacher->currency,
@@ -660,12 +660,6 @@ class QuranCircleController extends Controller
         if ($circle->academy_id !== $academy->id) {
             abort(404, 'دائرة القرآن غير موجودة');
         }
-    }
-
-    private function generateCircleCode(int $academyId): string
-    {
-        $count = QuranCircle::where('academy_id', $academyId)->count() + 1;
-        return 'QC-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
     }
 
     private function calculateAverageAttendance(QuranCircle $circle): float

@@ -418,8 +418,8 @@ class TeacherCalendarController extends Controller
             ->where('status', 'active')
             ->with([
                 'student', 
-                'templateSessions' => function($query) {
-                    $query->where('is_scheduled', false)->orderBy('session_sequence');
+                'scheduledSessions' => function($query) {
+                    $query->whereIn('status', ['scheduled', 'in_progress'])->orderBy('scheduled_at');
                 },
                 'subscription.package' => function($query) {
                     $query->select('id', 'sessions_per_month', 'session_duration_minutes');

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class QuranSession extends Model
 {
@@ -75,13 +76,9 @@ class QuranSession extends Model
         'updated_by',
         // New fields for individual circles and templates
         'individual_circle_id',
-        'is_template',
-        'is_generated',
-        'generated_from_schedule_id',
-        'is_scheduled',
+
         'teacher_scheduled_at',
         'scheduled_by',
-        'session_sequence',
         // New meeting platform fields
         'meeting_source',
         'meeting_platform',
@@ -108,7 +105,7 @@ class QuranSession extends Model
         'verses_covered_start' => 'integer',
         'verses_covered_end' => 'integer',
         'verses_memorized_today' => 'integer',
-        'session_sequence' => 'integer',
+
         'recitation_quality' => 'decimal:1',
         'tajweed_accuracy' => 'decimal:1',
         'mistakes_count' => 'integer',
@@ -116,9 +113,7 @@ class QuranSession extends Model
         'recording_enabled' => 'boolean',
         'is_makeup_session' => 'boolean',
         'follow_up_required' => 'boolean',
-        'is_template' => 'boolean',
-        'is_generated' => 'boolean',
-        'is_scheduled' => 'boolean',
+
         'meeting_auto_generated' => 'boolean',
         'lesson_objectives' => 'array',
         'common_mistakes' => 'array',
@@ -842,7 +837,7 @@ class QuranSession extends Model
             return false;
         }
         
-        $userIdentity = $user->id . '_' . \Str::slug($user->first_name . '_' . $user->last_name);
+        $userIdentity = $user->id . '_' . Str::slug($user->first_name . '_' . $user->last_name);
         
         foreach ($roomInfo['participants'] as $participant) {
             if ($participant['id'] === $userIdentity) {
@@ -936,6 +931,38 @@ class QuranSession extends Model
         );
         
         return $sessionCode;
+    }
+
+    // Boot method to handle model events
+    protected static function booted()
+    {
+        // Handle session deletion - check if group circle needs re-scheduling
+        static::deleted(function ($session) {
+            if ($session->circle_id && $session->generatedFromSchedule) {
+                // This was a group circle session generated from a schedule
+                $schedule = $session->generatedFromSchedule;
+                
+                if ($schedule && $schedule->is_active) {
+                    // Check if we need to generate more sessions for this month
+                    $currentMonth = now()->format('Y-m');
+                    $currentMonthSessions = self::where('circle_id', $session->circle_id)
+                        ->whereRaw("DATE_FORMAT(scheduled_at, '%Y-%m') = ?", [$currentMonth])
+                        ->count();
+                    
+                    $monthlyLimit = $schedule->circle->monthly_sessions_count ?? 4;
+                    
+                    if ($currentMonthSessions < $monthlyLimit) {
+                        // Try to generate replacement sessions
+                        $schedule->generateUpcomingSessions();
+                    }
+                }
+            }
+            
+            // Update individual circle counts if needed
+            if ($session->individual_circle_id && $session->individualCircle) {
+                $session->individualCircle->updateSessionCounts();
+            }
+        });
     }
 
     public static function getTodaysSessions(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection

@@ -26,9 +26,16 @@ class RecentSessionsWidget extends BaseWidget
         if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
             $query = QuranSession::query()->whereRaw('1 = 0'); // Return no results
         } else {
+            $teacherProfileId = $user->quranTeacherProfile->id;
+            $userId = $user->id;
+            
             $query = QuranSession::query()
-                ->where('quran_teacher_id', $user->quranTeacherProfile->id)
-                ->with(['student', 'subscription'])
+                ->where(function($q) use ($teacherProfileId, $userId) {
+                    // Include both teacher profile ID (group sessions) and user ID (individual sessions)
+                    $q->where('quran_teacher_id', $teacherProfileId)
+                      ->orWhere('quran_teacher_id', $userId);
+                })
+                ->with(['student', 'subscription', 'circle', 'individualCircle'])
                 ->latest('scheduled_at');
         }
 
