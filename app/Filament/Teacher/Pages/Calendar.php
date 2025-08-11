@@ -43,6 +43,7 @@ class Calendar extends Page
     public array $scheduleDays = [];
     public ?string $scheduleTime = null;
     public ?string $scheduleStartDate = null;
+    public int $sessionCount = 4; // NEW: Manual session count from user
 
     /**
      * Get the widgets for this page
@@ -437,6 +438,27 @@ class Calendar extends Page
                     })
                     ->helperText('الوقت الذي ستبدأ فيه الجلسات'),
                     
+                // NEW: Manual Session Count Field - VERY PROMINENT
+                Forms\Components\TextInput::make('session_count')
+                    ->label('🔢 عدد الجلسات المطلوب إنشاؤها (تحديد يدوي)')
+                    ->helperText('💡 حدد بنفسك عدد الجلسات التي تريد إنشاءها للحلقة')
+                    ->numeric()
+                    ->required()
+                    ->minValue(1)
+                    ->maxValue(100)
+                    ->default(function () {
+                        $circle = $this->getSelectedCircle();
+                        return $circle['monthly_sessions'] ?? 4;
+                    })
+                    ->placeholder('ادخل العدد المطلوب')
+                    ->suffixIcon('heroicon-m-hashtag')
+                    ->extraInputAttributes([
+                        'style' => 'font-size: 18px; font-weight: bold; text-align: center; background-color: #fef3c7; border: 2px solid #f59e0b;'
+                    ])
+                    ->extraAttributes([
+                        'style' => 'background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px;'
+                    ]),
+                    
                 Forms\Components\Placeholder::make('circle_info')
                     ->label('معلومات الحلقة')
                     ->content(function () {
@@ -462,6 +484,7 @@ class Calendar extends Page
                 $this->scheduleDays = $data['schedule_days'] ?? [];
                 $this->scheduleTime = $data['schedule_time'] ?? null;
                 $this->scheduleStartDate = $data['schedule_start_date'] ?? null;
+                $this->sessionCount = $data['session_count'] ?? 4; // NEW: Store user-specified session count
                 
                 $this->createBulkSchedule();
             })
@@ -597,7 +620,18 @@ class Calendar extends Page
         // Generate additional sessions for the extended period
         $additionalSessions = $schedule->generateUpcomingSessions();
         
-        return $generatedCount + $additionalSessions;
+        // NEW: Generate specific number of sessions based on user input
+        $totalGenerated = $generatedCount + $additionalSessions;
+        $userRequestedCount = $this->sessionCount;
+        
+        if ($totalGenerated < $userRequestedCount) {
+            // Generate more sessions to reach the requested count
+            $additionalNeeded = $userRequestedCount - $totalGenerated;
+            $moreGenerated = $this->generateAdditionalGroupSessions($schedule, $additionalNeeded);
+            $totalGenerated += $moreGenerated;
+        }
+        
+        return $totalGenerated;
     }
 
     /**
@@ -807,6 +841,117 @@ class Calendar extends Page
     }
     
 
+
+    /**
+     * Generate additional group sessions to reach user-specified count
+     */
+    private function generateAdditionalGroupSessions($schedule, int $additionalCount): int
+    {
+        if ($additionalCount <= 0) {
+            return 0;
+        }
+        
+        $circle = $schedule->circle;
+        $weeklySchedule = $schedule->weekly_schedule ?? [];
+        
+        if (empty($weeklySchedule)) {
+            return 0;
+        }
+        
+        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
+        $sessionsCreated = 0;
+        $weekOffset = 0;
+        $maxWeeks = 20; // Limit to prevent infinite loops
+        
+        while ($sessionsCreated < $additionalCount && $weekOffset < $maxWeeks) {
+            foreach ($weeklySchedule as $scheduleEntry) {
+                if ($sessionsCreated >= $additionalCount) break;
+                
+                $day = $scheduleEntry['day'];
+                $time = $scheduleEntry['time'];
+                
+                // Calculate session date
+                $sessionDate = $this->getNextDateForDay($startDate->copy()->addWeeks($weekOffset), $day);
+                $sessionDateTime = $sessionDate->setTimeFromTimeString($time);
+                
+                // Check if session already exists
+                $existingSession = QuranSession::where('circle_id', $circle->id)
+                    ->where('quran_teacher_id', Auth::user()->quranTeacherProfile->id ?? Auth::id())
+                    ->whereDate('scheduled_at', $sessionDateTime->toDateString())
+                    ->whereTime('scheduled_at', $sessionDateTime->toTimeString())
+                    ->first();
+                
+                if (!$existingSession) {
+                    // Create new session
+                    QuranSession::create([
+                        'academy_id' => $circle->academy_id,
+                        'quran_teacher_id' => Auth::user()->quranTeacherProfile->id ?? Auth::id(),
+                        'circle_id' => $circle->id,
+                        'session_code' => $this->generateGroupSessionCode($circle, $sessionDateTime),
+                        'session_type' => 'group',
+                        'status' => 'scheduled',
+                        'is_scheduled' => true,
+                        'title' => "جلسة {$circle->name_ar} - " . $this->getDayNameInArabic($day),
+                        'scheduled_at' => $sessionDateTime,
+                        'duration_minutes' => $circle->session_duration_minutes ?? 60,
+                        'location_type' => 'online',
+                        'created_by' => Auth::id(),
+                        'scheduled_by' => Auth::id(),
+                        'teacher_scheduled_at' => now(),
+                    ]);
+                    
+                    $sessionsCreated++;
+                }
+            }
+            $weekOffset++;
+        }
+        
+        return $sessionsCreated;
+    }
+    
+    /**
+     * Generate session code for group sessions
+     */
+    private function generateGroupSessionCode($circle, Carbon $sessionDateTime): string
+    {
+        $circleCode = $circle->circle_code ?? 'GC';
+        $dateCode = $sessionDateTime->format('Ymd-Hi');
+        $teacherId = str_pad(Auth::id(), 3, '0', STR_PAD_LEFT);
+        
+        $baseCode = "{$circleCode}-{$teacherId}-{$dateCode}";
+        
+        // Check for uniqueness and add suffix if needed
+        $attempt = 0;
+        $sessionCode = $baseCode;
+        while (
+            QuranSession::where('academy_id', $circle->academy_id)
+                        ->where('session_code', $sessionCode)
+                        ->exists() && $attempt < 50
+        ) {
+            $attempt++;
+            $sessionCode = $baseCode . "-G{$attempt}";
+        }
+        
+        return $sessionCode;
+    }
+    
+    /**
+     * Get Arabic day name
+     */
+    private function getDayNameInArabic(string $day): string
+    {
+        $dayNames = [
+            'saturday' => 'السبت',
+            'sunday' => 'الأحد',
+            'monday' => 'الاثنين',
+            'tuesday' => 'الثلاثاء',
+            'wednesday' => 'الأربعاء',
+            'thursday' => 'الخميس',
+            'friday' => 'الجمعة',
+        ];
+        
+        return $dayNames[$day] ?? $day;
+    }
 
     /**
      * Get the footer widgets (includes calendar)
