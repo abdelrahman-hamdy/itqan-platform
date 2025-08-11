@@ -243,29 +243,9 @@
             transition: all 0.3s ease !important;
         }
         
-        .circle-selected {
-            transform: scale(1.05) !important;
-        }
-        
         .circle-selected .fi-card {
-            border: 4px solid #3b82f6 !important;
-            background-color: #eff6ff !important;
-            box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.4) !important;
-            position: relative !important;
-        }
-        
-        .circle-selected .fi-card::before {
-            content: "✅ محدد";
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #3b82f6;
-            color: white;
-            font-size: 10px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-            z-index: 10;
+            border: 3px solid #3b82f6 !important;
+            background-color: #f0f9ff !important;
         }
     </style>
 
@@ -280,9 +260,7 @@
                 const cardElement = card.querySelector('.fi-card');
                 if (cardElement) {
                     cardElement.style.border = '';
-                    cardElement.style.boxShadow = '';
                     cardElement.style.backgroundColor = '';
-                    cardElement.style.transform = '';
                 }
             });
             
@@ -295,10 +273,8 @@
                 // Force styles as backup
                 const cardElement = targetCard.querySelector('.fi-card');
                 if (cardElement) {
-                    cardElement.style.border = '4px solid #3b82f6 !important';
-                    cardElement.style.backgroundColor = '#eff6ff !important';
-                    cardElement.style.boxShadow = '0 0 0 6px rgba(59, 130, 246, 0.4) !important';
-                    cardElement.style.transform = 'scale(1.05) !important';
+                    cardElement.style.border = '3px solid #3b82f6 !important';
+                    cardElement.style.backgroundColor = '#f0f9ff !important';
                 }
             }
         }
