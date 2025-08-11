@@ -438,10 +438,9 @@ class Calendar extends Page
                     })
                     ->helperText('الوقت الذي ستبدأ فيه الجلسات'),
                     
-                // NEW: Manual Session Count Field - VERY PROMINENT
                 Forms\Components\TextInput::make('session_count')
-                    ->label('🔢 عدد الجلسات المطلوب إنشاؤها (تحديد يدوي)')
-                    ->helperText('💡 حدد بنفسك عدد الجلسات التي تريد إنشاءها للحلقة')
+                    ->label('عدد الجلسات المطلوب إنشاؤها')
+                    ->helperText('حدد عدد الجلسات التي تريد جدولتها')
                     ->numeric()
                     ->required()
                     ->minValue(1)
@@ -450,14 +449,7 @@ class Calendar extends Page
                         $circle = $this->getSelectedCircle();
                         return $circle['monthly_sessions'] ?? 4;
                     })
-                    ->placeholder('ادخل العدد المطلوب')
-                    ->suffixIcon('heroicon-m-hashtag')
-                    ->extraInputAttributes([
-                        'style' => 'font-size: 18px; font-weight: bold; text-align: center; background-color: #fef3c7; border: 2px solid #f59e0b;'
-                    ])
-                    ->extraAttributes([
-                        'style' => 'background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px;'
-                    ]),
+                    ->placeholder('أدخل العدد'),
                     
                 Forms\Components\Placeholder::make('circle_info')
                     ->label('معلومات الحلقة')

@@ -32,6 +32,12 @@
         <x-filament::section>
             <x-slot name="heading">
                 إدارة الحلقات
+                {{-- Debug/Test Button --}}
+                <button onclick="testCircleSelection()" 
+                        class="ml-4 px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
+                        title="اختبار تمييز الحلقة">
+                    🧪 اختبر التمييز
+                </button>
             </x-slot>
             
             <x-slot name="description">
@@ -68,13 +74,12 @@
                         @forelse ($this->getGroupCircles() as $circle)
                             <div 
                                 wire:click="selectCircle({{ $circle['id'] }}, 'group')"
-                                class="cursor-pointer transition-all duration-200 circle-card"
+                                class="cursor-pointer transition-all duration-200 circle-card {{ $selectedCircleId === $circle['id'] ? 'circle-selected' : '' }}"
                                 data-circle-id="{{ $circle['id'] }}"
                                 data-circle-type="group"
                             >
                                 <x-filament::card 
                                     class="border-2 border-gray-200 hover:ring-2 hover:ring-primary-300 hover:shadow-md transition-all duration-200"
-                                    style="{{ $selectedCircleId === $circle['id'] ? 'border: 4px solid #3b82f6 !important; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3) !important; background-color: #eff6ff !important;' : '' }}"
                                 >
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between">
@@ -140,13 +145,12 @@
                         @forelse ($this->getIndividualCircles() as $circle)
                             <div 
                                 wire:click="selectCircle({{ $circle['id'] }}, 'individual')"
-                                class="cursor-pointer transition-all duration-200 circle-card"
+                                class="cursor-pointer transition-all duration-200 circle-card {{ $selectedCircleId === $circle['id'] ? 'circle-selected' : '' }}"
                                 data-circle-id="{{ $circle['id'] }}"
                                 data-circle-type="individual"
                             >
                                 <x-filament::card 
                                     class="border-2 border-gray-200 hover:ring-2 hover:ring-primary-300 hover:shadow-md transition-all duration-200"
-                                    style="{{ $selectedCircleId === $circle['id'] ? 'border: 4px solid #3b82f6 !important; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3) !important; background-color: #eff6ff !important;' : '' }}"
                                 >
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between">
@@ -229,56 +233,121 @@
         {{-- Calendar widget will render in footer widgets automatically --}}
     </div>
 
-    {{-- JavaScript for enhanced circle selection --}}
+    {{-- CSS for circle selection --}}
+    <style>
+        .circle-card {
+            transition: all 0.3s ease !important;
+        }
+        
+        .circle-card .fi-card {
+            transition: all 0.3s ease !important;
+        }
+        
+        .circle-selected {
+            transform: scale(1.05) !important;
+        }
+        
+        .circle-selected .fi-card {
+            border: 4px solid #3b82f6 !important;
+            background-color: #eff6ff !important;
+            box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.4) !important;
+            position: relative !important;
+        }
+        
+        .circle-selected .fi-card::before {
+            content: "✅ محدد";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #3b82f6;
+            color: white;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            z-index: 10;
+        }
+    </style>
+
+    {{-- JavaScript for GUARANTEED circle selection --}}
     <script>
+        function makeCircleSelected(circleId, circleType) {
+            console.log('🎯 Making circle selected:', circleId, circleType);
+            
+            // Remove all selections first
+            document.querySelectorAll('.circle-card').forEach(card => {
+                card.classList.remove('circle-selected');
+                const cardElement = card.querySelector('.fi-card');
+                if (cardElement) {
+                    cardElement.style.border = '';
+                    cardElement.style.boxShadow = '';
+                    cardElement.style.backgroundColor = '';
+                    cardElement.style.transform = '';
+                }
+            });
+            
+            // Find and select the target circle
+            const targetCard = document.querySelector(`[data-circle-id="${circleId}"][data-circle-type="${circleType}"]`);
+            if (targetCard) {
+                targetCard.classList.add('circle-selected');
+                console.log('✅ Applied circle-selected class');
+                
+                // Force styles as backup
+                const cardElement = targetCard.querySelector('.fi-card');
+                if (cardElement) {
+                    cardElement.style.border = '4px solid #3b82f6 !important';
+                    cardElement.style.backgroundColor = '#eff6ff !important';
+                    cardElement.style.boxShadow = '0 0 0 6px rgba(59, 130, 246, 0.4) !important';
+                    cardElement.style.transform = 'scale(1.05) !important';
+                }
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
-            // Enhanced circle selection with immediate visual feedback
+            console.log('🚀 Circle selection system initialized');
+            
+            // Enhanced click handler
             document.addEventListener('click', function(e) {
                 const circleCard = e.target.closest('.circle-card');
                 if (circleCard) {
-                    // Remove previous selections
-                    document.querySelectorAll('.circle-card').forEach(card => {
-                        const cardElement = card.querySelector('.fi-card');
-                        if (cardElement) {
-                            cardElement.style.border = '2px solid #d1d5db';
-                            cardElement.style.boxShadow = '';
-                            cardElement.style.backgroundColor = '';
-                        }
-                    });
+                    const circleId = circleCard.getAttribute('data-circle-id');
+                    const circleType = circleCard.getAttribute('data-circle-type');
                     
-                    // Add bold border to selected circle immediately
-                    const selectedCard = circleCard.querySelector('.fi-card');
-                    if (selectedCard) {
-                        selectedCard.style.border = '4px solid #3b82f6';
-                        selectedCard.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.3)';
-                        selectedCard.style.backgroundColor = '#eff6ff';
+                    if (circleId && circleType) {
+                        makeCircleSelected(circleId, circleType);
                     }
                 }
             });
             
-            // Debug: Log when individual circles tab is clicked
-            const individualTab = document.querySelector('[wire\\:click="setActiveTab(\'individual\')"]');
-            if (individualTab) {
-                individualTab.addEventListener('click', function() {
-                    console.log('Individual circles tab clicked');
-                    setTimeout(() => {
-                        const individualCircles = document.querySelectorAll('[data-circle-type="individual"]');
-                        console.log('Individual circles found:', individualCircles.length);
-                    }, 100);
-                });
-            }
+            // Listen for Livewire updates
+            document.addEventListener('livewire:updated', function() {
+                console.log('🔄 Livewire updated - checking selection');
+                setTimeout(() => {
+                    // Re-apply selection if there's a selected circle
+                    const selectedCards = document.querySelectorAll('.circle-selected');
+                    selectedCards.forEach(card => {
+                        const circleId = card.getAttribute('data-circle-id');
+                        const circleType = card.getAttribute('data-circle-type');
+                        if (circleId && circleType) {
+                            makeCircleSelected(circleId, circleType);
+                        }
+                    });
+                }, 100);
+            });
         });
         
-        // Livewire hook for when the page updates
-        document.addEventListener('livewire:navigated', function() {
-            console.log('Livewire navigated - checking circles');
-            setTimeout(() => {
-                const groupCircles = document.querySelectorAll('[data-circle-type="group"]');
-                const individualCircles = document.querySelectorAll('[data-circle-type="individual"]');
-                console.log('Group circles:', groupCircles.length);
-                console.log('Individual circles:', individualCircles.length);
-            }, 100);
-        });
+        // Manual test function for debugging
+        window.testCircleSelection = function() {
+            const firstCircle = document.querySelector('.circle-card');
+            if (firstCircle) {
+                const circleId = firstCircle.getAttribute('data-circle-id');
+                const circleType = firstCircle.getAttribute('data-circle-type');
+                makeCircleSelected(circleId, circleType);
+                alert(`تم اختبار التمييز للحلقة ${circleId}`);
+            } else {
+                alert('لا توجد حلقات للاختبار');
+            }
+        };
     </script>
 
     {{-- Modal is handled by the Filament Action --}}
