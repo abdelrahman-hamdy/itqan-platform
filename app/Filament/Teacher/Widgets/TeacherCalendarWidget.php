@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Filament\Forms;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
+use Filament\Infolists;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -101,36 +102,49 @@ class TeacherCalendarWidget extends FullCalendarWidget
         }
         
         return $query
-            ->with(['circle', 'individualCircle', 'individualCircle.subscription', 'individualCircle.subscription.package', 'student'])
+            ->with(['circle', 'individualCircle', 'individualCircle.subscription', 'individualCircle.subscription.package', 'student', 'trialRequest'])
             ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
             ->get()
             ->map(function (QuranSession $session) {
-                // Determine if this is a group or individual session
-                $isGroup = !empty($session->circle_id);
-                $circle = $isGroup ? $session->circle : $session->individualCircle;
+                // Determine session type and details
+                $sessionType = $session->session_type;
+                $isPassed = $session->scheduled_at < now();
                 
-                if ($isGroup) {
+                if ($sessionType === 'trial') {
+                    // Get student name from trial request or student record
+                    $studentName = $session->student->name ?? 
+                                 $session->trialRequest->student_name ?? 
+                                 'طالب تجريبي';
+                    $title = "جلسة تجريبية: {$studentName}";
+                    $color = '#eab308'; // yellow-500 for trial sessions
+                } elseif ($sessionType === 'group' || !empty($session->circle_id)) {
+                    $circle = $session->circle;
                     $circleName = $circle ? $circle->name : 'حلقة محذوفة';
                     $sessionNumber = $session->monthly_session_number ? "({$session->monthly_session_number})" : '';
                     $title = "حلقة جماعية: {$circleName} {$sessionNumber}";
+                    $color = '#22c55e'; // green-500 for group circles
                 } else {
+                    // Individual session
+                    $circle = $session->individualCircle;
                     $studentName = $session->student->name ?? ($circle ? $circle->name : null) ?? 'حلقة فردية';
                     $sessionNumber = $session->monthly_session_number ? "({$session->monthly_session_number})" : '';
                     $title = "حلقة فردية: {$studentName} {$sessionNumber}";
+                    $color = '#6366f1'; // indigo-500 for individual circles
                 }
                 
-                // Enhanced color coding based on status and type
-                $color = match($session->status) {
-                    'completed' => '#22c55e', // green for completed
-                    'cancelled' => '#ef4444', // red for cancelled
-                    'in_progress' => '#3b82f6', // blue for in progress
-                    'scheduled' => $session->session_type === 'group' ? '#f59e0b' : '#10b981', // amber for group, emerald for individual
-                    default => '#6b7280' // gray default
-                };
+                // Status-based color overrides (only for non-trial sessions)
+                if ($sessionType !== 'trial') {
+                    $color = match($session->status) {
+                        'cancelled' => '#ef4444', // red for cancelled
+                        'in_progress' => '#3b82f6', // blue for in progress
+                        default => $color // keep the type-based color for scheduled/completed
+                    };
+                }
 
-                // Override for overdue sessions
-                if ($session->status === 'scheduled' && $session->scheduled_at < now()) {
-                    $color = '#f97316'; // orange for overdue
+                // Add strikethrough class for passed sessions
+                $classNames = '';
+                if ($isPassed && $session->status !== 'in_progress') {
+                    $classNames = 'event-passed';
                 }
 
                 $eventData = EventData::make()
@@ -152,7 +166,11 @@ class TeacherCalendarWidget extends FullCalendarWidget
                         'sessionMonth' => $session->session_month,
                         'countsTowardSubscription' => $session->counts_toward_subscription,
                         'isMovable' => $session->session_type === 'individual', // Only individual sessions are movable
+                        'isPassed' => $isPassed,
+                        'classNames' => $classNames,
                     ]);
+                    
+                // Note: CSS class for passed sessions is handled via JavaScript in the calendar view
 
                 // Note: Editability is controlled through the onEventDrop and onEventResize methods
                 // Individual sessions can be moved and resized, group sessions cannot
@@ -163,7 +181,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
     }
 
     /**
-     * Form schema for session editing
+     * Form schema for regular session editing
      */
     public function getFormSchema(): array
     {
@@ -184,7 +202,6 @@ class TeacherCalendarWidget extends FullCalendarWidget
             Forms\Components\DateTimePicker::make('scheduled_at')
                 ->label('موعد الجلسة')
                 ->required()
-                ->visible(fn (?QuranSession $record) => $record && in_array($record->session_type, ['individual', 'group']))
                 ->seconds(false)
                 ->minutesStep(15)
                 ->minDate(fn () => Carbon::now()->toDateString())
@@ -240,6 +257,61 @@ class TeacherCalendarWidget extends FullCalendarWidget
     }
 
     /**
+     * Form schema for trial session editing (date and notes only)
+     */
+    public function getTrialFormSchema(): array
+    {
+        return [
+            Forms\Components\DateTimePicker::make('scheduled_at')
+                ->label('موعد الجلسة')
+                ->required()
+                ->seconds(false)
+                ->minutesStep(15)
+                ->minDate(fn () => Carbon::now()->toDateString())
+                ->maxDate(fn () => Carbon::now()->addMonths(2)->toDateString())
+                ->native(false)
+                ->displayFormat('Y-m-d H:i')
+                ->timezone(config('app.timezone', 'UTC'))
+                ->helperText('اختر التاريخ والوقت الجديد للجلسة التجريبية')
+                ->rules([
+                    function (?QuranSession $record) {
+                        return function (string $attribute, $value, \Closure $fail) use ($record) {
+                            if (!$value || !$record) return;
+                            
+                            $scheduledAt = Carbon::parse($value);
+                            
+                            // Check if date is in the past
+                            if ($scheduledAt->isPast()) {
+                                $fail('لا يمكن جدولة الجلسة في وقت ماضي');
+                            }
+                            
+                            // Check for session conflicts
+                            $conflictData = [
+                                'scheduled_at' => $scheduledAt,
+                                'duration_minutes' => 30, // Trial sessions are 30 minutes
+                                'quran_teacher_id' => Auth::id(),
+                            ];
+                            
+                            try {
+                                $this->validateSessionConflicts($conflictData, $record->id);
+                            } catch (\Exception $e) {
+                                $fail($e->getMessage());
+                            }
+                        };
+                    }
+                ])
+                ->default(fn (?QuranSession $record) => $record?->scheduled_at),
+                
+            Forms\Components\Textarea::make('description')
+                ->label('ملاحظات إضافية')
+                ->rows(3)
+                ->maxLength(500)
+                ->placeholder('اكتب أي ملاحظات للطالب حول تعديل الموعد...')
+                ->helperText('سيتم إرسال هذه الملاحظات مع إشعار تغيير الموعد'),
+        ];
+    }
+
+    /**
      * Header actions for creating sessions - removed as scheduling is now done via circles section
      */
     protected function headerActions(): array
@@ -258,33 +330,115 @@ class TeacherCalendarWidget extends FullCalendarWidget
             Actions\EditAction::make('editSession')
                 ->label('تعديل')
                 ->icon('heroicon-o-pencil-square')
-                ->modalHeading('تعديل بيانات الجلسة')
+                ->modalHeading(function (QuranSession $record) {
+                    return $record->session_type === 'trial' 
+                        ? 'تعديل موعد الجلسة التجريبية' 
+                        : 'تعديل بيانات الجلسة';
+                })
                 ->modalSubmitActionLabel('حفظ التغييرات')
                 ->modalCancelActionLabel('إلغاء')
-                ->form($this->getFormSchema())
+                ->form(function (QuranSession $record) {
+                    if ($record->session_type === 'trial') {
+                        return [
+                            Forms\Components\DateTimePicker::make('scheduled_at')
+                                ->label('موعد الجلسة')
+                                ->required()
+                                ->seconds(false)
+                                ->minutesStep(15)
+                                ->minDate(fn () => Carbon::now()->toDateString())
+                                ->maxDate(fn () => Carbon::now()->addMonths(2)->toDateString())
+                                ->native(false)
+                                ->displayFormat('Y-m-d H:i')
+                                ->timezone(config('app.timezone', 'UTC'))
+                                ->helperText('اختر التاريخ والوقت الجديد للجلسة التجريبية')
+                                ->rules([
+                                    function () use ($record) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($record) {
+                                            if (!$value || !$record) return;
+                                            
+                                            $scheduledAt = Carbon::parse($value);
+                                            
+                                            // Check if date is in the past
+                                            if ($scheduledAt->isPast()) {
+                                                $fail('لا يمكن جدولة الجلسة في وقت ماضي');
+                                            }
+                                            
+                                            // Check for session conflicts
+                                            $conflictData = [
+                                                'scheduled_at' => $scheduledAt,
+                                                'duration_minutes' => 30, // Trial sessions are 30 minutes
+                                                'quran_teacher_id' => Auth::id(),
+                                            ];
+                                            
+                                            try {
+                                                $this->validateSessionConflicts($conflictData, $record->id);
+                                            } catch (\Exception $e) {
+                                                $fail($e->getMessage());
+                                            }
+                                        };
+                                    }
+                                ])
+                                ->default($record->scheduled_at),
+                                
+                            Forms\Components\Textarea::make('description')
+                                ->label('ملاحظات إضافية')
+                                ->rows(3)
+                                ->maxLength(500)
+                                ->placeholder('اكتب أي ملاحظات للطالب حول تعديل الموعد...')
+                                ->helperText('سيتم إرسال هذه الملاحظات مع إشعار تغيير الموعد')
+                                ->default($record->description),
+                        ];
+                    } else {
+                        return $this->getFormSchema();
+                    }
+                })
                 ->mountUsing(function (QuranSession $record, Forms\Form $form, array $arguments) {
-                    $data = [
-                        'title' => $record->title,
-                        'description' => $record->description,
-                        'scheduled_at' => $record->scheduled_at,
-                    ];
+                    if ($record->session_type === 'trial') {
+                        // For trial sessions, only populate time and description
+                        $data = [
+                            'scheduled_at' => $record->scheduled_at,
+                            'description' => $record->description,
+                        ];
+                    } else {
+                        // For regular sessions, populate all fields
+                        $data = [
+                            'title' => $record->title,
+                            'description' => $record->description,
+                            'scheduled_at' => $record->scheduled_at,
+                        ];
+                    }
                     
                     $form->fill($data);
                 })
                 ->using(function (QuranSession $record, array $data): QuranSession {
-                    // Basic fields that all sessions can update
-                    $updateData = [
-                        'title' => $data['title'],
-                        'description' => $data['description'] ?? null,
-                    ];
-                    
-                    // Add date/time fields for both individual and group sessions
-                    if (in_array($record->session_type, ['individual', 'group']) && isset($data['scheduled_at'])) {
-                        $newScheduledAt = Carbon::parse($data['scheduled_at']);
+                    if ($record->session_type === 'trial') {
+                        // For trial sessions, only update time and description
+                        $updateData = [
+                            'scheduled_at' => Carbon::parse($data['scheduled_at']),
+                            'description' => $data['description'] ?? $record->description,
+                        ];
                         
-                        // Only update the scheduled time, not the duration
-                        // All validations are handled in the form rules above
-                        $updateData['scheduled_at'] = $newScheduledAt;
+                        // Also update the linked trial request if it exists
+                        if ($record->trial_request_id) {
+                            $trialRequest = \App\Models\QuranTrialRequest::find($record->trial_request_id);
+                            if ($trialRequest) {
+                                $trialRequest->update([
+                                    'scheduled_at' => $updateData['scheduled_at'],
+                                    'teacher_response' => $data['description'] ?? $trialRequest->teacher_response,
+                                ]);
+                            }
+                        }
+                    } else {
+                        // For regular sessions, update all fields
+                        $updateData = [
+                            'title' => $data['title'],
+                            'description' => $data['description'] ?? null,
+                        ];
+                        
+                        // Add date/time fields for individual and group sessions
+                        if (in_array($record->session_type, ['individual', 'group']) && isset($data['scheduled_at'])) {
+                            $updateData['scheduled_at'] = Carbon::parse($data['scheduled_at']);
+                        }
                     }
                     
                     $record->update($updateData);
@@ -294,7 +448,11 @@ class TeacherCalendarWidget extends FullCalendarWidget
                     
                     return $record;
                 })
-                ->successNotificationTitle('تم تحديث بيانات الجلسة بنجاح')
+                ->successNotificationTitle(function (QuranSession $record) {
+                    return $record->session_type === 'trial' 
+                        ? 'تم تحديث موعد الجلسة التجريبية بنجاح' 
+                        : 'تم تحديث بيانات الجلسة بنجاح';
+                })
                 ->extraModalFooterActions([
                     Action::make('view_full_edit')
                         ->label('عرض الصفحة الكاملة للتعديل')
@@ -302,10 +460,19 @@ class TeacherCalendarWidget extends FullCalendarWidget
                         ->color('gray')
                         ->size('sm')
                         ->url(function (QuranSession $record) {
-                            return route('filament.teacher.resources.quran-sessions.edit', [
-                                'tenant' => filament()->getTenant(),
-                                'record' => $record
-                            ]);
+                            if ($record->session_type === 'trial') {
+                                // For trial sessions, go to trial request resource
+                                return route('filament.teacher.resources.quran-trial-requests.edit', [
+                                    'tenant' => filament()->getTenant(),
+                                    'record' => $record->trial_request_id
+                                ]);
+                            } else {
+                                // For regular sessions, go to session resource
+                                return route('filament.teacher.resources.quran-sessions.edit', [
+                                    'tenant' => filament()->getTenant(),
+                                    'record' => $record
+                                ]);
+                            }
                         })
                         ->openUrlInNewTab()
                         ->visible(fn (QuranSession $record) => Auth::id() === $record->quran_teacher_id),
@@ -337,7 +504,66 @@ class TeacherCalendarWidget extends FullCalendarWidget
         return Actions\ViewAction::make('viewSession')
             ->label('عرض التفاصيل')
             ->icon('heroicon-o-eye')
-            ->modalHeading(fn (QuranSession $record) => "تفاصيل الجلسة: {$record->title}");
+            ->modalHeading(function (QuranSession $record) {
+                if ($record->session_type === 'trial') {
+                    $studentName = $record->student->name ?? 
+                                 $record->trialRequest->student_name ?? 
+                                 'طالب تجريبي';
+                    return "تفاصيل الجلسة التجريبية: {$studentName}";
+                }
+                return "تفاصيل الجلسة: {$record->title}";
+            })
+            ->infolist(function (QuranSession $record) {
+                if ($record->session_type === 'trial') {
+                    // Trial session infolist - same fields as edit form but read-only
+                    return [
+                        \Filament\Infolists\Components\TextEntry::make('scheduled_at')
+                            ->label('موعد الجلسة')
+                            ->dateTime()
+                            ->timezone(config('app.timezone', 'UTC')),
+                            
+                        \Filament\Infolists\Components\TextEntry::make('description')
+                            ->label('ملاحظات إضافية')
+                            ->placeholder('لا توجد ملاحظات'),
+                    ];
+                } else {
+                    // Regular session infolist - show all fields
+                    return [
+                        \Filament\Infolists\Components\TextEntry::make('title')
+                            ->label('عنوان الجلسة'),
+                            
+                        \Filament\Infolists\Components\TextEntry::make('description')
+                            ->label('وصف الجلسة')
+                            ->placeholder('لا يوجد وصف'),
+                            
+                        \Filament\Infolists\Components\TextEntry::make('scheduled_at')
+                            ->label('موعد الجلسة')
+                            ->dateTime()
+                            ->timezone(config('app.timezone', 'UTC')),
+                            
+                        \Filament\Infolists\Components\TextEntry::make('duration_minutes')
+                            ->label('مدة الجلسة')
+                            ->formatStateUsing(fn ($state) => ($state ?? 60) . ' دقيقة'),
+                            
+                        \Filament\Infolists\Components\TextEntry::make('status')
+                            ->label('حالة الجلسة')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'scheduled' => 'warning',
+                                'completed' => 'success',
+                                'cancelled' => 'danger',
+                                default => 'gray',
+                            })
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'scheduled' => 'مجدولة',
+                                'completed' => 'مكتملة',
+                                'cancelled' => 'ملغية',
+                                'in_progress' => 'جارية',
+                                default => $state,
+                            }),
+                    ];
+                }
+            });
     }
 
     /**

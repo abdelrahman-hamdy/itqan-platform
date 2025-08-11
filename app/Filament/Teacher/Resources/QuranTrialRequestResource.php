@@ -119,13 +119,13 @@ class QuranTrialRequestResource extends Resource
                                     ->label('المستوى الحالي')
                                     ->disabled()
                                     ->dehydrated(false)
-                                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::LEVELS[$state] ?? $state),
+                                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranTrialRequest::LEVELS[$state] ?? $state) : ''),
 
                                 TextInput::make('preferred_time')
                                     ->label('الوقت المفضل')
                                     ->disabled()
                                     ->dehydrated(false)
-                                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::TIMES[$state] ?? $state),
+                                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranTrialRequest::TIMES[$state] ?? $state) : ''),
                             ]),
 
                         Textarea::make('notes')
@@ -234,13 +234,13 @@ class QuranTrialRequestResource extends Resource
 
                 TextColumn::make('current_level')
                     ->label('المستوى')
-                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::LEVELS[$state] ?? $state)
+                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranTrialRequest::LEVELS[$state] ?? $state) : '-')
                     ->badge()
                     ->color('info'),
 
                 TextColumn::make('preferred_time')
                     ->label('الوقت المفضل')
-                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::TIMES[$state] ?? $state)
+                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranTrialRequest::TIMES[$state] ?? $state) : '-')
                     ->toggleable(),
 
                 TextColumn::make('scheduled_at')
@@ -352,7 +352,7 @@ class QuranTrialRequestResource extends Resource
 
                                 Infolists\Components\TextEntry::make('status')
                                     ->label('الحالة')
-                                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::STATUSES[$state] ?? $state)
+                                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranTrialRequest::STATUSES[$state] ?? $state) : '-')
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {
                                         'pending' => 'warning',
@@ -393,7 +393,7 @@ class QuranTrialRequestResource extends Resource
 
                                 Infolists\Components\TextEntry::make('current_level')
                                     ->label('المستوى الحالي')
-                                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::LEVELS[$state] ?? $state),
+                                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranTrialRequest::LEVELS[$state] ?? $state) : '-'),
                             ]),
 
                         Infolists\Components\TextEntry::make('learning_goals')

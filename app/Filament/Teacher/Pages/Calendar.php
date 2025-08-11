@@ -8,9 +8,11 @@ use App\Models\QuranSession;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranCircleSchedule;
+use App\Models\QuranTrialRequest;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use App\Filament\Teacher\Widgets\TeacherCalendarWidget;
+use App\Filament\Teacher\Widgets\ColorIndicatorsWidget;
 use Illuminate\Contracts\View\View;
 use Filament\Notifications\Notification;
 use Carbon\Carbon;
@@ -19,6 +21,7 @@ use Filament\Forms;
 use Filament\Support\Enums\Alignment;
 use App\Filament\Teacher\Actions\SessionSchedulingActions;
 use App\Services\SessionManagementService;
+use Illuminate\Support\Str;
 
 
 class Calendar extends Page
@@ -37,7 +40,8 @@ class Calendar extends Page
 
     public ?int $selectedCircleId = null;
     public string $selectedCircleType = 'group'; // 'group' or 'individual'
-    public string $activeTab = 'group'; // Tab state for circles
+    public string $activeTab = 'group'; // Tab state for circles, trials
+    public ?int $selectedTrialRequestId = null;
     
     // Scheduling form properties
     public array $scheduleDays = [];
@@ -293,8 +297,65 @@ class Calendar extends Page
     public function setActiveTab(string $tab): void
     {
         $this->activeTab = $tab;
-        // Clear selection when switching tabs
+        // Clear selections when switching tabs
         $this->selectedCircleId = null;
+        $this->selectedTrialRequestId = null;
+    }
+
+    /**
+     * Get trial requests for the teacher
+     */
+    public function getTrialRequests(): Collection
+    {
+        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
+        if (!$teacherProfileId) {
+            return collect();
+        }
+        
+        return QuranTrialRequest::where('teacher_id', $teacherProfileId)
+            ->whereIn('status', ['pending', 'approved', 'scheduled', 'completed'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($trialRequest) {
+                return [
+                    'id' => $trialRequest->id,
+                    'student_name' => $trialRequest->student_name,
+                    'phone' => $trialRequest->phone,
+                    'email' => $trialRequest->email,
+                    'current_level' => $trialRequest->current_level,
+                    'level_label' => $trialRequest->level_label,
+                    'preferred_time' => $trialRequest->preferred_time,
+                    'preferred_time_label' => $trialRequest->time_label,
+                    'notes' => $trialRequest->notes,
+                    'status' => $trialRequest->status,
+                    'status_label' => $trialRequest->status_label,
+                    'scheduled_at' => $trialRequest->scheduled_at,
+                    'scheduled_at_formatted' => $trialRequest->scheduled_at ? $trialRequest->scheduled_at->format('Y/m/d H:i') : null,
+                    'meeting_link' => $trialRequest->meeting_link,
+                    'can_schedule' => in_array($trialRequest->status, ['pending', 'approved']),
+                ];
+            });
+    }
+
+    /**
+     * Select a trial request for scheduling
+     */
+    public function selectTrialRequest(int $trialRequestId): void
+    {
+        $this->selectedTrialRequestId = $trialRequestId;
+    }
+
+    /**
+     * Get currently selected trial request data
+     */
+    public function getSelectedTrialRequest(): ?array
+    {
+        if (!$this->selectedTrialRequestId) {
+            return null;
+        }
+        
+        $trialRequests = $this->getTrialRequests();
+        return $trialRequests->firstWhere('id', $this->selectedTrialRequestId);
     }
 
 
@@ -308,6 +369,8 @@ class Calendar extends Page
             // No header actions - keep schedule action only under circles tabs
         ];
     }
+
+
 
 
 
@@ -789,7 +852,199 @@ class Calendar extends Page
         return $sessionCode;
     }
 
+    /**
+     * Schedule trial session action with form
+     */
+    public function scheduleTrialAction(): Action
+    {
+        return Action::make('scheduleTrialAction')
+            ->label('جدولة الجلسة التجريبية')
+            ->icon('heroicon-o-calendar-days')
+            ->color('primary')
+            ->size('lg')
+            ->modalHeading(function () {
+                $trialRequest = $this->getSelectedTrialRequest();
+                return 'جدولة جلسة تجريبية - ' . ($trialRequest['student_name'] ?? '');
+            })
+            ->modalDescription('اختر التاريخ والوقت المناسب للجلسة التجريبية')
+            ->modalSubmitActionLabel('جدولة الجلسة')
+            ->modalCancelActionLabel('إلغاء')
+            ->form([
+                Forms\Components\DateTimePicker::make('scheduled_at')
+                    ->label('موعد الجلسة التجريبية')
+                    ->required()
+                    ->native(false)
+                    ->seconds(false)
+                    ->minutesStep(15)
+                    ->minDate(now()->toDateString())
+                    ->maxDate(now()->addMonths(2)->toDateString())
+                    ->default(now()->addDay()->setTime(16, 0))
+                    ->displayFormat('Y-m-d H:i')
+                    ->timezone(config('app.timezone', 'UTC'))
+                    ->helperText('اختر التاريخ والوقت المناسب للطالب')
+                    ->rules([
+                        function () {
+                            return function (string $attribute, $value, \Closure $fail) {
+                                if (!$value) return;
+                                
+                                $scheduledAt = Carbon::parse($value);
+                                
+                                // Check if date is in the past
+                                if ($scheduledAt->isPast()) {
+                                    $fail('لا يمكن جدولة الجلسة في وقت ماضي');
+                                }
+                                
+                                // Check for conflicts with other sessions
+                                $conflicts = QuranSession::where('quran_teacher_id', Auth::id())
+                                    ->where(function ($query) use ($scheduledAt) {
+                                        $endTime = $scheduledAt->copy()->addMinutes(30);
+                                        $query->where(function ($q) use ($scheduledAt, $endTime) {
+                                            $q->whereRaw('? BETWEEN scheduled_at AND DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE)', [$scheduledAt])
+                                              ->orWhereRaw('? BETWEEN scheduled_at AND DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE)', [$endTime])
+                                              ->orWhere(function ($subQ) use ($scheduledAt, $endTime) {
+                                                  $subQ->where('scheduled_at', '>=', $scheduledAt)
+                                                       ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) <= ?', [$endTime]);
+                                              });
+                                        });
+                                    })
+                                    ->first();
+                                    
+                                if ($conflicts) {
+                                    $conflictTime = $conflicts->scheduled_at->format('Y/m/d H:i');
+                                    $fail("يوجد تعارض مع جلسة أخرى في {$conflictTime}");
+                                }
+                            };
+                        }
+                    ]),
+                    
+                Forms\Components\Textarea::make('teacher_response')
+                    ->label('رسالة للطالب (اختياري)')
+                    ->rows(3)
+                    ->placeholder('اكتب رسالة ترحيبية أو تعليمات للطالب...')
+                    ->helperText('سيتم إرسال هذه الرسالة مع تأكيد موعد الجلسة'),
+                    
+                Forms\Components\Placeholder::make('trial_info')
+                    ->label('معلومات الطلب')
+                    ->content(function () {
+                        $trialRequest = $this->getSelectedTrialRequest();
+                        if (!$trialRequest) return 'لم يتم اختيار طلب';
+                        
+                        $content = "الطالب: " . $trialRequest['student_name'] . "<br>";
+                        $content .= "الهاتف: " . $trialRequest['phone'] . "<br>";
+                        $content .= "المستوى: " . $trialRequest['level_label'] . "<br>";
+                        $content .= "الوقت المفضل: " . $trialRequest['preferred_time_label'] . "<br>";
+                        if ($trialRequest['notes']) {
+                            $content .= "ملاحظات: " . Str::limit($trialRequest['notes'], 100);
+                        }
+                        
+                        return new \Illuminate\Support\HtmlString($content);
+                    })
+                    ->columnSpanFull(),
+            ])
+            ->action(function (array $data) {
+                try {
+                    $trialRequest = QuranTrialRequest::find($this->selectedTrialRequestId);
+                    if (!$trialRequest) {
+                        throw new \Exception('طلب الجلسة التجريبية غير موجود');
+                    }
 
+                    $scheduledAt = Carbon::parse($data['scheduled_at']);
+                    $teacherResponse = $data['teacher_response'] ?? 'تم جدولة الجلسة التجريبية';
+
+                    // Update trial request with scheduled date
+                    $trialRequest->update([
+                        'scheduled_at' => $scheduledAt,
+                        'status' => QuranTrialRequest::STATUS_SCHEDULED,
+                        'teacher_response' => $teacherResponse,
+                        'responded_at' => now(),
+                    ]);
+
+                    // Create a session record for the trial
+                    $sessionCode = $this->generateTrialSessionCode($trialRequest, $scheduledAt);
+                    $teacherProfileId = Auth::user()?->quranTeacherProfile?->id ?? Auth::id();
+                    
+                    $session = QuranSession::create([
+                        'academy_id' => $trialRequest->academy_id,
+                        'session_code' => $sessionCode,
+                        'session_type' => 'trial',
+                        'quran_teacher_id' => $teacherProfileId,
+                        'student_id' => $trialRequest->student_id,
+                        'trial_request_id' => $trialRequest->id,
+                        'scheduled_at' => $scheduledAt,
+                        'duration_minutes' => 30,
+                        'status' => 'scheduled',
+                        'title' => "جلسة تجريبية - {$trialRequest->student_name}",
+                        'description' => $teacherResponse,
+                        'notes' => 'جلسة تجريبية مجدولة',
+                        'location_type' => 'online',
+                        'created_by' => Auth::id(),
+                        'scheduled_by' => Auth::id(),
+                        'teacher_scheduled_at' => now(),
+                        'session_data' => json_encode([
+                            'is_trial' => true,
+                            'student_level' => $trialRequest->current_level,
+                            'preferred_time' => $trialRequest->preferred_time,
+                            'contact_phone' => $trialRequest->phone,
+                            'learning_goals' => $trialRequest->learning_goals,
+                            'teacher_response' => $teacherResponse,
+                        ])
+                    ]);
+
+                    // Link trial session to the request
+                    $trialRequest->update(['trial_session_id' => $session->id]);
+
+                    Notification::make()
+                        ->title('تم جدولة الجلسة التجريبية')
+                        ->body("جُدولت جلسة تجريبية للطالب {$trialRequest->student_name} في {$scheduledAt->format('Y/m/d H:i')}")
+                        ->success()
+                        ->duration(5000)
+                        ->send();
+
+                    // Clear selection and refresh calendar
+                    $this->selectedTrialRequestId = null;
+                    $this->dispatch('refresh-calendar');
+                    
+                    // Refresh the page to show the new session
+                    $this->js('setTimeout(() => window.location.reload(), 2000)');
+                    
+                } catch (\Exception $e) {
+                    Notification::make()
+                        ->title('خطأ في جدولة الجلسة التجريبية')
+                        ->body($e->getMessage())
+                        ->danger()
+                        ->send();
+                }
+            })
+            ->visible(function () {
+                $trialRequest = $this->getSelectedTrialRequest();
+                return $trialRequest && in_array($trialRequest['status'], ['pending', 'approved']);
+            });
+    }
+
+    /**
+     * Generate session code for trial sessions
+     */
+    private function generateTrialSessionCode($trialRequest, Carbon $sessionDateTime): string
+    {
+        $dateCode = $sessionDateTime->format('Ymd-Hi');
+        $teacherId = str_pad(Auth::id(), 3, '0', STR_PAD_LEFT);
+        
+        $baseCode = "TR-{$teacherId}-{$dateCode}";
+        
+        // Check for uniqueness and add suffix if needed
+        $attempt = 0;
+        $sessionCode = $baseCode;
+        while (
+            QuranSession::where('academy_id', $trialRequest->academy_id)
+                        ->where('session_code', $sessionCode)
+                        ->exists() && $attempt < 50
+        ) {
+            $attempt++;
+            $sessionCode = $baseCode . "-T{$attempt}";
+        }
+        
+        return $sessionCode;
+    }
 
     /**
      * Extend session generation for all teacher's group circles
@@ -955,6 +1210,9 @@ class Calendar extends Page
                 'selectedCircleId' => $this->selectedCircleId,
                 'selectedCircleType' => $this->selectedCircleType,
             ]),
+            ColorIndicatorsWidget::make(),
         ];
     }
+
+
 }

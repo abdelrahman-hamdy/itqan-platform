@@ -18,7 +18,9 @@ class QuranSession extends Model
         'quran_teacher_id',
         'quran_subscription_id',
         'circle_id',
+        'individual_circle_id',
         'student_id',
+        'trial_request_id',
         'session_code',
         'session_type',
         'status',
@@ -164,6 +166,11 @@ class QuranSession extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function trialRequest(): BelongsTo
+    {
+        return $this->belongsTo(QuranTrialRequest::class, 'trial_request_id');
     }
 
     public function cancelledBy(): BelongsTo
