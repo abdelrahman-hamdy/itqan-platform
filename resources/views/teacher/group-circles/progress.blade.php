@@ -373,9 +373,9 @@
                                         <div class="flex flex-col items-end space-y-2">
                                             <!-- Status Badge -->
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                                {{ $session->status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                   ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 
-                                                   ($session->status === 'cancelled' ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')) }}">
+                                                {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'bg-green-100 text-green-800' :
+                                                   ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 
+                                                   ($session->status === App\Enums\SessionStatus::CANCELLED ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')) }}">
                                                 @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                                     <i class="ri-check-double-line ml-1"></i> مكتملة
                                                 @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)

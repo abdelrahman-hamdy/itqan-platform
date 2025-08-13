@@ -143,7 +143,7 @@
                                             <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                                                 <i class="ri-calendar-line text-white text-xs"></i>
                                             </div>
-                                        @elseif($session->status === 'completed')
+                                        @elseif($session->status === App\Enums\SessionStatus::COMPLETED)
                                             <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                                                 <i class="ri-check-line text-white text-xs"></i>
                                             </div>
@@ -165,7 +165,7 @@
                                         @if($session->scheduled_at)
                                             <span class="text-gray-600">
                                                 <i class="{{ $statusData['icon'] }} ml-1"></i>
-                                                @if($session->status === 'completed' && $session->ended_at)
+                                                @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->ended_at)
                                                     اكتملت {{ $session->ended_at->diffForHumans() }}
                                                 @elseif($session->scheduled_at->isFuture())
                                                     {{ $session->scheduled_at->format('l، d F Y - H:i') }}
@@ -218,7 +218,7 @@
                                     <span class="text-xs text-gray-500">
                                         متاح خلال {{ $minutesUntilSession }} دقيقة
                                     </span>
-                                @elseif($session->status === 'completed')
+                                @elseif($session->status === App\Enums\SessionStatus::COMPLETED)
                                     <!-- Show homework/progress/quiz indicators for completed sessions -->
                                     <div class="flex items-center space-x-1 space-x-reverse">
                                         @if($session->homework && $session->homework->count() > 0)
@@ -273,7 +273,7 @@
                         @endif
 
                         <!-- Progress Context: Attendance Status -->
-                        @if($context === 'progress' && $session->status === 'completed')
+                        @if($context === 'progress' && $session->status === App\Enums\SessionStatus::COMPLETED)
                             <div class="mt-3 pt-3 border-t border-gray-100">
                                 <div class="flex items-center space-x-4 space-x-reverse">
                                     <div class="flex items-center">

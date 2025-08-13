@@ -47,12 +47,12 @@
                     
                     <!-- Status Badge -->
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                        {{ $session->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                           ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
-                        @if($session->status === 'completed')
+                        {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'bg-green-100 text-green-800' : 
+                           ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
+                        @if($session->status === App\Enums\SessionStatus::COMPLETED)
                             <i class="ri-check-line ml-1"></i>
                             مكتملة
-                        @elseif($session->status === 'scheduled')
+                        @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
                             <i class="ri-calendar-line ml-1"></i>
                             مجدولة
                         @else
@@ -87,7 +87,7 @@
                 @endif
                 
                 <!-- Action Buttons Section -->
-                @if($session->status === 'scheduled')
+                @if($session->status === App\Enums\SessionStatus::SCHEDULED)
                     <div class="border-t border-gray-200 pt-6 mt-6">
                         <div class="flex flex-wrap items-center gap-4">
                             @if($session->scheduled_at && $session->scheduled_at->isFuture())
@@ -166,7 +166,7 @@
             </div>
 
             <!-- Student Feedback (if available) -->
-            @if($session->status === 'completed' && $session->student_feedback)
+            @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->student_feedback)
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-feedback-line text-yellow-600 ml-2"></i>
@@ -186,7 +186,7 @@
             @endif
 
             <!-- Recording (if available) -->
-            @if($session->status === 'completed' && $session->recording_url)
+            @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->recording_url)
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-video-line text-red-600 ml-2"></i>
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Session action handlers
-    @if($session->status === 'scheduled')
+    @if($session->status === App\Enums\SessionStatus::SCHEDULED)
     
     // Complete session
     document.getElementById('markCompleteBtn').addEventListener('click', function() {

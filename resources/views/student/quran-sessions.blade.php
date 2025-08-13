@@ -88,9 +88,9 @@
                             </p>
                         </div>
                         <span class="px-3 py-1 text-xs font-medium rounded-full
-                          {{ $session->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                             ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 
-                             ($session->status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) }}">
+                          {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'bg-green-100 text-green-800' : 
+                             ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 
+                             ($session->status === App\Enums\SessionStatus::CANCELLED ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) }}">
                             {{ ucfirst($session->status) }}
                         </span>
                     </div>
@@ -104,7 +104,7 @@
                     </div>
                     @endif
 
-                    @if($session->status === 'completed')
+                    @if($session->status === App\Enums\SessionStatus::COMPLETED)
                     <div class="bg-gray-50 rounded-lg p-4 mb-4">
                         <h5 class="font-medium text-gray-900 mb-2">ملخص الجلسة</h5>
                         @if($session->lesson_summary)

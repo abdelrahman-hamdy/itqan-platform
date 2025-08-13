@@ -341,10 +341,10 @@
                                                     <div class="w-4 h-4 bg-green-500 rounded-full mb-1"></div>
                                                     <span class="text-xs text-green-600 font-bold">حضر</span>
                                                 @endif
-                                            @elseif($session->status === 'scheduled')
+                                            @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
                                                 <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
                                                 <span class="text-xs text-blue-600 font-bold">مجدولة</span>
-                                            @elseif($session->status === 'cancelled')
+                                            @elseif($session->status === App\Enums\SessionStatus::CANCELLED)
                                                 <div class="w-4 h-4 bg-gray-400 rounded-full mb-1"></div>
                                                 <span class="text-xs text-gray-500 font-bold">ملغاة</span>
                                             @else
@@ -357,7 +357,7 @@
                                         <div class="flex-1">
                                             <div class="flex items-center space-x-3 space-x-reverse mb-2">
                                                 <h4 class="font-bold text-gray-900 text-lg">{{ $session->title ?? 'جلسة قرآنية' }}</h4>
-                                                @if($session->status === 'completed' && ($session->papers_memorized_today || $session->verses_memorized_today))
+                                                @if($session->status === App\Enums\SessionStatus::COMPLETED && ($session->papers_memorized_today || $session->verses_memorized_today))
                                                     <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
                                                         @if($session->papers_memorized_today)
                                                             +{{ $session->papers_memorized_today }} وجه
@@ -386,7 +386,7 @@
                                             </div>
                                             
                                             <!-- Progress in Session -->
-                                            @if($session->status === 'completed' && ($session->current_page || $session->current_surah))
+                                            @if($session->status === App\Enums\SessionStatus::COMPLETED && ($session->current_page || $session->current_surah))
                                                 <div class="mt-2 text-sm text-gray-700">
                                                     <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded font-medium">
                                                         @if($session->current_page)
@@ -406,12 +406,12 @@
                                         <div class="flex flex-col items-end space-y-2">
                                             <!-- Status Badge -->
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                                {{ $session->status === 'completed' ? 
+                                                {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 
                                                     ($session->attendance_status === 'attended' ? 'bg-green-100 text-green-800' :
                                                      ($session->attendance_status === 'late' ? 'bg-yellow-100 text-yellow-800' :
                                                       ($session->attendance_status === 'absent' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'))) :
-                                                   ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 
-                                                   ($session->status === 'cancelled' ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')) }}">
+                                                   ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 
+                                                   ($session->status === App\Enums\SessionStatus::CANCELLED ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')) }}">
                                                 @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                                     @if($session->attendance_status === 'attended')
                                                         <i class="ri-check-double-line ml-1"></i> حضر وأكمل

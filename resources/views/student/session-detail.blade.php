@@ -34,12 +34,12 @@
                     
                     <!-- Status Badge -->
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                        {{ $session->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                           ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
-                        @if($session->status === 'completed')
+                        {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'bg-green-100 text-green-800' : 
+                           ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
+                        @if($session->status === App\Enums\SessionStatus::COMPLETED)
                             <i class="ri-check-line ml-1"></i>
                             مكتملة
-                                                    @elseif($session->status === 'scheduled')
+                                                    @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
                                 <i class="ri-calendar-line ml-1"></i>
                                 مجدولة
                             @else
@@ -74,7 +74,7 @@
                 @endif
 
                 <!-- Meeting Access (for upcoming sessions) -->
-                @if($session->status === 'scheduled' && $session->scheduled_at && $session->scheduled_at->isFuture())
+                @if($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at && $session->scheduled_at->isFuture())
                     @php
                         $minutesUntilSession = now()->diffInMinutes($session->scheduled_at);
                         $canJoin = $minutesUntilSession <= 30 && $minutesUntilSession > 0;
@@ -111,7 +111,7 @@
             </div>
 
             <!-- Teacher Notes (for completed sessions) -->
-            @if($session->status === 'completed' && $session->teacher_notes)
+            @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->teacher_notes)
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-user-star-line text-blue-600 ml-2"></i>
@@ -124,7 +124,7 @@
             @endif
 
             <!-- Student Progress (for completed sessions) -->
-            @if($session->status === 'completed' && $session->student_progress)
+            @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->student_progress)
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-line-chart-line text-green-600 ml-2"></i>
@@ -150,7 +150,7 @@
             @endif
 
             <!-- Student Feedback Form (for completed sessions without feedback) -->
-            @if($session->status === 'completed' && !$session->student_feedback)
+            @if($session->status === App\Enums\SessionStatus::COMPLETED && !$session->student_feedback)
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-feedback-line text-yellow-600 ml-2"></i>
@@ -186,7 +186,7 @@
             @endif
 
             <!-- Student Feedback (if already submitted) -->
-            @if($session->status === 'completed' && $session->student_feedback)
+            @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->student_feedback)
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-feedback-line text-yellow-600 ml-2"></i>

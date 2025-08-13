@@ -217,7 +217,7 @@
                   'icon' => 'ri-time-line',
                   'iconBgColor' => 'bg-blue-100',
                   'iconColor' => 'text-blue-600',
-                  'status' => $session->status === 'completed' ? 'active' : 'pending',
+                  'status' => $session->status === App\Enums\SessionStatus::COMPLETED ? 'active' : 'pending',
                   'link' => '/teacher-panel/quran-sessions'
                 ];
               })->toArray(),

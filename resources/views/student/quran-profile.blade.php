@@ -242,10 +242,10 @@
                               <span>{{ $session->scheduled_at->format('Y/m/d') }}</span>
                             </div>
                             <span class="px-2 py-1 text-xs rounded-full
-                              {{ $session->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                 ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
-                              {{ $session->status === 'completed' ? 'مكتملة' : 
-                                 ($session->status === 'scheduled' ? 'مجدولة' : $session->status) }}
+                              {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'bg-green-100 text-green-800' : 
+                                 ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
+                              {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'مكتملة' : 
+                                 ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'مجدولة' : $session->status->label()) }}
                             </span>
                           </div>
                         @endforeach
