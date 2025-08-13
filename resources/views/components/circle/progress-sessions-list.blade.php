@@ -140,7 +140,7 @@
                                     @elseif($session->status === App\Enums\SessionStatus::CANCELLED)
                                         <i class="ri-close-line ml-1"></i> ملغاة
                                     @else
-                                        <i class="ri-question-line ml-1"></i> غير محددة
+                                        <i class="ri-question-line ml-1"></i> {{ $session->status->label() }}
                                     @endif
                                 </span>
                                 

@@ -117,7 +117,7 @@
                                 إلغاء الجلسة
                             </button>
                             
-                            @if($session->session_type === 'individual')
+                            @if($session->session_type === 'individual' && $session->scheduled_at && $session->scheduled_at->isPast())
                                 <button type="button" id="markAbsentBtn" 
                                     class="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
                                     <i class="ri-user-x-line ml-2"></i>
@@ -340,7 +340,7 @@
     input-label="سبب الإلغاء (اختياري)"
     input-placeholder="اذكر سبب إلغاء الجلسة..." />
 
-@if($session->session_type === 'individual')
+@if($session->session_type === 'individual' && $session->scheduled_at && $session->scheduled_at->isPast())
     <x-modals.session-action-modal 
         id="absent-session-modal"
         title="تسجيل غياب الطالب"
@@ -466,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    @if($session->session_type === 'individual')
+    @if($session->session_type === 'individual' && $session->scheduled_at && $session->scheduled_at->isPast())
     // Mark absent
     document.getElementById('markAbsentBtn').addEventListener('click', function() {
         openModal('absent-session-modal');
