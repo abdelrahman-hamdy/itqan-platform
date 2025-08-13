@@ -103,6 +103,7 @@ class QuranSession extends Model
     ];
 
     protected $casts = [
+        'status' => SessionStatus::class,
         'scheduled_at' => 'datetime',
         'started_at' => 'datetime',
         'ended_at' => 'datetime',

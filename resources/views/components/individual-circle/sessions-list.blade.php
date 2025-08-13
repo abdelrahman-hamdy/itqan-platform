@@ -118,12 +118,12 @@
                 }) as $session)
                     @php
                         $statusData = $session->getStatusDisplayData();
-                        $isClickable = in_array($session->status, ['completed', 'scheduled', 'ongoing']);
+                        $isClickable = in_array($session->status->value, ['completed', 'scheduled', 'ongoing']);
                         $isUpcoming = $statusData['is_upcoming'];
                     @endphp
                     <div class="session-item bg-white border border-gray-200 rounded-xl p-5 transition-all duration-200 {{ $isClickable ? 'hover:border-primary-300 hover:shadow-md cursor-pointer transform hover:-translate-y-1' : 'opacity-60 cursor-not-allowed' }}
                         {{ $isUpcoming ? 'ring-2 ring-blue-200 border-blue-300' : '' }}"
-                         data-session-type="{{ $session->status }}"
+                         data-session-type="{{ $session->status->value }}"
                          data-session-id="{{ $session->id }}"
                          @if($isClickable) onclick="openSessionDetail({{ $session->id }})" @endif>
                         <div class="flex items-center justify-between">
@@ -131,12 +131,12 @@
                                 <div class="flex-shrink-0">
                                     <div class="relative">
                                         <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold shadow-sm
-                                            {{ $session->status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' : 
-                                               ($session->status === 'scheduled' ? 'bg-gradient-to-r from-blue-400 to-blue-500 text-white' : 
-                                               ($session->status === 'unscheduled' ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700')) }}">
+                                            {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' : 
+                                               ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-gradient-to-r from-blue-400 to-blue-500 text-white' : 
+                                               ($session->status === App\Enums\SessionStatus::UNSCHEDULED ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700')) }}">
                                             {{ $session->session_sequence }}
                                         </span>
-                                        @if($session->status === 'completed')
+                                        @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                             <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                                                 <i class="ri-check-line text-white text-xs"></i>
                                             </div>
@@ -146,17 +146,17 @@
                                 <div>
                                     <h4 class="text-lg font-semibold text-gray-900 mb-1">{{ $session->title }}</h4>
                                     <div class="flex items-center space-x-4 space-x-reverse text-sm">
-                                        @if($session->status === 'scheduled' && $session->scheduled_at)
+                                        @if($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at)
                                             <span class="text-sm text-gray-600">
                                                 <i class="ri-calendar-line ml-1"></i>
                                                 {{ $session->scheduled_at->format('l، d F Y - H:i') }}
                                             </span>
-                                        @elseif($session->status === 'completed' && $session->ended_at)
+                                        @elseif($session->status === App\Enums\SessionStatus::COMPLETED && $session->ended_at)
                                             <span class="text-sm text-gray-600">
                                                 <i class="ri-check-line ml-1"></i>
                                                 اكتملت {{ $session->ended_at->diffForHumans() }}
                                             </span>
-                                        @elseif($session->status === 'unscheduled')
+                                        @elseif($session->status === App\Enums\SessionStatus::UNSCHEDULED)
                                             <span class="text-sm text-yellow-600">
                                                 <i class="ri-time-line ml-1"></i>
                                                 في انتظار الجدولة
@@ -210,7 +210,7 @@
                                             متاح خلال {{ $minutesUntilSession }} دقيقة
                                         </span>
                                     @endif
-                                @elseif($session->status === 'completed')
+                                @elseif($session->status === App\Enums\SessionStatus::COMPLETED)
                                     <!-- Show homework/progress/quiz indicators for completed sessions -->
                                     <div class="flex items-center space-x-1 space-x-reverse">
                                         @if($session->homework && $session->homework->count() > 0)

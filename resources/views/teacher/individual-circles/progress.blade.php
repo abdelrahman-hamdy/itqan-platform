@@ -324,7 +324,7 @@
                                     <div class="flex items-center space-x-4 space-x-reverse">
                                         <!-- Attendance Status Indicator -->
                                         <div class="flex flex-col items-center">
-                                            @if($session->status === 'completed')
+                                            @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                                 @if($session->attendance_status === 'attended')
                                                     <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
                                                     <span class="text-xs text-green-600 font-bold">حضر</span>
@@ -412,7 +412,7 @@
                                                       ($session->attendance_status === 'absent' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'))) :
                                                    ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 
                                                    ($session->status === 'cancelled' ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')) }}">
-                                                @if($session->status === 'completed')
+                                                @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                                     @if($session->attendance_status === 'attended')
                                                         <i class="ri-check-double-line ml-1"></i> حضر وأكمل
                                                     @elseif($session->attendance_status === 'late')
@@ -424,17 +424,17 @@
                                                     @else
                                                         <i class="ri-check-line ml-1"></i> مكتملة
                                                     @endif
-                                                @elseif($session->status === 'scheduled')
+                                                @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
                                                     <i class="ri-calendar-check-line ml-1"></i> مجدولة
-                                                @elseif($session->status === 'cancelled')
+                                                @elseif($session->status === App\Enums\SessionStatus::CANCELLED)
                                                     <i class="ri-close-line ml-1"></i> ملغاة
                                                 @else
-                                                    <i class="ri-question-line ml-1"></i> {{ $session->getStatusEnum()->label() }}
+                                                    <i class="ri-question-line ml-1"></i> {{ $session->status->label() }}
                                                 @endif
                                             </span>
                                             
                                             <!-- Performance Indicators -->
-                                            @if($session->status === 'completed' && ($session->recitation_quality || $session->tajweed_accuracy))
+                                            @if($session->status === App\Enums\SessionStatus::COMPLETED && ($session->recitation_quality || $session->tajweed_accuracy))
                                                 <div class="flex items-center space-x-1 space-x-reverse text-xs">
                                                     @if($session->recitation_quality)
                                                         <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded">
