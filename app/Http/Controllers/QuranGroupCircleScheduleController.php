@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
+use App\Models\User;
 use App\Services\QuranSessionSchedulingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Display teacher's group circles and their schedules
      */
-    public function index(Request $request)
+    public function index($subdomain, Request $request)
     {
         $user = Auth::user();
         
@@ -45,9 +46,12 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Show form to create/edit schedule for a group circle
      */
-    public function create(QuranCircle $circle)
+    public function create($subdomain, $circle)
     {
         $user = Auth::user();
+        
+        // Find the circle
+        $circle = QuranCircle::findOrFail($circle);
         
         // Check ownership
         if ($circle->quran_teacher_id !== $user->id) {
@@ -63,7 +67,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Store or update schedule for a group circle
      */
-    public function store(Request $request, QuranCircle $circle): JsonResponse
+    public function store($subdomain, Request $request, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
         
@@ -144,7 +148,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Activate schedule for a group circle
      */
-    public function activate(QuranCircle $circle): JsonResponse
+    public function activate($subdomain, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
         
@@ -180,7 +184,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Deactivate schedule for a group circle
      */
-    public function deactivate(QuranCircle $circle): JsonResponse
+    public function deactivate($subdomain, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
         
@@ -216,7 +220,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Preview upcoming sessions for a schedule
      */
-    public function previewSessions(Request $request, QuranCircle $circle): JsonResponse
+    public function previewSessions($subdomain, Request $request, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
         
@@ -276,7 +280,7 @@ class QuranGroupCircleScheduleController extends Controller
     /**
      * Show circle schedule details and generated sessions
      */
-    public function show(QuranCircle $circle)
+    public function show($subdomain, QuranCircle $circle)
     {
         $user = Auth::user();
         
@@ -304,13 +308,32 @@ class QuranGroupCircleScheduleController extends Controller
             ->limit(10)
             ->get();
 
-        return view('teacher.group-circles.show', compact('circle', 'upcomingSessions'));
+        // Get recent sessions
+        $recentSessions = $circle->sessions()
+            ->where('scheduled_at', '<', now())
+            ->orderBy('scheduled_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Prepare teacher data structure that the view expects
+        $teacherData = [
+            'upcomingSessions' => $upcomingSessions,
+            'recentSessions' => $recentSessions
+        ];
+        
+        // Determine user role
+        $userRole = 'teacher'; // Since this is in teacher routes
+        
+        // Get the academy for the view
+        $academy = $circle->academy;
+
+        return view('teacher.group-circles.show', compact('circle', 'upcomingSessions', 'teacherData', 'userRole', 'academy'));
     }
 
     /**
      * Generate additional sessions manually
      */
-    public function generateSessions(QuranCircle $circle): JsonResponse
+    public function generateSessions($subdomain, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
         
@@ -346,11 +369,162 @@ class QuranGroupCircleScheduleController extends Controller
     }
 
     /**
-     * Get schedule statistics
+     * Generate comprehensive progress report for the group circle
      */
-    public function getStats(QuranCircle $circle): JsonResponse
+    public function progressReport($subdomain, $circle)
     {
         $user = Auth::user();
+        
+        // Find the circle
+        $circle = QuranCircle::findOrFail($circle);
+        
+        // Check ownership - user should be the teacher of this circle
+        if (!$circle->quranTeacher || $circle->quranTeacher->user_id !== $user->id) {
+            abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
+        }
+
+        // Load comprehensive data for enhanced progress tracking
+        $circle->load([
+            'students.studentProfile',
+            'sessions' => function ($query) {
+                $query->orderBy('scheduled_at', 'desc');
+            },
+            'schedule',
+            'academy'
+        ]);
+
+        // Get detailed session statistics for attendance analysis
+        $totalSessions = $circle->sessions->count();
+        $completedSessions = $circle->sessions->where('status', 'completed');
+        $scheduledSessions = $circle->sessions->where('status', 'scheduled');
+        
+        // Enhanced attendance analysis with different statuses
+        $attendedSessions = $completedSessions->where('attendance_status', 'attended')->count();
+        $lateSessions = $completedSessions->where('attendance_status', 'late')->count();
+        $absentSessions = $completedSessions->where('attendance_status', 'absent')->count();
+        $leftEarlySessions = $completedSessions->where('attendance_status', 'left_early')->count();
+        
+        // For sessions without explicit attendance_status, assume attended if completed
+        $completedWithoutStatus = $completedSessions->whereNull('attendance_status')->count();
+        $totalAttended = $attendedSessions + $lateSessions + $leftEarlySessions + $completedWithoutStatus;
+        
+        // Performance metrics calculation
+        $avgRecitation = $completedSessions->avg('recitation_quality') ?? 0;
+        $avgTajweed = $completedSessions->avg('tajweed_accuracy') ?? 0;
+        $avgDuration = $completedSessions->avg('actual_duration_minutes') ?? 0;
+        
+        // Group circle specific metrics
+        $enrolledStudents = $circle->students->count();
+        $maxStudents = $circle->max_students ?? 0;
+        $enrollmentRate = $maxStudents > 0 ? ($enrolledStudents / $maxStudents) * 100 : 0;
+
+        // Calculate average attendance rate per session for group circles
+        $sessionAttendanceRates = [];
+        foreach ($completedSessions as $session) {
+            // For group circles, calculate how many students attended each session
+            $sessionAttendance = 1; // Default for now, can be enhanced with actual student attendance tracking
+            $sessionAttendanceRates[] = $sessionAttendance;
+        }
+        $avgSessionAttendance = count($sessionAttendanceRates) > 0 ? array_sum($sessionAttendanceRates) / count($sessionAttendanceRates) : 0;
+
+        // Comprehensive statistics for the enhanced view
+        $stats = [
+            // Basic session counts
+            'total_sessions' => $totalSessions,
+            'completed_sessions' => $completedSessions->count(),
+            'scheduled_sessions' => $scheduledSessions->count(),
+            'upcoming_sessions' => $circle->sessions()
+                ->where('scheduled_at', '>=', now())
+                ->where('status', 'scheduled')
+                ->count(),
+            
+            // Group circle specific metrics
+            'enrolled_students' => $enrolledStudents,
+            'max_students' => $maxStudents,
+            'enrollment_rate' => $enrollmentRate,
+            'available_spots' => max(0, $maxStudents - $enrolledStudents),
+            
+            // Enhanced attendance metrics
+            'attendance_rate' => $completedSessions->count() > 0 
+                ? ($totalAttended / $completedSessions->count()) * 100 
+                : 0,
+            'attended_sessions' => $attendedSessions,
+            'late_sessions' => $lateSessions,
+            'absent_sessions' => $absentSessions,
+            'left_early_sessions' => $leftEarlySessions,
+            
+            // Performance and progress metrics
+            'avg_recitation_quality' => $avgRecitation,
+            'avg_tajweed_accuracy' => $avgTajweed,
+            'avg_session_duration' => $avgDuration,
+            'avg_session_attendance' => $avgSessionAttendance,
+            
+            // Learning analytics
+            'consistency_score' => $this->calculateGroupConsistencyScore($circle),
+            'schedule_adherence' => $this->calculateScheduleAdherence($circle),
+        ];
+
+        return view('teacher.group-circles.progress', compact('circle', 'stats'));
+    }
+
+    /**
+     * Calculate consistency score for group circle based on session regularity
+     */
+    private function calculateGroupConsistencyScore($circle): float
+    {
+        $sessions = $circle->sessions()->where('status', 'completed')->orderBy('scheduled_at')->get();
+        
+        if ($sessions->count() < 2) {
+            return 0;
+        }
+
+        $completionPattern = $sessions->map(function ($session) {
+            // Score based on session completion and quality
+            $baseScore = $session->status === 'completed' ? 1.0 : 0.0;
+            
+            // Bonus for quality metrics
+            if ($session->recitation_quality > 0) {
+                $baseScore += ($session->recitation_quality / 10) * 0.2;
+            }
+            if ($session->tajweed_accuracy > 0) {
+                $baseScore += ($session->tajweed_accuracy / 10) * 0.2;
+            }
+            
+            return min(1.0, $baseScore);
+        });
+
+        return round($completionPattern->avg() * 10, 1);
+    }
+
+    /**
+     * Calculate how well the circle adheres to its schedule
+     */
+    private function calculateScheduleAdherence($circle): float
+    {
+        if (!$circle->schedule) {
+            return 0;
+        }
+
+        $scheduledSessions = $circle->sessions()->where('status', '!=', 'template')->get();
+        $completedOnTime = $scheduledSessions->filter(function ($session) {
+            return $session->status === 'completed' && 
+                   (!$session->started_at || $session->started_at->lte($session->scheduled_at->addMinutes(15)));
+        })->count();
+
+        return $scheduledSessions->count() > 0 
+            ? round(($completedOnTime / $scheduledSessions->count()) * 10, 1)
+            : 0;
+    }
+
+    /**
+     * Get schedule statistics
+     */
+    public function getStats($subdomain, $circle): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Find the circle
+        $circle = QuranCircle::findOrFail($circle);
         
         // Check ownership
         if ($circle->quran_teacher_id !== $user->id) {
@@ -378,5 +552,71 @@ class QuranGroupCircleScheduleController extends Controller
             'success' => true,
             'stats' => $stats
         ]);
+    }
+
+    /**
+     * Generate progress report for a specific student within the group circle
+     */
+    public function studentProgressReport($subdomain, $circle, $student)
+    {
+        $user = Auth::user();
+        
+        // Find the circle and student
+        $circle = QuranCircle::findOrFail($circle);
+        $student = User::findOrFail($student);
+        
+        // Check ownership - user should be the teacher of this circle
+        if (!$circle->quranTeacher || $circle->quranTeacher->user_id !== $user->id) {
+            abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
+        }
+
+        // Verify the student is enrolled in this circle
+        if (!$circle->students->contains($student)) {
+            abort(404, 'الطالب غير مسجل في هذه الحلقة');
+        }
+
+        // Get all sessions for this circle that the student was involved in
+        $sessions = $circle->sessions()
+            ->where(function($query) use ($student) {
+                $query->where('student_id', $student->id)
+                      ->orWhere('status', 'completed');
+            })
+            ->orderBy('scheduled_at', 'desc')
+            ->get();
+
+        // Calculate student-specific statistics for this circle
+        $attendedSessionIds = \App\Models\QuranSessionAttendance::where('student_id', $student->id)
+            ->where('attendance_status', 'attended')
+            ->pluck('session_id')
+            ->toArray();
+
+        $stats = [
+            'total_sessions' => $circle->sessions()->count(),
+            'attended_sessions' => $sessions->whereIn('status', ['completed'])->count(),
+            'missed_sessions' => $sessions->where('status', 'completed')->whereNotIn('id', $attendedSessionIds)->count(),
+            'attendance_rate' => $sessions->where('status', 'completed')->count() > 0 ? 
+                (count($attendedSessionIds) / $sessions->where('status', 'completed')->count()) * 100 : 0,
+            'avg_recitation_quality' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
+                ->whereIn('session_id', $sessions->pluck('id'))
+                ->whereNotNull('recitation_quality')
+                ->avg('recitation_quality') ?: 0,
+            'avg_tajweed_accuracy' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
+                ->whereIn('session_id', $sessions->pluck('id'))
+                ->whereNotNull('tajweed_accuracy')
+                ->avg('tajweed_accuracy') ?: 0,
+            'latest_progress' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
+                ->whereIn('session_id', $sessions->pluck('id'))
+                ->latest()
+                ->first(),
+            'improvement_trend' => 'stable', // Could be calculated based on recent performance
+            'total_pages_memorized' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
+                ->whereIn('session_id', $sessions->pluck('id'))
+                ->sum('papers_memorized_today') ?: 0,
+            'total_verses_memorized' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
+                ->whereIn('session_id', $sessions->pluck('id'))
+                ->sum('verses_memorized_today') ?: 0,
+        ];
+
+        return view('teacher.group-circles.student-progress', compact('circle', 'student', 'sessions', 'stats'));
     }
 }

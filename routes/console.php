@@ -48,3 +48,16 @@ if ($isLocal) {
 } else {
     $cleanupMeetingsCommand->everyTenMinutes(); // Every 10 minutes for production
 }
+
+// Update session statuses based on time
+$updateStatusesCommand = Schedule::command('sessions:update-statuses')
+    ->name('update-session-statuses')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Update session statuses based on current time and business rules');
+
+if ($isLocal) {
+    $updateStatusesCommand->everyTwoMinutes(); // Every 2 minutes for development
+} else {
+    $updateStatusesCommand->everyFiveMinutes(); // Every 5 minutes for production
+}

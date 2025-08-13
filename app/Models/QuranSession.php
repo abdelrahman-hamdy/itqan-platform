@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\SessionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class QuranSession extends Model
 {
@@ -44,9 +47,17 @@ class QuranSession extends Model
         'attendance_notes',
         'current_surah',
         'current_verse',
+        'current_page',
+        'current_face',
         'verses_covered_start',
         'verses_covered_end',
+        'page_covered_start',
+        'face_covered_start',
+        'page_covered_end',
+        'face_covered_end',
         'verses_memorized_today',
+        'papers_memorized_today',
+        'papers_covered_today',
         'recitation_quality',
         'tajweed_accuracy',
         'mistakes_count',
@@ -88,6 +99,7 @@ class QuranSession extends Model
         'meeting_room_name',
         'meeting_auto_generated',
         'meeting_expires_at',
+        'subscription_counted',
     ];
 
     protected $casts = [
@@ -104,9 +116,17 @@ class QuranSession extends Model
         'participants_count' => 'integer',
         'current_surah' => 'integer',
         'current_verse' => 'integer',
+        'current_page' => 'integer',
+        'current_face' => 'integer',
         'verses_covered_start' => 'integer',
         'verses_covered_end' => 'integer',
+        'page_covered_start' => 'integer',
+        'face_covered_start' => 'integer',
+        'page_covered_end' => 'integer',
+        'face_covered_end' => 'integer',
         'verses_memorized_today' => 'integer',
+        'papers_memorized_today' => 'decimal:2',
+        'papers_covered_today' => 'decimal:2',
 
         'recitation_quality' => 'decimal:1',
         'tajweed_accuracy' => 'decimal:1',
@@ -124,7 +144,8 @@ class QuranSession extends Model
         'materials_used' => 'array',
         'learning_outcomes' => 'array',
         'assessment_results' => 'array',
-        'meeting_data' => 'array'
+        'meeting_data' => 'array',
+        'subscription_counted' => 'boolean',
     ];
 
     // Relationships
@@ -135,7 +156,7 @@ class QuranSession extends Model
 
     public function quranTeacher(): BelongsTo
     {
-        return $this->belongsTo(QuranTeacherProfile::class);
+        return $this->belongsTo(User::class, 'quran_teacher_id');
     }
 
     public function subscription(): BelongsTo
@@ -190,12 +211,17 @@ class QuranSession extends Model
 
     public function homework(): HasMany
     {
-        return $this->hasMany(QuranHomework::class);
+        return $this->hasMany(QuranHomework::class, 'session_id');
     }
 
     public function progress(): HasMany
     {
-        return $this->hasMany(QuranProgress::class);
+        return $this->hasMany(QuranProgress::class, 'session_id');
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(QuranSessionAttendance::class, 'session_id');
     }
 
     // Scopes
@@ -273,6 +299,247 @@ class QuranSession extends Model
         return $query->where('is_makeup_session', false);
     }
 
+    // Status Management Methods
+    
+    /**
+     * Get the status enum instance
+     */
+    public function getStatusEnum(): SessionStatus
+    {
+        $statusValue = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
+        return SessionStatus::from($statusValue);
+    }
+
+    /**
+     * Check if session is upcoming (scheduled in future)
+     */
+    public function isUpcoming(): bool
+    {
+        $statusValue = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
+        return $statusValue === SessionStatus::SCHEDULED->value && 
+               $this->scheduled_at && 
+               $this->scheduled_at->isFuture();
+    }
+
+    /**
+     * Check if session is ready to start (within 30 minutes)
+     */
+    public function isReadyToStart(): bool
+    {
+        $statusValue = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
+        if (!$this->scheduled_at || $statusValue !== SessionStatus::SCHEDULED->value) {
+            return false;
+        }
+        
+        $minutesUntilSession = now()->diffInMinutes($this->scheduled_at, false);
+        return $minutesUntilSession <= 30 && $minutesUntilSession >= -10; // Can start 30 min before, 10 min after
+    }
+
+    /**
+     * Mark session as ongoing
+     */
+    public function markAsOngoing(): bool
+    {
+        if (!$this->getStatusEnum()->canStart()) {
+            return false;
+        }
+
+        $this->update([
+            'status' => SessionStatus::ONGOING,
+            'started_at' => now(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Mark session as completed
+     */
+    public function markAsCompleted(array $additionalData = []): bool
+    {
+        if (!$this->getStatusEnum()->canComplete()) {
+            return false;
+        }
+
+        $updateData = array_merge([
+            'status' => SessionStatus::COMPLETED,
+            'ended_at' => now(),
+            'attendance_status' => 'attended',
+        ], $additionalData);
+
+        $this->update($updateData);
+
+        // Update circle progress if applicable
+        if ($this->individualCircle) {
+            $this->individualCircle->updateProgress();
+        }
+
+        // Record attendance for students
+        $this->recordSessionAttendance('present');
+
+        // Update subscription usage
+        $this->updateSubscriptionUsage();
+
+        return true;
+    }
+
+    /**
+     * Mark session as cancelled
+     */
+    public function markAsCancelled(?string $reason = null, ?string $cancelledBy = null): bool
+    {
+        if (!$this->getStatusEnum()->canCancel()) {
+            return false;
+        }
+
+        $this->update([
+            'status' => SessionStatus::CANCELLED,
+            'cancellation_reason' => $reason,
+            'cancelled_by' => $cancelledBy,
+            'cancelled_at' => now(),
+        ]);
+
+        // Record attendance as cancelled (doesn't count towards subscription)
+        $this->recordSessionAttendance('cancelled');
+
+        return true;
+    }
+
+    /**
+     * Mark session as absent (individual circles only)
+     */
+    public function markAsAbsent(?string $reason = null): bool
+    {
+        // Prevent marking future sessions as absent
+        if ($this->session_type !== 'individual' || 
+            !$this->getStatusEnum()->canComplete() ||
+            ($this->scheduled_at && $this->scheduled_at->isFuture())) {
+            return false;
+        }
+
+        $this->update([
+            'status' => SessionStatus::ABSENT,
+            'ended_at' => now(),
+            'attendance_status' => 'absent',
+            'attendance_notes' => $reason,
+        ]);
+
+        // Record attendance as absent (counts towards subscription)
+        $this->recordSessionAttendance('absent');
+
+        // Update circle progress
+        if ($this->individualCircle) {
+            $this->individualCircle->updateProgress();
+        }
+
+        // Update subscription usage (absent sessions count towards subscription)
+        $this->updateSubscriptionUsage();
+
+        return true;
+    }
+
+    /**
+     * Check if session counts towards subscription
+     */
+    public function countsTowardsSubscription(): bool
+    {
+        return $this->getStatusEnum()->countsTowardsSubscription();
+    }
+
+    /**
+     * Record attendance for session
+     */
+    protected function recordSessionAttendance(string $attendanceStatus): void
+    {
+        if ($this->session_type === 'individual' && $this->student) {
+            // For individual sessions
+            QuranSessionAttendance::updateOrCreate([
+                'session_id' => $this->id,
+                'student_id' => $this->student_id,
+            ], [
+                'attendance_status' => $attendanceStatus,
+                'join_time' => $attendanceStatus === 'present' ? ($this->started_at ?? now()) : null,
+                'leave_time' => $attendanceStatus === 'present' ? ($this->ended_at ?? now()) : null,
+            ]);
+        } elseif ($this->session_type === 'circle' && $this->circle) {
+            // For group sessions - record for all enrolled students
+            $students = $this->circle->students;
+            foreach ($students as $student) {
+                QuranSessionAttendance::updateOrCreate([
+                    'session_id' => $this->id,
+                    'student_id' => $student->id,
+                ], [
+                    'attendance_status' => $attendanceStatus === 'cancelled' ? 'cancelled' : 'absent', // Default to absent for group sessions
+                    'join_time' => null,
+                    'leave_time' => null,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Update subscription usage if this session counts towards subscription
+     */
+    protected function updateSubscriptionUsage(): void
+    {
+        // Only count towards subscription if session is completed or marked as absent
+        if (!$this->countsTowardsSubscription()) {
+            return;
+        }
+
+        // For individual sessions with subscription
+        if ($this->session_type === 'individual' && $this->individualCircle && $this->individualCircle->subscription) {
+            $subscription = $this->individualCircle->subscription;
+            
+            // Check if this session was already counted
+            $alreadyCounted = $this->isCountedInSubscription();
+            
+            if (!$alreadyCounted) {
+                try {
+                    $subscription->useSession();
+                    
+                    // Mark this session as counted
+                    $this->update(['subscription_counted' => true]);
+                    
+                } catch (\Exception $e) {
+                    Log::warning("Failed to update subscription usage for session {$this->id}: " . $e->getMessage());
+                }
+            }
+        }
+        // For group sessions, we might handle differently in the future
+        // For now, group sessions don't directly count against individual subscriptions
+    }
+
+    /**
+     * Check if this session was already counted in subscription
+     */
+    protected function isCountedInSubscription(): bool
+    {
+        // Use a flag to track if session was already counted
+        return $this->subscription_counted ?? false;
+    }
+
+    /**
+     * Get session status display data
+     */
+    public function getStatusDisplayData(): array
+    {
+        $statusEnum = $this->getStatusEnum();
+        
+        return [
+            'status' => $this->status,
+            'label' => $statusEnum->label(),
+            'icon' => $statusEnum->icon(),
+            'color' => $statusEnum->color(),
+            'can_start' => $statusEnum->canStart() && $this->isReadyToStart(),
+            'can_complete' => $statusEnum->canComplete(),
+            'can_cancel' => $statusEnum->canCancel(),
+            'can_reschedule' => $statusEnum->canReschedule(),
+            'is_upcoming' => $this->isUpcoming(),
+            'is_ready' => $this->isReadyToStart(),
+        ];
+    }
+
     public function scopeAttended($query)
     {
         return $query->where('attendance_status', 'attended');
@@ -324,7 +591,8 @@ class QuranSession extends Model
             'pending' => 'في الانتظار'
         ];
 
-        return $statuses[$this->status] ?? $this->status;
+        $statusValue = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
+        return $statuses[$statusValue] ?? $statusValue;
     }
 
     public function getAttendanceStatusTextAttribute(): string
@@ -427,6 +695,21 @@ class QuranSession extends Model
 
     public function getProgressSummaryAttribute(): string
     {
+        // Use paper-based progress if available
+        if ($this->current_page && $this->current_face) {
+            $faceName = $this->current_face == 1 ? 'الوجه الأول' : 'الوجه الثاني';
+            $papersMemorized = $this->papers_memorized_today ?? 0;
+            
+            $summary = "الصفحة {$this->current_page} - {$faceName}";
+            
+            if ($papersMemorized > 0) {
+                $summary .= " (حُفظ {$papersMemorized} وجه)";
+            }
+            
+            return $summary;
+        }
+        
+        // Fallback to verse-based progress
         if (!$this->current_surah || !$this->current_verse) {
             return 'لم يتم تحديد التقدم';
         }
@@ -441,6 +724,38 @@ class QuranSession extends Model
         }
 
         return $summary;
+    }
+    
+    /**
+     * Convert verses to papers (وجه)
+     * Each paper (وجه) = approximately 15 verses
+     */
+    public function convertVersesToPapers(int $verses): float
+    {
+        return round($verses / 15, 2);
+    }
+    
+    /**
+     * Convert papers to verses
+     * Each paper (وجه) = approximately 15 verses
+     */
+    public function convertPapersToVerses(float $papers): int
+    {
+        return (int) round($papers * 15);
+    }
+    
+    /**
+     * Update session progress using papers
+     */
+    public function updateProgressByPapers(int $page, int $face, float $papersMemorized, float $papersCovered = 0): void
+    {
+        $this->update([
+            'current_page' => $page,
+            'current_face' => $face,
+            'papers_memorized_today' => $papersMemorized,
+            'papers_covered_today' => $papersCovered,
+            'verses_memorized_today' => $this->convertPapersToVerses($papersMemorized)
+        ]);
     }
 
     public function getPerformanceSummaryAttribute(): array
@@ -531,7 +846,7 @@ class QuranSession extends Model
         return $this;
     }
 
-    public function reschedule(\Carbon\Carbon $newDateTime, string $reason = null): self
+    public function reschedule(\Carbon\Carbon $newDateTime, ?string $reason = null): self
     {
         if (!$this->can_reschedule) {
             throw new \Exception('لا يمكن إعادة جدولة الجلسة في هذا الوقت');
@@ -874,7 +1189,7 @@ class QuranSession extends Model
         ];
     }
 
-    public function addFeedback(string $feedbackType, string $feedback, User $feedbackBy = null): self
+    public function addFeedback(string $feedbackType, string $feedback, ?User $feedbackBy = null): self
     {
         $feedbackField = $feedbackType . '_feedback';
         

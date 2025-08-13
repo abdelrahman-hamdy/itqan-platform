@@ -10,7 +10,14 @@
             <x-individual-circle.circle-header :circle="$circle" view-type="teacher" />
 
             <!-- Sessions List -->
-            <x-individual-circle.sessions-list :circle="$circle" :sessions="$circle->sessions" view-type="teacher" />
+            <x-circle.progress-sessions-list 
+                :sessions="$circle->sessions" 
+                title="جلسات الحلقة الفردية"
+                subtitle="جميع الجلسات"
+                view-type="teacher"
+                :limit="null"
+                :show-all-button="false"
+                empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 
         <!-- Sidebar -->
@@ -38,9 +45,11 @@
                         <select id="templateSessionSelect" name="template_session_id" required 
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
                             <option value="">اختر جلسة...</option>
-                            @foreach($circle->templateSessions->where('is_scheduled', false) as $template)
-                                <option value="{{ $template->id }}">{{ $template->title }}</option>
-                            @endforeach
+                            @if($circle->templateSessions)
+                                @foreach($circle->templateSessions->whereNull('scheduled_at') as $template)
+                                    <option value="{{ $template->id }}">{{ $template->title ?? 'جلسة ' . $template->id }}</option>
+                                @endforeach
+                            @endif
                         </select>
                     </div>
                     
@@ -119,7 +128,12 @@ function closeScheduleModal() {
 // Session detail function
 function openSessionDetail(sessionId) {
     const subdomain = '{{ auth()->user()->academy->subdomain ?? "itqan-academy" }}';
-    window.location.href = `/${subdomain}/teacher/sessions/${sessionId}`;
+    const domain = '{{ config("app.domain") }}';
+    
+    const finalUrl = `http://${subdomain}.${domain}/teacher/sessions/${sessionId}`;
+    
+    console.log('Session URL:', finalUrl);
+    window.location.href = finalUrl;
 }
 
 // Schedule form submission

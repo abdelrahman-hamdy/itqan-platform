@@ -7,8 +7,15 @@
     <nav class="mb-8">
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
             <li>
-                <a href="{{ route('teacher.individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
-                   class="hover:text-primary">الحلقة الفردية</a>
+                @if($session->individual_circle_id && $session->individualCircle)
+                    <a href="{{ route('teacher.individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
+                       class="hover:text-primary">الحلقة الفردية</a>
+                @elseif($session->circle_id && $session->circle)
+                    <a href="{{ route('teacher.group-circles.show', ['subdomain' => $academy->subdomain, 'circle' => $session->circle->id]) }}" 
+                       class="hover:text-primary">الحلقة الجماعية</a>
+                @else
+                    <span class="text-gray-500">الجلسة</span>
+                @endif
             </li>
             <li>/</li>
             <li class="text-gray-900">تفاصيل الجلسة</li>
@@ -23,7 +30,13 @@
                 <div class="flex items-start justify-between mb-6">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">{{ $session->title }}</h1>
-                        <p class="text-gray-600 mt-1">الجلسة رقم {{ $session->session_sequence }} مع {{ $session->student->name }}</p>
+                        <p class="text-gray-600 mt-1">الجلسة رقم {{ $session->session_sequence ?? 1 }} 
+                            @if($session->student)
+                                مع {{ $session->student->name }}
+                            @else
+                                - الطالب غير محدد
+                            @endif
+                        </p>
                         @if($session->scheduled_at)
                             <p class="text-sm text-gray-500 mt-2">
                                 <i class="ri-calendar-line ml-1"></i>
@@ -32,47 +45,22 @@
                         @endif
                     </div>
                     
-                    <!-- Action Buttons -->
-                    <div class="flex items-center space-x-2 space-x-reverse">
-                        @if($session->status === 'scheduled' && $session->scheduled_at && $session->scheduled_at->isFuture())
-                            @php
-                                $minutesUntilSession = now()->diffInMinutes($session->scheduled_at);
-                                $canJoin = $minutesUntilSession <= 30;
-                            @endphp
-                            
-                            @if($canJoin)
-                                <a href="{{ route('meetings.join', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                    <i class="ri-video-line ml-2"></i>
-                                    بدء الجلسة
-                                </a>
-                            @endif
+                    <!-- Status Badge -->
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                        {{ $session->status === 'completed' ? 'bg-green-100 text-green-800' : 
+                           ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
+                        @if($session->status === 'completed')
+                            <i class="ri-check-line ml-1"></i>
+                            مكتملة
+                        @elseif($session->status === 'scheduled')
+                            <i class="ri-calendar-line ml-1"></i>
+                            مجدولة
+                        @else
+                            @php $statusData = $session->getStatusDisplayData(); @endphp
+                            <i class="{{ $statusData['icon'] }} ml-1"></i>
+                            {{ $statusData['label'] }}
                         @endif
-                        
-                        @if($session->status === 'scheduled')
-                            <button type="button" id="markCompleteBtn" 
-                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                <i class="ri-check-line ml-2"></i>
-                                إنهاء الجلسة
-                            </button>
-                        @endif
-                        
-                        <!-- Status Badge -->
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                            {{ $session->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                               ($session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
-                            @if($session->status === 'completed')
-                                <i class="ri-check-line ml-1"></i>
-                                مكتملة
-                            @elseif($session->status === 'scheduled')
-                                <i class="ri-calendar-line ml-1"></i>
-                                مجدولة
-                            @else
-                                <i class="ri-draft-line ml-1"></i>
-                                قالب
-                            @endif
-                        </span>
-                    </div>
+                    </span>
                 </div>
 
                 <!-- Session Info -->
@@ -95,6 +83,48 @@
                                 </ul>
                             </div>
                         @endif
+                    </div>
+                @endif
+                
+                <!-- Action Buttons Section -->
+                @if($session->status === 'scheduled')
+                    <div class="border-t border-gray-200 pt-6 mt-6">
+                        <div class="flex flex-wrap items-center gap-4">
+                            @if($session->scheduled_at && $session->scheduled_at->isFuture())
+                                @php
+                                    $minutesUntilSession = now()->diffInMinutes($session->scheduled_at);
+                                    $canJoin = $minutesUntilSession <= 30;
+                                @endphp
+                                
+                                @if($canJoin)
+                                    <a href="{{ route('meetings.join', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}" 
+                                       class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                                        <i class="ri-video-line ml-2"></i>
+                                        بدء الجلسة
+                                    </a>
+                                @endif
+                            @endif
+                            
+                            <button type="button" id="markCompleteBtn" 
+                                class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                                <i class="ri-check-line ml-2"></i>
+                                إنهاء الجلسة
+                            </button>
+                            
+                            <button type="button" id="markCancelBtn" 
+                                class="inline-flex items-center px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                                <i class="ri-close-line ml-2"></i>
+                                إلغاء الجلسة
+                            </button>
+                            
+                            @if($session->session_type === 'individual')
+                                <button type="button" id="markAbsentBtn" 
+                                    class="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
+                                    <i class="ri-user-x-line ml-2"></i>
+                                    غياب الطالب
+                                </button>
+                            @endif
+                        </div>
                     </div>
                 @endif
             </div>
@@ -128,7 +158,7 @@
                             placeholder="اكتب الواجب المنزلي المطلوب للجلسة القادمة...">{{ $session->homework_assigned }}</textarea>
                     </div>
                     
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="ri-save-line ml-2"></i>
                         حفظ الملاحظات
                     </button>
@@ -178,27 +208,44 @@
             <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
                 <h3 class="font-bold text-gray-900 mb-4">معلومات الطالب</h3>
                 
-                <div class="flex items-center space-x-3 space-x-reverse mb-4">
-                    @if($session->student->avatar)
-                        <img src="{{ asset('storage/' . $session->student->avatar) }}" alt="{{ $session->student->name }}" 
-                             class="w-12 h-12 rounded-full object-cover">
-                    @else
-                        <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
-                            <span class="text-lg font-bold text-primary-600">{{ substr($session->student->name, 0, 1) }}</span>
-                        </div>
-                    @endif
-                    <div>
-                        <h4 class="font-medium text-gray-900">{{ $session->student->name }}</h4>
-                        @if($session->student->email)
-                            <p class="text-sm text-gray-600">{{ $session->student->email }}</p>
+                @if($session->student)
+                    <div class="flex items-center space-x-3 space-x-reverse mb-4">
+                        @if($session->student->avatar)
+                            <img src="{{ asset('storage/' . $session->student->avatar) }}" alt="{{ $session->student->name }}" 
+                                 class="w-12 h-12 rounded-full object-cover">
+                        @else
+                            <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                                <span class="text-lg font-bold text-primary-600">{{ substr($session->student->name, 0, 1) }}</span>
+                            </div>
                         @endif
+                        <div>
+                            <h4 class="font-medium text-gray-900">{{ $session->student->name }}</h4>
+                            @if($session->student->email)
+                                <p class="text-sm text-gray-600">{{ $session->student->email }}</p>
+                            @endif
+                        </div>
                     </div>
-                </div>
+                @else
+                    <div class="text-center py-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2">
+                            <i class="ri-user-line text-gray-400"></i>
+                        </div>
+                        <p class="text-gray-500">لم يتم تحديد الطالب</p>
+                    </div>
+                @endif
                 
                 <div class="space-y-3">
                     <div>
                         <span class="text-sm text-gray-600">نوع الاشتراك:</span>
-                        <p class="font-medium text-gray-900">{{ $session->individualCircle->subscription->package->name ?? 'غير محدد' }}</p>
+                        <p class="font-medium text-gray-900">
+                            @if($session->individual_circle_id && $session->individualCircle?->subscription?->package)
+                                {{ $session->individualCircle->subscription->package->name }}
+                            @elseif($session->circle_id && $session->circle)
+                                {{ $session->circle->name }} (حلقة جماعية)
+                            @else
+                                غير محدد
+                            @endif
+                        </p>
                     </div>
                     
                     <div>
@@ -223,11 +270,19 @@
                 </div>
 
                 <div class="mt-6 pt-4 border-t border-gray-200">
-                    <a href="{{ route('teacher.individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
-                       class="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
-                        <i class="ri-arrow-right-line ml-1"></i>
-                        العودة للحلقة
-                    </a>
+                    @if($session->individual_circle_id && $session->individualCircle)
+                        <a href="{{ route('teacher.individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
+                           class="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
+                            <i class="ri-arrow-right-line ml-1"></i>
+                            العودة للحلقة الفردية
+                        </a>
+                    @elseif($session->circle_id && $session->circle)
+                        <a href="{{ route('teacher.group-circles.show', ['subdomain' => $academy->subdomain, 'circle' => $session->circle->id]) }}" 
+                           class="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
+                            <i class="ri-arrow-right-line ml-1"></i>
+                            العودة للحلقة الجماعية
+                        </a>
+                    @endif
                 </div>
             </div>
 
@@ -236,17 +291,25 @@
                 <h3 class="font-bold text-gray-900 mb-4">إجراءات سريعة</h3>
                 
                 <div class="space-y-3">
-                    <a href="mailto:{{ $session->student->email }}" 
-                       class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                        <i class="ri-mail-line ml-2"></i>
-                        إرسال رسالة للطالب
-                    </a>
+                    @if($session->student && $session->student->email)
+                        <a href="mailto:{{ $session->student->email }}" 
+                           class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                            <i class="ri-mail-line ml-2"></i>
+                            إرسال رسالة للطالب
+                        </a>
+                    @endif
                     
-                    @if($session->individualCircle)
+                    @if($session->individual_circle_id && $session->individualCircle)
                         <a href="{{ route('teacher.individual-circles.progress', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
                            class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
                             <i class="ri-line-chart-line ml-2"></i>
-                            تقرير التقدم
+                            تقرير التقدم (فردي)
+                        </a>
+                    @elseif($session->circle_id && $session->circle)
+                        <a href="{{ route('teacher.group-circles.progress', ['subdomain' => $academy->subdomain, 'circle' => $session->circle->id]) }}" 
+                           class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                            <i class="ri-line-chart-line ml-2"></i>
+                            تقرير التقدم (جماعي)
                         </a>
                     @endif
                 </div>
@@ -254,6 +317,42 @@
         </div>
     </div>
 </div>
+
+<!-- Modals -->
+<x-modals.session-action-modal 
+    id="complete-session-modal"
+    title="تأكيد إنهاء الجلسة"
+    message="هل أنت متأكد من إنهاء هذه الجلسة؟ سيتم تسجيل الجلسة كمكتملة ولن تتمكن من التراجع عن هذا الإجراء."
+    confirm-text="إنهاء الجلسة"
+    cancel-text="إلغاء"
+    confirm-color="green"
+    icon="ri-check-circle-line" />
+
+<x-modals.session-action-modal 
+    id="cancel-session-modal"
+    title="تأكيد إلغاء الجلسة"
+    message="هل أنت متأكد من إلغاء هذه الجلسة؟ لن يتم احتساب هذه الجلسة من اشتراك الطالب."
+    confirm-text="إلغاء الجلسة"
+    cancel-text="تراجع"
+    confirm-color="red"
+    icon="ri-close-circle-line"
+    :has-input="true"
+    input-label="سبب الإلغاء (اختياري)"
+    input-placeholder="اذكر سبب إلغاء الجلسة..." />
+
+@if($session->session_type === 'individual')
+    <x-modals.session-action-modal 
+        id="absent-session-modal"
+        title="تسجيل غياب الطالب"
+        message="هل أنت متأكد من تسجيل غياب الطالب؟ سيتم احتساب هذه الجلسة من اشتراك الطالب."
+        confirm-text="تسجيل الغياب"
+        cancel-text="إلغاء"
+        confirm-color="orange"
+        icon="ri-user-x-line"
+        :has-input="true"
+        input-label="سبب الغياب (اختياري)"
+        input-placeholder="اذكر ملاحظات حول غياب الطالب..." />
+@endif
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -268,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = true;
         submitBtn.textContent = 'جاري الحفظ...';
 
-        fetch(`{{ route('sessions.update-notes', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}`, {
+        fetch(`{{ route('teacher.sessions.update-notes', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}`, {
             method: 'PUT',
             body: formData,
             headers: {
@@ -293,44 +392,119 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Mark complete functionality
+    // Session action handlers
     @if($session->status === 'scheduled')
+    
+    // Complete session
     document.getElementById('markCompleteBtn').addEventListener('click', function() {
-        if (confirm('هل أنت متأكد من إنهاء هذه الجلسة؟ لن تتمكن من التراجع عن هذا الإجراء.')) {
-            const btn = this;
-            const originalText = btn.textContent;
-            
-            btn.disabled = true;
-            btn.textContent = 'جاري الإنهاء...';
-
-            fetch(`{{ route('sessions.complete', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}`, {
-                method: 'PUT',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
-                } else {
-                    showToast('خطأ: ' + data.message, 'error');
-                    btn.disabled = false;
-                    btn.textContent = originalText;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('حدث خطأ في إنهاء الجلسة', 'error');
-                btn.disabled = false;
-                btn.textContent = originalText;
-            });
-        }
+        openModal('complete-session-modal');
     });
+    
+    document.getElementById('complete-session-modal-confirm').addEventListener('click', function() {
+        setModalLoading('complete-session-modal', true);
+        
+        fetch(`{{ route('teacher.sessions.complete', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}`, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast('خطأ: ' + data.message, 'error');
+                setModalLoading('complete-session-modal', false);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('حدث خطأ في إنهاء الجلسة', 'error');
+            setModalLoading('complete-session-modal', false);
+        });
+    });
+    
+    // Cancel session
+    document.getElementById('markCancelBtn').addEventListener('click', function() {
+        openModal('cancel-session-modal');
+    });
+    
+    document.getElementById('cancel-session-modal-confirm').addEventListener('click', function() {
+        setModalLoading('cancel-session-modal', true);
+        
+        const reason = document.getElementById('cancel-session-modal-input').value;
+        
+        fetch(`{{ route('teacher.sessions.cancel', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}`, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast('خطأ: ' + data.message, 'error');
+                setModalLoading('cancel-session-modal', false);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('حدث خطأ في إلغاء الجلسة', 'error');
+            setModalLoading('cancel-session-modal', false);
+        });
+    });
+    
+    @if($session->session_type === 'individual')
+    // Mark absent
+    document.getElementById('markAbsentBtn').addEventListener('click', function() {
+        openModal('absent-session-modal');
+    });
+    
+    document.getElementById('absent-session-modal-confirm').addEventListener('click', function() {
+        setModalLoading('absent-session-modal', true);
+        
+        const reason = document.getElementById('absent-session-modal-input').value;
+        
+        fetch(`{{ route('teacher.sessions.absent', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}`, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast('خطأ: ' + data.message, 'error');
+                setModalLoading('absent-session-modal', false);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('حدث خطأ في تسجيل الغياب', 'error');
+            setModalLoading('absent-session-modal', false);
+        });
+    });
+    @endif
+    
     @endif
 });
 </script>

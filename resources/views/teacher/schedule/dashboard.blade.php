@@ -467,7 +467,7 @@
                         </div>
                         
                         <div class="space-y-1 text-sm text-gray-600">
-                          <div>{{ $session->student->name }}</div>
+                          <div>{{ $session->student->name ?? 'طالب غير محدد' }}</div>
                           <div>{{ $session->duration_minutes }} دقيقة</div>
                         </div>
                       </div>

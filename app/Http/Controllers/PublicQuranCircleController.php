@@ -51,7 +51,7 @@ class PublicQuranCircleController extends Controller
         $circle = QuranCircle::where('id', $circleId)
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
-            ->with(['academy', 'quranTeacher.user', 'students'])
+            ->with(['academy', 'quranTeacher.user', 'students', 'schedule'])
             ->first();
 
         if (!$circle) {
@@ -66,17 +66,52 @@ class PublicQuranCircleController extends Controller
             'rating' => $circle->avg_rating ?? 0,
         ];
 
-        // Check if user is already enrolled in this circle
+        // Check user role and permissions
+        $userRole = 'guest';
         $isEnrolled = false;
-        if (Auth::check() && Auth::user()->user_type === 'student') {
-            $isEnrolled = $circle->students()->where('user_id', Auth::id())->exists();
+        $isTeacher = false;
+        
+        if (Auth::check()) {
+            $user = Auth::user();
+            
+            if ($user->user_type === 'student') {
+                $userRole = 'student';
+                $isEnrolled = $circle->students()->where('user_id', Auth::id())->exists();
+            } elseif ($user->user_type === 'quran_teacher' && $user->quranTeacherProfile && $circle->quran_teacher_id === $user->quranTeacherProfile->id) {
+                $userRole = 'teacher';
+                $isTeacher = true;
+            }
         }
 
-        return view('public.quran-circles.show', compact(
+        // For teachers, load additional data
+        $teacherData = [];
+        if ($isTeacher) {
+            // Load sessions for this circle
+            $teacherData['recentSessions'] = $circle->sessions()
+                ->with('student')
+                ->latest()
+                ->limit(5)
+                ->get();
+                
+            $teacherData['upcomingSessions'] = $circle->sessions()
+                ->with('student')
+                ->where('scheduled_at', '>', now())
+                ->orderBy('scheduled_at')
+                ->limit(5)
+                ->get();
+        }
+
+        // Determine which view to use based on user role
+        $viewName = $userRole === 'teacher' ? 'teacher.group-circles.show' : 'public.quran-circles.show';
+
+        return view($viewName, compact(
             'academy', 
             'circle', 
             'stats', 
-            'isEnrolled'
+            'isEnrolled',
+            'isTeacher',
+            'userRole',
+            'teacherData'
         ));
     }
 

@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Services\CalendarService;
-use App\Services\SessionSchedulingService;
 use App\Services\QuranSessionSchedulingService;
 use App\Services\AcademyContextService;
 use App\Models\QuranSubscription;
@@ -20,16 +19,13 @@ use Carbon\Carbon;
 class TeacherCalendarController extends Controller
 {
     private CalendarService $calendarService;
-    private SessionSchedulingService $schedulingService;
     private QuranSessionSchedulingService $quranSchedulingService;
 
     public function __construct(
         CalendarService $calendarService,
-        SessionSchedulingService $schedulingService,
         QuranSessionSchedulingService $quranSchedulingService
     ) {
         $this->calendarService = $calendarService;
-        $this->schedulingService = $schedulingService;
         $this->quranSchedulingService = $quranSchedulingService;
         $this->middleware('auth');
     }

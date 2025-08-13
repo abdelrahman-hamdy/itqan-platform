@@ -351,6 +351,17 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Unified Individual Circles Routes
+    |--------------------------------------------------------------------------
+    */
+    
+    // Unified routes accessible by both teachers and students
+    Route::middleware(['auth', 'role:quran_teacher,student'])->group(function () {
+        Route::get('/individual-circles/{circle}', [App\Http\Controllers\QuranIndividualCircleController::class, 'show'])->name('individual-circles.show');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Teacher Individual Circles Routes
     |--------------------------------------------------------------------------
     */
@@ -372,6 +383,70 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForTeacher'])->name('sessions.show');
         Route::put('/sessions/{sessionId}/notes', [App\Http\Controllers\QuranSessionController::class, 'updateNotes'])->name('sessions.update-notes');
         Route::put('/sessions/{sessionId}/complete', [App\Http\Controllers\QuranSessionController::class, 'markCompleted'])->name('sessions.complete');
+        Route::put('/sessions/{sessionId}/cancel', [App\Http\Controllers\QuranSessionController::class, 'markCancelled'])->name('sessions.cancel');
+        Route::put('/sessions/{sessionId}/absent', [App\Http\Controllers\QuranSessionController::class, 'markAbsent'])->name('sessions.absent');
+        Route::get('/sessions/{sessionId}/actions', [App\Http\Controllers\QuranSessionController::class, 'getStatusActions'])->name('sessions.actions');
+        
+        // Temporary debug route
+        Route::get('/debug/sessions', function() {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            $sessions = \App\Models\QuranSession::where('quran_teacher_id', $user->id)
+                ->with(['student:id,name', 'individualCircle:id,subscription_id'])
+                ->get(['id', 'session_type', 'status', 'individual_circle_id', 'quran_teacher_id', 'student_id']);
+            
+            return response()->json([
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'user_type' => $user->user_type,
+                'is_quran_teacher' => $user->isQuranTeacher(),
+                'sessions' => $sessions,
+                'session_count' => $sessions->count(),
+                'individual_sessions' => $sessions->where('session_type', 'individual')->values(),
+                'scheduled_sessions' => $sessions->where('status', 'scheduled')->values()
+            ]);
+        })->name('debug.sessions');
+        
+        // Simple test route for session action
+        Route::get('/test/session/{sessionId}', function($subdomain, $sessionId) {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            
+            // Debug all route parameters
+            $allParams = request()->route()->parameters();
+            
+            $session = \App\Models\QuranSession::where('id', $sessionId)
+                ->where('quran_teacher_id', $user->id)
+                ->first();
+                
+            return response()->json([
+                'found_session' => $session ? true : false,
+                'subdomain_param' => $subdomain,
+                'session_id' => $sessionId,
+                'all_route_parameters' => $allParams,
+                'request_path' => request()->path(),
+                'request_url' => request()->url(),
+                'user_id' => $user->id,
+                'session_data' => $session ? $session->only(['id', 'session_type', 'status', 'quran_teacher_id']) : null
+            ]);
+        })->name('debug.test-session');
+        
+        // Test PUT route for session action (simplified)
+        Route::put('/test/absent/{sessionId}', function($subdomain, $sessionId) {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            \Illuminate\Support\Facades\Log::info('Test Absent Route Hit', [
+                'user_id' => $user->id,
+                'subdomain' => $subdomain,
+                'session_id' => $sessionId,
+                'method' => request()->method()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Test route working',
+                'subdomain' => $subdomain,
+                'session_id' => $sessionId,
+                'user_id' => $user->id
+            ]);
+        })->name('debug.test-absent');
     });
 
     /*
@@ -385,6 +460,8 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         Route::get('/group-circles', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'index'])->name('group-circles.index');
         Route::get('/group-circles/{circle}', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'show'])->name('group-circles.show');
         Route::get('/group-circles/{circle}/schedule', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'create'])->name('group-circles.schedule');
+        Route::get('/group-circles/{circle}/progress', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'progressReport'])->name('group-circles.progress');
+        Route::get('/group-circles/{circle}/students/{student}/progress', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'studentProgressReport'])->name('group-circles.student-progress');
         
         // AJAX routes for group circle schedules
         Route::post('/group-circles/{circle}/schedule', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'store'])->name('group-circles.store-schedule');

@@ -7,7 +7,7 @@
     <nav class="mb-8">
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
             <li>
-                <a href="{{ route('student.individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $session->individualCircle->id]) }}" 
+                <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
                    class="hover:text-primary">الحلقة الفردية</a>
             </li>
             <li>/</li>
@@ -39,13 +39,14 @@
                         @if($session->status === 'completed')
                             <i class="ri-check-line ml-1"></i>
                             مكتملة
-                        @elseif($session->status === 'scheduled')
-                            <i class="ri-calendar-line ml-1"></i>
-                            مجدولة
-                        @else
-                            <i class="ri-draft-line ml-1"></i>
-                            قالب
-                        @endif
+                                                    @elseif($session->status === 'scheduled')
+                                <i class="ri-calendar-line ml-1"></i>
+                                مجدولة
+                            @else
+                                @php $statusData = $session->getStatusDisplayData(); @endphp
+                                <i class="{{ $statusData['icon'] }} ml-1"></i>
+                                {{ $statusData['label'] }}
+                            @endif
                     </span>
                 </div>
 
@@ -240,7 +241,7 @@
 
                 @if($session->individualCircle)
                     <div class="mt-6 pt-4 border-t border-gray-200">
-                        <a href="{{ route('student.individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $session->individualCircle->id]) }}" 
+                        <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
                            class="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
                             <i class="ri-arrow-right-line ml-1"></i>
                             العودة للحلقة

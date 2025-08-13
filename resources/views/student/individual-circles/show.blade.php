@@ -22,7 +22,14 @@
             @php
                 $allSessions = $individualCircle->sessions()->orderBy('scheduled_at', 'asc')->get();
             @endphp
-            <x-individual-circle.sessions-list :circle="$individualCircle" :sessions="$allSessions" view-type="student" />
+            <x-circle.progress-sessions-list 
+                :sessions="$allSessions" 
+                title="جلسات الحلقة الفردية"
+                subtitle="جميع الجلسات"
+                view-type="student"
+                :limit="null"
+                :show-all-button="false"
+                empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 
         <!-- Sidebar -->

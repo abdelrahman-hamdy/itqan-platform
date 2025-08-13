@@ -140,7 +140,7 @@
                 'progress' => $subscription->progress_percentage,
                 'status' => $subscription->subscription_status,
                 'link' => $subscription->individualCircle ? 
-                    route('student.individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circleId' => $subscription->individualCircle->id]) : 
+                    route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circle' => $subscription->individualCircle->id]) : 
                     '#'
               ];
             })->toArray(),

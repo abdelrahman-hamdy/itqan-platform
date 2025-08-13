@@ -52,8 +52,18 @@ class QuranIndividualCircleController extends Controller
         // Find the circle
         $circleModel = QuranIndividualCircle::findOrFail($circle);
         
-        // Check ownership - user should be the teacher of this circle
-        if (!$user->quranTeacherProfile || $circleModel->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        // Determine user role and permissions
+        $userRole = 'guest';
+        $isTeacher = false;
+        $isStudent = false;
+        
+        if ($user->user_type === 'quran_teacher' && $circleModel->quran_teacher_id === $user->id) {
+            $userRole = 'teacher';
+            $isTeacher = true;
+        } elseif ($user->user_type === 'student' && $circleModel->student_id === $user->id) {
+            $userRole = 'student';
+            $isStudent = true;
+        } else {
             abort(403, 'غير مسموح لك بالوصول لهذه الحلقة');
         }
 
@@ -68,12 +78,19 @@ class QuranIndividualCircleController extends Controller
             },
             'completedSessions' => function ($query) {
                 $query->where('status', 'completed')->orderBy('ended_at', 'desc');
+            },
+            'templateSessions' => function ($query) {
+                $query->orderBy('session_sequence');
             }
         ]);
 
         // Rename for view consistency  
         $circle = $circleModel;
-        return view('teacher.individual-circles.show', compact('circle'));
+        
+        // Determine which view to use based on user role
+        $viewName = $userRole === 'teacher' ? 'teacher.individual-circles.show' : 'student.individual-circles.show';
+        
+        return view($viewName, compact('circle', 'userRole', 'isTeacher', 'isStudent'));
     }
 
     /**
@@ -87,7 +104,7 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::findOrFail($circle);
         
         // Check ownership - user should be the teacher of this circle
-        if (!$user->quranTeacherProfile || $circleModel->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -121,7 +138,7 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::findOrFail($circle);
         
         // Check ownership - user should be the teacher of this circle
-        if (!$user->quranTeacherProfile || $circleModel->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -192,7 +209,7 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::findOrFail($circle);
         
         // Check ownership - user should be the teacher of this circle
-        if (!$user->quranTeacherProfile || $circleModel->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -243,7 +260,7 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::findOrFail($circle);
         
         // Check ownership - user should be the teacher of this circle
-        if (!$user->quranTeacherProfile || $circleModel->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -279,7 +296,7 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::findOrFail($circle);
         
         // Check ownership - user should be the teacher of this circle
-        if (!$user->quranTeacherProfile || $circleModel->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -318,7 +335,7 @@ class QuranIndividualCircleController extends Controller
     }
 
     /**
-     * Generate progress report for the circle
+     * Generate comprehensive progress report for the circle
      */
     public function progressReport($subdomain, $circle)
     {
@@ -328,33 +345,122 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::findOrFail($circle);
         
         // Check ownership - user should be the teacher of this circle
-        if (!$user->quranTeacherProfile || $circleModel->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
             abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
         }
 
+        // Load comprehensive data for enhanced progress tracking
         $circleModel->load([
-            'student',
+            'student.studentProfile',
+            'subscription.package',
             'sessions' => function ($query) {
-                $query->orderBy('scheduled_at');
+                $query->orderBy('scheduled_at', 'desc');
             },
             'homework',
             'progress'
         ]);
 
-        // Calculate statistics
+        // Get detailed session statistics for attendance analysis
+        $totalSessions = $circleModel->sessions->count();
+        $completedSessions = $circleModel->sessions->where('status', 'completed');
+        $scheduledSessions = $circleModel->sessions->where('status', 'scheduled');
+        
+        // Enhanced attendance analysis with different statuses
+        $attendedSessions = $completedSessions->where('attendance_status', 'attended')->count();
+        $lateSessions = $completedSessions->where('attendance_status', 'late')->count();
+        $absentSessions = $completedSessions->where('attendance_status', 'absent')->count();
+        $leftEarlySessions = $completedSessions->where('attendance_status', 'left_early')->count();
+        
+        // For sessions without explicit attendance_status, assume attended if completed
+        $completedWithoutStatus = $completedSessions->whereNull('attendance_status')->count();
+        $totalAttended = $attendedSessions + $lateSessions + $leftEarlySessions + $completedWithoutStatus;
+        
+        // Performance metrics calculation
+        $avgRecitation = $completedSessions->avg('recitation_quality') ?? 0;
+        $avgTajweed = $completedSessions->avg('tajweed_accuracy') ?? 0;
+        $avgDuration = $completedSessions->avg('actual_duration_minutes') ?? 0;
+        
+        // Calculate total papers memorized (using new paper-based system)
+        $totalPapers = $circleModel->papers_memorized_precise ?? 
+            ($circleModel->verses_memorized ? $this->convertVersesToPapers($circleModel->verses_memorized) : 0);
+
+        // Comprehensive statistics for the enhanced view
         $stats = [
-            'total_sessions' => $circleModel->total_sessions,
-            'completed_sessions' => $circleModel->sessions_completed,
-            'scheduled_sessions' => $circleModel->sessions_scheduled,
-            'remaining_sessions' => $circleModel->sessions_remaining,
-            'progress_percentage' => $circleModel->progress_percentage,
-            'attendance_rate' => $circleModel->sessions_completed > 0 
-                ? ($circleModel->sessions()->where('attendance_status', 'attended')->count() / $circleModel->sessions_completed) * 100 
+            // Basic session counts
+            'total_sessions' => $totalSessions,
+            'completed_sessions' => $completedSessions->count(),
+            'scheduled_sessions' => $scheduledSessions->count(),
+            'remaining_sessions' => max(0, ($circleModel->total_sessions ?? 0) - $completedSessions->count()),
+            'progress_percentage' => $circleModel->progress_percentage ?? 0,
+            
+            // Enhanced attendance metrics
+            'attendance_rate' => $completedSessions->count() > 0 
+                ? ($totalAttended / $completedSessions->count()) * 100 
                 : 0,
+            'attended_sessions' => $attendedSessions,
+            'late_sessions' => $lateSessions,
+            'absent_sessions' => $absentSessions,
+            'left_early_sessions' => $leftEarlySessions,
+            
+            // Performance and progress metrics
+            'avg_recitation_quality' => $avgRecitation,
+            'avg_tajweed_accuracy' => $avgTajweed,
+            'avg_session_duration' => $avgDuration,
+            'total_papers_memorized' => $totalPapers,
+            
+            // Learning analytics
+            'papers_per_session' => $completedSessions->count() > 0 && $totalPapers > 0 
+                ? $totalPapers / $completedSessions->count() 
+                : 0,
+            'consistency_score' => $this->calculateConsistencyScore($circleModel),
         ];
 
         // Rename for view consistency
         $circle = $circleModel;
         return view('teacher.individual-circles.progress', compact('circle', 'stats'));
+    }
+
+    /**
+     * Convert verses to approximate paper count (وجه)
+     * Based on standard Quran structure
+     */
+    private function convertVersesToPapers(int $verses): float
+    {
+        // Average verses per paper (وجه) in standard Mushaf
+        // This varies by Surah, but 17.5 is a reasonable average
+        $averageVersesPerPaper = 17.5;
+        return round($verses / $averageVersesPerPaper, 2);
+    }
+
+    /**
+     * Calculate consistency score based on attendance pattern
+     */
+    private function calculateConsistencyScore($circle): float
+    {
+        $sessions = $circle->sessions()->where('status', 'completed')->orderBy('scheduled_at')->get();
+        
+        if ($sessions->count() < 2) {
+            return 0;
+        }
+
+        $attendancePattern = $sessions->map(function ($session) {
+            // Score: attended = 1, late = 0.7, left_early = 0.5, absent = 0
+            return match($session->attendance_status) {
+                'attended' => 1.0,
+                'late' => 0.7,
+                'left_early' => 0.5,
+                'absent' => 0.0,
+                default => 1.0 // Default to attended if status not set
+            };
+        });
+
+        // Calculate consistency based on variance in attendance
+        $mean = $attendancePattern->avg();
+        $variance = $attendancePattern->map(fn($score) => pow($score - $mean, 2))->avg();
+        
+        // Convert to consistency score (0-10, where 10 is most consistent)
+        $consistencyScore = max(0, 10 - ($variance * 20));
+        
+        return round($consistencyScore, 1);
     }
 }

@@ -5,7 +5,7 @@
 
 <div class="lg:col-span-1">
     <!-- Circle Info -->
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 sticky top-4">
         <h3 class="font-bold text-gray-900 mb-4">معلومات الحلقة</h3>
         
         <div class="space-y-4">
@@ -88,7 +88,7 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="bg-white rounded-xl shadow-sm p-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 class="font-bold text-gray-900 mb-4">إجراءات سريعة</h3>
         
         <div class="space-y-3">
@@ -162,7 +162,7 @@
 
     <!-- Recent Activity (if any) -->
     @if($circle->sessions()->where('status', 'completed')->exists())
-        <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
             <h3 class="font-bold text-gray-900 mb-4">النشاط الأخير</h3>
             
             @php

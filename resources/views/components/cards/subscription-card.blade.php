@@ -12,8 +12,8 @@
         ($subscription->student->name ?? 'طالب') : 
         ($subscription->quranTeacher?->full_name ?? 'معلم غير محدد');
     
-    $routeName = $viewType === 'teacher' ? 'teacher.individual-circles.show' : 'student.individual-circles.show';
-    $routeParam = $viewType === 'teacher' ? 'circle' : 'circleId';
+    $routeName = 'individual-circles.show'; // Unified route for both teachers and students
+    $routeParam = 'circle'; // Unified parameter name
     
     $statusColors = [
         'active' => 'bg-green-100 text-green-800',

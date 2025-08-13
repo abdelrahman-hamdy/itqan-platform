@@ -80,10 +80,10 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         
         // Quran sessions and subscription management
         Route::get('/debug-user', function() {
-            $user = auth()->user();
+            $user = \Illuminate\Support\Facades\Auth::user();
             return response()->json([
-                'authenticated' => auth()->check(),
-                'user_id' => auth()->id(),
+                'authenticated' => \Illuminate\Support\Facades\Auth::check(),
+                'user_id' => \Illuminate\Support\Facades\Auth::id(),
                 'user_name' => $user->name ?? 'none',
                 'academy_id' => $user->academy->id ?? 'none',
                 'academy_subdomain' => $user->academy->subdomain ?? 'none',
@@ -93,7 +93,7 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         })->name('debug.user');
         
         Route::get('/debug-subscription/{subscriptionId}', function($subscriptionId) {
-            $user = auth()->user();
+            $user = \Illuminate\Support\Facades\Auth::user();
             $academy = $user->academy;
             
             $subscription = \App\Models\QuranSubscription::where('id', $subscriptionId)
@@ -129,7 +129,8 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         Route::post('/circles/{circleId}/leave', [App\Http\Controllers\StudentProfileController::class, 'leaveCircle'])->name('student.circles.leave');
         
         // Individual circles management
-        Route::get('/individual-circles/{circleId}', [App\Http\Controllers\StudentProfileController::class, 'showIndividualCircle'])->name('student.individual-circles.show');
+        // Route moved to web.php as unified route for both teachers and students
+        // Route::get('/individual-circles/{circleId}', [App\Http\Controllers\StudentProfileController::class, 'showIndividualCircle'])->name('student.individual-circles.show');
         
         // Session routes for students
         Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForStudent'])->name('student.sessions.show');
