@@ -105,11 +105,13 @@
                                 @endif
                             @endif
                             
-                            <button type="button" id="markCompleteBtn" 
-                                class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm">
-                                <i class="ri-check-line ml-2"></i>
-                                إنهاء الجلسة
-                            </button>
+                            @if($session->scheduled_at && ($session->scheduled_at->isPast() || $session->scheduled_at->isToday()))
+                                <button type="button" id="markCompleteBtn" 
+                                    class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                                    <i class="ri-check-line ml-2"></i>
+                                    إنهاء الجلسة
+                                </button>
+                            @endif
                             
                             <button type="button" id="markCancelBtn" 
                                 class="inline-flex items-center px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm">
@@ -395,6 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Session action handlers
     @if($session->status === App\Enums\SessionStatus::SCHEDULED)
     
+    @if($session->scheduled_at && ($session->scheduled_at->isPast() || $session->scheduled_at->isToday()))
     // Complete session
     document.getElementById('markCompleteBtn').addEventListener('click', function() {
         openModal('complete-session-modal');
@@ -428,6 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setModalLoading('complete-session-modal', false);
         });
     });
+    @endif
     
     // Cancel session
     document.getElementById('markCancelBtn').addEventListener('click', function() {
