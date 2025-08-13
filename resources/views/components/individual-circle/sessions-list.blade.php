@@ -192,7 +192,7 @@
                                 </span>
                                 
                                 <!-- Action Buttons -->
-                                @if($session->is_scheduled && $session->scheduled_at && $session->scheduled_at->isFuture())
+                                @if($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at && $session->scheduled_at->isFuture())
                                     @php
                                         $minutesUntilSession = now()->diffInMinutes($session->scheduled_at);
                                         $canJoin = $minutesUntilSession <= 30; // Can join 30 minutes before

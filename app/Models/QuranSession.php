@@ -316,8 +316,7 @@ class QuranSession extends Model
      */
     public function isUpcoming(): bool
     {
-        $statusValue = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
-        return $statusValue === SessionStatus::SCHEDULED->value && 
+        return $this->status === SessionStatus::SCHEDULED && 
                $this->scheduled_at && 
                $this->scheduled_at->isFuture();
     }
@@ -327,8 +326,7 @@ class QuranSession extends Model
      */
     public function isReadyToStart(): bool
     {
-        $statusValue = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
-        if (!$this->scheduled_at || $statusValue !== SessionStatus::SCHEDULED->value) {
+        if (!$this->scheduled_at || $this->status !== SessionStatus::SCHEDULED) {
             return false;
         }
         
@@ -341,7 +339,7 @@ class QuranSession extends Model
      */
     public function markAsOngoing(): bool
     {
-        if (!$this->getStatusEnum()->canStart()) {
+        if (!$this->status->canStart()) {
             return false;
         }
 
@@ -358,7 +356,7 @@ class QuranSession extends Model
      */
     public function markAsCompleted(array $additionalData = []): bool
     {
-        if (!$this->getStatusEnum()->canComplete()) {
+        if (!$this->status->canComplete()) {
             return false;
         }
 
@@ -389,7 +387,7 @@ class QuranSession extends Model
      */
     public function markAsCancelled(?string $reason = null, ?string $cancelledBy = null): bool
     {
-        if (!$this->getStatusEnum()->canCancel()) {
+        if (!$this->status->canCancel()) {
             return false;
         }
 
@@ -413,7 +411,7 @@ class QuranSession extends Model
     {
         // Prevent marking future sessions as absent
         if ($this->session_type !== 'individual' || 
-            !$this->getStatusEnum()->canComplete() ||
+            !$this->status->canComplete() ||
             ($this->scheduled_at && $this->scheduled_at->isFuture())) {
             return false;
         }
@@ -444,7 +442,7 @@ class QuranSession extends Model
      */
     public function countsTowardsSubscription(): bool
     {
-        return $this->getStatusEnum()->countsTowardsSubscription();
+        return $this->status->countsTowardsSubscription();
     }
 
     /**
@@ -525,17 +523,15 @@ class QuranSession extends Model
      */
     public function getStatusDisplayData(): array
     {
-        $statusEnum = $this->getStatusEnum();
-        
         return [
-            'status' => $this->status,
-            'label' => $statusEnum->label(),
-            'icon' => $statusEnum->icon(),
-            'color' => $statusEnum->color(),
-            'can_start' => $statusEnum->canStart() && $this->isReadyToStart(),
-            'can_complete' => $statusEnum->canComplete(),
-            'can_cancel' => $statusEnum->canCancel(),
-            'can_reschedule' => $statusEnum->canReschedule(),
+            'status' => $this->status->value,
+            'label' => $this->status->label(),
+            'icon' => $this->status->icon(),
+            'color' => $this->status->color(),
+            'can_start' => $this->status->canStart() && $this->isReadyToStart(),
+            'can_complete' => $this->status->canComplete(),
+            'can_cancel' => $this->status->canCancel(),
+            'can_reschedule' => $this->status->canReschedule(),
             'is_upcoming' => $this->isUpcoming(),
             'is_ready' => $this->isReadyToStart(),
         ];
@@ -582,18 +578,7 @@ class QuranSession extends Model
 
     public function getStatusTextAttribute(): string
     {
-        $statuses = [
-            'scheduled' => 'مجدولة',
-            'ongoing' => 'جارية',
-            'completed' => 'مكتملة',
-            'cancelled' => 'ملغاة',
-            'missed' => 'متغيب',
-            'rescheduled' => 'تم إعادة جدولتها',
-            'pending' => 'في الانتظار'
-        ];
-
-        $statusValue = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
-        return $statuses[$statusValue] ?? $statusValue;
+        return $this->status->label();
     }
 
     public function getAttendanceStatusTextAttribute(): string
@@ -665,31 +650,31 @@ class QuranSession extends Model
 
     public function getIsCompletedAttribute(): bool
     {
-        return $this->status === 'completed';
+        return $this->status === SessionStatus::COMPLETED;
     }
 
     public function getIsCancelledAttribute(): bool
     {
-        return $this->status === 'cancelled';
+        return $this->status === SessionStatus::CANCELLED;
     }
 
     public function getCanStartAttribute(): bool
     {
-        return $this->status === 'scheduled' && 
+        return $this->status === SessionStatus::SCHEDULED && 
                $this->scheduled_at &&
                $this->scheduled_at->diffInMinutes(now()) <= 15;
     }
 
     public function getCanCancelAttribute(): bool
     {
-        return in_array($this->status, ['scheduled', 'ongoing']) &&
+        return in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::ONGOING]) &&
                $this->scheduled_at &&
                $this->scheduled_at->diffInHours(now()) >= 2;
     }
 
     public function getCanRescheduleAttribute(): bool
     {
-        return $this->status === 'scheduled' &&
+        return $this->status === SessionStatus::SCHEDULED &&
                $this->scheduled_at &&
                $this->scheduled_at->diffInHours(now()) >= 24;
     }
