@@ -90,13 +90,7 @@
                 
                 @if($showActions)
                     <div class="flex items-center space-x-2 space-x-reverse">
-                        @if($circle->canScheduleSession())
-                            <button type="button" onclick="openScheduleModal()" 
-                                class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">
-                                <i class="ri-calendar-line ml-2"></i>
-                                جدولة جلسة
-                            </button>
-                        @endif
+                        <!-- Schedule functionality removed - now handled in Filament dashboard -->
                         
                         <a href="{{ route('teacher.individual-circles.progress', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
                            class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">

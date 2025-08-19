@@ -38,7 +38,7 @@ class PublicQuranCircleController extends Controller
     /**
      * Display the specified circle details
      */
-    public function show(Request $request, $subdomain, $circleId)
+    public function show(Request $request, $subdomain, $circle)
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -48,22 +48,22 @@ class PublicQuranCircleController extends Controller
         }
 
         // Find the circle by ID within the academy
-        $circle = QuranCircle::where('id', $circleId)
+        $circleModel = QuranCircle::where('id', $circle)
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
             ->with(['academy', 'quranTeacher.user', 'students', 'schedule'])
             ->first();
 
-        if (!$circle) {
+        if (!$circleModel) {
             abort(404, 'Circle not found');
         }
 
         // Calculate circle statistics
         $stats = [
-            'total_students' => $circle->enrolled_students ?? 0,
-            'available_spots' => $circle->available_spots ?? 0,
-            'sessions_completed' => $circle->sessions_completed ?? 0,
-            'rating' => $circle->avg_rating ?? 0,
+            'total_students' => $circleModel->enrolled_students ?? 0,
+            'available_spots' => $circleModel->available_spots ?? 0,
+            'sessions_completed' => $circleModel->sessions_completed ?? 0,
+            'rating' => $circleModel->avg_rating ?? 0,
         ];
 
         // Check user role and permissions
@@ -76,8 +76,8 @@ class PublicQuranCircleController extends Controller
             
             if ($user->user_type === 'student') {
                 $userRole = 'student';
-                $isEnrolled = $circle->students()->where('user_id', Auth::id())->exists();
-            } elseif ($user->user_type === 'quran_teacher' && $user->quranTeacherProfile && $circle->quran_teacher_id === $user->quranTeacherProfile->id) {
+                $isEnrolled = $circleModel->students()->where('user_id', Auth::id())->exists();
+            } elseif ($user->user_type === 'quran_teacher' && $user->quranTeacherProfile && $circleModel->quran_teacher_id === $user->quranTeacherProfile->id) {
                 $userRole = 'teacher';
                 $isTeacher = true;
             }
@@ -87,13 +87,13 @@ class PublicQuranCircleController extends Controller
         $teacherData = [];
         if ($isTeacher) {
             // Load sessions for this circle
-            $teacherData['recentSessions'] = $circle->sessions()
+            $teacherData['recentSessions'] = $circleModel->sessions()
                 ->with('student')
                 ->latest()
                 ->limit(5)
                 ->get();
                 
-            $teacherData['upcomingSessions'] = $circle->sessions()
+            $teacherData['upcomingSessions'] = $circleModel->sessions()
                 ->with('student')
                 ->where('scheduled_at', '>', now())
                 ->orderBy('scheduled_at')
@@ -106,19 +106,18 @@ class PublicQuranCircleController extends Controller
 
         return view($viewName, compact(
             'academy', 
-            'circle', 
             'stats', 
             'isEnrolled',
             'isTeacher',
             'userRole',
             'teacherData'
-        ));
+        ) + ['circle' => $circleModel]);
     }
 
     /**
      * Show circle enrollment form
      */
-    public function showEnrollment(Request $request, $subdomain, $circleId)
+    public function showEnrollment(Request $request, $subdomain, $circle)
     {
         // Check if user is authenticated and is a student
         if (!Auth::check() || Auth::user()->user_type !== 'student') {
@@ -132,19 +131,19 @@ class PublicQuranCircleController extends Controller
             abort(404, 'Academy not found');
         }
 
-        $circle = QuranCircle::where('id', $circleId)
+        $circleModel = QuranCircle::where('id', $circle)
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
             ->where('enrollment_status', 'open')
             ->first();
 
-        if (!$circle) {
+        if (!$circleModel) {
             abort(404, 'Circle not found or not available for enrollment');
         }
 
         // Check if circle is full
-        if ($circle->is_full) {
-            return redirect()->route('public.quran-circles.show', ['subdomain' => $academy->subdomain, 'circle' => $circle->id])
+        if ($circleModel->is_full) {
+            return redirect()->route('public.quran-circles.show', ['subdomain' => $academy->subdomain, 'circle' => $circleModel->id])
                 ->with('error', 'الحلقة مكتملة العدد');
         }
 
@@ -154,13 +153,13 @@ class PublicQuranCircleController extends Controller
             $user->load('studentProfile');
         }
 
-        return view('public.quran-circles.enrollment', compact('academy', 'circle'));
+        return view('public.quran-circles.enrollment', compact('academy') + ['circle' => $circleModel]);
     }
 
     /**
      * Process circle enrollment request
      */
-    public function submitEnrollment(Request $request, $subdomain, $circleId)
+    public function submitEnrollment(Request $request, $subdomain, $circle)
     {
         // Check if user is authenticated and is a student
         if (!Auth::check() || Auth::user()->user_type !== 'student') {
@@ -174,13 +173,13 @@ class PublicQuranCircleController extends Controller
             abort(404, 'Academy not found');
         }
 
-        $circle = QuranCircle::where('id', $circleId)
+        $circleModel = QuranCircle::where('id', $circle)
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
             ->where('enrollment_status', 'open')
             ->first();
 
-        if (!$circle) {
+        if (!$circleModel) {
             abort(404, 'Circle not found or not available for enrollment');
         }
 
@@ -189,18 +188,18 @@ class PublicQuranCircleController extends Controller
         // Debug: Log form submission
         Log::info('Circle enrollment form submitted', [
             'user_id' => $user->id,
-            'circle_id' => $circleId,
+            'circle_id' => $circle,
             'form_data' => $request->all()
         ]);
 
         // Check if student is already enrolled in this circle
-        if ($circle->students()->where('user_id', $user->id)->exists()) {
+        if ($circleModel->students()->where('user_id', $user->id)->exists()) {
             return redirect()->back()
                 ->with('error', 'أنت مسجل بالفعل في هذه الحلقة');
         }
 
         // Check if circle is full
-        if ($circle->is_full) {
+        if ($circleModel->is_full) {
             return redirect()->back()
                 ->with('error', 'الحلقة مكتملة العدد');
         }
@@ -228,7 +227,7 @@ class PublicQuranCircleController extends Controller
             $studentProfile = $user->studentProfile;
             
             // Enroll the student in the circle
-            $circle->enrollStudent($user, [
+            $circleModel->enrollStudent($user, [
                 'current_level' => $request->current_level,
                 'progress_notes' => json_encode([
                     'learning_goals' => $request->learning_goals,
@@ -240,13 +239,13 @@ class PublicQuranCircleController extends Controller
             // TODO: Send notification to teacher and academy admin
             // TODO: Send confirmation email to student
 
-            return redirect()->route('public.quran-circles.show', ['subdomain' => $academy->subdomain, 'circle' => $circle->id])
+            return redirect()->route('public.quran-circles.show', ['subdomain' => $academy->subdomain, 'circle' => $circleModel->id])
                 ->with('success', 'تم التسجيل في الحلقة بنجاح! سيتواصل معك المعلم قريباً لتحديد موعد البداية');
 
         } catch (\Exception $e) {
             Log::error('Circle enrollment failed', [
                 'user_id' => $user->id,
-                'circle_id' => $circleId,
+                'circle_id' => $circle,
                 'academy_id' => $academy->id,
                 'error_message' => $e->getMessage(),
                 'error_file' => $e->getFile(),

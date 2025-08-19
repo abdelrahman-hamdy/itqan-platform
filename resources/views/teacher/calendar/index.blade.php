@@ -338,11 +338,12 @@
                             title="اضغط لاختبار تمييز الحلقة المحددة">
                         🎯 اختبر التمييز
                     </button>
-                    <button id="bulkScheduleBtn" 
-                            class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            onclick="openBulkScheduleModal()" disabled>
-                        📅 جدولة جماعية للحلقة المحددة
+                    <button id="viewSessionsBtn" 
+                            class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-all shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            onclick="viewSelectedCircleSessions()" disabled>
+                        👁️ عرض جلسات الحلقة المحددة
                     </button>
+                    <!-- Bulk scheduling removed - now handled in Filament dashboard -->
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -360,7 +361,7 @@
                                        data-duration="{{ $circle->subscription->package->session_duration_minutes ?? 60 }}"
                                        data-name="{{ $circle->name ?? 'حلقة فردية' }}"
                                        class="mr-3" 
-                                       onchange="updateBulkScheduleButton(); makeCircleSelected(this);"
+                                       onchange="makeCircleSelected(this);"
                                        onclick="setTimeout(function(){ makeCircleSelected(document.querySelector('input[name=selectedCircle]:checked')); }, 10);">
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
@@ -405,7 +406,7 @@
                                        data-duration="{{ $circle->session_duration_minutes ?? 60 }}"
                                        data-name="{{ $circle->name_ar ?? 'حلقة جماعية' }}"
                                        class="mr-3" 
-                                       onchange="updateBulkScheduleButton(); makeCircleSelected(this);"
+                                       onchange="makeCircleSelected(this);"
                                        onclick="setTimeout(function(){ makeCircleSelected(document.querySelector('input[name=selectedCircle]:checked')); }, 10);">
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
@@ -521,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
             loadStats();
             checkGroupCircleStatuses();
-            updateBulkScheduleButton(); // Initialize button state
+            <!-- updateBulkScheduleButton call removed - no longer needed -->
             debugLog('Calendar initialization complete');
 });
 
@@ -2893,319 +2894,13 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                 }
             }
 
-            // Update bulk schedule button state based on selected circle
-            function updateBulkScheduleButton() {
-                const selectedCircle = document.querySelector('input[name="selectedCircle"]:checked');
-                const bulkScheduleBtn = document.getElementById('bulkScheduleBtn');
-                
-                if (selectedCircle && bulkScheduleBtn) {
-                    bulkScheduleBtn.disabled = false;
-                    const circleName = selectedCircle.getAttribute('data-name');
-                    const circleType = selectedCircle.getAttribute('data-type');
-                    
-                    if (circleType === 'individual') {
-                        bulkScheduleBtn.textContent = `📅 جدولة جلسات الحلقة الفردية`;
-                    } else {
-                        bulkScheduleBtn.textContent = `📅 جدولة جلسات الحلقة الجماعية`;
-                    }
-                } else if (bulkScheduleBtn) {
-                    bulkScheduleBtn.disabled = true;
-                    bulkScheduleBtn.textContent = '📅 جدولة جماعية للحلقة المحددة';
-                }
-                
-                // ALSO HIGHLIGHT THE SELECTED CIRCLE!
-                highlightSelectedCircle();
-            }
+            <!-- updateBulkScheduleButton function removed - no longer needed -->
 
-            // Open bulk schedule modal for selected circle
-            function openBulkScheduleModal() {
-                const selectedCircle = document.querySelector('input[name="selectedCircle"]:checked');
-                
-                if (!selectedCircle) {
-                    showNotification('يرجى اختيار حلقة أولاً', 'warning');
-                    return;
-                }
+            <!-- Bulk scheduling functionality removed - now handled in Filament dashboard -->
 
-                const circleId = selectedCircle.value;
-                const circleType = selectedCircle.getAttribute('data-type');
-                const circleName = selectedCircle.getAttribute('data-name');
-                const sessionsPerMonth = parseInt(selectedCircle.getAttribute('data-sessions')) || 0;
-                const sessionDuration = parseInt(selectedCircle.getAttribute('data-duration')) || 60;
+            <!-- Individual bulk scheduling modal removed - now handled in Filament dashboard -->
 
-                if (circleType === 'individual') {
-                    openIndividualBulkScheduleModal(circleId, circleName, sessionsPerMonth, sessionDuration);
-                } else if (circleType === 'group') {
-                    openGroupBulkScheduleModal(circleId, circleName, sessionsPerMonth, sessionDuration);
-                }
-            }
-
-            // Open individual circle bulk scheduling modal
-            function openIndividualBulkScheduleModal(circleId, circleName, sessionsPerMonth, sessionDuration) {
-                // Check if circle has template sessions
-                const sessionContainer = document.querySelector(`input[value="${circleId}"]`)?.closest('label')?.querySelector('.text-orange-600');
-                if (!sessionContainer) {
-                    showNotification('لا توجد جلسات في انتظار الجدولة لهذه الحلقة', 'warning');
-                    return;
-                }
-
-                // Calculate recommended weekdays based on subscription - flexible approach
-                let recommendedWeekdays = 2; // Default recommendation
-                if (sessionsPerMonth > 0) {
-                    recommendedWeekdays = Math.ceil(sessionsPerMonth / 4);
-                }
-
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4';
-                
-                const weekdayOptions = [
-                    { value: 0, name: 'الأحد' },
-                    { value: 1, name: 'الاثنين' },
-                    { value: 2, name: 'الثلاثاء' },
-                    { value: 3, name: 'الأربعاء' },
-                    { value: 4, name: 'الخميس' },
-                    { value: 5, name: 'الجمعة' },
-                    { value: 6, name: 'السبت' }
-                ];
-                
-                const weekdayCheckboxes = weekdayOptions.map(day => `
-                    <label class="flex items-center space-x-2 space-x-reverse">
-                        <input type="checkbox" name="weekdays" value="${day.value}" class="rounded weekday-checkbox" onchange="checkIndividualWeekdayRecommendation(${recommendedWeekdays})">
-                        <span class="text-sm">${day.name}</span>
-                    </label>
-                `).join('');
-                
-                modal.innerHTML = `
-                    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold">جدولة جلسات الحلقة الفردية</h3>
-                            <button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-gray-600">
-                                <i class="ri-close-line text-xl"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                            <h4 class="text-sm font-semibold text-blue-800 mb-1">الحلقة المحددة</h4>
-                            <p class="text-xs text-blue-700">📝 ${circleName}</p>
-                        </div>
-                        
-                        ${sessionsPerMonth > 0 ? `
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                            <h4 class="text-sm font-semibold text-green-800 mb-1">💡 توصية ذكية</h4>
-                            <p class="text-xs text-green-700">📊 ${sessionsPerMonth} جلسة/شهر - الموصى به: ${recommendedWeekdays} أيام/أسبوع</p>
-                            <p class="text-xs text-green-600 mt-1">يمكنك اختيار أكثر أو أقل حسب احتياجاتك</p>
-                        </div>
-                        ` : ''}
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    أيام الأسبوع (مرن - يمكنك الاختيار بحرية)
-                                </label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    ${weekdayCheckboxes}
-                                </div>
-                                <div id="weekday-recommendation-info" class="text-xs text-blue-600 mt-2">
-                                    💡 الموصى به: ${recommendedWeekdays} أيام في الأسبوع
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ بداية الجدولة (اختياري)</label>
-                                <input type="date" id="bulkIndividualStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="${new Date().toISOString().split('T')[0]}">
-                                <p class="text-xs text-gray-500 mt-1">اتركه فارغاً للبدء من اليوم</p>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">وقت الجلسة</label>
-                                <input type="time" id="bulkIndividualTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="16:00">
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-3 mt-6">
-                            <button onclick="executeBulkIndividualSchedule('${circleId}')" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                                جدولة الجلسات
-                            </button>
-                            <button onclick="this.closest('.modal-overlay').remove()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">
-                                إلغاء
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(modal);
-            }
-
-            // Open group circle bulk scheduling modal
-            function openGroupBulkScheduleModal(circleId, circleName, sessionsPerMonth, sessionDuration) {
-                const maxWeekdays = Math.min(Math.ceil(sessionsPerMonth / 4), 7);
-                
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4';
-                
-                const weekdayOptions = [
-                    { value: 0, name: 'الأحد' },
-                    { value: 1, name: 'الاثنين' },
-                    { value: 2, name: 'الثلاثاء' },
-                    { value: 3, name: 'الأربعاء' },
-                    { value: 4, name: 'الخميس' },
-                    { value: 5, name: 'الجمعة' },
-                    { value: 6, name: 'السبت' }
-                ];
-                
-                const weekdayCheckboxes = weekdayOptions.map(day => `
-                    <label class="flex items-center space-x-2 space-x-reverse">
-                        <input type="checkbox" name="weekdays" value="${day.value}" class="rounded weekday-checkbox" onchange="checkBulkWeekdayLimit(${maxWeekdays})">
-                        <span class="text-sm">${day.name}</span>
-                    </label>
-                `).join('');
-                
-                modal.innerHTML = `
-                    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold">جدولة جلسات الحلقة الجماعية</h3>
-                            <button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-gray-600">
-                                <i class="ri-close-line text-xl"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                            <h4 class="text-sm font-semibold text-green-800 mb-1">الحلقة المحددة</h4>
-                            <p class="text-xs text-green-700">📝 ${circleName}</p>
-                            <p class="text-xs text-green-700">📊 ${sessionsPerMonth} جلسات/شهر - حد إجباري: ${maxWeekdays} أيام/أسبوع - ⏱️ ${sessionDuration} دقيقة</p>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    أيام الأسبوع (حد إجباري: ${maxWeekdays})
-                                </label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    ${weekdayCheckboxes}
-                                </div>
-                                <div id="bulk-weekday-limit-warning" class="text-xs text-red-600 mt-2 hidden">
-                                    تجاوزت الحد المسموح من الأيام للحلقة
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ بداية الجدولة</label>
-                                <input type="date" id="bulkGroupStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" 
-                                       value="${new Date().toISOString().split('T')[0]}" min="${new Date().toISOString().split('T')[0]}">
-                            </div>
-                            
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <label class="block text-sm font-semibold text-blue-800 mb-2">
-                                    📊 عدد الجلسات المطلوب إنشاؤها (تحديد يدوي)
-                                </label>
-                                <input type="number" id="bulkGroupSessionCount" 
-                                       class="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-lg font-medium text-center" 
-                                       value="${sessionsPerMonth}" min="1" max="100" 
-                                       placeholder="أدخل العدد المطلوب"
-                                       onchange="updateSessionCountPreview('bulk')"
-                                       oninput="updateSessionCountPreview('bulk')">
-                                <p class="text-xs text-blue-600 mt-2 font-medium">
-                                    💡 حدد بنفسك عدد الجلسات التي تريد إنشاءها (افتراضي: ${sessionsPerMonth})
-                                </p>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    يمكنك إنشاء من 1 إلى 100 جلسة حسب احتياجاتك
-                                </p>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">وقت البداية</label>
-                                <input type="time" id="bulkGroupTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="16:00">
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-3 mt-6">
-                            <button onclick="executeBulkGroupSchedule('${circleId}', ${sessionDuration})" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
-                                بدء الجدولة المتكررة
-                            </button>
-                            <button onclick="this.closest('.modal-overlay').remove()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">
-                                إلغاء
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(modal);
-            }
-
-            // Check weekday limit for bulk scheduling
-            function checkBulkWeekdayLimit(maxWeekdays) {
-                const checkedBoxes = document.querySelectorAll('input[name="weekdays"]:checked');
-                const warning = document.getElementById('bulk-weekday-limit-warning');
-                
-                if (checkedBoxes.length > maxWeekdays) {
-                    if (warning) warning.classList.remove('hidden');
-                    // Disable the last checked checkbox
-                    checkedBoxes[checkedBoxes.length - 1].checked = false;
-                    showNotification(`الحد الأقصى المسموح: ${maxWeekdays} أيام في الأسبوع`, 'warning');
-                } else {
-                    if (warning) warning.classList.add('hidden');
-                }
-            }
-
-            // Execute bulk individual schedule
-            function executeBulkIndividualSchedule(circleId) {
-                const modal = document.querySelector('.modal-overlay');
-                const weekdayCheckboxes = modal.querySelectorAll('input[name="weekdays"]:checked');
-                const selectedDays = Array.from(weekdayCheckboxes).map(cb => parseInt(cb.value));
-                const time = modal.querySelector('#bulkIndividualTime').value;
-
-                if (selectedDays.length === 0) {
-                    showNotification('يرجى اختيار يوم واحد على الأقل', 'warning');
-                    return;
-                }
-
-                modal.remove();
-                bulkScheduleIndividual(circleId, 0, 60); // Use existing function
-                showNotification('تم بدء الجدولة الجماعية للحلقة الفردية', 'success');
-            }
-
-            // Execute bulk group schedule  
-            function executeBulkGroupSchedule(circleId, sessionDuration) {
-                const modal = document.querySelector('.modal-overlay');
-                if (!modal) {
-                    showNotification('خطأ: النافذة غير موجودة', 'error');
-                    return;
-                }
-                
-                const weekdayCheckboxes = modal.querySelectorAll('input[name="weekdays"]:checked');
-                const selectedDays = Array.from(weekdayCheckboxes).map(cb => parseInt(cb.value));
-                const time = modal.querySelector('#bulkGroupTime').value;
-                const startDateInput = modal.querySelector('#bulkGroupStartDate');
-                const sessionCountInput = modal.querySelector('#bulkGroupSessionCount');
-                
-                const startDate = startDateInput ? startDateInput.value : new Date().toISOString().split('T')[0];
-                const sessionCount = sessionCountInput ? parseInt(sessionCountInput.value) : 8;
-
-                if (selectedDays.length === 0) {
-                    showNotification('يرجى اختيار يوم واحد على الأقل', 'warning');
-                    return;
-                }
-
-                // Validate session count
-                if (sessionCount <= 0 || sessionCount > 100) {
-                    showNotification('عدد الجلسات يجب أن يكون بين 1 و 100', 'warning');
-                    return;
-                }
-
-                // Validate start date
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const selectedStartDate = new Date(startDate);
-                if (selectedStartDate < today) {
-                    showNotification('تاريخ البداية لا يمكن أن يكون في الماضي', 'warning');
-                    return;
-                }
-
-                modal.remove();
-                
-                // Call setupRecurringSchedule with the actual user values
-                setupRecurringSchedule(circleId, sessionCount, sessionDuration, startDate, sessionCount);
-                showNotification(`تم بدء جدولة ${sessionCount} جلسة للحلقة الجماعية`, 'success');
-            }
+            <!-- All bulk scheduling functionality removed - now handled in Filament dashboard -->
 
             // SIMPLE INITIALIZATION - GUARANTEED TO WORK  
             document.addEventListener('DOMContentLoaded', function() {
@@ -3241,7 +2936,6 @@ function loadCalendarEvents(fetchInfo, successCallback, failureCallback) {
                     // Multiple event types to ensure it works
                     radio.addEventListener('change', function() {
                         console.log('Radio change event triggered'); // Debug
-                        updateBulkScheduleButton();
                         highlightSelectedCircle();
                     });
                     

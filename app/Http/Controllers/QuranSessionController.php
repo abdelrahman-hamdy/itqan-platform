@@ -21,20 +21,37 @@ class QuranSessionController extends Controller
     public function showForStudent(Request $request, $subdomain, $sessionId)
     {
         $user = Auth::user();
-        $academy = $user->academy;
+        
+        // Get academy from container (set by middleware) or from user
+        $academy = app('current_academy') ?? $user->academy;
+        
+        if (!$academy) {
+            abort(404, 'Academy not found');
+        }
 
         // Check if user is a student
         if ($user->user_type !== 'student') {
             abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
         }
 
+        // Query for sessions - handle both individual and group sessions
         $session = QuranSession::where('id', $sessionId)
             ->where('academy_id', $academy->id)
-            ->where('student_id', $user->id)
+            ->where(function ($query) use ($user) {
+                // Individual sessions: direct student_id match
+                $query->where('student_id', $user->id)
+                    // OR group sessions: student enrolled in the circle (use correct session_type)
+                    ->orWhere(function($subQuery) use ($user) {
+                        $subQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
+                            ->whereHas('circle.students', function ($circleQuery) use ($user) {
+                                $circleQuery->where('student_id', $user->id);
+                            });
+                    });
+            })
             ->with([
                 'quranTeacher',
                 'individualCircle.subscription.package',
-                'circle',
+                'circle.students',
                 'homework',
                 'progress'
             ])
@@ -53,26 +70,49 @@ class QuranSessionController extends Controller
     public function showForTeacher(Request $request, $subdomain, $sessionId)
     {
         $user = Auth::user();
-        $academy = $user->academy;
+        
+        // Get academy from container (set by middleware) or from user
+        $academy = app('current_academy') ?? $user->academy;
+        
+        if (!$academy) {
+            abort(404, 'Academy not found');
+        }
 
-        // Check if user is a Quran teacher
-        if ($user->user_type !== 'quran_teacher') {
+        // Check if user has permission to access teacher sessions
+        if (!in_array($user->user_type, ['quran_teacher', 'admin', 'super_admin'])) {
             abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
         }
 
-        // Get teacher profile
-        $teacherProfile = $user->quranTeacherProfile;
-        if (!$teacherProfile) {
-            abort(403, 'ملف المعلم غير موجود');
+        // Get teacher profile (only required for quran_teacher users)
+        if ($user->user_type === 'quran_teacher') {
+            $teacherProfile = $user->quranTeacherProfile;
+            if (!$teacherProfile) {
+                abort(403, 'ملف المعلم غير موجود');
+            }
         }
 
-        $session = QuranSession::where('id', $sessionId)
-            ->where('academy_id', $academy->id)
-            ->where('quran_teacher_id', $user->id)
-            ->with([
+        // Build query based on user type
+        $query = QuranSession::where('id', $sessionId)
+            ->where('academy_id', $academy->id);
+            
+        // For regular teachers, only show their own sessions
+        // For admins and super_admins, show any session in their academy
+        if ($user->user_type === 'quran_teacher') {
+            // Handle both individual sessions (user_id) and group sessions (teacher_profile_id)
+            $teacherProfileId = $user->quranTeacherProfile?->id;
+            
+            $query->where(function($subQuery) use ($user, $teacherProfileId) {
+                $subQuery->where('quran_teacher_id', $user->id); // Individual sessions
+                if ($teacherProfileId) {
+                    $subQuery->orWhere('quran_teacher_id', $teacherProfileId); // Group sessions
+                }
+            });
+        }
+        
+        $session = $query->with([
                 'student',
                 'individualCircle.subscription.package',
-                'circle',
+                'circle.students',
                 'quranTeacher',
                 'homework',
                 'progress'
@@ -93,8 +133,16 @@ class QuranSessionController extends Controller
     {
         $user = Auth::user();
         
+        // Handle both individual sessions (user_id) and group sessions (teacher_profile_id)
+        $teacherProfileId = $user->quranTeacherProfile?->id;
+        
         $session = QuranSession::where('id', $sessionId)
-            ->where('quran_teacher_id', $user->id)
+            ->where(function($query) use ($user, $teacherProfileId) {
+                $query->where('quran_teacher_id', $user->id); // Individual sessions
+                if ($teacherProfileId) {
+                    $query->orWhere('quran_teacher_id', $teacherProfileId); // Group sessions
+                }
+            })
             ->first();
 
         if (!$session) {
@@ -133,8 +181,16 @@ class QuranSessionController extends Controller
         
         $user = Auth::user();
         
+        // Handle both individual sessions (user_id) and group sessions (teacher_profile_id)
+        $teacherProfileId = $user->quranTeacherProfile?->id;
+        
         $session = QuranSession::where('id', $sessionId)
-            ->where('quran_teacher_id', $user->id)
+            ->where(function($query) use ($user, $teacherProfileId) {
+                $query->where('quran_teacher_id', $user->id); // Individual sessions
+                if ($teacherProfileId) {
+                    $query->orWhere('quran_teacher_id', $teacherProfileId); // Group sessions
+                }
+            })
             ->first();
 
         if (!$session) {
@@ -171,8 +227,16 @@ class QuranSessionController extends Controller
         
         $user = Auth::user();
         
+        // Handle both individual sessions (user_id) and group sessions (teacher_profile_id)
+        $teacherProfileId = $user->quranTeacherProfile?->id;
+        
         $session = QuranSession::where('id', $sessionId)
-            ->where('quran_teacher_id', $user->id)
+            ->where(function($query) use ($user, $teacherProfileId) {
+                $query->where('quran_teacher_id', $user->id); // Individual sessions
+                if ($teacherProfileId) {
+                    $query->orWhere('quran_teacher_id', $teacherProfileId); // Group sessions
+                }
+            })
             ->first();
 
         if (!$session) {
@@ -234,18 +298,34 @@ class QuranSessionController extends Controller
             'session' => $sessionExists->only(['id', 'session_type', 'quran_teacher_id', 'student_id', 'status'])
         ]);
         
+        // Handle both individual sessions (user_id) and group sessions (teacher_profile_id)
+        $teacherProfileId = $user->quranTeacherProfile?->id;
+        
         $session = QuranSession::where('id', $sessionId)
             ->where('session_type', 'individual') // Only for individual sessions
-            ->where('quran_teacher_id', $user->id)
+            ->where(function($query) use ($user, $teacherProfileId) {
+                $query->where('quran_teacher_id', $user->id); // Individual sessions
+                if ($teacherProfileId) {
+                    $query->orWhere('quran_teacher_id', $teacherProfileId); // Group sessions
+                }
+            })
             ->first();
 
         if (!$session) {
             // Let's debug why the session wasn't found
-            $allUserSessions = QuranSession::where('quran_teacher_id', $user->id)->get(['id', 'session_type', 'status']);
+            $allUserSessions = QuranSession::where(function($query) use ($user, $teacherProfileId) {
+                $query->where('quran_teacher_id', $user->id);
+                if ($teacherProfileId) {
+                    $query->orWhere('quran_teacher_id', $teacherProfileId);
+                }
+            })->get(['id', 'session_type', 'status']);
+            
             $individualSessions = QuranSession::where('session_type', 'individual')->where('id', $sessionId)->get(['id', 'quran_teacher_id', 'session_type']);
             
             Log::error('Session access failed', [
                 'searched_session_id' => $sessionId,
+                'user_id' => $user->id,
+                'teacher_profile_id' => $teacherProfileId,
                 'user_sessions_count' => $allUserSessions->count(),
                 'user_sessions' => $allUserSessions->toArray(),
                 'individual_session_check' => $individualSessions->toArray()
@@ -277,9 +357,37 @@ class QuranSessionController extends Controller
     {
         $user = Auth::user();
         
-        $session = QuranSession::where('id', $sessionId)
-            ->where('quran_teacher_id', $user->id)
-            ->first();
+        // Get academy from container (set by middleware) or from user
+        $academy = app('current_academy') ?? $user->academy;
+        
+        if (!$academy) {
+            return response()->json(['success' => false, 'message' => 'Academy not found'], 404);
+        }
+
+        // Check if user has permission to access teacher sessions
+        if (!in_array($user->user_type, ['quran_teacher', 'admin', 'super_admin'])) {
+            return response()->json(['success' => false, 'message' => 'غير مسموح لك بالوصول'], 403);
+        }
+
+        // Build query based on user type
+        $query = QuranSession::where('id', $sessionId)
+            ->where('academy_id', $academy->id);
+            
+        // For regular teachers, only show their own sessions
+        // For admins and super_admins, show any session in their academy
+        if ($user->user_type === 'quran_teacher') {
+            // Handle both individual sessions (user_id) and group sessions (teacher_profile_id)
+            $teacherProfileId = $user->quranTeacherProfile?->id;
+            
+            $query->where(function($subQuery) use ($user, $teacherProfileId) {
+                $subQuery->where('quran_teacher_id', $user->id); // Individual sessions
+                if ($teacherProfileId) {
+                    $subQuery->orWhere('quran_teacher_id', $teacherProfileId); // Group sessions
+                }
+            });
+        }
+        
+        $session = $query->first();
 
         if (!$session) {
             return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة'], 404);
@@ -295,7 +403,7 @@ class QuranSessionController extends Controller
                 'label' => 'إنهاء الجلسة',
                 'icon' => 'ri-check-line',
                 'color' => 'green',
-                'url' => route('teacher.sessions.complete', ['subdomain' => $user->academy->subdomain, 'sessionId' => $session->id]),
+                'url' => route('teacher.sessions.complete', ['subdomain' => $academy->subdomain, 'sessionId' => $session->id]),
                 'method' => 'PUT'
             ];
         }
@@ -307,7 +415,7 @@ class QuranSessionController extends Controller
                 'label' => 'إلغاء الجلسة',
                 'icon' => 'ri-close-line',
                 'color' => 'red',
-                'url' => route('teacher.sessions.cancel', ['subdomain' => $user->academy->subdomain, 'sessionId' => $session->id]),
+                'url' => route('teacher.sessions.cancel', ['subdomain' => $academy->subdomain, 'sessionId' => $session->id]),
                 'method' => 'PUT',
                 'confirm' => true
             ];
@@ -320,7 +428,7 @@ class QuranSessionController extends Controller
                 'label' => 'تسجيل غياب الطالب',
                 'icon' => 'ri-user-x-line',
                 'color' => 'orange',
-                'url' => route('teacher.sessions.absent', ['subdomain' => $user->academy->subdomain, 'sessionId' => $session->id]),
+                'url' => route('teacher.sessions.absent', ['subdomain' => $academy->subdomain, 'sessionId' => $session->id]),
                 'method' => 'PUT',
                 'confirm' => true
             ];
@@ -342,9 +450,28 @@ class QuranSessionController extends Controller
     {
         $user = Auth::user();
         
+        // Get academy from container (set by middleware) or from user
+        $academy = app('current_academy') ?? $user->academy;
+        
+        if (!$academy) {
+            return response()->json(['success' => false, 'message' => 'Academy not found'], 404);
+        }
+        
+        // Query for sessions - handle both individual and group sessions
         $session = QuranSession::where('id', $sessionId)
-            ->where('student_id', $user->id)
+            ->where('academy_id', $academy->id)
             ->where('status', 'completed')
+            ->where(function ($query) use ($user) {
+                // Individual sessions: direct student_id match
+                $query->where('student_id', $user->id)
+                    // OR group sessions: student enrolled in the circle (use correct session_type)
+                    ->orWhere(function($subQuery) use ($user) {
+                        $subQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
+                            ->whereHas('circle.students', function ($circleQuery) use ($user) {
+                                $circleQuery->where('student_id', $user->id);
+                            });
+                    });
+            })
             ->first();
 
         if (!$session) {

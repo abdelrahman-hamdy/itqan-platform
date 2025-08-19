@@ -480,10 +480,8 @@ class StudentProfileController extends Controller
             ->paginate(12);
 
         // Get student's enrolled circles
-        $enrolledCircles = QuranCircle::where('academy_id', $academy->id)
-            ->whereHas('students', function($query) use ($user) {
-                $query->where('users.id', $user->id);
-            })
+        $enrolledCircles = $user->quranCircles()
+            ->where('academy_id', $academy->id)
             ->with(['quranTeacher', 'students'])
             ->get();
 

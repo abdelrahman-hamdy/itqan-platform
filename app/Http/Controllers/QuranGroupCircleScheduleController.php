@@ -54,7 +54,7 @@ class QuranGroupCircleScheduleController extends Controller
         $circle = QuranCircle::findOrFail($circle);
         
         // Check ownership
-        if ($circle->quran_teacher_id !== $user->id) {
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
             abort(403, 'غير مسموح لك بإدارة هذه الحلقة');
         }
 
@@ -72,7 +72,7 @@ class QuranGroupCircleScheduleController extends Controller
         $user = Auth::user();
         
         // Check ownership
-        if ($circle->quran_teacher_id !== $user->id) {
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -153,7 +153,7 @@ class QuranGroupCircleScheduleController extends Controller
         $user = Auth::user();
         
         // Check ownership
-        if ($circle->quran_teacher_id !== $user->id) {
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -189,7 +189,7 @@ class QuranGroupCircleScheduleController extends Controller
         $user = Auth::user();
         
         // Check ownership
-        if ($circle->quran_teacher_id !== $user->id) {
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -225,7 +225,7 @@ class QuranGroupCircleScheduleController extends Controller
         $user = Auth::user();
         
         // Check ownership
-        if ($circle->quran_teacher_id !== $user->id) {
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -285,14 +285,14 @@ class QuranGroupCircleScheduleController extends Controller
         $user = Auth::user();
         
         // Check ownership
-        if ($circle->quran_teacher_id !== $user->id) {
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
             abort(403, 'غير مسموح لك بالوصول لهذه الحلقة');
         }
 
         $circle->load([
             'schedule',
             'sessions' => function ($query) {
-                $query->where('is_generated', true)
+                $query->where('is_auto_generated', true)
                       ->orderBy('scheduled_at', 'desc')
                       ->limit(50); // Last 50 sessions
             },
@@ -331,6 +331,50 @@ class QuranGroupCircleScheduleController extends Controller
     }
 
     /**
+     * Schedule a single group session
+     */
+    public function scheduleSession($subdomain, Request $request, QuranCircle $circle): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Check ownership
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+            return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
+        }
+
+        $request->validate([
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'scheduled_at' => 'required|date|after:now',
+            'duration_minutes' => 'nullable|integer|min:30|max:180',
+        ]);
+
+        try {
+            $session = $circle->sessions()->create([
+                'title' => $request->title ?: 'جلسة قرآنية جماعية',
+                'description' => $request->description,
+                'scheduled_at' => Carbon::parse($request->scheduled_at),
+                'duration_minutes' => $request->duration_minutes ?: $circle->default_duration_minutes ?: 60,
+                'status' => 'scheduled',
+                'is_auto_generated' => false,
+                'academy_id' => $circle->academy_id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم جدولة الجلسة بنجاح',
+                'session' => $session
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء جدولة الجلسة: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Generate additional sessions manually
      */
     public function generateSessions($subdomain, QuranCircle $circle): JsonResponse
@@ -338,7 +382,7 @@ class QuranGroupCircleScheduleController extends Controller
         $user = Auth::user();
         
         // Check ownership
-        if ($circle->quran_teacher_id !== $user->id) {
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -527,12 +571,12 @@ class QuranGroupCircleScheduleController extends Controller
         $circle = QuranCircle::findOrFail($circle);
         
         // Check ownership
-        if ($circle->quran_teacher_id !== $user->id) {
+        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
         $stats = [
-            'total_sessions_generated' => $circle->sessions()->where('is_generated', true)->count(),
+            'total_sessions_generated' => $circle->sessions()->where('is_auto_generated', true)->count(),
             'completed_sessions' => $circle->sessions()->where('status', 'completed')->count(),
             'upcoming_sessions' => $circle->sessions()
                 ->where('scheduled_at', '>=', now())
@@ -575,18 +619,14 @@ class QuranGroupCircleScheduleController extends Controller
             abort(404, 'الطالب غير مسجل في هذه الحلقة');
         }
 
-        // Get all sessions for this circle that the student was involved in
+        // Get all sessions for this circle (group sessions don't have individual student_id)
         $sessions = $circle->sessions()
-            ->where(function($query) use ($student) {
-                $query->where('student_id', $student->id)
-                      ->orWhere('status', 'completed');
-            })
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
         // Calculate student-specific statistics for this circle
         $attendedSessionIds = \App\Models\QuranSessionAttendance::where('student_id', $student->id)
-            ->where('attendance_status', 'attended')
+            ->whereIn('attendance_status', ['present', 'late', 'partial'])
             ->pluck('session_id')
             ->toArray();
 

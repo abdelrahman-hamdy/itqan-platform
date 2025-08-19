@@ -503,7 +503,7 @@ class Calendar extends Page
                     
                 Forms\Components\TextInput::make('session_count')
                     ->label('عدد الجلسات المطلوب إنشاؤها')
-                    ->helperText('حدد عدد الجلسات التي تريد جدولتها')
+                    ->helperText('حدد عدد الجلسات التي تريد جدولتها (للحلقات الجماعية فقط)')
                     ->numeric()
                     ->required()
                     ->minValue(1)
@@ -512,7 +512,8 @@ class Calendar extends Page
                         $circle = $this->getSelectedCircle();
                         return $circle['monthly_sessions'] ?? 4;
                     })
-                    ->placeholder('أدخل العدد'),
+                    ->placeholder('أدخل العدد')
+                    ->visible(fn () => $this->getSelectedCircle()['type'] === 'group'),
                     
                 Forms\Components\Placeholder::make('circle_info')
                     ->label('معلومات الحلقة')
@@ -669,22 +670,20 @@ class Calendar extends Page
             ]);
         }
         
-        // Activate the schedule which will update circle status and generate sessions
-        $generatedCount = $schedule->activateSchedule();
-        
-        // Generate additional sessions for the extended period
-        $additionalSessions = $schedule->generateUpcomingSessions();
-        
-        // NEW: Generate specific number of sessions based on user input
-        $totalGenerated = $generatedCount + $additionalSessions;
+        // NEW: Generate ONLY the user-requested number of sessions, not based on time periods
         $userRequestedCount = $this->sessionCount;
         
-        if ($totalGenerated < $userRequestedCount) {
-            // Generate more sessions to reach the requested count
-            $additionalNeeded = $userRequestedCount - $totalGenerated;
-            $moreGenerated = $this->generateAdditionalGroupSessions($schedule, $additionalNeeded);
-            $totalGenerated += $moreGenerated;
-        }
+        // Activate the schedule (this updates circle status but we'll control session generation)
+        $schedule->update(['is_active' => true]);
+        $schedule->circle->update([
+            'status' => 'active',
+            'enrollment_status' => 'open',
+            'schedule_configured' => true,
+            'schedule_configured_at' => now(),
+        ]);
+        
+        // Generate exactly the number of sessions the user requested
+        $totalGenerated = $this->generateExactGroupSessions($schedule, $userRequestedCount);
         
         return $totalGenerated;
     }
@@ -1090,7 +1089,80 @@ class Calendar extends Page
 
 
     /**
-     * Generate additional group sessions to reach user-specified count
+     * Generate exact number of group sessions based on user input
+     */
+    private function generateExactGroupSessions($schedule, int $sessionCount): int
+    {
+        if ($sessionCount <= 0) {
+            return 0;
+        }
+        
+        $circle = $schedule->circle;
+        $weeklySchedule = $schedule->weekly_schedule ?? [];
+        
+        if (empty($weeklySchedule)) {
+            return 0;
+        }
+        
+        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
+        $sessionsCreated = 0;
+        $currentDate = $startDate->copy();
+        $maxWeeks = 52; // Limit to 1 year to prevent infinite loops
+        $weekOffset = 0;
+        
+        while ($sessionsCreated < $sessionCount && $weekOffset < $maxWeeks) {
+            foreach ($weeklySchedule as $scheduleEntry) {
+                if ($sessionsCreated >= $sessionCount) break;
+                
+                $dayName = $scheduleEntry['day'] ?? null;
+                $timeString = $scheduleEntry['time'] ?? null;
+                
+                if (!$dayName || !$timeString) continue;
+                
+                // Find the next occurrence of this day in the current week
+                $sessionDate = $this->getNextDateForDay($currentDate->copy(), $dayName);
+                $sessionDateTime = $sessionDate->setTimeFromTimeString($timeString);
+                
+                // Skip if this datetime is in the past
+                if ($sessionDateTime->isPast()) {
+                    continue;
+                }
+                
+                // Check if session already exists for this exact datetime
+                $existingSession = QuranSession::where('circle_id', $circle->id)
+                    ->where('quran_teacher_id', Auth::id())
+                    ->where('scheduled_at', $sessionDateTime)
+                    ->first();
+                
+                if (!$existingSession) {
+                    // Use SessionManagementService to create the session
+                    $sessionService = app(\App\Services\SessionManagementService::class);
+                    $sessionService->createGroupSession(
+                        $circle,
+                        $sessionDateTime,
+                        60, // duration
+                        "جلسة جماعية - {$circle->name_ar}",
+                        'جلسة تحفيظ قرآن جماعية مجدولة'
+                    );
+                    
+                    $sessionsCreated++;
+                }
+            }
+            
+            // Move to next week
+            $weekOffset++;
+            $currentDate->addWeek();
+        }
+        
+        if ($sessionsCreated > 0) {
+            $schedule->update(['last_generated_at' => now()]);
+        }
+        
+        return $sessionsCreated;
+    }
+
+    /**
+     * Generate additional group sessions to reach user-specified count (LEGACY - kept for compatibility)
      */
     private function generateAdditionalGroupSessions($schedule, int $additionalCount): int
     {

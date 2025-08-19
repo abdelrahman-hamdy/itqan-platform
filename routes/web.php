@@ -374,18 +374,7 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         
         // AJAX routes for individual circles
         Route::get('/individual-circles/{circle}/template-sessions', [App\Http\Controllers\QuranIndividualCircleController::class, 'getTemplateSessions'])->name('individual-circles.template-sessions');
-        Route::post('/individual-circles/{circle}/schedule-session', [App\Http\Controllers\QuranIndividualCircleController::class, 'scheduleSession'])->name('individual-circles.schedule-session');
-        Route::post('/individual-circles/{circle}/bulk-schedule', [App\Http\Controllers\QuranIndividualCircleController::class, 'bulkSchedule'])->name('individual-circles.bulk-schedule');
-        Route::get('/individual-circles/{circle}/available-slots', [App\Http\Controllers\QuranIndividualCircleController::class, 'getAvailableTimeSlots'])->name('individual-circles.available-slots');
         Route::put('/individual-circles/{circle}/settings', [App\Http\Controllers\QuranIndividualCircleController::class, 'updateSettings'])->name('individual-circles.update-settings');
-        
-        // Session management routes
-        Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForTeacher'])->name('sessions.show');
-        Route::put('/sessions/{sessionId}/notes', [App\Http\Controllers\QuranSessionController::class, 'updateNotes'])->name('sessions.update-notes');
-        Route::put('/sessions/{sessionId}/complete', [App\Http\Controllers\QuranSessionController::class, 'markCompleted'])->name('sessions.complete');
-        Route::put('/sessions/{sessionId}/cancel', [App\Http\Controllers\QuranSessionController::class, 'markCancelled'])->name('sessions.cancel');
-        Route::put('/sessions/{sessionId}/absent', [App\Http\Controllers\QuranSessionController::class, 'markAbsent'])->name('sessions.absent');
-        Route::get('/sessions/{sessionId}/actions', [App\Http\Controllers\QuranSessionController::class, 'getStatusActions'])->name('sessions.actions');
         
         // Temporary debug route
         Route::get('/debug/sessions', function() {
@@ -447,6 +436,8 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
                 'user_id' => $user->id
             ]);
         })->name('debug.test-absent');
+
+
     });
 
     /*
@@ -455,21 +446,20 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
     
-    Route::middleware(['auth', 'role:quran_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+    Route::middleware(['auth', 'role:quran_teacher,admin,super_admin'])->prefix('teacher')->name('teacher.')->group(function () {
         // Group Circles Management  
         Route::get('/group-circles', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'index'])->name('group-circles.index');
         Route::get('/group-circles/{circle}', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'show'])->name('group-circles.show');
-        Route::get('/group-circles/{circle}/schedule', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'create'])->name('group-circles.schedule');
         Route::get('/group-circles/{circle}/progress', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'progressReport'])->name('group-circles.progress');
         Route::get('/group-circles/{circle}/students/{student}/progress', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'studentProgressReport'])->name('group-circles.student-progress');
         
-        // AJAX routes for group circle schedules
-        Route::post('/group-circles/{circle}/schedule', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'store'])->name('group-circles.store-schedule');
-        Route::post('/group-circles/{circle}/activate', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'activate'])->name('group-circles.activate');
-        Route::post('/group-circles/{circle}/deactivate', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'deactivate'])->name('group-circles.deactivate');
-        Route::post('/group-circles/{circle}/preview-sessions', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'previewSessions'])->name('group-circles.preview-sessions');
-        Route::post('/group-circles/{circle}/generate-sessions', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'generateSessions'])->name('group-circles.generate-sessions');
-        Route::get('/group-circles/{circle}/stats', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'getStats'])->name('group-circles.stats');
+        // Session management routes
+        Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForTeacher'])->name('sessions.show');
+        Route::put('/sessions/{sessionId}/notes', [App\Http\Controllers\QuranSessionController::class, 'updateNotes'])->name('sessions.update-notes');
+        Route::put('/sessions/{sessionId}/complete', [App\Http\Controllers\QuranSessionController::class, 'markCompleted'])->name('sessions.complete');
+        Route::put('/sessions/{sessionId}/cancel', [App\Http\Controllers\QuranSessionController::class, 'markCancelled'])->name('sessions.cancel');
+        Route::put('/sessions/{sessionId}/absent', [App\Http\Controllers\QuranSessionController::class, 'markAbsent'])->name('sessions.absent');
+        Route::get('/sessions/{sessionId}/actions', [App\Http\Controllers\QuranSessionController::class, 'getStatusActions'])->name('sessions.actions');
     });
 
     /*

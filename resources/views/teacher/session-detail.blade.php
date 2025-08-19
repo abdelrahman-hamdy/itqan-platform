@@ -30,11 +30,16 @@
                 <div class="flex items-start justify-between mb-6">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">{{ $session->title }}</h1>
-                        <p class="text-gray-600 mt-1">الجلسة رقم {{ $session->session_sequence ?? 1 }} 
-                            @if($session->student)
-                                مع {{ $session->student->name }}
+                        <p class="text-gray-600 mt-1">
+                            @if(in_array($session->session_type, ['circle', 'group']) && $session->circle)
+                                جلسة جماعية - {{ $session->circle->name }}
+                                @if($session->circle->students)
+                                    <span class="text-sm">({{ $session->circle->students->count() }} طالب)</span>
+                                @endif
+                            @elseif($session->student)
+                                الجلسة رقم {{ $session->session_sequence ?? 1 }} مع {{ $session->student->name }}
                             @else
-                                - الطالب غير محدد
+                                الجلسة رقم {{ $session->session_sequence ?? 1 }} - الطالب غير محدد
                             @endif
                         </p>
                         @if($session->scheduled_at)
@@ -206,20 +211,52 @@
 
         <!-- Sidebar -->
         <div class="lg:col-span-1">
-            <!-- Student Info -->
+            <!-- Session Participants Info -->
             <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
-                <h3 class="font-bold text-gray-900 mb-4">معلومات الطالب</h3>
-                
-                @if($session->student)
+                @if(in_array($session->session_type, ['circle', 'group']) && $session->circle)
+                    <!-- Group Session Info -->
+                    <h3 class="font-bold text-gray-900 mb-4">معلومات الحلقة الجماعية</h3>
+                    
                     <div class="flex items-center space-x-3 space-x-reverse mb-4">
-                        @if($session->student->avatar)
-                            <img src="{{ asset('storage/' . $session->student->avatar) }}" alt="{{ $session->student->name }}" 
-                                 class="w-12 h-12 rounded-full object-cover">
-                        @else
-                            <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
-                                <span class="text-lg font-bold text-primary-600">{{ substr($session->student->name, 0, 1) }}</span>
+                        <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                            <i class="ri-group-line text-primary-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">{{ $session->circle->name }}</h4>
+                            <p class="text-sm text-gray-600">{{ $session->circle->students ? $session->circle->students->count() : 0 }} طالب مسجل</p>
+                        </div>
+                    </div>
+
+                    <!-- Students List -->
+                    @if($session->circle->students && $session->circle->students->count() > 0)
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            @foreach($session->circle->students->take(5) as $student)
+                                <div class="flex items-center space-x-2 space-x-reverse p-2 bg-gray-50 rounded-lg">
+                                    <x-student-avatar :student="$student" size="sm" />
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900 truncate">{{ $student->name }}</p>
+                                        <p class="text-xs text-gray-500 truncate">{{ $student->email ?? 'طالب' }}</p>
+                                    </div>
+                                </div>
+                            @endforeach
+                            @if($session->circle->students->count() > 5)
+                                <p class="text-center text-sm text-gray-500 pt-2">و {{ $session->circle->students->count() - 5 }} طالب آخر</p>
+                            @endif
+                        </div>
+                    @else
+                        <div class="text-center py-4">
+                            <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-group-line text-gray-400"></i>
                             </div>
-                        @endif
+                            <p class="text-gray-500">لا يوجد طلاب مسجلون</p>
+                        </div>
+                    @endif
+                @elseif($session->student)
+                    <!-- Individual Session Info -->
+                    <h3 class="font-bold text-gray-900 mb-4">معلومات الطالب</h3>
+                    
+                    <div class="flex items-center space-x-3 space-x-reverse mb-4">
+                        <x-student-avatar :student="$session->student" size="md" />
                         <div>
                             <h4 class="font-medium text-gray-900">{{ $session->student->name }}</h4>
                             @if($session->student->email)
@@ -228,6 +265,9 @@
                         </div>
                     </div>
                 @else
+                    <!-- No Participants Info -->
+                    <h3 class="font-bold text-gray-900 mb-4">معلومات الجلسة</h3>
+                    
                     <div class="text-center py-4">
                         <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2">
                             <i class="ri-user-line text-gray-400"></i>
@@ -238,17 +278,24 @@
                 
                 <div class="space-y-3">
                     <div>
-                        <span class="text-sm text-gray-600">نوع الاشتراك:</span>
+                        <span class="text-sm text-gray-600">نوع الجلسة:</span>
                         <p class="font-medium text-gray-900">
-                            @if($session->individual_circle_id && $session->individualCircle?->subscription?->package)
-                                {{ $session->individualCircle->subscription->package->name }}
-                            @elseif($session->circle_id && $session->circle)
-                                {{ $session->circle->name }} (حلقة جماعية)
+                            @if(in_array($session->session_type, ['circle', 'group']) && $session->circle)
+                                حلقة جماعية
+                            @elseif($session->individual_circle_id && $session->individualCircle)
+                                حلقة فردية
                             @else
                                 غير محدد
                             @endif
                         </p>
                     </div>
+                    
+                    @if($session->individual_circle_id && $session->individualCircle?->subscription?->package)
+                        <div>
+                            <span class="text-sm text-gray-600">نوع الاشتراك:</span>
+                            <p class="font-medium text-gray-900">{{ $session->individualCircle->subscription->package->name }}</p>
+                        </div>
+                    @endif
                     
                     <div>
                         <span class="text-sm text-gray-600">المدة:</span>

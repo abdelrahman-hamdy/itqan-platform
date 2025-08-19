@@ -24,25 +24,37 @@
         'xl' => 'w-8 h-8 -bottom-2 -right-2',
         default => 'w-5 h-5 -bottom-1 -right-1'
     };
+
+    // For teachers, we might have different naming patterns
+    $teacherName = $teacher->full_name ?? 
+                   ($teacher->first_name && $teacher->last_name ? $teacher->first_name . ' ' . $teacher->last_name : null) ?? 
+                   $teacher->first_name ?? 
+                   $teacher->name ??
+                   ($teacher->user ? ($teacher->user->name ?? 'معلم') : 'معلم');
+                   
+    // Check for avatar in different possible locations
+    $avatarPath = $teacher->avatar ?? 
+                  $teacher->user?->avatar ?? 
+                  ($teacher->teacherProfile?->avatar ?? null);
 @endphp
 
 <div {{ $attributes->merge(['class' => 'relative flex-shrink-0']) }}>
-    <div class="{{ $sizeClasses }} rounded-full border border-primary/20 overflow-hidden bg-gray-100">
-        @if($teacher->avatar)
-            <img src="{{ asset('storage/' . $teacher->avatar) }}" 
-                 alt="{{ $teacher->full_name }}" 
+    <div class="{{ $sizeClasses }} rounded-full border border-blue-200 overflow-hidden bg-blue-50">
+        @if($avatarPath)
+            <img src="{{ asset('storage/' . $avatarPath) }}" 
+                 alt="{{ $teacherName }}" 
                  class="w-full h-full object-cover">
         @else
-            <div class="w-full h-full flex items-center justify-center text-primary bg-primary/10">
-                <i class="ri-user-line {{ $textSizeClasses }}"></i>
+            <div class="w-full h-full flex items-center justify-center text-blue-600 bg-blue-100">
+                <i class="ri-user-star-line {{ $textSizeClasses }}"></i>
             </div>
         @endif
     </div>
     
     @if($showBadge)
-        <!-- Verified Badge -->
-        <div class="absolute {{ $badgeSizeClasses }} bg-green-500 text-white rounded-full flex items-center justify-center">
-            <i class="ri-shield-check-line text-xs"></i>
+        <!-- Verified Teacher Badge -->
+        <div class="absolute {{ $badgeSizeClasses }} bg-blue-500 text-white rounded-full flex items-center justify-center">
+            <i class="ri-shield-star-line text-xs"></i>
         </div>
     @endif
 </div>

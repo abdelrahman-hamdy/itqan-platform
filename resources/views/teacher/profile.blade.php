@@ -110,12 +110,12 @@
                   'iconBgColor' => 'bg-green-100',
                   'iconColor' => 'text-green-600',
                   'status' => 'active',
-                  'link' => route('public.quran-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id])
+                  'link' => route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id])
                 ];
               })->toArray(),
               'footer' => [
                 'text' => 'عرض جميع الحلقات',
-                'link' => route('public.quran-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
+                'link' => route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
               ],
               'stats' => [
                 ['icon' => 'ri-group-line', 'value' => $assignedCircles->count() . ' دائرة نشطة'],

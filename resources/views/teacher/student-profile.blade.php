@@ -68,9 +68,9 @@
                             @php
                                 $circleRoute = $circle['type'] === 'individual' 
                                     ? route('teacher.individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle['id']]) 
-                                    : '#'; // TODO: Add group circle route when available
+                                    : route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle['id']]);
                             @endphp
-                            <a href="{{ $circleRoute }}" class="block border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:bg-gray-50 transition-colors {{ $circle['type'] === 'group' ? 'pointer-events-none opacity-75' : '' }}">
+                            <a href="{{ $circleRoute }}" class="block border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:bg-gray-50 transition-colors">
                                 <div class="flex items-center justify-between mb-2">
                                     <div class="flex items-center space-x-3 space-x-reverse">
                                         <div class="w-3 h-3 rounded-full {{ $circle['type'] === 'individual' ? 'bg-blue-500' : 'bg-green-500' }}"></div>
@@ -78,9 +78,7 @@
                                         <span class="text-sm px-2 py-1 rounded-full {{ $circle['type'] === 'individual' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
                                             {{ $circle['type'] === 'individual' ? 'فردية' : 'جماعية' }}
                                         </span>
-                                        @if($circle['type'] === 'individual')
-                                            <i class="ri-external-link-line text-gray-400 text-sm"></i>
-                                        @endif
+                                        <i class="ri-external-link-line text-gray-400 text-sm"></i>
                                     </div>
                                     
                                     @if(isset($circle['progress_percentage']))

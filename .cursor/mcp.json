@@ -24,6 +24,13 @@
             "args": [
                 "croft"
             ]
+        },
+        "laravel-boost": {
+            "command": "php",
+            "args": [
+                "./artisan",
+                "boost:mcp"
+            ]
         }
     }
 }

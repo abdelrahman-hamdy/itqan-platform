@@ -287,7 +287,7 @@ class QuranSession extends Model
 
     public function scopeCircle($query)
     {
-        return $query->where('session_type', 'circle');
+        return $query->whereIn('session_type', ['circle', 'group']); // Support both old and new types
     }
 
     public function scopeMakeupSessions($query)
@@ -554,7 +554,17 @@ class QuranSession extends Model
 
     public function scopeByStudent($query, $studentId)
     {
-        return $query->where('student_id', $studentId);
+        return $query->where(function ($subQuery) use ($studentId) {
+            // Individual sessions: direct student_id match
+            $subQuery->where('student_id', $studentId)
+                // OR group sessions: student enrolled in the circle (use correct session_type)
+                ->orWhere(function($groupQuery) use ($studentId) {
+                    $groupQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
+                        ->whereHas('circle.students', function ($circleQuery) use ($studentId) {
+                            $circleQuery->where('student_id', $studentId);
+                        });
+                });
+        });
     }
 
     public function scopeHighRated($query, $minRating = 4)
@@ -1284,7 +1294,17 @@ class QuranSession extends Model
         }
 
         if (isset($filters['student_id'])) {
-            $query->where('student_id', $filters['student_id']);
+            $query->where(function ($subQuery) use ($filters) {
+                // Individual sessions: direct student_id match
+                $subQuery->where('student_id', $filters['student_id'])
+                    // OR group sessions: student enrolled in the circle (use correct session_type)
+                    ->orWhere(function($groupQuery) use ($filters) {
+                        $groupQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
+                            ->whereHas('circle.students', function ($circleQuery) use ($filters) {
+                                $circleQuery->where('student_id', $filters['student_id']);
+                            });
+                    });
+            });
         }
 
         if (isset($filters['status'])) {

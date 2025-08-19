@@ -593,11 +593,7 @@
                         عرض الحلقة
                     </a>
                     
-                    <a href="{{ route('teacher.group-circles.schedule', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
-                       class="block w-full text-center px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-medium rounded-xl hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg">
-                        <i class="ri-calendar-line ml-2"></i>
-                        إدارة الجدول
-                    </a>
+                    <!-- Schedule management removed - now handled in Filament dashboard -->
                     
                     <button class="w-full px-5 py-3 border-2 border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors">
                         <i class="ri-download-line ml-2"></i>
@@ -616,8 +612,16 @@
 
 <script>
 function openSessionDetail(sessionId) {
-    const subdomain = '{{ auth()->user()->academy->subdomain ?? "itqan-academy" }}';
-    window.location.href = `{{ url("") }}/teacher/sessions/${sessionId}`;
+    @if(auth()->check())
+        // Use Laravel route helper to generate correct URL for teacher sessions
+        const sessionUrl = '{{ route("teacher.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
+        const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
+        
+        console.log('Teacher Session URL:', finalUrl);
+        window.location.href = finalUrl;
+    @else
+        console.error('User not authenticated');
+    @endif
 }
 
 // Chart.js Configuration

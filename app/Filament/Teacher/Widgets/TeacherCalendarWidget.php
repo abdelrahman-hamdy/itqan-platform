@@ -548,18 +548,27 @@ class TeacherCalendarWidget extends FullCalendarWidget
                         \Filament\Infolists\Components\TextEntry::make('status')
                             ->label('حالة الجلسة')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn ($state): string => match ($state instanceof \App\Enums\SessionStatus ? $state->value : $state) {
+                                'unscheduled' => 'gray',
                                 'scheduled' => 'warning',
+                                'ready' => 'info',
+                                'ongoing' => 'primary',
                                 'completed' => 'success',
                                 'cancelled' => 'danger',
+                                'absent' => 'warning',
+                                'teacher_absent' => 'danger',
                                 default => 'gray',
                             })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SessionStatus ? $state->value : $state) {
+                                'unscheduled' => 'غير مجدولة',
                                 'scheduled' => 'مجدولة',
+                                'ready' => 'جاهزة للبدء',
+                                'ongoing' => 'جارية',
                                 'completed' => 'مكتملة',
                                 'cancelled' => 'ملغية',
-                                'in_progress' => 'جارية',
-                                default => $state,
+                                'absent' => 'غياب الطالب',
+                                'teacher_absent' => 'غياب المعلم',
+                                default => $state instanceof \App\Enums\SessionStatus ? $state->value : $state,
                             }),
                     ];
                 }

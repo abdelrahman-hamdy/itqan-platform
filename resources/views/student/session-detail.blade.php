@@ -6,11 +6,19 @@
     <!-- Breadcrumb -->
     <nav class="mb-8">
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li>
-                <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
-                   class="hover:text-primary">الحلقة الفردية</a>
-            </li>
-            <li>/</li>
+            @if($session->session_type === 'individual' && $session->individualCircle)
+                <li>
+                    <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
+                       class="hover:text-primary">الحلقة الفردية</a>
+                </li>
+                <li>/</li>
+            @elseif(in_array($session->session_type, ['circle', 'group']) && $session->circle)
+                <li>
+                    <a href="{{ route('student.circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $session->circle->id]) }}" 
+                       class="hover:text-primary">{{ $session->circle->name }}</a>
+                </li>
+                <li>/</li>
+            @endif
             <li class="text-gray-900">تفاصيل الجلسة</li>
         </ol>
     </nav>
@@ -23,7 +31,9 @@
                 <div class="flex items-start justify-between mb-6">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">{{ $session->title }}</h1>
-                        <p class="text-gray-600 mt-1">الجلسة رقم {{ $session->session_sequence }}</p>
+                        @if($session->session_sequence)
+                            <p class="text-gray-600 mt-1">الجلسة رقم {{ $session->session_sequence }}</p>
+                        @endif
                         @if($session->scheduled_at)
                             <p class="text-sm text-gray-500 mt-2">
                                 <i class="ri-calendar-line ml-1"></i>
@@ -239,15 +249,21 @@
                     @endif
                 </div>
 
-                @if($session->individualCircle)
-                    <div class="mt-6 pt-4 border-t border-gray-200">
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                    @if($session->session_type === 'individual' && $session->individualCircle)
                         <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
                            class="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
                             <i class="ri-arrow-right-line ml-1"></i>
-                            العودة للحلقة
+                            العودة للحلقة الفردية
                         </a>
-                    </div>
-                @endif
+                    @elseif(in_array($session->session_type, ['circle', 'group']) && $session->circle)
+                        <a href="{{ route('student.circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $session->circle->id]) }}" 
+                           class="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
+                            <i class="ri-arrow-right-line ml-1"></i>
+                            العودة للحلقة الجماعية
+                        </a>
+                    @endif
+                </div>
             </div>
         </div>
     </div>

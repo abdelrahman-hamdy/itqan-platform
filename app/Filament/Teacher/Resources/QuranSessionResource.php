@@ -319,13 +319,17 @@ class QuranSessionResource extends Resource
                         'danger' => 'cancelled',
                         'gray' => 'no_show',
                     ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SessionStatus ? $state->value : $state) {
+                        'unscheduled' => 'غير مجدولة',
                         'scheduled' => 'مجدولة',
-                        'in_progress' => 'جارية',
+                        'ready' => 'جاهزة للبدء',
+                        'ongoing' => 'جارية',
                         'completed' => 'مكتملة',
                         'cancelled' => 'ملغية',
-                        'no_show' => 'غياب',
-                        default => $state,
+                        'absent' => 'غياب الطالب',
+                        'missed' => 'فائتة',
+                        'rescheduled' => 'مؤجلة',
+                        default => $state instanceof \App\Enums\SessionStatus ? $state->label() : $state,
                     }),
                     
                 BadgeColumn::make('attendance_status')

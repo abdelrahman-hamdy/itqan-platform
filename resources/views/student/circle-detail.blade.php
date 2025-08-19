@@ -386,7 +386,8 @@
                                 $hasMeetingRoom = !empty($session->meeting_room_name);
                             @endphp
                             
-                            <div class="border rounded-lg p-4 {{ $isToday ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-gray-50' }}">
+                            <div class="border rounded-lg p-4 {{ $isToday ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-gray-50' }} cursor-pointer hover:shadow-md transition-shadow" 
+                                 onclick="openSessionDetail({{ $session->id }})">
                                 <div class="flex items-center justify-between mb-3">
                                     <div class="flex items-center gap-3">
                                         <div class="w-12 h-12 {{ $isToday ? 'bg-green-100' : 'bg-blue-100' }} rounded-full flex items-center justify-center">
@@ -448,6 +449,7 @@
                                     <div class="flex justify-end">
                                         <a href="{{ route('meetings.join', ['session' => $session->id]) }}" 
                                            target="_blank"
+                                           onclick="event.stopPropagation()"
                                            class="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -503,7 +505,8 @@
                                 $monthName = $arabicMonths[$sessionDate->month];
                             @endphp
                             
-                            <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <div class="border border-gray-200 rounded-lg p-3 bg-gray-50 cursor-pointer hover:shadow-md transition-shadow" 
+                                 onclick="openSessionDetail({{ $session->id }})">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
@@ -526,6 +529,7 @@
                                         
                                         @if($session->recording_url)
                                         <a href="{{ $session->recording_url }}" target="_blank"
+                                           onclick="event.stopPropagation()"
                                            class="text-blue-600 hover:text-blue-800 text-xs">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -661,6 +665,9 @@
 
             <!-- Sidebar -->
             <div class="lg:col-span-1">
+                <!-- Circle Info Sidebar -->
+                <x-circle.info-sidebar :circle="$circle" view-type="student" />
+
                 <!-- Enrollment Card -->
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
                     @if($isEnrolled)
@@ -682,11 +689,6 @@
                     </a>
                     @endif
                     
-                    <button onclick="showLeaveModal({{ $circle->id }})"
-                            class="w-full bg-red-100 text-red-700 py-3 px-4 rounded-lg font-medium hover:bg-red-200 transition-colors text-center block">
-                        إلغاء التسجيل
-                    </button>
-                    
                     @elseif($canEnroll)
                     <!-- Can Enroll -->
                     <div class="text-center mb-6">
@@ -700,11 +702,6 @@
                         <div class="text-sm text-gray-600 mb-4">بدون رسوم</div>
                         @endif
                     </div>
-                    
-                    <button onclick="showEnrollModal({{ $circle->id }})"
-                            class="w-full bg-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-secondary transition-colors text-center block mb-4">
-                        انضم للحلقة
-                    </button>
                     
                     <div class="text-center">
                         <p class="text-sm text-gray-600">{{ $circle->max_students - $circle->enrolled_students }} مقعد متبقي</p>
@@ -731,6 +728,9 @@
                     </div>
                     @endif
                 </div>
+
+                <!-- Quick Actions -->
+                <x-circle.quick-actions :circle="$circle" view-type="student" :isEnrolled="$isEnrolled" :canEnroll="$canEnroll" />
 
                 <!-- Circle Features -->
                 <div class="bg-white rounded-xl shadow-sm p-6">
@@ -779,6 +779,19 @@
 
 <x-slot name="scripts">
 <script>
+function openSessionDetail(sessionId) {
+    @if(auth()->check())
+        // Use Laravel route helper to generate correct URL for student sessions
+        const sessionUrl = '{{ route("student.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
+        const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
+        
+        console.log('Student Session URL:', finalUrl);
+        window.location.href = finalUrl;
+    @else
+        console.error('User not authenticated');
+    @endif
+}
+
 function showEnrollModal(circleId) {
     showConfirmModal({
         title: 'انضمام للحلقة',

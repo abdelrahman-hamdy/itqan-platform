@@ -325,12 +325,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Session detail function
 function openSessionDetail(sessionId) {
-    const userType = '{{ $viewType }}';
-    
-    if (userType === 'teacher') {
-        window.location.href = '{{ url("") }}/teacher/sessions/' + sessionId;
-    } else {
-        window.location.href = '{{ url("") }}/sessions/' + sessionId;
-    }
+    @if(auth()->check())
+        const userType = '{{ $viewType }}';
+        
+        if (userType === 'teacher') {
+            // Use Laravel route helper to generate correct URL for teachers
+            const sessionUrl = '{{ route("teacher.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
+            const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
+            
+            console.log('Teacher Session URL:', finalUrl);
+            window.location.href = finalUrl;
+        } else {
+            // Use Laravel route helper to generate correct URL for students
+            const sessionUrl = '{{ route("student.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
+            const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
+            
+            console.log('Student Session URL:', finalUrl);
+            window.location.href = finalUrl;
+        }
+    @else
+        console.error('User not authenticated');
+    @endif
 }
 </script>
