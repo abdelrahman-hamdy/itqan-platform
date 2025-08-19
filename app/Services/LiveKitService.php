@@ -8,6 +8,7 @@ use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
 use Agence104\LiveKit\RoomServiceClient;
+use Agence104\LiveKit\RoomCreateOptions;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -61,13 +62,24 @@ class LiveKitService
             $roomName = $this->generateRoomName($academy, $sessionType, $sessionId);
             
             // Create room with custom settings
-            $roomOptions = $this->buildRoomOptions($options);
-            $room = $this->roomService->createRoom($roomName, $roomOptions);
+            $roomOptions = $this->createRoomOptionsObject($roomName, $options);
+            
+            Log::info('Attempting to create LiveKit room', [
+                'room_name' => $roomName,
+                'session_id' => $sessionId,
+                'academy_id' => $academy->id,
+                'max_participants' => $roomOptions->getMaxParticipants(),
+                'empty_timeout' => $roomOptions->getEmptyTimeout(),
+            ]);
+            
+
+            $room = $this->roomService->createRoom($roomOptions);
             
             Log::info('LiveKit room created successfully', [
                 'room_name' => $roomName,
                 'session_id' => $sessionId,
                 'academy_id' => $academy->id,
+                'room_sid' => $room->getSid(),
             ]);
 
             return [
@@ -131,13 +143,11 @@ class LiveKitService
                 ->setRoomJoin()
                 ->setRoomName($roomName)
                 ->setCanPublish($permissions['can_publish'] ?? true)
-                ->setCanSubscribe($permissions['can_subscribe'] ?? true)
-                ->setCanUpdateMetadata($permissions['can_update_metadata'] ?? false);
+                ->setCanSubscribe($permissions['can_subscribe'] ?? true);
 
             // Additional permissions for teachers/admins
             if ($this->isTeacher($user) || $this->isAdmin($user)) {
-                $videoGrant->setRoomAdmin()
-                          ->setCanUpdateMetadata(true);
+                $videoGrant->setRoomAdmin();
             }
 
             $token = (new AccessToken($this->apiKey, $this->apiSecret))
@@ -188,20 +198,13 @@ class LiveKitService
                 ]
             ];
 
-            // Start recording using LiveKit Egress service
-            $recording = $this->roomService->startRoomCompositeEgress($recordingConfig);
-            
-            Log::info('Recording started for LiveKit room', [
+            // Recording functionality not yet implemented in this SDK version
+            Log::info('Recording requested for LiveKit room', [
                 'room_name' => $roomName,
-                'recording_id' => $recording->getEgressId(),
+                'config' => $recordingConfig,
             ]);
 
-            return [
-                'recording_id' => $recording->getEgressId(),
-                'status' => 'recording',
-                'started_at' => now(),
-                'config' => $recordingConfig,
-            ];
+            throw new \Exception('Recording functionality not yet implemented. Please use LiveKit Dashboard or API directly.');
 
         } catch (\Exception $e) {
             Log::error('Failed to start recording', [
@@ -219,18 +222,12 @@ class LiveKitService
     public function stopRecording(string $recordingId): array
     {
         try {
-            $result = $this->roomService->stopEgress($recordingId);
-            
-            Log::info('Recording stopped', [
+            // Recording functionality not yet implemented in this SDK version
+            Log::info('Recording stop requested', [
                 'recording_id' => $recordingId,
             ]);
-
-            return [
-                'recording_id' => $recordingId,
-                'status' => 'completed',
-                'stopped_at' => now(),
-                'file_info' => $result,
-            ];
+            
+            throw new \Exception('Recording functionality not yet implemented. Please use LiveKit Dashboard or API directly.');
 
         } catch (\Exception $e) {
             Log::error('Failed to stop recording', [
@@ -248,28 +245,41 @@ class LiveKitService
     public function getRoomInfo(string $roomName): ?array
     {
         try {
-            $rooms = $this->roomService->listRooms([$roomName]);
+            $roomsResponse = $this->roomService->listRooms([$roomName]);
+            
+            // Get rooms array from response
+            $rooms = [];
+            if ($roomsResponse && method_exists($roomsResponse, 'getRooms')) {
+                $rooms = $roomsResponse->getRooms();
+            }
             
             if (empty($rooms)) {
                 return null;
             }
 
             $room = $rooms[0];
-            $participants = $this->roomService->listParticipants($roomName);
+            $participantsResponse = $this->roomService->listParticipants($roomName);
+            
+            // Convert participants response to array
+            $participants = [];
+            if ($participantsResponse && method_exists($participantsResponse, 'getParticipants')) {
+                $participantsList = $participantsResponse->getParticipants();
+                foreach ($participantsList as $participant) {
+                    $participants[] = [
+                        'id' => $participant->getIdentity(),
+                        'name' => $participant->getName() ?: $participant->getIdentity(),
+                        'joined_at' => Carbon::createFromTimestamp($participant->getJoinedAt()),
+                        'is_publisher' => $participant->getPermission() ? $participant->getPermission()->getCanPublish() : false,
+                    ];
+                }
+            }
 
             return [
                 'room_name' => $room->getName(),
                 'room_sid' => $room->getSid(),
                 'participant_count' => $room->getNumParticipants(),
                 'created_at' => Carbon::createFromTimestamp($room->getCreationTime()),
-                'participants' => array_map(function($participant) {
-                    return [
-                        'id' => $participant->getIdentity(),
-                        'name' => $participant->getName(),
-                        'joined_at' => Carbon::createFromTimestamp($participant->getJoinedAt()),
-                        'is_publisher' => $participant->getPermission()->getCanPublish(),
-                    ];
-                }, $participants),
+                'participants' => $participants,
                 'is_active' => $room->getNumParticipants() > 0,
             ];
 
@@ -388,17 +398,32 @@ class LiveKitService
         return config('app.url') . "/meeting/{$roomName}";
     }
 
-    private function buildRoomOptions(array $options): array
+    private function createRoomOptionsObject(string $roomName, array $options): RoomCreateOptions
     {
-        return [
-            'max_participants' => $options['max_participants'] ?? 50,
-            'empty_timeout' => $options['empty_timeout'] ?? 300,
-            'metadata' => json_encode([
+        return (new RoomCreateOptions())
+            ->setName($roomName)
+            ->setMaxParticipants($options['max_participants'] ?? 50)
+            ->setEmptyTimeout($options['empty_timeout'] ?? 300)
+            ->setMetadata(json_encode([
                 'created_by' => 'itqan_platform',
                 'session_type' => $options['session_type'] ?? 'quran',
                 'recording_enabled' => $options['recording_enabled'] ?? false,
-            ]),
-        ];
+                'created_at' => now()->toISOString(),
+            ]));
+    }
+
+    private function buildRoomOptions(string $roomName, array $options): RoomCreateOptions
+    {
+        return (new RoomCreateOptions())
+            ->setName($roomName)
+            ->setMaxParticipants($options['max_participants'] ?? 50)
+            ->setEmptyTimeout($options['empty_timeout'] ?? 300)
+            ->setMetadata(json_encode([
+                'created_by' => 'itqan_platform',
+                'session_type' => $options['session_type'] ?? 'quran',
+                'recording_enabled' => $options['recording_enabled'] ?? false,
+                'created_at' => now()->toISOString(),
+            ]));
     }
 
     private function isTeacher(User $user): bool

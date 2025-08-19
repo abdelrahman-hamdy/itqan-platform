@@ -184,7 +184,7 @@
             <!-- Sidebar -->
             <div class="lg:col-span-1">
                 <!-- Enrollment Card -->
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                     @if($enrollment)
                     <!-- Already Enrolled -->
                     <div class="text-center mb-6">

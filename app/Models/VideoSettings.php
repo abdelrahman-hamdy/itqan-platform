@@ -114,7 +114,7 @@ class VideoSettings extends Model
     {
         return [
             'auto_create_meetings' => true,
-            'create_meetings_minutes_before' => 30,
+            'create_meetings_minutes_before' => 15,
             'auto_end_meetings' => true,
             'auto_end_minutes_after' => 15,
             'default_max_participants' => 50,

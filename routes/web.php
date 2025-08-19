@@ -460,6 +460,7 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         Route::put('/sessions/{sessionId}/cancel', [App\Http\Controllers\QuranSessionController::class, 'markCancelled'])->name('sessions.cancel');
         Route::put('/sessions/{sessionId}/absent', [App\Http\Controllers\QuranSessionController::class, 'markAbsent'])->name('sessions.absent');
         Route::get('/sessions/{sessionId}/actions', [App\Http\Controllers\QuranSessionController::class, 'getStatusActions'])->name('sessions.actions');
+        Route::post('/sessions/{sessionId}/create-meeting', [App\Http\Controllers\LiveKitMeetingController::class, 'createMeeting'])->name('sessions.create-meeting');
     });
 
     /*

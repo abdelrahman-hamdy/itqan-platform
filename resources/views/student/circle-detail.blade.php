@@ -669,7 +669,7 @@
                 <x-circle.info-sidebar :circle="$circle" view-type="student" />
 
                 <!-- Enrollment Card -->
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                     @if($isEnrolled)
                     <!-- Already Enrolled -->
                     <div class="text-center mb-6">

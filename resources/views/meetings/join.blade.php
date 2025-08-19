@@ -117,6 +117,18 @@
                 </div>
                 
                 <div class="flex items-center gap-4">
+                    <!-- Session Timer -->
+                    @if($session->duration_minutes)
+                    <div id="session-timer" class="px-4 py-2 rounded-lg text-sm font-bold bg-green-100 text-green-800 border border-green-200">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span id="timer-display">{{ $session->duration_minutes }}:00</span>
+                        </div>
+                    </div>
+                    @endif
+                    
                     <div id="connection-status" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
                         جاري الاتصال...
                     </div>
@@ -220,6 +232,77 @@
         const leaveBtn = document.getElementById('leave-btn');
         const noParticipants = document.getElementById('no-participants');
 
+        // Session Timer Configuration
+        const SESSION_DURATION_MINUTES = @json($session->duration_minutes ?? 60);
+        const SESSION_START_TIME = new Date(@json($session->scheduled_at ? $session->scheduled_at->toISOString() : 'null'));
+        let sessionTimer = null;
+
+        // Initialize Session Timer
+        function initializeSessionTimer() {
+            const timerDisplay = document.getElementById('timer-display');
+            const sessionTimerEl = document.getElementById('session-timer');
+            
+            if (!timerDisplay || !SESSION_DURATION_MINUTES) return;
+
+            // Calculate session end time
+            const sessionEndTime = new Date(SESSION_START_TIME.getTime() + (SESSION_DURATION_MINUTES * 60 * 1000));
+            
+            sessionTimer = setInterval(() => {
+                const now = new Date();
+                const timeRemaining = sessionEndTime - now;
+
+                if (timeRemaining <= 0) {
+                    // Session ended
+                    timerDisplay.textContent = '00:00';
+                    sessionTimerEl.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-red-100 text-red-800 border border-red-200';
+                    clearInterval(sessionTimer);
+                    
+                    // Optional: Show session ended notification
+                    showSessionEndedNotification();
+                    return;
+                }
+
+                const minutes = Math.floor(timeRemaining / 60000);
+                const seconds = Math.floor((timeRemaining % 60000) / 1000);
+                
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Change color based on remaining time
+                if (minutes < 5) {
+                    // Less than 5 minutes - red warning
+                    sessionTimerEl.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-red-100 text-red-800 border border-red-200';
+                } else if (minutes < 10) {
+                    // Less than 10 minutes - orange warning  
+                    sessionTimerEl.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-orange-100 text-orange-800 border border-orange-200';
+                } else {
+                    // Normal - green
+                    sessionTimerEl.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-green-100 text-green-800 border border-green-200';
+                }
+            }, 1000);
+        }
+
+        // Show session ended notification
+        function showSessionEndedNotification() {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>انتهى وقت الجلسة المحدد</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
         // Initialize meeting
         async function initializeMeeting() {
             try {
@@ -245,6 +328,9 @@
                 meetingContainer.classList.remove('hidden');
                 
                 updateConnectionStatus('connected');
+                
+                // Start session timer
+                initializeSessionTimer();
                 updateParticipantCount();
                 
             } catch (error) {
@@ -412,6 +498,12 @@
 
         // Leave room
         async function leaveRoom() {
+            // Clean up session timer
+            if (sessionTimer) {
+                clearInterval(sessionTimer);
+                sessionTimer = null;
+            }
+            
             if (room) {
                 await room.disconnect();
             }
@@ -430,6 +522,12 @@
         
         // Handle page unload
         window.addEventListener('beforeunload', async () => {
+            // Clean up session timer
+            if (sessionTimer) {
+                clearInterval(sessionTimer);
+                sessionTimer = null;
+            }
+            
             if (room) {
                 await room.disconnect();
             }

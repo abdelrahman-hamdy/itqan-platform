@@ -10,7 +10,7 @@
 ])
 
 @php
-    $limitedSessions = $limit ? $sessions->sortByDesc('scheduled_at')->take($limit) : $sessions->sortByDesc('scheduled_at');
+    $limitedSessions = $limit ? $sessions->sortBy('scheduled_at')->take($limit) : $sessions->sortBy('scheduled_at');
     $studentCount = $circle ? ($circle->students ? $circle->students->count() : 0) : 0;
 @endphp
 

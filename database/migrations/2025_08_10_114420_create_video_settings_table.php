@@ -17,7 +17,7 @@ return new class extends Migration
             
             // Auto-meeting creation settings
             $table->boolean('auto_create_meetings')->default(true);
-            $table->integer('create_meetings_minutes_before')->default(30); // Create meetings 30 minutes before session
+            $table->integer('create_meetings_minutes_before')->default(15); // Create meetings 15 minutes before session
             $table->boolean('auto_end_meetings')->default(true);
             $table->integer('auto_end_minutes_after')->default(15); // End meetings 15 minutes after scheduled end
             

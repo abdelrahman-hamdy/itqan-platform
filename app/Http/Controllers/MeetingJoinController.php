@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\QuranSession;
+use App\Models\QuranSessionAttendance;
 use App\Models\User;
 use App\Services\LiveKitService;
 use Illuminate\Http\Request;
@@ -39,8 +40,9 @@ class MeetingJoinController extends Controller
                 ]);
             }
 
-            // Check if session is within allowed time window
-            if (!$this->isSessionTimeValid($session)) {
+            // Check if session is within allowed time window (unless in test mode)
+            $isTestMode = $request->has('test_mode') && can_test_meetings();
+            if (!$isTestMode && !$this->isSessionTimeValid($session)) {
                 return view('meetings.not-ready', [
                     'session' => $session,
                     'message' => 'الجلسة غير متاحة حالياً. يمكنك الدخول قبل 15 دقيقة من موعد البدء.'
@@ -49,20 +51,18 @@ class MeetingJoinController extends Controller
 
             // Generate participant token
             $participantName = $user->name ?? $user->first_name . ' ' . $user->last_name;
-            $participantIdentity = 'user_' . $user->id;
             
             // Set permissions based on user role
-            $canPublish = true;
-            $canSubscribe = true;
-            $canUpdateMetadata = $user->user_type === 'quran_teacher';
+            $permissions = [
+                'canPublish' => true,
+                'canSubscribe' => true,
+                'canUpdateMetadata' => $user->user_type === 'quran_teacher'
+            ];
 
             $token = $this->livekitService->generateParticipantToken(
                 $session->meeting_room_name,
-                $participantIdentity,
-                $participantName,
-                $canPublish,
-                $canSubscribe,
-                $canUpdateMetadata
+                $user,
+                $permissions
             );
 
             if (!$token) {
@@ -74,8 +74,14 @@ class MeetingJoinController extends Controller
                 'user_id' => $user->id,
                 'session_id' => $session->id,
                 'room_name' => $session->meeting_room_name,
-                'participant_identity' => $participantIdentity
+                'participant_name' => $participantName,
+                'test_mode' => $isTestMode ?? false
             ]);
+
+            // Automatic attendance tracking for students
+            if ($user->user_type === 'student') {
+                $this->recordStudentAttendance($user, $session);
+            }
 
             // Return meeting join page with token
             return view('meetings.join', [
@@ -84,7 +90,8 @@ class MeetingJoinController extends Controller
                 'roomName' => $session->meeting_room_name,
                 'participantName' => $participantName,
                 'livekitServerUrl' => config('livekit.server_url'),
-                'userRole' => $user->user_type
+                'userRole' => $user->user_type,
+                'isTestMode' => $isTestMode ?? false
             ]);
 
         } catch (\Exception $e) {
@@ -152,5 +159,39 @@ class MeetingJoinController extends Controller
         $allowJoinFrom = $sessionStart->copy()->subMinutes(15);
         
         return $now->between($allowJoinFrom, $sessionEnd);
+    }
+
+    /**
+     * Record student attendance when they join the meeting
+     */
+    private function recordStudentAttendance(User $user, QuranSession $session): void
+    {
+        try {
+            // Create or find existing attendance record
+            $attendance = QuranSessionAttendance::firstOrCreate([
+                'session_id' => $session->id,
+                'student_id' => $user->id,
+            ], [
+                'attendance_status' => 'absent', // Default status, will be updated by recordJoin()
+            ]);
+
+            // Use the existing recordJoin method which handles present/late logic
+            $attendance->recordJoin();
+
+            Log::info('Student attendance recorded', [
+                'student_id' => $user->id,
+                'session_id' => $session->id,
+                'attendance_status' => $attendance->fresh()->attendance_status,
+                'join_time' => $attendance->fresh()->join_time,
+            ]);
+
+        } catch (\Exception $e) {
+            // Don't fail the meeting join if attendance tracking fails
+            Log::error('Failed to record attendance', [
+                'student_id' => $user->id,
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

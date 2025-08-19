@@ -112,8 +112,8 @@
     <div class="p-6">
         @if($sessions && $sessions->count() > 0)
             <div class="space-y-4" id="sessionsList">
-                @foreach($sessions->sortByDesc(function($session) {
-                    // Sort by date (recent to older)
+                @foreach($sessions->sortBy(function($session) {
+                    // Sort by date (recent to later - ascending)
                     return $session->scheduled_at ?? $session->created_at;
                 }) as $session)
                     @php
@@ -194,11 +194,11 @@
                                 <!-- Action Buttons -->
                                 @if($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at && $session->scheduled_at->isFuture())
                                     @php
-                                        $minutesUntilSession = now()->diffInMinutes($session->scheduled_at);
-                                        $canJoin = $minutesUntilSession <= 30; // Can join 30 minutes before
+                                        $timeRemaining = humanize_time_remaining_arabic($session->scheduled_at);
+                                        $canTestMeeting = can_test_meetings();
                                     @endphp
                                     
-                                    @if($canJoin)
+                                    @if($timeRemaining['can_join'])
                                         <a href="{{ route('meetings.join', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}" 
                                            onclick="event.stopPropagation()"
                                            class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
@@ -206,9 +206,17 @@
                                             انضمام للجلسة
                                         </a>
                                     @else
-                                        <span class="text-xs text-gray-500">
-                                            متاح خلال {{ $minutesUntilSession }} دقيقة
-                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-gray-500">{{ $timeRemaining['text'] }}</span>
+                                            @if($canTestMeeting)
+                                                <a href="{{ route('meetings.join', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id, 'test_mode' => 1]) }}" 
+                                                   onclick="event.stopPropagation()"
+                                                   class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded hover:bg-yellow-200 transition-colors">
+                                                    <i class="ri-flask-line ml-1"></i>
+                                                    اختبار
+                                                </a>
+                                            @endif
+                                        </div>
                                     @endif
                                 @elseif($session->status === App\Enums\SessionStatus::COMPLETED)
                                     <!-- Show homework/progress/quiz indicators for completed sessions -->

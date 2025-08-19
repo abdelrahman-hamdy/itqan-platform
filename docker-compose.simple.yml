@@ -5,15 +5,15 @@ services:
     container_name: simple-livekit
     ports:
       - "7880:7880"
-      - "50000-50020:50000-50020/udp"  # Smaller range for simplicity
+      - "50000-50020:50000-50020/udp" # Smaller range for simplicity
     environment:
-      - LIVEKIT_KEYS=devkey:devsecret
+      - "LIVEKIT_KEYS=devkey: devsecret"
       - LIVEKIT_PORT=7880
       - LIVEKIT_RTC__PORT_RANGE_START=50000
       - LIVEKIT_RTC__PORT_RANGE_END=50020
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7880"]
+      test: [ "CMD", "curl", "-f", "http://localhost:7880" ]
       interval: 30s
       timeout: 10s
       retries: 3

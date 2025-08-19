@@ -21,10 +21,20 @@ class LiveKitMeetingController extends Controller
     /**
      * Create a new meeting room
      */
-    public function createMeeting(Request $request): JsonResponse
+    public function createMeeting(Request $request, $subdomain = null, $sessionId = null): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
+            // Use sessionId from route if provided, otherwise from request body
+            $actualSessionId = $sessionId ?? $request->input('session_id');
+            
+            if (!$actualSessionId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session ID is required'
+                ], 400);
+            }
+            
+            $validator = Validator::make(array_merge($request->all(), ['session_id' => $actualSessionId]), [
                 'session_id' => 'required|exists:quran_sessions,id',
                 'max_participants' => 'nullable|integer|min:2|max:100',
                 'recording_enabled' => 'nullable|boolean',
@@ -39,14 +49,30 @@ class LiveKitMeetingController extends Controller
                 ], 422);
             }
 
-            $session = QuranSession::findOrFail($request->session_id);
+            $session = QuranSession::findOrFail($actualSessionId);
             
             // Check if user has permission to create meeting for this session
             $user = $request->user();
+            
+            // Debug logging to understand the authorization issue
+            Log::info('Meeting creation authorization debug', [
+                'user_id' => $user->id,
+                'user_type' => $user->user_type,
+                'session_id' => $session->id,
+                'session_quran_teacher_id' => $session->quran_teacher_id,
+                'session_student_id' => $session->student_id,
+                'can_manage' => $this->canManageSession($user, $session)
+            ]);
+            
             if (!$this->canManageSession($user, $session)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized to manage this session'
+                    'message' => 'Unauthorized to manage this session',
+                    'debug' => [
+                        'user_type' => $user->user_type,
+                        'user_id' => $user->id,
+                        'session_teacher_id' => $session->quran_teacher_id
+                    ]
                 ], 403);
             }
 
@@ -160,12 +186,24 @@ class LiveKitMeetingController extends Controller
     
     private function canManageSession($user, QuranSession $session): bool
     {
-        if (in_array($user->user_type, ['super_admin', 'admin'])) {
+        // Super admin can manage any session
+        if ($user->user_type === 'super_admin') {
+            return true;
+        }
+        
+        // Academy admin can manage sessions in their academy
+        if ($user->user_type === 'admin' && $session->academy_id === $user->academy_id) {
+            return true;
+        }
+        
+        // Supervisor can manage sessions in their academy
+        if ($user->user_type === 'supervisor' && $session->academy_id === $user->academy_id) {
             return true;
         }
 
+        // Teachers can manage their own sessions
         if (in_array($user->user_type, ['quran_teacher', 'academic_teacher'])) {
-            return $session->teacher_id === $user->id;
+            return $session->quran_teacher_id === $user->id;
         }
 
         return false;

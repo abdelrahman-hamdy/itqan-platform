@@ -86,12 +86,12 @@
                 <!-- Meeting Access (for upcoming sessions) -->
                 @if($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at && $session->scheduled_at->isFuture())
                     @php
-                        $minutesUntilSession = now()->diffInMinutes($session->scheduled_at);
-                        $canJoin = $minutesUntilSession <= 30 && $minutesUntilSession > 0;
+                        $timeRemaining = humanize_time_remaining_arabic($session->scheduled_at);
+                        $canTestMeeting = can_test_meetings();
                     @endphp
                     
                     <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        @if($canJoin)
+                        @if($timeRemaining['can_join'])
                             <div class="flex items-center justify-between">
                                 <div>
                                     <h4 class="font-medium text-blue-900">الجلسة متاحة الآن</h4>
@@ -109,10 +109,18 @@
                                 <p class="text-sm text-blue-700">
                                     ستتمكن من الانضمام قبل 30 دقيقة من موعد الجلسة
                                 </p>
-                                @if($session->scheduled_at->isToday())
-                                    <p class="text-xs text-blue-600 mt-1">
-                                        متبقي {{ $minutesUntilSession }} دقيقة
-                                    </p>
+                                <p class="text-xs text-blue-600 mt-1">
+                                    {{ $timeRemaining['text'] }}
+                                </p>
+                                
+                                @if($canTestMeeting)
+                                    <div class="mt-3">
+                                        <a href="{{ route('meetings.join', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'session' => $session->id, 'test_mode' => 1]) }}" 
+                                           class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded hover:bg-yellow-200 transition-colors">
+                                            <i class="ri-flask-line ml-1"></i>
+                                            انضمام للاختبار
+                                        </a>
+                                    </div>
                                 @endif
                             </div>
                         @endif
@@ -219,7 +227,7 @@
         <!-- Sidebar -->
         <div class="lg:col-span-1">
             <!-- Session Summary -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                 <h3 class="font-bold text-gray-900 mb-4">ملخص الجلسة</h3>
                 
                 <div class="space-y-3">

@@ -46,8 +46,8 @@
         'template' => ['label' => 'القوالب', 'icon' => 'ri-draft-line']
     ];
 
-    // Sort sessions by date (recent to older)
-    $sortedSessions = $sessions->sortByDesc(function($session) {
+    // Sort sessions by date (recent to later - ascending)
+    $sortedSessions = $sessions->sortBy(function($session) {
         return $session->scheduled_at ?? $session->created_at;
     });
 @endphp
@@ -213,11 +213,22 @@
                                     </a>
                                 @elseif($statusData['is_upcoming'])
                                     @php
-                                        $minutesUntilSession = now()->diffInMinutes($session->scheduled_at);
+                                        $timeRemaining = humanize_time_remaining_arabic($session->scheduled_at);
+                                        $canTestMeeting = can_test_meetings();
                                     @endphp
-                                    <span class="text-xs text-gray-500">
-                                        متاح خلال {{ $minutesUntilSession }} دقيقة
-                                    </span>
+                                    @if($canTestMeeting)
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-gray-500">{{ $timeRemaining['text'] }}</span>
+                                            <a href="{{ route('meetings.join', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id, 'test_mode' => 1]) }}" 
+                                               onclick="event.stopPropagation()"
+                                               class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded hover:bg-yellow-200 transition-colors">
+                                                <i class="ri-flask-line ml-1"></i>
+                                                اختبار
+                                            </a>
+                                        </div>
+                                    @else
+                                        <span class="text-xs text-gray-500">{{ $timeRemaining['text'] }}</span>
+                                    @endif
                                 @elseif($session->status === App\Enums\SessionStatus::COMPLETED)
                                     <!-- Show homework/progress/quiz indicators for completed sessions -->
                                     <div class="flex items-center space-x-1 space-x-reverse">

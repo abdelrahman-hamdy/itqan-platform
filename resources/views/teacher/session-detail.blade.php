@@ -90,7 +90,161 @@
                         @endif
                     </div>
                 @endif
+            </div>
+
+            <!-- Meeting Room Integration -->
+            @if($session->meeting_room_name && $session->meeting_link)
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">
+                            <i class="ri-video-line text-green-600 ml-2"></i>
+                            غرفة الاجتماع - {{ $session->meeting_room_name }}
+                        </h3>
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                <i class="ri-live-line ml-1"></i>
+                                جاهز
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3 space-x-reverse">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="ri-video-line text-green-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">غرفة الاجتماع جاهزة</p>
+                                    <p class="text-sm text-gray-600">{{ $session->meeting_platform ?? 'LiveKit' }} - تم الإنشاء</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 space-x-reverse">
+                                @if($session->scheduled_at)
+                                    @php
+                                        $timeRemaining = humanize_time_remaining_arabic($session->scheduled_at);
+                                        $canTestMeeting = can_test_meetings();
+                                    @endphp
+                                    @if($timeRemaining['can_join'] || $session->scheduled_at->isPast() || $canTestMeeting)
+                                        <div class="flex items-center gap-3">
+                                            <button type="button" onclick="startMeeting()" id="startMeetingBtn"
+                                                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                                                <i class="ri-video-line ml-2"></i>
+                                                <span id="meetingBtnText">بدء الجلسة</span>
+                                            </button>
+                                            <button type="button" onclick="endMeeting()" id="endMeetingBtn" style="display: none;"
+                                                   class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                                                <i class="ri-stop-line ml-2"></i>
+                                                إنهاء الاجتماع
+                                            </button>
+                                            <button type="button" onclick="copyMeetingLink()" 
+                                                   class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                                                <i class="ri-link ml-2"></i>
+                                                نسخ الرابط
+                                            </button>
+                                            
+                                            @if(!$timeRemaining['can_join'] && !$session->scheduled_at->isPast() && $canTestMeeting)
+                                                <span class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                                                    <i class="ri-flask-line ml-1"></i>
+                                                    وضع الاختبار
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-orange-600 font-medium">
+                                            <i class="ri-time-line ml-1"></i>
+                                            {{ $timeRemaining['text'] }}
+                                        </span>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meeting Info -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="flex items-center text-gray-600">
+                            <i class="ri-time-line ml-2"></i>
+                            <span>المدة: {{ $session->duration_minutes ?? 60 }} دقيقة</span>
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <i class="ri-group-line ml-2"></i>
+                            <span>أقصى مشاركين: {{ $session->meeting_data['settings']['max_participants'] ?? 50 }}</span>
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <i class="ri-shield-check-line ml-2"></i>
+                            <span>آمن ومشفر</span>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Embedded Meeting Room -->
+            <div id="meetingContainer" class="bg-white rounded-xl shadow-sm p-6 mb-8" style="display: none;">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">
+                        <i class="ri-video-on-line text-green-600 ml-2"></i>
+                        جلسة فيديو مباشرة
+                    </h3>
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                            <i class="ri-record-circle-line ml-1 animate-pulse"></i>
+                            جاري الآن
+                        </span>
+                        <div id="sessionTimer" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                            <i class="ri-time-line ml-1"></i>
+                            <span id="timerDisplay">00:00</span>
+                        </div>
+                    </div>
+                </div>
                 
+                <!-- Meeting Video Container -->
+                <div class="relative bg-gray-900 rounded-lg overflow-hidden" style="height: 500px;">
+                    <div id="meetingRoom" class="w-full h-full"></div>
+                    
+                    <!-- Loading State -->
+                    <div id="meetingLoading" class="absolute inset-0 flex items-center justify-center bg-gray-900">
+                        <div class="text-center text-white">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                            <p class="text-lg">جاري تحضير الغرفة...</p>
+                            <p class="text-sm text-gray-300">يرجى الانتظار</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Meeting Controls -->
+                    <div id="meetingControls" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 space-x-reverse bg-black/50 backdrop-blur-sm rounded-lg p-2" style="display: none;">
+                        <button onclick="toggleMute()" id="muteBtn" class="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                            <i class="ri-mic-line" id="micIcon"></i>
+                        </button>
+                        <button onclick="toggleVideo()" id="videoBtn" class="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                            <i class="ri-camera-line" id="cameraIcon"></i>
+                        </button>
+                        <button onclick="toggleScreenShare()" id="screenBtn" class="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                            <i class="ri-computer-line"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Session Info During Meeting -->
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="flex items-center text-gray-600">
+                            <i class="ri-user-line ml-2"></i>
+                            <span id="participantCount">0 مشارك</span>
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <i class="ri-signal-wifi-line ml-2"></i>
+                            <span id="connectionStatus">متصل</span>
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <i class="ri-record-circle-line ml-2"></i>
+                            <span>تسجيل: {{ $session->meeting_data['settings']['recording_enabled'] ?? false ? 'مفعل' : 'معطل' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                 <!-- Action Buttons Section -->
                 @if($session->status === App\Enums\SessionStatus::SCHEDULED)
                     <div class="border-t border-gray-200 pt-6 mt-6">
@@ -212,7 +366,7 @@
         <!-- Sidebar -->
         <div class="lg:col-span-1">
             <!-- Session Participants Info -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                 @if(in_array($session->session_type, ['circle', 'group']) && $session->circle)
                     <!-- Group Session Info -->
                     <h3 class="font-bold text-gray-900 mb-4">معلومات الحلقة الجماعية</h3>
@@ -340,6 +494,15 @@
                 <h3 class="font-bold text-gray-900 mb-4">إجراءات سريعة</h3>
                 
                 <div class="space-y-3">
+                    <!-- Test Meeting Creation Button -->
+                    @if($session->status === App\Enums\SessionStatus::SCHEDULED)
+                        <button id="testMeetingBtn" 
+                               class="w-full flex items-center justify-center px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-200 transition-colors">
+                            <i class="ri-test-tube-line ml-2"></i>
+                            اختبار إنشاء اجتماع
+                        </button>
+                    @endif
+                    
                     @if($session->student && $session->student->email)
                         <a href="mailto:{{ $session->student->email }}" 
                            class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
@@ -557,6 +720,273 @@ document.addEventListener('DOMContentLoaded', function() {
     @endif
     
     @endif
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-500' : 
+                        type === 'error' ? 'bg-red-500' : 
+                        type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
+        
+        toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }
+        }, 3000);
+    }
+
+    // Copy Meeting Link Function
+    function copyMeetingLink() {
+        const meetingUrl = "{{ $session->meeting_link ?? '' }}";
+        
+        if (!meetingUrl || meetingUrl.trim() === '') {
+            showToast('لم يتم إنشاء رابط الاجتماع بعد. اضغط على "بدء الجلسة" أولاً.', 'warning');
+            return;
+        }
+        
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(meetingUrl).then(function() {
+                showToast('تم نسخ رابط الاجتماع بنجاح!', 'success');
+            }, function(err) {
+                console.error('فشل في نسخ الرابط: ', err);
+                showToast('فشل في نسخ الرابط', 'error');
+            });
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = meetingUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('تم نسخ رابط الاجتماع بنجاح!', 'success');
+            } catch (err) {
+                showToast('فشل في نسخ الرابط', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+    }
+
+    // Debug function - call debugMeeting() in browser console for troubleshooting
+    window.debugMeeting = function() {
+        console.log('=== Meeting Debug Info ===');
+        console.log('Session ID:', {{ $session->id }});
+        console.log('Meeting Link:', "{{ $session->meeting_link ?? '' }}");
+        console.log('Meeting Room Name:', "{{ $session->meeting_room_name ?? '' }}");
+        console.log('Scheduled At:', "{{ $session->scheduled_at ?? '' }}");
+        console.log('Can Test Meetings:', {{ can_test_meetings() ? 'true' : 'false' }});
+        console.log('Academy Subdomain:', '{{ $academy->subdomain ?? "itqan-academy" }}');
+        console.log('User Type:', '{{ auth()->user()->user_type ?? '' }}');
+        console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? 'NOT FOUND');
+        console.log('========================');
+    };
+
+    // Test Meeting Creation
+    const testMeetingBtn = document.getElementById('testMeetingBtn');
+    if (testMeetingBtn) {
+        testMeetingBtn.addEventListener('click', function() {
+            const originalText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'جاري إنشاء الاجتماع...';
+            this.classList.remove('hover:bg-purple-200');
+            this.classList.add('opacity-50', 'cursor-not-allowed');
+
+            fetch(`{{ route('teacher.sessions.create-meeting', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('تم إنشاء الاجتماع بنجاح! سيتم تحديث الصفحة لعرض غرفة الاجتماع.', 'success');
+                    if (data.meeting_url) {
+                        console.log('Meeting URL:', data.meeting_url);
+                    }
+                    // Refresh page after 1.5 seconds to show the meeting interface
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('خطأ في إنشاء الاجتماع: ' + (data.message || 'حدث خطأ غير متوقع'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('حدث خطأ في إنشاء الاجتماع', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = originalText;
+                this.classList.add('hover:bg-purple-200');
+                this.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+        });
+    }
+
+    // Embedded Meeting Functionality
+    let room = null;
+    let localParticipant = null;
+    let sessionStartTime = null;
+    let timerInterval = null;
+    let isMuted = false;
+    let isVideoOff = false;
+
+    async function startMeeting() {
+        const meetingContainer = document.getElementById('meetingContainer');
+        const meetingLoading = document.getElementById('meetingLoading');
+        const meetingControls = document.getElementById('meetingControls');
+        const meetingBtnText = document.getElementById('meetingBtnText');
+        const endMeetingBtn = document.getElementById('endMeetingBtn');
+        const startMeetingBtn = document.getElementById('startMeetingBtn');
+        
+        try {
+            // Update button state
+            meetingBtnText.textContent = 'جاري إنشاء الاجتماع...';
+            startMeetingBtn.disabled = true;
+            
+            // First, create the meeting if it doesn't exist
+            const sessionId = {{ $session->id }};
+            const subdomain = '{{ $academy->subdomain ?? "itqan-academy" }}';
+            
+            // Check if meeting already exists
+            let meetingUrl = '{{ $session->meeting_link ?? "" }}';
+            
+            if (!meetingUrl) {
+                // Create the meeting using the correct API route
+                const response = await fetch('/api/meetings/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        max_participants: 50,
+                        recording_enabled: false,
+                        max_duration: 120
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', response.status, errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('Meeting creation result:', result);
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'فشل في إنشاء الاجتماع');
+                }
+                
+                meetingUrl = result.meeting_info.meeting_url;
+                showToast('تم إنشاء الاجتماع بنجاح!', 'success');
+                
+                // Reload the page to update the session data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+                return;
+            }
+            
+            // Show meeting container
+            meetingContainer.style.display = 'block';
+            meetingLoading.style.display = 'flex';
+            meetingBtnText.textContent = 'جاري الاتصال...';
+            
+            // Redirect to the meeting join page
+            setTimeout(() => {
+                window.location.href = meetingUrl;
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error starting meeting:', error);
+            showToast('خطأ في بدء الجلسة: ' + error.message, 'error');
+            
+            // Reset button state
+            meetingBtnText.textContent = 'بدء الجلسة';
+            startMeetingBtn.disabled = false;
+            meetingContainer.style.display = 'none';
+        }
+    }
+    
+    function endMeeting() {
+        endMeetingSession();
+        showToast('تم إنهاء الجلسة', 'info');
+    }
+    
+    function endMeetingSession() {
+        const meetingContainer = document.getElementById('meetingContainer');
+        const meetingBtnText = document.getElementById('meetingBtnText');
+        const endMeetingBtn = document.getElementById('endMeetingBtn');
+        
+        // Hide meeting container
+        meetingContainer.style.display = 'none';
+        
+        // Reset button states
+        meetingBtnText.textContent = 'بدء الجلسة';
+        endMeetingBtn.style.display = 'none';
+        
+        // Stop timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        // Reset variables
+        sessionStartTime = null;
+    }
+    
+    function startSessionTimer() {
+        sessionStartTime = Date.now();
+        timerInterval = setInterval(() => {
+            const elapsed = Date.now() - sessionStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timerDisplay').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+    
+    function updateParticipantCount() {
+        // Simulate participant count (in real implementation, this would be from LiveKit)
+        document.getElementById('participantCount').textContent = '1 مشارك';
+    }
+    
+    async function toggleMute() {
+        isMuted = !isMuted;
+        document.getElementById('micIcon').className = isMuted ? 'ri-mic-off-line' : 'ri-mic-line';
+        document.getElementById('muteBtn').className = isMuted ? 
+            'p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors' :
+            'p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors';
+        showToast(isMuted ? 'تم كتم الصوت' : 'تم إلغاء كتم الصوت', 'info');
+    }
+    
+    async function toggleVideo() {
+        isVideoOff = !isVideoOff;
+        document.getElementById('cameraIcon').className = isVideoOff ? 'ri-camera-off-line' : 'ri-camera-line';
+        document.getElementById('videoBtn').className = isVideoOff ? 
+            'p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors' :
+            'p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-colors';
+        showToast(isVideoOff ? 'تم إيقاف الكاميرا' : 'تم تشغيل الكاميرا', 'info');
+    }
+    
+    async function toggleScreenShare() {
+        showToast('مشاركة الشاشة (قريباً)', 'info');
+    }
 });
 </script>
 
