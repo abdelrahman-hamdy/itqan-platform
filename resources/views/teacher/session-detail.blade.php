@@ -477,10 +477,10 @@
             console.log('- Room connected:', room.state);
             console.log('- Local participant:', room.localParticipant);
             console.log('- Local participant tracks:', {
-                audio: room.localParticipant.audioTrack,
-                video: room.localParticipant.videoTrack
+                audio: room.localParticipant?.audioTrack,
+                video: room.localParticipant?.videoTrack
             });
-            console.log('- Participants count:', room.participants.size);
+            console.log('- Participants count:', room.participants?.size || 0);
             
         } catch (error) {
             console.error('Error initializing meeting:', error);
@@ -582,12 +582,16 @@
             console.log('✅ Teacher room connected successfully');
             updateConnectionStatus('connected');
             
-            // Add ALL existing participants when we connect
-            console.log('Adding existing participants:', room.remoteParticipants.size);
-            room.remoteParticipants.forEach(participant => {
-                console.log('Adding existing participant:', participant.identity);
-                addParticipant(participant);
-            });
+            // Add ALL existing participants when we connect - with null safety
+            if (room.remoteParticipants && typeof room.remoteParticipants.size !== 'undefined') {
+                console.log('Adding existing participants:', room.remoteParticipants.size);
+                room.remoteParticipants.forEach(participant => {
+                    console.log('Adding existing participant:', participant.identity);
+                    addParticipant(participant);
+                });
+            } else {
+                console.log('No remote participants available yet or remoteParticipants is undefined');
+            }
         });
 
         room.on('disconnected', (reason) => {
