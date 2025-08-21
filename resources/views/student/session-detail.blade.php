@@ -143,14 +143,14 @@
     <!-- Navigation -->
     <div class="mt-6 bg-white rounded-lg shadow-lg p-6">
         <div class="flex space-x-4 space-x-reverse">
-            <a href="{{ route('student.profile') }}" 
+            <a href="{{ route('student.profile', ['subdomain' => $session->academy->subdomain]) }}" 
                class="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors">
                 <i class="fas fa-arrow-right mr-2"></i>
                 العودة للملف الشخصي
             </a>
             
             @if($session->circle_id)
-                <a href="{{ route('student.circles.show', $session->circle_id) }}" 
+                <a href="{{ route('student.circles.show', ['subdomain' => $session->academy->subdomain, 'circleId' => $session->circle_id]) }}" 
                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="fas fa-users mr-2"></i>
                     عرض الحلقة

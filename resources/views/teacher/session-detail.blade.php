@@ -78,11 +78,11 @@
                                     {{ substr($student->first_name, 0, 1) }}
                                 </div>
                                 <span class="text-sm">{{ $student->full_name }}</span>
-                            </div>
-                        @endforeach
+                    </div>
+                    @endforeach
                         @if($session->circle->students->count() > 3)
                             <p class="text-sm text-gray-500">و {{ $session->circle->students->count() - 3 }} آخرين...</p>
-                        @endif
+                    @endif
                     </div>
                 @else
                     <p class="text-gray-500">لا توجد معلومات طالب</p>
@@ -105,7 +105,7 @@
                         <p class="text-green-600 text-sm">غرفة الاجتماع: {{ $session->meeting_room_name }}</p>
                     </div>
                 </div>
-            </div>
+                </div>
             
             <div class="flex space-x-4 space-x-reverse">
                 <a href="{{ route('meetings.join-iframe', $session->id) }}" 
@@ -128,8 +128,8 @@
                     <div>
                         <p class="text-yellow-800 font-medium">لم يتم إنشاء الاجتماع بعد</p>
                         <p class="text-yellow-600 text-sm">انقر على "إنشاء اجتماع" لبدء الجلسة</p>
-                    </div>
-                </div>
+            </div>
+            </div>
             </div>
             
             <form action="{{ route('meetings.join-iframe', $session->id) }}" method="GET" class="inline-block">
@@ -147,7 +147,7 @@
         <h3 class="text-lg font-semibold text-gray-900 mb-4">إجراءات الجلسة</h3>
         <div class="flex space-x-4 space-x-reverse">
             @if($session->status !== 'completed')
-                <form action="{{ route('teacher.sessions.complete', $session->id) }}" method="POST" class="inline-block">
+                <form action="{{ route('teacher.sessions.complete', ['subdomain' => $session->academy->subdomain, 'sessionId' => $session->id]) }}" method="POST" class="inline-block">
                     @csrf
                     @method('PUT')
                     <button type="submit" 
@@ -158,7 +158,7 @@
                     </button>
                 </form>
                 
-                <form action="{{ route('teacher.sessions.cancel', $session->id) }}" method="POST" class="inline-block">
+                <form action="{{ route('teacher.sessions.cancel', ['subdomain' => $session->academy->subdomain, 'sessionId' => $session->id]) }}" method="POST" class="inline-block">
                     @csrf
                     @method('PUT')
                     <button type="submit" 
@@ -170,7 +170,7 @@
                 </form>
             @endif
             
-            <a href="{{ route('teacher.calendar') }}" 
+            <a href="{{ route('teacher.calendar', ['subdomain' => $session->academy->subdomain]) }}" 
                class="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors">
                 <i class="fas fa-arrow-right mr-2"></i>
                 العودة للتقويم
@@ -196,23 +196,23 @@ function showNotification(message, type = 'info') {
         type === 'error' ? 'bg-red-500' : 
         type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
     }`;
-    
-    notification.innerHTML = `
-        <div class="flex items-center justify-between">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
-                ×
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.classList.remove('translate-x-full'), 100);
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        setTimeout(() => notification.remove(), 300);
+        
+        notification.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                    ×
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.classList.remove('translate-x-full'), 100);
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => notification.remove(), 300);
     }, 5000);
-}
+    }
 </script>
 @endsection
