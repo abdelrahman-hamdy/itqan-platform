@@ -12,9 +12,9 @@ return [
     |
     */
 
-    'server_url' => env('LIVEKIT_SERVER_URL', 'wss://test-rn3dlic1.livekit.cloud'),
-    'api_key' => env('LIVEKIT_API_KEY', 'APIxdLnkvjeS3PV'),
-    'api_secret' => env('LIVEKIT_API_SECRET', 'coCkSrJcJmAKQcmODKd3qgCaa80YJSnrvGEDebrPAIJ'),
+    'server_url' => 'https://test-rn3dlic1.livekit.cloud',
+    'api_key' => 'APIxdLnkvjeS3PV',
+    'api_secret' => 'coCkSrJcJmAKQcmODKd3qgCaa80YJSnrvGEDebrPAIJ',
 
     /*
     |--------------------------------------------------------------------------

@@ -134,6 +134,6 @@ if (!function_exists('can_test_meetings')) {
         // Allow super admins and admins to test meetings
         return $user->hasRole(['super_admin', 'admin']) || 
                request()->has('test_mode') && 
-               ($user->hasRole(['quran_teacher', 'academic_teacher', 'supervisor']) || app()->environment('local'));
+               ($user->hasRole(['quran_teacher', 'academic_teacher', 'supervisor', 'student']) || app()->environment('local'));
     }
 } 

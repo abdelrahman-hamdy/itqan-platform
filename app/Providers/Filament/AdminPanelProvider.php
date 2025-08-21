@@ -37,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
                 'gray' => Color::Slate,
             ])
-            ->font('Cairo')
+            ->font('Tajawal') // Arabic font
             ->favicon(asset('images/favicon.ico'))
             ->resources($this->getResources())
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

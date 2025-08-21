@@ -6,11 +6,11 @@
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
     <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.8/index.global.min.css' rel='stylesheet' />
     
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
     
     <style>
         body {
-            font-family: 'Cairo', 'Tajawal', sans-serif;
+            font-family: 'Tajawal', sans-serif;
         }
     </style>
 </x-slot:head>
@@ -18,7 +18,7 @@
 <style>
                 /* Calendar Styles */
         .fc {
-            font-family: 'Cairo', sans-serif !important;
+            font-family: 'Tajawal', sans-serif !important;
             direction: ltr !important;
         }
         

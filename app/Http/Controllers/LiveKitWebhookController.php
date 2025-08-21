@@ -3,336 +3,76 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Models\QuranSession;
-use App\Services\LiveKitService;
+use App\Services\SessionMeetingService;
+use App\Enums\SessionStatus;
 
 class LiveKitWebhookController extends Controller
 {
-    private LiveKitService $livekitService;
+    private SessionMeetingService $sessionMeetingService;
 
-    public function __construct(LiveKitService $livekitService)
+    public function __construct(SessionMeetingService $sessionMeetingService)
     {
-        $this->livekitService = $livekitService;
+        $this->sessionMeetingService = $sessionMeetingService;
     }
 
     /**
-     * Handle incoming LiveKit webhooks
+     * Handle webhooks from LiveKit server
      */
-    public function handleWebhook(Request $request): JsonResponse
+    public function handleWebhook(Request $request): Response
     {
         try {
-            // Verify webhook signature if configured
-            if (config('livekit.webhooks.secret')) {
-                if (!$this->verifyWebhookSignature($request)) {
-                    Log::warning('Invalid LiveKit webhook signature', [
-                        'ip' => $request->ip(),
-                        'user_agent' => $request->userAgent(),
-                    ]);
-                    return response()->json(['error' => 'Invalid signature'], 401);
-                }
-            }
-
-            $payload = $request->json()->all();
+            $event = $request->input('event');
+            $data = $request->all();
             
             Log::info('LiveKit webhook received', [
-                'event' => $payload['event'] ?? 'unknown',
-                'room' => $payload['room']['name'] ?? 'unknown',
-                'payload_keys' => array_keys($payload),
-            ]);
-
-            // Process the webhook
-            $this->livekitService->handleWebhook($payload);
-
-            // Handle specific events that affect our session management
-            $this->handleSessionEvents($payload);
-
-            return response()->json(['status' => 'success']);
-
-        } catch (\Exception $e) {
-            Log::error('Failed to process LiveKit webhook', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'payload' => $request->json()->all(),
-            ]);
-
-            return response()->json(['error' => 'Webhook processing failed'], 500);
-        }
-    }
-
-    /**
-     * Handle events that affect our session management
-     */
-    private function handleSessionEvents(array $payload): void
-    {
-        $event = $payload['event'] ?? '';
-        $roomName = $payload['room']['name'] ?? '';
-
-        if (empty($roomName)) {
-            return;
-        }
-
-        // Find the session associated with this room
-        $session = QuranSession::where('meeting_room_name', $roomName)->first();
-
-        if (!$session) {
-            Log::warning('Received webhook for unknown room', [
-                'room_name' => $roomName,
                 'event' => $event,
+                'room' => $data['room']['name'] ?? 'unknown',
+                'participant_count' => $data['room']['num_participants'] ?? 0,
             ]);
-            return;
-        }
 
-        switch ($event) {
-            case 'room_started':
-                $this->handleRoomStarted($session, $payload);
-                break;
-
-            case 'room_finished':
-                $this->handleRoomFinished($session, $payload);
-                break;
-
-            case 'participant_joined':
-                $this->handleParticipantJoined($session, $payload);
-                break;
-
-            case 'participant_left':
-                $this->handleParticipantLeft($session, $payload);
-                break;
-
-            case 'recording_started':
-                $this->handleRecordingStarted($session, $payload);
-                break;
-
-            case 'recording_finished':
-                $this->handleRecordingFinished($session, $payload);
-                break;
-
-            case 'egress_ended':
-                $this->handleEgressEnded($session, $payload);
-                break;
-
-            default:
-                Log::debug('Unhandled LiveKit webhook event', [
-                    'event' => $event,
-                    'room_name' => $roomName,
-                    'session_id' => $session->id,
-                ]);
-        }
-    }
-
-    /**
-     * Handle room started event
-     */
-    private function handleRoomStarted(QuranSession $session, array $payload): void
-    {
-        Log::info('LiveKit room started', [
-            'session_id' => $session->id,
-            'room_name' => $session->meeting_room_name,
-        ]);
-
-        $session->update([
-            'started_at' => now(),
-            'status' => 'ongoing',
-        ]);
-
-        // You can add additional logic here:
-        // - Send notifications to participants
-        // - Update attendance tracking
-        // - Start automatic recording if configured
-    }
-
-    /**
-     * Handle room finished event
-     */
-    private function handleRoomFinished(QuranSession $session, array $payload): void
-    {
-        $duration = $payload['room']['duration'] ?? null;
-        
-        Log::info('LiveKit room finished', [
-            'session_id' => $session->id,
-            'room_name' => $session->meeting_room_name,
-            'duration' => $duration,
-        ]);
-
-        $updateData = [
-            'ended_at' => now(),
-            'status' => 'completed',
-        ];
-
-        // Calculate actual duration if provided
-        if ($duration) {
-            $updateData['actual_duration_minutes'] = ceil($duration / 60);
-        } elseif ($session->started_at) {
-            $updateData['actual_duration_minutes'] = $session->started_at->diffInMinutes(now());
-        }
-
-        $session->update($updateData);
-
-        // You can add additional logic here:
-        // - Generate session summary
-        // - Send completion notifications
-        // - Update attendance records
-        // - Process recordings
-    }
-
-    /**
-     * Handle participant joined event
-     */
-    private function handleParticipantJoined(QuranSession $session, array $payload): void
-    {
-        $participant = $payload['participant'] ?? [];
-        $identity = $participant['identity'] ?? 'unknown';
-
-        Log::info('Participant joined LiveKit room', [
-            'session_id' => $session->id,
-            'participant_identity' => $identity,
-            'room_name' => $session->meeting_room_name,
-        ]);
-
-        // Update participant count
-        $session->increment('participants_count');
-
-        // You can add additional logic here:
-        // - Track attendance
-        // - Send welcome messages
-        // - Update UI for other participants
-        // - Log participation for analytics
-    }
-
-    /**
-     * Handle participant left event
-     */
-    private function handleParticipantLeft(QuranSession $session, array $payload): void
-    {
-        $participant = $payload['participant'] ?? [];
-        $identity = $participant['identity'] ?? 'unknown';
-
-        Log::info('Participant left LiveKit room', [
-            'session_id' => $session->id,
-            'participant_identity' => $identity,
-            'room_name' => $session->meeting_room_name,
-        ]);
-
-        // Update participant count
-        $session->decrement('participants_count');
-
-        // You can add additional logic here:
-        // - Update attendance records
-        // - Handle early departures
-        // - Send notifications if teacher leaves
-    }
-
-    /**
-     * Handle recording started event
-     */
-    private function handleRecordingStarted(QuranSession $session, array $payload): void
-    {
-        $recordingId = $payload['egress_info']['egress_id'] ?? null;
-
-        Log::info('Recording started for LiveKit room', [
-            'session_id' => $session->id,
-            'recording_id' => $recordingId,
-            'room_name' => $session->meeting_room_name,
-        ]);
-
-        // Update session with recording info
-        $meetingData = $session->meeting_data ?? [];
-        $meetingData['recording'] = [
-            'recording_id' => $recordingId,
-            'status' => 'recording',
-            'started_at' => now(),
-        ];
-
-        $session->update([
-            'meeting_data' => $meetingData,
-            'recording_enabled' => true,
-        ]);
-    }
-
-    /**
-     * Handle recording finished event
-     */
-    private function handleRecordingFinished(QuranSession $session, array $payload): void
-    {
-        $recordingId = $payload['egress_info']['egress_id'] ?? null;
-
-        Log::info('Recording finished for LiveKit room', [
-            'session_id' => $session->id,
-            'recording_id' => $recordingId,
-            'room_name' => $session->meeting_room_name,
-        ]);
-
-        // Update recording status
-        $meetingData = $session->meeting_data ?? [];
-        if (isset($meetingData['recording'])) {
-            $meetingData['recording']['status'] = 'processing';
-            $meetingData['recording']['finished_at'] = now();
-            
-            $session->update(['meeting_data' => $meetingData]);
-        }
-    }
-
-    /**
-     * Handle egress (recording/streaming) ended event
-     */
-    private function handleEgressEnded(QuranSession $session, array $payload): void
-    {
-        $egressInfo = $payload['egress_info'] ?? [];
-        $recordingId = $egressInfo['egress_id'] ?? null;
-        $fileOutputs = $egressInfo['file_results'] ?? [];
-
-        Log::info('Egress ended for LiveKit room', [
-            'session_id' => $session->id,
-            'recording_id' => $recordingId,
-            'file_count' => count($fileOutputs),
-            'room_name' => $session->meeting_room_name,
-        ]);
-
-        // Update session with final recording file information
-        $meetingData = $session->meeting_data ?? [];
-        
-        if (isset($meetingData['recording'])) {
-            $meetingData['recording']['status'] = 'completed';
-            $meetingData['recording']['completed_at'] = now();
-            $meetingData['recording']['files'] = $fileOutputs;
-
-            // Set the recording URL to the first file output
-            $recordingUrl = null;
-            if (!empty($fileOutputs)) {
-                $recordingUrl = $fileOutputs[0]['download_url'] ?? $fileOutputs[0]['filename'] ?? null;
+            switch ($event) {
+                case 'room_started':
+                    $this->handleRoomStarted($data);
+                    break;
+                    
+                case 'room_finished':
+                    $this->handleRoomFinished($data);
+                    break;
+                    
+                case 'participant_joined':
+                    $this->handleParticipantJoined($data);
+                    break;
+                    
+                case 'participant_left':
+                    $this->handleParticipantLeft($data);
+                    break;
+                    
+                case 'recording_started':
+                    $this->handleRecordingStarted($data);
+                    break;
+                    
+                case 'recording_finished':
+                    $this->handleRecordingFinished($data);
+                    break;
+                    
+                default:
+                    Log::info('Unhandled LiveKit webhook event', ['event' => $event]);
             }
 
-            $session->update([
-                'recording_url' => $recordingUrl,
-                'meeting_data' => $meetingData,
+            return response('OK', 200);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle LiveKit webhook', [
+                'error' => $e->getMessage(),
+                'data' => $request->all(),
             ]);
-
-            // You can add additional logic here:
-            // - Process the recording file
-            // - Generate thumbnails
-            // - Send notifications about available recording
-            // - Update storage statistics
+            
+            return response('Error processing webhook', 500);
         }
-    }
-
-    /**
-     * Verify webhook signature for security
-     */
-    private function verifyWebhookSignature(Request $request): bool
-    {
-        $signature = $request->header('livekit-signature');
-        $secret = config('livekit.webhooks.secret');
-
-        if (!$signature || !$secret) {
-            return false;
-        }
-
-        $payload = $request->getContent();
-        $expectedSignature = hash_hmac('sha256', $payload, $secret);
-
-        return hash_equals($expectedSignature, $signature);
     }
 
     /**
@@ -341,9 +81,312 @@ class LiveKitWebhookController extends Controller
     public function health(): JsonResponse
     {
         return response()->json([
-            'status' => 'healthy',
-            'service' => 'livekit-webhook',
+            'status' => 'ok',
             'timestamp' => now()->toISOString(),
+            'service' => 'livekit-webhooks',
         ]);
+    }
+
+    /**
+     * Handle room started event
+     */
+    private function handleRoomStarted(array $data): void
+    {
+        $roomName = $data['room']['name'] ?? null;
+        if (!$roomName) return;
+
+        $session = $this->findSessionByRoomName($roomName);
+        if (!$session) return;
+
+        try {
+            // Update session status to ongoing
+            $session->update([
+                'status' => SessionStatus::ONGOING,
+                'meeting_started_at' => now(),
+            ]);
+
+            // Ensure session persistence
+            $this->sessionMeetingService->markSessionPersistent($session);
+
+            Log::info('Session meeting started', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'started_at' => now(),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle room started event', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle room finished event
+     */
+    private function handleRoomFinished(array $data): void
+    {
+        $roomName = $data['room']['name'] ?? null;
+        if (!$roomName) return;
+
+        $session = $this->findSessionByRoomName($roomName);
+        if (!$session) return;
+
+        try {
+            $participantCount = $data['room']['num_participants'] ?? 0;
+            $duration = $data['room']['duration_seconds'] ?? 0;
+
+            // Only mark as completed if the session was actually used
+            if ($duration > 60) { // At least 1 minute of activity
+                $session->update([
+                    'status' => SessionStatus::COMPLETED,
+                    'meeting_ended_at' => now(),
+                    'actual_duration_minutes' => round($duration / 60),
+                ]);
+            } else {
+                // Very short session, just mark as ended
+                $session->update([
+                    'meeting_ended_at' => now(),
+                ]);
+            }
+
+            // Remove persistence since room is finished
+            $this->sessionMeetingService->removeSessionPersistence($session);
+
+            Log::info('Session meeting finished', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'duration_seconds' => $duration,
+                'participant_count' => $participantCount,
+                'ended_at' => now(),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle room finished event', [
+                'session_id' => $session->id ?? 'unknown',
+                'room_name' => $roomName,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle participant joined event
+     */
+    private function handleParticipantJoined(array $data): void
+    {
+        $roomName = $data['room']['name'] ?? null;
+        $participantIdentity = $data['participant']['identity'] ?? null;
+        
+        if (!$roomName || !$participantIdentity) return;
+
+        $session = $this->findSessionByRoomName($roomName);
+        if (!$session) return;
+
+        try {
+            // Extract user ID from participant identity
+            $userId = $this->extractUserIdFromIdentity($participantIdentity);
+            
+            Log::info('Participant joined session', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'participant_identity' => $participantIdentity,
+                'user_id' => $userId,
+                'participant_count' => $data['room']['num_participants'] ?? 0,
+            ]);
+
+            // TODO: Could implement attendance tracking here
+            // $this->trackAttendance($session, $userId, 'joined');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle participant joined event', [
+                'session_id' => $session->id ?? 'unknown',
+                'room_name' => $roomName,
+                'participant_identity' => $participantIdentity,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle participant left event
+     */
+    private function handleParticipantLeft(array $data): void
+    {
+        $roomName = $data['room']['name'] ?? null;
+        $participantIdentity = $data['participant']['identity'] ?? null;
+        
+        if (!$roomName || !$participantIdentity) return;
+
+        $session = $this->findSessionByRoomName($roomName);
+        if (!$session) return;
+
+        try {
+            $userId = $this->extractUserIdFromIdentity($participantIdentity);
+            $remainingParticipants = $data['room']['num_participants'] ?? 0;
+            
+            Log::info('Participant left session', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'participant_identity' => $participantIdentity,
+                'user_id' => $userId,
+                'remaining_participants' => $remainingParticipants,
+            ]);
+
+            // Check if room is now empty
+            if ($remainingParticipants === 0) {
+                $this->handleEmptyRoom($session, $roomName);
+            }
+
+            // TODO: Could implement attendance tracking here
+            // $this->trackAttendance($session, $userId, 'left');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle participant left event', [
+                'session_id' => $session->id ?? 'unknown',
+                'room_name' => $roomName,
+                'participant_identity' => $participantIdentity,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle recording started event
+     */
+    private function handleRecordingStarted(array $data): void
+    {
+        $roomName = $data['room']['name'] ?? null;
+        if (!$roomName) return;
+
+        $session = $this->findSessionByRoomName($roomName);
+        if (!$session) return;
+
+        try {
+            $session->update([
+                'recording_started_at' => now(),
+                'is_being_recorded' => true,
+            ]);
+
+            Log::info('Session recording started', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'recording_id' => $data['egress']['egress_id'] ?? 'unknown',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle recording started event', [
+                'session_id' => $session->id ?? 'unknown',
+                'room_name' => $roomName,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle recording finished event
+     */
+    private function handleRecordingFinished(array $data): void
+    {
+        $roomName = $data['room']['name'] ?? null;
+        if (!$roomName) return;
+
+        $session = $this->findSessionByRoomName($roomName);
+        if (!$session) return;
+
+        try {
+            $downloadUrl = $data['egress']['file']['download_url'] ?? null;
+            $fileSize = $data['egress']['file']['size'] ?? 0;
+            
+            $session->update([
+                'recording_ended_at' => now(),
+                'is_being_recorded' => false,
+                'recording_url' => $downloadUrl,
+                'recording_size_bytes' => $fileSize,
+            ]);
+
+            Log::info('Session recording finished', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'recording_id' => $data['egress']['egress_id'] ?? 'unknown',
+                'download_url' => $downloadUrl,
+                'file_size' => $fileSize,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle recording finished event', [
+                'session_id' => $session->id ?? 'unknown',
+                'room_name' => $roomName,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle empty room scenario
+     */
+    private function handleEmptyRoom(QuranSession $session, string $roomName): void
+    {
+        try {
+            // Check if session should persist even when empty
+            if ($this->sessionMeetingService->shouldSessionPersist($session)) {
+                Log::info('Room is empty but session marked as persistent', [
+                    'session_id' => $session->id,
+                    'room_name' => $roomName,
+                ]);
+                return;
+            }
+
+            // Check if session is scheduled and still active
+            $sessionTiming = $this->sessionMeetingService->getSessionTiming($session);
+            
+            if ($sessionTiming['status'] === 'active' || $sessionTiming['status'] === 'pre_session') {
+                Log::info('Room is empty but session is still active, keeping room alive', [
+                    'session_id' => $session->id,
+                    'room_name' => $roomName,
+                    'session_status' => $sessionTiming['status'],
+                ]);
+                return;
+            }
+
+            // Room can be cleaned up
+            Log::info('Room is empty and session not active, room may be cleaned up by LiveKit', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'session_status' => $sessionTiming['status'],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle empty room', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Find session by room name
+     */
+    private function findSessionByRoomName(string $roomName): ?QuranSession
+    {
+        return QuranSession::where('meeting_room_name', $roomName)->first();
+    }
+
+    /**
+     * Extract user ID from LiveKit participant identity
+     */
+    private function extractUserIdFromIdentity(string $identity): ?int
+    {
+        // Identity format is usually "userId_firstName_lastName"
+        $parts = explode('_', $identity);
+        
+        if (count($parts) > 0 && is_numeric($parts[0])) {
+            return (int) $parts[0];
+        }
+        
+        return null;
     }
 }

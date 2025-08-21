@@ -67,7 +67,7 @@
     }
 
     .stats-counter {
-      font-family: 'Cairo', sans-serif;
+      font-family: 'Tajawal', sans-serif;
       font-weight: bold;
     }
     

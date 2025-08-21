@@ -32,7 +32,7 @@
 
 /* Arabic font classes */
 .font-arabic {
-    font-family: 'Tajawal', 'Cairo', 'Amiri', sans-serif;
+    font-family: 'Tajawal', sans-serif;
 }
 
 /* Custom scrollbar for RTL */
@@ -48,7 +48,7 @@
 
 /* Filament theme customizations for Arabic */
 .fi-body {
-    font-family: 'Tajawal', 'Cairo', sans-serif !important;
+    font-family: 'Tajawal', sans-serif !important;
 }
 
 /* Custom color utilities */

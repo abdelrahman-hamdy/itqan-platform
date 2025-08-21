@@ -58,13 +58,56 @@ class LiveKitService
                 throw new \Exception('LiveKit is not properly configured. Please check API credentials.');
             }
 
-            // Generate unique room name
+            // Generate deterministic room name
             $roomName = $this->generateRoomName($academy, $sessionType, $sessionId);
             
-            // Create room with custom settings
+            // Check if room already exists
+            $existingRoom = $this->getRoomInfo($roomName);
+            if ($existingRoom) {
+                Log::info('LiveKit room already exists, returning existing room info', [
+                    'room_name' => $roomName,
+                    'session_id' => $sessionId,
+                    'academy_id' => $academy->id,
+                ]);
+                
+                return [
+                    'platform' => 'livekit',
+                    'room_name' => $roomName,
+                    'room_sid' => $existingRoom['room_sid'],
+                    'server_url' => $this->serverUrl,
+                    'meeting_id' => $roomName,
+                    'meeting_url' => $this->generateMeetingUrl($roomName),
+                    'join_info' => [
+                        'server_url' => $this->serverUrl,
+                        'room_name' => $roomName,
+                        'access_method' => 'token_based',
+                    ],
+                    'settings' => [
+                        'max_participants' => $options['max_participants'] ?? 50,
+                        'recording_enabled' => $options['recording_enabled'] ?? false,
+                        'auto_record' => $options['auto_record'] ?? false,
+                        'empty_timeout' => $options['empty_timeout'] ?? 300,
+                        'max_duration' => $options['max_duration'] ?? 7200,
+                    ],
+                    'features' => [
+                        'video' => true,
+                        'audio' => true,
+                        'screen_sharing' => true,
+                        'chat' => true,
+                        'recording' => true,
+                        'breakout_rooms' => false,
+                        'whiteboard' => false,
+                    ],
+                    'created_at' => $existingRoom['created_at'],
+                    'scheduled_at' => $startTime,
+                    'expires_at' => $options['expires_at'] ?? $startTime->copy()->addHours(3),
+                ];
+            }
+            
+            // Create new room with custom settings
             $roomOptions = $this->createRoomOptionsObject($roomName, $options);
             
-            Log::info('Attempting to create LiveKit room', [
+            Log::info('Attempting to create new LiveKit room', [
                 'room_name' => $roomName,
                 'session_id' => $sessionId,
                 'academy_id' => $academy->id,
@@ -72,7 +115,6 @@ class LiveKitService
                 'empty_timeout' => $roomOptions->getEmptyTimeout(),
             ]);
             
-
             $room = $this->roomService->createRoom($roomOptions);
             
             Log::info('LiveKit room created successfully', [
@@ -245,6 +287,11 @@ class LiveKitService
     public function getRoomInfo(string $roomName): ?array
     {
         try {
+            if (!$this->isConfigured()) {
+                Log::warning('LiveKit service not configured properly');
+                return null;
+            }
+
             $roomsResponse = $this->roomService->listRooms([$roomName]);
             
             // Get rooms array from response
@@ -253,7 +300,17 @@ class LiveKitService
                 $rooms = $roomsResponse->getRooms();
             }
             
+            Log::info('LiveKit listRooms response', [
+                'room_name' => $roomName,
+                'rooms_count' => count($rooms),
+                'server_url' => $this->serverUrl
+            ]);
+            
             if (empty($rooms)) {
+                Log::warning('Room not found on LiveKit server', [
+                    'room_name' => $roomName,
+                    'server_url' => $this->serverUrl
+                ]);
                 return null;
             }
 
@@ -387,9 +444,9 @@ class LiveKitService
     {
         $academySlug = Str::slug($academy->subdomain);
         $sessionSlug = Str::slug($sessionType);
-        $timestamp = now()->format('YmdHi');
         
-        return "{$academySlug}-{$sessionSlug}-{$sessionId}-{$timestamp}";
+        // Use deterministic naming based on session ID only - NO timestamp
+        return "{$academySlug}-{$sessionSlug}-session-{$sessionId}";
     }
 
     private function generateMeetingUrl(string $roomName): string

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Models\Academy;
 use App\Http\Controllers\AcademyHomepageController;
 use App\Http\Controllers\RecordedCourseController;
@@ -487,6 +488,8 @@ Route::domain('{subdomain}.' . config('app.domain'))->group(function () {
         Route::get('/google/callback', [App\Http\Controllers\GoogleAuthController::class, 'callback'])->name('google.callback');
         Route::post('/google/disconnect', [App\Http\Controllers\GoogleAuthController::class, 'disconnect'])->name('google.disconnect');
     });
+
+
 });
 
 
@@ -504,6 +507,16 @@ Route::prefix('webhooks')->group(function () {
     Route::get('livekit/health', [\App\Http\Controllers\LiveKitWebhookController::class, 'health'])->name('webhooks.livekit.health');
 });
 
+// Meeting API Routes (no separate UI routes)
+Route::middleware(['auth'])->group(function () {
+    Route::post('meetings/{session}/create-or-get', [\App\Http\Controllers\MeetingController::class, 'createOrGet'])->name('meetings.create-or-get');
+    
+    // New iframe meeting route
+    Route::get('meetings/{session}/join', [\App\Http\Controllers\MeetingController::class, 'joinMeetingIframe'])->name('meetings.join-iframe');
+    
+    // Removed legacy iframe route - meetings now happen inline in session pages
+});
+
 // LiveKit Meeting API routes (requires authentication)
 Route::middleware(['auth'])->prefix('api/meetings')->group(function () {
     Route::post('create', [\App\Http\Controllers\LiveKitMeetingController::class, 'createMeeting'])->name('api.meetings.create');
@@ -512,9 +525,4 @@ Route::middleware(['auth'])->prefix('api/meetings')->group(function () {
     Route::post('{sessionId}/recording/stop', [\App\Http\Controllers\LiveKitMeetingController::class, 'stopRecording'])->name('api.meetings.recording.stop');
     Route::get('{sessionId}/info', [\App\Http\Controllers\LiveKitMeetingController::class, 'getRoomInfo'])->name('api.meetings.info');
     Route::post('{sessionId}/end', [\App\Http\Controllers\LiveKitMeetingController::class, 'endMeeting'])->name('api.meetings.end');
-});
-
-// Meeting join routes (for students/teachers)
-Route::middleware(['auth'])->group(function () {
-    Route::get('meetings/{session}/join', [\App\Http\Controllers\MeetingJoinController::class, 'join'])->name('meetings.join');
 });

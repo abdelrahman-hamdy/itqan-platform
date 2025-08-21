@@ -927,6 +927,11 @@ class QuranSession extends Model
 
     public function generateMeetingLink(array $options = []): string
     {
+        // If meeting already exists and is valid, return existing link
+        if ($this->meeting_room_name && $this->isMeetingValid()) {
+            return $this->meeting_link;
+        }
+        
         $livekitService = app(\App\Services\LiveKitService::class);
         
         // Set default options
@@ -939,7 +944,7 @@ class QuranSession extends Model
         
         $mergedOptions = array_merge($defaultOptions, $options);
         
-        // Generate meeting using LiveKit service
+        // Generate meeting using LiveKit service only if none exists
         $meetingInfo = $livekitService->createMeeting(
             $this->academy,
             $this->session_type ?? 'quran',
@@ -958,6 +963,7 @@ class QuranSession extends Model
             'meeting_room_name' => $meetingInfo['room_name'],
             'meeting_auto_generated' => true,
             'meeting_expires_at' => $meetingInfo['expires_at'],
+            'meeting_created_at' => now(),
         ]);
 
         return $meetingInfo['meeting_url'];

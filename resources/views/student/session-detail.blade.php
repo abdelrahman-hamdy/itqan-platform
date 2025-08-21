@@ -1,357 +1,208 @@
-<x-layouts.student 
-    :title="'تفاصيل الجلسة - ' . config('app.name', 'منصة إتقان')"
-    :description="'تفاصيل جلسة القرآن الكريم'">
+@extends('components.layouts.student')
 
-<div class="max-w-5xl mx-auto">
-    <!-- Breadcrumb -->
-    <nav class="mb-8">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            @if($session->session_type === 'individual' && $session->individualCircle)
-                <li>
-                    <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
-                       class="hover:text-primary">الحلقة الفردية</a>
-                </li>
-                <li>/</li>
-            @elseif(in_array($session->session_type, ['circle', 'group']) && $session->circle)
-                <li>
-                    <a href="{{ route('student.circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $session->circle->id]) }}" 
-                       class="hover:text-primary">{{ $session->circle->name }}</a>
-                </li>
-                <li>/</li>
-            @endif
-            <li class="text-gray-900">تفاصيل الجلسة</li>
-        </ol>
-    </nav>
+@section('title', $session->title ?? 'تفاصيل الجلسة')
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Main Content -->
-        <div class="lg:col-span-2">
-            <!-- Session Header -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                <div class="flex items-start justify-between mb-6">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">{{ $session->title }}</h1>
-                        @if($session->session_sequence)
-                            <p class="text-gray-600 mt-1">الجلسة رقم {{ $session->session_sequence }}</p>
-                        @endif
-                        @if($session->scheduled_at)
-                            <p class="text-sm text-gray-500 mt-2">
-                                <i class="ri-calendar-line ml-1"></i>
-                                {{ $session->scheduled_at->format('l، d F Y - H:i A') }}
-                            </p>
-                        @endif
-                    </div>
-                    
-                    <!-- Status Badge -->
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                        {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'bg-green-100 text-green-800' : 
-                           ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
-                        @if($session->status === App\Enums\SessionStatus::COMPLETED)
-                            <i class="ri-check-line ml-1"></i>
-                            مكتملة
-                                                    @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
-                                <i class="ri-calendar-line ml-1"></i>
-                                مجدولة
-                            @else
-                                @php $statusData = $session->getStatusDisplayData(); @endphp
-                                <i class="{{ $statusData['icon'] }} ml-1"></i>
-                                {{ $statusData['label'] }}
-                            @endif
+@section('content')
+<div class="container mx-auto px-4 py-6">
+    <!-- Session Information Card -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $session->title ?? 'جلسة القرآن الكريم' }}</h1>
+                <p class="text-gray-600">{{ $session->description ?? 'جلسة تعليم القرآن الكريم' }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-gray-500">تاريخ الجلسة</p>
+                <p class="text-lg font-semibold text-gray-900">{{ $session->scheduled_at ? $session->scheduled_at->format('Y-m-d H:i') : 'غير محدد' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Details -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Basic Info -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">معلومات الجلسة</h3>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">المدة:</span>
+                    <span class="font-medium">{{ $session->duration_minutes ?? 60 }} دقيقة</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">الحالة:</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        @if($session->status === 'scheduled') bg-blue-100 text-blue-800
+                        @elseif($session->status === 'ongoing') bg-green-100 text-green-800
+                        @elseif($session->status === 'completed') bg-gray-100 text-gray-800
+                        @else bg-yellow-100 text-yellow-800 @endif">
+                        {{ ucfirst($session->status->value ?? $session->status) }}
                     </span>
                 </div>
-
-                <!-- Session Info -->
-                @if($session->description || $session->lesson_objectives)
-                    <div class="border-t border-gray-200 pt-6">
-                        @if($session->description)
-                            <div class="mb-4">
-                                <h3 class="font-medium text-gray-900 mb-2">وصف الجلسة</h3>
-                                <p class="text-gray-700">{{ $session->description }}</p>
-                            </div>
-                        @endif
-                        
-                        @if($session->lesson_objectives && count($session->lesson_objectives) > 0)
-                            <div>
-                                <h3 class="font-medium text-gray-900 mb-2">أهداف الجلسة</h3>
-                                <ul class="list-disc list-inside space-y-1 text-gray-700">
-                                    @foreach($session->lesson_objectives as $objective)
-                                        <li>{{ $objective }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-                    </div>
-                @endif
-
-                <!-- Meeting Access (for upcoming sessions) -->
-                @if($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at && $session->scheduled_at->isFuture())
-                    @php
-                        $timeRemaining = humanize_time_remaining_arabic($session->scheduled_at);
-                        $canTestMeeting = can_test_meetings();
-                    @endphp
-                    
-                    <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        @if($timeRemaining['can_join'])
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h4 class="font-medium text-blue-900">الجلسة متاحة الآن</h4>
-                                    <p class="text-sm text-blue-700">يمكنك الانضمام للجلسة الآن</p>
-                                </div>
-                                <a href="{{ route('meetings.join', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                    <i class="ri-video-line ml-2"></i>
-                                    انضمام للجلسة
-                                </a>
-                            </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">نوع الجلسة:</span>
+                    <span class="font-medium">
+                        @if($session->circle_id)
+                            جماعية
+                        @elseif($session->individual_circle_id)
+                            فردية
+                        @elseif($session->quran_subscription_id)
+                            اشتراك
                         @else
-                            <div class="text-center">
-                                <h4 class="font-medium text-blue-900 mb-2">جلسة مجدولة</h4>
-                                <p class="text-sm text-blue-700">
-                                    ستتمكن من الانضمام قبل 30 دقيقة من موعد الجلسة
-                                </p>
-                                <p class="text-xs text-blue-600 mt-1">
-                                    {{ $timeRemaining['text'] }}
-                                </p>
-                                
-                                @if($canTestMeeting)
-                                    <div class="mt-3">
-                                        <a href="{{ route('meetings.join', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'session' => $session->id, 'test_mode' => 1]) }}" 
-                                           class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded hover:bg-yellow-200 transition-colors">
-                                            <i class="ri-flask-line ml-1"></i>
-                                            انضمام للاختبار
-                                        </a>
-                                    </div>
-                                @endif
-                            </div>
+                            غير محدد
                         @endif
-                    </div>
-                @endif
+                    </span>
+                </div>
             </div>
-
-            <!-- Teacher Notes (for completed sessions) -->
-            @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->teacher_notes)
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-user-star-line text-blue-600 ml-2"></i>
-                        ملاحظات المعلم
-                    </h3>
-                    <div class="prose prose-sm max-w-none">
-                        <p class="text-gray-700">{{ $session->teacher_notes }}</p>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Student Progress (for completed sessions) -->
-            @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->student_progress)
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-line-chart-line text-green-600 ml-2"></i>
-                        التقدم المحرز
-                    </h3>
-                    <div class="prose prose-sm max-w-none">
-                        <p class="text-gray-700">{{ $session->student_progress }}</p>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Homework (if assigned) -->
-            @if($session->homework_assigned)
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-book-2-line text-purple-600 ml-2"></i>
-                        الواجب المنزلي
-                    </h3>
-                    <div class="prose prose-sm max-w-none">
-                        <p class="text-gray-700">{{ $session->homework_assigned }}</p>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Student Feedback Form (for completed sessions without feedback) -->
-            @if($session->status === App\Enums\SessionStatus::COMPLETED && !$session->student_feedback)
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-feedback-line text-yellow-600 ml-2"></i>
-                        تقييم الجلسة
-                    </h3>
-                    
-                    <form id="feedbackForm" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">تقييمك للجلسة</label>
-                            <div class="flex items-center space-x-2 space-x-reverse">
-                                @for($i = 1; $i <= 5; $i++)
-                                    <button type="button" class="star-rating text-2xl text-gray-300 hover:text-yellow-400 focus:outline-none" data-rating="{{ $i }}">
-                                        <i class="ri-star-line"></i>
-                                    </button>
-                                @endfor
-                            </div>
-                            <input type="hidden" name="rating" id="rating" required>
-                        </div>
-                        
-                        <div>
-                            <label for="feedback" class="block text-sm font-medium text-gray-700 mb-2">ملاحظاتك على الجلسة</label>
-                            <textarea name="student_feedback" id="feedback" rows="4" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                placeholder="شاركنا رأيك في الجلسة وكيف يمكن تحسينها..."></textarea>
-                        </div>
-                        
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                            <i class="ri-send-plane-line ml-2"></i>
-                            إرسال التقييم
-                        </button>
-                    </form>
-                </div>
-            @endif
-
-            <!-- Student Feedback (if already submitted) -->
-            @if($session->status === App\Enums\SessionStatus::COMPLETED && $session->student_feedback)
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-feedback-line text-yellow-600 ml-2"></i>
-                        تقييمك للجلسة
-                    </h3>
-                    
-                    <div class="flex items-center space-x-2 space-x-reverse mb-3">
-                        @for($i = 1; $i <= 5; $i++)
-                            <i class="ri-star-{{ $i <= $session->student_rating ? 'fill' : 'line' }} text-yellow-400"></i>
-                        @endfor
-                        <span class="text-sm text-gray-600 mr-2">{{ $session->student_rating }}/5</span>
-                    </div>
-                    
-                    <p class="text-gray-700">{{ $session->student_feedback }}</p>
-                    <p class="text-xs text-gray-500 mt-2">تم الإرسال {{ $session->feedback_at->diffForHumans() }}</p>
-                </div>
-            @endif
         </div>
 
-        <!-- Sidebar -->
-        <div class="lg:col-span-1">
-            <!-- Session Summary -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-                <h3 class="font-bold text-gray-900 mb-4">ملخص الجلسة</h3>
-                
-                <div class="space-y-3">
-                    <div>
-                        <span class="text-sm text-gray-600">المعلم:</span>
-                        <p class="font-medium text-gray-900">{{ $session->quranTeacher->full_name ?? 'غير محدد' }}</p>
-                    </div>
-                    
-                    <div>
-                        <span class="text-sm text-gray-600">المدة:</span>
-                        <p class="font-medium text-gray-900">{{ $session->duration_minutes }} دقيقة</p>
-                    </div>
-                    
-                    @if($session->scheduled_at)
-                        <div>
-                            <span class="text-sm text-gray-600">الموعد:</span>
-                            <p class="font-medium text-gray-900">{{ $session->scheduled_at->format('d/m/Y') }}</p>
-                            <p class="text-sm text-gray-600">{{ $session->scheduled_at->format('H:i A') }}</p>
+        <!-- Teacher Info -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">معلومات المعلم</h3>
+            <div class="space-y-3">
+                @if($session->quranTeacher)
+                    <div class="flex items-center space-x-3 space-x-reverse">
+                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                            {{ substr($session->quranTeacher->first_name, 0, 1) }}
                         </div>
-                    @endif
-                    
-                    @if($session->ended_at)
                         <div>
-                            <span class="text-sm text-gray-600">انتهت في:</span>
-                            <p class="font-medium text-gray-900">{{ $session->ended_at->format('d/m/Y H:i A') }}</p>
+                            <p class="font-medium text-gray-900">{{ $session->quranTeacher->full_name }}</p>
+                            <p class="text-sm text-gray-500">معلم القرآن الكريم</p>
+                            @if($session->quranTeacher->email)
+                                <p class="text-sm text-gray-500">{{ $session->quranTeacher->email }}</p>
+                            @endif
                         </div>
-                    @endif
-                </div>
+                    </div>
+                @else
+                    <p class="text-gray-500">لا توجد معلومات المعلم</p>
+                @endif
+            </div>
+        </div>
+    </div>
 
-                <div class="mt-6 pt-4 border-t border-gray-200">
-                    @if($session->session_type === 'individual' && $session->individualCircle)
-                        <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $session->individualCircle->id]) }}" 
-                           class="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
-                            <i class="ri-arrow-right-line ml-1"></i>
-                            العودة للحلقة الفردية
-                        </a>
-                    @elseif(in_array($session->session_type, ['circle', 'group']) && $session->circle)
-                        <a href="{{ route('student.circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $session->circle->id]) }}" 
-                           class="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
-                            <i class="ri-arrow-right-line ml-1"></i>
-                            العودة للحلقة الجماعية
-                        </a>
-                    @endif
+    <!-- Meeting Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">الاجتماع المرئي</h3>
+        
+        @if($session->meeting_room_name)
+            <!-- Meeting exists -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-video text-green-600 text-xl mr-3"></i>
+                    <div>
+                        <p class="text-green-800 font-medium">الاجتماع متاح</p>
+                        <p class="text-green-600 text-sm">يمكنك الانضمام للجلسة الآن</p>
+                    </div>
                 </div>
             </div>
+            
+            <div class="flex space-x-4 space-x-reverse">
+                <a href="{{ route('meetings.join-iframe', $session->id) }}" 
+                   class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-video mr-2"></i>
+                    انضم للجلسة
+                </a>
+                
+                <button onclick="copyMeetingLink('{{ route('meetings.join-iframe', $session->id) }}')" 
+                        class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-link mr-2"></i>
+                    نسخ رابط الجلسة
+                </button>
+            </div>
+        @else
+            <!-- No meeting yet -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-clock text-yellow-600 text-xl mr-3"></i>
+                    <div>
+                        <p class="text-yellow-800 font-medium">في انتظار بدء الجلسة</p>
+                        <p class="text-yellow-600 text-sm">يرجى انتظار المعلم لبدء الجلسة</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex space-x-4 space-x-reverse">
+                <button onclick="checkMeetingStatus()" 
+                        class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-refresh mr-2"></i>
+                    التحقق من حالة الجلسة
+                </button>
+            </div>
+        @endif
+    </div>
+
+    <!-- Session Notes -->
+    @if($session->status === 'completed' && $session->notes)
+        <div class="mt-6 bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">ملاحظات الجلسة</h3>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-gray-700">{{ $session->notes }}</p>
+            </div>
+        </div>
+    @endif
+
+    <!-- Navigation -->
+    <div class="mt-6 bg-white rounded-lg shadow-lg p-6">
+        <div class="flex space-x-4 space-x-reverse">
+            <a href="{{ route('student.profile') }}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-arrow-right mr-2"></i>
+                العودة للملف الشخصي
+            </a>
+            
+            @if($session->circle_id)
+                <a href="{{ route('student.circles.show', $session->circle_id) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-users mr-2"></i>
+                    عرض الحلقة
+                </a>
+            @endif
         </div>
     </div>
 </div>
 
 <script>
-// Star rating functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const stars = document.querySelectorAll('.star-rating');
-    const ratingInput = document.getElementById('rating');
-    let selectedRating = 0;
-
-    stars.forEach((star, index) => {
-        star.addEventListener('click', function() {
-            selectedRating = index + 1;
-            ratingInput.value = selectedRating;
-            updateStars();
-        });
-
-        star.addEventListener('mouseenter', function() {
-            highlightStars(index + 1);
-        });
+function copyMeetingLink(url) {
+    navigator.clipboard.writeText(url).then(function() {
+        showNotification('تم نسخ رابط الجلسة', 'success');
+    }, function(err) {
+        console.error('Could not copy meeting link: ', err);
+        showNotification('فشل في نسخ الرابط', 'error');
     });
+}
 
-    document.getElementById('feedbackForm').addEventListener('mouseleave', function() {
-        updateStars();
-    });
+function checkMeetingStatus() {
+    showNotification('جاري التحقق من حالة الجلسة...', 'info');
+    
+    // Reload page to check for meeting updates
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
 
-    function highlightStars(rating) {
-        stars.forEach((star, index) => {
-            if (index < rating) {
-                star.querySelector('i').className = 'ri-star-fill';
-                star.classList.add('text-yellow-400');
-                star.classList.remove('text-gray-300');
-            } else {
-                star.querySelector('i').className = 'ri-star-line';
-                star.classList.add('text-gray-300');
-                star.classList.remove('text-yellow-400');
-            }
-        });
-    }
-
-    function updateStars() {
-        highlightStars(selectedRating);
-    }
-
-    // Feedback form submission
-    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (!selectedRating) {
-            alert('الرجاء اختيار تقييم للجلسة');
-            return;
-        }
-
-        const formData = new FormData(this);
-        formData.append('rating', selectedRating);
-
-        fetch(`{{ route('student.sessions.feedback', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}`, {
-            method: 'PUT',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('خطأ: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('حدث خطأ في إرسال التقييم');
-        });
-    });
-});
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transform translate-x-full transition-transform duration-300 ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 
+        type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+    }`;
+    
+    notification.innerHTML = `
+        <div class="flex items-center justify-between">
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                ×
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.remove('translate-x-full'), 100);
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
 </script>
-
-</x-layouts.student>
+@endsection

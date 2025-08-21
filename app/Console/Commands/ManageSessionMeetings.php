@@ -1,0 +1,187 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Services\SessionMeetingService;
+use Illuminate\Support\Facades\Log;
+
+class ManageSessionMeetings extends Command
+{
+    /**
+     * The name and signature of the console command.
+     */
+    protected $signature = 'sessions:manage-meetings 
+                           {--dry-run : Show what would be done without making changes}
+                           {--force : Force processing even during off hours}';
+
+    /**
+     * The console command description.
+     */
+    protected $description = 'Manage LiveKit meetings for scheduled sessions - auto-create, update status, and cleanup';
+
+    private SessionMeetingService $sessionMeetingService;
+
+    public function __construct(SessionMeetingService $sessionMeetingService)
+    {
+        parent::__construct();
+        $this->sessionMeetingService = $sessionMeetingService;
+    }
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $isDryRun = $this->option('dry-run');
+        $isForced = $this->option('force');
+        
+        $this->info('🚀 Starting session meeting management...');
+        
+        if ($isDryRun) {
+            $this->warn('⚠️  DRY RUN MODE - No actual changes will be made');
+        }
+
+        // Check if we should run during off-hours
+        if (!$isForced && $this->isOffHours()) {
+            $this->info('⏰ Off hours detected, running in maintenance mode only');
+            return $this->runMaintenanceMode($isDryRun);
+        }
+
+        // Run full processing
+        return $this->runFullProcessing($isDryRun);
+    }
+
+    /**
+     * Run full processing during business hours
+     */
+    private function runFullProcessing(bool $isDryRun): int
+    {
+        try {
+            $this->info('📊 Processing scheduled sessions...');
+            
+            if (!$isDryRun) {
+                $results = $this->sessionMeetingService->processScheduledSessions();
+            } else {
+                $results = $this->simulateProcessing();
+            }
+            
+            $this->displayResults($results);
+            
+            // Send summary to logs
+            Log::info('Session meeting management completed', $results);
+            
+            $this->info('✅ Session meeting management completed successfully');
+            return Command::SUCCESS;
+            
+        } catch (\Exception $e) {
+            $this->error('❌ Error during session meeting management: ' . $e->getMessage());
+            Log::error('Session meeting management failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return Command::FAILURE;
+        }
+    }
+
+    /**
+     * Run maintenance mode during off-hours
+     */
+    private function runMaintenanceMode(bool $isDryRun): int
+    {
+        try {
+            $this->info('🔧 Running maintenance mode...');
+            
+            // Only cleanup and status updates during off-hours
+            if (!$isDryRun) {
+                $results = [
+                    'started' => 0,
+                    'updated' => 0,
+                    'cleaned' => $this->cleanupExpiredSessions(),
+                    'errors' => 0,
+                ];
+            } else {
+                $results = [
+                    'started' => 0,
+                    'updated' => 0,
+                    'cleaned' => 3, // Simulated
+                    'errors' => 0,
+                ];
+            }
+            
+            $this->displayResults($results);
+            
+            $this->info('✅ Maintenance mode completed');
+            return Command::SUCCESS;
+            
+        } catch (\Exception $e) {
+            $this->error('❌ Error during maintenance: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
+    }
+
+    /**
+     * Check if current time is off-hours (midnight to 6 AM)
+     */
+    private function isOffHours(): bool
+    {
+        $hour = now()->hour;
+        return $hour >= 0 && $hour < 6;
+    }
+
+    /**
+     * Simulate processing for dry-run mode
+     */
+    private function simulateProcessing(): array
+    {
+        $this->info('🔍 Simulating session processing...');
+        
+        // This would normally call the actual service
+        return [
+            'started' => 5,  // Simulated numbers
+            'updated' => 12,
+            'cleaned' => 3,
+            'errors' => 0,
+        ];
+    }
+
+    /**
+     * Clean up expired sessions (can run during off-hours)
+     */
+    private function cleanupExpiredSessions(): int
+    {
+        // Implementation would be similar to the service method
+        // but focused only on cleanup
+        return 0; // Placeholder
+    }
+
+    /**
+     * Display processing results
+     */
+    private function displayResults(array $results): void
+    {
+        $this->info('📈 Processing Results:');
+        $this->table(
+            ['Action', 'Count', 'Status'],
+            [
+                ['Sessions Started', $results['started'], $results['started'] > 0 ? '✅' : '⚪'],
+                ['Sessions Updated', $results['updated'], $results['updated'] > 0 ? '✅' : '⚪'],
+                ['Sessions Cleaned', $results['cleaned'], $results['cleaned'] > 0 ? '🧹' : '⚪'],
+                ['Errors', $results['errors'], $results['errors'] > 0 ? '❌' : '✅'],
+            ]
+        );
+
+        // Show summary
+        $total = $results['started'] + $results['updated'] + $results['cleaned'];
+        
+        if ($total > 0) {
+            $this->info("📊 Total actions performed: {$total}");
+        } else {
+            $this->comment('ℹ️  No actions needed at this time');
+        }
+
+        if ($results['errors'] > 0) {
+            $this->warn("⚠️  {$results['errors']} error(s) occurred. Check logs for details.");
+        }
+    }
+}

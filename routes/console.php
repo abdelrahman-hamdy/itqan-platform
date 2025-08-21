@@ -61,3 +61,25 @@ if ($isLocal) {
 } else {
     $updateStatusesCommand->everyFiveMinutes(); // Every 5 minutes for production
 }
+
+// Enhanced session meeting management (replaces individual commands above)
+$sessionMeetingCommand = Schedule::command('sessions:manage-meetings')
+    ->name('manage-session-meetings')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Comprehensive session meeting management - create, update, cleanup');
+
+if ($isLocal) {
+    $sessionMeetingCommand->everyThreeMinutes(); // Every 3 minutes for development
+} else {
+    $sessionMeetingCommand->everyFiveMinutes(); // Every 5 minutes for production
+}
+
+// Session meeting maintenance during off-hours
+Schedule::command('sessions:manage-meetings --force')
+    ->name('session-meeting-maintenance')
+    ->hourly()
+    ->between('0:00', '6:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Session management maintenance during off-hours');

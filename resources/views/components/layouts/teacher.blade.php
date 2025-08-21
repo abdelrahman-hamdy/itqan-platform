@@ -14,6 +14,64 @@
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
   
+  <!-- LiveKit Client for Video Meetings - UMD Version for CORS compatibility -->
+  <script>
+    // LiveKit loading with fallback for CORS issues
+    window.loadLiveKit = async function() {
+      if (window.LiveKit) {
+        console.log('LiveKit already loaded');
+        return window.LiveKit;
+      }
+      
+      try {
+        // Try to load via script tag to avoid CORS issues
+        console.log('Loading LiveKit via script tag...');
+        
+        return new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          // Try jsdelivr CDN first as it's often more reliable
+          script.src = 'https://cdn.jsdelivr.net/npm/livekit-client@1.15.13/dist/livekit-client.umd.js';
+          script.crossOrigin = 'anonymous';
+          
+          script.onload = function() {
+            // Give the script a moment to expose globals
+            setTimeout(() => {
+              // Check various possible global names for LiveKit (including case variations)
+              const livekit = window.LiveKit || window.LiveKitClient || window.livekit || window.LivekitClient;
+              
+              if (livekit) {
+                window.LiveKit = livekit;
+                console.log('LiveKit loaded successfully via UMD');
+                resolve(livekit);
+              } else {
+                console.error('LiveKit globals after load:', Object.keys(window).filter(k => k.toLowerCase().includes('livekit')));
+                reject(new Error('LiveKit UMD failed to load - no global found'));
+              }
+            }, 100);
+          };
+          
+          script.onerror = function(error) {
+            console.error('Failed to load LiveKit UMD:', error);
+            reject(new Error('Failed to load LiveKit script'));
+          };
+          
+          document.head.appendChild(script);
+        });
+        
+      } catch (error) {
+        console.error('Failed to load LiveKit:', error);
+        throw new Error('لا يمكن تحميل نظام الاجتماعات. تأكد من الاتصال بالإنترنت وحاول مرة أخرى.');
+      }
+    };
+    
+    // Try to load immediately
+    document.addEventListener('DOMContentLoaded', function() {
+      window.loadLiveKit().catch(error => {
+        console.log('Initial LiveKit load failed, will retry when needed:', error.message);
+      });
+    });
+  </script>
+  
   <script>
     tailwind.config = {
       theme: {
@@ -54,7 +112,7 @@
     }
 
     .stats-counter {
-      font-family: 'Cairo', sans-serif;
+      font-family: 'Tajawal', sans-serif;
       font-weight: bold;
     }
     
@@ -115,7 +173,11 @@
   <!-- Main Content -->
   <main class="mr-80 pt-20 min-h-screen" id="main-content">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {{ $slot }}
+      @isset($slot)
+        {{ $slot }}
+      @else
+        @yield('content')
+      @endisset
     </div>
   </main>
 
