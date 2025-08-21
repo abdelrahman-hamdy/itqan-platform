@@ -287,7 +287,7 @@ function cancelSession(sessionId) {
 }
 
 function startSession(sessionId) {
-    const sessionUrl = '{{ route("meetings.join", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => "SESSION_ID_PLACEHOLDER"]) }}';
+    const sessionUrl = '{{ route("student.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
     const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
     window.location.href = finalUrl;
 }

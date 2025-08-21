@@ -165,7 +165,7 @@
                     @endphp
                     
                     @if($nextSession && $nextSession->scheduled_at->diffInMinutes(now()) <= 30)
-                        <a href="{{ route('meetings.join', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $nextSession->id]) }}"
+                        <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $nextSession->id]) }}"
                            onclick="event.stopPropagation()"
                            class="inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
                             <i class="ri-video-line ml-1"></i>

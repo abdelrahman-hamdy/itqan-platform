@@ -447,8 +447,7 @@
                                 <!-- Join Meeting Button -->
                                 @if($hasMeetingRoom)
                                     <div class="flex justify-end">
-                                        <a href="{{ route('meetings.join', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}" 
-                                           target="_blank"
+                                        <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
                                            onclick="event.stopPropagation()"
                                            class="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -130,7 +130,7 @@
                 @endphp
                 
                 @if($nextSession && $nextSession->scheduled_at->diffInMinutes(now()) <= 30)
-                    <a href="{{ route('meetings.join', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $nextSession->id]) }}"
+                    <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $nextSession->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
                         <i class="ri-video-line ml-2"></i>
                         انضمام للجلسة القادمة

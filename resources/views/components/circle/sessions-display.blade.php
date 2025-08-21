@@ -205,7 +205,7 @@
                                 
                                 <!-- Action Buttons -->
                                 @if($statusData['can_start'] && $statusData['is_ready'])
-                                    <a href="{{ route('meetings.join', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}" 
+                                    <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
                                        onclick="event.stopPropagation()"
                                        class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
                                         <i class="ri-video-line ml-1"></i>
@@ -219,7 +219,7 @@
                                     @if($canTestMeeting)
                                         <div class="flex items-center gap-2">
                                             <span class="text-xs text-gray-500">{{ $timeRemaining['text'] }}</span>
-                                            <a href="{{ route('meetings.join', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id, 'test_mode' => 1]) }}" 
+                                            <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
                                                onclick="event.stopPropagation()"
                                                class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded hover:bg-yellow-200 transition-colors">
                                                 <i class="ri-flask-line ml-1"></i>
