@@ -511,10 +511,7 @@ Route::prefix('webhooks')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::post('meetings/{session}/create-or-get', [\App\Http\Controllers\MeetingController::class, 'createOrGet'])->name('meetings.create-or-get');
     
-    // New iframe meeting route
-    Route::get('meetings/{session}/join', [\App\Http\Controllers\MeetingController::class, 'joinMeetingIframe'])->name('meetings.join-iframe');
-    
-    // Removed legacy iframe route - meetings now happen inline in session pages
+    // NO SEPARATE MEETING ROUTES - All meeting functionality is in session pages
 });
 
 // LiveKit Meeting API routes (requires authentication)

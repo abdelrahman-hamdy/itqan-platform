@@ -1,0 +1,208 @@
+---
+alwaysApply: true
+---
+# LiveKit Meeting Feature Requirements
+
+## 🚨 CRITICAL REQUIREMENTS - NEVER VIOLATE
+
+### 1. NO SEPARATE MEETING ROUTES
+- **ABSOLUTELY FORBIDDEN**: Creating separate meeting routes like `/meetings/{session}/join`
+- **REQUIRED**: All meeting functionality MUST be integrated directly into session detail pages
+- **CORRECT APPROACH**: Use existing `student.sessions.show` and `teacher.sessions.show` routes
+- **WHY**: User explicitly stated "meetings should be in session page" multiple times
+
+### 2. SINGLE UNIFIED UI FOR ALL ROLES
+- **FORBIDDEN**: Different UI implementations for teachers vs students
+- **REQUIRED**: One robust, professional UI that works for all participants
+- **OBJECTIVE**: Group video call functionality that actually works
+- **NO**: Complex role-based customizations that break functionality
+
+### 3. USE LIVEKIT JAVASCRIPT SDK DIRECTLY
+- **REQUIRED**: Use LiveKit JavaScript SDK (https://github.com/livekit/client-sdk-js)
+- **FORBIDDEN**: iframe solutions, LiveKit Meet embedding, or external meeting UIs
+- **WHY**: User specifically requested "robust JS SDK exactly like the react and vue ones"
+- **DOCUMENTATION**: https://docs.livekit.io/reference/client-sdk-js/
+
+## 🎯 CORE FUNCTIONALITY REQUIREMENTS
+
+### Primary Objective: Group Video Call
+1. **Multiple participants can join the same session**
+2. **All participants can see and hear each other**
+3. **Real-time video and audio communication**
+4. **Professional, stable video conferencing experience**
+
+### Essential Features
+- ✅ Video grid showing all participants
+- ✅ Audio/video controls (mute, camera toggle)
+- ✅ Participant list with status indicators
+- ✅ Real-time chat functionality
+- ✅ Screen sharing capability
+- ✅ Connection status indicators
+- ✅ Responsive design for different screen sizes
+
+## 🏗️ TECHNICAL IMPLEMENTATION RULES
+
+### File Structure
+```
+resources/views/
+├── teacher/session-detail.blade.php    # Teacher session page with meeting UI
+└── student/session-detail.blade.php    # Student session page with meeting UI
+```
+
+### Route Structure
+```php
+// CORRECT - Use existing session routes
+Route::get('/sessions/{sessionId}', [QuranSessionController::class, 'showForTeacher'])->name('teacher.sessions.show');
+Route::get('/sessions/{sessionId}', [QuranSessionController::class, 'showForStudent'])->name('student.sessions.show');
+
+// FORBIDDEN - No separate meeting routes
+// Route::get('/meetings/{session}/join', ...) ❌
+```
+
+### LiveKit Integration
+```javascript
+// REQUIRED: Direct LiveKit SDK usage
+import { Room, RoomEvent, ConnectionState } from 'livekit-client';
+
+// CORRECT: Room connection within session page
+const room = new Room();
+await room.connect(serverUrl, token);
+```
+
+## 🚫 WHAT NOT TO DO
+
+### Never Create:
+1. **Separate meeting routes** - All meeting functionality must be in session pages
+2. **Different UI implementations** - One robust UI for all roles
+3. **iframe solutions** - Use LiveKit SDK directly
+4. **Complex role-based customizations** - Focus on core video call functionality
+5. **External meeting applications** - Everything must be integrated
+
+### Never Implement:
+1. **Multiple meeting controllers** - Use existing session controllers
+2. **Separate meeting views** - Integrate into session detail views
+3. **Role-specific meeting logic** - Unified approach for all participants
+4. **Complex permission systems** - Basic authentication is sufficient
+
+## ✅ WHAT TO DO
+
+### Always Implement:
+1. **Single robust meeting UI** in session detail pages
+2. **Direct LiveKit SDK integration** without external dependencies
+3. **Group video call functionality** as primary objective
+4. **Professional video conferencing experience**
+5. **Responsive design** that works on all devices
+
+### Core Features Priority:
+1. **Video/Audio Communication** - Must work reliably
+2. **Participant Management** - See who's in the meeting
+3. **Basic Controls** - Mute, camera, screen share
+4. **Real-time Chat** - Text communication
+5. **Connection Stability** - Reliable connections
+
+## 🔧 IMPLEMENTATION GUIDELINES
+
+### Session Detail Page Structure
+```blade
+@extends('components.layouts.teacher') {{-- or student --}}
+
+@section('content')
+<div class="container">
+    <!-- Session Info -->
+    <div class="session-header">
+        <!-- Session details -->
+    </div>
+    
+    <!-- Meeting Interface -->
+    <div class="meeting-container">
+        <!-- Video Grid -->
+        <div class="video-grid">
+            <!-- Participant videos -->
+        </div>
+        
+        <!-- Meeting Controls -->
+        <div class="meeting-controls">
+            <!-- Mute, camera, screen share, etc. -->
+        </div>
+        
+        <!-- Chat Panel -->
+        <div class="chat-panel">
+            <!-- Real-time chat -->
+        </div>
+    </div>
+</div>
+@endsection
+```
+
+### JavaScript Implementation
+```javascript
+// REQUIRED: LiveKit SDK integration
+class SessionMeeting {
+    constructor(sessionId) {
+        this.sessionId = sessionId;
+        this.room = new Room();
+        this.setupEventListeners();
+    }
+    
+    async joinMeeting() {
+        const token = await this.getParticipantToken();
+        await this.room.connect(serverUrl, token);
+        this.setupVideoGrid();
+    }
+    
+    setupVideoGrid() {
+        // Handle participant videos
+        this.room.on(RoomEvent.ParticipantConnected, this.addParticipant);
+        this.room.on(RoomEvent.ParticipantDisconnected, this.removeParticipant);
+    }
+}
+```
+
+## 📋 CHECKLIST FOR IMPLEMENTATION
+
+### Before Starting:
+- [ ] Confirm no separate meeting routes exist
+- [ ] Verify LiveKit SDK is properly loaded
+- [ ] Ensure session detail pages are the only entry points
+- [ ] Check that UI is unified for all roles
+
+### During Implementation:
+- [ ] Test group video call functionality
+- [ ] Verify all participants can see each other
+- [ ] Test audio/video controls
+- [ ] Ensure responsive design works
+- [ ] Test chat functionality
+- [ ] Verify screen sharing works
+
+### After Implementation:
+- [ ] No separate meeting routes created
+- [ ] All meeting functionality in session pages
+- [ ] Single robust UI for all participants
+- [ ] Group video call works reliably
+- [ ] Professional video conferencing experience
+
+## 🎯 SUCCESS CRITERIA
+
+### Primary Success:
+- ✅ Multiple participants can join the same session
+- ✅ All participants can see and hear each other
+- ✅ Professional video conferencing experience
+- ✅ No separate meeting routes or pages
+
+### Secondary Success:
+- ✅ Real-time chat works
+- ✅ Screen sharing works
+- ✅ Audio/video controls work
+- ✅ Responsive design works on all devices
+- ✅ Connection is stable and reliable
+
+## 🚨 REMINDER
+
+**ALWAYS REFERENCE THIS RULE FILE** when working on meeting features. The user has been very clear about requirements:
+
+1. **NO SEPARATE MEETING ROUTES**
+2. **SINGLE UNIFIED UI FOR ALL ROLES**
+3. **USE LIVEKIT JAVASCRIPT SDK DIRECTLY**
+4. **FOCUS ON GROUP VIDEO CALL FUNCTIONALITY**
+
+**VIOLATING THESE REQUIREMENTS WILL RESULT IN COMPLETE REJECTION OF THE IMPLEMENTATION.**

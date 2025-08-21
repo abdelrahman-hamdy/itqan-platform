@@ -23,53 +23,7 @@ class MeetingController extends Controller
 
     // REMOVED: join method - meetings now happen inline in session pages
 
-    /**
-     * Join meeting using LiveKit Meet iframe
-     */
-    public function joinMeetingIframe(Request $request, int $sessionId)
-    {
-        try {
-            $session = QuranSession::findOrFail($sessionId);
-            $user = $request->user();
 
-            // Check if user can join this session
-            if (!$this->canJoinSession($user, $session)) {
-                return redirect()->back()->with('error', 'غير مصرح لك بالانضمام إلى هذه الجلسة');
-            }
-
-            // Ensure meeting room exists
-            if (!$session->meeting_room_name) {
-                // Only teachers/admins can create meetings
-                if (!$this->canUserCreateMeeting($user, $session)) {
-                    return redirect()->back()->with('error', 'لم يتم إنشاء الاجتماع بعد. يرجى انتظار المعلم لبدء الجلسة.');
-                }
-                
-                // Create meeting
-                $session->generateMeetingLink();
-            }
-
-            // Generate participant token
-            $token = $session->generateParticipantToken($user);
-            
-            // Build LiveKit Meet URL
-            $meetingUrl = $this->buildLiveKitMeetUrl($token, $session);
-
-            return view('meetings.iframe', [
-                'session' => $session,
-                'meetingUrl' => $meetingUrl,
-                'token' => $token
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Failed to join meeting via iframe', [
-                'error' => $e->getMessage(),
-                'session_id' => $sessionId,
-                'user_id' => $request->user()->id,
-            ]);
-
-            return redirect()->back()->with('error', 'فشل في الانضمام للاجتماع: ' . $e->getMessage());
-        }
-    }
 
     /**
      * Create or get meeting for a session (API endpoint)
@@ -285,34 +239,5 @@ class MeetingController extends Controller
         }
     }
 
-    /**
-     * Build LiveKit Meet URL with proper parameters
-     */
-    private function buildLiveKitMeetUrl(string $token, QuranSession $session): string
-    {
-        $baseUrl = 'https://meet.livekit.io/';
-        $user = request()->user();
-        
-        $params = [
-            'liveKitUrl' => config('livekit.server_url'),
-            'token' => $token,
-            'room' => $session->meeting_room_name,
-            'name' => $user ? $user->name : 'User',
-            'audio' => 'true',
-            'video' => 'true',
-            'theme' => 'dark' // or 'light'
-        ];
-        
-        $queryString = http_build_query($params);
-        
-        Log::info('Generated LiveKit Meet URL', [
-            'session_id' => $session->id,
-            'room_name' => $session->meeting_room_name,
-            'user_id' => $user ? $user->id : 'unknown',
-            'base_url' => $baseUrl,
-            'has_token' => !empty($token)
-        ]);
-        
-        return $baseUrl . '?' . $queryString;
-    }
+
 }
