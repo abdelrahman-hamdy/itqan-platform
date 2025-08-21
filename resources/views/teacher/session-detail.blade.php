@@ -393,17 +393,27 @@
     async function initializeMeeting() {
         try {
             console.log('Initializing LiveKit meeting...');
+            console.log('LiveKit config:', {
+                serverUrl: meetingConfig.serverUrl,
+                roomName: meetingConfig.roomName,
+                participantName: meetingConfig.participantName
+            });
             
             // Check if LiveKit is loaded
             if (typeof LiveKit === 'undefined') {
                 throw new Error('LiveKit library not loaded. Please refresh the page and try again.');
             }
             
-            // Get participant token
+            updateConnectionStatus('connecting');
+            
+            // Get participant token with enhanced error handling
             const token = await getParticipantToken();
             if (!token) {
                 throw new Error('Failed to get participant token');
             }
+            
+            console.log('Got token, length:', token.length);
+            console.log('Token prefix:', token.substring(0, 50) + '...');
             
             // Create room
             room = new LiveKit.Room({
@@ -414,12 +424,28 @@
             // Set up event listeners
             setupRoomEventListeners();
             
-            // Connect to room
-            await room.connect(meetingConfig.serverUrl, token, {
-                autoSubscribe: true,
+            // Connect to room with enhanced error handling
+            console.log('Attempting to connect to LiveKit room...');
+            console.log('Connection params:', {
+                serverUrl: meetingConfig.serverUrl,
+                hasToken: !!token,
+                autoSubscribe: true
             });
             
-            console.log('Successfully connected to LiveKit room');
+            try {
+                await room.connect(meetingConfig.serverUrl, token, {
+                    autoSubscribe: true,
+                });
+                console.log('Successfully connected to LiveKit room');
+            } catch (connectError) {
+                console.error('LiveKit connection failed:', connectError);
+                console.error('Connection error details:', {
+                    message: connectError.message,
+                    name: connectError.name,
+                    stack: connectError.stack
+                });
+                throw new Error(`LiveKit connection failed: ${connectError.message}`);
+            }
             
             // Wait for the room to be fully ready
             await new Promise((resolve) => {
@@ -458,7 +484,23 @@
             
         } catch (error) {
             console.error('Error initializing meeting:', error);
+            console.error('Error details:', {
+                message: error.message,
+                name: error.name,
+                stack: error.stack,
+                roomState: room?.state,
+                roomExists: !!room
+            });
             alert('فشل في الاتصال بالاجتماع: ' + error.message);
+            
+            // Cleanup on error
+            if (room) {
+                try {
+                    room.disconnect();
+                } catch (disconnectError) {
+                    console.error('Error during cleanup disconnect:', disconnectError);
+                }
+            }
         }
     }
     
@@ -548,8 +590,11 @@
             });
         });
 
-        room.on('disconnected', () => {
+        room.on('disconnected', (reason) => {
             console.log('❌ Teacher room disconnected');
+            console.log('Disconnect reason:', reason);
+            console.log('Room state before disconnect:', room.state);
+            console.log('Connection quality:', room.engine?.connectionQuality);
             updateConnectionStatus('disconnected');
         });
 
