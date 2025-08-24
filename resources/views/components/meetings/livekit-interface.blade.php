@@ -121,22 +121,43 @@
     50% { opacity: 0.4; }
 }
 
-/* Smooth scaling focus mode */
+/* Focus Mode Overlay - Full Video Area Coverage */
 #focusOverlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 50 !important;
     backdrop-filter: blur(4px);
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
+#closeFocusBtn {
+    position: absolute !important;
+    top: 16px !important;
+    right: 16px !important;
+    z-index: 60 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Focus Mode Container - Updated for CSS-first approach */
 #focusedVideoContainer {
-    pointer-events: auto;
-    position: absolute;
-    width: 100%;
-    height: 100%;
+    /* Styles now handled by .focused-video-container class */
 }
 
-#focusedVideoContainer > div {
-    position: absolute;
-    transform-origin: center;
-    transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+/* Participant video hover effects */
+.participant-video {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.participant-video:hover {
+    transform: scale(1.02);
 }
 
 /* Scale animations */
@@ -161,18 +182,79 @@
     pointer-events: auto;
 }
 
+/* CSS Classes for Focus Mode */
+.participant-video.focus-mode-active {
+    position: absolute !important;
+    z-index: 60 !important;
+    transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.participant-video.focus-mode-transitioning {
+    transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.participant-video.focused {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 900px !important;
+    height: 90% !important;
+    max-height: 80vh !important;
+    z-index: 60 !important;
+    transition: all 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.participant-video.focused video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 12px !important;
+}
+
+/* Video Area - Updated for CSS-first approach */
+#videoArea {
+    /* Styles now handled by .video-area class */
+}
+
+/* Ensure the main content area takes full height */
+#meetingInterface {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Ensure the grid container takes remaining space */
+#meetingInterface > .grid {
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-rows: 1fr !important;
+}
+
+/* Video Grid - Updated for CSS-first approach */
+#videoGrid {
+    /* Styles now handled by .video-grid class */
+}
+
+/* Focus mode active state - Updated for CSS-first approach */
+#videoArea.focus-mode-active {
+    /* Styles now handled by .video-area.focus-mode-active class */
+}
+
 /* Placeholder styling */
 .placeholder-overlay {
     backdrop-filter: blur(2px);
     background: linear-gradient(135deg, rgba(31, 41, 55, 0.8), rgba(55, 65, 81, 0.8));
 }
 
-/* Ensure proper video aspect ratio in focus mode */
+/* Focused video - Updated for CSS-first approach */
 #focusedVideoContainer video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    aspect-ratio: 16/9 !important;
+    /* Styles now handled by .focused-video-container video class */
 }
 
 /* Enhanced participant interactions */
@@ -271,7 +353,7 @@
     100% { left: 100%; }
 }
 
-/* ===== CSS-FIRST VIDEO LAYOUT SYSTEM ===== */
+/* ===== UNIFIED RESPONSIVE VIDEO GRID SYSTEM ===== */
 
 /* Meeting Interface - Dynamic height will be set by JavaScript */
 #livekitMeetingInterface {
@@ -288,17 +370,128 @@
     z-index: 9999 !important;
 }
 
-/* ===== VIDEO LAYOUT STATES ===== */
+/* ===== MAIN VIDEO GRID LAYOUT ===== */
 
-/* Normal Layout State */
-.video-layout-normal #videoGrid {
-    display: grid;
-    place-items: center;
+/* Base Grid Configuration */
+#videoGrid {
+    display: grid !important;
     gap: 1rem;
     padding: 1rem;
-    height: 100%;
     width: 100%;
-    overflow: auto;
+    height: 100%;
+    place-items: center;
+    align-content: center;
+    justify-content: center;
+    grid-auto-rows: minmax(180px, 1fr);
+    max-width: 1600px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+/* Grid Layout Rules Based on Participant Count */
+
+/* 1 Participant - Single centered video */
+#videoGrid[data-participants="1"] {
+    grid-template-columns: 1fr;
+    max-width: 800px;
+}
+
+#videoGrid[data-participants="1"] .participant-video {
+    width: 100%;
+    max-width: 700px;
+    aspect-ratio: 16/9;
+    min-height: 300px;
+    max-height: 500px;
+}
+
+/* 2 Participants - Side by side */
+#videoGrid[data-participants="2"] {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1200px;
+}
+
+#videoGrid[data-participants="2"] .participant-video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    min-height: 250px;
+    max-height: 400px;
+}
+
+/* 3-4 Participants - 2x2 grid */
+#videoGrid[data-participants="3"],
+#videoGrid[data-participants="4"] {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    max-width: 1200px;
+}
+
+#videoGrid[data-participants="3"] .participant-video,
+#videoGrid[data-participants="4"] .participant-video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    min-height: 200px;
+    max-height: 350px;
+}
+
+/* 5-6 Participants - 3x2 grid */
+#videoGrid[data-participants="5"],
+#videoGrid[data-participants="6"] {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    max-width: 1400px;
+}
+
+#videoGrid[data-participants="5"] .participant-video,
+#videoGrid[data-participants="6"] .participant-video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    min-height: 180px;
+    max-height: 300px;
+}
+
+/* 7-9 Participants - 3x3 grid */
+#videoGrid[data-participants="7"],
+#videoGrid[data-participants="8"],
+#videoGrid[data-participants="9"] {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    max-width: 1400px;
+}
+
+#videoGrid[data-participants="7"] .participant-video,
+#videoGrid[data-participants="8"] .participant-video,
+#videoGrid[data-participants="9"] .participant-video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    min-height: 160px;
+    max-height: 280px;
+}
+
+/* 10-12 Participants - 4x3 grid */
+#videoGrid[data-participants="10"],
+#videoGrid[data-participants="11"],
+#videoGrid[data-participants="12"] {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    max-width: 1600px;
+}
+
+#videoGrid[data-participants="10"] .participant-video,
+#videoGrid[data-participants="11"] .participant-video,
+#videoGrid[data-participants="12"] .participant-video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    min-height: 140px;
+    max-height: 250px;
+}
+
+/* 13+ Participants - Auto-fit responsive grid */
+#videoGrid[data-participants^="1"]:not([data-participants="1"]):not([data-participants="10"]):not([data-participants="11"]):not([data-participants="12"]),
+#videoGrid[data-participants^="2"]:not([data-participants="2"]),
+#videoGrid[data-participants^="3"]:not([data-participants="3"]):not([data-participants="4"]):not([data-participants="5"]):not([data-participants="6"]):not([data-participants="7"]):not([data-participants="8"]):not([data-participants="9"]) {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-auto-rows: minmax(140px, 180px);
+    gap: 0.75rem;
 }
 
 /* Focus Layout State */
@@ -310,104 +503,24 @@
     display: flex !important;
 }
 
-/* Sidebar Open State */
+/* Sidebar Open State Adjustments */
 .video-layout-sidebar-open #videoGrid {
     gap: 0.75rem;
     padding: 0.75rem;
+    max-width: calc(100vw - 400px);
 }
 
-/* ===== PARTICIPANT COUNT-BASED LAYOUTS ===== */
-
-/* Single Participant */
-.participants-count-1 #videoGrid {
-    grid-template-columns: 1fr;
-    place-items: center;
+.video-layout-sidebar-open #videoGrid[data-participants="1"] {
+    max-width: 600px;
 }
 
-.participants-count-1 .participant-video {
-    width: 100%;
-    height: 100%;
-    max-width: 800px;
-    aspect-ratio: 16/9;
+.video-layout-sidebar-open #videoGrid[data-participants="2"] {
+    max-width: 900px;
 }
 
-/* Two Participants */
-.participants-count-2 #videoGrid {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.participants-count-2 .participant-video {
-    width: 100%;
-    aspect-ratio: 16/9;
-    min-height: 200px;
-    max-height: 400px;
-}
-
-/* Three to Four Participants */
-.participants-count-3 #videoGrid,
-.participants-count-4 #videoGrid {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.participants-count-3 .participant-video,
-.participants-count-4 .participant-video {
-    width: 100%;
-    aspect-ratio: 16/9;
-    min-height: 180px;
-    max-height: 350px;
-}
-
-/* Five to Six Participants */
-.participants-count-5 #videoGrid,
-.participants-count-6 #videoGrid {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.participants-count-5 .participant-video,
-.participants-count-6 .participant-video {
-    width: 100%;
-    aspect-ratio: 16/9;
-    min-height: 160px;
-    max-height: 300px;
-}
-
-/* Seven to Nine Participants */
-.participants-count-7 #videoGrid,
-.participants-count-8 #videoGrid,
-.participants-count-9 #videoGrid {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.participants-count-7 .participant-video,
-.participants-count-8 .participant-video,
-.participants-count-9 .participant-video {
-    width: 100%;
-    aspect-ratio: 16/9;
-    min-height: 140px;
-    max-height: 250px;
-}
-
-/* Ten or More Participants */
-.participants-count-10 #videoGrid,
-.participants-many #videoGrid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.5rem;
-}
-
-.participants-count-10 .participant-video,
-.participants-many .participant-video {
-    width: 100%;
-    aspect-ratio: 16/9;
-    min-height: 120px;
-    max-height: 200px;
+.video-layout-sidebar-open #videoGrid[data-participants="3"],
+.video-layout-sidebar-open #videoGrid[data-participants="4"] {
+    max-width: 1000px;
 }
 
 /* ===== FOCUS AREA STYLING REMOVED (focusArea deprecated) ===== */
@@ -441,100 +554,14 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* ===== PARTICIPANT VIDEO STYLING ===== */
 
-.participant-video {
-    background: rgb(31, 41, 55);
-    border: 1px solid rgb(55, 65, 81);
-    border-radius: 0.5rem;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 200ms ease-in-out;
-    position: relative;
-}
 
-.participant-video:hover {
-    border-color: rgb(59, 130, 246);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-}
-
-.participant-video video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* ===== SIDEBAR RESPONSIVE ADJUSTMENTS ===== */
-
-.video-layout-sidebar-open.participants-count-1 .participant-video {
-    max-width: 600px;
-}
-
-.video-layout-sidebar-open.participants-count-2 .participant-video {
-    max-height: 300px;
-}
-
-.video-layout-sidebar-open.participants-count-3 .participant-video,
-.video-layout-sidebar-open.participants-count-4 .participant-video {
-    max-height: 280px;
-}
-
-/* focusArea responsive rules removed */
-
-/* ===== RESPONSIVE BREAKPOINTS ===== */
-
-@media (max-width: 1024px) {
-    .participants-count-5 #videoGrid,
-    .participants-count-6 #videoGrid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .participants-count-7 #videoGrid,
-    .participants-count-8 #videoGrid,
-    .participants-count-9 #videoGrid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
-    }
-    
-    /* focusArea removed */
-}
+/* ===== HORIZONTAL PARTICIPANTS RESPONSIVE ADJUSTMENTS ===== */
 
 @media (max-width: 768px) {
-    .participants-count-3 #videoGrid,
-    .participants-count-4 #videoGrid,
-    .participants-count-5 #videoGrid,
-    .participants-count-6 #videoGrid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.5rem;
-    }
-    
-    .participants-count-7 #videoGrid,
-    .participants-count-8 #videoGrid,
-    .participants-count-9 #videoGrid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.5rem;
-    }
-    
-    /* focusArea removed */
-    
     .horizontal-participant {
         width: 160px;
         height: 90px;
-    }
-}
-
-@media (max-width: 640px) {
-    .participants-count-2 #videoGrid,
-    .participants-count-3 #videoGrid,
-    .participants-count-4 #videoGrid {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-    }
-    
-    .participant-video {
-        min-height: 120px;
-        max-height: 200px;
     }
 }
 
@@ -625,6 +652,182 @@
 .focus-transition {
     transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+
+
+
+
+/* Base Participant Video Styling */
+.participant-video {
+    transition: all 0.3s ease;
+    background: rgb(31, 41, 55);
+    border: 1px solid rgb(55, 65, 81);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.participant-video:hover {
+    border-color: rgb(59, 130, 246);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.participant-video video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+
+/* Tablet Breakpoint (1024px and below) */
+@media (max-width: 1024px) {
+    #videoGrid {
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+    
+    /* Adjust 5-6 participants to 2x3 on smaller screens */
+    #videoGrid[data-participants="5"],
+    #videoGrid[data-participants="6"] {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        max-width: 1000px;
+    }
+    
+    /* Adjust 7-9 participants to 3x3 on smaller screens */
+    #videoGrid[data-participants="7"],
+    #videoGrid[data-participants="8"],
+    #videoGrid[data-participants="9"] {
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 1200px;
+    }
+    
+    /* Adjust 10-12 participants to 3x4 on smaller screens */
+    #videoGrid[data-participants="10"],
+    #videoGrid[data-participants="11"],
+    #videoGrid[data-participants="12"] {
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        max-width: 1200px;
+    }
+}
+
+/* Mobile Landscape and Small Tablet (768px and below) */
+@media (max-width: 768px) {
+    #videoGrid {
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+    
+    /* 3-4 participants remain 2x2 */
+    #videoGrid[data-participants="3"],
+    #videoGrid[data-participants="4"] {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 100%;
+    }
+    
+    /* 5-6 participants become 2x3 */
+    #videoGrid[data-participants="5"],
+    #videoGrid[data-participants="6"] {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        max-width: 100%;
+    }
+    
+    /* 7+ participants use auto-fit grid */
+    #videoGrid[data-participants="7"],
+    #videoGrid[data-participants="8"],
+    #videoGrid[data-participants="9"],
+    #videoGrid[data-participants="10"],
+    #videoGrid[data-participants="11"],
+    #videoGrid[data-participants="12"] {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-rows: auto;
+        max-width: 100%;
+    }
+    
+    /* Reduce min heights for mobile */
+    .participant-video {
+        min-height: 120px !important;
+        max-height: 250px !important;
+    }
+}
+
+/* Mobile Portrait (640px and below) */
+@media (max-width: 640px) {
+    #videoGrid {
+        gap: 0.25rem;
+        padding: 0.25rem;
+    }
+    
+    /* Single participant takes more space */
+    #videoGrid[data-participants="1"] {
+        max-width: 100%;
+    }
+    
+    #videoGrid[data-participants="1"] .participant-video {
+        max-width: 100%;
+        min-height: 200px;
+        max-height: 300px;
+    }
+    
+    /* 2 participants become stacked on very small screens */
+    #videoGrid[data-participants="2"] {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(2, 1fr);
+        max-width: 100%;
+    }
+    
+    /* 3+ participants use 2 columns max */
+    #videoGrid[data-participants="3"],
+    #videoGrid[data-participants="4"],
+    #videoGrid[data-participants="5"],
+    #videoGrid[data-participants="6"],
+    #videoGrid[data-participants="7"],
+    #videoGrid[data-participants="8"],
+    #videoGrid[data-participants="9"],
+    #videoGrid[data-participants="10"],
+    #videoGrid[data-participants="11"],
+    #videoGrid[data-participants="12"] {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto;
+        max-width: 100%;
+    }
+    
+    /* Further reduce heights for small screens */
+    .participant-video {
+        min-height: 100px !important;
+        max-height: 180px !important;
+    }
+}
+
+/* Fullscreen support */
+.meeting-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    background: #111827 !important;
+}
+
+.meeting-fullscreen #videoGrid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    padding: 2rem !important;
+    gap: 1.5rem !important;
+}
+
+.meeting-fullscreen .participant-video {
+    min-width: 250px !important;
+    min-height: 180px !important;
+}
+
+
 
 /* Focus loading state */
 .focus-loading {
@@ -788,7 +991,7 @@ console.log('✅ Modular LiveKit system loaded successfully');
         </div>
         
         <!-- Meeting Interface -->
-        <div id="meetingInterface" class="h-full flex flex-col bg-gray-900 text-white" style="display: none;">
+        <div id="meetingInterface" class="h-full flex flex-col bg-gray-900 text-white" style="min-height: 700px;">
             <!-- Meeting Header - With fullscreen button -->
             <div class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white px-4 py-3 flex items-center justify-between text-sm font-medium shadow-lg">
                 <!-- Left side - Meeting info -->
@@ -819,28 +1022,26 @@ console.log('✅ Modular LiveKit system loaded successfully');
             </div>
 
             <!-- Main Content Area with Sidebar -->
-            <div class="flex-1 flex min-h-0 overflow-hidden relative" style="overflow: hidden;">
+            <div class="flex-1 grid grid-cols-1 min-h-0 overflow-hidden relative" style="overflow: hidden;">
                 <!-- Video Area -->
-                <div id="videoArea" class="flex-1 bg-gray-900 p-4 flex flex-col min-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                <div id="videoArea" class="video-area bg-gray-900 relative">
                     
-                    <!-- FocusArea removed: now using absolute focus container only -->
+                    <!-- Video Grid -->
+                    <div id="videoGrid" class="video-grid grid-1">
+                        <!-- Participants will be added here dynamically -->
+                    </div>
                     
-                    <!-- Participants Grid/Row Container -->
-                    <div id="participantsContainer" class="flex-1 flex flex-col min-h-0 justify-center items-center">
-                        <!-- Normal Grid Layout (Default) -->
-                        <div id="videoGrid" class="video-layout-transition">
-                            <!-- Participants will be added here dynamically -->
-                        </div>
-                        
-                        <!-- Horizontal Scroll Layout for when focus area is active -->
-                        <div id="horizontalParticipants" class="hidden video-layout-transition">
-                            <!-- Horizontal participant thumbnails will go here -->
+                    <!-- Focus Mode Overlay -->
+                    <div id="focusOverlay" class="focus-overlay hidden">
+                        <!-- Focused Video Container -->
+                        <div id="focusedVideoContainer" class="focused-video-container">
+                            <!-- Focused video will be moved here -->
                         </div>
                     </div>
                 </div>
 
                 <!-- Sidebar -->
-                <div id="meetingSidebar" class="h-full w-96 bg-gray-800 border-l border-gray-700 flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out sidebar-responsive">
+                <div id="meetingSidebar" class="absolute top-0 right-0 bottom-0 w-96 bg-gray-800 border-l border-gray-700 flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out z-40">
                     <!-- Sidebar Header -->
                     <div class="bg-gray-700 px-4 py-3 flex items-center justify-between border-b border-gray-600">
                         <h3 id="sidebarTitle" class="text-white font-semibold">الدردشة</h3>
@@ -884,7 +1085,7 @@ console.log('✅ Modular LiveKit system loaded successfully');
                         </div>
 
                         <!-- Participants Panel -->
-                        <div id="participantsContent" class="h-full flex flex-col hidden">
+                        <div id="participantsContent" class="h-full flex-col hidden">
                             <div class="flex-1 overflow-y-auto p-4 space-y-2">
                                 <div id="participantsList">
                                     <!-- Participants will be added here dynamically -->
@@ -893,7 +1094,7 @@ console.log('✅ Modular LiveKit system loaded successfully');
                         </div>
 
                         <!-- Settings Panel -->
-                        <div id="settingsContent" class="h-full flex flex-col hidden">
+                        <div id="settingsContent" class="h-full flex-col hidden">
                             <div class="flex-1 overflow-y-auto p-4 space-y-4">
                                 <!-- Camera Settings -->
                                 <div class="bg-gray-700 rounded-lg p-4">
@@ -939,7 +1140,7 @@ console.log('✅ Modular LiveKit system loaded successfully');
             </div>
             
             <!-- Control Bar - Always at bottom -->
-            <div class="bg-gray-800 border-t border-gray-700 px-4 py-4 flex items-center justify-center gap-2 sm:gap-4 shadow-lg flex-wrap sm:flex-nowrap">
+            <div class="control-bar bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-4 py-4 flex items-center justify-center gap-2 sm:gap-4 shadow-lg flex-wrap sm:flex-nowrap z-50">
                 <!-- Microphone Button -->
                 <button id="toggleMic" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95" title="إيقاف/تشغيل الميكروفون">
                     <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -1059,6 +1260,9 @@ async function initializeMeeting() {
                     const meetingContainer = document.getElementById('meetingContainer');
                     if (meetingContainer) {
                         meetingContainer.style.display = 'block';
+                        console.log('✅ Meeting container shown');
+                    } else {
+                        console.error('❌ Meeting container not found');
                     }
                     
                     // Initialize meeting with new modular system

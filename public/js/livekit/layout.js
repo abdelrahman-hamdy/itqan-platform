@@ -42,6 +42,7 @@ export class LiveKitLayout {
         this.cacheElements();
         this.setupResponsiveSystem();
         this.setupResizeObserver();
+        this.setupKeyboardHandlers();
 
         // Initial layout calculation
         this.calculateMeetingHeight();
@@ -54,10 +55,17 @@ export class LiveKitLayout {
     cacheElements() {
         this.elements = {
             videoGrid: document.getElementById('videoGrid'),
-            meetingInterface: document.getElementById('livekitMeetingInterface'),
+            meetingInterface: document.getElementById('meetingInterface'),
             sidebar: document.getElementById('meetingSidebar'),
-            videoArea: document.querySelector('#livekitMeetingInterface .relative')
+            videoArea: document.getElementById('videoArea')
         };
+
+        console.log('🔍 Cached elements:', {
+            videoGrid: !!this.elements.videoGrid,
+            meetingInterface: !!this.elements.meetingInterface,
+            sidebar: !!this.elements.sidebar,
+            videoArea: !!this.elements.videoArea
+        });
     }
 
     /**
@@ -70,7 +78,6 @@ export class LiveKitLayout {
         window.addEventListener('resize', () => {
             this.calculateMeetingHeight();
             this.updateVideoLayoutClasses();
-            this.scheduleFocusedLayoutUpdate();
         });
 
         // Detect sidebar state
@@ -96,7 +103,26 @@ export class LiveKitLayout {
 
         if (this.elements.meetingInterface) {
             this.responsiveObserver.observe(this.elements.meetingInterface);
+        } else {
+            console.warn('⚠️ Meeting interface element not found for resize observer');
         }
+    }
+
+    /**
+     * Set up keyboard handlers
+     */
+    setupKeyboardHandlers() {
+        console.log('⌨️ Setting up keyboard handlers...');
+
+        // Add keyboard event listener for focus mode
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isFocusModeActive) {
+                console.log('⌨️ Escape key pressed, exiting focus mode');
+                this.exitFocusMode();
+            }
+        });
+
+        console.log('✅ Keyboard handlers set up');
     }
 
     /**
@@ -109,9 +135,7 @@ export class LiveKitLayout {
 
         this.adjustVideoGridForContainer(width, height);
 
-        if (this.isFocusModeActive) {
-            this.scheduleFocusedLayoutUpdate();
-        }
+        // Focus mode uses CSS transforms, no manual layout updates needed
     }
 
     /**
@@ -170,7 +194,7 @@ export class LiveKitLayout {
         if (!this.elements.sidebar) return;
 
         const wasOpen = this.isSidebarOpen;
-        this.isSidebarOpen = !this.elements.sidebar.classList.contains('translate-x-full');
+        this.isSidebarOpen = this.elements.sidebar.classList.contains('-translate-x-0');
 
         if (wasOpen !== this.isSidebarOpen) {
             console.log(`📋 Sidebar state changed: ${this.isSidebarOpen ? 'open' : 'closed'}`);
@@ -189,83 +213,27 @@ export class LiveKitLayout {
         const participantCount = this.elements.videoGrid.children.length;
         if (participantCount === 0) return;
 
-        const gridConfig = this.calculateOptimalGrid(width, height, participantCount);
-        this.applyOptimalGrid(gridConfig);
+        // Update layout classes for responsive grid system
+        this.updateVideoLayoutClasses();
+        
+        console.log(`📐 Video grid adjusted for container ${width}x${height} with ${participantCount} participants`);
     }
 
-    /**
-     * Calculate optimal grid configuration
-     * @param {number} width - Available width
-     * @param {number} height - Available height
-     * @param {number} participantCount - Number of participants
-     * @returns {Object} Grid configuration
-     */
-    calculateOptimalGrid(width, height, participantCount) {
-        if (participantCount === 0) {
-            return { cols: 1, rows: 1, itemWidth: width, itemHeight: height };
-        }
 
-        // Handle single participant
-        if (participantCount === 1) {
-            return {
-                cols: 1,
-                rows: 1,
-                itemWidth: Math.min(width, height * 16 / 9),
-                itemHeight: Math.min(height, width * 9 / 16)
-            };
-        }
-
-        let bestConfig = { cols: 1, rows: participantCount, itemWidth: 0, itemHeight: 0, score: 0 };
-
-        // Try different grid configurations
-        for (let cols = 1; cols <= Math.ceil(Math.sqrt(participantCount * 2)); cols++) {
-            const rows = Math.ceil(participantCount / cols);
-
-            const itemWidth = width / cols;
-            const itemHeight = height / rows;
-
-            // Calculate aspect ratio score (prefer 16:9)
-            const aspectRatio = itemWidth / itemHeight;
-            const targetAspectRatio = 16 / 9;
-            const aspectScore = 1 - Math.abs(aspectRatio - targetAspectRatio) / targetAspectRatio;
-
-            // Calculate area utilization score
-            const totalArea = itemWidth * itemHeight * participantCount;
-            const availableArea = width * height;
-            const utilizationScore = totalArea / availableArea;
-
-            // Combined score
-            const score = aspectScore * 0.7 + utilizationScore * 0.3;
-
-            if (score > bestConfig.score) {
-                bestConfig = { cols, rows, itemWidth, itemHeight, score };
-            }
-        }
-
-        return bestConfig;
-    }
 
     /**
-     * Apply optimal grid configuration
+     * Apply grid layout configuration
      * @param {Object} gridConfig - Grid configuration
      */
-    applyOptimalGrid(gridConfig) {
+    applyGridLayout(gridConfig) {
         if (!this.elements.videoGrid) return;
 
-        const { cols, rows, itemWidth, itemHeight } = gridConfig;
+        const { participantCount } = gridConfig;
 
-        // Update CSS custom properties for grid
-        this.elements.videoGrid.style.setProperty('--grid-cols', cols);
-        this.elements.videoGrid.style.setProperty('--grid-rows', rows);
-        this.elements.videoGrid.style.setProperty('--item-width', `${itemWidth}px`);
-        this.elements.videoGrid.style.setProperty('--item-height', `${itemHeight}px`);
+        // Update data attribute for CSS-driven responsive grid layout
+        this.elements.videoGrid.setAttribute('data-participants', participantCount);
 
-        // Update grid CSS classes
-        this.elements.videoGrid.className = `grid gap-2 h-full w-full place-items-center`;
-        this.elements.videoGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-        this.elements.videoGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-
-        console.log(`🎯 Applied grid: ${cols}x${rows} (${itemWidth.toFixed(0)}x${itemHeight.toFixed(0)})`);
+        console.log(`🎯 Applied CSS grid layout for ${participantCount} participants`);
     }
 
     /**
@@ -273,7 +241,7 @@ export class LiveKitLayout {
      * @param {number} participantCount - Number of participants
      */
     applyGrid(participantCount) {
-        console.log(`🎯 Applying grid layout for ${participantCount} participants`);
+        console.log(`🎯 Applying CSS grid layout for ${participantCount} participants`);
 
         if (!this.elements.videoGrid) {
             console.error('❌ Video grid not found');
@@ -285,48 +253,31 @@ export class LiveKitLayout {
             this.exitFocusMode();
         }
 
-        // Update layout classes
+        // Update layout classes and data attributes
         this.updateVideoLayoutClasses();
 
-        // Calculate container dimensions
-        const containerRect = this.elements.videoGrid.getBoundingClientRect();
-        this.adjustVideoGridForContainer(containerRect.width, containerRect.height);
+        // Apply grid configuration using CSS data attribute
+        this.applyGridLayout({ participantCount });
 
-        console.log(`✅ Grid layout applied for ${participantCount} participants`);
+        console.log(`✅ CSS grid layout applied for ${participantCount} participants`);
     }
 
     /**
-     * Update video layout classes based on participant count
+     * Update video layout based on participant count
      */
     updateVideoLayoutClasses() {
         if (!this.elements.videoGrid) return;
 
         const participantCount = this.elements.videoGrid.children.length;
 
-        // Remove all existing layout classes
-        const layoutClasses = [
-            'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4',
-            'grid-rows-1', 'grid-rows-2', 'grid-rows-3', 'grid-rows-4'
-        ];
+        // Set data attribute for CSS-driven responsive grid
+        this.elements.videoGrid.setAttribute('data-participants', participantCount);
 
-        this.elements.videoGrid.classList.remove(...layoutClasses);
-
-        // Apply responsive grid classes
-        if (participantCount <= 1) {
-            this.elements.videoGrid.classList.add('grid-cols-1', 'place-items-center');
-        } else if (participantCount <= 4) {
-            this.elements.videoGrid.classList.add('grid-cols-1', 'sm:grid-cols-2');
-        } else if (participantCount <= 9) {
-            this.elements.videoGrid.classList.add('grid-cols-2', 'sm:grid-cols-3');
-        } else {
-            this.elements.videoGrid.classList.add('grid-cols-2', 'sm:grid-cols-3', 'lg:grid-cols-4');
-        }
-
-        console.log(`🎨 Updated layout classes for ${participantCount} participants`);
+        console.log(`🎨 Updated layout for ${participantCount} participants`);
     }
 
     /**
-     * Enter focus mode for a specific participant
+     * Enter focus mode for a specific participant (Simple Fade-in Approach)
      * @param {string} participantId - Participant ID to focus on
      * @param {HTMLElement} participantElement - Participant DOM element
      */
@@ -336,226 +287,473 @@ export class LiveKitLayout {
         }
 
         if (!participantElement) {
-            console.error(`❌ Participant element not found for ${participantId}`);
+            console.log(`⏳ Participant element not found for ${participantId}, will retry later`);
             return;
         }
 
-        console.log(`🎯 Entering focus mode for ${participantId}`);
+        // Prevent multiple focus modes
+        if (this.isFocusModeActive) {
+            console.log('⚠️ Focus mode already active, exiting first');
+            this.exitFocusMode();
+            setTimeout(() => this.applyFocusMode(participantId, participantElement), 100);
+            return;
+        }
+
+        console.log(`🎯 Entering focus mode for ${participantId} (simple fade-in approach)`);
 
         this.isFocusModeActive = true;
         this.focusedParticipant = participantId;
 
-        // Switch to horizontal layout
-        this.switchToHorizontalLayout();
+        // Get required elements
+        const videoArea = document.getElementById('videoArea');
+        const overlay = document.getElementById('focusOverlay');
+        const focusedContainer = document.getElementById('focusedVideoContainer');
 
-        // Create or update focused element
-        this.createFocusedElement(participantElement);
-
-        // Update focused layout
-        this.updateFocusedLayout();
-
-        // Add focus mode classes
-        document.body.classList.add('focus-mode-active');
-
-        // Notify callback
-        if (this.config.onFocusEnter) {
-            this.config.onFocusEnter(participantId, participantElement);
-        }
-
-        console.log(`✅ Focus mode activated for ${participantId}`);
-    }
-
-    /**
-     * Exit focus mode
-     */
-    exitFocusMode() {
-        console.log('🔙 Exiting focus mode');
-
-        if (!this.isFocusModeActive) {
-            console.log('⚠️ Focus mode not active');
+        if (!videoArea || !overlay || !focusedContainer) {
+            console.error('❌ Required elements not found');
             return;
         }
 
-        this.isFocusModeActive = false;
-        const previousFocusedParticipant = this.focusedParticipant;
-        this.focusedParticipant = null;
+        // Store references to original element
+        this._focusOriginalElement = participantElement;
 
-        // Clean up focus elements
-        this.cleanupFocusElements();
+        // Get video area dimensions for proper sizing
+        const videoAreaRect = videoArea.getBoundingClientRect();
+        const padding = 30; // 30px padding as requested
+        const availableWidth = videoAreaRect.width - (padding * 2);
+        const availableHeight = videoAreaRect.height - (padding * 2);
 
-        // Switch back to grid layout
-        this.switchToGridLayout();
+        console.log(`📐 Video area rect: ${videoAreaRect.width}x${videoAreaRect.height}`);
+        console.log(`📐 Available space after padding: ${availableWidth}x${availableHeight}`);
 
-        // Remove focus mode classes
-        document.body.classList.remove('focus-mode-active');
+        // Get actual video aspect ratio from the original video element
+        const originalVideo = participantElement.querySelector('video');
+        let videoAspectRatio = 16 / 9; // Default fallback
 
-        // Notify callback
-        if (this.config.onFocusExit) {
-            this.config.onFocusExit(previousFocusedParticipant);
+        if (originalVideo && originalVideo.videoWidth && originalVideo.videoHeight) {
+            videoAspectRatio = originalVideo.videoWidth / originalVideo.videoHeight;
+            console.log(`📹 Detected video aspect ratio: ${videoAspectRatio.toFixed(2)} (${originalVideo.videoWidth}x${originalVideo.videoHeight})`);
+        } else {
+            console.log(`📹 Using default aspect ratio: ${videoAspectRatio.toFixed(2)}`);
         }
 
-        console.log('✅ Focus mode exited');
-    }
+        // Use FULL available height as primary constraint
+        let focusedHeight = availableHeight;
+        let focusedWidth = focusedHeight * videoAspectRatio;
 
-    /**
-     * Switch to horizontal layout for focus mode
-     */
-    switchToHorizontalLayout() {
-        if (!this.elements.videoArea) return;
-
-        console.log('🔄 Switching to horizontal layout');
-
-        // Add horizontal layout classes
-        this.elements.videoArea.classList.add('flex', 'flex-col', 'lg:flex-row');
-        this.elements.videoArea.classList.remove('relative');
-
-        // Update video grid for horizontal layout
-        if (this.elements.videoGrid) {
-            this.elements.videoGrid.classList.remove('h-full');
-            this.elements.videoGrid.classList.add('lg:w-1/4', 'lg:max-w-xs', 'flex', 'lg:flex-col', 'gap-2', 'p-2');
-            this.elements.videoGrid.style.gridTemplateColumns = '';
-            this.elements.videoGrid.style.gridTemplateRows = '';
-        }
-    }
-
-    /**
-     * Switch back to grid layout
-     */
-    switchToGridLayout() {
-        if (!this.elements.videoArea) return;
-
-        console.log('🔄 Switching to grid layout');
-
-        // Remove horizontal layout classes
-        this.elements.videoArea.classList.remove('flex', 'flex-col', 'lg:flex-row');
-        this.elements.videoArea.classList.add('relative');
-
-        // Reset video grid
-        if (this.elements.videoGrid) {
-            this.elements.videoGrid.classList.add('h-full');
-            this.elements.videoGrid.classList.remove('lg:w-1/4', 'lg:max-w-xs', 'flex', 'lg:flex-col', 'gap-2', 'p-2');
+        // Only if calculated width exceeds available width, constrain by width
+        if (focusedWidth > availableWidth) {
+            focusedWidth = availableWidth;
+            focusedHeight = focusedWidth / videoAspectRatio;
         }
 
-        // Reapply grid layout
-        this.updateVideoLayoutClasses();
-    }
+        // Ensure we're using meaningful dimensions
+        focusedWidth = Math.max(focusedWidth, 200);
+        focusedHeight = Math.max(focusedHeight, 150);
 
-    /**
-     * Create focused element for focus mode
-     * @param {HTMLElement} participantElement - Participant element to focus
-     */
-    createFocusedElement(participantElement) {
-        // Remove existing focused element
-        this.cleanupFocusElements();
+        console.log(`📐 Video area rect: ${videoAreaRect.width}x${videoAreaRect.height}`);
+        console.log(`📐 Available space: ${availableWidth}x${availableHeight}`);
+        console.log(`📐 Calculated aspect ratio: ${videoAspectRatio.toFixed(2)}`);
+        console.log(`📐 Final focused video size: ${focusedWidth}x${focusedHeight}`);
+        console.log(`📐 Size utilization: ${((focusedWidth * focusedHeight) / (availableWidth * availableHeight) * 100).toFixed(1)}%`);
 
-        // Clone the participant element
+        // Create focused video element
         const focusedElement = participantElement.cloneNode(true);
-        focusedElement.id = `focused-${participantElement.id}`;
-        focusedElement.classList.add('focused-participant');
-        focusedElement.classList.remove('participant-video');
+        focusedElement.id = `focused-${participantId}`;
 
-        // Create focused container
-        const focusedContainer = document.createElement('div');
-        focusedContainer.id = 'focusedContainer';
-        focusedContainer.className = 'flex-1 relative bg-gray-900 flex items-center justify-center p-4';
+        // Style for centered, properly sized display - OVERRIDE ALL CSS CONSTRAINTS
+        focusedElement.style.setProperty('position', 'absolute', 'important');
+        focusedElement.style.setProperty('top', '50%', 'important');
+        focusedElement.style.setProperty('left', '50%', 'important');
+        focusedElement.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
+        focusedElement.style.setProperty('width', `${focusedWidth}px`, 'important');
+        focusedElement.style.setProperty('height', `${focusedHeight}px`, 'important');
+        focusedElement.style.setProperty('max-width', 'none', 'important');
+        focusedElement.style.setProperty('max-height', 'none', 'important');
+        focusedElement.style.setProperty('min-width', 'auto', 'important');
+        focusedElement.style.setProperty('min-height', 'auto', 'important');
+        focusedElement.style.setProperty('z-index', '60', 'important');
+        focusedElement.style.setProperty('opacity', '0', 'important'); // Start invisible for fade-in
+        focusedElement.style.setProperty('transition', 'opacity 400ms ease-in-out', 'important');
+        focusedElement.style.setProperty('pointer-events', 'auto', 'important');
+        focusedElement.style.setProperty('margin', '0', 'important');
+        focusedElement.style.setProperty('border-radius', '12px', 'important');
+        focusedElement.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.5)', 'important');
 
+        // Remove any existing exit buttons
+        const existingExitBtn = focusedElement.querySelector('#exitFocusBtn');
+        if (existingExitBtn) {
+            existingExitBtn.remove();
+        }
+
+        // Add exit button
+        const exitBtn = document.createElement('button');
+        exitBtn.id = 'exitFocusBtn';
+        exitBtn.className = 'absolute top-4 right-4 w-12 h-12 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white flex items-center justify-center transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 z-10';
+        exitBtn.innerHTML = '<i class="fas fa-times text-xl"></i>';
+        exitBtn.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            this.exitFocusMode();
+        };
+
+        focusedElement.appendChild(exitBtn);
+
+        // Clone video tracks to the focused element
+        this.cloneVideoTracks(participantElement, focusedElement, participantId);
+
+        // Ensure video element fills the focused container properly - OVERRIDE CSS CONSTRAINTS
+        const focusedVideo = focusedElement.querySelector('video');
+        if (focusedVideo) {
+            focusedVideo.style.setProperty('width', '100%', 'important');
+            focusedVideo.style.setProperty('height', '100%', 'important');
+            focusedVideo.style.setProperty('object-fit', 'cover', 'important'); // Fill the entire container
+            focusedVideo.style.setProperty('border-radius', '12px', 'important'); // Match the container styling
+            focusedVideo.style.setProperty('max-width', 'none', 'important');
+            focusedVideo.style.setProperty('max-height', 'none', 'important');
+        }
+
+        // Remove CSS classes that might constrain sizing
+        focusedElement.classList.remove('focused');
+        focusedElement.classList.add('custom-focused-video');
+
+        // Dim original element
+        participantElement.style.opacity = '0.3';
+        participantElement.style.pointerEvents = 'none';
+        participantElement.style.transition = 'opacity 300ms ease';
+
+        // Add focused element to the focused container
         focusedContainer.appendChild(focusedElement);
 
-        // Add to video area
-        if (this.elements.videoArea) {
-            this.elements.videoArea.insertBefore(focusedContainer, this.elements.videoGrid);
-        }
+        // Store reference
+        this._focusedElement = focusedElement;
 
-        // Setup exit button
-        this.setupExitFocusButton();
+        // Set up fullscreen change listener for automatic repositioning
+        this.setupFullscreenListener();
+
+        // Set up window resize listener for focus mode
+        this.setupFocusResizeListener();
+
+        // Show overlay
+        overlay.classList.remove('hidden');
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 300ms ease';
+
+        // Add focus mode class to video area
+        videoArea.classList.add('focus-mode-active');
+
+        // Fade in both overlay and focused video
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            focusedElement.style.setProperty('opacity', '1', 'important');
+
+            // Debug: Check actual applied dimensions
+            setTimeout(() => {
+                const rect = focusedElement.getBoundingClientRect();
+                console.log(`🔍 ACTUAL focused video dimensions: ${rect.width}x${rect.height}`);
+                console.log(`🔍 Expected vs Actual: ${focusedWidth}x${focusedHeight} vs ${rect.width}x${rect.height}`);
+
+                const computedStyle = window.getComputedStyle(focusedElement);
+                console.log(`🔍 Computed width: ${computedStyle.width}, height: ${computedStyle.height}`);
+                console.log(`🔍 Max-width: ${computedStyle.maxWidth}, max-height: ${computedStyle.maxHeight}`);
+            }, 100);
+        });
+
+        console.log('✅ Focus mode activated with simple fade-in');
     }
 
     /**
-     * Clean up focus elements
+     * Clone video tracks from original element to cloned element
+     * @param {HTMLElement} originalElement - Original participant element
+     * @param {HTMLElement} clonedElement - Cloned participant element
+     * @param {string} participantId - Participant ID
      */
-    cleanupFocusElements() {
-        const focusedContainer = document.getElementById('focusedContainer');
-        if (focusedContainer) {
-            focusedContainer.remove();
-        }
+    cloneVideoTracks(originalElement, clonedElement, participantId) {
+        console.log(`🎬 Cloning video tracks for ${participantId}...`);
 
-        const exitButton = document.getElementById('exitFocusButton');
-        if (exitButton) {
-            exitButton.remove();
+        try {
+            // Get video elements from both original and clone
+            const originalVideo = originalElement.querySelector('video');
+            const clonedVideo = clonedElement.querySelector('video');
+
+            if (!originalVideo || !clonedVideo) {
+                console.log(`⚠️ Video elements not found for cloning - original: ${!!originalVideo}, clone: ${!!clonedVideo}`);
+                return;
+            }
+
+            // If original video has a srcObject (MediaStream), clone it to the cloned video
+            if (originalVideo.srcObject) {
+                clonedVideo.srcObject = originalVideo.srcObject;
+                clonedVideo.play().catch(e => {
+                    console.log(`⚠️ Could not auto-play cloned video for ${participantId}:`, e);
+                });
+                console.log(`✅ Video track cloned for ${participantId}`);
+            } else {
+                console.log(`⚠️ No srcObject found on original video for ${participantId}`);
+            }
+
+            // Sync other video properties
+            clonedVideo.muted = originalVideo.muted;
+            clonedVideo.autoplay = originalVideo.autoplay;
+            clonedVideo.playsInline = originalVideo.playsInline;
+
+        } catch (error) {
+            console.error(`❌ Error cloning video tracks for ${participantId}:`, error);
         }
     }
 
     /**
-     * Setup exit focus button
+     * Setup fullscreen change listener for automatic repositioning
      */
-    setupExitFocusButton() {
-        const existingButton = document.getElementById('exitFocusButton');
-        if (existingButton) return;
+    setupFullscreenListener() {
+        if (this.fullscreenListener) {
+            return; // Already set up
+        }
 
-        const exitButton = document.createElement('button');
-        exitButton.id = 'exitFocusButton';
-        exitButton.className = 'absolute top-4 right-4 z-20 bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-full transition-colors';
-        exitButton.innerHTML = '<i class="fas fa-times text-lg"></i>';
-        exitButton.title = 'إغلاق وضع التركيز';
+        this.fullscreenListener = () => {
+            console.log('📺 Fullscreen state changed, recalculating focused video...');
 
-        exitButton.addEventListener('click', () => {
+            // Add a small delay to ensure the DOM has updated
+            setTimeout(() => {
+                this.recalculateFocusedVideoSize();
+            }, 100);
+        };
+
+        document.addEventListener('fullscreenchange', this.fullscreenListener);
+        document.addEventListener('webkitfullscreenchange', this.fullscreenListener);
+        document.addEventListener('mozfullscreenchange', this.fullscreenListener);
+        document.addEventListener('MSFullscreenChange', this.fullscreenListener);
+
+        console.log('📺 Fullscreen listener set up');
+    }
+
+    /**
+     * Setup window resize listener for focus mode
+     */
+    setupFocusResizeListener() {
+        if (this.focusResizeListener) {
+            return; // Already set up
+        }
+
+        this.focusResizeListener = () => {
+            console.log('📏 Window resized, recalculating focused video...');
+
+            // Debounce resize events
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(() => {
+                this.recalculateFocusedVideoSize();
+            }, 150);
+        };
+
+        window.addEventListener('resize', this.focusResizeListener);
+        console.log('📏 Focus resize listener set up');
+    }
+
+    /**
+     * Recalculate focused video size and position (for fullscreen changes)
+     */
+    recalculateFocusedVideoSize() {
+        if (!this.isFocusModeActive || !this._focusedElement) {
+            return;
+        }
+
+        console.log('🔄 Recalculating focused video size...');
+
+        const videoArea = document.getElementById('videoArea');
+        if (!videoArea) return;
+
+        const participantElement = this._focusOriginalElement;
+        if (!participantElement) return;
+
+        // Recalculate dimensions
+        const videoAreaRect = videoArea.getBoundingClientRect();
+        const padding = 30;
+        const availableWidth = videoAreaRect.width - (padding * 2);
+        const availableHeight = videoAreaRect.height - (padding * 2);
+
+        // Get video aspect ratio
+        const originalVideo = participantElement.querySelector('video');
+        let videoAspectRatio = 16 / 9;
+
+        if (originalVideo && originalVideo.videoWidth && originalVideo.videoHeight) {
+            videoAspectRatio = originalVideo.videoWidth / originalVideo.videoHeight;
+        }
+
+        // Calculate new size
+        let focusedHeight = availableHeight;
+        let focusedWidth = focusedHeight * videoAspectRatio;
+
+        if (focusedWidth > availableWidth) {
+            focusedWidth = availableWidth;
+            focusedHeight = focusedWidth / videoAspectRatio;
+        }
+
+        focusedWidth = Math.max(focusedWidth, 200);
+        focusedHeight = Math.max(focusedHeight, 150);
+
+        console.log(`🔄 New focused video size: ${focusedWidth}x${focusedHeight}`);
+
+        // Apply new size with smooth transition - OVERRIDE ALL CSS CONSTRAINTS
+        const focusedElement = this._focusedElement;
+        focusedElement.style.setProperty('transition', 'width 300ms ease, height 300ms ease', 'important');
+        focusedElement.style.setProperty('width', `${focusedWidth}px`, 'important');
+        focusedElement.style.setProperty('height', `${focusedHeight}px`, 'important');
+        focusedElement.style.setProperty('max-width', 'none', 'important');
+        focusedElement.style.setProperty('max-height', 'none', 'important');
+
+        // Reset transition after animation
+        setTimeout(() => {
+            focusedElement.style.transition = 'opacity 400ms ease-in-out';
+        }, 300);
+
+        console.log('✅ Focused video size recalculated');
+    }
+
+    /**
+     * Clean up focus mode event listeners
+     */
+    cleanupFocusListeners() {
+        console.log('🧹 Cleaning up focus listeners...');
+
+        // Clean up fullscreen listeners
+        if (this.fullscreenListener) {
+            document.removeEventListener('fullscreenchange', this.fullscreenListener);
+            document.removeEventListener('webkitfullscreenchange', this.fullscreenListener);
+            document.removeEventListener('mozfullscreenchange', this.fullscreenListener);
+            document.removeEventListener('MSFullscreenChange', this.fullscreenListener);
+            this.fullscreenListener = null;
+        }
+
+        // Clean up resize listener
+        if (this.focusResizeListener) {
+            window.removeEventListener('resize', this.focusResizeListener);
+            this.focusResizeListener = null;
+        }
+
+        // Clear any pending resize timeout
+        if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = null;
+        }
+
+        console.log('✅ Focus listeners cleaned up');
+    }
+
+    /**
+     * Clean up cloned video tracks to prevent memory leaks
+     * @param {HTMLElement} clonedElement - Cloned participant element
+     * @param {string} participantId - Participant ID
+     */
+    cleanupClonedVideoTracks(clonedElement, participantId) {
+        console.log(`🧹 Cleaning up cloned video tracks for ${participantId}...`);
+
+        try {
+            const clonedVideo = clonedElement?.querySelector('video');
+            if (clonedVideo && clonedVideo.srcObject) {
+                // Set srcObject to null to release the MediaStream reference
+                clonedVideo.srcObject = null;
+                console.log(`✅ Cloned video tracks cleaned up for ${participantId}`);
+            }
+        } catch (error) {
+            console.error(`❌ Error cleaning up cloned video tracks for ${participantId}:`, error);
+        }
+    }
+
+    /**
+     * Setup close focus button
+     */
+    setupCloseFocusButton() {
+        const closeFocusBtn = document.getElementById('closeFocusBtn');
+        if (!closeFocusBtn) return;
+
+        // Remove any existing event listeners
+        const newButton = closeFocusBtn.cloneNode(true);
+        closeFocusBtn.parentNode.replaceChild(newButton, closeFocusBtn);
+
+        // Add new event listener
+        newButton.addEventListener('click', () => {
             this.exitFocusMode();
         });
 
-        const focusedContainer = document.getElementById('focusedContainer');
-        if (focusedContainer) {
-            focusedContainer.appendChild(exitButton);
-        }
+        console.log('🔘 Close focus button setup complete');
     }
+
+
 
     /**
-     * Schedule focused layout update
+     * Exit focus mode and return to grid layout (Simple Fade-out)
      */
-    scheduleFocusedLayoutUpdate() {
-        if (!this.isFocusModeActive) return;
+    exitFocusMode() {
+        console.log('🚪 Exiting focus mode');
 
-        // Debounce layout updates
-        clearTimeout(this.focusedLayoutTimeout);
-        this.focusedLayoutTimeout = setTimeout(() => {
-            this.updateFocusedLayout();
-        }, 100);
-    }
-
-    /**
-     * Update focused layout positioning
-     */
-    updateFocusedLayout() {
-        if (!this.isFocusModeActive) return;
-
-        const focusedContainer = document.getElementById('focusedContainer');
-        const focusedElement = focusedContainer?.querySelector('.focused-participant');
-
-        if (!focusedContainer || !focusedElement) return;
-
-        const containerRect = focusedContainer.getBoundingClientRect();
-        const aspectRatio = 16 / 9;
-
-        // Calculate optimal size while maintaining aspect ratio
-        let targetWidth, targetHeight;
-
-        if (containerRect.width / containerRect.height > aspectRatio) {
-            // Container is wider than target aspect ratio
-            targetHeight = Math.min(containerRect.height * 0.9, 600);
-            targetWidth = targetHeight * aspectRatio;
-        } else {
-            // Container is taller than target aspect ratio
-            targetWidth = Math.min(containerRect.width * 0.9, 800);
-            targetHeight = targetWidth / aspectRatio;
+        if (!this.isFocusModeActive || !this._focusOriginalElement || !this._focusedElement) {
+            console.log('⚠️ No active focus mode to exit');
+            return;
         }
 
-        // Apply styles
-        focusedElement.style.width = `${targetWidth}px`;
-        focusedElement.style.height = `${targetHeight}px`;
-        focusedElement.style.maxWidth = '90%';
-        focusedElement.style.maxHeight = '90%';
+        const participantElement = this._focusOriginalElement;
+        const focusedElement = this._focusedElement;
+        const videoArea = document.getElementById('videoArea');
+        const overlay = document.getElementById('focusOverlay');
 
-        console.log(`🎯 Updated focused layout: ${targetWidth.toFixed(0)}x${targetHeight.toFixed(0)}`);
+        console.log('🎬 Starting fade-out animation...');
+
+        // Fade out focused element and overlay
+        focusedElement.style.opacity = '0';
+        if (overlay) {
+            overlay.style.opacity = '0';
+        }
+
+        // Remove focus mode class from video area
+        if (videoArea) {
+            videoArea.classList.remove('focus-mode-active');
+        }
+
+        // After fade-out completes, clean up
+        setTimeout(() => {
+            // Clean up video tracks to prevent memory leaks
+            this.cleanupClonedVideoTracks(focusedElement, this.focusedParticipant);
+
+            // Remove the focused element from DOM
+            if (focusedElement && focusedElement.parentNode) {
+                focusedElement.remove();
+                console.log('🗑️ Focused element removed from DOM');
+            }
+
+            // Hide overlay completely
+            if (overlay) {
+                overlay.classList.add('hidden');
+                overlay.style.opacity = '';
+                overlay.style.transition = '';
+            }
+
+            // Restore original element opacity and interaction
+            participantElement.style.opacity = '';
+            participantElement.style.pointerEvents = '';
+            participantElement.style.transition = '';
+
+            // Clean up listeners
+            this.cleanupFocusListeners();
+
+            // Reset focus state
+            this.isFocusModeActive = false;
+            this.focusedParticipant = null;
+            this._focusOriginalElement = null;
+            this._focusedElement = null;
+
+            console.log('✅ Focus mode exited - original element restored');
+        }, 400);
+
+        console.log('✅ Focus mode exit animation started');
     }
+
+
+
+
+
+
+
+
 
     /**
      * Adjust video area for sidebar state
@@ -567,13 +765,13 @@ export class LiveKitLayout {
         console.log(`📋 Adjusting video area for sidebar: ${sidebarOpen ? 'open' : 'closed'}`);
 
         if (sidebarOpen) {
-            this.elements.videoArea.classList.add('lg:mr-80');
+            this.elements.videoArea.classList.add('mr-96');
         } else {
-            this.elements.videoArea.classList.remove('lg:mr-80');
+            this.elements.videoArea.classList.remove('mr-96');
         }
 
-        // Trigger layout recalculation
-        this.scheduleFocusedLayoutUpdate();
+        // Trigger layout recalculation if needed
+        this.updateVideoLayoutClasses();
     }
 
     /**
@@ -595,7 +793,6 @@ export class LiveKitLayout {
     handleResize() {
         this.calculateMeetingHeight();
         this.updateVideoLayoutClasses();
-        this.scheduleFocusedLayoutUpdate();
     }
 
     /**
@@ -618,8 +815,23 @@ export class LiveKitLayout {
             this.exitFocusMode();
         }
 
-        // Clear timeouts
-        clearTimeout(this.focusedLayoutTimeout);
+        // Clean up focus listeners
+        this.cleanupFocusListeners();
+
+        // Clean up any remaining focused elements
+        const focusedElements = document.querySelectorAll('[id^="focused-"]');
+        focusedElements.forEach(element => {
+            console.log(`🗑️ Cleaning up focused element: ${element.id}`);
+            const participantId = element.id.replace('focused-', '');
+            this.cleanupClonedVideoTracks(element, participantId);
+            element.remove();
+        });
+
+        // Clean up any remaining placeholders (legacy cleanup)
+        const placeholders = document.querySelectorAll('[id^="placeholder-"]');
+        placeholders.forEach(placeholder => placeholder.remove());
+
+        // Note: Focus listeners are cleaned up by cleanupFocusListeners() above
 
         // Clear references
         this.elements = {};
