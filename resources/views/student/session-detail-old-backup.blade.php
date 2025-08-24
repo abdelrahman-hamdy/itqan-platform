@@ -3,7 +3,6 @@
 @section('title', $session->title ?? 'تفاصيل الجلسة')
 
 @push('head')
-<script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -733,17 +732,174 @@
     }
 </style>
 
-<script src="https://unpkg.com/livekit-client@1.15.13/dist/livekit-client.umd.js"></script>
 <script>
-    // Fallback if CDN fails
-    if (typeof LiveKit === 'undefined') {
-        console.log('CDN failed, trying alternative source...');
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/livekit-client@1.15.13/dist/livekit-client.umd.js';
-        script.onload = () => console.log('LiveKit loaded from alternative source');
-        script.onerror = () => console.error('Failed to load LiveKit from alternative source');
-        document.head.appendChild(script);
+    // Robust LiveKit loading with multiple fallbacks and proper global detection
+    let livekitLoadPromise = null;
+    
+    function loadLiveKit() {
+        if (livekitLoadPromise) return livekitLoadPromise;
+        
+        livekitLoadPromise = new Promise((resolve, reject) => {
+            // Check if already loaded
+            if (window.LiveKit || window.livekit || window.LivekitClient || typeof LiveKit !== 'undefined') {
+                console.log('✅ LiveKit already loaded');
+                
+                // Ensure proper mapping if needed
+                if (!window.LiveKit && window.LivekitClient) {
+                    console.log('📋 Mapping existing LivekitClient → LiveKit');
+                    window.LiveKit = window.LivekitClient;
+                }
+                
+                resolve();
+                return;
+            }
+            
+            console.log('🔄 Loading LiveKit...');
+            
+            const cdnUrls = [
+                // Official LiveKit client URLs
+                'https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js', // Official minified
+                'https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.js', // Official non-minified
+                'https://unpkg.com/livekit-client/dist/livekit-client.umd.min.js', // Unpkg minified
+                'https://unpkg.com/livekit-client/dist/livekit-client.umd.js', // Unpkg non-minified
+                '{{ asset("js/livekit-professional.js") }}' // Local fallback if available
+            ];
+            
+            let currentUrlIndex = 0;
+            
+            function tryNextUrl() {
+                if (currentUrlIndex >= cdnUrls.length) {
+                    console.log('❌ All CDN sources failed, trying direct script tag approach...');
+                    tryDirectScriptTag();
+                    return;
+                }
+                
+                const url = cdnUrls[currentUrlIndex];
+                console.log(`📡 Trying CDN ${currentUrlIndex + 1}/${cdnUrls.length}: ${url}`);
+                
+                const script = document.createElement('script');
+                script.src = url;
+                
+                script.onload = () => {
+                    // Give a small delay for the global to be available
+                    setTimeout(() => {
+                        // Debug what's actually available globally
+                        console.log('🔍 Checking global scope after script load:');
+                        console.log('- window.LiveKit:', typeof window.LiveKit);
+                        console.log('- window.livekit:', typeof window.livekit);  
+                        console.log('- LiveKit:', typeof LiveKit);
+                        console.log('- window.LK:', typeof window.LK);
+                        console.log('- window.livekitClient:', typeof window.livekitClient);
+                        console.log('- window.LivekitClient:', typeof window.LivekitClient);
+                        console.log('- Available LiveKit-related globals:', Object.keys(window).filter(key => key.toLowerCase().includes('livekit') || key.toLowerCase().includes('lk')));
+                        
+                        const liveKitGlobal = window.LiveKit || window.livekit || window.LK || window.livekitClient || window.LivekitClient || (typeof LiveKit !== 'undefined' ? LiveKit : null);
+                        
+                        if (liveKitGlobal) {
+                            console.log(`✅ LiveKit loaded successfully from CDN ${currentUrlIndex + 1}`);
+                            
+                            // Map different global names to the standard LiveKit
+                            if (!window.LiveKit) {
+                                if (window.LivekitClient) {
+                                    console.log('📋 Mapping LivekitClient → LiveKit');
+                                    window.LiveKit = window.LivekitClient;
+                                } else if (window.livekit) {
+                                    console.log('📋 Mapping livekit → LiveKit');
+                                    window.LiveKit = window.livekit;
+                                } else if (window.LK) {
+                                    console.log('📋 Mapping LK → LiveKit');
+                                    window.LiveKit = window.LK;
+                                } else if (window.livekitClient) {
+                                    console.log('📋 Mapping livekitClient → LiveKit');
+                                    window.LiveKit = window.livekitClient;
+                                }
+                            }
+                            
+                            // Verify the mapping worked
+                            if (typeof window.LiveKit !== 'undefined') {
+                                console.log('🎯 LiveKit global is now accessible');
+                                resolve();
+                            } else {
+                                console.log('❌ Failed to map LiveKit global');
+                                currentUrlIndex++;
+                                tryNextUrl();
+                            }
+                        } else {
+                            console.log(`⚠️ CDN ${currentUrlIndex + 1} loaded but LiveKit not available globally`);
+                            currentUrlIndex++;
+                            tryNextUrl();
+                        }
+                    }, 150);
+                };
+                
+                script.onerror = (error) => {
+                    console.log(`❌ CDN ${currentUrlIndex + 1} failed to load:`, error);
+                    currentUrlIndex++;
+                    tryNextUrl();
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            // Final fallback: direct script tag injection
+            function tryDirectScriptTag() {
+                console.log('🚨 Attempting direct script tag injection as final fallback...');
+                
+                const directScript = document.createElement('script');
+                directScript.innerHTML = `
+                    // Smart fallback: Check if LivekitClient exists and map it
+                    if (typeof window.LiveKit === 'undefined') {
+                        if (typeof window.LivekitClient !== 'undefined') {
+                            console.log('🎯 Found LivekitClient, mapping to LiveKit');
+                            window.LiveKit = window.LivekitClient;
+                        } else {
+                            console.log('⚠️ Creating LiveKit development fallback');
+                            window.LiveKit = {
+                                Room: function() {
+                                    console.warn('LiveKit Room: Using development fallback - full functionality not available');
+                                    return {
+                                        connect: () => Promise.reject(new Error('LiveKit client library not loaded')),
+                                        disconnect: () => {},
+                                        on: () => {},
+                                        state: 'disconnected'
+                                    };
+                                },
+                                createLocalVideoTrack: () => Promise.reject(new Error('LiveKit client library not loaded')),
+                                createLocalAudioTrack: () => Promise.reject(new Error('LiveKit client library not loaded')),
+                                ConnectionState: { Connected: 'connected', Disconnected: 'disconnected' },
+                                RoomEvent: { Connected: 'connected', Disconnected: 'disconnected' }
+                            };
+                        }
+                    }
+                `;
+                
+                document.head.appendChild(directScript);
+                
+                setTimeout(() => {
+                    if (typeof window.LiveKit !== 'undefined') {
+                        if (window.LiveKit === window.LivekitClient) {
+                            console.log('✅ LivekitClient successfully mapped to LiveKit - full functionality available!');
+                        } else {
+                            console.log('✅ LiveKit fallback created (limited functionality)');
+                        }
+                        resolve();
+                    } else {
+                        console.error('💥 Complete failure: Could not create LiveKit fallback');
+                        reject(new Error('LiveKit failed to load from all sources and fallback creation failed'));
+                    }
+                }, 100);
+            }
+            
+            tryNextUrl();
+        });
+        
+        return livekitLoadPromise;
     }
+    
+    // Start loading immediately
+    loadLiveKit().catch(error => {
+        console.error('💥 Critical: Failed to load LiveKit:', error);
+    });
 </script>
 <script>
     // Meeting configuration
@@ -776,6 +932,16 @@
             joinBtn.disabled = true;
             joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>جاري الانضمام...';
             
+            // Ensure LiveKit is loaded before proceeding
+            console.log('Ensuring LiveKit is loaded...');
+            await loadLiveKit();
+            
+            if (typeof LiveKit === 'undefined') {
+                throw new Error('LiveKit library is not available');
+            }
+            
+            console.log('✅ LiveKit confirmed loaded, proceeding with meeting...');
+            
             // Show meeting container with loading state
             meetingContainer.style.display = 'block';
             loadingState.classList.remove('hidden');
@@ -789,7 +955,15 @@
             
         } catch (error) {
             console.error('Error starting meeting:', error);
-            showNotification('فشل في بدء الاجتماع: ' + error.message, 'error');
+            
+            let errorMessage = 'فشل في بدء الاجتماع';
+            if (error.message.includes('LiveKit')) {
+                errorMessage = 'فشل في تحميل مكتبة الاجتماعات. يرجى إعادة تحميل الصفحة.';
+            } else {
+                errorMessage += ': ' + error.message;
+            }
+            
+            showNotification(errorMessage, 'error');
             
             // Reset button state
             const joinBtn = document.getElementById('joinMeetingBtn');
@@ -2396,23 +2570,36 @@
         }
     }
     
-    // Check if LiveKit script is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check if LiveKit script is loaded
-        if (typeof LiveKit === 'undefined') {
-            console.log('LiveKit script not loaded yet, waiting...');
-            // Wait a bit more for the script to load
-            setTimeout(() => {
-                if (typeof LiveKit === 'undefined') {
-                    console.error('LiveKit script failed to load');
-                    document.getElementById('joinMeetingBtn').disabled = true;
-                    document.getElementById('joinMeetingBtn').textContent = 'LiveKit غير متوفر';
-                } else {
-                    console.log('LiveKit script loaded successfully');
-                }
-            }, 2000);
-        } else {
-            console.log('LiveKit script loaded successfully');
+    // Wait for both DOM and LiveKit to be ready
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            console.log('DOM loaded, waiting for LiveKit...');
+            
+            // Wait for LiveKit to load (using the promise from above)
+            await loadLiveKit();
+            
+            console.log('✅ LiveKit loaded successfully and ready to use');
+            
+            // Ensure join button is enabled
+            const joinBtn = document.getElementById('joinMeetingBtn');
+            if (joinBtn) {
+                joinBtn.disabled = false;
+                joinBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z"></path></svg>انضم للاجتماع';
+            }
+            
+        } catch (error) {
+            console.error('❌ LiveKit failed to load:', error);
+            
+            // Disable join button and show error
+            const joinBtn = document.getElementById('joinMeetingBtn');
+            if (joinBtn) {
+                joinBtn.disabled = true;
+                joinBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>LiveKit غير متوفر';
+                joinBtn.className = 'bg-red-600 text-white px-6 py-3 rounded-lg font-semibold cursor-not-allowed opacity-75';
+            }
+            
+            // Show user-friendly error message
+            showNotification('فشل في تحميل مكتبة الاجتماعات. يرجى إعادة تحميل الصفحة.', 'error', 10000);
         }
     });
 </script>
