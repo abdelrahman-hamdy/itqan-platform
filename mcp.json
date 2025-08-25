@@ -1,0 +1,15 @@
+{
+    "servers": {
+        "laravel-boost": {
+            "command": "php",
+            "args": [
+                "artisan",
+                "boost:mcp"
+            ],
+            "cwd": "/Users/abdelrahmanhamdy/web/itqan-platform",
+            "env": {
+                "APP_ENV": "local"
+            }
+        }
+    }
+}

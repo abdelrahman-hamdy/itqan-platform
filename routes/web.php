@@ -526,3 +526,5 @@ Route::middleware(['auth'])->prefix('api/meetings')->group(function () {
     // LiveKit Token API
     Route::post('livekit/token', [\App\Http\Controllers\LiveKitController::class, 'getToken'])->name('api.livekit.token');
 });
+
+

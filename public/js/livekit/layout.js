@@ -32,6 +32,9 @@ export class LiveKitLayout {
 
         this.initializeLayout();
 
+        // Set global reference for screen share focus mode
+        window.livekitLayout = this;
+
         console.log('🎨 LiveKitLayout initialized');
     }
 
@@ -215,7 +218,7 @@ export class LiveKitLayout {
 
         // Update layout classes for responsive grid system
         this.updateVideoLayoutClasses();
-        
+
         console.log(`📐 Video grid adjusted for container ${width}x${height} with ${participantCount} participants`);
     }
 
@@ -268,12 +271,23 @@ export class LiveKitLayout {
     updateVideoLayoutClasses() {
         if (!this.elements.videoGrid) return;
 
-        const participantCount = this.elements.videoGrid.children.length;
+        const totalElements = this.elements.videoGrid.children.length;
+        const screenShareElements = this.elements.videoGrid.querySelectorAll('[data-is-screen-share="true"]').length;
+        const participantElements = totalElements - screenShareElements;
 
-        // Set data attribute for CSS-driven responsive grid
-        this.elements.videoGrid.setAttribute('data-participants', participantCount);
+        // Set data attributes for CSS-driven responsive grid
+        this.elements.videoGrid.setAttribute('data-participants', participantElements);
+        this.elements.videoGrid.setAttribute('data-screen-shares', screenShareElements);
+        this.elements.videoGrid.setAttribute('data-total-elements', totalElements);
 
-        console.log(`🎨 Updated layout for ${participantCount} participants`);
+        // Add screen share class if there are active screen shares
+        if (screenShareElements > 0) {
+            this.elements.videoGrid.classList.add('has-screen-share');
+        } else {
+            this.elements.videoGrid.classList.remove('has-screen-share');
+        }
+
+        console.log(`🎨 Updated layout for ${participantElements} participants and ${screenShareElements} screen shares (${totalElements} total)`);
     }
 
     /**
@@ -282,8 +296,12 @@ export class LiveKitLayout {
      * @param {HTMLElement} participantElement - Participant DOM element
      */
     applyFocusMode(participantId, participantElement = null) {
+        console.log(`🎯 applyFocusMode called with participantId: ${participantId}`);
+        console.log(`🎯 participantElement provided: ${!!participantElement}`);
+
         if (!participantElement) {
             participantElement = document.getElementById(`participant-${participantId}`);
+            console.log(`🎯 Found element by ID: ${!!participantElement}`);
         }
 
         if (!participantElement) {
@@ -330,11 +348,20 @@ export class LiveKitLayout {
         const originalVideo = participantElement.querySelector('video');
         let videoAspectRatio = 16 / 9; // Default fallback
 
+        // Check if this is a screen share (different aspect ratio handling)
+        const isScreenShare = participantElement.dataset.isScreenShare === 'true';
+
         if (originalVideo && originalVideo.videoWidth && originalVideo.videoHeight) {
             videoAspectRatio = originalVideo.videoWidth / originalVideo.videoHeight;
             console.log(`📹 Detected video aspect ratio: ${videoAspectRatio.toFixed(2)} (${originalVideo.videoWidth}x${originalVideo.videoHeight})`);
         } else {
             console.log(`📹 Using default aspect ratio: ${videoAspectRatio.toFixed(2)}`);
+        }
+
+        // For screen shares, use a more conservative aspect ratio to ensure content fits
+        if (isScreenShare) {
+            videoAspectRatio = Math.min(videoAspectRatio, 16 / 9); // Cap at 16:9 for screen shares
+            console.log(`🖥️ Screen share detected, adjusted aspect ratio: ${videoAspectRatio.toFixed(2)}`);
         }
 
         // Use FULL available height as primary constraint
@@ -407,7 +434,16 @@ export class LiveKitLayout {
         if (focusedVideo) {
             focusedVideo.style.setProperty('width', '100%', 'important');
             focusedVideo.style.setProperty('height', '100%', 'important');
-            focusedVideo.style.setProperty('object-fit', 'cover', 'important'); // Fill the entire container
+
+            // Use different object-fit for screen shares vs regular videos
+            const isScreenShare = focusedElement.dataset.isScreenShare === 'true';
+            if (isScreenShare) {
+                focusedVideo.style.setProperty('object-fit', 'contain', 'important'); // Show full screen share content
+                focusedVideo.style.setProperty('background-color', '#1f2937', 'important'); // Dark background for screen shares
+            } else {
+                focusedVideo.style.setProperty('object-fit', 'cover', 'important'); // Fill the entire container for regular videos
+            }
+
             focusedVideo.style.setProperty('border-radius', '12px', 'important'); // Match the container styling
             focusedVideo.style.setProperty('max-width', 'none', 'important');
             focusedVideo.style.setProperty('max-height', 'none', 'important');
@@ -428,11 +464,24 @@ export class LiveKitLayout {
         // Store reference
         this._focusedElement = focusedElement;
 
+        // Hide screen share title when in focus mode (target the cloned element)
+        if (isScreenShare) {
+            const focusedScreenShareTitle = focusedElement.querySelector('.screen-share-title');
+            if (focusedScreenShareTitle) {
+                focusedScreenShareTitle.style.setProperty('opacity', '0', 'important');
+                focusedScreenShareTitle.style.setProperty('pointer-events', 'none', 'important');
+                console.log('🏷️ Hidden screen share title in focus mode');
+            }
+        }
+
         // Set up fullscreen change listener for automatic repositioning
         this.setupFullscreenListener();
 
         // Set up window resize listener for focus mode
         this.setupFocusResizeListener();
+
+        // Start monitoring video area size changes during focus mode
+        this.startFocusModeMonitoring();
 
         // Show overlay
         overlay.classList.remove('hidden');
@@ -511,20 +560,65 @@ export class LiveKitLayout {
         }
 
         this.fullscreenListener = () => {
-            console.log('📺 Fullscreen state changed, recalculating focused video...');
+            const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement ||
+                document.mozFullScreenElement || document.msFullscreenElement);
+            console.log(`📺 Fullscreen state changed to: ${isFullscreen ? 'FULLSCREEN' : 'NORMAL'}, recalculating focused video...`);
 
-            // Add a small delay to ensure the DOM has updated
+            // Force immediate recalculation for both entering and exiting fullscreen
             setTimeout(() => {
-                this.recalculateFocusedVideoSize();
-            }, 100);
+                if (this.isFocusModeActive && this._focusedElement) {
+                    console.log('🔧 Force recalculating focus mode size due to fullscreen change');
+                    this.recalculateFocusedVideoSize();
+                }
+            }, 50); // Shorter delay for immediate response
+
+            // Also add a secondary check after a longer delay to ensure it worked
+            setTimeout(() => {
+                if (this.isFocusModeActive && this._focusedElement) {
+                    console.log('🔧 Secondary focus mode size check after fullscreen change');
+                    this.recalculateFocusedVideoSize();
+                }
+            }, 300);
+
+            // Add a third check after an even longer delay for stubborn cases
+            setTimeout(() => {
+                if (this.isFocusModeActive && this._focusedElement) {
+                    console.log('🔧 Final focus mode size check after fullscreen change');
+                    this.recalculateFocusedVideoSize();
+                }
+            }, 1000);
         };
 
+        // Add all fullscreen event listeners
         document.addEventListener('fullscreenchange', this.fullscreenListener);
         document.addEventListener('webkitfullscreenchange', this.fullscreenListener);
         document.addEventListener('mozfullscreenchange', this.fullscreenListener);
         document.addEventListener('MSFullscreenChange', this.fullscreenListener);
 
-        console.log('📺 Fullscreen listener set up');
+        // Also listen for window resize as a fallback
+        this.fullscreenResizeListener = () => {
+            if (this.isFocusModeActive && this._focusedElement) {
+                console.log('🔧 Window resize detected during focus mode, recalculating...');
+                clearTimeout(this.fullscreenResizeTimeout);
+                this.fullscreenResizeTimeout = setTimeout(() => {
+                    this.recalculateFocusedVideoSize();
+                }, 100);
+            }
+        };
+        window.addEventListener('resize', this.fullscreenResizeListener);
+
+        // Add a global method for manual testing
+        window.testFocusResize = () => {
+            console.log('🧪 Manual focus resize test triggered');
+            if (this.isFocusModeActive && this._focusedElement) {
+                this.recalculateFocusedVideoSize();
+            } else {
+                console.log('❌ No active focus mode to resize');
+            }
+        };
+
+        console.log('📺 Enhanced fullscreen listener set up with immediate recalculation and manual test function');
+        console.log('🧪 You can test manual resize by running: window.testFocusResize() in console');
     }
 
     /**
@@ -550,36 +644,100 @@ export class LiveKitLayout {
     }
 
     /**
+     * Start monitoring video area size changes during focus mode
+     */
+    startFocusModeMonitoring() {
+        if (this.focusMonitoringInterval) {
+            return; // Already monitoring
+        }
+
+        let lastVideoAreaSize = null;
+
+        this.focusMonitoringInterval = setInterval(() => {
+            if (!this.isFocusModeActive || !this._focusedElement) {
+                return;
+            }
+
+            const videoArea = document.getElementById('videoArea');
+            if (!videoArea) return;
+
+            const currentSize = `${videoArea.offsetWidth}x${videoArea.offsetHeight}`;
+
+            if (lastVideoAreaSize && lastVideoAreaSize !== currentSize) {
+                console.log(`📏 Video area size changed from ${lastVideoAreaSize} to ${currentSize} - recalculating focus mode`);
+                this.recalculateFocusedVideoSize();
+            }
+
+            lastVideoAreaSize = currentSize;
+        }, 250); // Check every 250ms
+
+        console.log('👁️ Started focus mode monitoring (checks every 250ms)');
+    }
+
+    /**
+     * Stop monitoring video area size changes
+     */
+    stopFocusModeMonitoring() {
+        if (this.focusMonitoringInterval) {
+            clearInterval(this.focusMonitoringInterval);
+            this.focusMonitoringInterval = null;
+            console.log('👁️ Stopped focus mode monitoring');
+        }
+    }
+
+    /**
      * Recalculate focused video size and position (for fullscreen changes)
      */
     recalculateFocusedVideoSize() {
         if (!this.isFocusModeActive || !this._focusedElement) {
+            console.log('⚠️ No active focus mode or focused element found');
             return;
         }
 
         console.log('🔄 Recalculating focused video size...');
 
         const videoArea = document.getElementById('videoArea');
-        if (!videoArea) return;
+        if (!videoArea) {
+            console.log('⚠️ Video area not found');
+            return;
+        }
 
         const participantElement = this._focusOriginalElement;
-        if (!participantElement) return;
+        if (!participantElement) {
+            console.log('⚠️ Original participant element not found');
+            return;
+        }
 
-        // Recalculate dimensions
+        // Force a reflow to get fresh measurements
+        videoArea.offsetHeight; // Force reflow
+
+        // Recalculate dimensions with fresh measurements
         const videoAreaRect = videoArea.getBoundingClientRect();
         const padding = 30;
-        const availableWidth = videoAreaRect.width - (padding * 2);
-        const availableHeight = videoAreaRect.height - (padding * 2);
+        const availableWidth = Math.max(200, videoAreaRect.width - (padding * 2));
+        const availableHeight = Math.max(150, videoAreaRect.height - (padding * 2));
+
+        console.log(`📊 Video area fresh bounds: ${videoAreaRect.width}x${videoAreaRect.height}`);
+        console.log(`📊 Available space after padding: ${availableWidth}x${availableHeight}`);
 
         // Get video aspect ratio
         const originalVideo = participantElement.querySelector('video');
         let videoAspectRatio = 16 / 9;
 
+        // Check if this is a screen share (different aspect ratio handling)
+        const isScreenShare = participantElement.dataset.isScreenShare === 'true';
+
         if (originalVideo && originalVideo.videoWidth && originalVideo.videoHeight) {
             videoAspectRatio = originalVideo.videoWidth / originalVideo.videoHeight;
         }
 
-        // Calculate new size
+        // For screen shares, use a more conservative aspect ratio to ensure content fits
+        if (isScreenShare) {
+            videoAspectRatio = Math.min(videoAspectRatio, 16 / 9); // Cap at 16:9 for screen shares
+            console.log(`🖥️ Screen share detected during resize, adjusted aspect ratio: ${videoAspectRatio.toFixed(2)}`);
+        }
+
+        // Calculate new size - prioritize fitting within available space
         let focusedHeight = availableHeight;
         let focusedWidth = focusedHeight * videoAspectRatio;
 
@@ -588,25 +746,45 @@ export class LiveKitLayout {
             focusedHeight = focusedWidth / videoAspectRatio;
         }
 
+        // Ensure minimum size
         focusedWidth = Math.max(focusedWidth, 200);
         focusedHeight = Math.max(focusedHeight, 150);
 
-        console.log(`🔄 New focused video size: ${focusedWidth}x${focusedHeight}`);
+        // AGGRESSIVE: Ensure we NEVER exceed video area bounds
+        focusedWidth = Math.min(focusedWidth, availableWidth);
+        focusedHeight = Math.min(focusedHeight, availableHeight);
+
+        // Double check - if still too big, scale down proportionally
+        if (focusedWidth > availableWidth || focusedHeight > availableHeight) {
+            const scaleX = availableWidth / focusedWidth;
+            const scaleY = availableHeight / focusedHeight;
+            const scale = Math.min(scaleX, scaleY);
+
+            focusedWidth = Math.floor(focusedWidth * scale);
+            focusedHeight = Math.floor(focusedHeight * scale);
+
+            console.log(`📊 Applied scale factor ${scale.toFixed(2)} to fit within bounds`);
+        }
+
+        console.log(`🔄 Final focused video size: ${focusedWidth}x${focusedHeight}`);
+        console.log(`📊 Constraint check: width ${focusedWidth} <= ${availableWidth}, height ${focusedHeight} <= ${availableHeight}`);
 
         // Apply new size with smooth transition - OVERRIDE ALL CSS CONSTRAINTS
         const focusedElement = this._focusedElement;
         focusedElement.style.setProperty('transition', 'width 300ms ease, height 300ms ease', 'important');
         focusedElement.style.setProperty('width', `${focusedWidth}px`, 'important');
         focusedElement.style.setProperty('height', `${focusedHeight}px`, 'important');
-        focusedElement.style.setProperty('max-width', 'none', 'important');
-        focusedElement.style.setProperty('max-height', 'none', 'important');
+        focusedElement.style.setProperty('max-width', `${focusedWidth}px`, 'important');
+        focusedElement.style.setProperty('max-height', `${focusedHeight}px`, 'important');
+        focusedElement.style.setProperty('min-width', 'auto', 'important');
+        focusedElement.style.setProperty('min-height', 'auto', 'important');
 
         // Reset transition after animation
         setTimeout(() => {
             focusedElement.style.transition = 'opacity 400ms ease-in-out';
         }, 300);
 
-        console.log('✅ Focused video size recalculated');
+        console.log('✅ Focused video size recalculated and aggressively constrained to video area');
     }
 
     /**
@@ -624,7 +802,19 @@ export class LiveKitLayout {
             this.fullscreenListener = null;
         }
 
-        // Clean up resize listener
+        // Clean up fullscreen resize listener
+        if (this.fullscreenResizeListener) {
+            window.removeEventListener('resize', this.fullscreenResizeListener);
+            this.fullscreenResizeListener = null;
+        }
+
+        // Clear fullscreen resize timeout
+        if (this.fullscreenResizeTimeout) {
+            clearTimeout(this.fullscreenResizeTimeout);
+            this.fullscreenResizeTimeout = null;
+        }
+
+        // Clean up regular resize listener
         if (this.focusResizeListener) {
             window.removeEventListener('resize', this.focusResizeListener);
             this.focusResizeListener = null;
@@ -635,6 +825,14 @@ export class LiveKitLayout {
             clearTimeout(this.resizeTimeout);
             this.resizeTimeout = null;
         }
+
+        // Clean up global test function
+        if (window.testFocusResize) {
+            delete window.testFocusResize;
+        }
+
+        // Stop any monitoring
+        this.stopFocusModeMonitoring();
 
         console.log('✅ Focus listeners cleaned up');
     }
@@ -735,6 +933,9 @@ export class LiveKitLayout {
             // Clean up listeners
             this.cleanupFocusListeners();
 
+            // Stop monitoring
+            this.stopFocusModeMonitoring();
+
             // Reset focus state
             this.isFocusModeActive = false;
             this.focusedParticipant = null;
@@ -826,6 +1027,9 @@ export class LiveKitLayout {
             this.cleanupClonedVideoTracks(element, participantId);
             element.remove();
         });
+
+        // Clean up global reference
+        window.livekitLayout = null;
 
         // Clean up any remaining placeholders (legacy cleanup)
         const placeholders = document.querySelectorAll('[id^="placeholder-"]');

@@ -109,20 +109,28 @@ export class LiveKitParticipants {
         // Create participant container
         const participantDiv = document.createElement('div');
         participantDiv.id = `participant-${participantId}`;
-        participantDiv.className = 'participant-video';
+        participantDiv.className = 'participant-video relative bg-gray-800 rounded-lg overflow-hidden aspect-video w-full h-full group';
         participantDiv.dataset.participantId = participantId;
         participantDiv.dataset.isLocal = isLocal;
 
-        // Add click listener for focus mode
-        participantDiv.addEventListener('click', () => {
-            if (this.config.onParticipantClick) {
-                this.config.onParticipantClick(participantDiv, participant);
-            }
-        });
+        // Note: Focus mode is now only triggered by the close button, not by clicking on the video
+        // This prevents accidental focus mode activation
 
         // Create placeholder with avatar and name
         const placeholder = this.createParticipantPlaceholder(participant, isLocal);
         participantDiv.appendChild(placeholder);
+
+        // Add click event listener to the entire participant div for focus mode
+        participantDiv.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log(`🎯 Participant clicked for focus mode: ${participantId}`);
+
+            if (this.config.onParticipantClick) {
+                this.config.onParticipantClick(participantDiv, participant);
+            }
+        });
 
         // Add to video grid
         videoGrid.appendChild(participantDiv);
@@ -131,6 +139,10 @@ export class LiveKitParticipants {
         this.participantElements.set(participantId, participantDiv);
 
         console.log(`✅ DOM element created for ${participantId}`);
+        console.log(`📊 Video grid now has ${videoGrid.children.length} participants`);
+
+        // Debug: Log the participant element
+        console.log('🎨 Participant element:', participantDiv);
     }
 
     /**
@@ -162,7 +174,17 @@ export class LiveKitParticipants {
 
         // Set data attributes
         placeholder.setAttribute('data-participant-id', participantId);
-        placeholder.setAttribute('data-camera-off', 'false');
+        placeholder.setAttribute('data-camera-off', 'true');
+
+        // Determine initial states - assume enabled for local participant, disabled for remote
+        const shouldShowCameraOn = isLocal;
+        const shouldShowMicOn = isLocal;
+
+        const cameraStatusClass = shouldShowCameraOn ? 'text-green-500' : 'text-red-500';
+        const cameraStatusIcon = shouldShowCameraOn ? 'fas fa-video' : 'fas fa-video-slash';
+
+        const micStatusClass = shouldShowMicOn ? 'text-green-500' : 'text-red-500';
+        const micStatusIcon = shouldShowMicOn ? 'fas fa-microphone' : 'fas fa-microphone-slash';
 
         placeholder.innerHTML = `
             <div class="flex flex-col items-center text-center">
@@ -173,10 +195,13 @@ export class LiveKitParticipants {
                 <p class="text-white text-sm sm:text-base font-medium px-2 text-center">${displayName}</p>
                 <p class="text-gray-300 text-xs mt-1">${isLocal ? '(أنت)' : isTeacher ? 'معلم' : 'مشارك'}</p>
                 
-                <!-- Camera status indicator -->
-                <div class="mt-2 flex items-center justify-center">
-                    <div id="camera-status-${participantId}" class="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-video-slash text-white text-xs"></i>
+                <!-- Camera and Mic status indicators -->
+                <div class="mt-2 flex items-center justify-center gap-3">
+                    <div id="camera-status-${participantId}" class="${cameraStatusClass}">
+                        <i class="${cameraStatusIcon} text-sm"></i>
+                    </div>
+                    <div id="mic-status-${participantId}" class="${micStatusClass}">
+                        <i class="${micStatusIcon} text-sm"></i>
                     </div>
                 </div>
             </div>

@@ -116,16 +116,31 @@ export class LiveKitConnection {
 
         // Track events - these will be handled by the tracks module
         this.room.on(window.LiveKit.RoomEvent.TrackSubscribed, (track, publication, participant) => {
-            console.log('📹 Track subscribed:', track.kind, 'from', participant.identity);
+            console.log('📹 Track subscribed:', track.kind, 'from', participant.identity, 'isLocal:', participant.isLocal);
             if (this.config.onTrackSubscribed) {
                 this.config.onTrackSubscribed(track, publication, participant);
             }
         });
 
         this.room.on(window.LiveKit.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-            console.log('📹 Track unsubscribed:', track.kind, 'from', participant.identity);
+            console.log('📹 Track unsubscribed:', track.kind, 'from', participant.identity, 'isLocal:', participant.isLocal);
             if (this.config.onTrackUnsubscribed) {
                 this.config.onTrackUnsubscribed(track, publication, participant);
+            }
+        });
+
+        // Local track events - important for local participant
+        this.room.on(window.LiveKit.RoomEvent.LocalTrackPublished, (publication, participant) => {
+            console.log('📹 Local track published:', publication.kind, 'from', participant.identity);
+            if (this.config.onTrackPublished) {
+                this.config.onTrackPublished(publication, participant);
+            }
+        });
+
+        this.room.on(window.LiveKit.RoomEvent.LocalTrackUnpublished, (publication, participant) => {
+            console.log('📹 Local track unpublished:', publication.kind, 'from', participant.identity);
+            if (this.config.onTrackUnpublished) {
+                this.config.onTrackUnpublished(publication, participant);
             }
         });
 
@@ -153,9 +168,30 @@ export class LiveKitConnection {
 
         // Data received
         this.room.on(window.LiveKit.RoomEvent.DataReceived, (payload, participant) => {
-            console.log('📦 Data received from:', participant?.identity);
+            console.log('📦 Raw data received from:', participant?.identity);
+            console.log('📦 Payload length:', payload?.length);
+            console.log('📦 Participant is local:', participant?.isLocal);
+            console.log('📦 Participant SID:', participant?.sid);
+            console.log('📦 Local participant SID:', this.room?.localParticipant?.sid);
+            console.log('📦 Current participants in room:', Array.from(this.room.remoteParticipants.keys()));
+            console.log('📦 All participants (including local):', [
+                this.room?.localParticipant?.identity,
+                ...Array.from(this.room.remoteParticipants.values()).map(p => p.identity)
+            ]);
+
+            // Try to decode the payload for debugging
+            try {
+                const decodedData = JSON.parse(new TextDecoder().decode(payload));
+                console.log('📦 Decoded payload:', decodedData);
+            } catch (e) {
+                console.log('📦 Could not decode payload as JSON:', e.message);
+            }
+
             if (this.config.onDataReceived) {
+                console.log('📦 Calling onDataReceived callback');
                 this.config.onDataReceived(payload, participant);
+            } else {
+                console.warn('⚠️ No onDataReceived callback configured');
             }
         });
 
@@ -282,6 +318,14 @@ export class LiveKitConnection {
         console.log('🔑 Getting LiveKit token...');
 
         try {
+            const requestData = {
+                room_name: this.config.roomName,
+                participant_name: this.config.participantName,
+                user_type: this.config.role === 'teacher' ? 'quran_teacher' : 'student'
+            };
+
+            console.log('🔑 Sending token request with data:', requestData);
+
             const response = await fetch('/api/meetings/livekit/token', {
                 method: 'POST',
                 headers: {
@@ -289,21 +333,19 @@ export class LiveKitConnection {
                     'X-CSRF-TOKEN': this.config.csrfToken
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    room_name: this.config.roomName,
-                    participant_name: this.config.participantName,
-                    role: this.config.role
-                })
+                body: JSON.stringify(requestData)
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error('❌ Server response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
 
-            if (!data.success || !data.token) {
-                throw new Error('Invalid token response: ' + (data.message || 'Unknown error'));
+            if (!data.token) {
+                throw new Error('Invalid token response: ' + (data.error || 'Unknown error'));
             }
 
             console.log('✅ Token received successfully');
