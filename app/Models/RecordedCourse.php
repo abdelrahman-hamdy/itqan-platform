@@ -5,17 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class RecordedCourse extends Model
+class RecordedCourse extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
-        'instructor_id',
         'subject_id',
         'grade_level_id',
         'title',
@@ -24,23 +26,17 @@ class RecordedCourse extends Model
         'description_en',
         'course_code',
         'thumbnail_url',
-        'trailer_video_url',
-        'level',
         'duration_hours',
         'language',
         'price',
         'discount_price',
-        'currency',
-        'is_free',
         'is_published',
-        'is_featured',
         'enrollment_deadline',
-        'completion_certificate',
         'prerequisites',
         'learning_outcomes',
         'course_materials',
+        'materials',
         'total_sections',
-        'total_lessons',
         'total_duration_minutes',
         'avg_rating',
         'total_reviews',
@@ -50,24 +46,21 @@ class RecordedCourse extends Model
         'tags',
         'meta_keywords',
         'meta_description',
-        'status',
         'published_at',
         'created_by',
         'updated_by',
-        'notes'
+        'notes',
     ];
 
     protected $casts = [
-        'is_free' => 'boolean',
         'is_published' => 'boolean',
-        'is_featured' => 'boolean',
-        'completion_certificate' => 'boolean',
         'price' => 'decimal:2',
         'discount_price' => 'decimal:2',
         'avg_rating' => 'decimal:1',
         'prerequisites' => 'array',
         'learning_outcomes' => 'array',
         'course_materials' => 'array',
+        'materials' => 'array',
         'tags' => 'array',
         'enrollment_deadline' => 'datetime',
         'published_at' => 'datetime',
@@ -77,11 +70,6 @@ class RecordedCourse extends Model
     public function academy(): BelongsTo
     {
         return $this->belongsTo(Academy::class);
-    }
-
-    public function instructor(): BelongsTo
-    {
-        return $this->belongsTo(AcademicTeacher::class, 'instructor_id');
     }
 
     public function subject(): BelongsTo
@@ -123,7 +111,7 @@ class RecordedCourse extends Model
 
     public function reviews(): HasMany
     {
-        return $this->hasMany(CourseReview::class);
+        return $this->hasMany(CourseReview::class, 'course_id');
     }
 
     public function progress(): HasMany
@@ -134,27 +122,22 @@ class RecordedCourse extends Model
     // Scopes
     public function scopePublished($query)
     {
-        return $query->where('is_published', true)->where('status', 'published');
-    }
-
-    public function scopeFeatured($query)
-    {
-        return $query->where('is_featured', true);
+        return $query->where('is_published', true);
     }
 
     public function scopeFree($query)
     {
-        return $query->where('is_free', true);
+        return $query->where('price', 0);
     }
 
     public function scopePaid($query)
     {
-        return $query->where('is_free', false);
+        return $query->where('price', '>', 0);
     }
 
-    public function scopeByLevel($query, $level)
+    public function scopeByDifficultyLevel($query, $level)
     {
-        return $query->where('level', $level);
+        return $query->where('difficulty_level', $level);
     }
 
     public function scopeByCategory($query, $category)
@@ -163,38 +146,52 @@ class RecordedCourse extends Model
     }
 
     // Accessors
+    public function getIsFreeAttribute(): bool
+    {
+        return $this->price == 0;
+    }
+
     public function getFormattedPriceAttribute(): string
     {
         if ($this->is_free) {
             return 'مجاني';
         }
-        
+
+        // Get currency from academy or use default SAR
+        $currency = $this->academy->currency ?? 'SAR';
+
         if ($this->discount_price && $this->discount_price < $this->price) {
-            return $this->discount_price . ' ' . $this->currency . ' (خصم من ' . $this->price . ')';
+            return $this->discount_price.' '.$currency.' (خصم من '.$this->price.')';
         }
-        
-        return $this->price . ' ' . $this->currency;
+
+        return $this->price.' '.$currency;
+    }
+
+    public function getTotalLessonsAttribute(): int
+    {
+        return $this->lessons()->count();
     }
 
     public function getProgressPercentageAttribute(): float
     {
-        if ($this->total_lessons == 0) {
+        $totalLessons = $this->total_lessons;
+        if ($totalLessons == 0) {
             return 0;
         }
-        
-        return ($this->completed_lessons_count / $this->total_lessons) * 100;
+
+        return ($this->completed_lessons_count / $totalLessons) * 100;
     }
 
     public function getDurationFormattedAttribute(): string
     {
         $hours = floor($this->total_duration_minutes / 60);
         $minutes = $this->total_duration_minutes % 60;
-        
+
         if ($hours > 0) {
-            return $hours . ' ساعة' . ($minutes > 0 ? ' و ' . $minutes . ' دقيقة' : '');
+            return $hours.' ساعة'.($minutes > 0 ? ' و '.$minutes.' دقيقة' : '');
         }
-        
-        return $minutes . ' دقيقة';
+
+        return $minutes.' دقيقة';
     }
 
     public function getEnrollmentStatusAttribute(): string
@@ -202,11 +199,11 @@ class RecordedCourse extends Model
         if ($this->enrollment_deadline && now() > $this->enrollment_deadline) {
             return 'انتهى التسجيل';
         }
-        
-        if (!$this->is_published) {
+
+        if (! $this->is_published) {
             return 'غير منشور';
         }
-        
+
         return 'متاح للتسجيل';
     }
 
@@ -215,19 +212,17 @@ class RecordedCourse extends Model
     {
         $this->update([
             'total_sections' => $this->sections()->count(),
-            'total_lessons' => $this->lessons()->count(),
-            'total_duration_minutes' => $this->lessons()->sum('duration_minutes'),
+            'total_duration_minutes' => 0, // TODO: Calculate from actual video durations when available
             'total_enrollments' => $this->enrollments()->count(),
-            'avg_rating' => $this->reviews()->avg('rating') ?? 0,
-            'total_reviews' => $this->reviews()->count(),
+            'avg_rating' => 0, // Default to 0 for now
+            'total_reviews' => 0, // Default to 0 for now
         ]);
     }
 
     public function canEnroll(): bool
     {
-        return $this->is_published 
-            && $this->status === 'published'
-            && (!$this->enrollment_deadline || now() <= $this->enrollment_deadline);
+        return $this->is_published
+            && (! $this->enrollment_deadline || now() <= $this->enrollment_deadline);
     }
 
     public function isEnrolledBy(User $user): bool
@@ -237,4 +232,83 @@ class RecordedCourse extends Model
             ->where('status', 'active')
             ->exists();
     }
-} 
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('thumbnails')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+
+        $this->addMediaCollection('materials')
+            ->acceptsMimeTypes([
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+                'text/plain',
+                'text/csv',
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ]);
+
+        $this->addMediaCollection('videos')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'video/mp4',
+                'video/mpeg',
+                'video/quicktime',
+                'video/x-msvideo',
+                'video/webm',
+                'video/mov',
+            ]);
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        // Register conversions if needed
+    }
+
+    public function getMediaConversionUrls(string $collection = 'default'): array
+    {
+        return $this->getMedia($collection)
+            ->map(fn ($media) => $media->getUrl())
+            ->toArray();
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (RecordedCourse $course) {
+            // Create a default section for this course
+            $course->sections()->create([
+                'title' => 'دروس الكورس',
+                'title_en' => 'Course Lessons',
+                'description' => 'دروس الكورس الرئيسية',
+                'description_en' => 'Main course lessons',
+                'is_published' => true,
+                'order' => 1,
+                'created_by' => auth()->id() ?? 1,
+            ]);
+        });
+    }
+
+    public function getDefaultSectionId(): int
+    {
+        $defaultSection = $this->sections()->first();
+
+        if (! $defaultSection) {
+            $defaultSection = $this->sections()->create([
+                'title' => 'دروس الكورس',
+                'title_en' => 'Course Lessons',
+                'description' => 'دروس الكورس الرئيسية',
+                'description_en' => 'Main course lessons',
+                'is_published' => true,
+                'order' => 1,
+                'created_by' => auth()->id() ?? 1,
+            ]);
+        }
+
+        return $defaultSection->id;
+    }
+}

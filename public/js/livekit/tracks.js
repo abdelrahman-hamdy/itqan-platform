@@ -1,13 +1,13 @@
 /**
- * LiveKit Tracks Module
+ * LiveKit Tracks Module - ENHANCED WITH SYNCHRONIZATION FIXES
  * Handles track subscription, attachment/detachment, and media element management
- * Replaces manual camera detection with proper SDK events
+ * CRITICAL FIXES: Proper state synchronization, race condition elimination, robust track handling
  */
 
 /**
  * Track manager for LiveKit media tracks
  */
-export class LiveKitTracks {
+class LiveKitTracks {
     /**
      * Create a new tracks manager
      * @param {Object} config - Configuration object
@@ -21,170 +21,335 @@ export class LiveKitTracks {
     constructor(config = {}) {
         this.config = config;
         this.participantTracks = new Map(); // participantId -> { video: HTMLVideoElement, audio: HTMLAudioElement }
-        this.trackStates = new Map(); // participantId -> { hasVideo: boolean, hasAudio: boolean, videoMuted: boolean, audioMuted: boolean }
+        this.trackStates = new Map(); // participantId -> comprehensive state object
 
         // Retry mechanism tracking
         this.lastTrack = null;
         this.lastPublication = null;
         this.lastParticipant = null;
 
-        console.log('🎬 LiveKitTracks initialized');
+        // CRITICAL FIX: Enhanced state synchronization
+        this.processingQueue = new Set(); // Track which participants are being processed
+        this.syncTimeouts = new Map(); // participantId -> timeout ID
+        this.lastStateUpdate = new Map(); // participantId -> timestamp
+
+        console.log('🎬 LiveKitTracks initialized with enhanced synchronization');
     }
 
     /**
-     * Handle track subscribed event
-     * @param {LiveKit.Track} track - The subscribed track
-     * @param {LiveKit.TrackPublication} publication - The track publication
-     * @param {LiveKit.Participant} participant - The participant
+     * CRITICAL FIX: Initialize participant state with actual track publication data
      */
-    handleTrackSubscribed(track, publication, participant) {
-        console.log(`📹 Track subscribed: ${track.kind} from ${participant.identity}, source: ${publication.source}`);
-
-        const participantId = participant.identity;
-        const isLocal = participant.isLocal;
-
-        // Store for retry mechanism
-        this.lastTrack = track;
-        this.lastPublication = publication;
-        this.lastParticipant = participant;
-
-        // Initialize participant state if not exists
+    initializeParticipantState(participantId, isLocal) {
         if (!this.trackStates.has(participantId)) {
-            this.trackStates.set(participantId, {
+            // CRITICAL FIX: Don't assume states - read from actual participant
+            const defaultState = {
                 hasVideo: false,
                 hasAudio: false,
                 videoMuted: true,
                 audioMuted: true,
                 hasScreenShare: false,
-                screenShareMuted: true
-            });
+                screenShareMuted: true,
+                isLocal: isLocal,
+                lastUpdate: Date.now(),
+                uiSynced: false
+            };
+            
+            this.trackStates.set(participantId, defaultState);
+            console.log(`📊 [FIXED] Initialized state for ${participantId}:`, defaultState);
         }
-
-        // Handle screen share tracks differently
-        if (publication.source === window.LiveKit.Track.Source.ScreenShare) {
-            this.handleScreenShareTrackSubscribed(track, publication, participant);
-        } else if (publication.source === window.LiveKit.Track.Source.ScreenShareAudio) {
-            this.handleScreenShareAudioTrackSubscribed(track, publication, participant);
-        } else if (track.kind === 'video') {
-            this.handleVideoTrackSubscribed(track, publication, participant);
-        } else if (track.kind === 'audio') {
-            this.handleAudioTrackSubscribed(track, publication, participant);
-        }
-
-        // Update participant state
-        this.updateParticipantTrackState(participantId, publication);
     }
 
     /**
-     * Handle video track subscribed
+     * CRITICAL FIX: Update track state based on actual publication data
+     */
+    updateTrackState(participantId, publication, track) {
+        const state = this.trackStates.get(participantId);
+        if (!state) return;
+
+        const hasTrack = track !== null && track !== undefined;
+        const isMuted = publication.isMuted;
+        
+        if (publication.source === window.LiveKit.Track.Source.ScreenShare) {
+            state.hasScreenShare = hasTrack;
+            state.screenShareMuted = isMuted;
+        } else if (publication.kind === 'video') {
+            state.hasVideo = hasTrack;
+            state.videoMuted = isMuted;
+        } else if (publication.kind === 'audio') {
+            state.hasAudio = hasTrack;
+            state.audioMuted = isMuted;
+        }
+
+        state.lastUpdate = Date.now();
+        state.uiSynced = false; // Mark as needing UI sync
+        
+        console.log(`📊 [FIXED] Updated track state for ${participantId}:`, state);
+    }
+
+    /**
+     * CRITICAL FIX: Force UI synchronization
+     */
+    forceUISync(participantId) {
+        // Cancel any pending sync
+        if (this.syncTimeouts.has(participantId)) {
+            clearTimeout(this.syncTimeouts.get(participantId));
+        }
+
+        // Schedule immediate sync
+        const timeoutId = setTimeout(() => {
+            this.performUISync(participantId);
+            this.syncTimeouts.delete(participantId);
+        }, 100);
+        
+        this.syncTimeouts.set(participantId, timeoutId);
+    }
+
+    /**
+     * CRITICAL FIX: Perform UI synchronization based on actual state
+     */
+    performUISync(participantId) {
+        console.log(`🔄 [FIXED] Performing UI sync for ${participantId}`);
+        
+        const state = this.trackStates.get(participantId);
+        if (!state) {
+            console.warn(`⚠️ No state found for ${participantId}`);
+            return;
+        }
+
+        // Sync video display
+        const shouldShowVideo = state.hasVideo && !state.videoMuted;
+        this.updateVideoDisplay(participantId, shouldShowVideo);
+
+        // Sync audio indicators
+        const shouldShowAudio = state.hasAudio && !state.audioMuted;
+        this.updateMicrophoneStatusIcon(participantId, shouldShowAudio);
+        this.updateOverlayMicStatus(participantId, shouldShowAudio);
+
+        state.uiSynced = true;
+        console.log(`✅ UI sync completed for ${participantId}`);
+    }
+
+    /**
+     * CRITICAL FIX: Wait for video to be ready before showing
+     */
+    async waitForVideoReady(videoElement, participantId, timeout = 3000) {
+        console.log(`📹 Waiting for video to be ready for ${participantId}`);
+        
+        return new Promise((resolve) => {
+            const checkReady = () => {
+                if (videoElement.srcObject && 
+                    videoElement.srcObject.getTracks().length > 0 &&
+                    videoElement.readyState >= 2) {
+                    console.log(`✅ Video ready for ${participantId}`);
+                    resolve(true);
+                    return;
+                }
+            };
+
+            // Check immediately
+            checkReady();
+
+            // Set up event listeners for video ready states
+            const onLoadedData = () => {
+                console.log(`📹 Video loaded data for ${participantId}`);
+                checkReady();
+            };
+
+            const onCanPlay = () => {
+                console.log(`📹 Video can play for ${participantId}`);
+                checkReady();
+            };
+
+            videoElement.addEventListener('loadeddata', onLoadedData, { once: true });
+            videoElement.addEventListener('canplay', onCanPlay, { once: true });
+
+            // Timeout fallback
+            setTimeout(() => {
+                videoElement.removeEventListener('loadeddata', onLoadedData);
+                videoElement.removeEventListener('canplay', onCanPlay);
+                console.log(`⏰ Video ready timeout for ${participantId}, proceeding anyway`);
+                resolve(false);
+            }, timeout);
+        });
+    }
+
+    /**
+     * Handle track subscribed event - ENHANCED WITH SYNCHRONIZATION FIXES
+     * @param {LiveKit.Track} track - The subscribed track
+     * @param {LiveKit.TrackPublication} publication - The track publication
+     * @param {LiveKit.Participant} participant - The participant
+     */
+    async handleTrackSubscribed(track, publication, participant) {
+        const participantId = participant.identity;
+        const isLocal = participant.isLocal;
+        
+        console.log(`📹 [FIXED] Track subscribed: ${track.kind} from ${participantId}, source: ${publication.source}`);
+        console.log(`📊 Publication state: subscribed=${publication.isSubscribed}, muted=${publication.isMuted}`);
+
+        // CRITICAL FIX: Prevent duplicate processing
+        const processingKey = `${participantId}-${track.kind}-${publication.source}`;
+        if (this.processingQueue.has(processingKey)) {
+            console.log(`⏭️ Already processing ${track.kind} for ${participantId}, skipping`);
+            return;
+        }
+        
+        this.processingQueue.add(processingKey);
+
+        try {
+            // Store for retry mechanism
+            this.lastTrack = track;
+            this.lastPublication = publication;
+            this.lastParticipant = participant;
+
+            // CRITICAL FIX: Initialize participant state with REAL track data
+            this.initializeParticipantState(participantId, isLocal);
+            
+            // Update state based on actual publication
+            this.updateTrackState(participantId, publication, track);
+
+            // Handle screen share tracks differently
+            if (publication.source === window.LiveKit.Track.Source.ScreenShare) {
+                await this.handleScreenShareTrackSubscribed(track, publication, participant);
+            } else if (publication.source === window.LiveKit.Track.Source.ScreenShareAudio) {
+                await this.handleScreenShareAudioTrackSubscribed(track, publication, participant);
+            } else if (track.kind === 'video') {
+                await this.handleVideoTrackSubscribed(track, publication, participant);
+            } else if (track.kind === 'audio') {
+                await this.handleAudioTrackSubscribed(track, publication, participant);
+            }
+
+            // CRITICAL FIX: Force UI sync after track processing
+            this.forceUISync(participantId);
+            
+        } finally {
+            this.processingQueue.delete(processingKey);
+        }
+    }
+
+    /**
+     * Handle video track subscribed - ENHANCED WITH ROBUST ERROR HANDLING
      * @param {LiveKit.VideoTrack} track - The video track
      * @param {LiveKit.TrackPublication} publication - The track publication
      * @param {LiveKit.Participant} participant - The participant
      */
-    handleVideoTrackSubscribed(track, publication, participant) {
+    async handleVideoTrackSubscribed(track, publication, participant) {
         const participantId = participant.identity;
         const isLocal = participant.isLocal;
 
-        console.log(`📹 Video track subscribed for ${participantId} (local: ${isLocal}, muted: ${publication.isMuted})`);
+        console.log(`📹 [FIXED] Video track subscribed for ${participantId} (local: ${isLocal})`);
 
-        // Get or create video element
-        const videoElement = this.getOrCreateVideoElement(participantId, isLocal);
-
-        if (!videoElement) {
-            console.error(`❌ Could not create video element for ${participantId}`);
-            return;
-        }
-
-        // Attach track to video element
-        track.attach(videoElement);
-        console.log(`📹 Track attached to video element for ${participantId}`);
-
-        // For debugging: log video element properties
-        console.log(`📹 Video element state: width=${videoElement.videoWidth}, height=${videoElement.videoHeight}, ready=${videoElement.readyState}`);
-
-        // Ensure video element is properly configured
-        videoElement.onloadedmetadata = () => {
-            console.log(`📹 Video metadata loaded for ${participantId}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
-            // Force update display once metadata is loaded
-            this.updateVideoDisplay(participantId, !publication.isMuted);
-        };
-
-        // Add error handling for video track
-        videoElement.onerror = (error) => {
-            console.error(`❌ Video error for ${participantId}:`, error);
-        };
-
-        // Add event when video is ready to play
-        videoElement.oncanplay = () => {
-            console.log(`🎬 Video can play for ${participantId}`);
-            this.updateVideoDisplay(participantId, !publication.isMuted);
-        };
-
-        // Update video visibility and overlay state immediately
-        const shouldShowVideo = !publication.isMuted;
-        console.log(`📹 Should show video for ${participantId}: ${shouldShowVideo}`);
-        this.updateVideoDisplay(participantId, shouldShowVideo);
-
-        // Extra verification for track attachment
-        setTimeout(() => {
-            if (videoElement.srcObject) {
-                console.log(`✅ Video srcObject confirmed for ${participantId}`);
-            } else {
-                console.warn(`⚠️ Video srcObject missing for ${participantId}, re-attaching track...`);
-                track.attach(videoElement);
+        try {
+            // CRITICAL FIX: Get video element with retry mechanism
+            const videoElement = await this.getVideoElementWithRetry(participantId, isLocal);
+            if (!videoElement) {
+                console.error(`❌ Failed to create video element for ${participantId} after retries`);
+                return;
             }
-        }, 1000);
 
-        // Store track reference
-        if (!this.participantTracks.has(participantId)) {
-            this.participantTracks.set(participantId, {});
+            // Attach track with error handling
+            try {
+                track.attach(videoElement);
+                console.log(`✅ Video track attached for ${participantId}`);
+            } catch (attachError) {
+                console.error(`❌ Failed to attach video track for ${participantId}:`, attachError);
+                return;
+            }
+
+            // Store track reference
+            this.storeTrackReference(participantId, 'video', videoElement);
+
+            // CRITICAL FIX: Update video display based on ACTUAL track state
+            const shouldShowVideo = !publication.isMuted && track !== null;
+            
+            // Wait for video to be ready before updating display
+            await this.waitForVideoReady(videoElement, participantId);
+            
+            // Update display with actual state
+            this.updateVideoDisplay(participantId, shouldShowVideo);
+            
+            // Callback notification
+            if (this.config.onVideoTrackAttached) {
+                this.config.onVideoTrackAttached(participantId, videoElement, track, publication);
+            }
+
+            console.log(`✅ Video track handled for ${participantId} (FIXED)`);
+
+        } catch (error) {
+            console.error(`❌ Error handling video track for ${participantId}:`, error);
         }
-        this.participantTracks.get(participantId).video = videoElement;
-
-        // Notify callback
-        if (this.config.onVideoTrackAttached) {
-            this.config.onVideoTrackAttached(participantId, videoElement, track, publication);
-        }
-
-        console.log(`✅ Video track attached for ${participantId} - should show: ${shouldShowVideo}`);
     }
 
     /**
-     * Handle audio track subscribed
+     * CRITICAL FIX: Get video element with retry mechanism
+     */
+    async getVideoElementWithRetry(participantId, isLocal, maxRetries = 3) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`📹 Getting video element for ${participantId} (attempt ${attempt}/${maxRetries})`);
+            
+            const videoElement = this.getOrCreateVideoElement(participantId, isLocal);
+            if (videoElement) {
+                return videoElement;
+            }
+            
+            if (attempt < maxRetries) {
+                console.log(`⏳ Waiting before retry for ${participantId}...`);
+                await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Store track reference safely
+     */
+    storeTrackReference(participantId, trackType, element) {
+        if (!this.participantTracks.has(participantId)) {
+            this.participantTracks.set(participantId, {});
+        }
+        this.participantTracks.get(participantId)[trackType] = element;
+    }
+
+    /**
+     * Handle audio track subscribed - ENHANCED WITH IMMEDIATE UI UPDATE
      * @param {LiveKit.AudioTrack} track - The audio track
      * @param {LiveKit.TrackPublication} publication - The track publication
      * @param {LiveKit.Participant} participant - The participant
      */
-    handleAudioTrackSubscribed(track, publication, participant) {
+    async handleAudioTrackSubscribed(track, publication, participant) {
         const participantId = participant.identity;
         const isLocal = participant.isLocal;
 
-        console.log(`🎤 Audio track subscribed for ${participantId} (local: ${isLocal}, muted: ${publication.isMuted})`);
+        console.log(`🎤 [FIXED] Audio track subscribed for ${participantId} (local: ${isLocal}, muted: ${publication.isMuted})`);
 
-        // Update microphone status icon
-        this.updateMicrophoneStatusIcon(participantId, !publication.isMuted);
+        try {
+            // CRITICAL FIX: Update UI immediately with actual state
+            const hasActiveAudio = !publication.isMuted && track !== null;
+            this.updateMicrophoneStatusIcon(participantId, hasActiveAudio);
+            this.updateOverlayMicStatus(participantId, hasActiveAudio);
 
-        // For local participant, don't attach audio to prevent feedback
-        if (!isLocal) {
-            // Get or create audio element
-            const audioElement = this.getOrCreateAudioElement(participantId);
-
-            // Attach track to audio element
-            track.attach(audioElement);
-
-            // Store track reference
-            if (!this.participantTracks.has(participantId)) {
-                this.participantTracks.set(participantId, {});
+            // For non-local participants, attach audio
+            if (!isLocal && track) {
+                const audioElement = this.getOrCreateAudioElement(participantId);
+                
+                try {
+                    track.attach(audioElement);
+                    this.storeTrackReference(participantId, 'audio', audioElement);
+                } catch (attachError) {
+                    console.error(`❌ Failed to attach audio track for ${participantId}:`, attachError);
+                }
             }
-            this.participantTracks.get(participantId).audio = audioElement;
 
-            // Notify callback
+            // Callback notification
             if (this.config.onAudioTrackAttached) {
-                this.config.onAudioTrackAttached(participantId, audioElement, track, publication);
+                this.config.onAudioTrackAttached(participantId, null, track, publication);
             }
-        }
 
-        console.log(`✅ Audio track handled for ${participantId}`);
+            console.log(`✅ Audio track handled for ${participantId} (FIXED)`);
+
+        } catch (error) {
+            console.error(`❌ Error handling audio track for ${participantId}:`, error);
+        }
     }
 
     /**
@@ -455,8 +620,8 @@ export class LiveKitTracks {
             this.handleAudioTrackUnsubscribed(track, publication, participant);
         }
 
-        // Update participant state
-        this.updateParticipantTrackState(participantId, publication);
+        // CRITICAL FIX: Update track state immediately
+        this.updateTrackState(participantId, publication, publication.track);
     }
 
     /**
@@ -502,6 +667,7 @@ export class LiveKitTracks {
 
         // Update microphone status icon to show as muted
         this.updateMicrophoneStatusIcon(participantId, false);
+        this.updateOverlayMicStatus(participantId, false);
 
         // Detach track
         track.detach();
@@ -573,14 +739,16 @@ export class LiveKitTracks {
     }
 
     /**
-     * Handle track muted event
+     * Handle track muted event - ENHANCED WITH IMMEDIATE UI UPDATE
      * @param {LiveKit.TrackPublication} publication - The track publication
      * @param {LiveKit.Participant} participant - The participant
      */
     handleTrackMuted(publication, participant) {
         const participantId = participant.identity;
+        console.log(`🔇 [FIXED] Track muted: ${publication.kind} from ${participantId}`);
 
-        console.log(`🔇 Track muted: ${publication.kind} from ${participantId}, source: ${publication.source}`);
+        // CRITICAL FIX: Update state immediately
+        this.updateTrackState(participantId, publication, publication.track);
 
         if (publication.source === window.LiveKit.Track.Source.ScreenShare) {
             // Handle screen share muted (hide screen share)
@@ -596,6 +764,7 @@ export class LiveKitTracks {
         } else if (publication.kind === 'audio') {
             // Update microphone status icon
             this.updateMicrophoneStatusIcon(participantId, false);
+            this.updateOverlayMicStatus(participantId, false);
 
             // Notify microphone state change
             if (this.config.onMicrophoneStateChanged) {
@@ -603,43 +772,48 @@ export class LiveKitTracks {
             }
         }
 
-        // Update participant state
-        this.updateParticipantTrackState(participantId, publication);
+        // CRITICAL FIX: Force UI sync
+        this.forceUISync(participantId);
     }
 
     /**
-     * Handle track unmuted event
+     * Handle track unmuted event - ENHANCED WITH IMMEDIATE UI UPDATE
      * @param {LiveKit.TrackPublication} publication - The track publication
      * @param {LiveKit.Participant} participant - The participant
      */
     handleTrackUnmuted(publication, participant) {
         const participantId = participant.identity;
+        console.log(`🔊 [FIXED] Track unmuted: ${publication.kind} from ${participantId}`);
 
-        console.log(`🔊 Track unmuted: ${publication.kind} from ${participantId}, source: ${publication.source}`);
+        // CRITICAL FIX: Update state immediately
+        this.updateTrackState(participantId, publication, publication.track);
 
         if (publication.source === window.LiveKit.Track.Source.ScreenShare) {
             // Handle screen share unmuted (show screen share)
             this.updateScreenShareDisplay(participantId, true);
         } else if (publication.kind === 'video') {
-            // Show video and update camera status icon
-            this.updateVideoDisplay(participantId, true);
+            // CRITICAL FIX: Only show video if we actually have the track
+            const hasTrack = publication.track !== null;
+            this.updateVideoDisplay(participantId, hasTrack);
 
             // Notify camera state change
             if (this.config.onCameraStateChanged) {
-                this.config.onCameraStateChanged(participantId, true);
+                this.config.onCameraStateChanged(participantId, hasTrack);
             }
         } else if (publication.kind === 'audio') {
-            // Update microphone status icon
-            this.updateMicrophoneStatusIcon(participantId, true);
+            // CRITICAL FIX: Only show audio status if we actually have the track
+            const hasTrack = publication.track !== null;
+            this.updateMicrophoneStatusIcon(participantId, hasTrack);
+            this.updateOverlayMicStatus(participantId, hasTrack);
 
             // Notify microphone state change
             if (this.config.onMicrophoneStateChanged) {
-                this.config.onMicrophoneStateChanged(participantId, true);
+                this.config.onMicrophoneStateChanged(participantId, hasTrack);
             }
         }
 
-        // Update participant state
-        this.updateParticipantTrackState(participantId, publication);
+        // CRITICAL FIX: Force UI sync
+        this.forceUISync(participantId);
     }
 
     /**
@@ -649,9 +823,17 @@ export class LiveKitTracks {
      * @returns {HTMLVideoElement} Video element
      */
     getOrCreateVideoElement(participantId, isLocal = false) {
-        console.log(`📹 Getting/Creating video element for ${participantId}, isLocal: ${isLocal}`);
+        console.log(`📹 Getting video element for ${participantId}, isLocal: ${isLocal}`);
 
-        // Try to find participant element
+        // Try to find the video element directly first
+        let videoElement = document.getElementById(`video-${participantId}`);
+        
+        if (videoElement) {
+            console.log(`✅ Found existing video element for ${participantId}`);
+            return videoElement;
+        }
+
+        // Try to find participant element and look for video inside
         let participantElement = document.getElementById(`participant-${participantId}`);
 
         if (!participantElement) {
@@ -681,28 +863,24 @@ export class LiveKitTracks {
 
         console.log(`✅ Found participant element for ${participantId}`);
 
-        // Look for existing video element
-        let videoElement = participantElement.querySelector('video');
-        let existingVideoId = videoElement ? videoElement.id : 'none';
-        console.log(`📹 Existing video element check: ${existingVideoId}`);
-
+        // Look for existing video element inside participant
+        videoElement = participantElement.querySelector('video');
+        
         if (!videoElement) {
             console.log(`📹 Creating new video element for ${participantId}`);
 
             videoElement = document.createElement('video');
             videoElement.id = `video-${participantId}`;
-            videoElement.className = 'absolute inset-0 w-full h-full object-cover opacity-1 transition-opacity duration-300 z-10';
+            videoElement.className = 'absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 z-10';
             videoElement.autoplay = true;
             videoElement.playsInline = true;
             videoElement.muted = isLocal; // Mute local video to avoid feedback
-            videoElement.style.aspectRatio = '16/9';
-            videoElement.style.display = 'block';
+            videoElement.style.display = 'none';
 
             // Insert video element at the beginning of participant element
             participantElement.insertBefore(videoElement, participantElement.firstChild);
 
             console.log(`📹 ✅ Video element created and inserted for ${participantId}`);
-            console.log(`📹 📊 Participant element children:`, participantElement.children.length);
         } else {
             console.log(`📹 Found existing video element for ${participantId}: ${videoElement.id}`);
         }
@@ -731,12 +909,13 @@ export class LiveKitTracks {
         return audioElement;
     }
 
-    /**
- * Update video display and camera status icon
- * @param {string} participantId - Participant ID
- * @param {boolean} hasVideo - Whether participant has active video
- */
+        /**
+     * Update video display and camera status icon
+     * @param {string} participantId - Participant ID
+     * @param {boolean} hasVideo - Whether participant has active video
+     */
     updateVideoDisplay(participantId, hasVideo) {
+        console.log(`🔴 [DEBUG] updateVideoDisplay called for ${participantId} with hasVideo=${hasVideo}`);
         console.log(`📹 Updating video display for ${participantId}: ${hasVideo ? 'ON' : 'OFF'}`);
 
         const participantElement = document.getElementById(`participant-${participantId}`);
@@ -748,33 +927,79 @@ export class LiveKitTracks {
         const videoElement = participantElement.querySelector('video');
         const placeholder = participantElement.querySelector('.absolute.inset-0.flex.flex-col');
 
-        if (hasVideo) {
-            // Show video
+                if (hasVideo) {
+            // Show video, hide placeholder completely and show name overlay
             console.log(`📹 Showing video for ${participantId}`);
 
             if (videoElement) {
                 videoElement.style.opacity = '1';
                 videoElement.style.display = 'block';
                 videoElement.style.visibility = 'visible';
+                videoElement.style.zIndex = '10';
             }
 
+            // Hide placeholder completely when video is on
             if (placeholder) {
-                placeholder.style.opacity = '0.1'; // Keep slightly visible for labels
+                placeholder.style.opacity = '0';
+                placeholder.style.visibility = 'hidden';
+                placeholder.style.zIndex = '5';
+            }
+
+            // Show the existing HTML name overlay
+            const nameOverlay = document.getElementById(`name-overlay-${participantId}`);
+            if (nameOverlay) {
+                nameOverlay.style.display = 'block';
+                nameOverlay.style.opacity = '1';
+                console.log(`✅ Name overlay shown for ${participantId}`);
+            } else {
+                console.warn(`⚠️ Name overlay not found for ${participantId}`);
             }
 
             console.log(`✅ Video shown for ${participantId}`);
         } else {
-            // Hide video
+            // Hide video, show full placeholder with all content
             console.log(`📹 Hiding video for ${participantId}`);
 
             if (videoElement) {
                 videoElement.style.opacity = '0';
                 videoElement.style.display = 'none';
                 videoElement.style.visibility = 'hidden';
+                videoElement.style.zIndex = '5';
             }
 
+            // Show placeholder completely when video is off
             if (placeholder) {
                 placeholder.style.opacity = '1';
+                placeholder.style.visibility = 'visible';
+                placeholder.style.zIndex = '15';
+                placeholder.style.backgroundColor = '';
+
+                // Ensure all content inside placeholder is fully visible
+                const allElements = placeholder.querySelectorAll('*');
+                allElements.forEach(el => {
+                    el.style.opacity = '1';
+                    el.style.visibility = 'visible';
+                });
+
+                // Reset any custom styles that may have been applied
+                const statusContainer = placeholder.querySelector('.mt-2.flex.items-center.justify-center.gap-3');
+                if (statusContainer) {
+                    statusContainer.style.position = '';
+                    statusContainer.style.bottom = '';
+                    statusContainer.style.left = '';
+                    statusContainer.style.backgroundColor = '';
+                    statusContainer.style.padding = '';
+                    statusContainer.style.borderRadius = '';
+                    statusContainer.style.zIndex = '';
+                }
+            }
+
+            // Hide the HTML name overlay when video is off (placeholder shows the name)
+            const nameOverlay = document.getElementById(`name-overlay-${participantId}`);
+            if (nameOverlay) {
+                nameOverlay.style.display = 'none';
+                nameOverlay.style.opacity = '0';
+                console.log(`✅ Name overlay hidden for ${participantId}`);
             }
 
             console.log(`✅ Video hidden for ${participantId}`);
@@ -785,8 +1010,44 @@ export class LiveKitTracks {
     }
 
     /**
-     * Update camera status icon
+     * Update name overlay content (for dynamic updates)
      * @param {string} participantId - Participant ID
+     * @param {string} displayName - Display name to show
+     * @param {boolean} isTeacher - Whether participant is a teacher
+     */
+    updateNameOverlayContent(participantId, displayName, isTeacher) {
+        const nameElement = document.getElementById(`overlay-name-${participantId}`);
+        if (nameElement) {
+            nameElement.textContent = displayName;
+        }
+        
+        // Update teacher badge visibility
+        const teacherBadge = document.querySelector(`#name-overlay-${participantId} .bg-green-600`);
+        if (teacherBadge) {
+            teacherBadge.style.display = isTeacher ? 'inline-block' : 'none';
+        }
+    }
+
+    /**
+     * Update overlay mic status when video is on
+     * @param {string} participantId - Participant ID
+     * @param {boolean} hasAudio - Whether participant has active audio
+     */
+    updateOverlayMicStatus(participantId, hasAudio) {
+        const overlayMicIcon = document.getElementById(`overlay-mic-${participantId}`);
+        if (overlayMicIcon) {
+            if (hasAudio) {
+                overlayMicIcon.className = 'fas fa-microphone text-sm text-green-500';
+            } else {
+                overlayMicIcon.className = 'fas fa-microphone-slash text-sm text-red-500';
+            }
+            console.log(`🎤 Updated overlay mic status for ${participantId}: ${hasAudio ? 'ON' : 'OFF'}`);
+        }
+    }
+
+    /**
+     * Update camera status icon
+     * @param {string} participantId - Participant ID  
      * @param {boolean} hasVideo - Whether participant has active video
      */
     updateCameraStatusIcon(participantId, hasVideo) {
@@ -1023,10 +1284,19 @@ export class LiveKitTracks {
     }
 
     /**
-     * Destroy tracks manager and clean up
+     * Destroy tracks manager and clean up - ENHANCED WITH CLEANUP
      */
     destroy() {
-        console.log('🧹 Destroying tracks manager...');
+        console.log('🧹 [FIXED] Destroying tracks manager...');
+
+        // CRITICAL FIX: Clear all timeouts
+        for (const timeoutId of this.syncTimeouts.values()) {
+            clearTimeout(timeoutId);
+        }
+        this.syncTimeouts.clear();
+
+        // Clear processing queue
+        this.processingQueue.clear();
 
         // Remove all participant tracks
         for (const participantId of this.participantTracks.keys()) {
@@ -1035,7 +1305,11 @@ export class LiveKitTracks {
 
         this.participantTracks.clear();
         this.trackStates.clear();
+        this.lastStateUpdate.clear();
 
-        console.log('✅ Tracks manager destroyed');
+        console.log('🎵 Tracks manager destroyed (FIXED)');
     }
 }
+
+// Make class globally available
+window.LiveKitTracks = LiveKitTracks;

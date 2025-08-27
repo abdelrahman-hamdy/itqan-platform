@@ -41,6 +41,44 @@
         transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* CRITICAL FIX: Smooth loading overlay transitions */
+    #loadingOverlay {
+        transition: opacity 500ms ease-out, visibility 500ms ease-out;
+        pointer-events: auto;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+    }
+
+    #loadingOverlay.fade-out {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    /* Smooth meeting interface transitions */
+    #meetingInterface {
+        transition: opacity 400ms ease-in;
+    }
+
+    #meetingInterface.fade-in {
+        opacity: 1 !important;
+    }
+
+    /* Ensure meeting interface is visible by default */
+    #meetingInterface:not(.fade-in) {
+        opacity: 1;
+    }
+
+    /* Loading spinner enhancement */
+    #loadingOverlay .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
     /* Focus area styling - removed (focusArea deprecated) */
 
     /* Horizontal participants layout */
@@ -86,15 +124,40 @@
         position: absolute;
         top: 8px;
         right: 8px;
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         border-radius: 9999px;
-        background: rgba(245, 158, 11, 0.95);
+        background: linear-gradient(135deg, #f59e0b, #d97706);
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 20;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+        z-index: 30;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border: 2px solid white;
+        animation: handRaisePulse 2s ease-in-out infinite;
+        transition: all 0.3s ease;
+    }
+
+    .hand-raise-indicator:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .hand-raise-indicator i {
+        color: white;
+        font-size: 14px;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+    }
+
+    @keyframes handRaisePulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
     }
 
     .hand-raise-indicator svg {
@@ -940,26 +1003,74 @@
     window.livekitLoadPromise = loadLiveKitScript();
 </script>
 
-<!-- Modular LiveKit Implementation -->
-<div id="livekit-config" data-module-url="{{ asset('js/livekit/index.js') }}" style="display: none;"></div>
+<!-- Load LiveKit Classes in Correct Order -->
 <script>
-    // Get module path from data attribute to avoid IDE parsing issues
-    const configElement = document.getElementById('livekit-config');
-    const moduleUrl = configElement.getAttribute('data-module-url');
-
-    // Dynamic import
     console.log('🔄 Loading Modular LiveKit system...');
 
-    import(moduleUrl).then(module => {
-        // Make functions available globally for compatibility
-        window.initializeLiveKitMeeting = module.initializeLiveKitMeeting;
-        window.getCurrentMeeting = module.getCurrentMeeting;
-        window.destroyCurrentMeeting = module.destroyCurrentMeeting;
+    // Track loading states
+    let scriptsLoaded = {
+        dataChannel: false,
+        connection: false,
+        tracks: false,
+        participants: false,
+        controls: false,
+        layout: false,
+        index: false
+    };
 
-        console.log('✅ Modular LiveKit system loaded successfully');
-    }).catch(error => {
-        console.error('❌ Failed to load LiveKit module:', error);
-    });
+    function checkAllScriptsLoaded() {
+        const allLoaded = Object.values(scriptsLoaded).every(loaded => loaded);
+        if (allLoaded) {
+            console.log('✅ All LiveKit classes loaded, initializing system...');
+            
+            // Store session configuration
+            window.sessionId = '{{ $session->id }}';
+            window.auth = {
+                user: {
+                    id: '{{ auth()->id() }}',
+                    name: '{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}'
+                }
+            };
+
+            console.log('✅ Session configuration set:', {
+                sessionId: window.sessionId,
+                user: window.auth.user
+            });
+            
+            console.log('✅ Modular LiveKit system ready!');
+        }
+    }
+
+    function loadScript(src, name) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => {
+                console.log(`✅ ${name} loaded`);
+                scriptsLoaded[name] = true;
+                checkAllScriptsLoaded();
+                resolve();
+            };
+            script.onerror = (error) => {
+                console.error(`❌ Failed to load ${name}:`, error);
+                reject(error);
+            };
+            document.head.appendChild(script);
+        });
+    }
+
+    // Load scripts in order
+    Promise.resolve()
+        .then(() => loadScript('{{ asset("js/livekit/data-channel.js") }}?v={{ time() }}', 'dataChannel'))
+        .then(() => loadScript('{{ asset("js/livekit/connection.js") }}?v={{ time() }}', 'connection'))
+        .then(() => loadScript('{{ asset("js/livekit/tracks.js") }}?v={{ time() }}', 'tracks'))
+        .then(() => loadScript('{{ asset("js/livekit/participants.js") }}?v={{ time() }}', 'participants'))
+        .then(() => loadScript('{{ asset("js/livekit/controls.js") }}?v={{ time() }}', 'controls'))
+        .then(() => loadScript('{{ asset("js/livekit/layout.js") }}?v={{ time() }}', 'layout'))
+        .then(() => loadScript('{{ asset("js/livekit/index.js") }}?v={{ time() }}', 'index'))
+        .catch(error => {
+            console.error('❌ Failed to load LiveKit system:', error);
+        });
 </script>
 
 <!-- Meeting Controls Card -->
@@ -1023,15 +1134,16 @@
 <div id="meetingContainer" class="bg-white rounded-lg shadow-md overflow-hidden mb-8" style="display: none;">
     <!-- LiveKit Meeting Interface - Dynamic Height -->
     <div id="livekitMeetingInterface" class="bg-gray-900 relative overflow-hidden" style="min-height: 400px;">
-        <!-- Loading Overlay -->
+        <!-- Loading Overlay - ENHANCED WITH SMOOTH TRANSITIONS -->
         <div id="loadingOverlay" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
             <div class="text-center text-white">
                 <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p class="text-xl">جاري الاتصال بالاجتماع...</p>
+                <p class="text-xl font-medium">جاري الاتصال بالاجتماع...</p>
+                <p class="text-sm text-gray-300 mt-2">يرجى الانتظار قليلاً...</p>
             </div>
         </div>
 
-        <!-- Meeting Interface -->
+        <!-- Meeting Interface - ENHANCED WITH SMOOTH FADE-IN -->
         <div id="meetingInterface" class="h-full flex flex-col bg-gray-900 text-white" style="min-height: 700px;">
             <!-- Meeting Header - With fullscreen button -->
             <div class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white px-4 py-3 flex items-center justify-between text-sm font-medium shadow-lg">
@@ -1054,7 +1166,7 @@
                 </div>
 
                 <!-- Right side - Fullscreen button -->
-                <button id="fullscreenBtn" class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 z-[99999] relative">
+                <button id="fullscreenBtn" class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 z-1 relative">
                     <svg id="fullscreenIcon" class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 11-1.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
@@ -1131,6 +1243,51 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Raised Hands Panel (Teachers Only) -->
+                        @if($userType === 'quran_teacher')
+                        <div id="raisedHandsContent" class="h-full flex-col hidden">
+                            <!-- Global Audio Controls -->
+                            <div class="p-4 border-b border-gray-600">
+                                <h4 class="text-white font-medium mb-3">إدارة الصوت</h4>
+                                <div class="flex items-center justify-between py-2">
+                                    <span class="text-white text-sm font-medium">السماح للطلاب بإستخدام الميكروفون</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="toggleAllStudentsMicSwitch" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Raised Hands Queue -->
+                            <div class="flex-1 overflow-y-auto p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-white font-medium">الأيدي المرفوعة</h4>
+                                    <div class="flex items-center gap-2">
+                                        <span id="raisedHandsCount" class="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">0</span>
+                                        <button id="clearAllRaisedHandsBtn" 
+                                                onclick="window.meeting?.controls?.clearAllRaisedHands()" 
+                                                class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded transition-colors hidden"
+                                                title="إخفاء جميع الأيدي المرفوعة">
+                                            ✋ إخفاء الكل
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="raisedHandsList" class="space-y-3">
+                                    <!-- Empty state -->
+                                    <div id="noRaisedHandsMessage" class="text-center text-gray-400 py-8">
+                                        <svg class="w-12 h-12 mx-auto mb-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        <p>لا يوجد طلاب رفعوا أيديهم</p>
+                                    </div>
+                                    <!-- Raised hands will be added here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                        @endif
 
                         <!-- Settings Panel -->
                         <div id="settingsContent" class="h-full flex-col hidden">
@@ -1223,6 +1380,17 @@
                 </button>
 
                 @if($userType === 'quran_teacher')
+                <!-- Raised Hands Button (Teachers Only) -->
+                <button id="toggleRaisedHands" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95 relative" title="إدارة الأيدي المرفوعة">
+                    <i class="fa-solid fa-hand text-white text-xl"></i>
+                    <!-- Notification Badge -->
+                    <div id="raisedHandsNotificationBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold hidden">
+                        <span id="raisedHandsBadgeCount">0</span>
+                    </div>
+                </button>
+                @endif
+
+                @if($userType === 'quran_teacher')
                 <!-- Recording Button -->
                 <button id="toggleRecording" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95" title="بدء/إيقاف التسجيل">
                     <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -1289,11 +1457,21 @@
                 startBtn.addEventListener('click', async () => {
                     console.log('🎯 Start button clicked!');
 
+                    // Check if already initializing or initialized
+                    if (window.meeting || startBtn.disabled) {
+                        console.log('⚠️ Meeting already initialized or initializing, ignoring click');
+                        return;
+                    }
+
                     try {
                         // Show loading state
                         startBtn.disabled = true;
                         const btnText = document.getElementById('meetingBtnText');
-                        if (btnText) btnText.textContent = 'جاري الاتصال...';
+                        const originalText = btnText?.textContent;
+                        
+                        if (btnText) {
+                            btnText.textContent = window.isAutoJoining ? 'انضمام تلقائي...' : 'جاري الاتصال...';
+                        }
 
                         // Show meeting container
                         const meetingContainer = document.getElementById('meetingContainer');
@@ -1319,7 +1497,19 @@
                         // Reset button state
                         startBtn.disabled = false;
                         const btnText = document.getElementById('meetingBtnText');
-                        if (btnText) btnText.textContent = 'إعادة المحاولة';
+                        if (btnText) {
+                            if (window.isAutoJoining) {
+                                btnText.textContent = 'فشل الانضمام التلقائي - اضغط للمحاولة';
+                            } else {
+                                btnText.textContent = 'إعادة المحاولة';
+                            }
+                        }
+
+                        // Hide meeting container on error
+                        const meetingContainer = document.getElementById('meetingContainer');
+                        if (meetingContainer) {
+                            meetingContainer.style.display = 'none';
+                        }
 
                         // Show user-friendly error
                         const errorMessage = error?.message || 'حدث خطأ غير متوقع';
@@ -1384,6 +1574,74 @@
             }
         }
     });
+
+    // Add debug panel toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create debug panel
+        const debugPanel = document.createElement('div');
+        debugPanel.id = 'debugPanel';
+        debugPanel.className = 'fixed top-4 right-4 bg-gray-800 bg-opacity-90 text-white p-4 rounded-lg shadow-lg z-50 hidden';
+        debugPanel.innerHTML = `
+            <h3 class="text-lg font-bold mb-3">Debug Panel</h3>
+            <div class="space-y-2">
+                <button onclick="window.debugMeeting()" class="w-full bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-sm">
+                    Debug Meeting
+                </button>
+                <button onclick="window.debugVideos()" class="w-full bg-green-600 hover:bg-green-700 px-3 py-2 rounded text-sm">
+                    Debug Videos
+                </button>
+                <button onclick="window.debugPlaceholders()" class="w-full bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded text-sm">
+                    Debug Placeholders
+                </button>
+                <button onclick="window.testOverlay()" class="w-full bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm">
+                    Test Overlay
+                </button>
+                <button onclick="window.forceShowOverlays()" class="w-full bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded text-sm">
+                    Force Show Overlays
+                </button>
+                <button onclick="window.forceUpdateVideoDisplay()" class="w-full bg-pink-600 hover:bg-pink-700 px-3 py-2 rounded text-sm">
+                    Force Update Video
+                </button>
+                <button onclick="window.checkOverlays()" class="w-full bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm">
+                    Check Overlays
+                </button>
+                <button onclick="window.testNameCleaning()" class="w-full bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded text-sm">
+                    Test Name Cleaning
+                </button>
+                <button onclick="window.testHandRaiseIndicators()" class="w-full bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded text-sm">
+                    Test Hand Raise
+                </button>
+                <button onclick="window.testHandRaiseDirectly('local')" class="w-full bg-orange-500 hover:bg-orange-600 px-3 py-2 rounded text-sm">
+                    Test Direct Hand Raise
+                </button>
+                <button onclick="window.forceCreateHandRaiseIndicator('local')" class="w-full bg-orange-400 hover:bg-orange-500 px-3 py-2 rounded text-sm">
+                    Force Create Indicator
+                </button>
+                <button onclick="window.testControlsHandRaise('local', true)" class="w-full bg-orange-300 hover:bg-orange-400 px-3 py-2 rounded text-sm">
+                    Test Controls Hand Raise
+                </button>
+            </div>
+        `;
+
+        // Create debug toggle button
+        const debugToggle = document.createElement('button');
+        debugToggle.id = 'debugToggle';
+        debugToggle.className = 'fixed top-4 right-4 bg-gray-600 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center z-40 transition-all duration-200';
+        debugToggle.innerHTML = '<i class="fas fa-bug text-sm"></i>';
+        debugToggle.title = 'Toggle Debug Panel';
+        debugToggle.onclick = function() {
+            const panel = document.getElementById('debugPanel');
+            if (panel) {
+                panel.classList.toggle('hidden');
+            }
+        };
+
+        // Add to page
+        document.body.appendChild(debugToggle);
+        document.body.appendChild(debugPanel);
+
+        console.log('🔍 Debug panel added to page');
+    });
 </script>
 
 @if($userType === 'quran_teacher' && $session->scheduled_at && $session->scheduled_at->isToday())
@@ -1398,26 +1656,30 @@
         // Auto-join if within 5 minutes of scheduled time
         if (Math.abs(timeDiff) <= 5 * 60 * 1000) {
             console.log('🕐 Auto-joining meeting as it\'s scheduled time');
-            setTimeout(async () => {
-                try {
-                    const meetingContainer = document.getElementById('meetingContainer');
-                    if (meetingContainer) {
-                        meetingContainer.style.display = 'block';
+            
+            // Set auto-join flag to prevent conflicts
+            window.isAutoJoining = true;
+            
+            // Simulate button click after ensuring initialization is complete
+            setTimeout(() => {
+                const startBtn = document.getElementById('startMeetingBtn');
+                if (startBtn && !window.meeting) {
+                    console.log('🕐 Triggering auto-join via button click');
+                    startBtn.click();
+                    
+                    // Update button text to indicate auto-join
+                    const btnText = document.getElementById('meetingBtnText');
+                    if (btnText) {
+                        btnText.textContent = 'انضمام تلقائي...';
                     }
-                    if (window.initializeLiveKitMeeting) {
-                        window.meeting = await window.initializeLiveKitMeeting({
-                            serverUrl: '{{ config("livekit.server_url") }}',
-                            csrfToken: '{{ csrf_token() }}',
-                            roomName: '{{ $session->meeting_room_name ?? "session-" . $session->id }}',
-                            participantName: '{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}',
-                            role: 'teacher'
-                        });
-                        console.log('✅ Auto-join successful');
-                    }
-                } catch (error) {
-                    console.error('❌ Auto-join failed:', error);
+                } else if (window.meeting) {
+                    console.log('🕐 Meeting already initialized, skipping auto-join');
+                } else {
+                    console.warn('⚠️ Start button not found for auto-join');
                 }
-            }, 2000);
+                
+                window.isAutoJoining = false;
+            }, 3000); // Increased delay to ensure proper initialization
         }
     });
 </script>

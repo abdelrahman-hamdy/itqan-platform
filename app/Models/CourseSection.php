@@ -23,7 +23,7 @@ class CourseSection extends Model
         'duration_minutes',
         'lessons_count',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
@@ -31,7 +31,7 @@ class CourseSection extends Model
         'is_free_preview' => 'boolean',
         'order' => 'integer',
         'duration_minutes' => 'integer',
-        'lessons_count' => 'integer'
+        'lessons_count' => 'integer',
     ];
 
     // Relationships
@@ -42,7 +42,7 @@ class CourseSection extends Model
 
     public function lessons(): HasMany
     {
-        return $this->hasMany(Lesson::class)->orderBy('order');
+        return $this->hasMany(Lesson::class)->orderBy('id');
     }
 
     // Scopes
@@ -65,17 +65,17 @@ class CourseSection extends Model
     public function getDurationFormattedAttribute(): string
     {
         if ($this->duration_minutes < 60) {
-            return $this->duration_minutes . ' دقيقة';
+            return $this->duration_minutes.' دقيقة';
         }
-        
+
         $hours = floor($this->duration_minutes / 60);
         $minutes = $this->duration_minutes % 60;
-        
+
         if ($minutes > 0) {
-            return $hours . ' ساعة و ' . $minutes . ' دقيقة';
+            return $hours.' ساعة و '.$minutes.' دقيقة';
         }
-        
-        return $hours . ' ساعة';
+
+        return $hours.' ساعة';
     }
 
     public function getCompletionPercentageAttribute(): float
@@ -84,14 +84,14 @@ class CourseSection extends Model
         if ($totalLessons === 0) {
             return 0;
         }
-        
+
         $completedLessons = $this->lessons()
             ->whereHas('progress', function ($query) {
                 $query->where('user_id', auth()->id())
-                      ->where('is_completed', true);
+                    ->where('is_completed', true);
             })
             ->count();
-            
+
         return ($completedLessons / $totalLessons) * 100;
     }
 
@@ -100,7 +100,7 @@ class CourseSection extends Model
     {
         $this->update([
             'lessons_count' => $this->lessons()->count(),
-            'duration_minutes' => $this->lessons()->sum('duration_minutes')
+            'duration_minutes' => $this->lessons()->sum('duration_minutes'),
         ]);
     }
 
@@ -109,7 +109,7 @@ class CourseSection extends Model
         return $this->lessons()
             ->whereDoesntHave('progress', function ($query) use ($user) {
                 $query->where('user_id', $user->id)
-                      ->where('is_completed', true);
+                    ->where('is_completed', true);
             })
             ->orderBy('order')
             ->first();
@@ -121,14 +121,14 @@ class CourseSection extends Model
         if ($totalLessons === 0) {
             return false;
         }
-        
+
         $completedLessons = $this->lessons()
             ->whereHas('progress', function ($query) use ($user) {
                 $query->where('user_id', $user->id)
-                      ->where('is_completed', true);
+                    ->where('is_completed', true);
             })
             ->count();
-            
+
         return $completedLessons === $totalLessons;
     }
-} 
+}

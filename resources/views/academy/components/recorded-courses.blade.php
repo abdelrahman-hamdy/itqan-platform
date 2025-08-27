@@ -14,8 +14,8 @@
       @forelse($recordedCourses as $course)
         <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
           <div class="h-48 relative overflow-hidden">
-            @if($course->thumbnail)
-              <img src="{{ $course->thumbnail }}" alt="{{ $course->name }}" class="w-full h-full object-cover object-top">
+            @if($course->thumbnail_url)
+              <img src="{{ $course->thumbnail_url }}" alt="{{ $course->name }}" class="w-full h-full object-cover object-top">
             @else
               <div class="w-full h-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
                 <i class="ri-play-circle-line text-6xl text-white opacity-50"></i>
@@ -29,12 +29,16 @@
             <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $course->name }}</h3>
             <p class="text-gray-600 mb-4">{{ $course->description ?? 'شرح شامل لمنهج الرياضيات مع حل التمارين والأمثلة التطبيقية' }}</p>
             <div class="flex items-center justify-between mb-4">
-              <span class="text-2xl font-bold text-primary">{{ $course->price ?? 299 }} ر.س</span>
-              <div class="flex items-center text-yellow-500">
-                <div class="w-4 h-4 flex items-center justify-center ml-1">
-                  <i class="ri-star-fill"></i>
-                </div>
-                <span class="text-gray-700">{{ $course->rating ?? 4.8 }} ({{ $course->reviews_count ?? 124 }})</span>
+              <span class="text-2xl font-bold text-primary">
+                @if($course->is_free || $course->price == 0)
+                  مجاني
+                @else
+                  {{ $course->formatted_price }}
+                @endif
+              </span>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="ri-play-circle-line"></i>
+                <span>{{ $course->total_lessons ?? 0 }} درس</span>
               </div>
             </div>
             <a href="#" 
@@ -58,11 +62,9 @@
             <p class="text-gray-600 mb-4">شرح شامل لمنهج الرياضيات مع حل التمارين والأمثلة التطبيقية</p>
             <div class="flex items-center justify-between mb-4">
               <span class="text-2xl font-bold text-primary">299 ر.س</span>
-              <div class="flex items-center text-yellow-500">
-                <div class="w-4 h-4 flex items-center justify-center ml-1">
-                  <i class="ri-star-fill"></i>
-                </div>
-                <span class="text-gray-700">4.8 (124)</span>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="ri-play-circle-line"></i>
+                <span>45 درس</span>
               </div>
             </div>
             <button class="w-full bg-primary text-white py-3 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل الكورس المسجل">
@@ -82,11 +84,9 @@
             <p class="text-gray-600 mb-4">فهم قوانين الفيزياء من خلال التجارب العملية والأمثلة الواقعية</p>
             <div class="flex items-center justify-between mb-4">
               <span class="text-2xl font-bold text-primary">349 ر.س</span>
-              <div class="flex items-center text-yellow-500">
-                <div class="w-4 h-4 flex items-center justify-center ml-1">
-                  <i class="ri-star-fill"></i>
-                </div>
-                <span class="text-gray-700">4.9 (89)</span>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="ri-play-circle-line"></i>
+                <span>31 درس</span>
               </div>
             </div>
             <button class="w-full bg-primary text-white py-3 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل الكورس المسجل">
@@ -106,11 +106,9 @@
             <p class="text-gray-600 mb-4">تعلم قواعد اللغة العربية وتذوق الأدب والشعر العربي الأصيل</p>
             <div class="flex items-center justify-between mb-4">
               <span class="text-2xl font-bold text-primary">249 ر.س</span>
-              <div class="flex items-center text-yellow-500">
-                <div class="w-4 h-4 flex items-center justify-center ml-1">
-                  <i class="ri-star-fill"></i>
-                </div>
-                <span class="text-gray-700">4.7 (156)</span>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="ri-play-circle-line"></i>
+                <span>20 درس</span>
               </div>
             </div>
             <button class="w-full bg-primary text-white py-3 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل الكورس المسجل">

@@ -549,7 +549,7 @@ class ComprehensiveDataSeeder extends Seeder
                             'is_free' => rand(0, 1) === 0,
                             'is_featured' => rand(0, 1) === 1,
                             'is_published' => true,
-                            'status' => 'published',
+
                             'thumbnail_url' => 'courses/default-thumbnail.jpg',
                             'trailer_video_url' => 'https://example.com/video.mp4',
                             'published_at' => now()->subDays(rand(1, 30)),
@@ -650,7 +650,7 @@ class ComprehensiveDataSeeder extends Seeder
                             'enrollment_deadline' => now()->addDays(rand(10, 30)),
                             'schedule' => [],
                             'is_published' => true,
-                            'status' => 'published',
+
                             'publication_date' => now()->subDays(rand(1, 30)),
                         ]
                     );

@@ -215,8 +215,8 @@
                 <span>{{ $course->lessons_count ?? 0 }} درس</span>
               </div>
               <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-group-line ml-2"></i>
-                <span>{{ $course->students_count ?? 0 }} طالب مسجل</span>
+                <i class="ri-time-line ml-2"></i>
+                <span>{{ $course->duration_hours ?? 0 }} ساعة</span>
               </div>
               @if($course->price)
               <div class="flex items-center text-sm text-gray-600">

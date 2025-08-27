@@ -201,7 +201,7 @@
                     </div>
                     
                     <div class="flex gap-2">
-                        <a href="{{ route('student.courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $enrollment->course_id]) }}" 
+                        <a href="{{ route('courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $enrollment->recorded_course_id]) }}" 
                            class="flex-1 bg-primary text-white text-center py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">
                             متابعة الدورة
                         </a>

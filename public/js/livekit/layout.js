@@ -6,7 +6,7 @@
 /**
  * Layout manager for video grid and focus modes
  */
-export class LiveKitLayout {
+class LiveKitLayout {
     /**
      * Create a new layout manager
      * @param {Object} config - Configuration object
@@ -1041,6 +1041,9 @@ export class LiveKitLayout {
         this.elements = {};
         this.focusedParticipant = null;
 
-        console.log('✅ Layout manager destroyed');
+        console.log('📐 Layout manager destroyed');
     }
 }
+
+// Make class globally available
+window.LiveKitLayout = LiveKitLayout;

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CourseSubscription;
-use App\Models\StudentProgress;
-use App\Models\RecordedCourse;
 use App\Models\Academy;
+use App\Models\CourseSubscription;
+use App\Models\RecordedCourse;
+use App\Models\StudentProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +28,7 @@ class StudentDashboardController extends Controller
         // Get enrolled courses
         $enrolledCourses = CourseSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['recordedCourse.instructor', 'recordedCourse.sections'])
+            ->with(['recordedCourse.sections'])
             ->orderBy('enrolled_at', 'desc')
             ->get();
 
@@ -36,11 +36,11 @@ class StudentDashboardController extends Controller
         $activeCourses = $enrolledCourses->where('status', 'active');
         $completedCourses = $enrolledCourses->where('status', 'completed');
         $inProgressCourses = $activeCourses->where('progress_percentage', '>', 0)
-                                         ->where('progress_percentage', '<', 100);
+            ->where('progress_percentage', '<', 100);
 
         // Get recent activity
         $recentProgress = StudentProgress::where('user_id', $user->id)
-            ->whereHas('recordedCourse', function($query) use ($academy) {
+            ->whereHas('recordedCourse', function ($query) use ($academy) {
                 $query->where('academy_id', $academy->id);
             })
             ->with(['recordedCourse', 'lesson'])
@@ -80,7 +80,7 @@ class StudentDashboardController extends Controller
 
         $query = CourseSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['recordedCourse.instructor', 'recordedCourse.subject']);
+            ->with(['recordedCourse.subject']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -95,7 +95,7 @@ class StudentDashboardController extends Controller
                     break;
                 case 'in_progress':
                     $query->where('progress_percentage', '>', 0)
-                          ->where('progress_percentage', '<', 100);
+                        ->where('progress_percentage', '<', 100);
                     break;
                 case 'completed':
                     $query->where('progress_percentage', 100);
@@ -105,9 +105,9 @@ class StudentDashboardController extends Controller
 
         // Search
         if ($request->filled('search')) {
-            $query->whereHas('recordedCourse', function($q) use ($request) {
-                $q->where('title', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('description', 'LIKE', '%' . $request->search . '%');
+            $query->whereHas('recordedCourse', function ($q) use ($request) {
+                $q->where('title', 'LIKE', '%'.$request->search.'%')
+                    ->orWhere('description', 'LIKE', '%'.$request->search.'%');
             });
         }
 
@@ -127,7 +127,6 @@ class StudentDashboardController extends Controller
 
         $enrollment->load([
             'recordedCourse.sections.lessons',
-            'recordedCourse.instructor'
         ]);
 
         // Get detailed progress for each lesson
@@ -143,18 +142,18 @@ class StudentDashboardController extends Controller
         foreach ($enrollment->recordedCourse->sections as $section) {
             $totalLessons = $section->lessons->count();
             $completedLessons = 0;
-            
+
             foreach ($section->lessons as $lesson) {
                 $progress = $lessonsProgress->get($lesson->id);
                 if ($progress && $progress->is_completed) {
                     $completedLessons++;
                 }
             }
-            
+
             $sectionsProgress[$section->id] = [
                 'total_lessons' => $totalLessons,
                 'completed_lessons' => $completedLessons,
-                'progress_percentage' => $totalLessons > 0 ? ($completedLessons / $totalLessons) * 100 : 0
+                'progress_percentage' => $totalLessons > 0 ? ($completedLessons / $totalLessons) * 100 : 0,
             ];
         }
 
@@ -176,7 +175,7 @@ class StudentDashboardController extends Controller
         $certificates = CourseSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
             ->where('certificate_issued', true)
-            ->with(['recordedCourse.instructor'])
+
             ->orderBy('certificate_issued_at', 'desc')
             ->get();
 
@@ -192,7 +191,7 @@ class StudentDashboardController extends Controller
             abort(403);
         }
 
-        if (!$enrollment->certificate_issued || !$enrollment->completion_certificate_url) {
+        if (! $enrollment->certificate_issued || ! $enrollment->completion_certificate_url) {
             abort(404, 'الشهادة غير متوفرة');
         }
 
@@ -209,7 +208,7 @@ class StudentDashboardController extends Controller
 
         $bookmarkedLessons = StudentProgress::where('user_id', $user->id)
             ->whereNotNull('bookmarked_at')
-            ->whereHas('recordedCourse', function($query) use ($academy) {
+            ->whereHas('recordedCourse', function ($query) use ($academy) {
                 $query->where('academy_id', $academy->id);
             })
             ->with(['recordedCourse', 'lesson.section'])
@@ -229,7 +228,7 @@ class StudentDashboardController extends Controller
 
         $notesProgress = StudentProgress::where('user_id', $user->id)
             ->whereNotNull('notes')
-            ->whereHas('recordedCourse', function($query) use ($academy) {
+            ->whereHas('recordedCourse', function ($query) use ($academy) {
                 $query->where('academy_id', $academy->id);
             })
             ->with(['recordedCourse', 'lesson.section'])
@@ -252,7 +251,7 @@ class StudentDashboardController extends Controller
 
         // Watch time statistics
         $watchTimeStats = StudentProgress::where('user_id', $user->id)
-            ->whereHas('recordedCourse', function($query) use ($academy) {
+            ->whereHas('recordedCourse', function ($query) use ($academy) {
                 $query->where('academy_id', $academy->id);
             })
             ->where('last_accessed_at', '>=', $startDate)
@@ -264,7 +263,7 @@ class StudentDashboardController extends Controller
 
         // Completion statistics
         $completionStats = StudentProgress::where('user_id', $user->id)
-            ->whereHas('recordedCourse', function($query) use ($academy) {
+            ->whereHas('recordedCourse', function ($query) use ($academy) {
                 $query->where('academy_id', $academy->id);
             })
             ->where('completed_at', '>=', $startDate)
@@ -306,7 +305,7 @@ class StudentDashboardController extends Controller
             ->get();
 
         $totalProgress = StudentProgress::where('user_id', $user->id)
-            ->whereHas('recordedCourse', function($query) use ($academy) {
+            ->whereHas('recordedCourse', function ($query) use ($academy) {
                 $query->where('academy_id', $academy->id);
             })
             ->get();
@@ -319,7 +318,7 @@ class StudentDashboardController extends Controller
             'total_watch_time' => $totalProgress->sum('watch_time_seconds'),
             'total_lessons_completed' => $totalProgress->where('is_completed', true)->count(),
             'avg_progress' => $enrollments->avg('progress_percentage') ?? 0,
-            'current_streak' => $this->calculateLearningStreak($user, $academy)
+            'current_streak' => $this->calculateLearningStreak($user, $academy),
         ];
     }
 
@@ -340,7 +339,7 @@ class StudentDashboardController extends Controller
             'completionist' => ['threshold' => 5, 'field' => 'completed_courses', 'title' => 'مكمل المهام', 'icon' => 'clipboard-check'],
             'certificate_earner' => ['threshold' => 1, 'field' => 'certificates_earned', 'title' => 'حامل الشهادات', 'icon' => 'certificate'],
             'dedication' => ['threshold' => 3600, 'field' => 'total_watch_time', 'title' => 'المثابرة', 'icon' => 'clock'],
-            'speed_learner' => ['threshold' => 50, 'field' => 'total_lessons_completed', 'title' => 'متعلم سريع', 'icon' => 'lightning-bolt']
+            'speed_learner' => ['threshold' => 50, 'field' => 'total_lessons_completed', 'title' => 'متعلم سريع', 'icon' => 'lightning-bolt'],
         ];
 
         foreach ($achievementRules as $key => $rule) {
@@ -350,7 +349,7 @@ class StudentDashboardController extends Controller
                     'title' => $rule['title'],
                     'icon' => $rule['icon'],
                     'earned' => true,
-                    'progress' => 100
+                    'progress' => 100,
                 ];
             }
         }
@@ -375,15 +374,15 @@ class StudentDashboardController extends Controller
         // Recommend courses from same subjects or beginner level
         $recommended = RecordedCourse::where('academy_id', $academy->id)
             ->published()
-            ->whereNotIn('id', function($query) use ($user) {
+            ->whereNotIn('id', function ($query) use ($user) {
                 $query->select('recorded_course_id')
-                      ->from('course_subscriptions')
-                      ->where('student_id', $user->id);
+                    ->from('course_subscriptions')
+                    ->where('student_id', $user->id);
             })
-            ->where(function($query) use ($enrolledSubjects) {
+            ->where(function ($query) use ($enrolledSubjects) {
                 $query->whereIn('subject_id', $enrolledSubjects)
-                      ->orWhere('level', 'beginner')
-                      ->orWhere('is_featured', true);
+                    ->orWhere('level', 'beginner')
+                    ->orWhere('is_featured', true);
             })
             ->with(['instructor', 'subject'])
             ->take(6)
@@ -399,15 +398,15 @@ class StudentDashboardController extends Controller
     {
         $streak = 0;
         $currentDate = now()->startOfDay();
-        
+
         while (true) {
             $hasActivity = StudentProgress::where('user_id', $user->id)
-                ->whereHas('recordedCourse', function($query) use ($academy) {
+                ->whereHas('recordedCourse', function ($query) use ($academy) {
                     $query->where('academy_id', $academy->id);
                 })
                 ->whereDate('last_accessed_at', $currentDate)
                 ->exists();
-                
+
             if ($hasActivity) {
                 $streak++;
                 $currentDate->subDay();
@@ -415,7 +414,7 @@ class StudentDashboardController extends Controller
                 break;
             }
         }
-        
+
         return $streak;
     }
 
@@ -444,6 +443,7 @@ class StudentDashboardController extends Controller
     private function getCurrentAcademy()
     {
         $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+
         return Academy::where('subdomain', $subdomain)->firstOrFail();
     }
-} 
+}

@@ -3,21 +3,21 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\RecordedCourseResource\Pages;
-use App\Models\RecordedCourse;
-use App\Models\Academy;
-use App\Models\AcademicTeacher;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
 use App\Helpers\AcademyHelper;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicSubject;
+use App\Models\Academy;
+use App\Models\RecordedCourse;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
+use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
-class RecordedCourseResource extends BaseResource
+class RecordedCourseResource extends Resource
 {
     protected static ?string $model = RecordedCourse::class;
 
@@ -34,7 +34,7 @@ class RecordedCourseResource extends BaseResource
     public static function form(Form $form): Form
     {
         $currentAcademy = AcademyHelper::getCurrentAcademy();
-        
+
         return $form
             ->schema([
                 Forms\Components\Tabs::make('admin-course-tabs')
@@ -44,118 +44,145 @@ class RecordedCourseResource extends BaseResource
                             ->schema([
                                 Forms\Components\Section::make('معلومات الدورة')
                                     ->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->label('عنوان الدورة (عربي)')
-                            ->required()
-                            ->maxLength(255),
+                                        Forms\Components\TextInput::make('title')
+                                            ->label('عنوان الدورة (عربي)')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->placeholder('أدخل عنوان الدورة باللغة العربية')
+                                            ->helperText('مطلوب - عنوان الدورة باللغة العربية'),
 
-                        Forms\Components\TextInput::make('title_en')
-                            ->label('عنوان الدورة (إنجليزي)')
-                            ->maxLength(255),
+                                        Forms\Components\TextInput::make('title_en')
+                                            ->label('عنوان الدورة (إنجليزي)')
+                                            ->maxLength(255)
+                                            ->placeholder('Enter course title in English')
+                                            ->helperText('اختياري - عنوان الدورة باللغة الإنجليزية'),
 
-                        Forms\Components\Textarea::make('description')
-                            ->label('وصف الدورة (عربي)')
-                            ->rows(3)
-                            ->maxLength(1000),
+                                        Forms\Components\TextInput::make('course_code')
+                                            ->label('رمز الدورة')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->unique(ignoreRecord: true)
+                                            ->helperText('رمز فريد للدورة (مثال: MATH101)')
+                                            ->placeholder('أدخل رمز الدورة'),
 
-                        Forms\Components\Textarea::make('description_en')
-                            ->label('وصف الدورة (إنجليزي)')
-                            ->rows(3)
-                            ->maxLength(1000),
+                                        Forms\Components\Textarea::make('description')
+                                            ->label('وصف الدورة (عربي)')
+                                            ->rows(3)
+                                            ->maxLength(1000)
+                                            ->required()
+                                            ->placeholder('أدخل وصف مفصل للدورة باللغة العربية')
+                                            ->helperText('مطلوب - يجب إدخال وصف للدورة')
+                                            ->default('وصف الدورة'),
 
-                        Forms\Components\Select::make('academy_id')
-                            ->label('الأكاديمية')
-                            ->options(Academy::pluck('name', 'id'))
-                            ->default($currentAcademy?->id)
-                            ->disabled($currentAcademy !== null)
-                            ->required(),
+                                        Forms\Components\Textarea::make('description_en')
+                                            ->label('وصف الدورة (إنجليزي)')
+                                            ->rows(3)
+                                            ->maxLength(1000)
+                                            ->placeholder('Enter course description in English')
+                                            ->helperText('اختياري - يمكن تركه فارغاً')
+                                            ->default('Course Description'),
 
-                        Forms\Components\Select::make('instructor_id')
-                            ->label('المدرس')
-                            ->options(function () use ($currentAcademy) {
-                                $query = AcademicTeacher::with('user');
-                                if ($currentAcademy) {
-                                    $query->whereHas('user', function($q) use ($currentAcademy) {
-                                        $q->where('academy_id', $currentAcademy->id);
-                                    });
-                                }
-                                return $query->get()->mapWithKeys(function($teacher) {
-                                    $academyName = $teacher->user->academy->name ?? '';
-                                    return [$teacher->id => $teacher->user->name . ' (' . $academyName . ')'];
-                                });
-                            })
-                            ->searchable()
-                            ->required(),
+                                        Forms\Components\Select::make('academy_id')
+                                            ->label('الأكاديمية')
+                                            ->options(Academy::pluck('name', 'id'))
+                                            ->default($currentAcademy?->id)
+                                            ->disabled($currentAcademy !== null)
+                                            ->required(),
 
-                        Forms\Components\Select::make('subject_id')
-                            ->label('المادة الدراسية')
-                            ->options(AcademicSubject::pluck('name', 'id'))
-                            ->searchable()
-                            ->required(),
+                                        Forms\Components\Select::make('subject_id')
+                                            ->label('المادة الدراسية')
+                                            ->options(function () use ($currentAcademy) {
+                                                $query = AcademicSubject::query();
+                                                if ($currentAcademy) {
+                                                    $query->where('academy_id', $currentAcademy->id);
+                                                }
 
-                        Forms\Components\Select::make('grade_level_id')
-                            ->label('المستوى الدراسي')
-                            ->options(AcademicGradeLevel::pluck('name', 'id'))
-                            ->searchable()
-                            ->required(),
-                    ])->columns(2),
+                                                return $query->pluck('name', 'id');
+                                            })
+                                            ->searchable()
+                                            ->required(),
 
-                Forms\Components\Section::make('تفاصيل الدورة')
-                    ->schema([
-                        Forms\Components\TextInput::make('duration')
-                            ->label('مدة الدورة (بالساعات)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->step(0.5),
+                                        Forms\Components\Select::make('grade_level_id')
+                                            ->label('الصف الدراسي')
+                                            ->options(function () use ($currentAcademy) {
+                                                $query = AcademicGradeLevel::query();
+                                                if ($currentAcademy) {
+                                                    $query->where('academy_id', $currentAcademy->id);
+                                                }
 
-                        Forms\Components\TextInput::make('lessons_count')
-                            ->label('عدد الدروس')
-                            ->numeric()
-                            ->minValue(0),
+                                                return $query->where('is_active', true)
+                                                    ->orderBy('level_number')
+                                                    ->pluck('name', 'id');
+                                            })
+                                            ->searchable()
+                                            ->required(),
+                                    ])->columns(2),
 
-                        Forms\Components\TextInput::make('price')
-                            ->label('السعر')
-                            ->numeric()
-                            ->prefix('SAR')
-                            ->minValue(0),
+                                Forms\Components\Section::make('تفاصيل الدورة')
+                                    ->schema([
+                                        Forms\Components\Grid::make(2)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('duration_hours')
+                                                    ->label('مدة الدورة (بالساعات)')
+                                                    ->numeric()
+                                                    ->minValue(0)
+                                                    ->step(0.5)
+                                                    ->default(0)
+                                                    ->required(),
 
-                        Forms\Components\Select::make('difficulty_level')
-                            ->label('مستوى الصعوبة')
-                            ->options([
-                                'beginner' => 'مبتدئ',
-                                'intermediate' => 'متوسط',
-                                'advanced' => 'متقدم',
-                            ])
-                            ->default('intermediate'),
+                                                Forms\Components\Select::make('language')
+                                                    ->label('لغة الدورة')
+                                                    ->options([
+                                                        'ar' => 'العربية',
+                                                        'en' => 'الإنجليزية',
+                                                        'both' => 'العربية والإنجليزية',
+                                                    ])
+                                                    ->default('ar')
+                                                    ->required(),
 
-                        Forms\Components\Select::make('status')
-                            ->label('الحالة')
-                            ->options([
-                                'draft' => 'مسودة',
-                                'published' => 'منشور',
-                                'archived' => 'مؤرشف',
-                            ])
-                            ->default('draft'),
-                    ])->columns(2),
+                                                Forms\Components\TextInput::make('price')
+                                                    ->label('السعر')
+                                                    ->numeric()
+                                                    ->prefix('SAR')
+                                                    ->minValue(0)
+                                                    ->default(0)
+                                                    ->required(),
 
-                Forms\Components\Section::make('الوسائط')
-                    ->schema([
-                        Forms\Components\FileUpload::make('thumbnail')
-                            ->label('صورة مصغرة')
-                            ->image()
-                            ->directory('course-thumbnails'),
+                                                Forms\Components\Select::make('difficulty_level')
+                                                    ->label('مستوى الدورة')
+                                                    ->options([
+                                                        'easy' => 'سهل',
+                                                        'medium' => 'متوسط',
+                                                        'hard' => 'صعب',
+                                                    ])
+                                                    ->default('medium')
+                                                    ->required(),
+                                            ]),
 
-                        Forms\Components\FileUpload::make('intro_video')
-                            ->label('فيديو تعريفي')
-                            ->acceptedFileTypes(['video/mp4', 'video/mov', 'video/avi', 'video/wmv', 'video/flv', 'video/webm'])
-                            ->directory('course-videos')
-                            ->maxSize(512000) // 512MB max size
-                            ->helperText('الأنواع المدعومة: MP4, MOV, AVI, WMV, FLV, WebM'),
+                                        Forms\Components\Toggle::make('is_published')
+                                            ->label('منشور')
+                                            ->default(false)
+                                            ->required(),
 
-                        Forms\Components\FileUpload::make('materials')
-                            ->label('الملفات المرفقة')
-                            ->multiple()
-                            ->directory('course-materials'),
+                                    ])->columns(2),
+
+                                Forms\Components\Section::make('الوسائط')
+                                    ->schema([
+                                        SpatieMediaLibraryFileUpload::make('thumbnail_url')
+                                            ->label('صورة مصغرة')
+                                            ->image()
+                                            ->collection('thumbnails')
+                                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                            ->maxSize(10240) // 10MB max size
+                                            ->helperText('أقصى حجم: 10 ميجابايت'),
+
+                                        SpatieMediaLibraryFileUpload::make('materials')
+                                            ->label('مواد الكورس')
+                                            ->multiple()
+                                            ->collection('materials')
+                                            ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'])
+                                            ->maxSize(51200) // 50MB max size
+                                            ->helperText('أقصى حجم: 50 ميجابايت لكل ملف'),
                                     ])->columns(2),
                             ]),
 
@@ -166,8 +193,19 @@ class RecordedCourseResource extends BaseResource
                                     ->description('يمكنك إضافة عدد لا محدود من الدروس وتحديد محتوى كل درس')
                                     ->schema([
                                         Forms\Components\Repeater::make('lessons')
+                                            ->relationship('lessons')
                                             ->label('دروس الدورة')
                                             ->schema([
+                                                Forms\Components\Hidden::make('course_section_id')
+                                                    ->default(function ($livewire) {
+                                                        $record = $livewire->record ?? null;
+
+                                                        return $record ? $record->getDefaultSectionId() : null;
+                                                    }),
+
+                                                Forms\Components\Hidden::make('created_by')
+                                                    ->default(auth()->id()),
+
                                                 Forms\Components\Grid::make(2)
                                                     ->schema([
                                                         Forms\Components\TextInput::make('title')
@@ -175,11 +213,9 @@ class RecordedCourseResource extends BaseResource
                                                             ->required()
                                                             ->maxLength(255),
 
-                                                        Forms\Components\TextInput::make('order')
-                                                            ->label('ترتيب الدرس')
-                                                            ->numeric()
-                                                            ->minValue(1)
-                                                            ->required(),
+                                                        Forms\Components\TextInput::make('title_en')
+                                                            ->label('Lesson Title (English)')
+                                                            ->maxLength(255),
                                                     ]),
 
                                                 Forms\Components\RichEditor::make('description')
@@ -187,15 +223,24 @@ class RecordedCourseResource extends BaseResource
                                                     ->required()
                                                     ->columnSpanFull(),
 
-                                                Forms\Components\FileUpload::make('video_url')
-                                                    ->label('🎥 فيديو الدرس')
-                                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov'])
-                                                    ->maxSize(500 * 1024)
-                                                    ->directory('lessons/videos')
-                                                    ->required()
+                                                Forms\Components\Textarea::make('description_en')
+                                                    ->label('Lesson Description (English)')
+                                                    ->rows(3)
                                                     ->columnSpanFull(),
 
-                                                Forms\Components\Grid::make(2)
+                                                Forms\Components\FileUpload::make('video_url')
+                                                    ->label('فيديو الدرس')
+                                                    ->disk('public')
+                                                    ->directory('lessons/videos')
+                                                    ->visibility('public')
+                                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
+                                                    ->maxSize(512 * 1024) // 512MB
+                                                    ->columnSpanFull()
+                                                    ->getUploadedFileNameForStorageUsing(
+                                                        fn (TemporaryUploadedFile $file): string => 'lesson_video_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                    ),
+
+                                                Forms\Components\Grid::make(3)
                                                     ->schema([
                                                         Forms\Components\Toggle::make('is_published')
                                                             ->label('منشور')
@@ -204,12 +249,16 @@ class RecordedCourseResource extends BaseResource
                                                         Forms\Components\Toggle::make('is_free_preview')
                                                             ->label('معاينة مجانية')
                                                             ->default(false),
+
+                                                        Forms\Components\Toggle::make('is_downloadable')
+                                                            ->label('قابل للتحميل')
+                                                            ->default(false),
                                                     ]),
+
                                             ])
                                             ->defaultItems(1)
                                             ->collapsible()
-                                            ->itemLabel(fn (array $state): ?string => 
-                                                !empty($state['title']) ? "📹 " . $state['title'] : "درس جديد"
+                                            ->itemLabel(fn (array $state): ?string => ! empty($state['title']) ? '📹 '.$state['title'] : 'درس جديد'
                                             )
                                             ->addActionLabel('➕ إضافة درس جديد')
                                             ->reorderableWithButtons(),
@@ -232,11 +281,7 @@ class RecordedCourseResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('academy.name')
                     ->label('الأكاديمية')
-                    ->visible(fn() => !AcademyHelper::hasAcademySelected())
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('instructor.user.name')
-                    ->label('المدرس')
+                    ->visible(fn () => ! AcademyHelper::hasAcademySelected())
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('subject.name')
@@ -244,7 +289,7 @@ class RecordedCourseResource extends BaseResource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('grade_level.name')
-                    ->label('المستوى')
+                    ->label('الصف الدراسي')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('price')
@@ -252,40 +297,18 @@ class RecordedCourseResource extends BaseResource
                     ->money('SAR')
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('الحالة')
-                    ->colors([
-                        'warning' => 'draft',
-                        'success' => 'published',
-                        'danger' => 'archived',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'draft' => 'مسودة',
-                        'published' => 'منشور',
-                        'archived' => 'مؤرشف',
-                        default => $state,
-                    }),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime()
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options([
-                        'draft' => 'مسودة',
-                        'published' => 'منشور',
-                        'archived' => 'مؤرشف',
-                    ]),
-
                 Tables\Filters\SelectFilter::make('difficulty_level')
                     ->label('مستوى الصعوبة')
                     ->options([
-                        'beginner' => 'مبتدئ',
-                        'intermediate' => 'متوسط',
-                        'advanced' => 'متقدم',
+                        'easy' => 'سهل',
+                        'medium' => 'متوسط',
+                        'hard' => 'صعب',
                     ]),
             ])
             ->actions([
@@ -303,12 +326,12 @@ class RecordedCourseResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        
+
         // Filter by current academy if selected
         if (AcademyHelper::hasAcademySelected()) {
             $query->where('academy_id', AcademyHelper::getCurrentAcademyId());
         }
-        
+
         return $query;
     }
 
@@ -328,4 +351,4 @@ class RecordedCourseResource extends BaseResource
             'view' => Pages\ViewRecordedCourse::route('/{record}'),
         ];
     }
-} 
+}

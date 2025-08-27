@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Payment;
-use App\Models\CourseSubscription;
-use App\Models\RecordedCourse;
 use App\Models\Academy;
+use App\Models\CourseSubscription;
+use App\Models\Payment;
+use App\Models\RecordedCourse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,20 +17,21 @@ class PaymentController extends Controller
      */
     public function create(RecordedCourse $course)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();
-        
+
         // Check if course enrollment exists and is pending payment
         $enrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
             ->where('payment_status', 'pending')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return redirect()->route('courses.show', $course)
                 ->with('error', 'لم يتم العثور على طلب التسجيل');
         }
@@ -39,8 +40,8 @@ class PaymentController extends Controller
             return redirect()->route('courses.enroll', $course);
         }
 
-        $course->load(['instructor', 'academy']);
-        
+        $course->load(['academy']);
+
         // Calculate payment details
         $originalPrice = $course->price;
         $discountAmount = $course->discount_price ? ($originalPrice - $course->discount_price) : 0;
@@ -64,19 +65,19 @@ class PaymentController extends Controller
      */
     public function store(Request $request, RecordedCourse $course)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         $user = Auth::user();
-        
+
         $validated = $request->validate([
             'payment_method' => 'required|in:credit_card,mada,stc_pay,bank_transfer',
             'card_number' => 'required_if:payment_method,credit_card,mada|string',
             'expiry_month' => 'required_if:payment_method,credit_card,mada|integer|min:1|max:12',
             'expiry_year' => 'required_if:payment_method,credit_card,mada|integer|min:2024',
             'cvv' => 'required_if:payment_method,credit_card,mada|string|size:3',
-            'cardholder_name' => 'required_if:payment_method,credit_card,mada|string|max:255'
+            'cardholder_name' => 'required_if:payment_method,credit_card,mada|string|max:255',
         ]);
 
         // Get enrollment
@@ -85,9 +86,9 @@ class PaymentController extends Controller
             ->where('payment_status', 'pending')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return response()->json([
-                'error' => 'لم يتم العثور على طلب التسجيل'
+                'error' => 'لم يتم العثور على طلب التسجيل',
             ], 404);
         }
 
@@ -96,7 +97,7 @@ class PaymentController extends Controller
         $totalAmount = $finalPrice + $taxAmount;
 
         try {
-            DB::transaction(function() use ($user, $course, $enrollment, $validated, $totalAmount, $taxAmount) {
+            DB::transaction(function () use ($user, $course, $enrollment, $validated, $totalAmount, $taxAmount) {
                 // Create payment record
                 $payment = Payment::createPayment([
                     'academy_id' => $course->academy_id,
@@ -110,7 +111,7 @@ class PaymentController extends Controller
                     'tax_amount' => $taxAmount,
                     'tax_percentage' => 15, // Saudi VAT
                     'status' => 'pending',
-                    'payment_status' => 'pending'
+                    'payment_status' => 'pending',
                 ]);
 
                 // Process payment with gateway
@@ -119,11 +120,11 @@ class PaymentController extends Controller
                 if ($gatewayResult['success']) {
                     // Mark payment as completed
                     $payment->markAsCompleted($gatewayResult['data']);
-                    
+
                     // Update enrollment
                     $enrollment->update([
                         'payment_status' => 'paid',
-                        'status' => 'active'
+                        'status' => 'active',
                     ]);
                 } else {
                     // Mark payment as failed
@@ -135,12 +136,12 @@ class PaymentController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'تم الدفع بنجاح',
-                'redirect_url' => route('courses.learn', $course)
+                'redirect_url' => route('courses.learn', $course),
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'فشل في عملية الدفع: ' . $e->getMessage()
+                'error' => 'فشل في عملية الدفع: '.$e->getMessage(),
             ], 400);
         }
     }
@@ -150,12 +151,12 @@ class PaymentController extends Controller
      */
     public function success(Payment $payment)
     {
-        if (!Auth::check() || $payment->user_id !== Auth::id()) {
+        if (! Auth::check() || $payment->user_id !== Auth::id()) {
             abort(403);
         }
 
         $payment->load(['subscription', 'user']);
-        
+
         return view('payments.success', compact('payment'));
     }
 
@@ -164,12 +165,12 @@ class PaymentController extends Controller
      */
     public function failed(Payment $payment)
     {
-        if (!Auth::check() || $payment->user_id !== Auth::id()) {
+        if (! Auth::check() || $payment->user_id !== Auth::id()) {
             abort(403);
         }
 
         $payment->load(['subscription', 'user']);
-        
+
         return view('payments.failed', compact('payment'));
     }
 
@@ -181,12 +182,12 @@ class PaymentController extends Controller
         $this->authorize('refund', $payment);
 
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01|max:' . $payment->refundable_amount,
-            'reason' => 'required|string|max:500'
+            'amount' => 'required|numeric|min:0.01|max:'.$payment->refundable_amount,
+            'reason' => 'required|string|max:500',
         ]);
 
         try {
-            DB::transaction(function() use ($payment, $validated) {
+            DB::transaction(function () use ($payment, $validated) {
                 // Process refund with gateway
                 $gatewayResult = $this->processRefundWithGateway($payment, $validated['amount']);
 
@@ -199,12 +200,12 @@ class PaymentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'تم معالجة طلب الاسترداد بنجاح'
+                'message' => 'تم معالجة طلب الاسترداد بنجاح',
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'فشل في معالجة الاسترداد: ' . $e->getMessage()
+                'error' => 'فشل في معالجة الاسترداد: '.$e->getMessage(),
             ], 400);
         }
     }
@@ -214,13 +215,14 @@ class PaymentController extends Controller
      */
     public function history()
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();
-        
+
         $payments = Payment::where('user_id', $user->id)
             ->with(['subscription', 'academy'])
             ->orderBy('created_at', 'desc')
@@ -234,16 +236,16 @@ class PaymentController extends Controller
      */
     public function downloadReceipt(Payment $payment)
     {
-        if (!Auth::check() || $payment->user_id !== Auth::id()) {
+        if (! Auth::check() || $payment->user_id !== Auth::id()) {
             abort(403);
         }
 
-        if (!$payment->is_successful) {
+        if (! $payment->is_successful) {
             abort(404, 'لا يمكن تحميل إيصال لدفعة غير مكتملة');
         }
 
         // Generate receipt if not exists
-        if (!$payment->receipt_url) {
+        if (! $payment->receipt_url) {
             $receiptUrl = $payment->generateReceipt();
         } else {
             $receiptUrl = $payment->receipt_url;
@@ -262,28 +264,28 @@ class PaymentController extends Controller
             'credit_card' => [
                 'name' => 'بطاقة ائتمان',
                 'icon' => 'credit-card',
-                'enabled' => true
+                'enabled' => true,
             ],
             'mada' => [
                 'name' => 'مدى',
                 'icon' => 'mada',
-                'enabled' => true
+                'enabled' => true,
             ],
             'stc_pay' => [
                 'name' => 'STC Pay',
                 'icon' => 'stc-pay',
-                'enabled' => true
+                'enabled' => true,
             ],
             'bank_transfer' => [
                 'name' => 'تحويل بنكي',
                 'icon' => 'bank',
-                'enabled' => false
-            ]
+                'enabled' => false,
+            ],
         ];
 
         return response()->json([
             'success' => true,
-            'methods' => $methods
+            'methods' => $methods,
         ]);
     }
 
@@ -304,7 +306,7 @@ class PaymentController extends Controller
             'credit_card' => 'moyasar',
             'mada' => 'moyasar',
             'stc_pay' => 'stc_pay',
-            'bank_transfer' => 'manual'
+            'bank_transfer' => 'manual',
         ];
 
         return $gateways[$method] ?? 'moyasar';
@@ -317,7 +319,7 @@ class PaymentController extends Controller
     {
         // This is a mock implementation
         // In real application, you would integrate with actual payment gateways
-        
+
         switch ($payment->payment_gateway) {
             case 'moyasar':
                 return $this->processMoyasarPayment($payment, $paymentData);
@@ -326,7 +328,7 @@ class PaymentController extends Controller
             default:
                 return [
                     'success' => false,
-                    'error' => 'Payment gateway not supported'
+                    'error' => 'Payment gateway not supported',
                 ];
         }
     }
@@ -338,14 +340,14 @@ class PaymentController extends Controller
     {
         // Mock successful payment
         // In real implementation, you would call Moyasar API
-        
+
         return [
             'success' => true,
             'data' => [
-                'transaction_id' => 'TXN_' . time(),
-                'receipt_number' => 'REC_' . $payment->id . '_' . time(),
-                'gateway_response' => 'Payment processed successfully'
-            ]
+                'transaction_id' => 'TXN_'.time(),
+                'receipt_number' => 'REC_'.$payment->id.'_'.time(),
+                'gateway_response' => 'Payment processed successfully',
+            ],
         ];
     }
 
@@ -358,10 +360,10 @@ class PaymentController extends Controller
         return [
             'success' => true,
             'data' => [
-                'transaction_id' => 'STC_' . time(),
-                'receipt_number' => 'STC_REC_' . $payment->id . '_' . time(),
-                'gateway_response' => 'STC Pay payment processed successfully'
-            ]
+                'transaction_id' => 'STC_'.time(),
+                'receipt_number' => 'STC_REC_'.$payment->id.'_'.time(),
+                'gateway_response' => 'STC Pay payment processed successfully',
+            ],
         ];
     }
 
@@ -374,9 +376,9 @@ class PaymentController extends Controller
         return [
             'success' => true,
             'data' => [
-                'refund_id' => 'REF_' . time(),
-                'refunded_amount' => $amount
-            ]
+                'refund_id' => 'REF_'.time(),
+                'refunded_amount' => $amount,
+            ],
         ];
     }
-} 
+}

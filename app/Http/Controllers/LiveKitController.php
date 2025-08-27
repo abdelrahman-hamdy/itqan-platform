@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class LiveKitController extends Controller
 {
@@ -20,7 +20,7 @@ class LiveKitController extends Controller
             $request->validate([
                 'room_name' => 'required|string',
                 'participant_name' => 'required|string',
-                'user_type' => 'required|string|in:quran_teacher,student'
+                'user_type' => 'required|string|in:quran_teacher,student',
             ]);
 
             $roomName = $request->input('room_name');
@@ -31,21 +31,25 @@ class LiveKitController extends Controller
             $apiKey = config('livekit.api_key');
             $apiSecret = config('livekit.api_secret');
 
-            if (!$apiKey || !$apiSecret) {
+            if (! $apiKey || ! $apiSecret) {
                 return response()->json([
-                    'error' => 'LiveKit configuration not found'
+                    'error' => 'LiveKit configuration not found',
                 ], 500);
             }
+
+            // Create participant identity with user ID for uniqueness
+            $identity = auth()->id().'_'.str_replace(' ', '_', $participantName);
 
             // Create access token options with metadata
             $metadata = json_encode([
                 'userType' => $userType,
                 'displayName' => $participantName,
-                'role' => $userType === 'quran_teacher' ? 'teacher' : 'student'
+                'role' => $userType === 'quran_teacher' ? 'teacher' : 'student',
+                'userId' => auth()->id(),
             ]);
-            
+
             $options = new AccessTokenOptions([
-                'identity' => $participantName,
+                'identity' => $identity,
                 'name' => $participantName,
                 'metadata' => $metadata,
             ]);
@@ -83,12 +87,284 @@ class LiveKitController extends Controller
             return response()->json([
                 'token' => $token,
                 'room_name' => $roomName,
-                'participant_name' => $participantName
+                'participant_name' => $participantName,
+                'identity' => $identity,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Failed to generate token: ' . $e->getMessage()
+                'error' => 'Failed to generate token: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Mute/unmute participant's microphone (Admin only)
+     */
+    public function muteParticipant(Request $request): JsonResponse
+    {
+        try {
+            // Validate request
+            $request->validate([
+                'room_name' => 'required|string',
+                'participant_identity' => 'required|string',
+                'track_sid' => 'required|string',
+                'muted' => 'required|boolean',
+            ]);
+
+            // Check if user is a teacher
+            if (! in_array(auth()->user()->user_type, ['quran_teacher', 'academic_teacher'])) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $roomName = $request->input('room_name');
+            $participantIdentity = $request->input('participant_identity');
+            $trackSid = $request->input('track_sid');
+            $muted = $request->input('muted');
+
+            // Get LiveKit service
+            $liveKitService = app(\App\Services\LiveKitService::class);
+
+            if (! $liveKitService->isConfigured()) {
+                return response()->json(['error' => 'LiveKit service not configured'], 500);
+            }
+
+            // Use room service client to mute/unmute
+            $roomService = new \Agence104\LiveKit\RoomServiceClient(
+                config('livekit.server_url'),
+                config('livekit.api_key'),
+                config('livekit.api_secret')
+            );
+
+            $result = $roomService->mutePublishedTrack([
+                'room' => $roomName,
+                'identity' => $participantIdentity,
+                'track_sid' => $trackSid,
+                'muted' => $muted,
+            ]);
+
+            Log::info('Participant mute/unmute action', [
+                'room' => $roomName,
+                'participant' => $participantIdentity,
+                'track_sid' => $trackSid,
+                'muted' => $muted,
+                'teacher' => auth()->id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'muted' => $muted,
+                'participant_identity' => $participantIdentity,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to mute/unmute participant', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to mute/unmute participant: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get room participants with their tracks
+     */
+    public function getRoomParticipants(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'room_name' => 'required|string',
+            ]);
+
+            // Check if user is a teacher
+            if (! in_array(auth()->user()->user_type, ['quran_teacher', 'academic_teacher'])) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $roomName = $request->input('room_name');
+
+            // Get LiveKit service
+            $liveKitService = app(\App\Services\LiveKitService::class);
+            $roomInfo = $liveKitService->getRoomInfo($roomName);
+
+            if (! $roomInfo) {
+                return response()->json(['error' => 'Room not found'], 404);
+            }
+
+            // Get detailed participant info with tracks
+            $roomService = new \Agence104\LiveKit\RoomServiceClient(
+                config('livekit.server_url'),
+                config('livekit.api_key'),
+                config('livekit.api_secret')
+            );
+
+            $participantsResponse = $roomService->listParticipants($roomName);
+            $participants = [];
+
+            if ($participantsResponse && method_exists($participantsResponse, 'getParticipants')) {
+                foreach ($participantsResponse->getParticipants() as $participant) {
+                    $tracks = [];
+
+                    // Get tracks for this participant
+                    foreach ($participant->getTracks() as $track) {
+                        $tracks[] = [
+                            'sid' => $track->getSid(),
+                            'name' => $track->getName(),
+                            'type' => $track->getType(),
+                            'muted' => $track->getMuted(),
+                            'source' => $track->getSource(),
+                        ];
+                    }
+
+                    $participants[] = [
+                        'identity' => $participant->getIdentity(),
+                        'name' => $participant->getName() ?: $participant->getIdentity(),
+                        'sid' => $participant->getSid(),
+                        'tracks' => $tracks,
+                        'joined_at' => $participant->getJoinedAt(),
+                        'metadata' => $participant->getMetadata(),
+                    ];
+                }
+            }
+
+            return response()->json([
+                'room_name' => $roomName,
+                'participants' => $participants,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get room participants', [
+                'error' => $e->getMessage(),
+                'room_name' => $request->input('room_name'),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to get participants: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Mute all students in a room (Teacher only)
+     */
+    public function muteAllStudents(Request $request): JsonResponse
+    {
+        try {
+            // Enhanced debugging at controller level
+            \Log::info('LiveKitController::muteAllStudents - Start', [
+                'auth_check' => auth()->check(),
+                'user_id' => auth()->check() ? auth()->user()->id : null,
+                'user_type' => auth()->check() ? auth()->user()->user_type : null,
+                'request_data' => $request->all(),
+                'session_id' => $request->session()->getId() ?? 'no-session',
+            ]);
+
+            // Check if user is a teacher
+            if (! auth()->check()) {
+                \Log::warning('LiveKitController::muteAllStudents - User not authenticated');
+
+                return response()->json(['error' => 'Authentication required'], 401);
+            }
+
+            $allowedTypes = ['quran_teacher', 'academic_teacher', 'admin', 'super_admin'];
+            if (! in_array(auth()->user()->user_type, $allowedTypes)) {
+                \Log::warning('LiveKitController::muteAllStudents - Unauthorized user type', [
+                    'user_type' => auth()->user()->user_type,
+                    'allowed_types' => $allowedTypes,
+                ]);
+
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $roomName = $request->input('room_name');
+            $muted = $request->input('muted');
+
+            \Log::info('LiveKitController::muteAllStudents - Processing request', [
+                'room_name' => $roomName,
+                'muted' => $muted,
+            ]);
+
+            // Get room participants
+            $roomService = new \Agence104\LiveKit\RoomServiceClient(
+                config('livekit.server_url'),
+                config('livekit.api_key'),
+                config('livekit.api_secret')
+            );
+
+            try {
+                $participantsResponse = $roomService->listParticipants($roomName);
+            } catch (\Exception $e) {
+                Log::error('Failed to list participants', [
+                    'room' => $roomName,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'error' => 'Room not found or LiveKit server unavailable',
+                ], 404);
+            }
+
+            $mutedCount = 0;
+
+            if ($participantsResponse && method_exists($participantsResponse, 'getParticipants')) {
+                foreach ($participantsResponse->getParticipants() as $participant) {
+                    // Parse metadata to check if participant is student
+                    $metadata = $participant->getMetadata() ? json_decode($participant->getMetadata(), true) : [];
+
+                    // Check if participant is student based on identity or metadata
+                    $identity = $participant->getIdentity();
+                    $isStudent = (isset($metadata['role']) && $metadata['role'] === 'student') ||
+                                 (! str_contains($identity, 'teacher') && ! str_contains($identity, 'admin'));
+
+                    if ($isStudent) {
+                        // Find audio tracks and mute them
+                        foreach ($participant->getTracks() as $track) {
+                            if ($track->getType() === 1) { // Audio type = 1
+                                try {
+                                    $roomService->mutePublishedTrack([
+                                        'room' => $roomName,
+                                        'identity' => $participant->getIdentity(),
+                                        'track_sid' => $track->getSid(),
+                                        'muted' => $muted,
+                                    ]);
+                                    $mutedCount++;
+                                } catch (\Exception $e) {
+                                    Log::warning('Failed to mute individual student', [
+                                        'participant' => $participant->getIdentity(),
+                                        'track_sid' => $track->getSid(),
+                                        'error' => $e->getMessage(),
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Log::info('Bulk mute/unmute students action', [
+                'room' => $roomName,
+                'muted' => $muted,
+                'affected_tracks' => $mutedCount,
+                'teacher' => auth()->id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'muted' => $muted,
+                'affected_participants' => $mutedCount,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to mute all students', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to mute all students: '.$e->getMessage(),
             ], 500);
         }
     }

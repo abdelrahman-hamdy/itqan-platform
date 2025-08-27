@@ -17,7 +17,7 @@
             $isQuranTeachersActive = in_array($currentRoute, ['student.quran-teachers', 'public.quran-teachers.index', 'public.quran-teachers.show', 'public.quran-teachers.trial', 'public.quran-teachers.subscribe']);
             $isInteractiveCoursesActive = in_array($currentRoute, ['student.interactive-courses']);
             $isAcademicTeachersActive = in_array($currentRoute, ['student.academic-teachers']);
-            $isRecordedCoursesActive = in_array($currentRoute, ['student.recorded-courses', 'student.courses.show', 'courses.show', 'courses.learn']);
+            $isRecordedCoursesActive = in_array($currentRoute, ['courses.index', 'courses.show', 'courses.learn']);
           @endphp
           <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
              class="{{ $isQuranCirclesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
@@ -31,7 +31,7 @@
           <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
              class="{{ $isAcademicTeachersActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
              aria-label="استعرض المعلمين الأكاديميين">المعلمون الأكاديميون</a>
-          <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
              class="{{ $isRecordedCoursesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
              aria-label="استعرض الكورسات المسجلة">الكورسات المسجلة</a>
         </div>
@@ -147,7 +147,7 @@
            class="block px-3 py-2 {{ $isInteractiveCoursesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات التفاعلية</a>
         <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
            class="block px-3 py-2 {{ $isAcademicTeachersActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">المعلمون الأكاديميون</a>
-        <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+        <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
            class="block px-3 py-2 {{ $isRecordedCoursesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات المسجلة</a>
       </div>
     </div>

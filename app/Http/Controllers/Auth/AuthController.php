@@ -556,7 +556,9 @@ class AuthController extends Controller
         }
 
         if ($user->isTeacher()) {
-            return redirect('/teacher');
+            // Get the subdomain from the academy or user's academy
+            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? 'itqan-academy');
+            return redirect()->route('teacher.dashboard', ['subdomain' => $subdomain]);
         }
 
         if ($user->isSupervisor()) {

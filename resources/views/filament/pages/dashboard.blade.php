@@ -145,8 +145,8 @@
                                 <p class="font-medium text-gray-900 dark:text-white">{{ $course->title_ar }}</p>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ $course->created_at->diffForHumans() }}</p>
                             </div>
-                            <span class="px-2 py-1 text-xs rounded-full {{ $course->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                {{ $course->status === 'published' ? 'منشور' : 'مسودة' }}
+                            <span class="px-2 py-1 text-xs rounded-full {{ $course->is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                {{ $course->is_published ? 'منشور' : 'مسودة' }}
                             </span>
                         </div>
                     @empty

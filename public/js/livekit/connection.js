@@ -6,7 +6,7 @@
 /**
  * Connection manager for LiveKit Room
  */
-export class LiveKitConnection {
+class LiveKitConnection {
     /**
      * Create a new LiveKit connection manager
      * @param {Object} config - Configuration object
@@ -48,32 +48,31 @@ export class LiveKitConnection {
             throw new Error('LiveKit SDK not loaded');
         }
 
-        // Create room with optimized settings
+        // Create room with TURN servers to bypass network restrictions
         this.room = new window.LiveKit.Room({
-            // Enhanced adaptive streaming for better quality management
-            adaptiveStream: {
-                pixelDensity: 'screen'
-            },
-            // Enable dynacast for optimal bandwidth usage
-            dynacast: true,
-            // WebRTC configuration for better connectivity
             webRtcConfig: {
-                iceTransportPolicy: 'all'
-            },
-            // Publishing defaults optimized for meetings
-            publishDefaults: {
-                // Disable simulcast for better compatibility
-                simulcast: false,
-                videoEncoding: {
-                    maxBitrate: 1_500_000,
-                    maxFramerate: 30
-                },
-                audioEncoding: {
-                    maxBitrate: 64_000
-                }
-            },
-            // Auto-subscribe to all tracks
-            autoSubscribe: true
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    // Public TURN servers to bypass network restrictions
+                    {
+                        urls: 'turn:openrelay.metered.ca:80',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443',
+                        username: 'openrelayproject', 
+                        credential: 'openrelayproject'
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    }
+                ],
+                iceTransportPolicy: 'relay'
+            }
         });
 
         this.setupRoomEventListeners();
@@ -199,6 +198,36 @@ export class LiveKitConnection {
     }
 
     /**
+     * Connect to LiveKit room with token
+     * @param {string} serverUrl - LiveKit server URL
+     * @param {string} token - Authentication token
+     * @returns {Promise<void>}
+     */
+    async connect(serverUrl, token) {
+        if (!this.room) {
+            await this.createRoom();
+        }
+
+        if (this.isConnected || this.isConnecting) {
+            console.warn('⚠️ Already connected or connecting');
+            return;
+        }
+
+        this.isConnecting = true;
+        console.log('🔌 Connecting to LiveKit room...');
+
+        try {
+            await this.room.connect(serverUrl, token);
+            console.log('✅ Successfully connected to room');
+            this.localParticipant = this.room.localParticipant;
+        } catch (error) {
+            this.isConnecting = false;
+            console.error('❌ Connection failed:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Handle connection state changes
      * @param {string} state - Connection state
      */
@@ -227,18 +256,9 @@ export class LiveKitConnection {
      * Handle disconnection and attempt reconnection if needed
      */
     handleDisconnection() {
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-            this.reconnectAttempts++;
-            const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
-
-            console.log(`🔄 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
-
-            setTimeout(() => {
-                this.reconnect();
-            }, delay);
-        } else {
-            console.error('❌ Max reconnection attempts reached');
-        }
+        console.log('❌ Connection lost - disabling auto-reconnect to prevent spam');
+        // Temporarily disable auto-reconnection to stop notification spam
+        // User can manually click meeting button to reconnect
     }
 
     /**
@@ -260,48 +280,10 @@ export class LiveKitConnection {
             }
 
             // Reconnect with fresh token
-            await this.room.connect(this.config.serverUrl, token);
-
-        } catch (error) {
-            console.error('❌ Reconnection failed:', error);
-            this.isConnecting = false;
-            this.handleDisconnection(); // Trigger another attempt
-        }
-    }
-
-    /**
-     * Connect to the LiveKit room
-     * @returns {Promise<void>}
-     */
-    async connect() {
-        if (this.isConnecting || this.isConnected) {
-            console.log('⚠️ Already connecting or connected');
-            return;
-        }
-
-        try {
-            this.isConnecting = true;
-            console.log('🚪 Connecting to room...');
-
-            // Create room if not already created
-            if (!this.room) {
-                await this.createRoom();
-            }
-
-            // Get LiveKit token
-            const token = await this.getLiveKitToken();
-            if (!token) {
-                throw new Error('Failed to get LiveKit token');
-            }
-
-            // Connect to room
-            console.log('🔗 Connecting to server URL:', this.config.serverUrl);
-            await this.room.connect(this.config.serverUrl, token);
-
-            // Set local participant reference
-            this.localParticipant = this.room.localParticipant;
-
-            console.log('✅ Connected to room successfully');
+            const serverUrl = this.config.serverUrl || 'wss://test-rn3dlic1.livekit.cloud';
+            await this.room.connect(serverUrl, token);
+            
+            console.log('✅ Reconnected to room successfully');
 
         } catch (error) {
             console.error('❌ Failed to connect to room:', error);
@@ -357,22 +339,18 @@ export class LiveKitConnection {
         }
     }
 
+
     /**
      * Disconnect from the room
      */
     async disconnect() {
-        if (!this.room || !this.isConnected) {
-            return;
-        }
-
-        try {
-            console.log('🚪 Disconnecting from room...');
+        if (this.room && this.isConnected) {
+            console.log('🔌 Disconnecting from room...');
+            
             await this.room.disconnect();
             this.isConnected = false;
             this.isConnecting = false;
-            console.log('✅ Disconnected successfully');
-        } catch (error) {
-            console.error('❌ Error during disconnect:', error);
+            console.log('✅ Disconnected from room');
         }
     }
 
@@ -430,3 +408,6 @@ export class LiveKitConnection {
         console.log('✅ Connection destroyed');
     }
 }
+
+// Make class globally available
+window.LiveKitConnection = LiveKitConnection;

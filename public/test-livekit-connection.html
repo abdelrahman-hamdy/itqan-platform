@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LiveKit Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+</head>
+<body>
+    <h1>LiveKit Connection Diagnostic</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="results"></div>
+    
+    <script>
+        async function testConnection() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>Testing...</h2>';
+            
+            let html = '';
+            
+            // Test 1: WebRTC Support
+            const rtcSupport = window.RTCPeerConnection ? '✅ Supported' : '❌ Not Supported';
+            html += `<p><b>WebRTC Support:</b> ${rtcSupport}</p>`;
+            
+            // Test 2: LiveKit SDK
+            const sdkLoaded = window.LiveKit ? '✅ Loaded' : '❌ Not Loaded';
+            html += `<p><b>LiveKit SDK:</b> ${sdkLoaded}</p>`;
+            
+            // Test 3: Get Token
+            try {
+                const response = await fetch('/api/meetings/livekit/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({
+                        room_name: 'test-room-' + Date.now(),
+                        participant_name: 'Test User',
+                        user_type: 'student'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    html += `<p><b>Token Generation:</b> ✅ Success</p>`;
+                    
+                    // Test 4: Connection
+                    const room = new window.LiveKit.Room({
+                        adaptiveStream: false,
+                        dynacast: false,
+                        webRtcConfig: {
+                            iceServers: [
+                                { urls: 'stun:stun.l.google.com:19302' }
+                            ]
+                        }
+                    });
+                    
+                    try {
+                        await room.connect('wss://test-rn3dlic1.livekit.cloud', data.token);
+                        html += `<p><b>LiveKit Connection:</b> ✅ Connected!</p>`;
+                        html += `<p><b>Room:</b> ${room.name}</p>`;
+                        html += `<p><b>Participant:</b> ${room.localParticipant.identity}</p>`;
+                        
+                        // Disconnect after success
+                        room.disconnect();
+                    } catch (connectError) {
+                        html += `<p><b>LiveKit Connection:</b> ❌ Failed</p>`;
+                        html += `<p><b>Error:</b> ${connectError.message}</p>`;
+                        
+                        // Detailed error analysis
+                        if (connectError.message.includes('could not establish pc connection')) {
+                            html += `<h3>🔥 Diagnosis: WebRTC/Network Issue</h3>`;
+                            html += `<ul>`;
+                            html += `<li>Check if UDP ports 443, 50000-60000 are open</li>`;
+                            html += `<li>Check firewall/antivirus settings</li>`;
+                            html += `<li>Try disabling VPN if active</li>`;
+                            html += `<li>Try a different network (mobile hotspot)</li>`;
+                            html += `</ul>`;
+                        }
+                    }
+                    
+                } else {
+                    html += `<p><b>Token Generation:</b> ❌ Failed (${response.status})</p>`;
+                }
+            } catch (error) {
+                html += `<p><b>Test Error:</b> ${error.message}</p>`;
+            }
+            
+            // Test 5: STUN Server
+            try {
+                const pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                // Wait for ICE gathering
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        pc.addEventListener('icegatheringstatechange', () => {
+                            if (pc.iceGatheringState === 'complete') {
+                                resolve();
+                            }
+                        });
+                        setTimeout(resolve, 3000); // Timeout after 3 seconds
+                    }
+                });
+                
+                const candidates = pc.localDescription.sdp.match(/candidate:.+/g) || [];
+                const hasPublicIP = candidates.some(c => !c.includes('host') && !c.includes('127.0.0.1'));
+                
+                if (hasPublicIP) {
+                    html += `<p><b>STUN Server:</b> ✅ Working (public IP obtained)</p>`;
+                } else {
+                    html += `<p><b>STUN Server:</b> ⚠️ May be blocked</p>`;
+                }
+                
+                pc.close();
+            } catch (stunError) {
+                html += `<p><b>STUN Test:</b> ❌ Failed</p>`;
+            }
+            
+            results.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

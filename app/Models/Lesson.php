@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Lesson extends Model
+class Lesson extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = [
         'recorded_course_id',
@@ -19,30 +21,23 @@ class Lesson extends Model
         'title_en',
         'description',
         'description_en',
-        'lesson_code',
         'video_url',
-        'video_duration_seconds',
         'video_size_mb',
         'video_quality',
         'transcript',
-        'notes',
         'attachments',
-        'order',
         'is_published',
         'is_free_preview',
         'is_downloadable',
-        'lesson_type',
         'quiz_id',
         'assignment_requirements',
         'learning_objectives',
-        'difficulty_level',
-        'estimated_study_time_minutes',
         'view_count',
         'avg_rating',
         'total_comments',
         'created_by',
         'updated_by',
-        'published_at'
+        'published_at',
     ];
 
     protected $casts = [
@@ -52,14 +47,11 @@ class Lesson extends Model
         'attachments' => 'array',
         'assignment_requirements' => 'array',
         'learning_objectives' => 'array',
-        'video_duration_seconds' => 'integer',
         'video_size_mb' => 'decimal:2',
-        'order' => 'integer',
         'view_count' => 'integer',
         'avg_rating' => 'decimal:1',
         'total_comments' => 'integer',
-        'estimated_study_time_minutes' => 'integer',
-        'published_at' => 'datetime'
+        'published_at' => 'datetime',
     ];
 
     // Relationships
@@ -80,18 +72,33 @@ class Lesson extends Model
 
     public function progress(): HasMany
     {
-        return $this->hasMany(LessonProgress::class);
+        return $this->hasMany(StudentProgress::class);
     }
 
-    public function comments(): HasMany
+    public function registerMediaCollections(): void
     {
-        return $this->hasMany(LessonComment::class);
+        $this->addMediaCollection('videos')
+            ->singleFile()
+            ->acceptsMimeTypes(['video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo']);
+
+        $this->addMediaCollection('thumbnails')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+
+        $this->addMediaCollection('attachments')
+            ->acceptsMimeTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']);
     }
 
-    public function notes(): HasMany
-    {
-        return $this->hasMany(LessonNote::class);
-    }
+    // TODO: Implement LessonComment and LessonNote models if needed
+    // public function comments(): HasMany
+    // {
+    //     return $this->hasMany(LessonComment::class);
+    // }
+
+    // public function notes(): HasMany
+    // {
+    //     return $this->hasMany(LessonNote::class);
+    // }
 
     // Scopes
     public function scopePublished($query)
@@ -101,7 +108,7 @@ class Lesson extends Model
 
     public function scopeOrdered($query)
     {
-        return $query->orderBy('order');
+        return $query->orderBy('id');
     }
 
     public function scopeFreePreview($query)
@@ -109,76 +116,44 @@ class Lesson extends Model
         return $query->where('is_free_preview', true);
     }
 
-    public function scopeByType($query, $type)
-    {
-        return $query->where('lesson_type', $type);
-    }
-
-    public function scopeVideoLessons($query)
-    {
-        return $query->where('lesson_type', 'video');
-    }
-
-    public function scopeQuizLessons($query)
-    {
-        return $query->where('lesson_type', 'quiz');
-    }
-
     // Accessors
-    public function getDurationFormattedAttribute(): string
+    public function getOrderAttribute(): int
     {
-        if ($this->video_duration_seconds < 60) {
-            return $this->video_duration_seconds . ' ثانية';
-        }
-        
-        $minutes = floor($this->video_duration_seconds / 60);
-        $seconds = $this->video_duration_seconds % 60;
-        
-        if ($minutes < 60) {
-            return $minutes . ' دقيقة' . ($seconds > 0 ? ' و ' . $seconds . ' ثانية' : '');
-        }
-        
-        $hours = floor($minutes / 60);
-        $remainingMinutes = $minutes % 60;
-        
-        return $hours . ' ساعة' . 
-               ($remainingMinutes > 0 ? ' و ' . $remainingMinutes . ' دقيقة' : '') .
-               ($seconds > 0 ? ' و ' . $seconds . ' ثانية' : '');
-    }
+        // Calculate order dynamically based on position in course lessons
+        $lessons = $this->recordedCourse->lessons()->pluck('id')->toArray();
+        $position = array_search($this->id, $lessons);
 
-    public function getDurationMinutesAttribute(): int
-    {
-        return ceil($this->video_duration_seconds / 60);
+        return $position !== false ? $position + 1 : 0;
     }
 
     public function getVideoSizeFormattedAttribute(): string
     {
         if ($this->video_size_mb < 1024) {
-            return number_format($this->video_size_mb, 1) . ' MB';
+            return number_format($this->video_size_mb, 1).' MB';
         }
-        
-        return number_format($this->video_size_mb / 1024, 1) . ' GB';
+
+        return number_format($this->video_size_mb / 1024, 1).' GB';
     }
 
     public function getProgressPercentageAttribute(): float
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return 0;
         }
-        
+
         $progress = $this->progress()
             ->where('user_id', auth()->id())
             ->first();
-            
+
         return $progress ? $progress->progress_percentage : 0;
     }
 
     public function getIsCompletedAttribute(): bool
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return false;
         }
-        
+
         return $this->progress()
             ->where('user_id', auth()->id())
             ->where('is_completed', true)
@@ -186,43 +161,40 @@ class Lesson extends Model
     }
 
     // Methods
-    public function markAsWatched(User $user, int $watchTimeSeconds = null): LessonProgress
+    public function markAsWatched(User $user, ?int $watchTimeSeconds = null): LessonProgress
     {
         $progress = $this->progress()->updateOrCreate(
             ['user_id' => $user->id],
             [
-                'watch_time_seconds' => $watchTimeSeconds ?? $this->video_duration_seconds,
-                'progress_percentage' => $watchTimeSeconds ? 
-                    min(100, ($watchTimeSeconds / $this->video_duration_seconds) * 100) : 100,
-                'is_completed' => $watchTimeSeconds ? 
-                    $watchTimeSeconds >= ($this->video_duration_seconds * 0.9) : true,
-                'completed_at' => $watchTimeSeconds && $watchTimeSeconds >= ($this->video_duration_seconds * 0.9) ? 
-                    now() : null,
-                'last_watched_at' => now()
+                'watch_time_seconds' => $watchTimeSeconds ?? 0,
+                'progress_percentage' => 100, // Mark as 100% complete
+                'is_completed' => true,
+                'completed_at' => now(),
+                'last_watched_at' => now(),
             ]
         );
 
         // Update view count
         $this->increment('view_count');
-        
+
         return $progress;
     }
 
     public function getNextLesson(): ?Lesson
     {
         return Lesson::where('recorded_course_id', $this->recorded_course_id)
-            ->where('order', '>', $this->order)
+            ->where('id', '>', $this->id)
             ->where('is_published', true)
-            ->orderBy('order')
+            ->orderBy('id')
             ->first();
     }
 
     public function getPreviousLesson(): ?Lesson
     {
         return Lesson::where('recorded_course_id', $this->recorded_course_id)
-            ->where('order', '<', $this->order)
+            ->where('id', '<', $this->id)
             ->where('is_published', true)
-            ->orderBy('order', 'desc')
+            ->orderBy('id', 'desc')
             ->first();
     }
 
@@ -232,7 +204,7 @@ class Lesson extends Model
         if ($this->is_free_preview) {
             return true;
         }
-        
+
         // Check if user is enrolled in the course
         return $this->recordedCourse->isEnrolledBy($user);
     }
@@ -241,7 +213,7 @@ class Lesson extends Model
     {
         $this->update([
             'avg_rating' => $this->comments()->avg('rating') ?? 0,
-            'total_comments' => $this->comments()->count()
+            'total_comments' => $this->comments()->count(),
         ]);
     }
-} 
+}

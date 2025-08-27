@@ -32,7 +32,7 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            'root' => storage_path('app'),
             'serve' => true,
             'throw' => false,
             'report' => false,
@@ -42,6 +42,15 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/public'),
             'url' => env('APP_URL').'/storage',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'livewire-uploads' => [
+            'driver' => 'local',
+            'root' => storage_path('app/livewire-uploads'),
+            'url' => env('APP_URL').'/livewire-uploads',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
@@ -75,6 +84,7 @@ return [
 
     'links' => [
         public_path('storage') => storage_path('app/public'),
+        public_path('livewire-uploads') => storage_path('app/livewire-uploads'),
     ],
 
 ];

@@ -3,37 +3,35 @@
 namespace App\Filament\Academy\Resources;
 
 use App\Filament\Academy\Resources\RecordedCourseResource\Pages;
-use App\Models\RecordedCourse;
-use App\Models\AcademicSubject;
+use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers;
+use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\SectionsRelationManager;
 use App\Models\AcademicGradeLevel;
+use App\Models\AcademicSubject;
 use App\Models\AcademicTeacher;
+use App\Models\RecordedCourse;
 use Filament\Forms;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\TagsInput;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\SectionsRelationManager;
-use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers as RelationManagers;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class RecordedCourseResource extends Resource
 {
@@ -89,6 +87,7 @@ class RecordedCourseResource extends Resource
                                                     ->label('المدرب')
                                                     ->options(function () {
                                                         $academyId = Auth::user()->academy_id;
+
                                                         return AcademicTeacher::where('academy_id', $academyId)
                                                             ->where('is_approved', true)
                                                             ->where('is_active', true)
@@ -121,6 +120,7 @@ class RecordedCourseResource extends Resource
                                                     ->label('المادة الدراسية')
                                                     ->options(function () {
                                                         $academyId = Auth::user()->academy_id;
+
                                                         return AcademicSubject::where('academy_id', $academyId)
                                                             ->where('is_active', true)
                                                             ->pluck('name', 'id');
@@ -133,6 +133,7 @@ class RecordedCourseResource extends Resource
                                                     ->label('المستوى الدراسي')
                                                     ->options(function () {
                                                         $academyId = Auth::user()->academy_id;
+
                                                         return AcademicGradeLevel::where('academy_id', $academyId)
                                                             ->where('is_active', true)
                                                             ->pluck('name', 'id');
@@ -194,22 +195,20 @@ class RecordedCourseResource extends Resource
                                     ->schema([
                                         Grid::make(2)
                                             ->schema([
-                                                FileUpload::make('thumbnail_url')
+                                                Forms\Components\FileUpload::make('thumbnail_url')
                                                     ->label('صورة مصغرة للدورة')
                                                     ->image()
-                                                    ->imageEditor()
-                                                    ->imageCropAspectRatio('16:9')
-                                                    ->imageResizeTargetWidth('400')
-                                                    ->imageResizeTargetHeight('225')
+                                                    ->disk('public')
                                                     ->directory('courses/thumbnails')
-                                                    ->placeholder('اختر صورة مصغرة للدورة'),
-
-                                                FileUpload::make('trailer_video_url')
-                                                    ->label('فيديو تعريفي')
-                                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/ogg'])
-                                                    ->maxSize(100 * 1024) // 100MB
-                                                    ->directory('courses/trailers')
-                                                    ->placeholder('اختر فيديو تعريفي للدورة'),
+                                                    ->visibility('public')
+                                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                                    ->maxSize(10240) // 10MB
+                                                    ->placeholder('اختر صورة مصغرة للدورة')
+                                                    ->getUploadedFileNameForStorageUsing(
+                                                        fn (TemporaryUploadedFile $file): string => 'course_thumbnail_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                    )
+                                                    ->optimize('webp')
+                                                    ->resize(800, 600),
                                             ]),
                                     ])
                                     ->collapsible(),
@@ -227,15 +226,15 @@ class RecordedCourseResource extends Resource
                                                     ->label('السعر')
                                                     ->numeric()
                                                     ->prefix('$')
-                                                    ->visible(fn (Get $get): bool => !$get('is_free'))
-                                                    ->required(fn (Get $get): bool => !$get('is_free'))
+                                                    ->visible(fn (Get $get): bool => ! $get('is_free'))
+                                                    ->required(fn (Get $get): bool => ! $get('is_free'))
                                                     ->placeholder('0.00'),
 
                                                 TextInput::make('discount_price')
                                                     ->label('سعر الخصم')
                                                     ->numeric()
                                                     ->prefix('$')
-                                                    ->visible(fn (Get $get): bool => !$get('is_free'))
+                                                    ->visible(fn (Get $get): bool => ! $get('is_free'))
                                                     ->placeholder('0.00'),
                                             ]),
 
@@ -340,7 +339,7 @@ class RecordedCourseResource extends Resource
                                     ])
                                     ->collapsible(),
                             ]),
-                            
+
                         Tabs\Tab::make('دروس الدورة')
                             ->icon('heroicon-o-play')
                             ->schema([
@@ -365,30 +364,28 @@ class RecordedCourseResource extends Resource
                                                             ->placeholder('Enter lesson title in English'),
                                                     ]),
 
-                                                Grid::make(2)
-                                                    ->schema([
-                                                        TextInput::make('lesson_code')
-                                                            ->label('رمز الدرس')
-                                                            ->maxLength(50)
-                                                            ->placeholder('مثال: LESSON01')
-                                                            ->unique(ignoreRecord: true),
-
-                                                        TextInput::make('order')
-                                                            ->label('ترتيب الدرس')
-                                                            ->numeric()
-                                                            ->minValue(1)
-                                                            ->required()
-                                                            ->placeholder('ترتيب الدرس في الدورة'),
-                                                    ]),
-
-                                                FileUpload::make('video_url')
-                                                    ->label('فيديو الدرس')
-                                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
-                                                    ->maxSize(500 * 1024) // 500MB
-                                                    ->directory('lessons/videos')
+                                                TextInput::make('order')
+                                                    ->label('ترتيب الدرس')
+                                                    ->numeric()
+                                                    ->minValue(1)
                                                     ->required()
+                                                    ->placeholder('ترتيب الدرس في الدورة'),
+
+                                                Forms\Components\FileUpload::make('video_url')
+                                                    ->label('فيديو الدرس')
+                                                    ->disk('public')
+                                                    ->directory('lessons/videos')
+                                                    ->visibility('public')
+                                                    ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
+                                                    ->maxSize(512 * 1024) // 512MB - matches Livewire config
+                                                    // ->required() // Temporarily disabled to test form save
                                                     ->columnSpanFull()
-                                                    ->placeholder('اختر فيديو الدرس'),
+                                                    ->placeholder('اختر فيديو الدرس')
+                                                    ->getUploadedFileNameForStorageUsing(
+                                                        fn (TemporaryUploadedFile $file): string => 'lesson_video_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                    )
+                                                    ->uploadingMessage('جاري رفع الفيديو...')
+                                                    ->loadingIndicatorPosition('left'),
 
                                                 RichEditor::make('description')
                                                     ->label('وصف الدرس')
@@ -402,42 +399,6 @@ class RecordedCourseResource extends Resource
                                                     ->columnSpanFull()
                                                     ->placeholder('Enter lesson description in English'),
 
-                                                Grid::make(3)
-                                                    ->schema([
-                                                        TextInput::make('video_duration_seconds')
-                                                            ->label('مدة الفيديو (بالثواني)')
-                                                            ->numeric()
-                                                            ->minValue(1)
-                                                            ->placeholder('مدة الفيديو'),
-
-                                                        TextInput::make('estimated_study_time_minutes')
-                                                            ->label('وقت الدراسة المقدر (بالدقائق)')
-                                                            ->numeric()
-                                                            ->minValue(1)
-                                                            ->placeholder('الوقت المقدر للدراسة'),
-
-                                                        Select::make('difficulty_level')
-                                                            ->label('مستوى الصعوبة')
-                                                            ->options([
-                                                                'easy' => 'سهل',
-                                                                'medium' => 'متوسط',
-                                                                'hard' => 'صعب',
-                                                            ])
-                                                            ->default('medium'),
-                                                    ]),
-
-                                                Select::make('lesson_type')
-                                                    ->label('نوع الدرس')
-                                                    ->options([
-                                                        'video' => 'فيديو',
-                                                        'quiz' => 'اختبار',
-                                                        'assignment' => 'مهمة',
-                                                        'reading' => 'قراءة',
-                                                        'exercise' => 'تمرين',
-                                                    ])
-                                                    ->default('video')
-                                                    ->required(),
-
                                                 KeyValue::make('learning_objectives')
                                                     ->label('أهداف التعلم')
                                                     ->keyLabel('الهدف')
@@ -445,12 +406,20 @@ class RecordedCourseResource extends Resource
                                                     ->addActionLabel('إضافة هدف')
                                                     ->columnSpanFull(),
 
-                                                FileUpload::make('attachments')
+                                                Forms\Components\FileUpload::make('attachments')
                                                     ->label('مرفقات الدرس')
                                                     ->multiple()
-                                                    ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/*'])
+                                                    ->disk('public')
                                                     ->directory('lessons/attachments')
-                                                    ->columnSpanFull(),
+                                                    ->visibility('public')
+                                                    ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/*'])
+                                                    ->maxSize(51200) // 50MB per file
+                                                    ->columnSpanFull()
+                                                    ->getUploadedFileNameForStorageUsing(
+                                                        fn (TemporaryUploadedFile $file): string => 'lesson_attachment_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                    )
+                                                    ->uploadingMessage('جاري رفع المرفقات...')
+                                                    ->reorderable(),
 
                                                 Grid::make(3)
                                                     ->schema([
@@ -469,11 +438,6 @@ class RecordedCourseResource extends Resource
                                                             ->helperText('يمكن للطلاب تحميل هذا الدرس'),
                                                     ]),
 
-                                                Textarea::make('notes')
-                                                    ->label('ملاحظات الدرس')
-                                                    ->rows(3)
-                                                    ->columnSpanFull()
-                                                    ->placeholder('ملاحظات إضافية للدرس'),
                                             ])
                                             ->defaultItems(1)
                                             ->addActionLabel('إضافة درس جديد')
@@ -579,6 +543,7 @@ class RecordedCourseResource extends Resource
                     ->label('المادة الدراسية')
                     ->options(function () {
                         $academyId = Auth::user()->academy_id;
+
                         return AcademicSubject::where('academy_id', $academyId)
                             ->where('is_active', true)
                             ->pluck('name', 'id');
@@ -588,6 +553,7 @@ class RecordedCourseResource extends Resource
                     ->label('المستوى الدراسي')
                     ->options(function () {
                         $academyId = Auth::user()->academy_id;
+
                         return AcademicGradeLevel::where('academy_id', $academyId)
                             ->where('is_active', true)
                             ->pluck('name', 'id');
@@ -597,6 +563,7 @@ class RecordedCourseResource extends Resource
                     ->label('المدرب')
                     ->options(function () {
                         $academyId = Auth::user()->academy_id;
+
                         return AcademicTeacher::with('user')
                             ->where('academy_id', $academyId)
                             ->where('is_approved', true)
@@ -645,7 +612,7 @@ class RecordedCourseResource extends Resource
                     ->action(function (RecordedCourse $record) {
                         $record->update(['is_published' => true]);
                     })
-                    ->visible(fn (RecordedCourse $record): bool => !$record->is_published),
+                    ->visible(fn (RecordedCourse $record): bool => ! $record->is_published),
 
                 Tables\Actions\Action::make('unpublish')
                     ->label('إلغاء النشر')
@@ -687,17 +654,17 @@ class RecordedCourseResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        
+
         // Filter by current user's academy
         if (Auth::user()->academy_id) {
             $query->where('academy_id', Auth::user()->academy_id);
         }
-        
+
         // If user is a teacher, only show their courses
         if (Auth::user()->isAcademicTeacher()) {
             $query->where('instructor_id', Auth::user()->academicTeacher->id);
         }
-        
+
         return $query;
     }
 
@@ -718,4 +685,4 @@ class RecordedCourseResource extends Resource
             'view' => Pages\ViewRecordedCourse::route('/{record}'),
         ];
     }
-} 
+}

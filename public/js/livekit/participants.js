@@ -6,7 +6,7 @@
 /**
  * Participant manager for LiveKit participants
  */
-export class LiveKitParticipants {
+class LiveKitParticipants {
     /**
      * Create a new participants manager
      * @param {Object} config - Configuration object
@@ -116,9 +116,60 @@ export class LiveKitParticipants {
         // Note: Focus mode is now only triggered by the close button, not by clicking on the video
         // This prevents accidental focus mode activation
 
+        // Create video element for tracks (starts hidden)
+        const videoElement = document.createElement('video');
+        videoElement.id = `video-${participantId}`;
+        videoElement.className = 'absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 z-10';
+        videoElement.autoplay = true;
+        videoElement.playsInline = true;
+        videoElement.muted = isLocal; // Mute local video to avoid feedback
+        videoElement.style.display = 'none'; // Hidden until track is attached and confirmed working
+
         // Create placeholder with avatar and name
         const placeholder = this.createParticipantPlaceholder(participant, isLocal);
+        
+        // Add video element first (behind placeholder)
+        participantDiv.appendChild(videoElement);
+        // Add placeholder on top
         participantDiv.appendChild(placeholder);
+
+        // Create name overlay HTML (hidden by default, shown when video is on)
+        const nameOverlay = document.createElement('div');
+        nameOverlay.id = `name-overlay-${participantId}`;
+        nameOverlay.className = 'absolute bottom-2 left-2 z-20 pointer-events-none opacity-0 transition-opacity duration-300';
+        nameOverlay.style.display = 'none';
+        nameOverlay.style.maxWidth = '200px'; // Ensure consistent max width
+        
+        // Create overlay content with Tailwind CSS - narrower width, more transparent, with better spacing
+        nameOverlay.innerHTML = `
+            <div class="flex items-center justify-between bg-black bg-opacity-60 rounded-lg px-4 py-1.5 text-white text-sm max-w-48 shadow-lg border border-gray-600">
+                <div class="flex items-center flex-1 min-w-0">
+                    <span class="font-semibold truncate" id="overlay-name-${participantId}">${this.getParticipantDisplayName(participant)}</span>
+                    ${this.isParticipantTeacher(participant, isLocal) ? 
+                        '<span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap flex-shrink-0 shadow-sm">معلم</span>' : 
+                        ''
+                    }
+                </div>
+                <div class="flex items-center mr-1 flex-shrink-0">
+                    <i id="overlay-mic-${participantId}" class="fas fa-microphone text-sm ${isLocal ? 'text-green-500' : 'text-red-500'}"></i>
+                </div>
+            </div>
+        `;
+        
+        // Add name overlay to participant
+        participantDiv.appendChild(nameOverlay);
+
+        // Create hand raise indicator (hidden by default) - positioned at top right
+        const handRaiseIndicator = document.createElement('div');
+        handRaiseIndicator.id = `hand-raise-${participantId}`;
+        handRaiseIndicator.className = 'absolute top-2 right-2 z-30 bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg border-2 border-white opacity-0 transition-all duration-300 transform scale-75';
+        handRaiseIndicator.style.display = 'none';
+        handRaiseIndicator.innerHTML = `
+            <i class="fas fa-hand text-sm"></i>
+        `;
+        
+        // Add hand raise indicator to participant
+        participantDiv.appendChild(handRaiseIndicator);
 
         // Add click event listener to the entire participant div for focus mode
         participantDiv.addEventListener('click', (e) => {
@@ -138,6 +189,12 @@ export class LiveKitParticipants {
         // Store element reference
         this.participantElements.set(participantId, participantDiv);
 
+        // Ensure participant starts with placeholder visible (prevents dark background issues)
+        // Add a small delay to ensure the DOM element is fully rendered
+        setTimeout(() => {
+            this.ensureParticipantPlaceholderVisible(participantId);
+        }, 100);
+
         console.log(`✅ DOM element created for ${participantId}`);
         console.log(`📊 Video grid now has ${videoGrid.children.length} participants`);
 
@@ -154,7 +211,7 @@ export class LiveKitParticipants {
     createParticipantPlaceholder(participant, isLocal) {
         const participantId = participant.identity;
         const placeholder = document.createElement('div');
-        placeholder.className = 'absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-gray-800 transition-opacity duration-300';
+        placeholder.className = 'absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-gray-800 transition-opacity duration-300 z-10';
 
         // Generate avatar color based on participant identity
         const colors = ['bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-red-600', 'bg-yellow-600', 'bg-indigo-600', 'bg-pink-600', 'bg-gray-600'];
@@ -244,8 +301,44 @@ export class LiveKitParticipants {
             }
         }
 
-        // Fallback to identity
-        return participant.identity || 'مشارك';
+        // Clean up the identity to extract readable name
+        if (participant.identity) {
+            return this.cleanParticipantIdentity(participant.identity);
+        }
+
+        return 'مشارك';
+    }
+
+    /**
+     * Clean participant identity to extract readable name
+     * @param {string} identity - Raw participant identity
+     * @returns {string} Clean, readable name
+     */
+    cleanParticipantIdentity(identity) {
+        // Remove common prefixes and suffixes
+        let cleanName = identity;
+        
+        // Remove numeric prefixes (like "17_")
+        cleanName = cleanName.replace(/^\d+_/, '');
+        
+        // Remove "teacher" suffix if present
+        cleanName = cleanName.replace(/_teacher$/, '');
+        
+        // Remove "student" suffix if present
+        cleanName = cleanName.replace(/_student$/, '');
+        
+        // Replace remaining underscores with spaces for better readability
+        cleanName = cleanName.replace(/_/g, ' ');
+        
+        // Trim any extra whitespace
+        cleanName = cleanName.trim();
+        
+        // If we end up with an empty string, return a default
+        if (!cleanName) {
+            return 'مشارك';
+        }
+        
+        return cleanName;
     }
 
     /**
@@ -254,7 +347,9 @@ export class LiveKitParticipants {
      * @returns {string} Initials
      */
     getParticipantInitials(displayName) {
-        return displayName.split(' ')
+        // Use the clean display name for initials
+        const cleanName = this.cleanParticipantIdentity(displayName);
+        return cleanName.split(' ')
             .map(n => n[0])
             .join('')
             .toUpperCase()
@@ -526,6 +621,224 @@ export class LiveKitParticipants {
     }
 
     /**
+     * Ensure participant placeholder is visible (prevents dark background issues)
+     * @param {string} participantId - Participant ID
+     */
+    ensureParticipantPlaceholderVisible(participantId) {
+        console.log(`🔍 Ensuring placeholder visibility for ${participantId}`);
+
+        const participantElement = this.getParticipantElement(participantId);
+        if (!participantElement) {
+            console.warn(`⚠️ Participant element not found for ${participantId}`);
+            return;
+        }
+
+        const placeholder = participantElement.querySelector('.absolute.inset-0.flex.flex-col');
+        const videoElement = participantElement.querySelector('video');
+
+        if (placeholder) {
+            // Ensure placeholder is fully visible by default
+            placeholder.style.opacity = '1';
+            placeholder.style.zIndex = '15';
+            placeholder.style.backgroundColor = '';
+
+            // Ensure all placeholder content is visible
+            const mainContent = placeholder.querySelector('.flex.flex-col.items-center');
+            if (mainContent) {
+                const avatar = mainContent.querySelector('.rounded-full');
+                const nameElements = mainContent.querySelectorAll('p');
+                
+                if (avatar) avatar.style.opacity = '1';
+                nameElements.forEach(p => p.style.opacity = '1');
+            }
+
+            // Reset status indicators to normal position
+            const statusContainer = placeholder.querySelector('.mt-2.flex.items-center.justify-center.gap-3');
+            if (statusContainer) {
+                statusContainer.style.opacity = '1';
+                statusContainer.style.position = '';
+                statusContainer.style.bottom = '';
+                statusContainer.style.left = '';
+                statusContainer.style.backgroundColor = '';
+                statusContainer.style.padding = '';
+                statusContainer.style.borderRadius = '';
+                statusContainer.style.zIndex = '';
+            }
+
+            console.log(`✅ Placeholder visibility ensured for ${participantId}`);
+        } else {
+            console.warn(`⚠️ Placeholder not found for ${participantId}`);
+        }
+
+        // Ensure video is hidden initially
+        if (videoElement) {
+            videoElement.style.opacity = '0';
+            videoElement.style.display = 'none';
+            videoElement.style.visibility = 'hidden';
+            videoElement.style.zIndex = '5';
+        }
+    }
+
+    /**
+     * Update name overlay content (for dynamic updates)
+     * @param {string} participantId - Participant ID
+     * @param {string} displayName - Display name to show
+     * @param {boolean} isTeacher - Whether participant is a teacher
+     */
+    updateNameOverlayContent(participantId, displayName, isTeacher) {
+        const nameElement = document.getElementById(`overlay-name-${participantId}`);
+        if (nameElement) {
+            // Clean the display name before updating
+            const cleanName = this.cleanParticipantIdentity(displayName);
+            nameElement.textContent = cleanName;
+        }
+        
+        // Update teacher badge visibility
+        const teacherBadge = document.querySelector(`#name-overlay-${participantId} .bg-green-600`);
+        if (teacherBadge) {
+            teacherBadge.style.display = isTeacher ? 'inline-block' : 'none';
+        }
+    }
+
+    /**
+     * Update participant display name in both placeholder and overlay
+     * @param {string} participantId - Participant ID
+     * @param {string} newName - New name to display
+     */
+    updateParticipantName(participantId, newName) {
+        const cleanName = this.cleanParticipantIdentity(newName);
+        
+        // Update placeholder name
+        const placeholder = document.querySelector(`#participant-${participantId} .absolute.inset-0.flex.flex-col p`);
+        if (placeholder) {
+            placeholder.textContent = cleanName;
+        }
+        
+        // Update overlay name
+        const overlayName = document.getElementById(`overlay-name-${participantId}`);
+        if (overlayName) {
+            overlayName.textContent = cleanName;
+        }
+        
+        // Update initials in avatar
+        const initials = this.getParticipantInitials(cleanName);
+        const avatar = document.querySelector(`#participant-${participantId} .rounded-full span`);
+        if (avatar) {
+            avatar.textContent = initials;
+        }
+        
+        console.log(`✅ Updated participant name for ${participantId}: ${cleanName}`);
+    }
+
+    /**
+     * Test hand raise functionality directly (for debugging)
+     * @param {string} participantId - Participant ID to test
+     */
+    testHandRaiseDirectly(participantId) {
+        console.log(`🧪 Testing hand raise directly for ${participantId}`);
+        
+        // Check if element exists
+        const participantElement = document.getElementById(`participant-${participantId}`);
+        if (!participantElement) {
+            console.error(`❌ Participant element not found: participant-${participantId}`);
+            return;
+        }
+        
+        // Check if hand raise indicator exists
+        const handRaiseIndicator = document.getElementById(`hand-raise-${participantId}`);
+        if (!handRaiseIndicator) {
+            console.error(`❌ Hand raise indicator not found: hand-raise-${participantId}`);
+            
+            // Try to create one manually for testing
+            console.log(`🔧 Creating hand raise indicator manually for testing...`);
+            const newIndicator = document.createElement('div');
+            newIndicator.id = `hand-raise-${participantId}`;
+            newIndicator.className = 'absolute top-2 right-2 z-30 bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg border-2 border-white';
+            newIndicator.innerHTML = '<i class="fas fa-hand text-sm"></i>';
+            participantElement.appendChild(newIndicator);
+            
+            console.log(`✅ Created manual hand raise indicator for ${participantId}`);
+            return;
+        }
+        
+        console.log(`✅ Both elements found, testing show/hide...`);
+        
+        // Test show
+        this.showHandRaise(participantId);
+        
+        // Test hide after 2 seconds
+        setTimeout(() => {
+            this.hideHandRaise(participantId);
+        }, 2000);
+    }
+
+    /**
+     * Show hand raise indicator for participant
+     * @param {string} participantId - Participant ID
+     */
+    showHandRaise(participantId) {
+        console.log(`✋ Attempting to show hand raise for ${participantId}`);
+        const handRaiseIndicator = document.getElementById(`hand-raise-${participantId}`);
+        if (handRaiseIndicator) {
+            handRaiseIndicator.style.display = 'flex';
+            handRaiseIndicator.style.opacity = '1';
+            handRaiseIndicator.style.transform = 'scale(1)';
+            handRaiseIndicator.style.visibility = 'visible';
+            console.log(`✋ ✅ Hand raise shown for ${participantId}`, handRaiseIndicator);
+            
+            // Debug: Check computed styles
+            const computedStyle = window.getComputedStyle(handRaiseIndicator);
+            console.log(`✋ Computed styles for ${participantId}:`, {
+                display: computedStyle.display,
+                opacity: computedStyle.opacity,
+                visibility: computedStyle.visibility,
+                position: computedStyle.position,
+                top: computedStyle.top,
+                right: computedStyle.right,
+                zIndex: computedStyle.zIndex
+            });
+        } else {
+            console.warn(`⚠️ Hand raise indicator not found for ${participantId}`);
+            // Debug: Check what elements exist
+            const allElements = document.querySelectorAll('[id^="hand-raise-"]');
+            console.log(`🔍 Found hand raise elements:`, allElements);
+        }
+    }
+
+    /**
+     * Hide hand raise indicator for participant
+     * @param {string} participantId - Participant ID
+     */
+    hideHandRaise(participantId) {
+        console.log(`✋ Attempting to hide hand raise for ${participantId}`);
+        const handRaiseIndicator = document.getElementById(`hand-raise-${participantId}`);
+        if (handRaiseIndicator) {
+            handRaiseIndicator.style.opacity = '0';
+            handRaiseIndicator.style.transform = 'scale(0.75)';
+            handRaiseIndicator.style.visibility = 'hidden';
+            setTimeout(() => {
+                handRaiseIndicator.style.display = 'none';
+            }, 300); // Wait for transition to complete
+            console.log(`✋ ✅ Hand raise hidden for ${participantId}`);
+        } else {
+            console.warn(`⚠️ Hand raise indicator not found for ${participantId}`);
+        }
+    }
+
+    /**
+     * Update hand raise status for participant
+     * @param {string} participantId - Participant ID
+     * @param {boolean} isRaised - Whether hand is raised
+     */
+    updateHandRaiseStatus(participantId, isRaised) {
+        if (isRaised) {
+            this.showHandRaise(participantId);
+        } else {
+            this.hideHandRaise(participantId);
+        }
+    }
+
+    /**
      * Destroy participants manager and clean up
      */
     destroy() {
@@ -540,6 +853,9 @@ export class LiveKitParticipants {
         this.participantElements.clear();
         this.localParticipant = null;
 
-        console.log('✅ Participants manager destroyed');
+        console.log('🧑‍🤝‍🧑 Participants manager destroyed');
     }
 }
+
+// Make class globally available
+window.LiveKitParticipants = LiveKitParticipants;

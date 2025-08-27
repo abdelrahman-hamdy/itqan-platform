@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Test for LiveKit</title>
+</head>
+<body>
+    <h1>Network Connectivity Test</h1>
+    <button onclick="runTests()">Run Network Tests</button>
+    <div id="results"></div>
+    
+    <script>
+        async function runTests() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>Testing network connectivity...</h2>';
+            
+            let html = '';
+            
+            // Test 1: Basic connectivity
+            try {
+                const response = await fetch('https://test-rn3dlic1.livekit.cloud', { mode: 'no-cors' });
+                html += '<p>✅ LiveKit server reachable</p>';
+            } catch (e) {
+                html += '<p>❌ Cannot reach LiveKit server</p>';
+            }
+            
+            // Test 2: STUN server test
+            try {
+                const pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
+                
+                const dataChannel = pc.createDataChannel('test');
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                // Wait for ICE gathering
+                await new Promise((resolve) => {
+                    const timeout = setTimeout(() => resolve('timeout'), 5000);
+                    pc.addEventListener('icegatheringstatechange', () => {
+                        if (pc.iceGatheringState === 'complete') {
+                            clearTimeout(timeout);
+                            resolve('complete');
+                        }
+                    });
+                });
+                
+                const candidates = pc.localDescription.sdp.match(/candidate:.+/g) || [];
+                const srflxCandidates = candidates.filter(c => c.includes('srflx'));
+                const relayCandidates = candidates.filter(c => c.includes('relay'));
+                
+                html += `<p><strong>ICE Candidates Found:</strong></p>`;
+                html += `<p>• Host candidates: ${candidates.filter(c => c.includes('host')).length}</p>`;
+                html += `<p>• Server reflexive: ${srflxCandidates.length}</p>`;
+                html += `<p>• Relay candidates: ${relayCandidates.length}</p>`;
+                
+                if (srflxCandidates.length === 0) {
+                    html += '<p>⚠️ <strong>PROBLEM:</strong> No public IP candidates found</p>';
+                    html += '<p>This indicates firewall/NAT blocking WebRTC</p>';
+                } else {
+                    html += '<p>✅ Public IP candidates found - basic WebRTC should work</p>';
+                }
+                
+                pc.close();
+            } catch (e) {
+                html += '<p>❌ WebRTC test failed: ' + e.message + '</p>';
+            }
+            
+            // Test 3: Connection type detection
+            if (navigator.connection) {
+                const conn = navigator.connection;
+                html += `<p><strong>Connection Info:</strong></p>`;
+                html += `<p>• Type: ${conn.effectiveType || 'unknown'}</p>`;
+                html += `<p>• Downlink: ${conn.downlink || 'unknown'} Mbps</p>`;
+                
+                if (conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g') {
+                    html += '<p>⚠️ Slow connection detected - may cause issues</p>';
+                }
+            }
+            
+            // Recommendations
+            html += '<h3>🔧 Troubleshooting Steps:</h3>';
+            html += '<ol>';
+            html += '<li><strong>Try different network:</strong> Use mobile hotspot to test</li>';
+            html += '<li><strong>Disable VPN:</strong> VPNs often block WebRTC</li>';
+            html += '<li><strong>Check firewall:</strong> Temporarily disable antivirus/firewall</li>';
+            html += '<li><strong>Try different browser:</strong> Chrome/Edge work best</li>';
+            html += '<li><strong>Contact IT:</strong> Ask to allow WebRTC traffic on ports 443, 50000-60000 UDP</li>';
+            html += '</ol>';
+            
+            results.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

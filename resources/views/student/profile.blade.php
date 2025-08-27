@@ -260,7 +260,7 @@
       <div class="mt-12">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-900">الكورسات المسجلة</h2>
-          <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
+          <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
              class="text-primary hover:text-secondary text-sm font-medium transition-colors">
             عرض جميع الكورسات
             <i class="ri-arrow-left-s-line mr-1"></i>
@@ -354,10 +354,10 @@
                       <i class="ri-play-circle-line ml-1"></i>
                       <span>{{ $course->total_lessons ?? 0 }} درس</span>
                     </div>
-                    @if($course->level)
+                    @if($course->difficulty_level)
                       <div class="flex items-center">
                         <i class="ri-bar-chart-line ml-1"></i>
-                        <span>{{ $course->level }}</span>
+                        <span>{{ $course->difficulty_level }}</span>
                       </div>
                     @endif
                   </div>
@@ -391,7 +391,7 @@
               <p class="text-gray-600 mb-4">
                 لم يتم العثور على كورسات مسجلة. استكشف المزيد من الدورات المتاحة.
               </p>
-              <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
+              <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
                  class="inline-block bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 <i class="ri-search-line ml-2"></i>
                 استكشاف الكورسات

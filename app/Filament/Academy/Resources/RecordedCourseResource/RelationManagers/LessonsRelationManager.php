@@ -2,14 +2,12 @@
 
 namespace App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers;
 
+use App\Models\CourseSection;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Models\CourseSection;
 
 class LessonsRelationManager extends RelationManager
 {
@@ -250,27 +248,24 @@ class LessonsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('video_duration_seconds')
                     ->label('المدة')
-                    ->formatStateUsing(fn (int $state): string => 
-                        $state >= 3600 
-                            ? floor($state / 3600) . 'س ' . floor(($state % 3600) / 60) . 'د'
-                            : floor($state / 60) . 'د ' . ($state % 60) . 'ث'
+                    ->formatStateUsing(fn (int $state): string => $state >= 3600
+                            ? floor($state / 3600).'س '.floor(($state % 3600) / 60).'د'
+                            : floor($state / 60).'د '.($state % 60).'ث'
                     )
                     ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('difficulty_level')
                     ->label('الصعوبة')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'very_easy' => 'سهل جداً',
                         'easy' => 'سهل',
                         'medium' => 'متوسط',
                         'hard' => 'صعب',
-                        'very_hard' => 'صعب جداً',
                         default => $state,
                     })
                     ->colors([
-                        'success' => ['very_easy', 'easy'],
+                        'success' => 'easy',
                         'warning' => 'medium',
-                        'danger' => ['hard', 'very_hard'],
+                        'danger' => 'hard',
                     ]),
 
                 Tables\Columns\IconColumn::make('is_published')
@@ -343,6 +338,7 @@ class LessonsRelationManager extends RelationManager
                         $data['recorded_course_id'] = $this->getOwnerRecord()->id;
                         $data['created_by'] = auth()->id();
                         $data['updated_by'] = auth()->id();
+
                         return $data;
                     }),
             ])
@@ -353,6 +349,7 @@ class LessonsRelationManager extends RelationManager
                     ->label('تعديل')
                     ->mutateFormDataUsing(function (array $data): array {
                         $data['updated_by'] = auth()->id();
+
                         return $data;
                     }),
                 Tables\Actions\DeleteAction::make()

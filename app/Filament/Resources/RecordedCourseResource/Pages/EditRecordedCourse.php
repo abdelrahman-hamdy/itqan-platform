@@ -20,7 +20,13 @@ class EditRecordedCourse extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['updated_by'] = auth()->id();
-        
+
         return $data;
     }
-} 
+
+    protected function afterSave(): void
+    {
+        // Update course statistics after saving
+        $this->record->updateStats();
+    }
+}

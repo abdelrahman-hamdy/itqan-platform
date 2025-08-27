@@ -7,10 +7,11 @@
   <div class="p-6 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100/50">
     <div class="flex flex-col items-center text-center mb-4">
       @php
-        $student = auth()->user()->studentProfile;
+        $user = auth()->user();
+        $student = $user ? $user->studentProfile : null;
         $fullName = $student ? 
                    ($student->first_name && $student->last_name ? $student->first_name . ' ' . $student->last_name : $student->first_name) :
-                   auth()->user()->name;
+                   ($user ? $user->name : 'زائر');
       @endphp
       
       <x-student-avatar :student="$student" size="md" class="mb-3" />
@@ -29,7 +30,7 @@
     <div class="space-y-2 text-sm">
       <div class="flex items-center justify-center text-gray-600">
         <i class="ri-mail-line ml-2 text-gray-400"></i>
-        <span class="truncate">{{ auth()->user()->email }}</span>
+        <span class="truncate">{{ $user ? $user->email : 'غير مسجل الدخول' }}</span>
       </div>
     </div>
   </div>
@@ -42,12 +43,12 @@
       <div class="mb-6">
         <h4 class="text-xs font-medium text-gray-400 mb-3">إدارة الملف الشخصي</h4>
         <div class="space-y-1">
-          <a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ $user ? route('student.profile', ['subdomain' => $user->academy->subdomain ?? 'itqan-academy']) : '#' }}" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.profile') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-user-line ml-3"></i>
             الملف الشخصي
           </a>
-          <a href="{{ route('student.profile.edit', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.profile.edit', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">
             <i class="ri-edit-line ml-3"></i>
             تعديل الملف الشخصي
@@ -60,27 +61,27 @@
       <div class="mb-6">
         <h4 class="text-xs font-medium text-gray-400 mb-3">التقدم الدراسي</h4>
         <div class="space-y-1">
-          <a href="{{ route('student.quran', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.quran', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.quran') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-book-mark-line ml-3"></i>
             ملف القرآن الكريم
           </a>
-          <a href="{{ route('student.recorded-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
-             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.recorded-courses') ? 'bg-gray-100 text-primary' : '' }}">
+          <a href="{{ route('courses.index', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('courses.index') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-video-line ml-3"></i>
             الكورسات المسجلة
           </a>
-          <a href="{{ route('student.progress', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.progress', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">
             <i class="ri-bar-chart-line ml-3"></i>
             تقرير التقدم
           </a>
-          <a href="{{ route('student.certificates', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.certificates', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">
             <i class="ri-medal-line ml-3"></i>
             الشهادات
           </a>
-          <a href="{{ route('student.calendar', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.calendar', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.calendar') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-calendar-line ml-3"></i>
             التقويم والجلسات
@@ -92,12 +93,12 @@
       <div class="mb-6">
         <h4 class="text-xs font-medium text-gray-400 mb-3">الاشتراكات والمدفوعات</h4>
         <div class="space-y-1">
-          <a href="{{ route('student.subscriptions', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.subscriptions', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">
             <i class="ri-wallet-3-line ml-3"></i>
             الاشتراكات النشطة
           </a>
-          <a href="{{ route('student.payments', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.payments', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">
             <i class="ri-bill-line ml-3"></i>
             سجل المدفوعات

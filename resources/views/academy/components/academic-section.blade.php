@@ -51,8 +51,8 @@
             <div class="bg-white rounded-xl shadow-lg min-w-[300px] card-hover">
               <div class="relative">
                 <div class="h-40 bg-gradient-to-br from-purple-400 to-purple-600">
-                  @if($course->thumbnail)
-                    <img src="{{ $course->thumbnail }}" alt="{{ $course->name }}" class="w-full h-full object-cover object-top">
+                  @if($course->thumbnail_url)
+                    <img src="{{ $course->thumbnail_url }}" alt="{{ $course->name }}" class="w-full h-full object-cover object-top">
                   @else
                     <div class="w-full h-full flex items-center justify-center">
                       <i class="ri-book-open-line text-6xl text-white opacity-50"></i>
