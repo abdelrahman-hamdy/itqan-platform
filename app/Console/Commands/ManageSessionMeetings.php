@@ -61,7 +61,7 @@ class ManageSessionMeetings extends Command
             $this->info('📊 Processing scheduled sessions...');
             
             if (!$isDryRun) {
-                $results = $this->sessionMeetingService->processScheduledSessions();
+                $results = $this->sessionMeetingService->processSessionMeetings();
             } else {
                 $results = $this->simulateProcessing();
             }
@@ -138,10 +138,10 @@ class ManageSessionMeetings extends Command
         
         // This would normally call the actual service
         return [
-            'started' => 5,  // Simulated numbers
-            'updated' => 12,
-            'cleaned' => 3,
-            'errors' => 0,
+            'meetings_created' => 5,  // Simulated numbers
+            'meetings_terminated' => 2,
+            'status_transitions' => 12,
+            'errors' => [],
         ];
     }
 

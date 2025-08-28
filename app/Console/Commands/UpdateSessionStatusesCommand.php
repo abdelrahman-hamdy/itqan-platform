@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
+use App\Services\SessionStatusService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,14 @@ class UpdateSessionStatusesCommand extends Command
      */
     protected $description = 'Update session statuses based on current time and business rules';
 
+    private SessionStatusService $sessionStatusService;
+
+    public function __construct(SessionStatusService $sessionStatusService)
+    {
+        parent::__construct();
+        $this->sessionStatusService = $sessionStatusService;
+    }
+
     /**
      * Execute the console command.
      */
@@ -35,7 +44,7 @@ class UpdateSessionStatusesCommand extends Command
         $academyId = $this->option('academy-id');
 
         if ($isVerbose) {
-            $this->info('🕐 Starting session status update process...');
+            $this->info('🕐 Starting enhanced session status update process...');
             $this->info("📅 Current time: {$now->format('Y-m-d H:i:s')}");
             if ($isDryRun) {
                 $this->warn('🧪 DRY RUN MODE - No changes will be made');
@@ -53,23 +62,39 @@ class UpdateSessionStatusesCommand extends Command
                 }
             }
 
-            // Track statistics
-            $stats = [
-                'total_processed' => 0,
-                'marked_ready' => 0,
-                'marked_missed' => 0,
-                'marked_ended' => 0,
-                'errors' => 0,
-            ];
+            // Get all sessions that might need status updates
+            $sessionsToProcess = $query->whereIn('status', [
+                SessionStatus::SCHEDULED,
+                SessionStatus::READY,
+                SessionStatus::ONGOING
+            ])->with(['academy', 'circle', 'individualCircle', 'meetingAttendances'])->get();
 
-            // 1. Mark scheduled sessions as ready (within 30 minutes before start time)
-            $this->updateScheduledToReady($query, $now, $isDryRun, $isVerbose, $stats);
+            if ($isVerbose) {
+                $this->info("📊 Found {$sessionsToProcess->count()} sessions to process");
+            }
 
-            // 2. Mark sessions as missed (past start time + grace period with no attendance)
-            $this->updateScheduledToMissed($query, $now, $isDryRun, $isVerbose, $stats);
+            if ($sessionsToProcess->isEmpty()) {
+                if ($isVerbose) {
+                    $this->info('✅ No sessions require status updates');
+                }
+                return self::SUCCESS;
+            }
 
-            // 3. Auto-end ongoing sessions that have exceeded their duration
-            $this->updateOngoingToCompleted($query, $now, $isDryRun, $isVerbose, $stats);
+            // Process status transitions using the enhanced service
+            if ($isDryRun) {
+                $stats = $this->simulateStatusTransitions($sessionsToProcess, $isVerbose);
+            } else {
+                $rawStats = $this->sessionStatusService->processStatusTransitions($sessionsToProcess);
+                // Convert to expected format for display
+                $stats = [
+                    'total_processed' => $sessionsToProcess->count(),
+                    'marked_ready' => $rawStats['transitions_to_ready'],
+                    'marked_absent' => $rawStats['transitions_to_absent'],
+                    'marked_completed' => $rawStats['transitions_to_completed'],
+                    'errors' => count($rawStats['errors']),
+                    'error_details' => $rawStats['errors'],
+                ];
+            }
 
             // Final statistics
             $executionTime = round(microtime(true) - $startTime, 2);
@@ -79,15 +104,23 @@ class UpdateSessionStatusesCommand extends Command
                 $this->table(['Metric', 'Count'], [
                     ['Total sessions processed', $stats['total_processed']],
                     ['Marked as ready', $stats['marked_ready']],
-                    ['Marked as missed', $stats['marked_missed']],
-                    ['Auto-ended sessions', $stats['marked_ended']],
+                    ['Marked as absent', $stats['marked_absent']],
+                    ['Auto-completed sessions', $stats['marked_completed']],
                     ['Errors encountered', $stats['errors']],
                     ['Execution time', "{$executionTime}s"],
                 ]);
+
+                // Display errors if any
+                if ($stats['errors'] > 0 && isset($stats['error_details'])) {
+                    $this->error('❌ Errors encountered:');
+                    foreach ($stats['error_details'] as $error) {
+                        $this->error("Session {$error['session_id']}: {$error['error']}");
+                    }
+                }
             }
 
             // Log summary
-            Log::info('Session status update completed', [
+            Log::info('Enhanced session status update completed', [
                 'execution_time' => $executionTime,
                 'stats' => $stats,
                 'academy_id' => $academyId,
@@ -100,14 +133,14 @@ class UpdateSessionStatusesCommand extends Command
             }
 
             if ($isVerbose) {
-                $this->info('✅ Session status update completed successfully');
+                $this->info('✅ Enhanced session status update completed successfully');
             }
 
             return self::SUCCESS;
 
         } catch (\Exception $e) {
             $this->error('❌ Session status update failed: ' . $e->getMessage());
-            Log::error('Session status update command failed', [
+            Log::error('Enhanced session status update command failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'academy_id' => $academyId,
@@ -118,156 +151,57 @@ class UpdateSessionStatusesCommand extends Command
     }
 
     /**
-     * Update scheduled sessions to ready status
+     * Simulate status transitions for dry-run mode
      */
-    private function updateScheduledToReady($baseQuery, Carbon $now, bool $isDryRun, bool $isVerbose, array &$stats): void
+    private function simulateStatusTransitions($sessions, bool $isVerbose): array
     {
-        // Sessions that should be marked as ready (within 30 minutes of start time)
-        $readyThreshold = $now->copy()->addMinutes(30);
-        
-        $sessionsToMarkReady = (clone $baseQuery)
-            ->where('status', SessionStatus::SCHEDULED->value)
-            ->where('scheduled_at', '<=', $readyThreshold)
-            ->where('scheduled_at', '>', $now->copy()->subMinutes(10)) // Not too far in the past
-            ->whereNotNull('scheduled_at')
-            ->get();
+        $stats = [
+            'total_processed' => $sessions->count(),
+            'marked_ready' => 0,
+            'marked_absent' => 0,
+            'marked_completed' => 0,
+            'errors' => 0,
+        ];
 
-        foreach ($sessionsToMarkReady as $session) {
-            $stats['total_processed']++;
-            
-            try {
-                if ($isVerbose) {
-                    $this->line("🟢 Marking session {$session->id} as ready (scheduled at {$session->scheduled_at->format('H:i')})");
-                }
+        foreach ($sessions as $session) {
+            $currentStatus = $session->status;
+            $shouldTransitionToReady = $this->sessionStatusService->shouldTransitionToReady($session);
+            $shouldTransitionToAbsent = $this->sessionStatusService->shouldTransitionToAbsent($session);
+            $shouldAutoComplete = $this->sessionStatusService->shouldAutoComplete($session);
 
-                if (!$isDryRun) {
-                    $session->update(['status' => SessionStatus::READY->value]);
-                }
-                
+            if ($shouldTransitionToReady) {
                 $stats['marked_ready']++;
-                
-            } catch (\Exception $e) {
-                $stats['errors']++;
-                Log::error('Failed to mark session as ready', [
-                    'session_id' => $session->id,
-                    'error' => $e->getMessage(),
-                ]);
-                
                 if ($isVerbose) {
-                    $this->error("❌ Failed to update session {$session->id}: {$e->getMessage()}");
+                    $circle = $session->session_type === 'individual' ? $session->individualCircle : $session->circle;
+                    $prepMinutes = $circle?->preparation_minutes ?? 15;
+                    $this->line("🟢 Would mark session {$session->id} as READY ({$prepMinutes}min before start: {$session->scheduled_at->format('H:i')})");
                 }
+            } elseif ($shouldTransitionToAbsent) {
+                $stats['marked_absent']++;
+                if ($isVerbose) {
+                    $circle = $session->session_type === 'individual' ? $session->individualCircle : $session->circle;
+                    $graceMinutes = $circle?->late_join_grace_period_minutes ?? 15;
+                    $this->line("🔴 Would mark session {$session->id} as ABSENT (no attendance after {$graceMinutes}min grace period)");
+                }
+            } elseif ($shouldAutoComplete) {
+                $stats['marked_completed']++;
+                if ($isVerbose) {
+                    $circle = $session->session_type === 'individual' ? $session->individualCircle : $session->circle;
+                    $bufferMinutes = $circle?->ending_buffer_minutes ?? 5;
+                    $this->line("⏰ Would auto-complete session {$session->id} (exceeded duration + {$bufferMinutes}min buffer)");
+                }
+            } elseif ($isVerbose) {
+                $this->line("⚪ Session {$session->id} remains {$currentStatus->label()}");
             }
         }
-    }
 
-    /**
-     * Update scheduled sessions to missed status
-     */
-    private function updateScheduledToMissed($baseQuery, Carbon $now, bool $isDryRun, bool $isVerbose, array &$stats): void
-    {
-        // Sessions that should be marked as missed (15 minutes past start time with no attendance)
-        $missedThreshold = $now->copy()->subMinutes(15);
-        
-        $sessionsToMarkMissed = (clone $baseQuery)
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
-            ->where('scheduled_at', '<', $missedThreshold)
-            ->whereNotNull('scheduled_at')
-            ->whereDoesntHave('attendances', function($query) {
-                $query->where('attendance_status', 'present');
-            })
-            ->get();
-
-        foreach ($sessionsToMarkMissed as $session) {
-            $stats['total_processed']++;
-            
-            try {
-                if ($isVerbose) {
-                    $this->line("🔴 Marking session {$session->id} as missed (was scheduled at {$session->scheduled_at->format('H:i')})");
-                }
-
-                if (!$isDryRun) {
-                    $session->update([
-                        'status' => SessionStatus::MISSED->value,
-                        'attendance_status' => 'absent',
-                    ]);
-
-                    // Record attendance as missed for individual sessions
-                    if ($session->session_type === 'individual' && $session->student_id) {
-                        $session->recordSessionAttendance('absent');
-                    }
-                }
-                
-                $stats['marked_missed']++;
-                
-            } catch (\Exception $e) {
-                $stats['errors']++;
-                Log::error('Failed to mark session as missed', [
-                    'session_id' => $session->id,
-                    'error' => $e->getMessage(),
-                ]);
-                
-                if ($isVerbose) {
-                    $this->error("❌ Failed to update session {$session->id}: {$e->getMessage()}");
-                }
-            }
+        if ($isVerbose) {
+            $this->info("\n🔍 Dry run summary:");
+            $this->info("• Using circle-specific timing configurations");
+            $this->info("• Enhanced business logic for individual vs group sessions");
+            $this->info("• Improved absence detection for individual sessions");
         }
-    }
 
-    /**
-     * Auto-end ongoing sessions that have exceeded their duration
-     */
-    private function updateOngoingToCompleted($baseQuery, Carbon $now, bool $isDryRun, bool $isVerbose, array &$stats): void
-    {
-        $sessionsToEnd = (clone $baseQuery)
-            ->where('status', SessionStatus::ONGOING->value)
-            ->whereNotNull('started_at')
-            ->get()
-            ->filter(function ($session) use ($now) {
-                // End if session has been running for longer than expected duration + 30 minute buffer
-                $expectedEndTime = $session->started_at->copy()->addMinutes(($session->duration_minutes ?? 60) + 30);
-                return $now->isAfter($expectedEndTime);
-            });
-
-        foreach ($sessionsToEnd as $session) {
-            $stats['total_processed']++;
-            
-            try {
-                $runningTime = $session->started_at->diffInMinutes($now);
-                
-                if ($isVerbose) {
-                    $this->line("⏹️  Auto-ending session {$session->id} (running for {$runningTime} minutes)");
-                }
-
-                if (!$isDryRun) {
-                    $session->update([
-                        'status' => SessionStatus::COMPLETED->value,
-                        'ended_at' => $now,
-                        'actual_duration_minutes' => $runningTime,
-                        'attendance_status' => 'attended', // Assume attended if it was ongoing
-                    ]);
-
-                    // Update circle progress if applicable
-                    if ($session->individualCircle) {
-                        $session->individualCircle->updateProgress();
-                    }
-
-                    // Record attendance as present (since session was ongoing)
-                    $session->recordSessionAttendance('present');
-                }
-                
-                $stats['marked_ended']++;
-                
-            } catch (\Exception $e) {
-                $stats['errors']++;
-                Log::error('Failed to auto-end ongoing session', [
-                    'session_id' => $session->id,
-                    'error' => $e->getMessage(),
-                ]);
-                
-                if ($isVerbose) {
-                    $this->error("❌ Failed to end session {$session->id}: {$e->getMessage()}");
-                }
-            }
-        }
+        return $stats;
     }
 }

@@ -225,6 +225,14 @@ class QuranSession extends Model
         return $this->hasMany(QuranSessionAttendance::class, 'session_id');
     }
 
+    /**
+     * Enhanced meeting attendance tracking
+     */
+    public function meetingAttendances(): HasMany
+    {
+        return $this->hasMany(MeetingAttendance::class, 'session_id');
+    }
+
     // Scopes
     public function scopeScheduled($query)
     {

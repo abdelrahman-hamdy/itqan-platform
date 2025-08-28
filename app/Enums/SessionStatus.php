@@ -11,8 +11,6 @@ enum SessionStatus: string
     case COMPLETED = 'completed';          // Finished successfully
     case CANCELLED = 'cancelled';          // Cancelled by teacher/admin
     case ABSENT = 'absent';                // Student didn't attend (individual only)
-    case MISSED = 'missed';                // System marked as missed due to time
-    case RESCHEDULED = 'rescheduled';      // Moved to different time
 
     /**
      * Get the Arabic label for the status
@@ -27,8 +25,6 @@ enum SessionStatus: string
             self::COMPLETED => 'مكتملة',
             self::CANCELLED => 'ملغية',
             self::ABSENT => 'غياب الطالب',
-            self::MISSED => 'فائتة',
-            self::RESCHEDULED => 'مؤجلة',
         };
     }
 
@@ -45,8 +41,6 @@ enum SessionStatus: string
             self::COMPLETED => 'ri-check-circle-line',
             self::CANCELLED => 'ri-close-circle-line',
             self::ABSENT => 'ri-user-x-line',
-            self::MISSED => 'ri-time-line',
-            self::RESCHEDULED => 'ri-calendar-schedule-line',
         };
     }
 
@@ -63,8 +57,6 @@ enum SessionStatus: string
             self::COMPLETED => 'green',
             self::CANCELLED => 'red',
             self::ABSENT => 'red',
-            self::MISSED => 'red',
-            self::RESCHEDULED => 'purple',
         };
     }
 
@@ -124,8 +116,6 @@ enum SessionStatus: string
             self::COMPLETED,
             self::CANCELLED,
             self::ABSENT,
-            self::MISSED,
-            self::RESCHEDULED,
         ];
     }
 
@@ -141,8 +131,6 @@ enum SessionStatus: string
             self::ONGOING,
             self::COMPLETED,
             self::CANCELLED,
-            self::MISSED,
-            self::RESCHEDULED,
         ];
     }
 

@@ -65,6 +65,9 @@ class QuranCircle extends Model
         'dropout_rate',
         'notes',
         'special_instructions',
+        'preparation_minutes',
+        'ending_buffer_minutes',
+        'late_join_grace_period_minutes',
         'created_by',
         'updated_by'
     ];
@@ -93,7 +96,10 @@ class QuranCircle extends Model
         'actual_start_date' => 'date',
         'actual_end_date' => 'date',
         'last_session_at' => 'datetime',
-        'next_session_at' => 'datetime'
+        'next_session_at' => 'datetime',
+        'preparation_minutes' => 'integer',
+        'ending_buffer_minutes' => 'integer',
+        'late_join_grace_period_minutes' => 'integer'
     ];
 
     // Constants

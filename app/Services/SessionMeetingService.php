@@ -7,14 +7,19 @@ use App\Enums\SessionStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Collection;
 
 class SessionMeetingService
 {
     private LiveKitService $livekitService;
+    private SessionStatusService $sessionStatusService;
 
-    public function __construct(LiveKitService $livekitService)
-    {
+    public function __construct(
+        LiveKitService $livekitService,
+        SessionStatusService $sessionStatusService
+    ) {
         $this->livekitService = $livekitService;
+        $this->sessionStatusService = $sessionStatusService;
     }
 
     /**
@@ -79,11 +84,16 @@ class SessionMeetingService
         $sessionStart = $session->scheduled_at;
         $sessionEnd = $sessionStart->copy()->addMinutes($session->duration_minutes ?? 60);
         
-        // Allow joining 15 minutes before start
-        $joinableStart = $sessionStart->copy()->subMinutes(15);
+        // Get circle configuration for timing
+        $circle = $this->getCircleForSession($session);
+        $preparationMinutes = $circle?->preparation_minutes ?? 15;
+        $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
         
-        // Keep room available for 30 minutes after session ends for late joiners
-        $roomExpiry = $sessionEnd->copy()->addMinutes(30);
+        // Allow joining based on circle configuration
+        $joinableStart = $sessionStart->copy()->subMinutes($preparationMinutes);
+        
+        // Keep room available based on circle configuration
+        $roomExpiry = $sessionEnd->copy()->addMinutes($endingBufferMinutes);
 
         if ($now->lt($joinableStart)) {
             // Too early to join
@@ -402,5 +412,173 @@ class SessionMeetingService
             'is_active' => $roomInfo['is_active'],
             'room_info' => $roomInfo,
         ];
+    }
+
+    /**
+     * Create meetings for sessions that are ready (based on preparation time)
+     */
+    public function createMeetingsForReadySessions(): array
+    {
+        $results = [
+            'meetings_created' => 0,
+            'sessions_processed' => 0,
+            'errors' => [],
+        ];
+
+        // Get sessions that should have meetings created
+        $readySessions = QuranSession::where('status', SessionStatus::SCHEDULED)
+            ->whereNull('meeting_room_name')
+            ->with(['academy', 'circle', 'individualCircle'])
+            ->get()
+            ->filter(function ($session) {
+                return $this->sessionStatusService->shouldTransitionToReady($session);
+            });
+
+        foreach ($readySessions as $session) {
+            try {
+                // Transition to READY first
+                if ($this->sessionStatusService->transitionToReady($session)) {
+                    // Then create the meeting
+                    $session->generateMeetingLink([
+                        'max_participants' => 50,
+                        'empty_timeout' => $this->calculateEmptyTimeout($session),
+                        'max_duration' => $this->calculateMaxDuration($session),
+                    ]);
+
+                    $results['meetings_created']++;
+                    
+                    Log::info('Meeting created for ready session', [
+                        'session_id' => $session->id,
+                        'room_name' => $session->meeting_room_name,
+                    ]);
+                }
+
+                $results['sessions_processed']++;
+
+            } catch (\Exception $e) {
+                $results['errors'][] = [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ];
+
+                Log::error('Failed to create meeting for ready session', [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Terminate meetings for expired sessions
+     */
+    public function terminateExpiredMeetings(): array
+    {
+        $results = [
+            'meetings_terminated' => 0,
+            'sessions_processed' => 0,
+            'errors' => [],
+        ];
+
+        // Get sessions that should have meetings terminated
+        $expiredSessions = QuranSession::whereNotNull('meeting_room_name')
+            ->whereIn('status', [SessionStatus::ONGOING, SessionStatus::READY])
+            ->with(['academy', 'circle', 'individualCircle'])
+            ->get()
+            ->filter(function ($session) {
+                return $this->sessionStatusService->shouldAutoComplete($session);
+            });
+
+        foreach ($expiredSessions as $session) {
+            try {
+                // End the meeting
+                if ($session->endMeeting()) {
+                    $results['meetings_terminated']++;
+                }
+
+                // Transition session to completed
+                $this->sessionStatusService->transitionToCompleted($session);
+                $results['sessions_processed']++;
+
+                Log::info('Meeting terminated for expired session', [
+                    'session_id' => $session->id,
+                    'status' => $session->status->value,
+                ]);
+
+            } catch (\Exception $e) {
+                $results['errors'][] = [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ];
+
+                Log::error('Failed to terminate meeting for expired session', [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Enhanced processing method that uses the new status service
+     */
+    public function processSessionMeetings(): array
+    {
+        $results = [
+            'meetings_created' => 0,
+            'meetings_terminated' => 0,
+            'status_transitions' => 0,
+            'errors' => [],
+        ];
+
+        try {
+            // Create meetings for ready sessions
+            $createResults = $this->createMeetingsForReadySessions();
+            $results['meetings_created'] = $createResults['meetings_created'];
+            $results['errors'] = array_merge($results['errors'], $createResults['errors']);
+
+            // Process status transitions
+            $transitionSessions = QuranSession::whereIn('status', [
+                SessionStatus::SCHEDULED, 
+                SessionStatus::READY, 
+                SessionStatus::ONGOING
+            ])->with(['academy', 'circle', 'individualCircle'])->get();
+
+            $transitionResults = $this->sessionStatusService->processStatusTransitions($transitionSessions);
+            $results['status_transitions'] = $transitionResults['transitions_to_ready'] 
+                + $transitionResults['transitions_to_absent'] 
+                + $transitionResults['transitions_to_completed'];
+
+            // Terminate expired meetings
+            $terminateResults = $this->terminateExpiredMeetings();
+            $results['meetings_terminated'] = $terminateResults['meetings_terminated'];
+            $results['errors'] = array_merge($results['errors'], $terminateResults['errors']);
+
+        } catch (\Exception $e) {
+            $results['errors'][] = [
+                'general' => $e->getMessage(),
+            ];
+
+            Log::error('Error in session meeting processing', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get the appropriate circle (individual or group) for a session
+     */
+    private function getCircleForSession(QuranSession $session)
+    {
+        return $session->session_type === 'individual' 
+            ? $session->individualCircle 
+            : $session->circle;
     }
 }
