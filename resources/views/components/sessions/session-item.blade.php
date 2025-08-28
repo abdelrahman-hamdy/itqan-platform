@@ -20,36 +20,39 @@
     <div class="flex items-center justify-between">
         <!-- Session Info -->
         <div class="flex items-center space-x-4 space-x-reverse">
+            <!-- Session Status Indicator with Animated Circles -->
+            <div class="flex flex-col items-center">
+                @if($session->status === SessionStatus::COMPLETED)
+                    <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
+                    <span class="text-xs text-green-600 font-bold">مكتملة</span>
+                @elseif($session->status === SessionStatus::ONGOING)
+                    <div class="w-4 h-4 bg-orange-500 rounded-full mb-1 animate-pulse"></div>
+                    <span class="text-xs text-orange-600 font-bold">جارية</span>
+                @elseif($session->status === SessionStatus::READY)
+                    <div class="w-4 h-4 bg-green-400 rounded-full mb-1 animate-bounce"></div>
+                    <span class="text-xs text-green-600 font-bold">جاهزة</span>
+                @elseif($session->status === SessionStatus::SCHEDULED)
+                    <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
+                    <span class="text-xs text-blue-600 font-bold">مجدولة</span>
+                @elseif($session->status === SessionStatus::CANCELLED)
+                    <div class="w-4 h-4 bg-gray-400 rounded-full mb-1"></div>
+                    <span class="text-xs text-gray-500 font-bold">ملغاة</span>
+                @elseif($session->status === SessionStatus::ABSENT)
+                    <div class="w-4 h-4 bg-red-500 rounded-full mb-1"></div>
+                    <span class="text-xs text-red-600 font-bold">غائب</span>
+                @else
+                    <div class="w-4 h-4 bg-gray-300 rounded-full mb-1"></div>
+                    <span class="text-xs text-gray-500 font-bold">{{ $statusLabel }}</span>
+                @endif
+            </div>
+
             <!-- Session Number -->
             <div class="flex-shrink-0">
-                <div class="relative">
+                <div class="relative ml-4">
                     <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold shadow-sm
                         bg-gradient-to-r from-{{ $statusColor }}-400 to-{{ $statusColor }}-500 text-white">
                         {{ $session->session_sequence ?? '#' }}
                     </span>
-                    
-                    <!-- Status indicator overlay -->
-                    @if($session->status === SessionStatus::COMPLETED)
-                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                            <i class="ri-check-line text-white text-xs"></i>
-                        </div>
-                    @elseif($session->status === SessionStatus::ONGOING)
-                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center animate-pulse">
-                            <i class="ri-live-line text-white text-xs"></i>
-                        </div>
-                    @elseif($session->status === SessionStatus::READY)
-                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full flex items-center justify-center">
-                            <i class="ri-video-line text-white text-xs"></i>
-                        </div>
-                    @elseif($session->status === SessionStatus::ABSENT)
-                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                            <i class="ri-user-x-line text-white text-xs"></i>
-                        </div>
-                    @elseif($session->status === SessionStatus::SCHEDULED)
-                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                            <i class="ri-calendar-line text-white text-xs"></i>
-                        </div>
-                    @endif
                 </div>
             </div>
             
@@ -103,7 +106,7 @@
                     @elseif($session->duration_minutes)
                         <span class="flex items-center space-x-1 space-x-reverse">
                             <i class="ri-timer-2-line"></i>
-                            <span>{{ $session->duration_minutes }} دقيقة مخطط</span>
+                            <span>{{ $session->duration_minutes }} دقيقة</span>
                         </span>
                     @endif
                 </div>
@@ -127,24 +130,22 @@
                     @php
                         $circle = $session->session_type === 'individual' ? $session->individualCircle : $session->circle;
                         $preparationMinutes = $circle?->preparation_minutes ?? 15;
+                        $meetingInfo = getMeetingPreparationMessage($session->scheduled_at, $preparationMinutes);
                     @endphp
                     
-                    @if($session->status === SessionStatus::SCHEDULED && $session->scheduled_at)
+                    @if($meetingInfo['message'])
                         @php
-                            $minutesUntilReady = now()->diffInMinutes($session->scheduled_at->copy()->subMinutes($preparationMinutes), false);
+                            $bgColor = match($meetingInfo['type']) {
+                                'waiting' => 'text-amber-600 bg-amber-50',
+                                'preparing' => 'text-blue-600 bg-blue-50',
+                                'ready' => 'text-green-600 bg-green-50',
+                                default => 'text-gray-600 bg-gray-50'
+                            };
                         @endphp
-                        
-                        @if($minutesUntilReady > 0)
-                            <div class="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                                <i class="ri-timer-line"></i>
-                                سيتم تحضير الاجتماع خلال {{ ceil($minutesUntilReady) }} دقيقة
-                            </div>
-                        @elseif($minutesUntilReady <= 0 && $minutesUntilReady > -60)
-                            <div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                <i class="ri-settings-3-line animate-spin"></i>
-                                جاري تحضير الاجتماع...
-                            </div>
-                        @endif
+                        <div class="mt-2 text-xs {{ $bgColor }} px-2 py-1 rounded">
+                            <i class="{{ $meetingInfo['icon'] ?? 'ri-timer-line' }}"></i>
+                            {{ $meetingInfo['message'] }}
+                        </div>
                     @endif
                 @endif
             </div>

@@ -2,7 +2,7 @@
     :title="$circle->name . ' - ' . config('app.name', 'منصة إتقان')"
     :description="'تفاصيل حلقة القرآن: ' . $circle->name">
 
-<div class="max-w-5xl mx-auto">
+<div>
         <!-- Breadcrumb -->
         <nav class="mb-8">
             <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
