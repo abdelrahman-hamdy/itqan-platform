@@ -531,17 +531,37 @@ class QuranSession extends Model
      */
     public function getStatusDisplayData(): array
     {
+        // Get circle configuration if available
+        $circle = $this->session_type === 'individual' 
+            ? $this->individualCircle 
+            : $this->circle;
+        
         return [
             'status' => $this->status->value,
             'label' => $this->status->label(),
             'icon' => $this->status->icon(),
             'color' => $this->status->color(),
-            'can_start' => $this->status->canStart() && $this->isReadyToStart(),
-            'can_complete' => $this->status->canComplete(),
-            'can_cancel' => $this->status->canCancel(),
-            'can_reschedule' => $this->status->canReschedule(),
-            'is_upcoming' => $this->isUpcoming(),
-            'is_ready' => $this->isReadyToStart(),
+            'can_join' => in_array($this->status, [
+                SessionStatus::READY,
+                SessionStatus::ONGOING
+            ]),
+            'can_complete' => in_array($this->status, [
+                SessionStatus::READY,
+                SessionStatus::ONGOING
+            ]),
+            'can_cancel' => in_array($this->status, [
+                SessionStatus::SCHEDULED,
+                SessionStatus::READY
+            ]),
+            'can_reschedule' => in_array($this->status, [
+                SessionStatus::SCHEDULED,
+                SessionStatus::READY
+            ]),
+            'is_upcoming' => $this->status === SessionStatus::SCHEDULED && $this->scheduled_at && $this->scheduled_at->isFuture(),
+            'is_active' => in_array($this->status, [SessionStatus::READY, SessionStatus::ONGOING]),
+            'preparation_minutes' => $circle?->preparation_minutes ?? 15,
+            'ending_buffer_minutes' => $circle?->ending_buffer_minutes ?? 5,
+            'grace_period_minutes' => $circle?->late_join_grace_period_minutes ?? 15,
         ];
     }
 

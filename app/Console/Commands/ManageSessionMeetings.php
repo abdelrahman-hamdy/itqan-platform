@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Services\SessionMeetingService;
+use App\Services\CronJobLogger;
 use Illuminate\Support\Facades\Log;
 
 class ManageSessionMeetings extends Command
@@ -35,6 +36,12 @@ class ManageSessionMeetings extends Command
     {
         $isDryRun = $this->option('dry-run');
         $isForced = $this->option('force');
+        
+        // Start enhanced logging
+        $executionData = CronJobLogger::logCronStart('sessions:manage-meetings', [
+            'dry_run' => $isDryRun,
+            'forced' => $isForced,
+        ]);
         
         $this->info('🚀 Starting session meeting management...');
         

@@ -9,25 +9,18 @@
             <!-- Circle Header -->
             <x-circle.group-header :circle="$circle" view-type="teacher" />
 
-            <!-- Sessions List -->
+            <!-- Enhanced Sessions List -->
             @php
-                // Combine recent and upcoming sessions for unified display
-                $allSessions = collect();
-                if(isset($teacherData['recentSessions'])) {
-                    $allSessions = $allSessions->merge($teacherData['recentSessions']);
-                }
-                if(isset($teacherData['upcomingSessions'])) {
-                    $allSessions = $allSessions->merge($teacherData['upcomingSessions']);
-                }
+                // Get all sessions for the circle
+                $allSessions = $circle->sessions()->orderBy('scheduled_at', 'desc')->get();
             @endphp
             
-            <x-circle.progress-sessions-list 
+            <x-sessions.enhanced-sessions-list 
                 :sessions="$allSessions" 
-                title="جلسات الحلقة الجماعية"
-                subtitle="آخر الجلسات والقادمة"
+                title="إدارة جلسات الحلقة الجماعية"
                 view-type="teacher"
-                :limit="10"
-                :show-all-button="true"
+                :show-tabs="true"
+                :circle="$circle"
                 empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 

@@ -57,6 +57,12 @@
                                 @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                     <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
                                     <span class="text-xs text-green-600 font-bold">مكتملة</span>
+                                @elseif($session->status === App\Enums\SessionStatus::ONGOING)
+                                    <div class="w-4 h-4 bg-orange-500 rounded-full mb-1 animate-pulse"></div>
+                                    <span class="text-xs text-orange-600 font-bold">جارية</span>
+                                @elseif($session->status === App\Enums\SessionStatus::READY)
+                                    <div class="w-4 h-4 bg-green-400 rounded-full mb-1 animate-bounce"></div>
+                                    <span class="text-xs text-green-600 font-bold">جاهزة</span>
                                 @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
                                     <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
                                     <span class="text-xs text-blue-600 font-bold">مجدولة</span>

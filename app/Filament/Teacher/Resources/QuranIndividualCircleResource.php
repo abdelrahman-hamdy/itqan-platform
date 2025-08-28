@@ -109,6 +109,43 @@ class QuranIndividualCircleResource extends Resource
                     ])
                     ->columns(2),
 
+                Forms\Components\Section::make('إعدادات الاجتماعات')
+                    ->description('إعدادات توقيت الاجتماعات والحضور للجلسات الفردية')
+                    ->schema([
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('preparation_minutes')
+                                    ->label('وقت تحضير الاجتماع (دقيقة)')
+                                    ->helperText('الوقت قبل بداية الجلسة لإنشاء الاجتماع')
+                                    ->numeric()
+                                    ->minValue(5)
+                                    ->maxValue(30)
+                                    ->default(15)
+                                    ->required()
+                                    ->suffix('دقيقة'),
+
+                                Forms\Components\TextInput::make('ending_buffer_minutes')
+                                    ->label('وقت إضافي بعد انتهاء الجلسة (دقيقة)')
+                                    ->helperText('الوقت الإضافي لبقاء الاجتماع مفتوح بعد انتهاء الجلسة')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(15)
+                                    ->default(5)
+                                    ->required()
+                                    ->suffix('دقيقة'),
+
+                                Forms\Components\TextInput::make('late_join_grace_period_minutes')
+                                    ->label('فترة السماح للانضمام المتأخر (دقيقة)')
+                                    ->helperText('الوقت المسموح للطالب للانضمام بعد بداية الجلسة دون اعتباره متأخراً')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(30)
+                                    ->default(15)
+                                    ->required()
+                                    ->suffix('دقيقة'),
+                            ]),
+                    ]),
+
                 Forms\Components\Section::make('ملاحظات')
                     ->schema([
                         Forms\Components\Textarea::make('teacher_notes')

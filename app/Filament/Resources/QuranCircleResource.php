@@ -190,6 +190,43 @@ public static function form(Form $form): Form
                             ]),
                     ]),
 
+                Section::make('إعدادات الاجتماعات')
+                    ->description('إعدادات توقيت الاجتماعات والحضور للجلسات')
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
+                                TextInput::make('preparation_minutes')
+                                    ->label('وقت تحضير الاجتماع (دقيقة)')
+                                    ->helperText('الوقت قبل بداية الجلسة لإنشاء الاجتماع')
+                                    ->numeric()
+                                    ->minValue(5)
+                                    ->maxValue(30)
+                                    ->default(15)
+                                    ->required()
+                                    ->suffix('دقيقة'),
+
+                                TextInput::make('ending_buffer_minutes')
+                                    ->label('وقت إضافي بعد انتهاء الجلسة (دقيقة)')
+                                    ->helperText('الوقت الإضافي لبقاء الاجتماع مفتوح بعد انتهاء الجلسة')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(15)
+                                    ->default(5)
+                                    ->required()
+                                    ->suffix('دقيقة'),
+
+                                TextInput::make('late_join_grace_period_minutes')
+                                    ->label('فترة السماح للانضمام المتأخر (دقيقة)')
+                                    ->helperText('الوقت المسموح للطلاب للانضمام بعد بداية الجلسة دون اعتبارهم متأخرين')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(30)
+                                    ->default(15)
+                                    ->required()
+                                    ->suffix('دقيقة'),
+                            ]),
+                    ]),
+
                 Section::make('حلقات القرآن الجماعية')
                     ->schema([
                         Grid::make(2)

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use App\Services\SessionStatusService;
+use App\Services\CronJobLogger;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +18,7 @@ class UpdateSessionStatusesCommand extends Command
     protected $signature = 'sessions:update-statuses 
                           {--academy-id= : Process only specific academy ID}
                           {--dry-run : Show what would be done without actually updating sessions}
-                          {--verbose : Show detailed output}';
+                          {--details : Show detailed output}';
 
     /**
      * The console command description.
@@ -37,11 +38,18 @@ class UpdateSessionStatusesCommand extends Command
      */
     public function handle(): int
     {
-        $startTime = microtime(true);
-        $now = now();
         $isDryRun = $this->option('dry-run');
-        $isVerbose = $this->option('verbose') || $isDryRun;
+        $isVerbose = $this->option('details') || $isDryRun;
         $academyId = $this->option('academy-id');
+        
+        // Start enhanced logging
+        $executionData = CronJobLogger::logCronStart('sessions:update-statuses', [
+            'dry_run' => $isDryRun,
+            'verbose' => $isVerbose,
+            'academy_id' => $academyId,
+        ]);
+
+        $now = now();
 
         if ($isVerbose) {
             $this->info('🕐 Starting enhanced session status update process...');
@@ -97,7 +105,7 @@ class UpdateSessionStatusesCommand extends Command
             }
 
             // Final statistics
-            $executionTime = round(microtime(true) - $startTime, 2);
+            $executionTime = round(microtime(true) - $executionData['start_time'], 2);
             
             if ($isVerbose) {
                 $this->info('📊 Session Status Update Results:');
@@ -127,9 +135,13 @@ class UpdateSessionStatusesCommand extends Command
                 'dry_run' => $isDryRun,
             ]);
 
+            // Log completion
             if ($stats['errors'] > 0) {
+                CronJobLogger::logCronEnd('sessions:update-statuses', $executionData, $stats, 'warning');
                 $this->warn("⚠️  Completed with {$stats['errors']} errors. Check logs for details.");
                 return self::FAILURE;
+            } else {
+                CronJobLogger::logCronEnd('sessions:update-statuses', $executionData, $stats, 'success');
             }
 
             if ($isVerbose) {
@@ -139,6 +151,7 @@ class UpdateSessionStatusesCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
+            CronJobLogger::logCronError('sessions:update-statuses', $executionData, $e);
             $this->error('❌ Session status update failed: ' . $e->getMessage());
             Log::error('Enhanced session status update command failed', [
                 'error' => $e->getMessage(),

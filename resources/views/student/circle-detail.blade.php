@@ -354,7 +354,24 @@
                     </div>
                     @endif
 
-                    <!-- Upcoming Sessions (for enrolled students) -->
+                    <!-- Enhanced Sessions List (for enrolled students) -->
+                    @if($isEnrolled)
+                        @php
+                            // Combine all sessions for the unified display
+                            $allCircleSessions = collect($upcomingSessions)->merge($pastSessions)->sortByDesc('scheduled_at');
+                        @endphp
+                        
+                        <x-sessions.enhanced-sessions-list 
+                            :sessions="$allCircleSessions" 
+                            title="جلسات الحلقة"
+                            view-type="student"
+                            :show-tabs="true"
+                            :circle="$circle"
+                            empty-message="لا توجد جلسات مجدولة بعد" />
+                    @endif
+                    
+                    <!-- Legacy sessions section (temporarily comment out) -->
+                    {{-- 
                     @if($isEnrolled && $upcomingSessions->count() > 0)
                     <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                         <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -659,6 +676,8 @@
                         </div>
                     </div>
                     @endif
+                    --}}
+                    
                 </div>
             </div>
 

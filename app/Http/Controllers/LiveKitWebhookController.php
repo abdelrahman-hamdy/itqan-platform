@@ -7,16 +7,26 @@ use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Models\QuranSession;
+use App\Models\User;
 use App\Services\SessionMeetingService;
+use App\Services\MeetingAttendanceService;
+use App\Services\SessionStatusService;
 use App\Enums\SessionStatus;
 
 class LiveKitWebhookController extends Controller
 {
     private SessionMeetingService $sessionMeetingService;
+    private MeetingAttendanceService $attendanceService;
+    private SessionStatusService $statusService;
 
-    public function __construct(SessionMeetingService $sessionMeetingService)
-    {
+    public function __construct(
+        SessionMeetingService $sessionMeetingService,
+        MeetingAttendanceService $attendanceService,
+        SessionStatusService $statusService
+    ) {
         $this->sessionMeetingService = $sessionMeetingService;
+        $this->attendanceService = $attendanceService;
+        $this->statusService = $statusService;
     }
 
     /**
@@ -197,8 +207,13 @@ class LiveKitWebhookController extends Controller
                 'participant_count' => $data['room']['num_participants'] ?? 0,
             ]);
 
-            // TODO: Could implement attendance tracking here
-            // $this->trackAttendance($session, $userId, 'joined');
+            // Track attendance using enhanced system
+            if ($userId) {
+                $user = User::find($userId);
+                if ($user) {
+                    $this->attendanceService->handleUserJoin($session, $user);
+                }
+            }
 
         } catch (\Exception $e) {
             Log::error('Failed to handle participant joined event', [
@@ -235,13 +250,18 @@ class LiveKitWebhookController extends Controller
                 'remaining_participants' => $remainingParticipants,
             ]);
 
+            // Track attendance using enhanced system
+            if ($userId) {
+                $user = User::find($userId);
+                if ($user) {
+                    $this->attendanceService->handleUserLeave($session, $user);
+                }
+            }
+
             // Check if room is now empty
             if ($remainingParticipants === 0) {
                 $this->handleEmptyRoom($session, $roomName);
             }
-
-            // TODO: Could implement attendance tracking here
-            // $this->trackAttendance($session, $userId, 'left');
 
         } catch (\Exception $e) {
             Log::error('Failed to handle participant left event', [

@@ -9,14 +9,13 @@
             <!-- Circle Header -->
             <x-individual-circle.circle-header :circle="$circle" view-type="teacher" />
 
-            <!-- Sessions List -->
-            <x-circle.progress-sessions-list 
+            <!-- Enhanced Sessions List -->
+            <x-sessions.enhanced-sessions-list 
                 :sessions="$circle->sessions" 
-                title="جلسات الحلقة الفردية"
-                subtitle="جميع الجلسات"
+                title="إدارة جلسات الحلقة الفردية"
                 view-type="teacher"
-                :limit="null"
-                :show-all-button="false"
+                :show-tabs="true"
+                :circle="$circle"
                 empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 

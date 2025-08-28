@@ -132,13 +132,29 @@
                                     <div class="relative">
                                         <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold shadow-sm
                                             {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' : 
+                                               ($session->status === App\Enums\SessionStatus::ONGOING ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white' :
+                                               ($session->status === App\Enums\SessionStatus::READY ? 'bg-gradient-to-r from-green-300 to-green-400 text-white' :
                                                ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-gradient-to-r from-blue-400 to-blue-500 text-white' : 
-                                               ($session->status === App\Enums\SessionStatus::UNSCHEDULED ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700')) }}">
+                                               ($session->status === App\Enums\SessionStatus::UNSCHEDULED ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' : 
+                                               ($session->status === App\Enums\SessionStatus::ABSENT ? 'bg-gradient-to-r from-red-400 to-red-500 text-white' : 
+                                               'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700'))))) }}">
                                             {{ $session->session_sequence }}
                                         </span>
                                         @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                             <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                                                 <i class="ri-check-line text-white text-xs"></i>
+                                            </div>
+                                        @elseif($session->status === App\Enums\SessionStatus::ONGOING)
+                                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center animate-pulse">
+                                                <i class="ri-live-line text-white text-xs"></i>
+                                            </div>
+                                        @elseif($session->status === App\Enums\SessionStatus::READY)
+                                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full flex items-center justify-center">
+                                                <i class="ri-video-line text-white text-xs"></i>
+                                            </div>
+                                        @elseif($session->status === App\Enums\SessionStatus::ABSENT)
+                                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                                                <i class="ri-user-x-line text-white text-xs"></i>
                                             </div>
                                         @endif
                                     </div>
@@ -192,7 +208,14 @@
                                 </span>
                                 
                                 <!-- Action Buttons -->
-                                @if($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at && $session->scheduled_at->isFuture())
+                                @if($session->status === App\Enums\SessionStatus::READY || $session->status === App\Enums\SessionStatus::ONGOING)
+                                    <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
+                                       onclick="event.stopPropagation()"
+                                       class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
+                                        <i class="ri-video-line ml-1"></i>
+                                        {{ $session->status === App\Enums\SessionStatus::ONGOING ? 'انضمام للجلسة الجارية' : 'انضمام للجلسة' }}
+                                    </a>
+                                @elseif($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at && $session->scheduled_at->isFuture())
                                     @php
                                         $timeRemaining = humanize_time_remaining_arabic($session->scheduled_at);
                                         $canTestMeeting = can_test_meetings();

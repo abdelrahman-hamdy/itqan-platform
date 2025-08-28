@@ -1073,10 +1073,91 @@
         });
 </script>
 
+@php
+    // Get circle configuration for meeting timing
+    $circle = $session->session_type === 'individual' 
+        ? $session->individualCircle 
+        : $session->circle;
+    
+    $preparationMinutes = $circle?->preparation_minutes ?? 15;
+    $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
+    $graceMinutes = $circle?->late_join_grace_period_minutes ?? 15;
+    
+    $canJoinMeeting = in_array($session->status, [
+        App\Enums\SessionStatus::READY,
+        App\Enums\SessionStatus::ONGOING
+    ]);
+    
+    // Get status-specific messages
+    $meetingMessage = '';
+    $buttonText = '';
+    $buttonClass = '';
+    $buttonDisabled = false;
+    
+    switch($session->status) {
+        case App\Enums\SessionStatus::READY:
+            $meetingMessage = $userType === 'quran_teacher' 
+                ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع' 
+                : 'الجلسة جاهزة - يمكنك الانضمام الآن';
+            $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'انضم للجلسة';
+            $buttonClass = 'bg-green-600 hover:bg-green-700';
+            break;
+            
+        case App\Enums\SessionStatus::ONGOING:
+            $meetingMessage = 'الجلسة جارية الآن - انضم للمشاركة';
+            $buttonText = 'انضمام للجلسة الجارية';
+            $buttonClass = 'bg-orange-600 hover:bg-orange-700 animate-pulse';
+            break;
+            
+        case App\Enums\SessionStatus::SCHEDULED:
+            if ($session->scheduled_at) {
+                $minutesUntilReady = now()->diffInMinutes($session->scheduled_at->copy()->subMinutes($preparationMinutes), false);
+                if ($minutesUntilReady > 0) {
+                    $meetingMessage = "سيتم تحضير الاجتماع خلال " . ceil($minutesUntilReady) . " دقيقة ({$preparationMinutes} دقيقة قبل الموعد)";
+                } else {
+                    $meetingMessage = "جاري تحضير الاجتماع...";
+                }
+            } else {
+                $meetingMessage = 'الجلسة مجدولة لكن لم يتم تحديد الوقت بعد';
+            }
+            $buttonText = 'في انتظار تحضير الاجتماع';
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $buttonDisabled = true;
+            break;
+            
+        case App\Enums\SessionStatus::COMPLETED:
+            $meetingMessage = 'تم إنهاء الجلسة بنجاح';
+            $buttonText = 'الجلسة منتهية';
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $buttonDisabled = true;
+            break;
+            
+        case App\Enums\SessionStatus::CANCELLED:
+            $meetingMessage = 'تم إلغاء الجلسة';
+            $buttonText = 'الجلسة ملغية';
+            $buttonClass = 'bg-red-400 cursor-not-allowed';
+            $buttonDisabled = true;
+            break;
+            
+        case App\Enums\SessionStatus::ABSENT:
+            $meetingMessage = 'تم تسجيل غياب الطالب';
+            $buttonText = 'غياب الطالب';
+            $buttonClass = 'bg-red-400 cursor-not-allowed';
+            $buttonDisabled = true;
+            break;
+            
+        default:
+            $meetingMessage = 'حالة الجلسة: ' . $session->status->label();
+            $buttonText = 'غير متاح';
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $buttonDisabled = true;
+    }
+@endphp
+
 <!-- Meeting Controls Card -->
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
     <div class="flex items-center justify-between">
-        <div>
+        <div class="flex-1">
             <h2 class="text-xl font-semibold text-gray-900 mb-2">
                 @if($userType === 'quran_teacher')
                 إدارة الاجتماع المباشر
@@ -1084,14 +1165,24 @@
                 الانضمام للجلسة المباشرة
                 @endif
             </h2>
-            <p class="text-gray-600">
-                @if($userType === 'quran_teacher')
-                يمكنك بدء الاجتماع والتحكم في الجلسة
-                @else
-                انضم للجلسة المباشرة مع معلمك
-                @endif
-            </p>
+            
+            <!-- Status Message -->
+            <p class="text-gray-600 mb-2">{{ $meetingMessage }}</p>
+            
+            <!-- Meeting Configuration Info -->
+            @if($canJoinMeeting && $circle)
+            <div class="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg">
+                <div class="flex items-center gap-4 text-xs">
+                    <span><i class="ri-time-line"></i> تحضير: {{ $preparationMinutes }} دقيقة مسبقاً</span>
+                    <span><i class="ri-timer-line"></i> فترة إضافية: {{ $endingBufferMinutes }} دقيقة</span>
+                    @if($session->session_type === 'individual')
+                    <span><i class="ri-user-clock-line"></i> السماح للتأخير: {{ $graceMinutes }} دقيقة</span>
+                    @endif
+                </div>
+            </div>
+            @endif
         </div>
+        
         <div class="flex flex-col items-end gap-2">
             <!-- Connection Status -->
             <div id="connectionStatus" class="connection-status hidden">
@@ -1102,19 +1193,18 @@
             <!-- Join Meeting Button -->
             <button
                 id="startMeetingBtn"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 min-w-[200px] justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
-                    </path>
-                </svg>
-                <span id="meetingBtnText">
-                    @if($userType === 'quran_teacher')
-                    بدء الجلسة
-                    @else
-                    انضم للجلسة
-                    @endif
-                </span>
+                class="{{ $buttonClass }} text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 min-w-[200px] justify-center"
+                {{ $buttonDisabled ? 'disabled' : '' }}>
+                @if($canJoinMeeting)
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                @else
+                    <i class="{{ $session->status->icon() }} text-lg"></i>
+                @endif
+                <span id="meetingBtnText">{{ $buttonText }}</span>
             </button>
 
             <!-- Meeting Info -->
