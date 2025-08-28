@@ -154,13 +154,6 @@
         <!-- Session Status and Actions -->
         <div class="text-left">
             <div class="flex flex-col items-end space-y-2">
-                <!-- Status Badge -->
-                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm
-                    bg-gradient-to-r from-{{ $statusColor }}-100 to-{{ $statusColor }}-200 text-{{ $statusColor }}-800 border border-{{ $statusColor }}-300">
-                    <i class="{{ $statusIcon }} ml-1"></i>
-                    {{ $statusLabel }}
-                </span>
-                
                 <!-- Action Button for active sessions -->
                 @if(in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING]) && $viewType === 'student')
                     <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
