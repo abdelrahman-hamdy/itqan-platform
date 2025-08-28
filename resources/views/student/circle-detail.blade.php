@@ -177,30 +177,26 @@
                         </div>
                         @endif
 
-                        <!-- Learning Objectives -->
-                        @if($circle->learning_objectives)
+                        <!-- Learning Objectives (Circle Goals) -->
+                        @if($circle->learning_objectives && count($circle->learning_objectives) > 0)
                         <div>
                             <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                أهداف التعلم
+                                <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                أهداف الحلقة
                             </h3>
                             <div class="p-2">
-                                @if(is_array($circle->learning_objectives))
                                 <div class="space-y-3">
                                     @foreach($circle->learning_objectives as $objective)
                                     <div class="flex items-start gap-3">
-                                        <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
+                                        <div class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
                                             <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"></path>
                                             </svg>
                                         </div>
                                         <span class="text-gray-700 leading-relaxed">{{ $objective }}</span>
                                     </div>
                                     @endforeach
                                 </div>
-                                @else
-                                <p class="text-gray-700 leading-relaxed">{{ $circle->learning_objectives }}</p>
-                                @endif
                             </div>
                         </div>
                         @endif
@@ -232,6 +228,24 @@
                             </div>
                         </div>
                         @endif
+                    </div>
+                </div>
+                @endif
+
+                <!-- Admin Notes (Only for Teachers, Admins, and Super Admins) -->
+                @if($circle->admin_notes && (auth()->user()->hasRole(['teacher', 'admin', 'super_admin']) || auth()->user()->isQuranTeacher()))
+                <div class="bg-orange-50 border-l-4 border-orange-400 rounded-xl shadow-sm p-6 mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-orange-800 flex items-center gap-2">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            ملاحظات الإدارة
+                        </h2>
+                        <span class="text-xs text-orange-400 italic">مرئية للإدارة والمعلمين والمشرفين فقط</span>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border border-orange-200">
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ $circle->admin_notes }}</p>
                     </div>
                 </div>
                 @endif

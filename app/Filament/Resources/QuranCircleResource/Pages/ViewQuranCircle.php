@@ -12,7 +12,7 @@ class ViewQuranCircle extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'دائرة القرآن: ' . $this->record->name_ar;
+        return 'دائرة القرآن: '.$this->record->name_ar;
     }
 
     protected function getHeaderActions(): array
@@ -20,55 +20,22 @@ class ViewQuranCircle extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->label('تعديل'),
-            Actions\Action::make('publish')
-                ->label('نشر للتسجيل')
-                ->icon('heroicon-o-megaphone')
-                ->color('success')
+            Actions\Action::make('toggle_status')
+                ->label(fn () => $this->record->status ? 'إلغاء التفعيل' : 'تفعيل')
+                ->icon(fn () => $this->record->status ? 'heroicon-o-pause-circle' : 'heroicon-o-play-circle')
+                ->color(fn () => $this->record->status ? 'warning' : 'success')
                 ->requiresConfirmation()
+                ->modalHeading(fn () => $this->record->status ? 'إلغاء تفعيل الحلقة' : 'تفعيل الحلقة')
+                ->modalDescription(fn () => $this->record->status
+                    ? 'هل أنت متأكد من إلغاء تفعيل هذه الحلقة؟ لن يتمكن الطلاب من الانضمام إليها.'
+                    : 'هل أنت متأكد من تفعيل هذه الحلقة؟ ستصبح متاحة للطلاب للانضمام.'
+                )
                 ->action(fn () => $this->record->update([
-                    'status' => 'pending',
-                    'enrollment_status' => 'open',
-                ]))
-                ->visible(fn () => $this->record->status === 'planning'),
-            Actions\Action::make('start')
-                ->label('بدء الدائرة')
-                ->icon('heroicon-o-play-circle')
-                ->color('primary')
-                ->requiresConfirmation()
-                ->action(fn () => $this->record->update([
-                    'status' => 'ongoing',
-                    'enrollment_status' => 'closed',
-                    'actual_start_date' => now(),
-                ]))
-                ->visible(fn () => $this->record->status === 'pending' && $this->record->enrolled_students >= 3),
-            Actions\Action::make('complete')
-                ->label('إنهاء الدائرة')
-                ->icon('heroicon-o-check-circle')
-                ->color('success')
-                ->requiresConfirmation()
-                ->action(fn () => $this->record->update([
-                    'status' => 'completed',
-                    'actual_end_date' => now(),
-                ]))
-                ->visible(fn () => $this->record->status === 'ongoing'),
-            Actions\Action::make('cancel')
-                ->label('إلغاء الدائرة')
-                ->icon('heroicon-o-x-circle')
-                ->color('danger')
-                ->requiresConfirmation()
-                ->form([
-                    \Filament\Forms\Components\Textarea::make('cancellation_reason')
-                        ->label('سبب الإلغاء')
-                        ->required()
-                ])
-                ->action(function (array $data) {
-                    $this->record->update([
-                        'status' => 'cancelled',
-                        'notes' => ($this->record->notes ? $this->record->notes . "\n\n" : '') . 
-                                  'سبب الإلغاء: ' . $data['cancellation_reason']
-                    ]);
-                })
-                ->visible(fn () => in_array($this->record->status, ['planning', 'pending', 'ongoing'])),
+                    'status' => ! $this->record->status,
+                    'enrollment_status' => $this->record->status ? 'closed' : 'open',
+                ])),
+            Actions\DeleteAction::make()
+                ->label('حذف'),
         ];
     }
-} 
+}

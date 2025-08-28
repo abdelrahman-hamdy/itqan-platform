@@ -1,6 +1,6 @@
 <?php
 
-if (!function_exists('current_academy')) {
+if (! function_exists('current_academy')) {
     /**
      * Get the current academy from the resolved tenant
      */
@@ -10,18 +10,19 @@ if (!function_exists('current_academy')) {
     }
 }
 
-if (!function_exists('academy_url')) {
+if (! function_exists('academy_url')) {
     /**
      * Generate URL for an academy
      */
     function academy_url(\App\Models\Academy $academy, string $path = '/'): string
     {
         $protocol = app()->environment('local') ? 'http' : 'https';
-        return $protocol . '://' . $academy->full_domain . $path;
+
+        return $protocol.'://'.$academy->full_domain.$path;
     }
 }
 
-if (!function_exists('humanize_time_remaining_arabic')) {
+if (! function_exists('humanize_time_remaining_arabic')) {
     /**
      * Humanize the time remaining until a session in Arabic
      */
@@ -29,16 +30,16 @@ if (!function_exists('humanize_time_remaining_arabic')) {
     {
         $now = now();
         $diff = $now->diffInMinutes($sessionTime, false);
-        
+
         // If session is in the past
         if ($diff < 0) {
             return [
                 'text' => 'انتهت الجلسة',
                 'can_join' => false,
-                'is_past' => true
+                'is_past' => true,
             ];
         }
-        
+
         // Format the remaining time in a human-readable Arabic format
         if ($diff < 60) {
             $minutes = (int) $diff;
@@ -56,7 +57,7 @@ if (!function_exists('humanize_time_remaining_arabic')) {
         } else {
             $hours = (int) ($diff / 60);
             $remainingMinutes = (int) ($diff % 60);
-            
+
             if ($hours == 1) {
                 if ($remainingMinutes == 0) {
                     $text = 'متاح خلال ساعة واحدة';
@@ -84,7 +85,7 @@ if (!function_exists('humanize_time_remaining_arabic')) {
             } else {
                 $days = (int) ($hours / 24);
                 $remainingHours = (int) ($hours % 24);
-                
+
                 if ($days == 1) {
                     if ($remainingHours == 0) {
                         $text = 'متاح خلال يوم واحد';
@@ -106,34 +107,37 @@ if (!function_exists('humanize_time_remaining_arabic')) {
                 }
             }
         }
-        
+
         // Determine if user can join (within 30 minutes)
         $canJoin = $diff <= 30;
-        
+
         return [
             'text' => $text,
             'can_join' => $canJoin,
             'is_past' => false,
-            'minutes_remaining' => (int) $diff
+            'minutes_remaining' => (int) $diff,
         ];
     }
 }
 
-if (!function_exists('can_test_meetings')) {
+if (! function_exists('can_test_meetings')) {
     /**
      * Check if the current user can bypass meeting time restrictions for testing
      */
     function can_test_meetings(): bool
     {
-        if (!\Illuminate\Support\Facades\Auth::check()) {
+        if (! \Illuminate\Support\Facades\Auth::check()) {
             return false;
         }
-        
+
         $user = \Illuminate\Support\Facades\Auth::user();
-        
+
         // Allow super admins and admins to test meetings
-        return $user->hasRole(['super_admin', 'admin']) || 
-               request()->has('test_mode') && 
+        return $user->hasRole(['super_admin', 'admin']) ||
+               request()->has('test_mode') &&
                ($user->hasRole(['quran_teacher', 'academic_teacher', 'supervisor', 'student']) || app()->environment('local'));
     }
-} 
+}
+
+// Include TimeHelper functions
+require_once __DIR__.'/Helpers/TimeHelper.php';

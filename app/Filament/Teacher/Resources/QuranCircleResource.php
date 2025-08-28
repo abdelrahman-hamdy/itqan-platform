@@ -5,28 +5,22 @@ namespace App\Filament\Teacher\Resources;
 use App\Filament\Teacher\Resources\QuranCircleResource\Pages;
 use App\Models\QuranCircle;
 use Filament\Forms;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Actions\ActionGroup;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\TagsInput;
-use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class QuranCircleResource extends Resource
@@ -35,7 +29,7 @@ class QuranCircleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationLabel = 'حلقاتي';
+    protected static ?string $navigationLabel = 'حلقات القرآن الجماعية';
 
     protected static ?string $modelLabel = 'حلقة قرآن';
 
@@ -49,8 +43,8 @@ class QuranCircleResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        
-        if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
+
+        if (! $user->isQuranTeacher() || ! $user->quranTeacherProfile) {
             return parent::getEloquentQuery()->whereRaw('1 = 0'); // Return no results
         }
 
@@ -67,16 +61,20 @@ class QuranCircleResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('name')
-                                    ->label('اسم الحلقة')
+                                TextInput::make('name_ar')
+                                    ->label('اسم الحلقة (عربي)')
                                     ->required()
-                                    ->maxLength(255),
-                                    
+                                    ->maxLength(150),
+
+                                TextInput::make('name_en')
+                                    ->label('اسم الحلقة (إنجليزي)')
+                                    ->maxLength(150),
+
                                 TextInput::make('circle_code')
                                     ->label('رمز الحلقة')
                                     ->disabled()
                                     ->dehydrated(false),
-                                    
+
                                 Select::make('age_group')
                                     ->label('الفئة العمرية')
                                     ->options([
@@ -86,27 +84,51 @@ class QuranCircleResource extends Resource
                                         'mixed' => 'مختلطة',
                                     ])
                                     ->required(),
-                                    
-                                Select::make('level')
+
+                                Select::make('gender_type')
+                                    ->label('النوع')
+                                    ->options([
+                                        'male' => 'رجال',
+                                        'female' => 'نساء',
+                                        'mixed' => 'مختلط',
+                                    ])
+                                    ->required(),
+
+                                Select::make('specialization')
+                                    ->label('التخصص')
+                                    ->options([
+                                        'memorization' => 'حفظ القرآن',
+                                        'recitation' => 'تلاوة وتجويد',
+                                        'interpretation' => 'تفسير',
+                                        'arabic_language' => 'اللغة العربية القرآنية',
+                                        'complete' => 'شامل',
+                                    ])
+                                    ->default('memorization')
+                                    ->required(),
+
+                                Select::make('memorization_level')
                                     ->label('مستوى الحفظ')
                                     ->options([
                                         'beginner' => 'مبتدئ',
-                                        'basic' => 'أساسي',
+                                        'elementary' => 'أساسي',
                                         'intermediate' => 'متوسط',
                                         'advanced' => 'متقدم',
-                                        'hafez' => 'حافظ',
+                                        'expert' => 'خبير',
                                     ])
+                                    ->default('beginner')
                                     ->required(),
                             ]),
-                            
-                        Textarea::make('description')
-                            ->label('وصف الحلقة')
+
+                        Textarea::make('description_ar')
+                            ->label('وصف الحلقة (عربي)')
                             ->rows(3)
                             ->maxLength(500),
-                            
-                        TagsInput::make('goals')
-                            ->label('أهداف الحلقة')
-                            ->placeholder('أضف هدف جديد'),
+
+                        Textarea::make('description_en')
+                            ->label('وصف الحلقة (إنجليزي)')
+                            ->rows(3)
+                            ->maxLength(500),
+
                     ]),
 
                 Section::make('إعدادات الحلقة')
@@ -120,35 +142,57 @@ class QuranCircleResource extends Resource
                                     ->maxValue(20)
                                     ->default(8)
                                     ->required(),
-                                    
-                                TextInput::make('current_students')
+
+                                TextInput::make('enrolled_students')
                                     ->label('عدد الطلاب الحالي')
                                     ->numeric()
                                     ->disabled()
+                                    ->default(fn ($record) => $record ? $record->students()->count() : 0)
                                     ->dehydrated(false),
-                                    
-                                TextInput::make('session_duration_minutes')
+
+                                Select::make('session_duration_minutes')
                                     ->label('مدة الجلسة (بالدقائق)')
-                                    ->numeric()
+                                    ->options([
+                                        30 => '30 دقيقة',
+                                        45 => '45 دقيقة',
+                                        60 => '60 دقيقة',
+                                    ])
                                     ->default(60)
                                     ->required(),
                             ]),
-                            
-                        Grid::make(2)
-                            ->schema([
-                                TimePicker::make('start_time')
-                                    ->label('وقت البداية')
-                                    ->native(false)
-                                    ->format('H:i')
-                                    ->required(),
-                                    
-                                TimePicker::make('end_time')
-                                    ->label('وقت النهاية')
-                                    ->native(false)
-                                    ->format('H:i')
-                                    ->required(),
-                            ]),
-                            
+
+                        Select::make('schedule_time')
+                            ->label('الساعة')
+                            ->options([
+                                '00:00' => '12:00 ص',
+                                '01:00' => '01:00 ص',
+                                '02:00' => '02:00 ص',
+                                '03:00' => '03:00 ص',
+                                '04:00' => '04:00 ص',
+                                '05:00' => '05:00 ص',
+                                '06:00' => '06:00 ص',
+                                '07:00' => '07:00 ص',
+                                '08:00' => '08:00 ص',
+                                '09:00' => '09:00 ص',
+                                '10:00' => '10:00 ص',
+                                '11:00' => '11:00 ص',
+                                '12:00' => '12:00 م',
+                                '13:00' => '01:00 م',
+                                '14:00' => '02:00 م',
+                                '15:00' => '03:00 م',
+                                '16:00' => '04:00 م',
+                                '17:00' => '05:00 م',
+                                '18:00' => '06:00 م',
+                                '19:00' => '07:00 م',
+                                '20:00' => '08:00 م',
+                                '21:00' => '09:00 م',
+                                '22:00' => '10:00 م',
+                                '23:00' => '11:00 م',
+                            ])
+                            ->native(false)
+                            ->required()
+                            ->helperText('تحديد الساعة المحددة لبداية الجلسات'),
+
                         Select::make('schedule_days')
                             ->label('أيام الانعقاد')
                             ->options([
@@ -194,43 +238,16 @@ class QuranCircleResource extends Resource
                                     ->helperText('الوقت المسموح للطلاب للانضمام بعد بداية الجلسة دون اعتبارهم متأخرين')
                                     ->numeric()
                                     ->minValue(0)
-                                    ->maxValue(30)
-                                    ->default(15)
                                     ->required()
-                                    ->suffix('دقيقة'),
-                            ]),
-                    ]),
-
-                Section::make('المحتوى التعليمي')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('current_surah')
-                                    ->label('السورة الحالية')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(114),
-                                    
-                                TextInput::make('target_surah')
-                                    ->label('السورة المستهدفة')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(114),
-                            ]),
-                            
-                        Textarea::make('curriculum_notes')
-                            ->label('ملاحظات المنهج')
-                            ->rows(3),
-                            
-                        TagsInput::make('learning_methods')
-                            ->label('طرق التعليم المستخدمة')
-                            ->placeholder('أضف طريقة تعليم')
-                            ->suggestions([
-                                'التلقين',
-                                'التكرار',
-                                'التحفيز',
-                                'المراجعة',
-                                'التسميع',
+                                    ->suffix('دقيقة')
+                                    ->rule(function (Forms\Get $get) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $sessionDuration = $get('session_duration_minutes');
+                                            if ($sessionDuration && $value > $sessionDuration) {
+                                                $fail('فترة السماح للانضمام المتأخر لا يمكن أن تكون أكبر من مدة الجلسة.');
+                                            }
+                                        };
+                                    }),
                             ]),
                     ]),
 
@@ -238,34 +255,19 @@ class QuranCircleResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Select::make('status')
+                                Toggle::make('status')
                                     ->label('حالة الحلقة')
-                                    ->options([
-                                        'active' => 'نشطة',
-                                        'paused' => 'متوقفة مؤقتاً',
-                                        'cancelled' => 'ملغية',
-                                        'completed' => 'مكتملة',
-                                    ])
-                                    ->default('active')
-                                    ->required(),
-                                    
-                                Toggle::make('accepting_registrations')
-                                    ->label('قبول تسجيلات جديدة')
+                                    ->helperText('تفعيل أو إلغاء تفعيل الحلقة')
                                     ->default(true),
+
+                                Textarea::make('admin_notes')
+                                    ->label('ملاحظات الإدارة')
+                                    ->rows(3)
+                                    ->disabled()
+                                    ->helperText('ملاحظات من الإدارة (للقراءة فقط)')
+                                    ->columnSpanFull(),
                             ]),
-                            
-                        DateTimePicker::make('start_date')
-                            ->label('تاريخ بداية الحلقة')
-                            ->native(false)
-                            ->required(),
-                            
-                        DateTimePicker::make('end_date')
-                            ->label('تاريخ انتهاء الحلقة')
-                            ->native(false),
-                            
-                        Textarea::make('teacher_notes')
-                            ->label('ملاحظات المعلم')
-                            ->rows(3),
+
                     ]),
             ]);
     }
@@ -278,12 +280,13 @@ class QuranCircleResource extends Resource
                     ->label('رمز الحلقة')
                     ->searchable()
                     ->sortable(),
-                    
-                TextColumn::make('name')
+
+                TextColumn::make('name_ar')
                     ->label('اسم الحلقة')
                     ->searchable()
-                    ->limit(30),
-                    
+                    ->limit(30)
+                    ->placeholder('غير محدد'),
+
                 BadgeColumn::make('age_group')
                     ->label('الفئة العمرية')
                     ->colors([
@@ -300,44 +303,77 @@ class QuranCircleResource extends Resource
                         null => 'غير محدد',
                         default => $state,
                     }),
-                    
-                BadgeColumn::make('level')
+
+                BadgeColumn::make('gender_type')
+                    ->label('النوع')
+                    ->colors([
+                        'primary' => 'male',
+                        'success' => 'female',
+                        'info' => 'mixed',
+                    ])
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'male' => 'رجال',
+                        'female' => 'نساء',
+                        'mixed' => 'مختلط',
+                        null => 'غير محدد',
+                        default => $state,
+                    }),
+
+                BadgeColumn::make('specialization')
+                    ->label('التخصص')
+                    ->colors([
+                        'primary' => 'memorization',
+                        'success' => 'recitation',
+                        'warning' => 'interpretation',
+                        'info' => 'arabic_language',
+                        'secondary' => 'complete',
+                    ])
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'memorization' => 'حفظ',
+                        'recitation' => 'تلاوة',
+                        'interpretation' => 'تفسير',
+                        'arabic_language' => 'لغة عربية',
+                        'complete' => 'شامل',
+                        null => 'غير محدد',
+                        default => $state,
+                    }),
+
+                BadgeColumn::make('memorization_level')
                     ->label('المستوى')
                     ->colors([
                         'gray' => 'beginner',
-                        'info' => 'basic',
+                        'info' => 'elementary',
                         'warning' => 'intermediate',
                         'success' => 'advanced',
-                        'primary' => 'hafez',
+                        'primary' => 'expert',
                     ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'beginner' => 'مبتدئ',
-                        'basic' => 'أساسي',
+                        'elementary' => 'أساسي',
                         'intermediate' => 'متوسط',
                         'advanced' => 'متقدم',
-                        'hafez' => 'حافظ',
+                        'expert' => 'خبير',
+                        null => 'غير محدد',
                         default => $state,
                     }),
-                    
+
                 TextColumn::make('current_students')
                     ->label('الطلاب الحاليون')
-                    ->formatStateUsing(fn ($record) => $record->current_students . ' / ' . $record->max_students)
-                    ->color(fn ($record) => $record->current_students >= $record->max_students ? 'danger' : 'primary'),
-                    
-                TextColumn::make('start_time')
-                    ->label('وقت البداية')
+                    ->formatStateUsing(fn ($record) => $record->students()->count().' / '.$record->max_students)
+                    ->color(fn ($record) => $record->students()->count() >= $record->max_students ? 'danger' : 'primary'),
+
+                TextColumn::make('schedule_time')
+                    ->label('الساعة')
                     ->time('H:i')
-                    ->sortable(),
-                    
-                TextColumn::make('end_time')
-                    ->label('وقت النهاية')
-                    ->time('H:i')
-                    ->sortable(),
-                    
+                    ->sortable()
+                    ->placeholder('غير محدد'),
+
                 TextColumn::make('schedule_days')
                     ->label('أيام الانعقاد')
                     ->formatStateUsing(function ($state) {
-                        if (!is_array($state)) return '';
+                        if (! is_array($state)) {
+                            return '';
+                        }
                         $days = [
                             'sunday' => 'أحد',
                             'monday' => 'اثنين',
@@ -347,38 +383,18 @@ class QuranCircleResource extends Resource
                             'friday' => 'جمعة',
                             'saturday' => 'سبت',
                         ];
-                        return implode(', ', array_map(fn($day) => $days[$day] ?? $day, $state));
+
+                        return implode(', ', array_map(fn ($day) => $days[$day] ?? $day, $state));
                     }),
-                    
+
                 BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
-                        'success' => 'active',
-                        'warning' => 'paused',
-                        'danger' => 'cancelled',
-                        'info' => 'completed',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'active' => 'نشطة',
-                        'paused' => 'متوقفة',
-                        'cancelled' => 'ملغية',
-                        'completed' => 'مكتملة',
-                        default => $state,
-                    }),
-                    
-                BadgeColumn::make('accepting_registrations')
-                    ->label('التسجيل')
-                    ->formatStateUsing(fn ($state): string => $state ? 'مفتوح' : 'مغلق')
-                    ->colors([
                         'success' => true,
                         'danger' => false,
-                    ]),
-                    
-                TextColumn::make('start_date')
-                    ->label('تاريخ البداية')
-                    ->date('Y-m-d')
-                    ->sortable(),
-                    
+                    ])
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'نشطة' : 'غير نشطة'),
+
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
@@ -394,33 +410,34 @@ class QuranCircleResource extends Resource
                         'adults' => 'بالغون',
                         'mixed' => 'مختلطة',
                     ]),
-                    
-                SelectFilter::make('level')
+
+                SelectFilter::make('memorization_level')
                     ->label('المستوى')
                     ->options([
                         'beginner' => 'مبتدئ',
-                        'basic' => 'أساسي',
                         'intermediate' => 'متوسط',
                         'advanced' => 'متقدم',
-                        'hafez' => 'حافظ',
                     ]),
-                    
+
                 SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'active' => 'نشطة',
-                        'paused' => 'متوقفة',
-                        'cancelled' => 'ملغية',
-                        'completed' => 'مكتملة',
+                        '1' => 'نشطة',
+                        '0' => 'غير نشطة',
                     ]),
-                    
-                Filter::make('accepting_registrations')
-                    ->label('تقبل تسجيلات جديدة')
-                    ->query(fn (Builder $query): Builder => $query->where('accepting_registrations', true)),
-                    
+
+                SelectFilter::make('enrollment_status')
+                    ->label('حالة التسجيل')
+                    ->options([
+                        'open' => 'مفتوح',
+                        'closed' => 'مغلق',
+                        'full' => 'ممتلئ',
+                    ]),
+
                 Filter::make('full_capacity')
                     ->label('مكتملة العدد')
-                    ->query(fn (Builder $query): Builder => $query->whereColumn('current_students', '>=', 'max_students')),
+                    ->query(fn (Builder $query): Builder => $query->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) >= max_students')
+                    ),
             ])
             ->actions([
                 ActionGroup::make([
@@ -433,7 +450,7 @@ class QuranCircleResource extends Resource
                         ->icon('heroicon-o-users')
                         ->color('info')
                         ->url(fn (QuranCircle $record): string => '#'), // Will implement later
-                ])
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

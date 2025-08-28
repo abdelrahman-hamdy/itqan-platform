@@ -117,11 +117,11 @@
                     <!-- Learning Objectives -->
                     @if($circle->learning_objectives && count($circle->learning_objectives) > 0)
                         <div class="border-t pt-6 mt-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">الأهداف التعليمية</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">أهداف الحلقة</h3>
                             <ul class="space-y-2">
                                 @foreach($circle->learning_objectives as $objective)
                                     <li class="flex items-start">
-                                        <i class="ri-check-line text-green-500 mt-1 ml-2"></i>
+                                        <i class="ri-target-line text-purple-500 mt-1 ml-2"></i>
                                         <span class="text-gray-700">{{ $objective }}</span>
                                     </li>
                                 @endforeach
@@ -143,6 +143,26 @@
                             </ul>
                         </div>
                     @endif
+
+                    <!-- Admin Notes (Only for Teachers, Admins, and Super Admins) -->
+                    @auth
+                        @if($circle->admin_notes && (auth()->user()->hasRole(['teacher', 'admin', 'super_admin']) || auth()->user()->isQuranTeacher()))
+                            <div class="border-t pt-6 mt-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-orange-800 flex items-center">
+                                        <i class="ri-information-line text-orange-600 ml-2"></i>
+                                        ملاحظات الإدارة
+                                    </h3>
+                                    <span class="text-xs text-orange-400 italic">مرئية للإدارة والمعلمين والمشرفين فقط</span>
+                                </div>
+                                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                    <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ $circle->admin_notes }}</p>
+                                </div>
+                            </div>
+                        @endif
+                    @endauth
+
+                    <!-- Enrollment CTA -->
                 </div>
             </div>
 

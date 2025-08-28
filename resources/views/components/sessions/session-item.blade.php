@@ -15,7 +15,7 @@
     $statusLabel = $statusData['label'];
 @endphp
 
-<div class="attendance-indicator rounded-xl p-6 border border-gray-200 hover:shadow-md transition-all duration-300 {{ $isClickable ? 'cursor-pointer' : 'cursor-default' }}"
+<div class="attendance-indicator rounded-xl p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out {{ $isClickable ? 'cursor-pointer' : 'cursor-default' }}"
      @if($isClickable) onclick="openSessionDetail({{ $session->id }})" @endif>
     <div class="flex items-center justify-between">
         <!-- Session Info -->
@@ -44,16 +44,6 @@
                     <div class="w-4 h-4 bg-gray-300 rounded-full mb-1"></div>
                     <span class="text-xs text-gray-500 font-bold">{{ $statusLabel }}</span>
                 @endif
-            </div>
-
-            <!-- Session Number -->
-            <div class="flex-shrink-0">
-                <div class="relative ml-4">
-                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold shadow-sm
-                        bg-gradient-to-r from-{{ $statusColor }}-400 to-{{ $statusColor }}-500 text-white">
-                        {{ $session->session_sequence ?? '#' }}
-                    </span>
-                </div>
             </div>
             
             <!-- Session Details -->
@@ -154,11 +144,18 @@
         <!-- Session Status and Actions -->
         <div class="text-left">
             <div class="flex flex-col items-end space-y-2">
+                <!-- Status Badge -->
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm
+                    bg-gradient-to-r from-{{ $statusColor }}-100 to-{{ $statusColor }}-200 text-{{ $statusColor }}-800 border border-{{ $statusColor }}-300">
+                    <i class="{{ $statusIcon }} ml-1"></i>
+                    {{ $statusLabel }}
+                </span>
+                
                 <!-- Action Button for active sessions -->
                 @if(in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING]) && $viewType === 'student')
                     <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
                        onclick="event.stopPropagation()"
-                       class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                       class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-lg">
                         <i class="ri-video-line ml-1"></i>
                         {{ $session->status === SessionStatus::ONGOING ? 'انضمام الآن' : 'انضم للجلسة' }}
                     </a>

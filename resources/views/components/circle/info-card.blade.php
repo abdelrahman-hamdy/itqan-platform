@@ -208,6 +208,18 @@
                         <p class="mt-1 text-sm text-gray-700">{{ $circle->teacher_notes }}</p>
                     </div>
                 @endif
+
+                @if($circle->admin_notes && ($viewType === 'teacher' || (auth()->user() && (auth()->user()->hasRole(['admin', 'super_admin']) || auth()->user()->isQuranTeacher()))))
+                    <div class="pt-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-orange-600">ملاحظات الإدارة:</span>
+                            <span class="text-xs text-gray-400 italic">مرئية للإدارة والمعلمين والمشرفين فقط</span>
+                        </div>
+                        <div class="mt-1 bg-orange-50 border border-orange-200 rounded p-3">
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ $circle->admin_notes }}</p>
+                        </div>
+                    </div>
+                @endif
             </div>
         @endif
     </div>

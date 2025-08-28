@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Services\SessionMeetingService;
 use App\Services\CronJobLogger;
+use App\Services\SessionMeetingService;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class ManageSessionMeetings extends Command
@@ -36,22 +36,23 @@ class ManageSessionMeetings extends Command
     {
         $isDryRun = $this->option('dry-run');
         $isForced = $this->option('force');
-        
+
         // Start enhanced logging
         $executionData = CronJobLogger::logCronStart('sessions:manage-meetings', [
             'dry_run' => $isDryRun,
             'forced' => $isForced,
         ]);
-        
+
         $this->info('🚀 Starting session meeting management...');
-        
+
         if ($isDryRun) {
             $this->warn('⚠️  DRY RUN MODE - No actual changes will be made');
         }
 
         // Check if we should run during off-hours
-        if (!$isForced && $this->isOffHours()) {
+        if (! $isForced && $this->isOffHours()) {
             $this->info('⏰ Off hours detected, running in maintenance mode only');
+
             return $this->runMaintenanceMode($isDryRun);
         }
 
@@ -66,27 +67,29 @@ class ManageSessionMeetings extends Command
     {
         try {
             $this->info('📊 Processing scheduled sessions...');
-            
-            if (!$isDryRun) {
+
+            if (! $isDryRun) {
                 $results = $this->sessionMeetingService->processSessionMeetings();
             } else {
                 $results = $this->simulateProcessing();
             }
-            
+
             $this->displayResults($results);
-            
+
             // Send summary to logs
             Log::info('Session meeting management completed', $results);
-            
+
             $this->info('✅ Session meeting management completed successfully');
+
             return Command::SUCCESS;
-            
+
         } catch (\Exception $e) {
-            $this->error('❌ Error during session meeting management: ' . $e->getMessage());
+            $this->error('❌ Error during session meeting management: '.$e->getMessage());
             Log::error('Session meeting management failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return Command::FAILURE;
         }
     }
@@ -98,9 +101,9 @@ class ManageSessionMeetings extends Command
     {
         try {
             $this->info('🔧 Running maintenance mode...');
-            
+
             // Only cleanup and status updates during off-hours
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 $results = [
                     'started' => 0,
                     'updated' => 0,
@@ -115,14 +118,16 @@ class ManageSessionMeetings extends Command
                     'errors' => 0,
                 ];
             }
-            
+
             $this->displayResults($results);
-            
+
             $this->info('✅ Maintenance mode completed');
+
             return Command::SUCCESS;
-            
+
         } catch (\Exception $e) {
-            $this->error('❌ Error during maintenance: ' . $e->getMessage());
+            $this->error('❌ Error during maintenance: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -133,6 +138,7 @@ class ManageSessionMeetings extends Command
     private function isOffHours(): bool
     {
         $hour = now()->hour;
+
         return $hour >= 0 && $hour < 6;
     }
 
@@ -142,7 +148,7 @@ class ManageSessionMeetings extends Command
     private function simulateProcessing(): array
     {
         $this->info('🔍 Simulating session processing...');
-        
+
         // This would normally call the actual service
         return [
             'meetings_created' => 5,  // Simulated numbers
@@ -168,27 +174,35 @@ class ManageSessionMeetings extends Command
     private function displayResults(array $results): void
     {
         $this->info('📈 Processing Results:');
+
+        // Handle different result formats (full vs maintenance mode)
+        $meetingsCreated = $results['meetings_created'] ?? ($results['started'] ?? 0);
+        $statusTransitions = $results['status_transitions'] ?? ($results['updated'] ?? 0);
+        $meetingsTerminated = $results['meetings_terminated'] ?? ($results['cleaned'] ?? 0);
+        $errors = $results['errors'] ?? 0;
+        $errorCount = is_array($errors) ? count($errors) : $errors;
+
         $this->table(
             ['Action', 'Count', 'Status'],
             [
-                ['Sessions Started', $results['started'], $results['started'] > 0 ? '✅' : '⚪'],
-                ['Sessions Updated', $results['updated'], $results['updated'] > 0 ? '✅' : '⚪'],
-                ['Sessions Cleaned', $results['cleaned'], $results['cleaned'] > 0 ? '🧹' : '⚪'],
-                ['Errors', $results['errors'], $results['errors'] > 0 ? '❌' : '✅'],
+                ['Meetings Created', $meetingsCreated, $meetingsCreated > 0 ? '✅' : '⚪'],
+                ['Status Transitions', $statusTransitions, $statusTransitions > 0 ? '✅' : '⚪'],
+                ['Meetings Terminated', $meetingsTerminated, $meetingsTerminated > 0 ? '🧹' : '⚪'],
+                ['Errors', $errorCount, $errorCount > 0 ? '❌' : '✅'],
             ]
         );
 
         // Show summary
-        $total = $results['started'] + $results['updated'] + $results['cleaned'];
-        
+        $total = $meetingsCreated + $statusTransitions + $meetingsTerminated;
+
         if ($total > 0) {
             $this->info("📊 Total actions performed: {$total}");
         } else {
             $this->comment('ℹ️  No actions needed at this time');
         }
 
-        if ($results['errors'] > 0) {
-            $this->warn("⚠️  {$results['errors']} error(s) occurred. Check logs for details.");
+        if ($errorCount > 0) {
+            $this->warn("⚠️  {$errorCount} error(s) occurred. Check logs for details.");
         }
     }
 }

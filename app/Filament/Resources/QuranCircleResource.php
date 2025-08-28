@@ -4,36 +4,30 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuranCircleResource\Pages;
 use App\Models\QuranCircle;
-use Filament\Forms;
-use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\TagsInput;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\TimePicker;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use App\Services\AcademyContextService;
 use App\Traits\ScopedToAcademy;
+use Filament\Forms;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Form;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class QuranCircleResource extends BaseResource
 {
     use ScopedToAcademy;
+
     protected static ?string $model = QuranCircle::class;
 
     protected static function getAcademyRelationshipPath(): string
@@ -52,7 +46,8 @@ class QuranCircleResource extends BaseResource
     protected static ?string $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 3;
-public static function form(Form $form): Form
+
+    public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -133,6 +128,38 @@ public static function form(Form $form): Form
                     ->schema([
                         Grid::make(4)
                             ->schema([
+                                Select::make('schedule_time')
+                                    ->label('الساعة')
+                                    ->options([
+                                        '00:00' => '12:00 ص',
+                                        '01:00' => '01:00 ص',
+                                        '02:00' => '02:00 ص',
+                                        '03:00' => '03:00 ص',
+                                        '04:00' => '04:00 ص',
+                                        '05:00' => '05:00 ص',
+                                        '06:00' => '06:00 ص',
+                                        '07:00' => '07:00 ص',
+                                        '08:00' => '08:00 ص',
+                                        '09:00' => '09:00 ص',
+                                        '10:00' => '10:00 ص',
+                                        '11:00' => '11:00 ص',
+                                        '12:00' => '12:00 م',
+                                        '13:00' => '01:00 م',
+                                        '14:00' => '02:00 م',
+                                        '15:00' => '03:00 م',
+                                        '16:00' => '04:00 م',
+                                        '17:00' => '05:00 م',
+                                        '18:00' => '06:00 م',
+                                        '19:00' => '07:00 م',
+                                        '20:00' => '08:00 م',
+                                        '21:00' => '09:00 م',
+                                        '22:00' => '10:00 م',
+                                        '23:00' => '11:00 م',
+                                    ])
+                                    ->disabled()
+                                    ->placeholder('سيحدده المعلم')
+                                    ->helperText('يحدد المعلم التوقيت من تقويمه'),
+
                                 Select::make('schedule_days')
                                     ->label('أيام الأسبوع')
                                     ->options([
@@ -149,21 +176,16 @@ public static function form(Form $form): Form
                                     ->placeholder('سيحدده المعلم')
                                     ->helperText('يحدد المعلم الأيام من تقويمه'),
 
-                                TimePicker::make('schedule_time')
-                                    ->label('توقيت الحلقة')
-                                    ->disabled()
-                                    ->placeholder('سيحدده المعلم')
-                                    ->helperText('يحدد المعلم التوقيت من تقويمه'),
-
                                 Select::make('session_duration_minutes')
                                     ->label('مدة الجلسة')
                                     ->options([
                                         30 => '30 دقيقة',
+                                        45 => '45 دقيقة',
                                         60 => '60 دقيقة',
                                     ])
                                     ->default(60)
                                     ->required(),
-                                    
+
                                 Select::make('monthly_sessions_count')
                                     ->label('عدد الجلسات الشهرية')
                                     ->options([
@@ -181,7 +203,7 @@ public static function form(Form $form): Form
                                     ->label('فترة الجدولة')
                                     ->options([
                                         'week' => 'أسبوع واحد',
-                                        'month' => 'شهر واحد', 
+                                        'month' => 'شهر واحد',
                                         'two_months' => 'شهرين',
                                     ])
                                     ->default('month')
@@ -220,10 +242,16 @@ public static function form(Form $form): Form
                                     ->helperText('الوقت المسموح للطلاب للانضمام بعد بداية الجلسة دون اعتبارهم متأخرين')
                                     ->numeric()
                                     ->minValue(0)
-                                    ->maxValue(30)
-                                    ->default(15)
                                     ->required()
-                                    ->suffix('دقيقة'),
+                                    ->suffix('دقيقة')
+                                    ->rule(function (Forms\Get $get) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $sessionDuration = $get('session_duration_minutes');
+                                            if ($sessionDuration && $value > $sessionDuration) {
+                                                $fail('فترة السماح للانضمام المتأخر لا يمكن أن تكون أكبر من مدة الجلسة.');
+                                            }
+                                        };
+                                    }),
                             ]),
                     ]),
 
@@ -302,23 +330,14 @@ public static function form(Form $form): Form
                             ->maxLength(1000),
                     ]),
 
-                Section::make('حالة الدائرة')
+                Section::make('الحالة والإعدادات')
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Select::make('status')
-                                    ->label('الحالة')
-                                    ->options([
-                                        'planning' => 'قيد التخطيط',
-                                        'inactive' => 'غير نشط',
-                                        'pending' => 'في انتظار البداية',
-                                        'active' => 'نشط',
-                                        'ongoing' => 'جاري',
-                                        'completed' => 'مكتمل',
-                                        'cancelled' => 'ملغي',
-                                        'suspended' => 'معلق',
-                                    ])
-                                    ->default('planning'),
+                                Toggle::make('status')
+                                    ->label('حالة الحلقة')
+                                    ->helperText('تفعيل أو إلغاء تفعيل الحلقة')
+                                    ->default(true),
 
                                 Select::make('enrollment_status')
                                     ->label('حالة التسجيل')
@@ -328,6 +347,20 @@ public static function form(Form $form): Form
                                         'full' => 'ممتلئ',
                                     ])
                                     ->default('closed'),
+
+                                TextInput::make('enrolled_students')
+                                    ->label('عدد الطلاب الحالي')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->default(fn ($record) => $record ? $record->students()->count() : 0)
+                                    ->dehydrated(false),
+
+                                Textarea::make('admin_notes')
+                                    ->label('ملاحظات الإدارة')
+                                    ->rows(3)
+                                    ->maxLength(1000)
+                                    ->helperText('ملاحظات مرئية للمعلم والإدارة والمشرف فقط')
+                                    ->columnSpanFull(),
                             ]),
                     ])
                     ->visibleOn('edit'),
@@ -389,10 +422,11 @@ public static function form(Form $form): Form
                         'warning' => 'mixed',
                     ]),
 
-                TextColumn::make('enrolled_students')
+                TextColumn::make('students_count')
                     ->label('المسجلون')
                     ->alignCenter()
-                    ->color('info'),
+                    ->color('info')
+                    ->getStateUsing(fn ($record) => $record->students()->count()),
 
                 TextColumn::make('max_students')
                     ->label('الحد الأقصى')
@@ -415,8 +449,10 @@ public static function form(Form $form): Form
                                     default => $day,
                                 };
                             }
+
                             return implode(', ', $days);
                         }
+
                         return match ($state) {
                             'saturday' => 'السبت',
                             'sunday' => 'الأحد',
@@ -439,26 +475,10 @@ public static function form(Form $form): Form
 
                 BadgeColumn::make('status')
                     ->label('الحالة')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'planning' => 'قيد التخطيط',
-                        'inactive' => 'غير نشط',
-                        'pending' => 'في انتظار البداية',
-                        'active' => 'نشط',
-                        'ongoing' => 'جاري',
-                        'completed' => 'مكتمل',
-                        'cancelled' => 'ملغي',
-                        'suspended' => 'معلق',
-                        default => $state,
-                    })
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'نشطة' : 'متوقفة')
                     ->colors([
-                        'secondary' => 'planning',
-                        'gray' => 'inactive',
-                        'info' => 'pending',
-                        'success' => 'active',
-                        'primary' => 'ongoing',
-                        'warning' => 'completed',
-                        'danger' => 'cancelled',
-                        'orange' => 'suspended',
+                        'success' => true,
+                        'danger' => false,
                     ]),
 
                 BadgeColumn::make('enrollment_status')
@@ -474,34 +494,21 @@ public static function form(Form $form): Form
                         'success' => 'open',
                         'warning' => 'full',
                     ]),
-
-                TextColumn::make('circle_start_date')
-                    ->label('تاريخ البداية')
-                    ->date()
-                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'planning' => 'قيد التخطيط',
-                        'inactive' => 'غير نشط',
-                        'pending' => 'في انتظار البداية',
-                        'active' => 'نشط',
-                        'ongoing' => 'جاري',
-                        'completed' => 'مكتمل',
-                        'cancelled' => 'ملغي',
-                        'suspended' => 'معلق',
+                        '1' => 'نشطة',
+                        '0' => 'متوقفة',
                     ]),
 
-                SelectFilter::make('level')
+                SelectFilter::make('memorization_level')
                     ->label('المستوى')
                     ->options([
                         'beginner' => 'مبتدئ',
-                        'elementary' => 'أولي',
                         'intermediate' => 'متوسط',
                         'advanced' => 'متقدم',
-                        'expert' => 'خبير',
                     ]),
 
                 SelectFilter::make('enrollment_status')
@@ -512,9 +519,27 @@ public static function form(Form $form): Form
                         'full' => 'ممتلئ',
                     ]),
 
+                SelectFilter::make('age_group')
+                    ->label('الفئة العمرية')
+                    ->options([
+                        'children' => 'أطفال',
+                        'youth' => 'شباب',
+                        'adults' => 'كبار',
+                        'all_ages' => 'كل الفئات',
+                    ]),
+
+                SelectFilter::make('gender_type')
+                    ->label('النوع')
+                    ->options([
+                        'male' => 'رجال',
+                        'female' => 'نساء',
+                        'mixed' => 'مختلط',
+                    ]),
+
                 Filter::make('available_spots')
                     ->label('يوجد أماكن متاحة')
-                    ->query(fn (Builder $query): Builder => $query->whereRaw('enrolled_students < max_students')),
+                    ->query(fn (Builder $query): Builder => $query->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students')
+                    ),
             ])
             ->actions([
                 ActionGroup::make([
@@ -522,30 +547,32 @@ public static function form(Form $form): Form
                         ->label('عرض'),
                     Tables\Actions\EditAction::make()
                         ->label('تعديل'),
+                    Tables\Actions\Action::make('toggle_status')
+                        ->label(fn (QuranCircle $record) => $record->status ? 'إلغاء التفعيل' : 'تفعيل')
+                        ->icon(fn (QuranCircle $record) => $record->status ? 'heroicon-o-pause-circle' : 'heroicon-o-play-circle')
+                        ->color(fn (QuranCircle $record) => $record->status ? 'warning' : 'success')
+                        ->requiresConfirmation()
+                        ->modalHeading(fn (QuranCircle $record) => $record->status ? 'إلغاء تفعيل الحلقة' : 'تفعيل الحلقة')
+                        ->modalDescription(fn (QuranCircle $record) => $record->status
+                            ? 'هل أنت متأكد من إلغاء تفعيل هذه الحلقة؟ لن يتمكن الطلاب من الانضمام إليها.'
+                            : 'هل أنت متأكد من تفعيل هذه الحلقة؟ ستصبح متاحة للطلاب للانضمام.'
+                        )
+                        ->action(fn (QuranCircle $record) => $record->update([
+                            'status' => ! $record->status,
+                            'enrollment_status' => $record->status ? 'closed' : 'open',
+                        ])),
                     Tables\Actions\Action::make('activate')
                         ->label('تفعيل للتسجيل')
                         ->icon('heroicon-o-megaphone')
                         ->color('success')
                         ->requiresConfirmation()
                         ->action(fn (QuranCircle $record) => $record->update([
-                            'status' => 'pending',
+                            'status' => true,
                             'enrollment_status' => 'open',
-                        ]))
-                        ->visible(fn (QuranCircle $record) => $record->status === 'planning'),
-                    Tables\Actions\Action::make('start')
-                        ->label('بدء الدائرة')
-                        ->icon('heroicon-o-play-circle')
-                        ->color('primary')
-                        ->requiresConfirmation()
-                        ->action(fn (QuranCircle $record) => $record->update([
-                            'status' => 'ongoing',
-                            'enrollment_status' => 'closed',
-                            'actual_start_date' => now(),
-                        ]))
-                        ->visible(fn (QuranCircle $record) => $record->status === 'pending' && $record->enrolled_students >= 3),
+                        ])),
                     Tables\Actions\DeleteAction::make()
                         ->label('حذف'),
-                ])
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -576,7 +603,8 @@ public static function form(Form $form): Form
     public static function getNavigationBadge(): ?string
     {
         // Use the scoped query from trait for consistent academy filtering
-        $query = static::getEloquentQuery()->where('status', 'planning');
+        $query = static::getEloquentQuery()->where('status', false);
+
         return $query->count() ?: null;
     }
 
@@ -584,4 +612,4 @@ public static function form(Form $form): Form
     {
         return 'info';
     }
-} 
+}

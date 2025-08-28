@@ -123,8 +123,8 @@
                         $isUpcoming = $statusData['is_upcoming'];
                     @endphp
                     
-                    <div class="session-item bg-white border border-gray-200 rounded-lg p-5 transition-all duration-200 
-                        {{ $isClickable ? 'hover:border-primary-300 hover:shadow-sm cursor-pointer' : 'opacity-60 cursor-not-allowed' }}
+                    <div class="session-item bg-white border border-gray-200 rounded-lg p-5 transition-all duration-300 ease-out
+                        {{ $isClickable ? 'hover:border-primary-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer' : 'opacity-60 cursor-not-allowed' }}
                         {{ $isUpcoming ? 'ring-2 ring-blue-200 border-blue-300' : '' }}"
                          data-session-type="{{ $session->status }}"
                          data-session-id="{{ $session->id }}"
@@ -132,40 +132,9 @@
                         
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3 space-x-reverse">
-                                <!-- Session Number -->
-                                <div class="flex-shrink-0">
-                                    <div class="relative">
-                                        <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold shadow-sm
-                                            bg-gradient-to-r from-{{ $statusData['color'] }}-400 to-{{ $statusData['color'] }}-500 text-white">
-                                            {{ $session->session_sequence ?? '#' }}
-                                        </span>
-                                                                @if($isUpcoming)
-                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                                <i class="ri-calendar-line text-white text-xs"></i>
-                            </div>
-                        @elseif($session->status === App\Enums\SessionStatus::COMPLETED)
-                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                <i class="ri-check-line text-white text-xs"></i>
-                            </div>
-                        @elseif($session->status === App\Enums\SessionStatus::READY)
-                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full flex items-center justify-center">
-                                <i class="ri-video-line text-white text-xs"></i>
-                            </div>
-                        @elseif($session->status === App\Enums\SessionStatus::ONGOING)
-                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center animate-pulse">
-                                <i class="ri-live-line text-white text-xs"></i>
-                            </div>
-                        @elseif($session->status === App\Enums\SessionStatus::ABSENT)
-                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                                <i class="ri-user-x-line text-white text-xs"></i>
-                            </div>
-                        @endif
-                                    </div>
-                                </div>
-                                
                                 <!-- Session Info -->
                                 <div>
-                                    <h4 class="text-lg font-semibold text-gray-900 mb-1">{{ $session->title ?? 'جلسة ' . ($session->session_sequence ?? '#') }}</h4>
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-1">{{ $session->title ?? 'جلسة قرآنية' }}</h4>
                                     <div class="flex items-center space-x-4 space-x-reverse text-sm">
                                         @if($isUpcoming)
                                             <span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-md font-medium">
@@ -219,7 +188,7 @@
                                 @if($session->status === App\Enums\SessionStatus::READY || $session->status === App\Enums\SessionStatus::ONGOING)
                                     <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
                                        onclick="event.stopPropagation()"
-                                       class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
+                                       class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-lg transform hover:scale-105">
                                         <i class="ri-video-line ml-1"></i>
                                         {{ $session->status === App\Enums\SessionStatus::ONGOING ? 'انضمام للجلسة الجارية' : 'انضمام للجلسة' }}
                                     </a>

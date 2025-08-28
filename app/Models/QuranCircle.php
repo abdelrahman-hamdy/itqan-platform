@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QuranCircle extends Model
@@ -41,15 +41,12 @@ class QuranCircle extends Model
         'enrollment_fee',
         'materials_fee',
         'sessions_completed',
-        'current_surah',
-        'current_verse',
-        'materials_used',
-        'requirements',
-        'learning_objectives',
+
         'status',
         'enrollment_status',
-        'actual_start_date',
-        'actual_end_date',
+        'admin_notes',
+        'learning_objectives', // Re-added for circle goals
+
         'last_session_at',
         'next_session_at',
         'room_link',
@@ -63,20 +60,19 @@ class QuranCircle extends Model
         'total_reviews',
         'completion_rate',
         'dropout_rate',
-        'notes',
+
         'special_instructions',
         'preparation_minutes',
         'ending_buffer_minutes',
         'late_join_grace_period_minutes',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
         'schedule_days' => 'array',
-        'materials_used' => 'array',
-        'requirements' => 'array',
-        'learning_objectives' => 'array',
+        'learning_objectives' => 'array', // Cast for circle goals
+
         'max_students' => 'integer',
         'enrolled_students' => 'integer',
         'min_students_to_start' => 'integer',
@@ -89,37 +85,37 @@ class QuranCircle extends Model
         'total_reviews' => 'integer',
         'completion_rate' => 'decimal:2',
         'dropout_rate' => 'decimal:2',
+        'status' => 'boolean',
         'recording_enabled' => 'boolean',
         'attendance_required' => 'boolean',
         'makeup_sessions_allowed' => 'boolean',
         'certificates_enabled' => 'boolean',
-        'actual_start_date' => 'date',
-        'actual_end_date' => 'date',
+
         'last_session_at' => 'datetime',
         'next_session_at' => 'datetime',
         'preparation_minutes' => 'integer',
         'ending_buffer_minutes' => 'integer',
-        'late_join_grace_period_minutes' => 'integer'
+        'late_join_grace_period_minutes' => 'integer',
     ];
 
     // Constants
     const LEVELS = [
         'beginner' => 'مبتدئ',
         'intermediate' => 'متوسط',
-        'advanced' => 'متقدم'
+        'advanced' => 'متقدم',
     ];
 
     const AGE_GROUPS = [
         'children' => 'أطفال',
         'youth' => 'شباب',
         'adults' => 'كبار',
-        'all_ages' => 'كل الفئات'
+        'all_ages' => 'كل الفئات',
     ];
 
     const GENDER_TYPES = [
         'male' => 'رجال',
         'female' => 'نساء',
-        'mixed' => 'مختلط'
+        'mixed' => 'مختلط',
     ];
 
     // Relationships
@@ -141,20 +137,20 @@ class QuranCircle extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'quran_circle_students', 'circle_id', 'student_id')
-                    ->withPivot([
-                        'enrolled_at',
-                        'status',
-                        'attendance_count',
-                        'missed_sessions',
-                        'makeup_sessions_used',
-                        'current_level',
-                        'progress_notes',
-                        'parent_rating',
-                        'student_rating',
-                        'completion_date',
-                        'certificate_issued'
-                    ])
-                    ->withTimestamps();
+            ->withPivot([
+                'enrolled_at',
+                'status',
+                'attendance_count',
+                'missed_sessions',
+                'makeup_sessions_used',
+                'current_level',
+                'progress_notes',
+                'parent_rating',
+                'student_rating',
+                'completion_date',
+                'certificate_issued',
+            ])
+            ->withTimestamps();
     }
 
     public function sessions(): HasMany
@@ -191,31 +187,26 @@ class QuranCircle extends Model
     // Scopes
     public function scopeActive($query)
     {
-        return $query->where('status', 'active')
-                    ->where('enrollment_status', 'open');
+        return $query->where('status', true)
+            ->where('enrollment_status', 'open');
     }
 
     public function scopeOngoing($query)
     {
-        return $query->where('status', 'ongoing')
-                    ->where('start_date', '<=', now())
-                    ->where(function($q) {
-                        $q->where('end_date', '>=', now())
-                          ->orWhereNull('end_date');
-                    });
+        return $query->where('status', true);
     }
 
     public function scopeOpenForEnrollment($query)
     {
         return $query->where('enrollment_status', 'open')
-                    ->where('registration_deadline', '>=', now())
-                    ->where('current_students', '<', 'max_students');
+            ->where('status', true)
+            ->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students');
     }
 
     public function scopeStartingSoon($query, $days = 7)
     {
         return $query->where('status', 'pending')
-                    ->whereBetween('start_date', [now(), now()->addDays($days)]);
+            ->whereBetween('start_date', [now(), now()->addDays($days)]);
     }
 
     public function scopeBySpecialization($query, $specialization)
@@ -231,7 +222,7 @@ class QuranCircle extends Model
     public function scopeByAgeRange($query, $age)
     {
         return $query->where('age_range_min', '<=', $age)
-                    ->where('age_range_max', '>=', $age);
+            ->where('age_range_max', '>=', $age);
     }
 
     public function scopeByDay($query, $day)
@@ -241,7 +232,7 @@ class QuranCircle extends Model
 
     public function scopeWithAvailableSpots($query)
     {
-        return $query->whereRaw('current_students < max_students');
+        return $query->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students');
     }
 
     public function scopeByTeacher($query, $teacherId)
@@ -261,6 +252,7 @@ class QuranCircle extends Model
         if ($locale === 'ar') {
             return $this->name_ar ?? $this->name_en ?? 'حلقة غير محددة';
         }
+
         return $this->name_en ?? $this->name_ar ?? 'Unnamed Circle';
     }
 
@@ -270,11 +262,18 @@ class QuranCircle extends Model
         if ($locale === 'ar') {
             return $this->description_ar ?? $this->description_en ?? 'لا يوجد وصف';
         }
+
         return $this->description_en ?? $this->description_ar ?? 'No description';
     }
 
     public function getStatusTextAttribute(): string
     {
+        // Handle boolean status values
+        if (is_bool($this->status) || is_numeric($this->status)) {
+            return $this->status ? 'نشط' : 'غير نشط';
+        }
+        
+        // Handle string status values (for backward compatibility)
         $statuses = [
             'planning' => 'قيد التخطيط',
             'pending' => 'في انتظار البداية',
@@ -282,10 +281,11 @@ class QuranCircle extends Model
             'ongoing' => 'جاري',
             'completed' => 'مكتمل',
             'cancelled' => 'ملغي',
-            'suspended' => 'معلق'
+            'suspended' => 'معلق',
+            'inactive' => 'غير نشط',
         ];
 
-        return $statuses[$this->status] ?? $this->status;
+        return $statuses[$this->status] ?? ($this->status ? 'نشط' : 'غير نشط');
     }
 
     public function getEnrollmentStatusTextAttribute(): string
@@ -294,7 +294,7 @@ class QuranCircle extends Model
             'open' => 'مفتوح للتسجيل',
             'closed' => 'مغلق',
             'full' => 'مكتمل العدد',
-            'waitlist' => 'قائمة انتظار'
+            'waitlist' => 'قائمة انتظار',
         ];
 
         return $statuses[$this->enrollment_status] ?? $this->enrollment_status;
@@ -307,7 +307,7 @@ class QuranCircle extends Model
             'recitation' => 'حلقة تلاوة وتجويد',
             'mixed' => 'حلقة مختلطة',
             'advanced' => 'حلقة متقدمة',
-            'beginners' => 'حلقة مبتدئين'
+            'beginners' => 'حلقة مبتدئين',
         ];
 
         return $types[$this->circle_type] ?? $this->circle_type;
@@ -320,7 +320,7 @@ class QuranCircle extends Model
             'recitation' => 'تلاوة وتجويد',
             'interpretation' => 'تفسير',
             'arabic_language' => 'اللغة العربية القرآنية',
-            'complete' => 'شامل'
+            'complete' => 'شامل',
         ];
 
         return $specializations[$this->specialization] ?? $this->specialization;
@@ -333,7 +333,7 @@ class QuranCircle extends Model
             'elementary' => 'أساسي',
             'intermediate' => 'متوسط',
             'advanced' => 'متقدم',
-            'expert' => 'متقن'
+            'expert' => 'متقن',
         ];
 
         return $levels[$this->memorization_level] ?? $this->memorization_level;
@@ -341,12 +341,12 @@ class QuranCircle extends Model
 
     public function getFormattedPriceAttribute(): string
     {
-        return number_format($this->price_per_student, 2) . ' ' . $this->currency;
+        return number_format($this->price_per_student, 2).' '.$this->currency;
     }
 
     public function getFormattedMonthlyFeeAttribute(): string
     {
-        return number_format((float) $this->monthly_fee, 2) . ' ' . $this->currency;
+        return number_format((float) $this->monthly_fee, 2).' '.$this->currency;
     }
 
     public function getTotalCostAttribute(): float
@@ -356,22 +356,22 @@ class QuranCircle extends Model
 
     public function getFormattedTotalCostAttribute(): string
     {
-        return number_format($this->total_cost, 2) . ' ' . $this->currency;
+        return number_format($this->total_cost, 2).' '.$this->currency;
     }
 
     public function getAvailableSpotsAttribute(): int
     {
-        return max(0, $this->max_students - $this->current_students);
+        return max(0, $this->max_students - $this->students()->count());
     }
 
     public function getIsFullAttribute(): bool
     {
-        return $this->current_students >= $this->max_students;
+        return $this->students()->count() >= $this->max_students;
     }
 
     public function getCanStartAttribute(): bool
     {
-        return $this->current_students >= $this->min_students_to_start;
+        return $this->students()->count() >= ($this->min_students_to_start ?? 3);
     }
 
     public function getScheduleTextAttribute(): string
@@ -387,22 +387,43 @@ class QuranCircle extends Model
             'wednesday' => 'الأربعاء',
             'thursday' => 'الخميس',
             'friday' => 'الجمعة',
-            'saturday' => 'السبت'
+            'saturday' => 'السبت',
         ];
 
-        $scheduleDays = array_map(fn($day) => $days[$day] ?? $day, $this->schedule_days);
+        $scheduleDays = array_map(fn ($day) => $days[$day] ?? $day, $this->schedule_days);
         $times = implode(', ', $this->schedule_times);
 
-        return implode(', ', $scheduleDays) . ' - ' . $times;
+        return implode(', ', $scheduleDays).' - '.$times;
+    }
+
+    public function getScheduleDaysTextAttribute(): string
+    {
+        if (empty($this->schedule_days)) {
+            return 'لم يتم تحديد الأيام بعد';
+        }
+
+        $days = [
+            'sunday' => 'الأحد',
+            'monday' => 'الاثنين',
+            'tuesday' => 'الثلاثاء',
+            'wednesday' => 'الأربعاء',
+            'thursday' => 'الخميس',
+            'friday' => 'الجمعة',
+            'saturday' => 'السبت',
+        ];
+
+        $scheduleDays = array_map(fn ($day) => $days[strtolower($day)] ?? $day, $this->schedule_days);
+        
+        return implode('، ', $scheduleDays);
     }
 
     public function getAgeRangeTextAttribute(): string
     {
-        if (!$this->age_range_min || !$this->age_range_max) {
+        if (! $this->age_range_min || ! $this->age_range_max) {
             return 'جميع الأعمار';
         }
 
-        return $this->age_range_min . ' - ' . $this->age_range_max . ' سنة';
+        return $this->age_range_min.' - '.$this->age_range_max.' سنة';
     }
 
     public function getProgressPercentageAttribute(): float
@@ -416,7 +437,7 @@ class QuranCircle extends Model
 
     public function getDaysUntilStartAttribute(): int
     {
-        if (!$this->start_date) {
+        if (! $this->start_date) {
             return 0;
         }
 
@@ -425,7 +446,7 @@ class QuranCircle extends Model
 
     public function getDaysUntilRegistrationDeadlineAttribute(): int
     {
-        if (!$this->registration_deadline) {
+        if (! $this->registration_deadline) {
             return 999; // No deadline
         }
 
@@ -439,7 +460,7 @@ class QuranCircle extends Model
             throw new \Exception('الحلقة مكتملة العدد');
         }
 
-        if (!$this->canEnrollStudent($student)) {
+        if (! $this->canEnrollStudent($student)) {
             throw new \Exception('لا يمكن تسجيل هذا الطالب في الحلقة');
         }
 
@@ -449,27 +470,25 @@ class QuranCircle extends Model
             'attendance_count' => 0,
             'missed_sessions' => 0,
             'makeup_sessions_used' => 0,
-            'current_level' => $this->memorization_level
+            'current_level' => $this->memorization_level,
         ], $additionalData);
 
         $this->students()->attach($student->id, $pivotData);
-        $this->increment('current_students');
 
         // Update enrollment status if full
-        if ($this->current_students >= $this->max_students) {
+        if ($this->students()->count() >= $this->max_students) {
             $this->update(['enrollment_status' => 'full']);
         }
 
         return $this;
     }
 
-    public function unenrollStudent(User $student, string $reason = null): self
+    public function unenrollStudent(User $student, ?string $reason = null): self
     {
         $this->students()->detach($student->id);
-        $this->decrement('current_students');
 
         // Update enrollment status
-        if ($this->enrollment_status === 'full' && $this->current_students < $this->max_students) {
+        if ($this->enrollment_status === 'full' && $this->students()->count() < $this->max_students) {
             $this->update(['enrollment_status' => 'open']);
         }
 
@@ -492,38 +511,38 @@ class QuranCircle extends Model
         }
 
         // Check grade level
-        if (!empty($this->grade_levels) && $student->grade_level) {
-            if (!in_array($student->grade_level, $this->grade_levels)) {
+        if (! empty($this->grade_levels) && $student->grade_level) {
+            if (! in_array($student->grade_level, $this->grade_levels)) {
                 return false;
             }
         }
 
         // Check enrollment status and capacity
-        return $this->enrollment_status === 'open' && 
-               !$this->is_full && 
-               $this->registration_deadline >= now();
+        return $this->enrollment_status === 'open' &&
+            ! $this->is_full &&
+            $this->status === true;
     }
 
     public function start(): self
     {
-        if (!$this->can_start) {
+        if (! $this->can_start) {
             throw new \Exception('عدد الطلاب غير كافي لبدء الحلقة');
         }
 
         $this->update([
             'status' => 'ongoing',
             'enrollment_status' => 'closed',
-            'start_date' => now()
+            'start_date' => now(),
         ]);
 
         return $this;
     }
 
-    public function suspend(string $reason = null): self
+    public function suspend(?string $reason = null): self
     {
         $this->update([
             'status' => 'suspended',
-            'notes' => $reason
+            'notes' => $reason,
         ]);
 
         return $this;
@@ -532,7 +551,7 @@ class QuranCircle extends Model
     public function resume(): self
     {
         $this->update([
-            'status' => 'ongoing'
+            'status' => 'ongoing',
         ]);
 
         return $this;
@@ -543,7 +562,7 @@ class QuranCircle extends Model
         $this->update([
             'status' => 'completed',
             'enrollment_status' => 'closed',
-            'end_date' => now()
+            'end_date' => now(),
         ]);
 
         // Issue certificates if enabled
@@ -554,12 +573,12 @@ class QuranCircle extends Model
         return $this;
     }
 
-    public function cancel(string $reason = null): self
+    public function cancel(?string $reason = null): self
     {
         $this->update([
             'status' => 'cancelled',
             'enrollment_status' => 'closed',
-            'notes' => $reason
+            'notes' => $reason,
         ]);
 
         return $this;
@@ -571,7 +590,7 @@ class QuranCircle extends Model
             'academy_id' => $this->academy_id,
             'quran_teacher_id' => $this->quran_teacher_id,
             'session_type' => 'circle',
-            'participants_count' => $this->current_students
+            'participants_count' => $this->current_students,
         ]));
 
         $this->increment('sessions_completed');
@@ -609,7 +628,7 @@ class QuranCircle extends Model
 
         $this->update([
             'avg_rating' => round($avgRating, 1),
-            'total_reviews' => $ratingCount
+            'total_reviews' => $ratingCount,
         ]);
 
         // Update teacher's rating
@@ -630,7 +649,7 @@ class QuranCircle extends Model
 
         $this->update([
             'completion_rate' => round($completionRate, 2),
-            'dropout_rate' => round($dropoutRate, 2)
+            'dropout_rate' => round($dropoutRate, 2),
         ]);
 
         return $this;
@@ -649,18 +668,18 @@ class QuranCircle extends Model
 
         while ($currentDate <= $endDate) {
             $dayName = strtolower($currentDate->format('l'));
-            
+
             if (in_array($dayName, $this->schedule_days)) {
                 foreach ($this->schedule_times as $time) {
                     $sessionDateTime = $currentDate->copy()->setTimeFromTimeString($time);
                     $schedule[] = [
                         'scheduled_at' => $sessionDateTime,
                         'duration_minutes' => $this->session_duration_minutes,
-                        'status' => 'scheduled'
+                        'status' => 'scheduled',
                     ];
                 }
             }
-            
+
             $currentDate->addDay();
         }
 
@@ -671,7 +690,7 @@ class QuranCircle extends Model
 
     public function issueCertificates(): self
     {
-        if (!$this->certificates_enabled) {
+        if (! $this->certificates_enabled) {
             return $this;
         }
 
@@ -689,13 +708,13 @@ class QuranCircle extends Model
                 'academy_name' => $this->academy->name,
                 'completion_date' => now(),
                 'specialization' => $this->specialization_text,
-                'level' => $this->memorization_level_text
+                'level' => $this->memorization_level_text,
             ];
 
             // Update pivot to mark certificate as issued
             $this->students()->updateExistingPivot($student->id, [
                 'certificate_issued' => true,
-                'completion_date' => now()
+                'completion_date' => now(),
             ]);
         }
 
@@ -714,7 +733,7 @@ class QuranCircle extends Model
             'completion_rate' => 0,
             'dropout_rate' => 0,
             'status' => 'planning',
-            'enrollment_status' => 'closed'
+            'enrollment_status' => 'closed',
         ]));
     }
 
@@ -722,15 +741,15 @@ class QuranCircle extends Model
     {
         $prefix = 'QC';
         $academyPart = $academyId;
-        
+
         // Get all existing circle codes for this academy
         $existingCodes = self::withTrashed()
             ->where('academy_id', $academyId)
             ->pluck('circle_code')
             ->toArray();
-        
+
         $maxSequence = 0;
-        
+
         // Parse existing codes to find the highest sequence number
         foreach ($existingCodes as $code) {
             // Only process codes that match the standard format: QC-{academy}-{sequence}
@@ -739,18 +758,18 @@ class QuranCircle extends Model
                 $maxSequence = max($maxSequence, $sequence);
             }
         }
-        
+
         $nextSequence = $maxSequence + 1;
-        $code = "{$prefix}-{$academyPart}-" . str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
-        
+        $code = "{$prefix}-{$academyPart}-".str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
+
         // Double-check for uniqueness (fallback safety)
         $attempt = 0;
         while (in_array($code, $existingCodes) && $attempt < 100) {
             $nextSequence++;
-            $code = "{$prefix}-{$academyPart}-" . str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
+            $code = "{$prefix}-{$academyPart}-".str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
             $attempt++;
         }
-        
+
         return $code;
     }
 
@@ -767,18 +786,18 @@ class QuranCircle extends Model
         static::deleting(function ($circle) {
             // Delete all sessions for this circle
             $circle->sessions()->delete();
-            
+
             // Delete schedule if exists
             if ($circle->schedule) {
                 $circle->schedule->delete();
             }
-            
+
             // Clean up pivot table entries (students)
             $circle->students()->detach();
-            
+
             // Delete related homework
             $circle->homework()->delete();
-            
+
             // Delete related progress records
             $circle->progress()->delete();
         });
@@ -787,18 +806,18 @@ class QuranCircle extends Model
         static::forceDeleting(function ($circle) {
             // Force delete all sessions for this circle
             $circle->sessions()->forceDelete();
-            
+
             // Force delete schedule if exists
             if ($circle->schedule) {
                 $circle->schedule->forceDelete();
             }
-            
+
             // Clean up pivot table entries (students)
             $circle->students()->detach();
-            
+
             // Force delete related homework
             $circle->homework()->forceDelete();
-            
+
             // Force delete related progress records
             $circle->progress()->forceDelete();
         });
@@ -831,8 +850,8 @@ class QuranCircle extends Model
         }
 
         return $query->orderBy('avg_rating', 'desc')
-                    ->orderBy('start_date', 'asc')
-                    ->get();
+            ->orderBy('start_date', 'asc')
+            ->get();
     }
 
     public static function getStartingSoon(int $academyId, int $days = 7): \Illuminate\Database\Eloquent\Collection
@@ -842,4 +861,4 @@ class QuranCircle extends Model
             ->with(['quranTeacher.user', 'students'])
             ->get();
     }
-} 
+}

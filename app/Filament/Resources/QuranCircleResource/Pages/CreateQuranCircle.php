@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\QuranCircleResource\Pages;
 
 use App\Filament\Resources\QuranCircleResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,16 +20,16 @@ class CreateQuranCircle extends CreateRecord
         // Add the academy ID and created_by automatically
         $data['academy_id'] = Auth::user()->academy_id ?? 1; // Default academy or get from user
         $data['created_by'] = Auth::id();
-        
+
         // Generate circle code using the model method
         $data['circle_code'] = \App\Models\QuranCircle::generateCircleCode($data['academy_id']);
-        
+
         // Set initial values
         $data['enrolled_students'] = 0;
         $data['sessions_completed'] = 0;
-        $data['status'] = 'planning';
+        $data['status'] = false;
         $data['enrollment_status'] = 'closed';
-        
+
         return $data;
     }
 
@@ -43,4 +42,4 @@ class CreateQuranCircle extends CreateRecord
     {
         return 'تم إضافة دائرة القرآن بنجاح';
     }
-} 
+}
