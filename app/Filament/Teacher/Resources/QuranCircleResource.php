@@ -22,6 +22,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\TagsInput;
 
 class QuranCircleResource extends Resource
 {
@@ -118,6 +119,13 @@ class QuranCircleResource extends Resource
                                     ->default('beginner')
                                     ->required(),
                             ]),
+
+                        TagsInput::make('learning_objectives')
+                            ->label('أهداف الحلقة')
+                            ->placeholder('أضف هدفاً من أهداف الحلقة')
+                            ->helperText('أهداف تعليمية واضحة ومحددة للحلقة')
+                            ->reorderable()
+                            ->columnSpanFull(),
 
                         Textarea::make('description_ar')
                             ->label('وصف الحلقة (عربي)')

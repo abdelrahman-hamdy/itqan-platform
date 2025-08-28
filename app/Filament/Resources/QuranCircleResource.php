@@ -51,7 +51,7 @@ class QuranCircleResource extends BaseResource
     {
         return $form
             ->schema([
-                Section::make('معلومات الدائرة الأساسية')
+                Section::make('معلومات الحلقة الأساسية')
                     ->schema([
                         Grid::make(2)
                             ->schema([
@@ -64,36 +64,26 @@ class QuranCircleResource extends BaseResource
                                     ->required(),
 
                                 TextInput::make('name_ar')
-                                    ->label('اسم الدائرة (عربي)')
+                                    ->label('اسم الحلقة (عربي)')
                                     ->required()
-                                    ->maxLength(100),
+                                    ->maxLength(150),
 
                                 TextInput::make('name_en')
-                                    ->label('اسم الدائرة (إنجليزي)')
-                                    ->maxLength(100),
+                                    ->label('اسم الحلقة (إنجليزي)')
+                                    ->maxLength(150),
 
-                                Select::make('memorization_level')
-                                    ->label('المستوى')
-                                    ->options([
-                                        'beginner' => 'مبتدئ',
-                                        'intermediate' => 'متوسط',
-                                        'advanced' => 'متقدم',
-                                    ])
-                                    ->required(),
-                            ]),
-                    ]),
+                                TextInput::make('circle_code')
+                                    ->label('رمز الحلقة')
+                                    ->disabled()
+                                    ->dehydrated(false),
 
-                Section::make('تفاصيل الفئة المستهدفة')
-                    ->schema([
-                        Grid::make(3)
-                            ->schema([
                                 Select::make('age_group')
                                     ->label('الفئة العمرية')
                                     ->options([
-                                        'children' => 'أطفال',
-                                        'youth' => 'شباب',
-                                        'adults' => 'كبار',
-                                        'all_ages' => 'كل الفئات',
+                                        'children' => 'أطفال (5-12 سنة)',
+                                        'teenagers' => 'مراهقون (13-17 سنة)',
+                                        'adults' => 'بالغون (18+ سنة)',
+                                        'mixed' => 'مختلطة',
                                     ])
                                     ->required(),
 
@@ -106,12 +96,76 @@ class QuranCircleResource extends BaseResource
                                     ])
                                     ->required(),
 
+                                Select::make('specialization')
+                                    ->label('التخصص')
+                                    ->options([
+                                        'memorization' => 'حفظ القرآن',
+                                        'recitation' => 'تلاوة وتجويد',
+                                        'interpretation' => 'تفسير',
+                                        'arabic_language' => 'اللغة العربية القرآنية',
+                                        'complete' => 'شامل',
+                                    ])
+                                    ->default('memorization')
+                                    ->required(),
+
+                                Select::make('memorization_level')
+                                    ->label('مستوى الحفظ')
+                                    ->options([
+                                        'beginner' => 'مبتدئ',
+                                        'elementary' => 'أساسي',
+                                        'intermediate' => 'متوسط',
+                                        'advanced' => 'متقدم',
+                                        'expert' => 'خبير',
+                                    ])
+                                    ->default('beginner')
+                                    ->required(),
+                            ]),
+
+                        TagsInput::make('learning_objectives')
+                            ->label('أهداف الحلقة')
+                            ->placeholder('أضف هدفاً من أهداف الحلقة')
+                            ->helperText('أهداف تعليمية واضحة ومحددة للحلقة')
+                            ->reorderable()
+                            ->columnSpanFull(),
+
+                        Textarea::make('description_ar')
+                            ->label('وصف الحلقة (عربي)')
+                            ->rows(3)
+                            ->maxLength(500),
+
+                        Textarea::make('description_en')
+                            ->label('وصف الحلقة (إنجليزي)')
+                            ->rows(3)
+                            ->maxLength(500),
+                    ]),
+
+                Section::make('إعدادات الحلقة')
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
                                 TextInput::make('max_students')
                                     ->label('الحد الأقصى للطلاب')
                                     ->numeric()
-                                    ->minValue(3)
-                                    ->maxValue(100)
+                                    ->minValue(1)
+                                    ->maxValue(20)
                                     ->default(8)
+                                    ->required(),
+
+                                TextInput::make('enrolled_students')
+                                    ->label('عدد الطلاب الحالي')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->default(fn ($record) => $record ? $record->students()->count() : 0)
+                                    ->dehydrated(false),
+
+                                Select::make('session_duration_minutes')
+                                    ->label('مدة الجلسة (بالدقائق)')
+                                    ->options([
+                                        30 => '30 دقيقة',
+                                        45 => '45 دقيقة',
+                                        60 => '60 دقيقة',
+                                    ])
+                                    ->default(60)
                                     ->required(),
 
                                 TextInput::make('monthly_fee')
@@ -121,95 +175,52 @@ class QuranCircleResource extends BaseResource
                                     ->minValue(0)
                                     ->required(),
                             ]),
-                    ]),
 
-                Section::make('الجدول الزمني')
-                    ->description('سيتم تحديد الجدول من قبل المعلم لضمان عدم التعارض مع جدوله الشخصي')
-                    ->schema([
-                        Grid::make(4)
-                            ->schema([
-                                Select::make('schedule_time')
-                                    ->label('الساعة')
-                                    ->options([
-                                        '00:00' => '12:00 ص',
-                                        '01:00' => '01:00 ص',
-                                        '02:00' => '02:00 ص',
-                                        '03:00' => '03:00 ص',
-                                        '04:00' => '04:00 ص',
-                                        '05:00' => '05:00 ص',
-                                        '06:00' => '06:00 ص',
-                                        '07:00' => '07:00 ص',
-                                        '08:00' => '08:00 ص',
-                                        '09:00' => '09:00 ص',
-                                        '10:00' => '10:00 ص',
-                                        '11:00' => '11:00 ص',
-                                        '12:00' => '12:00 م',
-                                        '13:00' => '01:00 م',
-                                        '14:00' => '02:00 م',
-                                        '15:00' => '03:00 م',
-                                        '16:00' => '04:00 م',
-                                        '17:00' => '05:00 م',
-                                        '18:00' => '06:00 م',
-                                        '19:00' => '07:00 م',
-                                        '20:00' => '08:00 م',
-                                        '21:00' => '09:00 م',
-                                        '22:00' => '10:00 م',
-                                        '23:00' => '11:00 م',
-                                    ])
-                                    ->disabled()
-                                    ->placeholder('سيحدده المعلم')
-                                    ->helperText('يحدد المعلم التوقيت من تقويمه'),
+                        Select::make('schedule_time')
+                            ->label('الساعة')
+                            ->options([
+                                '00:00' => '12:00 ص',
+                                '01:00' => '01:00 ص',
+                                '02:00' => '02:00 ص',
+                                '03:00' => '03:00 ص',
+                                '04:00' => '04:00 ص',
+                                '05:00' => '05:00 ص',
+                                '06:00' => '06:00 ص',
+                                '07:00' => '07:00 ص',
+                                '08:00' => '08:00 ص',
+                                '09:00' => '09:00 ص',
+                                '10:00' => '10:00 ص',
+                                '11:00' => '11:00 ص',
+                                '12:00' => '12:00 م',
+                                '13:00' => '01:00 م',
+                                '14:00' => '02:00 م',
+                                '15:00' => '03:00 م',
+                                '16:00' => '04:00 م',
+                                '17:00' => '05:00 م',
+                                '18:00' => '06:00 م',
+                                '19:00' => '07:00 م',
+                                '20:00' => '08:00 م',
+                                '21:00' => '09:00 م',
+                                '22:00' => '10:00 م',
+                                '23:00' => '11:00 م',
+                            ])
+                            ->native(false)
+                            ->required()
+                            ->helperText('تحديد الساعة المحددة لبداية الجلسات'),
 
-                                Select::make('schedule_days')
-                                    ->label('أيام الأسبوع')
-                                    ->options([
-                                        'saturday' => 'السبت',
-                                        'sunday' => 'الأحد',
-                                        'monday' => 'الاثنين',
-                                        'tuesday' => 'الثلاثاء',
-                                        'wednesday' => 'الأربعاء',
-                                        'thursday' => 'الخميس',
-                                        'friday' => 'الجمعة',
-                                    ])
-                                    ->multiple()
-                                    ->disabled()
-                                    ->placeholder('سيحدده المعلم')
-                                    ->helperText('يحدد المعلم الأيام من تقويمه'),
-
-                                Select::make('session_duration_minutes')
-                                    ->label('مدة الجلسة')
-                                    ->options([
-                                        30 => '30 دقيقة',
-                                        45 => '45 دقيقة',
-                                        60 => '60 دقيقة',
-                                    ])
-                                    ->default(60)
-                                    ->required(),
-
-                                Select::make('monthly_sessions_count')
-                                    ->label('عدد الجلسات الشهرية')
-                                    ->options([
-                                        4 => '4 جلسات (جلسة واحدة أسبوعياً)',
-                                        8 => '8 جلسات (جلستين أسبوعياً)',
-                                        12 => '12 جلسة (3 جلسات أسبوعياً)',
-                                        16 => '16 جلسة (4 جلسات أسبوعياً)',
-                                        20 => '20 جلسة (5 جلسات أسبوعياً)',
-                                    ])
-                                    ->default(8)
-                                    ->required()
-                                    ->helperText('يحدد هذا الرقم عدد الجلسات التي يمكن للمعلم جدولتها شهرياً'),
-
-                                Select::make('schedule_period')
-                                    ->label('فترة الجدولة')
-                                    ->options([
-                                        'week' => 'أسبوع واحد',
-                                        'month' => 'شهر واحد',
-                                        'two_months' => 'شهرين',
-                                    ])
-                                    ->default('month')
-                                    ->required()
-                                    ->helperText('تحدد كم من الوقت مقدماً يمكن جدولة الجلسات'),
-                            ]),
+                        Select::make('schedule_days')
+                            ->label('أيام الانعقاد')
+                            ->options([
+                                'sunday' => 'الأحد',
+                                'monday' => 'الاثنين',
+                                'tuesday' => 'الثلاثاء',
+                                'wednesday' => 'الأربعاء',
+                                'thursday' => 'الخميس',
+                                'friday' => 'الجمعة',
+                                'saturday' => 'السبت',
+                            ])
+                            ->multiple()
+                            ->required(),
                     ]),
 
                 Section::make('إعدادات الاجتماعات')
@@ -255,82 +266,7 @@ class QuranCircleResource extends BaseResource
                             ]),
                     ]),
 
-                Section::make('حلقات القرآن الجماعية')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('circle_type')
-                                    ->label('نوع الدائرة')
-                                    ->options([
-                                        'memorization' => 'حفظ',
-                                        'recitation' => 'تلاوة وتجويد',
-                                        'interpretation' => 'تفسير',
-                                        'general' => 'عام',
-                                    ])
-                                    ->required(),
-
-                                Select::make('location_type')
-                                    ->label('نوع المكان*')
-                                    ->options([
-                                        'online' => 'عبر الإنترنت',
-                                        'physical' => 'حضوري',
-                                        'hybrid' => 'مختلط',
-                                    ])
-                                    ->default('online')
-                                    ->required(),
-
-                                TagsInput::make('learning_objectives')
-                                    ->label('أهداف التعلم')
-                                    ->placeholder('أضف هدف تعليمي')
-                                    ->reorderable(),
-
-                                Textarea::make('prerequisites')
-                                    ->label('المتطلبات المسبقة')
-                                    ->rows(3)
-                                    ->maxLength(500),
-                            ]),
-                    ]),
-
-                Section::make('المكان ووسائل التعلم')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('physical_location')
-                                    ->label('المكان الفعلي')
-                                    ->maxLength(200)
-                                    ->visible(fn (Forms\Get $get) => in_array($get('location_type'), ['physical', 'hybrid'])),
-
-                                TextInput::make('online_platform')
-                                    ->label('منصة الإنترنت')
-                                    ->maxLength(100)
-                                    ->visible(fn (Forms\Get $get) => in_array($get('location_type'), ['online', 'hybrid'])),
-
-                                TextInput::make('meeting_link')
-                                    ->label('رابط الاجتماع')
-                                    ->url()
-                                    ->visible(fn (Forms\Get $get) => in_array($get('location_type'), ['online', 'hybrid'])),
-                            ]),
-                    ]),
-
-                Section::make('الوصف والملاحظات')
-                    ->schema([
-                        Textarea::make('description_ar')
-                            ->label('وصف الدائرة (عربي)')
-                            ->rows(4)
-                            ->maxLength(500),
-
-                        Textarea::make('description_en')
-                            ->label('وصف الدائرة (إنجليزي)')
-                            ->rows(4)
-                            ->maxLength(500),
-
-                        Textarea::make('notes')
-                            ->label('ملاحظات إدارية')
-                            ->rows(3)
-                            ->maxLength(1000),
-                    ]),
-
-                Section::make('الحالة والإعدادات')
+                Section::make('الحالة والإعدادات الإدارية')
                     ->schema([
                         Grid::make(2)
                             ->schema([
@@ -348,12 +284,25 @@ class QuranCircleResource extends BaseResource
                                     ])
                                     ->default('closed'),
 
-                                TextInput::make('enrolled_students')
-                                    ->label('عدد الطلاب الحالي')
+                                Select::make('monthly_sessions_count')
+                                    ->label('عدد الجلسات الشهرية')
+                                    ->options([
+                                        4 => '4 جلسات (جلسة واحدة أسبوعياً)',
+                                        8 => '8 جلسات (جلستين أسبوعياً)',
+                                        12 => '12 جلسة (3 جلسات أسبوعياً)',
+                                        16 => '16 جلسة (4 جلسات أسبوعياً)',
+                                        20 => '20 جلسة (5 جلسات أسبوعياً)',
+                                    ])
+                                    ->default(8)
+                                    ->required()
+                                    ->helperText('يحدد هذا الرقم عدد الجلسات التي يمكن للمعلم جدولتها شهرياً'),
+
+                                TextInput::make('teacher_monthly_revenue')
+                                    ->label('أجر المعلم الشهري')
                                     ->numeric()
-                                    ->disabled()
-                                    ->default(fn ($record) => $record ? $record->students()->count() : 0)
-                                    ->dehydrated(false),
+                                    ->prefix('SAR')
+                                    ->minValue(0)
+                                    ->helperText('راتب المعلم الشهري من هذه الحلقة'),
 
                                 Textarea::make('admin_notes')
                                     ->label('ملاحظات الإدارة')
@@ -362,8 +311,7 @@ class QuranCircleResource extends BaseResource
                                     ->helperText('ملاحظات مرئية للمعلم والإدارة والمشرف فقط')
                                     ->columnSpanFull(),
                             ]),
-                    ])
-                    ->visibleOn('edit'),
+                    ]),
             ]);
     }
 

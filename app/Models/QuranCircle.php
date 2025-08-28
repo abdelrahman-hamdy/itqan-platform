@@ -16,7 +16,6 @@ class QuranCircle extends Model
     protected $fillable = [
         'academy_id',
         'quran_teacher_id',
-        'supervisor_id',
         'circle_code',
         'name_ar',
         'name_en',
@@ -32,14 +31,10 @@ class QuranCircle extends Model
         'min_students_to_start',
         'session_duration_minutes',
         'monthly_sessions_count',
-        'schedule_period',
         'schedule_days',
         'schedule_time',
-        'timezone',
         'monthly_fee',
-        'currency',
-        'enrollment_fee',
-        'materials_fee',
+        'teacher_monthly_revenue', // Teacher's monthly salary from this circle
         'sessions_completed',
 
         'status',
@@ -61,7 +56,6 @@ class QuranCircle extends Model
         'completion_rate',
         'dropout_rate',
 
-        'special_instructions',
         'preparation_minutes',
         'ending_buffer_minutes',
         'late_join_grace_period_minutes',
@@ -79,8 +73,7 @@ class QuranCircle extends Model
         'session_duration_minutes' => 'integer',
         'sessions_completed' => 'integer',
         'monthly_fee' => 'decimal:2',
-        'enrollment_fee' => 'decimal:2',
-        'materials_fee' => 'decimal:2',
+        'teacher_monthly_revenue' => 'decimal:2',
         'avg_rating' => 'decimal:1',
         'total_reviews' => 'integer',
         'completion_rate' => 'decimal:2',
@@ -127,11 +120,6 @@ class QuranCircle extends Model
     public function quranTeacher(): BelongsTo
     {
         return $this->belongsTo(QuranTeacherProfile::class);
-    }
-
-    public function supervisor(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'supervisor_id');
     }
 
     public function students(): BelongsToMany
@@ -339,24 +327,14 @@ class QuranCircle extends Model
         return $levels[$this->memorization_level] ?? $this->memorization_level;
     }
 
-    public function getFormattedPriceAttribute(): string
-    {
-        return number_format($this->price_per_student, 2).' '.$this->currency;
-    }
-
     public function getFormattedMonthlyFeeAttribute(): string
     {
-        return number_format((float) $this->monthly_fee, 2).' '.$this->currency;
+        return number_format((float) $this->monthly_fee, 2).' ريال';
     }
 
-    public function getTotalCostAttribute(): float
+    public function getFormattedTeacherRevenueAttribute(): string
     {
-        return $this->monthly_fee + $this->enrollment_fee + $this->materials_fee;
-    }
-
-    public function getFormattedTotalCostAttribute(): string
-    {
-        return number_format($this->total_cost, 2).' '.$this->currency;
+        return number_format((float) $this->teacher_monthly_revenue, 2).' ريال';
     }
 
     public function getAvailableSpotsAttribute(): int
