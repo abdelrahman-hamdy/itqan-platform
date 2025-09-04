@@ -29,6 +29,7 @@ class AcademicSettings extends Model
         'course_enrollment_deadline_days',
         'allow_late_enrollment',
         'available_languages',
+        'default_package_ids',
         'created_by',
         'updated_by',
         'notes',
@@ -50,6 +51,7 @@ class AcademicSettings extends Model
         'course_enrollment_deadline_days' => 'integer',
         'allow_late_enrollment' => 'boolean',
         'available_languages' => 'array',
+        'default_package_ids' => 'array',
     ];
 
     /**

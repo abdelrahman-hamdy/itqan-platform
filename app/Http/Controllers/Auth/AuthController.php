@@ -137,9 +137,9 @@ class AuthController extends Controller
         }
 
         // Get grade levels for the academy
-        $gradeLevels = \App\Models\GradeLevel::where('academy_id', $academy->id)
+                    $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->orderBy('level')
+            ->orderBy('name')
             ->get();
 
         return view('auth.student-register', compact('academy', 'gradeLevels'));
@@ -342,7 +342,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
             'password' => 'required|string|min:8|confirmed',
-            'qualification_degree' => 'required|string|max:255',
+            'qualification_degree' => 'required|in:bachelor,master,phd,other',
             'university' => 'required|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
         ];
@@ -401,7 +401,7 @@ class AuthController extends Controller
                     'first_name' => $request->first_name,
                     'last_name' => $request->last_name,
                     'phone' => $request->phone,
-                    'educational_qualification' => 'bachelor', // Use ENUM value
+                    'educational_qualification' => $request->qualification_degree,
                     'teaching_experience_years' => $request->years_experience,
                     'approval_status' => 'pending',
                     'is_active' => false,

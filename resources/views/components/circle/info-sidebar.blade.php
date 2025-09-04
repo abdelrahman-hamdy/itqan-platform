@@ -1,6 +1,7 @@
 @props([
     'circle',
-    'viewType' => 'student' // 'student', 'teacher', 'supervisor'
+    'viewType' => 'student', // 'student', 'teacher', 'supervisor'
+    'context' => 'group' // 'group', 'individual'
 ])
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -24,7 +25,7 @@
                             class="flex-shrink-0" />
                         <div class="flex-1">
                             <span class="text-xs font-medium text-blue-600 uppercase tracking-wide">المعلم</span>
-                            <p class="font-bold text-blue-900 text-sm">{{ $circle->quranTeacher->user->name ?? 'غير محدد' }}</p>
+                            <p class="font-bold text-blue-900 text-sm">{{ $circle->quranTeacher->name ?? 'غير محدد' }}</p>
                             @if($viewType === 'student' && $circle->quranTeacher->teaching_experience_years)
                                 <p class="text-xs text-blue-700 mt-1">{{ $circle->quranTeacher->teaching_experience_years }} سنوات خبرة</p>
                             @endif
@@ -48,7 +49,7 @@
         </div>
 
         <!-- Schedule Card -->
-        @if($circle->schedule_days || $circle->schedule_time)
+        @if($context === 'group' && $circle->schedule && $circle->schedule->weekly_schedule)
             <div class="bg-white rounded-lg p-4 border border-gray-200">
                 <div class="flex items-start space-x-3 space-x-reverse">
                     <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -57,13 +58,37 @@
                     <div class="flex-1">
                         <span class="text-xs font-medium text-green-600 uppercase tracking-wide">الجدول</span>
                         <div class="space-y-1">
-                            @if($circle->schedule_days)
-                                <p class="font-bold text-green-900 text-sm">{{ $circle->schedule_days_text }}</p>
+                            <p class="font-bold text-green-900 text-sm">{{ $circle->schedule_days_text }}</p>
+                            @if($circle->schedule->weekly_schedule && count($circle->schedule->weekly_schedule) > 0)
+                                @foreach($circle->schedule->weekly_schedule as $scheduleItem)
+                                    <p class="text-xs text-green-700 flex items-center">
+                                        <i class="ri-time-line ml-1"></i>
+                                        {{ $scheduleItem['time'] ?? 'غير محدد' }}
+                                        @if(isset($scheduleItem['duration']))
+                                            ({{ $scheduleItem['duration'] }} دقيقة)
+                                        @endif
+                                    </p>
+                                @endforeach
                             @endif
-                            @if($circle->schedule_time)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @elseif($context === 'individual' && $circle->subscription)
+            <!-- Subscription Card for Individual Circles -->
+            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                <div class="flex items-start space-x-3 space-x-reverse">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <i class="ri-bookmark-line text-green-600 text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="text-xs font-medium text-green-600 uppercase tracking-wide">الاشتراك</span>
+                        <div class="space-y-1">
+                            <p class="font-bold text-green-900 text-sm">{{ $circle->subscription->package->name ?? 'اشتراك مخصص' }}</p>
+                            @if($circle->subscription->expires_at)
                                 <p class="text-xs text-green-700 flex items-center">
                                     <i class="ri-time-line ml-1"></i>
-                                    {{ \Carbon\Carbon::parse($circle->schedule_time)->format('H:i') }}
+                                    ينتهي: {{ $circle->subscription->expires_at->format('Y-m-d') }}
                                 </p>
                             @endif
                         </div>
@@ -106,50 +131,65 @@
         </div>
         
         <!-- Age Group & Gender Type (50% width each) -->
-        <div class="grid grid-cols-2 gap-3">
-            <!-- Age Group -->
-            @if($circle->age_group)
-                <div class="bg-white rounded-lg p-3 border border-gray-200">
-                    <div class="flex items-center space-x-2 space-x-reverse">
-                        <i class="ri-user-3-line text-indigo-600 text-sm"></i>
-                        <span class="text-xs font-medium text-indigo-600">الفئة العمرية</span>
+        @if($circle->age_group || $circle->gender_type)
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Age Group -->
+                @if($circle->age_group)
+                    <div class="bg-white rounded-lg p-3 border border-gray-200">
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <i class="ri-user-3-line text-indigo-600 text-sm"></i>
+                            <span class="text-xs font-medium text-indigo-600">الفئة العمرية</span>
+                        </div>
+                        <p class="text-sm font-bold text-indigo-900 mt-1">
+                            @switch($circle->age_group)
+                                @case('children') أطفال @break
+                                @case('youth') شباب @break
+                                @case('adults') كبار @break
+                                @case('all_ages') كل الفئات @break
+                                @default {{ $circle->age_group }}
+                            @endswitch
+                        </p>
                     </div>
-                    <p class="text-sm font-bold text-indigo-900 mt-1">
-                        @switch($circle->age_group)
-                            @case('children') أطفال @break
-                            @case('youth') شباب @break
-                            @case('adults') كبار @break
-                            @case('all_ages') كل الفئات @break
-                            @default {{ $circle->age_group }}
-                        @endswitch
-                    </p>
-                </div>
-            @endif
+                @endif
 
-            <!-- Gender Type -->
-            @if($circle->gender_type)
-                <div class="bg-white rounded-lg p-3 border border-gray-200">
-                    <div class="flex items-center space-x-2 space-x-reverse">
-                        <i class="ri-group-2-line text-cyan-600 text-sm"></i>
-                        <span class="text-xs font-medium text-cyan-600">النوع</span>
+                <!-- Gender Type -->
+                @if($circle->gender_type)
+                    <div class="bg-white rounded-lg p-3 border border-gray-200">
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <i class="ri-group-2-line text-cyan-600 text-sm"></i>
+                            <span class="text-xs font-medium text-cyan-600">النوع</span>
+                        </div>
+                        <p class="text-sm font-bold text-cyan-900 mt-1">
+                            {{ $circle->gender_type === 'male' ? 'رجال' : ($circle->gender_type === 'female' ? 'نساء' : 'مختلط') }}
+                        </p>
                     </div>
-                    <p class="text-sm font-bold text-cyan-900 mt-1">
-                        {{ $circle->gender_type === 'male' ? 'رجال' : ($circle->gender_type === 'female' ? 'نساء' : 'مختلط') }}
-                    </p>
-                </div>
-            @endif
-        </div>
+                @endif
+            </div>
+        @endif
         
         <!-- Capacity & Duration -->
         <div class="grid grid-cols-2 gap-3">
-            <!-- Capacity -->
-            <div class="bg-white rounded-lg p-3 border border-gray-200">
-                <div class="flex items-center space-x-2 space-x-reverse">
-                    <i class="ri-group-line text-teal-600 text-sm"></i>
-                    <span class="text-xs font-medium text-teal-600">السعة</span>
+            @if($context === 'group')
+                <!-- Capacity -->
+                <div class="bg-white rounded-lg p-3 border border-gray-200">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <i class="ri-group-line text-teal-600 text-sm"></i>
+                        <span class="text-xs font-medium text-teal-600">السعة</span>
+                    </div>
+                    <p class="text-sm font-bold text-teal-900 mt-1">{{ $circle->students ? $circle->students->count() : 0 }}/{{ $circle->max_students ?? '∞' }}</p>
                 </div>
-                <p class="text-sm font-bold text-teal-900 mt-1">{{ $circle->students ? $circle->students->count() : 0 }}/{{ $circle->max_students ?? '∞' }}</p>
-            </div>
+            @else
+                <!-- Student Info for Individual -->
+                @if($circle->student)
+                    <div class="bg-white rounded-lg p-3 border border-gray-200">
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <i class="ri-user-line text-teal-600 text-sm"></i>
+                            <span class="text-xs font-medium text-teal-600">الطالب</span>
+                        </div>
+                        <p class="text-sm font-bold text-teal-900 mt-1">{{ $circle->student->name ?? 'طالب' }}</p>
+                    </div>
+                @endif
+            @endif
 
             <!-- Duration -->
             <div class="bg-white rounded-lg p-3 border border-gray-200">
@@ -163,7 +203,7 @@
 
         @if($viewType === 'student')
             <!-- Student-specific info -->
-            @if($circle->monthly_fee)
+            @if($context === 'group' && $circle->monthly_fee)
                 <div class="bg-white rounded-lg p-3 border border-gray-200">
                     <div class="flex items-center space-x-2 space-x-reverse">
                         <i class="ri-money-dollar-circle-line text-yellow-600 text-sm"></i>
@@ -171,28 +211,39 @@
                     </div>
                     <p class="text-sm font-bold text-yellow-900 mt-1">{{ number_format($circle->monthly_fee) }} {{ $circle->currency ?? 'ريال' }}</p>
                 </div>
+            @elseif($context === 'individual' && $circle->subscription && $circle->subscription->package)
+                <div class="bg-white rounded-lg p-3 border border-gray-200">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <i class="ri-money-dollar-circle-line text-yellow-600 text-sm"></i>
+                        <span class="text-xs font-medium text-yellow-600">قيمة الباقة</span>
+                    </div>
+                    <p class="text-sm font-bold text-yellow-900 mt-1">{{ number_format($circle->subscription->package->price ?? 0) }} {{ $circle->subscription->package->currency ?? 'ريال' }}</p>
+                </div>
             @endif
         @endif
     </div>
     
     <!-- Notes -->
-    @if($circle->notes)
+    @php
+        // For individual circles, show subscription notes (user's notes during subscription)
+        // For group circles, show circle notes (admin/teacher notes)
+        $notesToShow = null;
+        if ($context === 'individual' && $circle->subscription && $circle->subscription->notes) {
+            $notesToShow = $circle->subscription->notes;
+        } elseif ($context === 'group' && $circle->notes) {
+            $notesToShow = $circle->notes;
+        }
+    @endphp
+    
+    @if($notesToShow)
         <div class="mt-6 pt-4 border-t border-gray-200">
             <span class="text-sm text-gray-600 flex items-center">
                 <i class="ri-sticky-note-line ml-1"></i>
-                ملاحظات:
+                ملاحظات{{ $context === 'individual' ? ' الطالب' : '' }}:
             </span>
-            <p class="mt-1 text-sm text-gray-700">{{ $circle->notes }}</p>
+            <p class="mt-1 text-sm text-gray-700">{{ $notesToShow }}</p>
         </div>
     @endif
 
-    @if($viewType === 'teacher' && $circle->teacher_notes)
-        <div class="mt-4 pt-4 border-t border-gray-200">
-            <span class="text-sm text-gray-600 flex items-center">
-                <i class="ri-user-star-line ml-1"></i>
-                ملاحظات المعلم:
-            </span>
-            <p class="mt-1 text-sm text-gray-700">{{ $circle->teacher_notes }}</p>
-        </div>
-    @endif
+
 </div>

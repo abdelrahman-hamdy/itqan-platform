@@ -26,14 +26,19 @@
     };
 
     // For students, we might have student profile or just user data
-    $studentName = $student->full_name ?? 
-                   ($student->first_name && $student->last_name ? $student->first_name . ' ' . $student->last_name : null) ?? 
-                   $student->first_name ?? 
-                   $student->name ??
-                   'طالب';
-                   
-    // Check for avatar in User model first, then StudentProfile
-    $avatarPath = $student->avatar ?? $student->studentProfile?->avatar ?? null;
+    $studentName = 'طالب';
+    $avatarPath = null;
+    
+    if ($student) {
+        $studentName = $student->full_name ?? 
+                       ($student->first_name && $student->last_name ? $student->first_name . ' ' . $student->last_name : null) ?? 
+                       $student->first_name ?? 
+                       $student->name ??
+                       'طالب';
+                       
+        // Check for avatar in User model first, then StudentProfile
+        $avatarPath = $student->avatar ?? $student->studentProfile?->avatar ?? null;
+    }
 @endphp
 
 <div {{ $attributes->merge(['class' => 'relative flex-shrink-0']) }}>

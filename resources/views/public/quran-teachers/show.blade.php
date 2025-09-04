@@ -2,6 +2,17 @@
   title="معلم القرآن الكريم - {{ $teacher->full_name }}" 
   description="تعلم القرآن الكريم مع الأستاذ {{ $teacher->full_name }} - معلم مؤهل ومعتمد في {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
 
+  <!-- Breadcrumb -->
+  <nav class="mb-8">
+    <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
+      <li><a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">ملفي الشخصي</a></li>
+      <li>/</li>
+      <li><a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">معلمو القرآن الكريم</a></li>
+      <li>/</li>
+      <li class="text-gray-900">{{ $teacher->full_name }}</li>
+    </ol>
+  </nav>
+
   <!-- Success Messages -->
   @if (session('success'))
     <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">

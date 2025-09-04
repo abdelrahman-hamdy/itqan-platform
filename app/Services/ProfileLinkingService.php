@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\StudentProfile;
-use App\Models\QuranTeacherProfile;
 use App\Models\AcademicTeacherProfile;
 use App\Models\ParentProfile;
+use App\Models\QuranTeacherProfile;
+use App\Models\StudentProfile;
 use App\Models\SupervisorProfile;
-use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileLinkingService
 {
@@ -24,7 +24,7 @@ class ProfileLinkingService
         // Find existing profile by email
         $profile = $this->findProfileByEmail($email);
 
-        if (!$profile) {
+        if (! $profile) {
             return [
                 'success' => false,
                 'message' => 'لم يتم العثور على ملف شخصي مطابق لهذا البريد الإلكتروني. يرجى التواصل مع الإدارة.',
@@ -59,6 +59,7 @@ class ProfileLinkingService
             'phone' => $profile->phone,
             'user_type' => $userType,
             'status' => 'active',
+            'active_status' => true,
             'role' => $this->mapUserTypeToRole($userType), // Keep for backward compatibility
             'email_verified_at' => now(), // Auto-verify since profile was created by admin
         ]);
@@ -81,26 +82,36 @@ class ProfileLinkingService
     {
         // Check StudentProfile
         $profile = StudentProfile::where('email', $email)->first();
-        if ($profile) return $profile;
+        if ($profile) {
+            return $profile;
+        }
 
         // Check QuranTeacherProfile
         $profile = QuranTeacherProfile::where('email', $email)->first();
-        if ($profile) return $profile;
+        if ($profile) {
+            return $profile;
+        }
 
         // Check AcademicTeacherProfile
         $profile = AcademicTeacherProfile::where('email', $email)->first();
-        if ($profile) return $profile;
+        if ($profile) {
+            return $profile;
+        }
 
         // Check ParentProfile (if table exists)
         if (class_exists(ParentProfile::class)) {
             $profile = ParentProfile::where('email', $email)->first();
-            if ($profile) return $profile;
+            if ($profile) {
+                return $profile;
+            }
         }
 
         // Check SupervisorProfile (if table exists)
         if (class_exists(SupervisorProfile::class)) {
             $profile = SupervisorProfile::where('email', $email)->first();
-            if ($profile) return $profile;
+            if ($profile) {
+                return $profile;
+            }
         }
 
         return null;
@@ -128,13 +139,11 @@ class ProfileLinkingService
     {
         // For StudentProfile, get academy through grade level
         if ($profile instanceof StudentProfile) {
-            return $profile->gradeLevel?->academy_id ?? 1;
+            return $profile->gradeLevel?->academy_id ?? AcademyContextService::getCurrentAcademyId() ?? AcademyContextService::getDefaultAcademy()?->id ?? 2;
         }
 
-        // For other profiles, we can implement academy extraction logic
-        // based on email domain or other criteria
-        // For now, use default academy ID
-        return 1; // TODO: Implement academy extraction logic
+        // For other profiles, use current academy context or default
+        return AcademyContextService::getCurrentAcademyId() ?? AcademyContextService::getDefaultAcademy()?->id ?? 2;
     }
 
     /**
@@ -167,8 +176,8 @@ class ProfileLinkingService
     public function getProfileTypeByEmail(string $email): ?string
     {
         $profile = $this->findProfileByEmail($email);
-        
-        if (!$profile) {
+
+        if (! $profile) {
             return null;
         }
 
@@ -195,4 +204,4 @@ class ProfileLinkingService
             'supervisors' => class_exists(SupervisorProfile::class) ? SupervisorProfile::unlinked()->count() : 0,
         ];
     }
-} 
+}

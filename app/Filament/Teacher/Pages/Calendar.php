@@ -74,8 +74,8 @@ class Calendar extends Page
      */
     public function getSessionStatistics(): array
     {
-        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
-        if (! $teacherProfileId) {
+        $userId = Auth::id();
+        if (! $userId) {
             return [
                 ['title' => 'جلسات اليوم', 'value' => 0, 'icon' => 'heroicon-o-calendar-days', 'color' => 'primary'],
                 ['title' => 'الجلسات القادمة', 'value' => 0, 'icon' => 'heroicon-o-clock', 'color' => 'warning'],
@@ -84,40 +84,26 @@ class Calendar extends Page
             ];
         }
 
-        $userId = Auth::id();
-
         // Get today's sessions
-        $todaySessions = QuranSession::where(function ($query) use ($teacherProfileId, $userId) {
-            $query->where('quran_teacher_id', $teacherProfileId)
-                ->orWhere('quran_teacher_id', $userId);
-        })
+        $todaySessions = QuranSession::where('quran_teacher_id', $userId)
             ->whereDate('scheduled_at', today())
             ->count();
 
         // Get upcoming sessions (next 7 days)
-        $upcomingSessions = QuranSession::where(function ($query) use ($teacherProfileId, $userId) {
-            $query->where('quran_teacher_id', $teacherProfileId)
-                ->orWhere('quran_teacher_id', $userId);
-        })
+        $upcomingSessions = QuranSession::where('quran_teacher_id', $userId)
             ->where('scheduled_at', '>', now())
             ->where('scheduled_at', '<=', now()->addDays(7))
             ->count();
 
         // Get completed sessions this month
-        $completedThisMonth = QuranSession::where(function ($query) use ($teacherProfileId, $userId) {
-            $query->where('quran_teacher_id', $teacherProfileId)
-                ->orWhere('quran_teacher_id', $userId);
-        })
+        $completedThisMonth = QuranSession::where('quran_teacher_id', $userId)
             ->whereMonth('scheduled_at', now()->month)
             ->whereYear('scheduled_at', now()->year)
             ->where('status', 'completed')
             ->count();
 
         // Get pending/unscheduled sessions
-        $pendingSessions = QuranSession::where(function ($query) use ($teacherProfileId, $userId) {
-            $query->where('quran_teacher_id', $teacherProfileId)
-                ->orWhere('quran_teacher_id', $userId);
-        })
+        $pendingSessions = QuranSession::where('quran_teacher_id', $userId)
             ->where('status', 'pending')
             ->count();
 
@@ -154,12 +140,12 @@ class Calendar extends Page
      */
     public function getGroupCircles(): Collection
     {
-        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
-        if (! $teacherProfileId) {
+        $userId = Auth::id();
+        if (! $userId) {
             return collect();
         }
 
-        return QuranCircle::where('quran_teacher_id', $teacherProfileId)
+        return QuranCircle::where('quran_teacher_id', $userId)
             ->where('status', true) // Only show active circles
             ->with(['sessions' => function ($query) {
                 $query->where('scheduled_at', '>=', now()->startOfWeek())
@@ -629,11 +615,11 @@ class Calendar extends Page
         }
 
         // Check if schedule already exists with same configuration
-        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
+        $teacherId = Auth::id();
         $existingSchedule = QuranCircleSchedule::where([
             'academy_id' => $circle->academy_id,
             'circle_id' => $circle->id,
-            'quran_teacher_id' => $teacherProfileId,
+            'quran_teacher_id' => $teacherId,
             'is_active' => true,
         ])->first();
 
@@ -661,7 +647,7 @@ class Calendar extends Page
             $schedule = QuranCircleSchedule::create([
                 'academy_id' => $circle->academy_id,
                 'circle_id' => $circle->id,
-                'quran_teacher_id' => $teacherProfileId,
+                'quran_teacher_id' => $teacherId,
                 'weekly_schedule' => $weeklySchedule,
                 'timezone' => config('app.timezone', 'UTC'),
                 'default_duration_minutes' => 60,
@@ -974,13 +960,13 @@ class Calendar extends Page
 
                     // Create a session record for the trial
                     $sessionCode = $this->generateTrialSessionCode($trialRequest, $scheduledAt);
-                    $teacherProfileId = Auth::user()?->quranTeacherProfile?->id ?? Auth::id();
+                    $teacherId = Auth::id();
 
                     $session = QuranSession::create([
                         'academy_id' => $trialRequest->academy_id,
                         'session_code' => $sessionCode,
                         'session_type' => 'trial',
-                        'quran_teacher_id' => $teacherProfileId,
+                        'quran_teacher_id' => $teacherId,
                         'student_id' => $trialRequest->student_id,
                         'trial_request_id' => $trialRequest->id,
                         'scheduled_at' => $scheduledAt,
@@ -1214,7 +1200,7 @@ class Calendar extends Page
 
                 // Check if session already exists
                 $existingSession = QuranSession::where('circle_id', $circle->id)
-                    ->where('quran_teacher_id', Auth::user()->quranTeacherProfile->id ?? Auth::id())
+                    ->where('quran_teacher_id', Auth::id())
                     ->whereDate('scheduled_at', $sessionDateTime->toDateString())
                     ->whereTime('scheduled_at', $sessionDateTime->toTimeString())
                     ->first();
@@ -1223,7 +1209,7 @@ class Calendar extends Page
                     // Create new session
                     QuranSession::create([
                         'academy_id' => $circle->academy_id,
-                        'quran_teacher_id' => Auth::user()->quranTeacherProfile->id ?? Auth::id(),
+                        'quran_teacher_id' => Auth::id(),
                         'circle_id' => $circle->id,
                         'session_code' => $this->generateGroupSessionCode($circle, $sessionDateTime),
                         'session_type' => 'group',

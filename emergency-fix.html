@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EMERGENCY FIX - Working Chat</title>
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; background: #f0f0f0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #007bff; }
+        .message { padding: 8px; margin: 5px 0; border-radius: 4px; background: #f8f9fa; }
+        #messages { height: 400px; overflow-y: auto; border: 2px solid #ddd; padding: 10px; margin: 15px 0; }
+        input { width: 60%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; }
+        button:hover { background: #0056b3; }
+        .status { padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 EMERGENCY CHAT FIX</h1>
+        <div id="status" class="status">Initializing...</div>
+        
+        <div id="messages"></div>
+        
+        <div>
+            <input type="text" id="messageInput" placeholder="Type your message here...">
+            <button onclick="sendMessage()">Send</button>
+            <button onclick="forceReconnect()">Reconnect</button>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button onclick="testEchoServer()">Test Echo Server</button>
+            <button onclick="testLocalServer()">Test Local</button>
+            <button onclick="clearMessages()">Clear</button>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let connectionAttempts = 0;
+        const maxAttempts = 3;
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            document.getElementById('messages').appendChild(div);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+        }
+        
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+            log('Messages cleared', 'info');
+        }
+        
+        function testEchoServer() {
+            log('🌐 Testing public echo server (wss://echo.websocket.org)...', 'info');
+            connectWebSocket('wss://echo.websocket.org/');
+        }
+        
+        function testLocalServer() {
+            log('🏠 Testing local server (ws://127.0.0.1:6001)...', 'info');
+            connectWebSocket('ws://127.0.0.1:6001/');
+        }
+        
+        function connectWebSocket(url) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+            
+            updateStatus(`Connecting to ${url}...`, 'info');
+            
+            try {
+                ws = new WebSocket(url);
+                
+                ws.onopen = function() {
+                    log(`✅ Connected successfully to ${url}`, 'success');
+                    updateStatus(`Connected to ${url}`, 'success');
+                    connectionAttempts = 0;
+                    
+                    // Send test message
+                    ws.send(JSON.stringify({
+                        type: 'test',
+                        message: 'Hello from emergency chat fix!',
+                        timestamp: new Date().toISOString()
+                    }));
+                };
+                
+                ws.onmessage = function(event) {
+                    let data = event.data;
+                    try {
+                        const parsed = JSON.parse(data);
+                        data = parsed.message || parsed.data || data;
+                    } catch (e) {
+                        // Use raw data if not JSON
+                    }
+                    log(`📨 Received: ${data}`, 'success');
+                };
+                
+                ws.onclose = function(event) {
+                    log(`❌ Connection closed (${event.code}): ${event.reason}`, 'error');
+                    updateStatus('Connection closed', 'error');
+                    
+                    if (connectionAttempts < maxAttempts) {
+                        connectionAttempts++;
+                        log(`🔄 Retrying connection (${connectionAttempts}/${maxAttempts})...`, 'info');
+                        setTimeout(() => connectWebSocket(url), 2000);
+                    }
+                };
+                
+                ws.onerror = function(error) {
+                    log(`❌ WebSocket error: ${error}`, 'error');
+                    updateStatus('Connection error', 'error');
+                };
+                
+            } catch (error) {
+                log(`❌ Failed to create WebSocket: ${error}`, 'error');
+                updateStatus('Failed to connect', 'error');
+            }
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) {
+                log('❌ Please enter a message', 'error');
+                return;
+            }
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ No active connection. Testing echo server...', 'error');
+                testEchoServer();
+                return;
+            }
+            
+            try {
+                ws.send(message);
+                log(`📤 Sent: ${message}`, 'info');
+                input.value = '';
+            } catch (error) {
+                log(`❌ Failed to send message: ${error}`, 'error');
+            }
+        }
+        
+        function forceReconnect() {
+            log('🔄 Force reconnecting...', 'info');
+            if (ws) {
+                ws.close();
+            }
+            setTimeout(testEchoServer, 500);
+        }
+        
+        // Auto-start when page loads
+        window.addEventListener('load', function() {
+            log('🚀 Emergency chat fix loaded', 'info');
+            log('📡 Testing WebSocket connections...', 'info');
+            
+            // First try echo server (most likely to work)
+            setTimeout(testEchoServer, 1000);
+        });
+        
+        // Enter key sends message
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Status updates
+        setInterval(function() {
+            if (ws) {
+                const states = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
+                const state = states[ws.readyState] || 'UNKNOWN';
+                if (ws.readyState === WebSocket.OPEN) {
+                    updateStatus(`✅ Connected and ready (${state})`, 'success');
+                } else if (ws.readyState === WebSocket.CONNECTING) {
+                    updateStatus(`🔄 Connecting... (${state})`, 'info');
+                } else {
+                    updateStatus(`❌ Not connected (${state})`, 'error');
+                }
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

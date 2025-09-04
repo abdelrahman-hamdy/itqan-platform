@@ -7,12 +7,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Services\CalendarService;
 use App\Services\QuranSessionSchedulingService;
+use App\Services\AcademicSessionSchedulingService;
 use App\Services\AcademyContextService;
 use App\Models\QuranSubscription;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
+use App\Models\AcademicSubscription;
+use App\Models\AcademicSession;
 use App\Models\Academy;
 use Carbon\Carbon;
 
@@ -20,13 +23,16 @@ class TeacherCalendarController extends Controller
 {
     private CalendarService $calendarService;
     private QuranSessionSchedulingService $quranSchedulingService;
+    private AcademicSessionSchedulingService $academicSchedulingService;
 
     public function __construct(
         CalendarService $calendarService,
-        QuranSessionSchedulingService $quranSchedulingService
+        QuranSessionSchedulingService $quranSchedulingService,
+        AcademicSessionSchedulingService $academicSchedulingService
     ) {
         $this->calendarService = $calendarService;
         $this->quranSchedulingService = $quranSchedulingService;
+        $this->academicSchedulingService = $academicSchedulingService;
         $this->middleware('auth');
     }
 
@@ -55,10 +61,13 @@ class TeacherCalendarController extends Controller
         // Get teacher's individual and group circles for session creation
         $individualCircles = $this->getTeacherIndividualCircles();
         $groupCircles = $this->getTeacherGroupCircles();
+        
+        // Get teacher's academic subscriptions for session creation
+        $academicSubscriptions = $this->getTeacherAcademicSubscriptions();
 
         return view('teacher.calendar.index', compact(
             'events', 'stats', 'view', 'date', 'user',
-            'individualCircles', 'groupCircles'
+            'individualCircles', 'groupCircles', 'academicSubscriptions'
         ));
     }
 
@@ -678,5 +687,86 @@ class TeacherCalendarController extends Controller
         $session->delete();
 
         return ['success' => true, 'message' => 'تم حذف الجلسة بنجاح'];
+    }
+
+    /**
+     * Get teacher's academic subscriptions for session creation
+     */
+    private function getTeacherAcademicSubscriptions()
+    {
+        $user = Auth::user();
+        
+        // Check if user is an academic teacher
+        if (!$user->isAcademicTeacher()) {
+            return collect();
+        }
+        
+        // Get the teacher's profile ID
+        $teacherProfile = $user->academicTeacherProfile;
+        if (!$teacherProfile) {
+            return collect();
+        }
+        
+        return AcademicSubscription::select([
+                'id', 'subscription_code', 'student_id', 'subject_id', 
+                'session_duration_minutes', 'sessions_per_week', 'status'
+            ])
+            ->with(['student:id,name', 'subject:id,name'])
+            ->where('teacher_id', $teacherProfile->id)
+            ->where('status', 'active')
+            ->get();
+    }
+
+    /**
+     * Create academic session
+     */
+    public function createAcademicSession(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user->isAcademicTeacher()) {
+            return response()->json(['success' => false, 'message' => 'غير مسموح لك بإنشاء جلسات أكاديمية'], 403);
+        }
+
+        $request->validate([
+            'subscription_id' => 'required|exists:academic_subscriptions,id',
+            'scheduled_at' => 'required|date|after:now',
+            'duration_minutes' => 'nullable|integer|min:30|max:120',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $subscription = AcademicSubscription::where('id', $request->subscription_id)
+                ->where('teacher_id', $user->academicTeacherProfile->id)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$subscription) {
+                return response()->json(['success' => false, 'message' => 'الاشتراك غير موجود أو غير مخول لك']);
+            }
+
+            $session = $this->academicSchedulingService->scheduleIndividualSession(
+                $subscription,
+                Carbon::parse($request->scheduled_at),
+                $request->duration_minutes,
+                $request->title,
+                $request->description
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم إنشاء الجلسة الأكاديمية بنجاح',
+                'session' => [
+                    'id' => $session->id,
+                    'title' => $session->title,
+                    'scheduled_at' => $session->scheduled_at->toISOString(),
+                    'duration_minutes' => $session->duration_minutes,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'خطأ في إنشاء الجلسة: ' . $e->getMessage()], 500);
+        }
     }
 }

@@ -23,33 +23,33 @@ return [
     */
     'routes' => [
         'custom' => env('CHATIFY_CUSTOM_ROUTES', false),
-        'prefix' => env('CHATIFY_ROUTES_PREFIX', 'chatify'),
+        'prefix' => env('CHATIFY_ROUTES_PREFIX', 'chat'),
         'middleware' => env('CHATIFY_ROUTES_MIDDLEWARE', ['web','auth']),
-        'namespace' => env('CHATIFY_ROUTES_NAMESPACE', 'Chatify\Http\Controllers'),
+        'namespace' => env('CHATIFY_ROUTES_NAMESPACE', 'App\Http\Controllers\vendor\Chatify'),
     ],
     'api_routes' => [
-        'prefix' => env('CHATIFY_API_ROUTES_PREFIX', 'chatify/api'),
-        'middleware' => env('CHATIFY_API_ROUTES_MIDDLEWARE', ['api']),
-        'namespace' => env('CHATIFY_API_ROUTES_NAMESPACE', 'Chatify\Http\Controllers\Api'),
+        'prefix' => env('CHATIFY_API_ROUTES_PREFIX', 'chat/api'),
+        'middleware' => env('CHATIFY_API_ROUTES_MIDDLEWARE', ['web','auth']),
+        'namespace' => env('CHATIFY_API_ROUTES_NAMESPACE', 'App\Http\Controllers\vendor\Chatify'),
     ],
 
     /*
     |-------------------------------------
-    | Pusher API credentials
+    | Laravel Reverb API credentials
     |-------------------------------------
     */
     'pusher' => [
         'debug' => env('APP_DEBUG', false),
-        'key' => env('PUSHER_APP_KEY'),
-        'secret' => env('PUSHER_APP_SECRET'),
-        'app_id' => env('PUSHER_APP_ID'),
+        'key' => env('REVERB_APP_KEY', env('PUSHER_APP_KEY', 'vil71wafgpp6do1miwn1')),
+        'secret' => env('REVERB_APP_SECRET', env('PUSHER_APP_SECRET', 'auto0ms5oev2876cfpvt')),
+        'app_id' => env('REVERB_APP_ID', env('PUSHER_APP_ID', 'itqan-platform')),
         'options' => [
-            'cluster' => env('PUSHER_APP_CLUSTER', 'mt1'),
-            'host' => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
-            'port' => env('PUSHER_PORT', 443),
-            'scheme' => env('PUSHER_SCHEME', 'https'),
-            'encrypted' => true,
-            'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
+            'cluster' => null,
+            'host' => env('REVERB_HOST', '127.0.0.1'),
+            'port' => env('REVERB_PORT', 8085),
+            'scheme' => env('REVERB_SCHEME', 'http'),
+            'encrypted' => false,
+            'useTLS' => false,
         ],
     ],
 

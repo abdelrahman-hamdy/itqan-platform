@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Services\AutoMeetingCreationService;
+use Illuminate\Console\Command;
 
 class CleanupExpiredMeetingsCommand extends Command
 {
@@ -33,7 +33,7 @@ class CleanupExpiredMeetingsCommand extends Command
     {
         $startTime = microtime(true);
         $this->info('🧹 Starting expired meetings cleanup process...');
-        $this->info('📅 Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('📅 Current time: '.now()->format('Y-m-d H:i:s'));
 
         try {
             $isDryRun = $this->option('dry-run');
@@ -45,7 +45,7 @@ class CleanupExpiredMeetingsCommand extends Command
 
             $results = [];
 
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 // Perform actual cleanup
                 $results = $this->autoMeetingService->cleanupExpiredMeetings();
             } else {
@@ -57,7 +57,7 @@ class CleanupExpiredMeetingsCommand extends Command
             $this->displayResults($results, $isVerbose);
 
             // Show statistics if not dry run
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 $this->displayStatistics();
             }
 
@@ -67,20 +67,22 @@ class CleanupExpiredMeetingsCommand extends Command
             // Determine exit code based on results
             if (isset($results['meetings_failed_to_end']) && $results['meetings_failed_to_end'] > 0) {
                 $this->warn('⚠️  Some meetings failed to end. Check logs for details.');
+
                 return self::INVALID;
             }
 
             $this->info('✅ Meeting cleanup process completed successfully');
+
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('💥 Fatal error during cleanup: ' . $e->getMessage());
-            
+            $this->error('💥 Fatal error during cleanup: '.$e->getMessage());
+
             if ($this->getOutput()->isVerbose()) {
                 $this->error('Stack trace:');
                 $this->error($e->getTraceAsString());
             }
-            
+
             return self::FAILURE;
         }
     }
@@ -93,12 +95,12 @@ class CleanupExpiredMeetingsCommand extends Command
         $this->info('📊 Cleanup Results:');
         $this->line("  • Sessions checked: {$results['sessions_checked']}");
         $this->line("  • Meetings ended: {$results['meetings_ended']}");
-        
+
         if ($results['meetings_failed_to_end'] > 0) {
             $this->error("  • Meetings failed to end: {$results['meetings_failed_to_end']}");
         }
 
-        if ($verbose && !empty($results['errors'])) {
+        if ($verbose && ! empty($results['errors'])) {
             $this->warn('  • Errors encountered:');
             foreach ($results['errors'] as $error) {
                 if (is_array($error) && isset($error['session_id'])) {
@@ -116,7 +118,7 @@ class CleanupExpiredMeetingsCommand extends Command
     private function displayStatistics(): void
     {
         $stats = $this->autoMeetingService->getStatistics();
-        
+
         $this->info('📈 System Statistics After Cleanup:');
         $this->line("  • Total auto-generated meetings: {$stats['total_auto_generated_meetings']}");
         $this->line("  • Active meetings: {$stats['active_meetings']}");
@@ -130,22 +132,22 @@ class CleanupExpiredMeetingsCommand extends Command
     private function simulateCleanup(): array
     {
         // Count sessions that would be cleaned up
-        $expiredSessions = \App\Models\QuranSession::whereNotNull('meeting_room_name')
-            ->where('status', ['scheduled', 'ongoing'])
+        $expiredSessions = \App\Models\QuranSession::whereNotNull('meeting_id')
+            ->whereIn('status', ['scheduled', 'ongoing'])
             ->whereNotNull('scheduled_at')
             ->with('academy')
             ->get()
             ->filter(function ($session) {
                 $videoSettings = \App\Models\VideoSettings::forAcademy($session->academy);
-                
-                if (!$videoSettings->auto_end_meetings) {
+
+                if (! $videoSettings->auto_end_meetings) {
                     return false;
                 }
-                
+
                 $scheduledEndTime = \Carbon\Carbon::parse($session->scheduled_at)
                     ->addMinutes($session->duration_minutes ?? 60);
                 $actualEndTime = $videoSettings->getMeetingEndTime($scheduledEndTime);
-                
+
                 return now()->gte($actualEndTime);
             });
 

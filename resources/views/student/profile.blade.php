@@ -132,7 +132,7 @@
               $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
               return [
                 'title' => $subscription->package->getDisplayName() ?? 'اشتراك مخصص',
-                'description' => 'مع ' . $subscription->quranTeacher->full_name . 
+                'description' => 'مع ' . ($subscription->quranTeacher->full_name ?? 'معلم القرآن') . 
                                  ($nextSession ? ' - ' . $nextSession->scheduled_at->format('l، d F H:i') : ''),
                 'icon' => 'ri-user-star-line',
                 'iconBgColor' => 'bg-purple-100',
@@ -207,50 +207,38 @@
         <!-- Academic Private Sessions -->
         <div id="academic-private-sessions">
           @include('components.cards.learning-section-card', [
-            'title' => 'جلسات خاصة مع المعلمين الأكاديميين',
+            'title' => 'دروس خاصة مع المعلمين الأكاديميين',
             'subtitle' => 'دروس فردية مع معلمي المواد الأكاديمية المؤهلين',
             'icon' => 'ri-user-3-line',
             'iconBgColor' => 'bg-orange-500',
             'hideDots' => true,
-            'items' => $academicPrivateSessions->count() > 0 ? $academicPrivateSessions->take(3)->map(function($session) {
+            'items' => $academicPrivateSessions->count() > 0 ? $academicPrivateSessions->take(3)->map(function($subscription) {
               return [
-                'title' => $session->subject->name ?? 'درس أكاديمي',
-                'description' => 'مع ' . ($session->teacher->user->name ?? 'معلم أكاديمي') . 
-                                 ($session->scheduled_date ? ' - ' . $session->scheduled_date->format('l، d F') : ''),
+                'title' => $subscription->subject_name ?? 'درس أكاديمي',
+                'description' => 'مع ' . ($subscription->academicTeacher->full_name ?? 'معلم أكاديمي') . 
+                                 ' - ' . ($subscription->grade_level_name ?? 'مرحلة دراسية') .
+                                 ' - ' . number_format($subscription->monthly_amount) . ' ' . $subscription->currency . ' شهرياً',
                 'icon' => 'ri-user-3-line',
                 'iconBgColor' => 'bg-orange-100',
                 'iconColor' => 'text-orange-600',
-                'progress' => $session->progress_percentage ?? 0,
-                'status' => $session->status ?? 'pending'
+                'progress' => $subscription->completion_rate ?? 0,
+                'status' => $subscription->status ?? 'active',
+                'link' => route('student.academic-private-lessons.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscription' => $subscription->id])
               ];
-            })->toArray() : [
-              [
-                'title' => 'الرياضيات المتقدمة',
-                'description' => 'دروس فردية في الرياضيات - متاحة للحجز',
-                'icon' => 'ri-user-3-line',
-                'iconBgColor' => 'bg-orange-100',
-                'iconColor' => 'text-orange-600',
-                'progress' => 0,
-                'status' => 'available'
-              ],
-              [
-                'title' => 'اللغة العربية',
-                'description' => 'دروس فردية في اللغة العربية - متاحة للحجز',
-                'icon' => 'ri-user-3-line',
-                'iconBgColor' => 'bg-orange-100',
-                'iconColor' => 'text-orange-600',
-                'progress' => 0,
-                'status' => 'available'
-              ]
-            ],
+            })->toArray() : [],
+            'emptyTitle' => 'لا توجد دروس خاصة بعد',
+            'emptyDescription' => 'ابدأ رحلتك التعليمية من خلال الاشتراك مع أحد المعلمين الأكاديميين المؤهلين',
+            'emptyActionText' => 'تصفح المعلمين الأكاديميين',
             'footer' => [
-              'text' => 'عرض جميع المعلمين',
-              'link' => route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain])
+              'text' => $academicPrivateSessions->count() > 0 ? 'عرض جميع الدروس' : 'تصفح المعلمين',
+              'link' => $academicPrivateSessions->count() > 0 ? 
+                route('student.academic-private-lessons', ['subdomain' => auth()->user()->academy->subdomain]) :
+                route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain])
             ],
-            'stats' => [
-              ['icon' => 'ri-user-3-line', 'value' => $stats['academicPrivateSessionsCount'] . ' جلسة نشطة'],
-              ['icon' => 'ri-calendar-line', 'value' => '0 جلسة مجدولة']
-            ]
+            'stats' => $academicPrivateSessions->count() > 0 ? [
+              ['icon' => 'ri-user-3-line', 'value' => $academicPrivateSessions->count() . ' اشتراك نشط'],
+              ['icon' => 'ri-calendar-line', 'value' => $academicPrivateSessions->sum('sessions_per_month') . ' جلسة شهرياً']
+            ] : []
           ])
         </div>
 
@@ -403,104 +391,157 @@
 
 
 
-      <!-- Upcoming Sessions -->
+      <!-- Quran Trial Requests Section -->
       <div class="mt-12">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">الجلسات القادمة</h2>
-          <a href="#" class="text-primary hover:text-secondary text-sm font-medium transition-colors">
-            عرض الجدول الكامل
+          <h2 class="text-2xl font-bold text-gray-900">طلبات الجلسات التجريبية للقرآن</h2>
+          <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
+             class="text-primary hover:text-secondary text-sm font-medium transition-colors">
+            عرض جميع المعلمين
             <i class="ri-arrow-left-s-line mr-1"></i>
           </a>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center space-x-3 space-x-reverse mb-4">
-              <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <i class="ri-book-mark-line text-green-600"></i>
+        @if($quranTrialRequests && $quranTrialRequests->count() > 0)
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($quranTrialRequests->take(6) as $trialRequest)
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300">
+                <div class="flex items-center space-x-3 space-x-reverse mb-4">
+                  @if($trialRequest->teacher)
+                    @include('components.teacher-avatar', [
+                      'teacher' => $trialRequest->teacher,
+                      'size' => 'sm',
+                      'showBadge' => false
+                    ])
+                  @else
+                    <div class="w-12 h-12 rounded-full border border-blue-200 overflow-hidden bg-blue-50">
+                      <div class="w-full h-full flex items-center justify-center text-blue-600 bg-blue-100">
+                        <i class="ri-user-star-line text-sm"></i>
+                      </div>
+                    </div>
+                  @endif
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900">
+                      @if($trialRequest->teacher)
+                        {{ $trialRequest->teacher->full_name ?? 
+                           ($trialRequest->teacher->first_name && $trialRequest->teacher->last_name ? 
+                            $trialRequest->teacher->first_name . ' ' . $trialRequest->teacher->last_name : null) ?? 
+                           $trialRequest->teacher->first_name ?? 
+                           $trialRequest->teacher->user?->name ?? 
+                           'معلم القرآن' }}
+                      @else
+                        معلم القرآن
+                      @endif
+                    </h3>
+                    <p class="text-sm text-gray-500">
+                      @if($trialRequest->status === 'pending')
+                        في انتظار الموافقة
+                      @elseif($trialRequest->status === 'scheduled')
+                        مجدولة
+                      @elseif($trialRequest->status === 'completed')
+                        مكتملة
+                      @else
+                        {{ $trialRequest->status }}
+                      @endif
+                    </p>
+                  </div>
+                  <div class="text-left">
+                    @if($trialRequest->status === 'pending')
+                      <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                        قيد المراجعة
+                      </span>
+                    @elseif($trialRequest->status === 'scheduled')
+                      <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                        مجدولة
+                      </span>
+                    @elseif($trialRequest->status === 'completed')
+                      <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                        مكتملة
+                      </span>
+                    @endif
+                  </div>
+                </div>
+                
+                <div class="space-y-2 mb-4">
+                  @if($trialRequest->preferred_time)
+                    <div class="flex items-center text-sm text-gray-600">
+                      <i class="ri-time-line ml-2"></i>
+                      <span>
+                        @php
+                          $preferredTime = $trialRequest->preferred_time;
+                          
+                          if ($preferredTime instanceof \Carbon\Carbon) {
+                            \Carbon\Carbon::setLocale('ar');
+                            echo $preferredTime->translatedFormat('l، d F Y - H:i');
+                          } elseif (is_string($preferredTime) && preg_match('/^\d{4}-\d{2}-\d{2}/', $preferredTime)) {
+                            try {
+                              $parsedTime = \Carbon\Carbon::parse($preferredTime);
+                              \Carbon\Carbon::setLocale('ar');
+                              echo $parsedTime->translatedFormat('l، d F Y - H:i');
+                            } catch (\Exception $e) {
+                              // Fallback to displaying as is if parsing fails
+                              echo $preferredTime;
+                            }
+                          } else {
+                            // Handle text preferences like "morning", "afternoon" etc.
+                            $translations = [
+                              'morning' => 'صباحاً',
+                              'afternoon' => 'بعد الظهر', 
+                              'evening' => 'مساءً',
+                              'night' => 'ليلاً'
+                            ];
+                            echo $translations[strtolower($preferredTime)] ?? $preferredTime;
+                          }
+                        @endphp
+                      </span>
+                    </div>
+                  @endif
+                  @if($trialRequest->notes)
+                    <div class="flex items-start text-sm text-gray-600">
+                      <i class="ri-file-text-line ml-2 mt-1"></i>
+                      <span class="line-clamp-2">{{ $trialRequest->notes }}</span>
+                    </div>
+                  @endif
+                  <div class="flex items-center text-sm text-gray-600">
+                    <i class="ri-calendar-line ml-2"></i>
+                    <span>تم الطلب: {{ $trialRequest->created_at->diffForHumans() }}</span>
+                  </div>
+                </div>
+                
+                @if($trialRequest->status === 'scheduled' && $trialRequest->scheduled_session)
+                  <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain, 'sessionId' => $trialRequest->scheduled_session->id]) }}"
+                     class="w-full inline-block text-center bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                    <i class="ri-video-line ml-1"></i>
+                    دخول الجلسة
+                  </a>
+                @elseif($trialRequest->status === 'pending')
+                  <button class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed" disabled>
+                    <i class="ri-time-line ml-1"></i>
+                    في انتظار الرد
+                  </button>
+                @endif
               </div>
-              <div>
-                <h3 class="font-semibold text-gray-900">دائرة الحفظ</h3>
-                <p class="text-sm text-gray-500">مع الأستاذ أحمد محمد</p>
-              </div>
-            </div>
-            <div class="space-y-2">
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-calendar-line ml-2"></i>
-                <span>غداً - الأحد</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-time-line ml-2"></i>
-                <span>4:00 مساءً - 5:30 مساءً</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-map-pin-line ml-2"></i>
-                <span>الغرفة الافتراضية</span>
-              </div>
-            </div>
-            <button class="w-full mt-4 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-              انضم للجلسة
-            </button>
+            @endforeach
           </div>
-
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center space-x-3 space-x-reverse mb-4">
-              <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i class="ri-calculator-line text-blue-600"></i>
+        @else
+          <!-- Empty State for Trial Requests -->
+          <div class="text-center py-12 bg-white rounded-xl border border-gray-200">
+            <div class="max-w-md mx-auto">
+              <div class="mb-4">
+                <i class="ri-calendar-todo-line text-4xl text-gray-400"></i>
               </div>
-              <div>
-                <h3 class="font-semibold text-gray-900">درس الرياضيات</h3>
-                <p class="text-sm text-gray-500">مع الأستاذة ليلى محمد</p>
-              </div>
+              <h3 class="text-lg font-bold text-gray-900 mb-2">لا توجد طلبات جلسات تجريبية</h3>
+              <p class="text-gray-600 mb-4">
+                احجز جلسة تجريبية مجانية مع أحد معلمي القرآن المؤهلين وابدأ رحلة التعلم.
+              </p>
+              <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
+                 class="inline-block bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="ri-add-circle-line ml-2"></i>
+                طلب جلسة تجريبية
+              </a>
             </div>
-            <div class="space-y-2">
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-calendar-line ml-2"></i>
-                <span>الثلاثاء</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-time-line ml-2"></i>
-                <span>3:00 مساءً - 4:00 مساءً</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-map-pin-line ml-2"></i>
-                <span>الغرفة الافتراضية</span>
-              </div>
-            </div>
-            <button class="w-full mt-4 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-              انضم للجلسة
-            </button>
           </div>
-
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center space-x-3 space-x-reverse mb-4">
-              <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i class="ri-user-star-line text-purple-600"></i>
-              </div>
-              <div>
-                <h3 class="font-semibold text-gray-900">درس خاص - القرآن</h3>
-                <p class="text-sm text-gray-500">مع الأستاذ محمد عبدالله</p>
-              </div>
-            </div>
-            <div class="space-y-2">
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-calendar-line ml-2"></i>
-                <span>الخميس</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-time-line ml-2"></i>
-                <span>6:00 مساءً - 7:00 مساءً</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="ri-map-pin-line ml-2"></i>
-                <span>الغرفة الافتراضية</span>
-              </div>
-            </div>
-            <button class="w-full mt-4 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-              انضم للجلسة
-            </button>
-          </div>
-        </div>
+        @endif
       </div>
 
     </div>
@@ -513,17 +554,4 @@
 
 </body>
 </html> 
-<!-- Calendar Link -->
-<div class="bg-white rounded-lg shadow p-6 mb-6">
-    <h3 class="text-lg font-medium text-gray-900 mb-4">التقويم والجلسات</h3>
-    <div class="flex space-x-4 space-x-reverse">
-        <a href="{{ route('student.calendar', ['subdomain' => request()->route('subdomain')]) }}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-            <svg class="h-5 w-5 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>
-            عرض التقويم
-        </a>
-        <p class="text-gray-600 flex items-center">عرض جلساتك ومواعيدك الدراسية</p>
-    </div>
-</div>
 

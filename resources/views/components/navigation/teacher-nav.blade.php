@@ -57,11 +57,19 @@
       <div class="flex items-center space-x-4 space-x-reverse">
         
         <!-- Dashboard Link -->
-        <a href="/teacher-panel" target="_blank"
-           class="hidden md:flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-          <i class="ri-apps-2-line ml-2"></i>
-          لوحة التحكم
-        </a>
+        @if(auth()->user()->isQuranTeacher())
+          <a href="/teacher-panel" target="_blank"
+             class="hidden md:flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+            <i class="ri-apps-2-line ml-2"></i>
+            لوحة التحكم
+          </a>
+        @elseif(auth()->user()->isAcademicTeacher())
+          <a href="/academic-teacher-panel" target="_blank"
+             class="hidden md:flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+            <i class="ri-apps-2-line ml-2"></i>
+            لوحة التحكم
+          </a>
+        @endif
         
         <!-- Notifications -->
         <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
@@ -72,12 +80,12 @@
         </button>
 
         <!-- Messages -->
-        <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+        <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors" aria-label="فتح الرسائل">
           <i class="ri-message-3-line text-xl"></i>
           <span class="absolute top-0 left-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full">
             1
           </span>
-        </button>
+        </a>
 
         <!-- User Dropdown -->
         <div class="relative" x-data="{ open: false }">

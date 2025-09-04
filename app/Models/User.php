@@ -402,7 +402,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         switch ($this->user_type) {
             case 'student':
                 // Get a random grade level from the user's academy
-                $gradeLevel = \App\Models\GradeLevel::where('academy_id', $this->academy_id)->inRandomOrder()->first();
+                $gradeLevel = \App\Models\AcademicGradeLevel::where('academy_id', $this->academy_id)->inRandomOrder()->first();
 
                 StudentProfile::create(array_merge($profileData, [
                     'grade_level_id' => $gradeLevel ? $gradeLevel->id : null,
@@ -638,7 +638,12 @@ class User extends Authenticatable implements FilamentUser, HasTenants
                 return in_array($this->user_type, ['admin', 'quran_teacher', 'academic_teacher', 'supervisor']);
 
             case 'teacher':
-                return $this->isTeacher();
+                // Only Quran teachers can access the teacher panel
+                return $this->user_type === 'quran_teacher';
+
+            case 'academic-teacher':
+                // Only academic teachers can access the academic teacher panel
+                return $this->user_type === 'academic_teacher';
 
             case 'supervisor':
                 return $this->isSupervisor();
@@ -655,7 +660,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     {
         // Only apply tenancy to panels that have tenancy configured
         // Admin panel should NOT use tenancy at all
-        if (! in_array($panel->getId(), ['academy', 'teacher', 'supervisor'])) {
+        if (! in_array($panel->getId(), ['academy', 'teacher', 'supervisor', 'academic-teacher'])) {
             return Academy::where('id', -1)->get(); // Empty collection for non-tenant panels
         }
 
@@ -682,5 +687,147 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
         // Regular users can only access their assigned academy
         return $this->academy_id === $tenant->id;
+    }
+
+    /**
+     * Chatify Integration Methods
+     */
+    
+    /**
+     * Get the user's display name for Chatify
+     */
+    public function getChatifyName(): string
+    {
+        // For students, use their student profile name
+        if ($this->isStudent() && $this->studentProfile) {
+            $firstName = $this->studentProfile->first_name ?? '';
+            $lastName = $this->studentProfile->last_name ?? '';
+            return trim($firstName . ' ' . $lastName) ?: $this->name;
+        }
+        
+        // For Quran teachers, use their profile name
+        if ($this->isQuranTeacher() && $this->quranTeacherProfile) {
+            return $this->quranTeacherProfile->full_name ?? $this->name;
+        }
+        
+        // For Academic teachers, use their profile name
+        if ($this->isAcademicTeacher() && $this->academicTeacherProfile) {
+            return $this->academicTeacherProfile->full_name ?? $this->name;
+        }
+        
+        // For parents, use their parent profile name
+        if ($this->isParent() && $this->parentProfile) {
+            $firstName = $this->parentProfile->first_name ?? '';
+            $lastName = $this->parentProfile->last_name ?? '';
+            return trim($firstName . ' ' . $lastName) ?: $this->name;
+        }
+        
+        // Default to full name or name field
+        if ($this->first_name || $this->last_name) {
+            return trim($this->first_name . ' ' . $this->last_name);
+        }
+        
+        return $this->name;
+    }
+    
+    /**
+     * Get the user's avatar URL for Chatify
+     */
+    public function getChatifyAvatar(): ?string
+    {
+        // Check if user has a direct avatar
+        if ($this->avatar) {
+            // If it's a full URL, return as is
+            if (filter_var($this->avatar, FILTER_VALIDATE_URL)) {
+                return $this->avatar;
+            }
+            // Otherwise, assume it's a path in storage
+            return asset('storage/' . $this->avatar);
+        }
+        
+        // For students, check their profile avatar
+        if ($this->isStudent() && $this->studentProfile && $this->studentProfile->avatar) {
+            return asset('storage/' . $this->studentProfile->avatar);
+        }
+        
+        // For Quran teachers, check their profile avatar
+        if ($this->isQuranTeacher() && $this->quranTeacherProfile && $this->quranTeacherProfile->avatar) {
+            return asset('storage/' . $this->quranTeacherProfile->avatar);
+        }
+        
+        // For Academic teachers, check their profile avatar
+        if ($this->isAcademicTeacher() && $this->academicTeacherProfile && $this->academicTeacherProfile->avatar) {
+            return asset('storage/' . $this->academicTeacherProfile->avatar);
+        }
+        
+        // For parents, check their profile avatar
+        if ($this->isParent() && $this->parentProfile && $this->parentProfile->avatar) {
+            return asset('storage/' . $this->parentProfile->avatar);
+        }
+        
+        // Return null to use Chatify's default avatar generation
+        return null;
+    }
+    
+    /**
+     * Get user info formatted for Chatify
+     */
+    public function getChatifyInfo(): array
+    {
+        return [
+            'name' => $this->getChatifyName(),
+            'avatar' => $this->getChatifyAvatar(),
+            'role' => $this->getUserTypeLabel(),
+            'academy' => $this->academy ? $this->academy->name : null,
+        ];
+    }
+    
+    /**
+     * Get user type label in Arabic
+     */
+    public function getUserTypeLabel(): string
+    {
+        $labels = [
+            'super_admin' => 'مدير النظام',
+            'admin' => 'مدير الأكاديمية',
+            'academy_admin' => 'مدير الأكاديمية',
+            'quran_teacher' => 'معلم قرآن',
+            'academic_teacher' => 'معلم أكاديمي',
+            'supervisor' => 'مشرف',
+            'student' => 'طالب',
+            'parent' => 'ولي أمر',
+        ];
+        
+        return $labels[$this->user_type] ?? $this->user_type;
+    }
+    
+    /**
+     * Chat Groups Relationships
+     */
+    
+    /**
+     * Get chat groups the user owns
+     */
+    public function ownedChatGroups(): HasMany
+    {
+        return $this->hasMany(ChatGroup::class, 'owner_id');
+    }
+    
+    /**
+     * Get chat groups the user is a member of
+     */
+    public function chatGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(ChatGroup::class, 'chat_group_members', 'user_id', 'group_id')
+                    ->withPivot(['role', 'can_send_messages', 'is_muted', 'joined_at', 'last_read_at', 'unread_count'])
+                    ->withTimestamps();
+    }
+    
+    /**
+     * Get chat group memberships
+     */
+    public function chatGroupMemberships(): HasMany
+    {
+        return $this->hasMany(ChatGroupMember::class, 'user_id');
     }
 }

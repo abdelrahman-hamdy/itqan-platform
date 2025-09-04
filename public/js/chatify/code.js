@@ -33,7 +33,6 @@ const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
 Pusher.logToConsole = chatify.pusher.debug;
 const pusher = new Pusher(chatify.pusher.key, {
     encrypted: chatify.pusher.options.encrypted,
-    cluster: chatify.pusher.options.cluster,
     wsHost: chatify.pusher.options.host,
     wsPort: chatify.pusher.options.port,
     wssPort: chatify.pusher.options.port,

@@ -35,11 +35,8 @@
                         </p>
                         <div class="flex items-center space-x-3 space-x-reverse mt-2">
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                {{ $circle->status === 'active' ? 'bg-green-100 text-green-800' : 
-                                   ($circle->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                {{ $circle->status === 'active' ? 'نشط' : 
-                                   ($circle->status === 'pending' ? 'في الانتظار' : 
-                                   ($circle->status === 'completed' ? 'مكتمل' : $circle->status)) }}
+                                {{ $circle->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                {{ $circle->status ? 'نشط' : 'غير نشط' }}
                             </span>
                             @if($circle->schedule_days_text)
                                 <span class="text-sm text-gray-500">{{ $circle->schedule_days_text }}</span>
@@ -65,7 +62,7 @@
         @if(!$isGroupCircle && $viewType === 'teacher' && $student)
             <!-- Student Info for Individual Circles -->
             <div class="flex items-center justify-between mb-6">
-                <a href="{{ route('teacher.students.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}" 
+                <a href="{{ route('teacher.students.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}" 
                    class="flex items-center space-x-4 space-x-reverse hover:bg-gray-50 p-3 rounded-lg transition-colors group flex-1">
                     <x-student-avatar :student="$student" size="lg" />
                     <div>
@@ -75,11 +72,8 @@
                         <p class="text-sm text-gray-500">{{ $circle->subscription->package->name ?? 'اشتراك مخصص' }}</p>
                         <div class="flex items-center space-x-2 space-x-reverse mt-1">
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                {{ $circle->status === 'active' ? 'bg-green-100 text-green-800' : 
-                                   ($circle->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                {{ $circle->status === 'active' ? 'نشط' : 
-                                   ($circle->status === 'pending' ? 'في الانتظار' : 
-                                   ($circle->status === 'completed' ? 'مكتمل' : $circle->status)) }}
+                                {{ $circle->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                {{ $circle->status ? 'نشط' : 'غير نشط' }}
                             </span>
                             @if($student->email)
                                 <span class="text-xs text-gray-400">{{ $student->email }}</span>
@@ -92,7 +86,7 @@
                     <div class="flex items-center space-x-2 space-x-reverse">
                         <!-- Schedule functionality removed - now handled in Filament dashboard -->
                         
-                        <a href="{{ route('teacher.individual-circles.progress', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
+                        <a href="{{ route('teacher.individual-circles.progress', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
                            class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
                             <i class="ri-line-chart-line ml-2"></i>
                             تقرير التقدم

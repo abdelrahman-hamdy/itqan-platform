@@ -79,10 +79,71 @@
         </div>
       </div>
 
+      @if($mySubscriptions->count() > 0)
+      <!-- My Subscribed Teachers -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">معلميني المشتركين</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @foreach($mySubscriptions as $subscription)
+          @php
+            $teacher = $subscription->academicTeacher;
+          @endphp
+          @if($teacher)
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <i class="ri-user-line text-xl text-primary"></i>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-gray-900">{{ $teacher->full_name ?? 'معلم أكاديمي' }}</h3>
+                  <p class="text-sm text-gray-600">{{ $subscription->subject_name ?? 'مادة دراسية' }}</p>
+                </div>
+              </div>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                @if($subscription->status === 'active') bg-green-100 text-green-800
+                @elseif($subscription->status === 'paused') bg-yellow-100 text-yellow-800
+                @else bg-gray-100 text-gray-800 @endif">
+                @if($subscription->status === 'active') نشط
+                @elseif($subscription->status === 'paused') متوقف
+                @else {{ $subscription->status }} @endif
+              </span>
+            </div>
+            
+            <div class="space-y-2">
+              <div class="flex items-center text-sm text-gray-600">
+                <i class="ri-book-line ml-2"></i>
+                <span>{{ $subscription->grade_level_name }}</span>
+              </div>
+              <div class="flex items-center text-sm text-gray-600">
+                <i class="ri-calendar-line ml-2"></i>
+                <span>{{ $subscription->sessions_per_month }} جلسة شهرياً</span>
+              </div>
+              <div class="flex items-center text-sm text-gray-600">
+                <i class="ri-money-dollar-circle-line ml-2"></i>
+                <span>{{ number_format($subscription->monthly_amount) }} {{ $subscription->currency }} شهرياً</span>
+              </div>
+            </div>
+
+            <!-- Single Action Button -->
+            <div class="mt-6">
+              <a href="{{ route('student.academic-private-lessons.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscription' => $subscription->id]) }}" 
+                 class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
+                <i class="ri-book-open-line ml-2"></i>
+                عرض الدرس الخاص
+              </a>
+            </div>
+          </div>
+          @endif
+          @endforeach
+        </div>
+      </div>
+      @endif
+
       @if($academicProgress->count() > 0)
       <!-- My Current Teachers -->
       <div class="mb-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">معلميني الحاليين</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">معلميني الحاليين (التقدم الأكاديمي)</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           @foreach($academicProgress->groupBy('teacher_id') as $teacherId => $progressItems)
           @php
@@ -93,11 +154,7 @@
           @endphp
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
             <div class="flex items-start justify-between mb-4">
-              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span class="text-green-600 font-semibold">
-                  {{ substr($teacher->first_name ?? 'أ', 0, 1) }}{{ substr($teacher->last_name ?? 'أ', 0, 1) }}
-                </span>
-              </div>
+              <x-teacher-avatar :teacher="$teacher" size="sm" class="flex-shrink-0" />
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 نشط
               </span>
@@ -164,11 +221,7 @@
           @foreach($academicTeachers as $teacher)
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
             <div class="flex items-start justify-between mb-4">
-              <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <span class="text-orange-600 font-semibold">
-                  {{ substr($teacher->user->first_name, 0, 1) }}{{ substr($teacher->user->last_name, 0, 1) }}
-                </span>
-              </div>
+              <x-teacher-avatar :teacher="$teacher" size="sm" class="flex-shrink-0" />
               <div class="flex items-center">
                 <i class="ri-star-fill text-yellow-400 text-sm"></i>
                 <span class="text-sm text-gray-600 mr-1">{{ number_format($teacher->average_rating ?? 4.8, 1) }}</span>
@@ -241,14 +294,12 @@
             </div>
             @endif
 
-            <div class="mt-6 flex space-x-2 space-x-reverse">
-              <button class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-                <i class="ri-calendar-check-line ml-1"></i>
-                حجز درس تجريبي
-              </button>
-              <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                <i class="ri-information-line"></i>
-              </button>
+            <div class="mt-6">
+              <a href="{{ route('public.academic-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) }}" 
+                 class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
+                <i class="ri-eye-line ml-2"></i>
+                عرض الملف الشخصي
+              </a>
             </div>
           </div>
           @endforeach

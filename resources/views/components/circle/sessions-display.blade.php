@@ -166,7 +166,7 @@
                                             {{ $session->duration_minutes ?? 60 }} دقيقة
                                         </span>
 
-                                        @if($session->lesson_objectives && count($session->lesson_objectives) > 0)
+                                        @if($session->lesson_objectives && is_array($session->lesson_objectives) && count($session->lesson_objectives) > 0)
                                             <span class="text-gray-500">
                                                 <i class="ri-target-line ml-1"></i>
                                                 {{ count($session->lesson_objectives) }} هدف
@@ -248,16 +248,16 @@
                         @endif
 
                         <!-- Lesson Objectives (for teacher view) -->
-                        @if($viewType === 'teacher' && $session->lesson_objectives && count($session->lesson_objectives) > 0)
+                        @if($viewType === 'teacher' && $session->lesson_objectives && is_array($session->lesson_objectives) && count($session->lesson_objectives) > 0)
                             <div class="mt-3 pt-3 border-t border-gray-100">
                                 <p class="text-xs text-gray-500 mb-1">أهداف الجلسة:</p>
                                 <div class="flex flex-wrap gap-1">
-                                    @foreach(array_slice($session->lesson_objectives, 0, 3) as $objective)
+                                    @foreach(array_slice($session->lesson_objectives ?? [], 0, 3) as $objective)
                                         <span class="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded">
                                             {{ $objective }}
                                         </span>
                                     @endforeach
-                                    @if(count($session->lesson_objectives) > 3)
+                                    @if(is_array($session->lesson_objectives) && count($session->lesson_objectives) > 3)
                                         <span class="text-xs text-gray-500">+{{ count($session->lesson_objectives) - 3 }} المزيد</span>
                                     @endif
                                 </div>

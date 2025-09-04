@@ -1,181 +1,217 @@
 @props([
     'sessions' => collect(),
-    'title' => 'إدارة الجلسات',
-    'viewType' => 'student', // 'student', 'teacher'
-    'showTabs' => true,
-    'emptyMessage' => 'لا توجد جلسات مسجلة بعد',
-    'circle' => null
+    'title' => '',
+    'viewType' => 'student', // student, teacher
+    'showTabs' => false,
+    'circle' => null,
+    'emptyMessage' => 'لا توجد جلسات متاحة'
 ])
 
 @php
-    use App\Enums\SessionStatus;
+    $now = now();
     
-    // Categorize sessions by status
-    $allSessions = $sessions->sortByDesc('scheduled_at');
+    // Helper function to get status value (handles both string and enum)
+    $getStatusValue = function($session) {
+        return is_object($session->status) ? $session->status->value : $session->status;
+    };
     
-    // Coming sessions: SCHEDULED, READY, ONGOING
-    $comingSessions = $sessions->filter(function($session) {
-        return in_array($session->status, [
-            SessionStatus::SCHEDULED,
-            SessionStatus::READY, 
-            SessionStatus::ONGOING
-        ]);
-    })->sortBy('scheduled_at');
-    
-    // Passed sessions: COMPLETED, CANCELLED, ABSENT
-    $passedSessions = $sessions->filter(function($session) {
-        return in_array($session->status, [
-            SessionStatus::COMPLETED,
-            SessionStatus::CANCELLED,
-            SessionStatus::ABSENT
-        ]);
-    })->sortByDesc('scheduled_at');
-    
-    // Get status display data for each session
-    function getEnhancedStatusData($session) {
-        $statusData = $session->getStatusDisplayData();
-        return $statusData;
-    }
+    $ongoingSessions = $sessions->filter(fn($session) => $getStatusValue($session) === 'ongoing');
+    $upcomingSessions = $sessions->filter(fn($session) => 
+        $session->scheduled_at > $now && 
+        in_array($getStatusValue($session), ['scheduled', 'ready'])
+    );
+    $unscheduledSessions = $sessions->filter(fn($session) => 
+        $getStatusValue($session) === 'unscheduled'
+    );
+    $pastSessions = $sessions->filter(fn($session) => 
+        $session->scheduled_at <= $now && 
+        in_array($getStatusValue($session), ['completed', 'absent'])
+    );
 @endphp
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200">
-    <!-- Header -->
-    <div class="flex items-center justify-between p-6 border-b border-gray-200">
-        <h3 class="text-xl font-bold text-gray-900">{{ $title }}</h3>
-        <div class="flex items-center gap-2 text-sm text-gray-500">
-            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
-                المجموع: {{ $allSessions->count() }}
-            </span>
-        </div>
-    </div>
-
-    <!-- Tabs (if enabled) -->
-    @if($showTabs)
-    <div class="border-b border-gray-200">
-        <nav class="flex gap-8 px-6" id="sessionTabs">
-            <button class="session-tab active py-4 px-1 border-b-2 border-blue-500 font-medium text-blue-600 text-sm"
-                    data-tab="all">
-                الكل ({{ $allSessions->count() }})
-            </button>
-            <button class="session-tab py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-sm"
-                    data-tab="coming">
-                القادمة ({{ $comingSessions->count() }})
-            </button>
-            <button class="session-tab py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-sm"
-                    data-tab="passed">
-                المنتهية ({{ $passedSessions->count() }})
-            </button>
-        </nav>
-    </div>
+<div class="sessions-list-container">
+    @if($title)
+        <h3 class="text-lg font-bold text-gray-900 mb-4">{{ $title }}</h3>
     @endif
 
-    <!-- Sessions Content -->
-    <div class="p-6">
-        <!-- All Sessions Tab -->
-        <div id="all-sessions" class="session-tab-content {{ $showTabs ? 'block' : 'block' }}">
-            @if($allSessions->count() > 0)
-                <div class="space-y-4">
-                    @foreach($allSessions as $session)
-                        @include('components.sessions.session-item', ['session' => $session, 'viewType' => $viewType])
-                    @endforeach
-                </div>
-            @else
-                @include('components.sessions.empty-state', ['message' => $emptyMessage])
-            @endif
+    @if($showTabs && ($ongoingSessions->count() > 0 || $upcomingSessions->count() > 0 || $unscheduledSessions->count() > 0 || $pastSessions->count() > 0))
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-8 space-x-reverse" aria-label="جلسات">
+                @if($ongoingSessions->count() > 0)
+                    <button type="button" 
+                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap border-orange-500 text-orange-600" 
+                            data-tab="ongoing">
+                        الجلسات الجارية
+                        <span class="ml-2 bg-orange-100 text-orange-600 py-0.5 px-2 rounded-full text-xs">{{ $ongoingSessions->count() }}</span>
+                    </button>
+                @endif
+                
+                @if($upcomingSessions->count() > 0)
+                    <button type="button" 
+                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ $ongoingSessions->count() === 0 ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}" 
+                            data-tab="upcoming">
+                        الجلسات القادمة
+                        <span class="ml-2 bg-blue-100 text-blue-600 py-0.5 px-2 rounded-full text-xs">{{ $upcomingSessions->count() }}</span>
+                    </button>
+                @endif
+                
+                @if($unscheduledSessions->count() > 0)
+                    <button type="button" 
+                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ ($ongoingSessions->count() === 0 && $upcomingSessions->count() === 0) ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}" 
+                            data-tab="unscheduled">
+                        جلسات غير مجدولة
+                        <span class="ml-2 bg-amber-100 text-amber-600 py-0.5 px-2 rounded-full text-xs">{{ $unscheduledSessions->count() }}</span>
+                    </button>
+                @endif
+                
+                @if($pastSessions->count() > 0)
+                    <button type="button" 
+                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ $ongoingSessions->count() === 0 && $upcomingSessions->count() === 0 && $unscheduledSessions->count() === 0 ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}" 
+                            data-tab="past">
+                        الجلسات السابقة
+                        <span class="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">{{ $pastSessions->count() }}</span>
+                    </button>
+                @endif
+            </nav>
         </div>
 
-        <!-- Coming Sessions Tab -->
-        @if($showTabs)
-        <div id="coming-sessions" class="session-tab-content hidden">
-            @if($comingSessions->count() > 0)
-                <div class="space-y-4">
-                    @foreach($comingSessions as $session)
-                        @include('components.sessions.session-item', ['session' => $session, 'viewType' => $viewType])
-                    @endforeach
-                </div>
-            @else
-                @include('components.sessions.empty-state', ['message' => 'لا توجد جلسات قادمة'])
-            @endif
-        </div>
-
-        <!-- Passed Sessions Tab -->
-        <div id="passed-sessions" class="session-tab-content hidden">
-            @if($passedSessions->count() > 0)
-                <div class="space-y-4">
-                    @foreach($passedSessions as $session)
-                        @include('components.sessions.session-item', ['session' => $session, 'viewType' => $viewType])
-                    @endforeach
-                </div>
-            @else
-                @include('components.sessions.empty-state', ['message' => 'لا توجد جلسات منتهية'])
-            @endif
-        </div>
+        <!-- Tab Contents -->
+        @if($ongoingSessions->count() > 0)
+            <div class="session-tab-content" data-tab-content="ongoing" style="{{ $ongoingSessions->count() > 0 ? '' : 'display: none;' }}">
+                <x-sessions.session-cards :sessions="$ongoingSessions" :view-type="$viewType" :circle="$circle" />
+            </div>
         @endif
-    </div>
+
+        @if($upcomingSessions->count() > 0)
+            <div class="session-tab-content" data-tab-content="upcoming" style="{{ $ongoingSessions->count() === 0 ? '' : 'display: none;' }}">
+                <x-sessions.session-cards :sessions="$upcomingSessions" :view-type="$viewType" :circle="$circle" />
+            </div>
+        @endif
+
+        @if($unscheduledSessions->count() > 0)
+            <div class="session-tab-content" data-tab-content="unscheduled" style="{{ ($ongoingSessions->count() === 0 && $upcomingSessions->count() === 0) ? '' : 'display: none;' }}">
+                <x-sessions.session-cards :sessions="$unscheduledSessions" :view-type="$viewType" :circle="$circle" />
+            </div>
+        @endif
+
+        @if($pastSessions->count() > 0)
+            <div class="session-tab-content" data-tab-content="past" style="{{ $ongoingSessions->count() === 0 && $upcomingSessions->count() === 0 && $unscheduledSessions->count() === 0 ? '' : 'display: none;' }}">
+                <x-sessions.session-cards :sessions="$pastSessions" :view-type="$viewType" :circle="$circle" />
+            </div>
+        @endif
+    @else
+        <!-- Simple list without tabs -->
+        @if($sessions->count() > 0)
+            <x-sessions.session-cards :sessions="$sessions" :view-type="$viewType" :circle="$circle" />
+        @else
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ri-calendar-line text-2xl text-gray-400"></i>
+                </div>
+                <h4 class="text-lg font-medium text-gray-900 mb-2">{{ $emptyMessage }}</h4>
+                @if($viewType === 'student' && $circle)
+                    <p class="text-gray-600">سيتم إضافة الجلسات قريباً من قبل المعلم</p>
+                @elseif($viewType === 'teacher' && $circle)
+                    <p class="text-gray-600">يمكنك إضافة جلسات جديدة من لوحة إدارة الحلقة</p>
+                @endif
+            </div>
+        @endif
+    @endif
 </div>
 
+<!-- Tab functionality script -->
 <script>
-// Tab functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const tabs = document.querySelectorAll('.session-tab');
-    const tabContents = document.querySelectorAll('.session-tab-content');
+    // Use the same unified approach as session-cards.blade.php
+    function initializeEnhancedSessionTabs(container = document) {
+        const tabs = container.querySelectorAll('.session-tab');
+        const tabContents = container.querySelectorAll('.session-tab-content');
+
+        // Only proceed if we have both tabs and content
+        if (!tabs.length || !tabContents.length) return;
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetTab = this.getAttribute('data-tab');
+                
+                // Find the container to scope the changes
+                const tabContainer = this.closest('.sessions-list-container') || container;
+                const scopedTabs = tabContainer.querySelectorAll('.session-tab');
+                const scopedContents = tabContainer.querySelectorAll('.session-tab-content');
+                
+                // Remove active classes from all tabs in this container
+                scopedTabs.forEach(t => {
+                    t.classList.remove('border-primary-500', 'text-primary-600', 'border-orange-500', 'text-orange-600', 'border-amber-500', 'text-amber-600');
+                    t.classList.add('border-transparent', 'text-gray-500');
+                });
+                
+                // Add active class to clicked tab
+                this.classList.remove('border-transparent', 'text-gray-500');
+                if (targetTab === 'ongoing') {
+                    this.classList.add('border-orange-500', 'text-orange-600');
+                } else if (targetTab === 'upcoming') {
+                    this.classList.add('border-primary-500', 'text-primary-600');
+                } else if (targetTab === 'unscheduled') {
+                    this.classList.add('border-amber-500', 'text-amber-600');
+                } else { // past
+                    this.classList.add('border-primary-500', 'text-primary-600');
+                }
+                
+                // Hide all tab contents in this container
+                scopedContents.forEach(content => {
+                    content.style.display = 'none';
+                    content.classList.add('hidden');
+                    content.classList.remove('block');
+                });
+                
+                // Show target tab content
+                const targetContent = tabContainer.querySelector(`[data-tab-content="${targetTab}"]`);
+                if (targetContent) {
+                    targetContent.style.display = 'block';
+                    targetContent.classList.remove('hidden');
+                    targetContent.classList.add('block');
+                }
+                
+                // Trigger custom event for other components to listen
+                tabContainer.dispatchEvent(new CustomEvent('enhancedSessionTabChanged', {
+                    detail: { targetTab, targetContent }
+                }));
+            });
+        });
+    }
+
+    // Initialize tabs immediately
+    initializeEnhancedSessionTabs();
     
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const targetTab = this.getAttribute('data-tab');
-            
-            // Remove active class from all tabs
-            tabs.forEach(t => {
-                t.classList.remove('active', 'border-blue-500', 'text-blue-600');
-                t.classList.add('border-transparent', 'text-gray-500');
-            });
-            
-            // Add active class to clicked tab
-            this.classList.add('active', 'border-blue-500', 'text-blue-600');
-            this.classList.remove('border-transparent', 'text-gray-500');
-            
-            // Hide all tab contents
-            tabContents.forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            // Show target tab content
-            const targetContent = document.getElementById(targetTab + '-sessions');
-            if (targetContent) {
-                targetContent.classList.remove('hidden');
-                targetContent.classList.add('block');
+    // Re-initialize when new content is loaded (for dynamic content like Livewire updates)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1 && (node.querySelector('.session-tab') || node.classList?.contains('session-tab'))) {
+                        initializeEnhancedSessionTabs(node);
+                    }
+                });
             }
         });
     });
-});
-
-// Session detail navigation
-function openSessionDetail(sessionId) {
-    const userType = '{{ $viewType }}';
     
-    @if(auth()->check())
-        if (userType === 'teacher') {
-            const sessionUrl = '{{ route("teacher.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
-            const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
-            window.location.href = finalUrl;
-        } else {
-            const sessionUrl = '{{ route("student.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
-            const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
-            window.location.href = finalUrl;
-        }
-    @else
-        console.error('User not authenticated');
-    @endif
-}
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Listen for Livewire updates and reinitialize tabs
+    if (typeof Livewire !== 'undefined') {
+        Livewire.hook('message.processed', (message, component) => {
+            // Small delay to ensure DOM is updated
+            setTimeout(() => {
+                initializeEnhancedSessionTabs();
+            }, 100);
+        });
+    }
+});
 </script>
-
-<style>
-.session-tab.active {
-    border-bottom: 2px solid #3B82F6 !important;
-    color: #3B82F6 !important;
-}
-
-.session-tab:hover {
-    color: #374151 !important;
-}
-</style>

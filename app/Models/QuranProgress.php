@@ -65,14 +65,14 @@ class QuranProgress extends Model
         'support_needed',
         'recommendations',
         'next_steps',
-        'teacher_notes',
+
         'parent_notes',
         'student_feedback',
         'assessment_date',
         'overall_rating',
         'progress_status',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
@@ -115,7 +115,7 @@ class QuranProgress extends Model
         'challenges_faced' => 'array',
         'support_needed' => 'array',
         'recommendations' => 'array',
-        'next_steps' => 'array'
+        'next_steps' => 'array',
     ];
 
     // Relationships
@@ -204,7 +204,7 @@ class QuranProgress extends Model
     {
         return $query->whereBetween('progress_date', [
             now()->startOfWeek(),
-            now()->endOfWeek()
+            now()->endOfWeek(),
         ]);
     }
 
@@ -212,21 +212,21 @@ class QuranProgress extends Model
     {
         return $query->whereBetween('progress_date', [
             now()->startOfMonth(),
-            now()->endOfMonth()
+            now()->endOfMonth(),
         ]);
     }
 
     public function scopeHighPerformance($query, $minRating = 8.0)
     {
         return $query->where('recitation_quality', '>=', $minRating)
-                    ->where('tajweed_accuracy', '>=', $minRating);
+            ->where('tajweed_accuracy', '>=', $minRating);
     }
 
     public function scopeNeedsImprovement($query, $maxRating = 6.0)
     {
-        return $query->where(function($q) use ($maxRating) {
+        return $query->where(function ($q) use ($maxRating) {
             $q->where('recitation_quality', '<=', $maxRating)
-              ->orWhere('tajweed_accuracy', '<=', $maxRating);
+                ->orWhere('tajweed_accuracy', '<=', $maxRating);
         });
     }
 
@@ -254,7 +254,7 @@ class QuranProgress extends Model
             'review' => 'مراجعة',
             'assessment' => 'تقييم',
             'test' => 'اختبار',
-            'milestone' => 'إنجاز مهم'
+            'milestone' => 'إنجاز مهم',
         ];
 
         return $types[$this->progress_type] ?? $this->progress_type;
@@ -268,7 +268,7 @@ class QuranProgress extends Model
             'behind' => 'متأخر عن الخطة',
             'needs_attention' => 'يحتاج اهتمام',
             'excellent' => 'ممتاز',
-            'struggling' => 'يواجه صعوبات'
+            'struggling' => 'يواجه صعوبات',
         ];
 
         return $statuses[$this->progress_status] ?? $this->progress_status;
@@ -282,7 +282,7 @@ class QuranProgress extends Model
             'proficient' => 'متقن',
             'advanced' => 'متقدم',
             'expert' => 'خبير',
-            'master' => 'متمكن'
+            'master' => 'متمكن',
         ];
 
         return $levels[$this->mastery_level] ?? $this->mastery_level;
@@ -295,7 +295,7 @@ class QuranProgress extends Model
             'easy' => 'سهل',
             'moderate' => 'متوسط',
             'challenging' => 'صعب',
-            'very_challenging' => 'صعب جداً'
+            'very_challenging' => 'صعب جداً',
         ];
 
         return $levels[$this->difficulty_level] ?? $this->difficulty_level;
@@ -308,7 +308,7 @@ class QuranProgress extends Model
             'slow' => 'بطيء',
             'normal' => 'طبيعي',
             'fast' => 'سريع',
-            'very_fast' => 'سريع جداً'
+            'very_fast' => 'سريع جداً',
         ];
 
         return $paces[$this->learning_pace] ?? $this->learning_pace;
@@ -326,30 +326,39 @@ class QuranProgress extends Model
 
     public function getProgressSummaryAttribute(): string
     {
-        if (!$this->current_surah || !$this->current_verse) {
+        if (! $this->current_surah || ! $this->current_verse) {
             return 'لم يتم تحديد التقدم';
         }
 
         $surahName = $this->current_surah_name;
         $versesCount = $this->verses_memorized ?? 0;
-        
+
         return "سورة {$surahName} - آية {$this->current_verse} ({$versesCount} آيات محفوظة)";
     }
 
     public function getPerformanceGradeAttribute(): string
     {
         $averageScore = ($this->recitation_quality + $this->tajweed_accuracy) / 2;
-        
-        if ($averageScore >= 9.0) return 'ممتاز';
-        if ($averageScore >= 8.0) return 'جيد جداً';
-        if ($averageScore >= 7.0) return 'جيد';
-        if ($averageScore >= 6.0) return 'مقبول';
+
+        if ($averageScore >= 9.0) {
+            return 'ممتاز';
+        }
+        if ($averageScore >= 8.0) {
+            return 'جيد جداً';
+        }
+        if ($averageScore >= 7.0) {
+            return 'جيد';
+        }
+        if ($averageScore >= 6.0) {
+            return 'مقبول';
+        }
+
         return 'يحتاج تحسين';
     }
 
     public function getWeeklyGoalProgressAttribute(): float
     {
-        if (!$this->weekly_goal) {
+        if (! $this->weekly_goal) {
             return 0;
         }
 
@@ -363,7 +372,7 @@ class QuranProgress extends Model
 
     public function getMonthlyGoalProgressAttribute(): float
     {
-        if (!$this->monthly_goal) {
+        if (! $this->monthly_goal) {
             return 0;
         }
 
@@ -378,44 +387,80 @@ class QuranProgress extends Model
     public function getConsistencyLevelAttribute(): string
     {
         $score = $this->consistency_score ?? 0;
-        
-        if ($score >= 9.0) return 'ممتاز';
-        if ($score >= 8.0) return 'جيد جداً';
-        if ($score >= 7.0) return 'جيد';
-        if ($score >= 6.0) return 'مقبول';
+
+        if ($score >= 9.0) {
+            return 'ممتاز';
+        }
+        if ($score >= 8.0) {
+            return 'جيد جداً';
+        }
+        if ($score >= 7.0) {
+            return 'جيد';
+        }
+        if ($score >= 6.0) {
+            return 'مقبول';
+        }
+
         return 'يحتاج تحسين';
     }
 
     public function getMotivationLevelTextAttribute(): string
     {
         $level = $this->motivation_level ?? 0;
-        
-        if ($level >= 9.0) return 'متحمس جداً';
-        if ($level >= 8.0) return 'متحمس';
-        if ($level >= 7.0) return 'جيد';
-        if ($level >= 6.0) return 'متوسط';
+
+        if ($level >= 9.0) {
+            return 'متحمس جداً';
+        }
+        if ($level >= 8.0) {
+            return 'متحمس';
+        }
+        if ($level >= 7.0) {
+            return 'جيد';
+        }
+        if ($level >= 6.0) {
+            return 'متوسط';
+        }
+
         return 'يحتاج تحفيز';
     }
 
     public function getStudyHabitQualityAttribute(): string
     {
         $dailyAverage = $this->average_daily_study ?? 0;
-        
-        if ($dailyAverage >= 2.0) return 'ممتاز';
-        if ($dailyAverage >= 1.5) return 'جيد جداً';
-        if ($dailyAverage >= 1.0) return 'جيد';
-        if ($dailyAverage >= 0.5) return 'مقبول';
+
+        if ($dailyAverage >= 2.0) {
+            return 'ممتاز';
+        }
+        if ($dailyAverage >= 1.5) {
+            return 'جيد جداً';
+        }
+        if ($dailyAverage >= 1.0) {
+            return 'جيد';
+        }
+        if ($dailyAverage >= 0.5) {
+            return 'مقبول';
+        }
+
         return 'يحتاج تحسين';
     }
 
     public function getRetentionQualityAttribute(): string
     {
         $rate = $this->retention_rate ?? 0;
-        
-        if ($rate >= 95) return 'ممتاز';
-        if ($rate >= 85) return 'جيد جداً';
-        if ($rate >= 75) return 'جيد';
-        if ($rate >= 65) return 'مقبول';
+
+        if ($rate >= 95) {
+            return 'ممتاز';
+        }
+        if ($rate >= 85) {
+            return 'جيد جداً';
+        }
+        if ($rate >= 75) {
+            return 'جيد';
+        }
+        if ($rate >= 65) {
+            return 'مقبول';
+        }
+
         return 'يحتاج تحسين';
     }
 
@@ -423,10 +468,10 @@ class QuranProgress extends Model
     public function updateProgress(array $progressData): self
     {
         $this->update($progressData);
-        
+
         // Recalculate totals and percentages
         $this->recalculateStats();
-        
+
         return $this;
     }
 
@@ -440,7 +485,7 @@ class QuranProgress extends Model
         $averageQuality = $studentProgress->avg('recitation_quality');
         $averageAccuracy = $studentProgress->avg('tajweed_accuracy');
         $totalSessions = $studentProgress->distinct('session_id')->count();
-        
+
         // Update subscription progress if available
         if ($this->subscription) {
             $this->subscription->updateProgress(
@@ -455,7 +500,7 @@ class QuranProgress extends Model
             'total_verses_memorized' => $totalVersesMemorized,
             'total_pages_memorized' => intval($totalVersesMemorized / 15), // Approximate verses per page
             'recitation_quality' => $averageQuality,
-            'tajweed_accuracy' => $averageAccuracy
+            'tajweed_accuracy' => $averageAccuracy,
         ]);
 
         return $this;
@@ -467,7 +512,7 @@ class QuranProgress extends Model
         $milestones[] = [
             'milestone' => $milestone,
             'achieved_at' => now(),
-            'details' => $details
+            'details' => $details,
         ];
 
         $this->update(['milestones_achieved' => $milestones]);
@@ -475,19 +520,19 @@ class QuranProgress extends Model
         return $this;
     }
 
-    public function setGoals(int $weeklyGoal = null, int $monthlyGoal = null): self
+    public function setGoals(?int $weeklyGoal = null, ?int $monthlyGoal = null): self
     {
         $updateData = [];
-        
+
         if ($weeklyGoal !== null) {
             $updateData['weekly_goal'] = $weeklyGoal;
         }
-        
+
         if ($monthlyGoal !== null) {
             $updateData['monthly_goal'] = $monthlyGoal;
         }
 
-        if (!empty($updateData)) {
+        if (! empty($updateData)) {
             $this->update($updateData);
         }
 
@@ -499,7 +544,7 @@ class QuranProgress extends Model
         $this->update([
             'study_hours_this_week' => $this->study_hours_this_week + $hours,
             'average_daily_study' => $this->calculateDailyAverage(),
-            'last_review_date' => now()
+            'last_review_date' => now(),
         ]);
 
         return $this;
@@ -515,7 +560,7 @@ class QuranProgress extends Model
             'retention' => $this->retention_quality,
             'areas_of_strength' => $this->strengths ?? [],
             'areas_for_improvement' => $this->improvement_areas ?? [],
-            'recommendations' => $this->generateRecommendations()
+            'recommendations' => $this->generateRecommendations(),
         ];
 
         return $assessment;
@@ -556,6 +601,7 @@ class QuranProgress extends Model
     private function calculateDailyAverage(): float
     {
         $daysInWeek = 7;
+
         return $this->study_hours_this_week / $daysInWeek;
     }
 
@@ -579,14 +625,15 @@ class QuranProgress extends Model
         return self::create(array_merge($data, [
             'progress_code' => self::generateProgressCode($data['academy_id']),
             'progress_date' => $data['progress_date'] ?? now(),
-            'certificate_eligible' => false
+            'certificate_eligible' => false,
         ]));
     }
 
     private static function generateProgressCode(int $academyId): string
     {
         $count = self::where('academy_id', $academyId)->count() + 1;
-        return 'QP-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+
+        return 'QP-'.$academyId.'-'.str_pad($count, 6, '0', STR_PAD_LEFT);
     }
 
     public static function getStudentSummary(int $studentId, int $academyId): array
@@ -596,7 +643,7 @@ class QuranProgress extends Model
             ->orderBy('progress_date', 'desc')
             ->first();
 
-        if (!$progress) {
+        if (! $progress) {
             return [
                 'total_verses' => 0,
                 'total_pages' => 0,
@@ -604,7 +651,7 @@ class QuranProgress extends Model
                 'current_surah' => null,
                 'memorization_percentage' => 0,
                 'performance_grade' => 'غير متوفر',
-                'last_update' => null
+                'last_update' => null,
             ];
         }
 
@@ -619,7 +666,7 @@ class QuranProgress extends Model
             'recitation_quality' => $progress->recitation_quality,
             'tajweed_accuracy' => $progress->tajweed_accuracy,
             'consistency_score' => $progress->consistency_score,
-            'last_update' => $progress->progress_date
+            'last_update' => $progress->progress_date,
         ];
     }
 
@@ -649,7 +696,7 @@ class QuranProgress extends Model
             'verses_trend' => [],
             'quality_trend' => [],
             'accuracy_trend' => [],
-            'consistency_trend' => []
+            'consistency_trend' => [],
         ];
 
         foreach ($progressRecords as $progress) {
@@ -662,4 +709,4 @@ class QuranProgress extends Model
 
         return $trends;
     }
-} 
+}

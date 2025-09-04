@@ -2,12 +2,14 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Enums\WeekDays;
 use App\Filament\Teacher\Resources\QuranCircleResource\Pages;
 use App\Models\QuranCircle;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -22,7 +24,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Filament\Forms\Components\TagsInput;
 
 class QuranCircleResource extends Resource
 {
@@ -50,7 +51,7 @@ class QuranCircleResource extends Resource
         }
 
         return parent::getEloquentQuery()
-            ->where('quran_teacher_id', $user->quranTeacherProfile->id)
+            ->where('quran_teacher_id', $user->id)
             ->where('academy_id', $user->academy_id);
     }
 
@@ -169,6 +170,14 @@ class QuranCircleResource extends Resource
                                     ->required(),
                             ]),
 
+                        Select::make('schedule_days')
+                            ->label('أيام الانعقاد')
+                            ->options(WeekDays::options())
+                            ->multiple()
+                            ->native(false)
+                            ->helperText('أيام انعقاد الحلقة - للمعلومات العامة')
+                            ->columnSpanFull(),
+
                         Select::make('schedule_time')
                             ->label('الساعة')
                             ->options([
@@ -198,22 +207,9 @@ class QuranCircleResource extends Resource
                                 '23:00' => '11:00 م',
                             ])
                             ->native(false)
-                            ->required()
+                            ->searchable()
                             ->helperText('تحديد الساعة المحددة لبداية الجلسات'),
 
-                        Select::make('schedule_days')
-                            ->label('أيام الانعقاد')
-                            ->options([
-                                'sunday' => 'الأحد',
-                                'monday' => 'الاثنين',
-                                'tuesday' => 'الثلاثاء',
-                                'wednesday' => 'الأربعاء',
-                                'thursday' => 'الخميس',
-                                'friday' => 'الجمعة',
-                                'saturday' => 'السبت',
-                            ])
-                            ->multiple()
-                            ->required(),
                     ]),
 
                 Section::make('إعدادات الاجتماعات')
@@ -379,20 +375,11 @@ class QuranCircleResource extends Resource
                 TextColumn::make('schedule_days')
                     ->label('أيام الانعقاد')
                     ->formatStateUsing(function ($state) {
-                        if (! is_array($state)) {
-                            return '';
+                        if (! is_array($state) || empty($state)) {
+                            return 'غير محدد';
                         }
-                        $days = [
-                            'sunday' => 'أحد',
-                            'monday' => 'اثنين',
-                            'tuesday' => 'ثلاثاء',
-                            'wednesday' => 'أربعاء',
-                            'thursday' => 'خميس',
-                            'friday' => 'جمعة',
-                            'saturday' => 'سبت',
-                        ];
 
-                        return implode(', ', array_map(fn ($day) => $days[$day] ?? $day, $state));
+                        return WeekDays::getDisplayNames($state);
                     }),
 
                 BadgeColumn::make('status')
@@ -471,7 +458,7 @@ class QuranCircleResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            \App\Filament\Teacher\Resources\QuranCircleResource\RelationManagers\SessionsRelationManager::class,
         ];
     }
 
@@ -483,5 +470,10 @@ class QuranCircleResource extends Resource
             'view' => Pages\ViewQuranCircle::route('/{record}'),
             'edit' => Pages\EditQuranCircle::route('/{record}/edit'),
         ];
+    }
+
+    public static function getBreadcrumb(): string
+    {
+        return static::$pluralModelLabel ?? 'حلقات القرآن';
     }
 }

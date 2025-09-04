@@ -166,6 +166,23 @@
           </a>
         </div>
       </div>
+
+      <!-- Communication -->
+      <div class="mb-6">
+        <h4 class="text-xs font-medium text-gray-400 mb-3">التواصل</h4>
+        <div class="space-y-1">
+          <a href="{{ url('/chat') }}" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->is('chat*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-message-3-line ml-3"></i>
+            الرسائل والمحادثات
+          </a>
+          <a href="#" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">
+            <i class="ri-customer-service-2-line ml-3"></i>
+            الدعم الفني
+          </a>
+        </div>
+      </div>
     </div>
   </nav>
 

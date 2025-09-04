@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\AcademicSession;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class MeetingAttendance extends Model
@@ -48,11 +49,33 @@ class MeetingAttendance extends Model
     ];
 
     /**
-     * Relationship with QuranSession
+     * Polymorphic relationship with session (QuranSession or AcademicSession)
      */
     public function session(): BelongsTo
     {
+        // Check session_type to determine which model to use
+        if ($this->session_type === 'academic') {
+            return $this->belongsTo(AcademicSession::class, 'session_id');
+        }
+        
+        // Default to QuranSession for backwards compatibility
         return $this->belongsTo(QuranSession::class, 'session_id');
+    }
+
+    /**
+     * Specifically get QuranSession
+     */
+    public function quranSession(): BelongsTo
+    {
+        return $this->belongsTo(QuranSession::class, 'session_id');
+    }
+
+    /**
+     * Specifically get AcademicSession
+     */
+    public function academicSession(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSession::class, 'session_id');
     }
 
     /**
@@ -70,16 +93,18 @@ class MeetingAttendance extends Model
     {
         $now = now();
         $cycles = $this->join_leave_cycles ?? [];
-        
+
         // Check if user is already in the meeting (has joined but not left)
         $lastCycle = end($cycles);
-        if ($lastCycle && isset($lastCycle['joined_at']) && !isset($lastCycle['left_at'])) {
-            Log::warning('User tried to join meeting but already in meeting', [
+        if ($lastCycle && isset($lastCycle['joined_at']) && ! isset($lastCycle['left_at'])) {
+            Log::info('User already in meeting, updating join status', [
                 'session_id' => $this->session_id,
                 'user_id' => $this->user_id,
                 'last_cycle' => $lastCycle,
             ]);
-            return false;
+
+            // Return true since user is already in meeting (this is success)
+            return true;
         }
 
         // Add new join event
@@ -99,6 +124,7 @@ class MeetingAttendance extends Model
             'user_id' => $this->user_id,
             'join_time' => $now,
             'join_count' => $this->join_count,
+            'is_currently_in_meeting' => $this->isCurrentlyInMeeting(),
         ]);
 
         return true;
@@ -111,11 +137,11 @@ class MeetingAttendance extends Model
     {
         $now = now();
         $cycles = $this->join_leave_cycles ?? [];
-        
+
         // Find the last open cycle (joined but not left)
         $lastCycleIndex = null;
         for ($i = count($cycles) - 1; $i >= 0; $i--) {
-            if (isset($cycles[$i]['joined_at']) && !isset($cycles[$i]['left_at'])) {
+            if (isset($cycles[$i]['joined_at']) && ! isset($cycles[$i]['left_at'])) {
                 $lastCycleIndex = $i;
                 break;
             }
@@ -126,12 +152,13 @@ class MeetingAttendance extends Model
                 'session_id' => $this->session_id,
                 'user_id' => $this->user_id,
             ]);
+
             return false;
         }
 
         // Update the last cycle with leave time
         $cycles[$lastCycleIndex]['left_at'] = $now->toISOString();
-        
+
         // Calculate duration for this cycle
         $joinTime = Carbon::parse($cycles[$lastCycleIndex]['joined_at']);
         $cycleDurationMinutes = $joinTime->diffInMinutes($now);
@@ -161,7 +188,7 @@ class MeetingAttendance extends Model
     private function calculateTotalDuration(array $cycles): int
     {
         $totalMinutes = 0;
-        
+
         foreach ($cycles as $cycle) {
             if (isset($cycle['joined_at']) && isset($cycle['left_at'])) {
                 $joinTime = Carbon::parse($cycle['joined_at']);
@@ -169,7 +196,7 @@ class MeetingAttendance extends Model
                 $totalMinutes += $joinTime->diffInMinutes($leaveTime);
             }
         }
-        
+
         return $totalMinutes;
     }
 
@@ -183,16 +210,16 @@ class MeetingAttendance extends Model
         }
 
         $session = $this->session;
-        if (!$session) {
+        if (! $session) {
             return false;
         }
 
         // Get circle configuration for this session
-        $circle = $session->session_type === 'individual' 
-            ? $session->individualCircle 
+        $circle = $session->session_type === 'individual'
+            ? $session->individualCircle
             : $session->circle;
 
-        if (!$circle) {
+        if (! $circle) {
             return false;
         }
 
@@ -202,14 +229,14 @@ class MeetingAttendance extends Model
 
         // Calculate attendance status
         $attendanceStatus = $this->determineAttendanceStatus(
-            $sessionStartTime, 
-            $sessionDuration, 
+            $sessionStartTime,
+            $sessionDuration,
             $graceMinutes
         );
 
         // Calculate attendance percentage
-        $attendancePercentage = $sessionDuration > 0 
-            ? ($this->total_duration_minutes / $sessionDuration) * 100 
+        $attendancePercentage = $sessionDuration > 0
+            ? ($this->total_duration_minutes / $sessionDuration) * 100
             : 0;
 
         $this->update([
@@ -238,17 +265,17 @@ class MeetingAttendance extends Model
      * Determine attendance status based on join time and duration
      */
     private function determineAttendanceStatus(
-        Carbon $sessionStartTime, 
-        int $sessionDuration, 
+        Carbon $sessionStartTime,
+        int $sessionDuration,
         int $graceMinutes
     ): string {
         // If never joined, definitely absent
-        if (!$this->first_join_time) {
+        if (! $this->first_join_time) {
             return 'absent';
         }
 
-        $attendancePercentage = $sessionDuration > 0 
-            ? ($this->total_duration_minutes / $sessionDuration) * 100 
+        $attendancePercentage = $sessionDuration > 0
+            ? ($this->total_duration_minutes / $sessionDuration) * 100
             : 0;
 
         // Determine status based on attendance percentage
@@ -272,8 +299,8 @@ class MeetingAttendance extends Model
     {
         $cycles = $this->join_leave_cycles ?? [];
         $lastCycle = end($cycles);
-        
-        return $lastCycle && isset($lastCycle['joined_at']) && !isset($lastCycle['left_at']);
+
+        return $lastCycle && isset($lastCycle['joined_at']) && ! isset($lastCycle['left_at']);
     }
 
     /**
@@ -281,20 +308,20 @@ class MeetingAttendance extends Model
      */
     public function getCurrentSessionDuration(): int
     {
-        if (!$this->isCurrentlyInMeeting()) {
+        if (! $this->isCurrentlyInMeeting()) {
             return $this->total_duration_minutes;
         }
 
         $cycles = $this->join_leave_cycles ?? [];
         $lastCycle = end($cycles);
-        
-        if (!$lastCycle || !isset($lastCycle['joined_at'])) {
+
+        if (! $lastCycle || ! isset($lastCycle['joined_at'])) {
             return $this->total_duration_minutes;
         }
 
         $joinTime = Carbon::parse($lastCycle['joined_at']);
         $currentDuration = $joinTime->diffInMinutes(now());
-        
+
         return $this->total_duration_minutes + $currentDuration;
     }
 
@@ -342,7 +369,7 @@ class MeetingAttendance extends Model
     }
 
     /**
-     * Static method to find or create meeting attendance
+     * Static method to find or create meeting attendance (QuranSession - backwards compatibility)
      */
     public static function findOrCreateForUser(QuranSession $session, User $user): self
     {
@@ -352,6 +379,35 @@ class MeetingAttendance extends Model
         ], [
             'user_type' => $user->user_type === 'quran_teacher' ? 'teacher' : 'student',
             'session_type' => $session->session_type ?? 'individual',
+            'join_leave_cycles' => [],
+            'join_count' => 0,
+            'leave_count' => 0,
+            'total_duration_minutes' => 0,
+            'attendance_status' => 'absent',
+            'attendance_percentage' => 0,
+            'is_calculated' => false,
+        ]);
+    }
+
+    /**
+     * Static method to find or create meeting attendance (Polymorphic version)
+     */
+    public static function findOrCreateForUserPolymorphic($session, User $user, string $sessionType): self
+    {
+        $userType = 'student'; // Default
+        
+        if ($sessionType === 'academic') {
+            $userType = $user->user_type === 'academic_teacher' ? 'teacher' : 'student';
+        } else {
+            $userType = $user->user_type === 'quran_teacher' ? 'teacher' : 'student';
+        }
+
+        return static::firstOrCreate([
+            'session_id' => $session->id,
+            'user_id' => $user->id,
+            'session_type' => $sessionType,
+        ], [
+            'user_type' => $userType,
             'join_leave_cycles' => [],
             'join_count' => 0,
             'leave_count' => 0,

@@ -37,15 +37,16 @@ class LiveKitController extends Controller
                 ], 500);
             }
 
-            // Create participant identity with user ID for uniqueness
-            $identity = auth()->id().'_'.str_replace(' ', '_', $participantName);
+            // Create participant identity with user ID for uniqueness (consistent with other token generation)
+            $user = auth()->user();
+            $identity = $user->id.'_'.\Illuminate\Support\Str::slug($user->first_name.'_'.$user->last_name);
 
             // Create access token options with metadata
             $metadata = json_encode([
                 'userType' => $userType,
                 'displayName' => $participantName,
                 'role' => $userType === 'quran_teacher' ? 'teacher' : 'student',
-                'userId' => auth()->id(),
+                'userId' => $user->id,
             ]);
 
             $options = new AccessTokenOptions([

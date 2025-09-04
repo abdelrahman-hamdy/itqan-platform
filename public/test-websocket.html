@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Connection Test</title>
+    <!-- Socket.IO for WebSocket connection -->
+    <script src="/js/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.connecting {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+        }
+        .log-entry.success {
+            border-color: #28a745;
+        }
+        .log-entry.error {
+            border-color: #dc3545;
+        }
+        .log-entry.warning {
+            border-color: #ffc107;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 اختبار اتصال WebSocket</h1>
+        
+        <div id="status" class="status connecting">
+            جاري محاولة الاتصال...
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="testConnection()">اختبار الاتصال</button>
+            <button onclick="subscribeToChannel()">الاشتراك في القناة</button>
+            <button onclick="clearLog()">مسح السجل</button>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        let echo = null;
+        let channel = null;
+        
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString('ar-EG');
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateStatus(status, message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = message;
+        }
+        
+        function testConnection() {
+            addLog('🚀 بدء اختبار الاتصال بـ Laravel Echo Server...', 'info');
+            
+            // Test direct Socket.IO connection
+            addLog('🔄 محاولة الاتصال المباشر عبر Socket.IO...', 'info');
+            
+            if (window.socket) {
+                window.socket.disconnect();
+            }
+            
+            window.socket = io('http://127.0.0.1:6001', {
+                transports: ['websocket'],
+                upgrade: false,
+                forceNew: true
+            });
+            
+            window.socket.on('connect', () => {
+                updateStatus('connected', '✅ متصل بنجاح!');
+                addLog('✅ تم الاتصال بـ Socket.IO بنجاح!', 'success');
+                addLog(`🆔 Socket ID: ${window.socket.id}`, 'info');
+            });
+            
+            window.socket.on('disconnect', () => {
+                updateStatus('error', '❌ غير متصل');
+                addLog('❌ تم قطع الاتصال', 'warning');
+            });
+            
+            window.socket.on('connect_error', (error) => {
+                addLog(`❌ خطأ في الاتصال: ${error.message}`, 'error');
+                updateStatus('error', '❌ خطأ في الاتصال');
+            });
+            
+            window.socket.on('error', (error) => {
+                addLog(`❌ خطأ Socket.IO: ${error}`, 'error');
+            });
+        }
+        
+        function subscribeToChannel() {
+            if (!window.socket || !window.socket.connected) {
+                addLog('⚠️ يجب الاتصال أولاً قبل الاشتراك في القناة', 'warning');
+                return;
+            }
+            
+            const userId = prompt('أدخل معرف المستخدم (User ID):', '1');
+            if (!userId) return;
+            
+            addLog(`📡 محاولة الاشتراك في القناة: test-channel`, 'info');
+            
+            // Join a test room
+            window.socket.emit('join-room', 'test-channel');
+            
+            // Listen for test events
+            window.socket.on('test-event', (data) => {
+                addLog(`📨 حدث اختبار: ${JSON.stringify(data)}`, 'success');
+            });
+            
+            addLog(`✅ تم الاشتراك في القناة: test-channel`, 'success');
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            addLog('🧹 تم مسح السجل', 'info');
+        }
+        
+        // Auto-start test on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            addLog('📋 صفحة اختبار WebSocket جاهزة', 'info');
+            addLog('👈 اضغط على "اختبار الاتصال" للبدء', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentProfileResource\Pages;
 use App\Models\StudentProfile;
-use App\Models\GradeLevel;
+use App\Models\AcademicGradeLevel;
 use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 use Filament\Forms;

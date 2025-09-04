@@ -475,7 +475,7 @@ class LiveKitTracks {
         if (isLocal) {
             const stopButton = document.createElement('button');
             stopButton.className = 'bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors pointer-events-auto';
-            stopButton.innerHTML = '<i class="fas fa-stop"></i>';
+            stopButton.innerHTML = '<i class="ri-stop-circle-line text-lg"></i>';
             stopButton.title = 'إيقاف مشاركة الشاشة';
             stopButton.onclick = () => {
                 // Trigger screen share toggle through controls

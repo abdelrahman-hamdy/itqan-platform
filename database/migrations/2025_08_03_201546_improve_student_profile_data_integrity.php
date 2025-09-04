@@ -17,11 +17,11 @@ return new class extends Migration
             UPDATE student_profiles 
             SET grade_level_id = (
                 SELECT gl.id 
-                FROM grade_levels gl 
+                FROM academic_grade_levels gl 
                 INNER JOIN users u ON u.academy_id = gl.academy_id 
                 WHERE u.id = student_profiles.user_id 
                 AND gl.is_active = 1 
-                ORDER BY gl.level ASC 
+                ORDER BY gl.name ASC 
                 LIMIT 1
             ) 
             WHERE grade_level_id IS NULL 
@@ -40,7 +40,7 @@ return new class extends Migration
         // Create a trigger to prevent deletion of grade levels with associated students
         DB::unprepared('
             CREATE TRIGGER prevent_grade_level_deletion 
-            BEFORE DELETE ON grade_levels 
+            BEFORE DELETE ON academic_grade_levels 
             FOR EACH ROW 
             BEGIN 
                 IF (SELECT COUNT(*) FROM student_profiles WHERE grade_level_id = OLD.id) > 0 THEN 

@@ -21,6 +21,17 @@ class ResolveTenantFromSubdomain
         $uri = $request->getRequestUri();
         $method = $request->method();
 
+        // AGGRESSIVE DEBUG: Log academic subscription requests
+        if (str_contains($path, 'academic-packages') && str_contains($path, 'subscribe')) {
+            \Log::error('ACADEMIC SUBSCRIPTION REQUEST DETECTED IN MIDDLEWARE', [
+                'path' => $path,
+                'uri' => $uri,
+                'method' => $method,
+                'all_data' => $request->all(),
+                'headers' => $request->headers->all(),
+            ]);
+        }
+
         // Log for debugging
         if (str_contains($path, 'livewire') || str_contains($uri, 'livewire')) {
             \Log::info('Livewire request detected', [

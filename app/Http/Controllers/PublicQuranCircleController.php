@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\QuranCircle;
 use App\Models\Academy;
+use App\Models\QuranCircle;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,14 +19,14 @@ class PublicQuranCircleController extends Controller
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
         // Get active circles that are open for enrollment
         $circles = QuranCircle::where('academy_id', $academy->id)
-            ->where('status', 'active')
+            ->where('status', true)
             ->where('enrollment_status', 'open')
             ->with(['academy', 'quranTeacher.user'])
             ->withCount(['students', 'sessions'])
@@ -42,19 +42,19 @@ class PublicQuranCircleController extends Controller
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
         // Find the circle by ID within the academy
         $circleModel = QuranCircle::where('id', $circle)
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
+            ->where('status', true)
             ->with(['academy', 'quranTeacher.user', 'students', 'schedule'])
             ->first();
 
-        if (!$circleModel) {
+        if (! $circleModel) {
             abort(404, 'Circle not found');
         }
 
@@ -70,14 +70,14 @@ class PublicQuranCircleController extends Controller
         $userRole = 'guest';
         $isEnrolled = false;
         $isTeacher = false;
-        
+
         if (Auth::check()) {
             $user = Auth::user();
-            
+
             if ($user->user_type === 'student') {
                 $userRole = 'student';
                 $isEnrolled = $circleModel->students()->where('user_id', Auth::id())->exists();
-            } elseif ($user->user_type === 'quran_teacher' && $user->quranTeacherProfile && $circleModel->quran_teacher_id === $user->quranTeacherProfile->id) {
+            } elseif ($user->user_type === 'quran_teacher' && $user->quranTeacherProfile && $circleModel->quran_teacher_id === $user->id) {
                 $userRole = 'teacher';
                 $isTeacher = true;
             }
@@ -92,7 +92,7 @@ class PublicQuranCircleController extends Controller
                 ->latest()
                 ->limit(5)
                 ->get();
-                
+
             $teacherData['upcomingSessions'] = $circleModel->sessions()
                 ->with('student')
                 ->where('scheduled_at', '>', now())
@@ -105,8 +105,8 @@ class PublicQuranCircleController extends Controller
         $viewName = $userRole === 'teacher' ? 'teacher.group-circles.show' : 'public.quran-circles.show';
 
         return view($viewName, compact(
-            'academy', 
-            'stats', 
+            'academy',
+            'stats',
             'isEnrolled',
             'isTeacher',
             'userRole',
@@ -120,24 +120,24 @@ class PublicQuranCircleController extends Controller
     public function showEnrollment(Request $request, $subdomain, $circle)
     {
         // Check if user is authenticated and is a student
-        if (!Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== 'student') {
             return redirect()->route('login', ['subdomain' => $subdomain])
                 ->with('error', 'يجب تسجيل الدخول كطالب للانضمام للحلقة');
         }
 
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
         $circleModel = QuranCircle::where('id', $circle)
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
+            ->where('status', true)
             ->where('enrollment_status', 'open')
             ->first();
 
-        if (!$circleModel) {
+        if (! $circleModel) {
             abort(404, 'Circle not found or not available for enrollment');
         }
 
@@ -162,24 +162,24 @@ class PublicQuranCircleController extends Controller
     public function submitEnrollment(Request $request, $subdomain, $circle)
     {
         // Check if user is authenticated and is a student
-        if (!Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== 'student') {
             return redirect()->route('login', ['subdomain' => $subdomain])
                 ->with('error', 'يجب تسجيل الدخول كطالب للانضمام للحلقة');
         }
 
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
         $circleModel = QuranCircle::where('id', $circle)
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
+            ->where('status', true)
             ->where('enrollment_status', 'open')
             ->first();
 
-        if (!$circleModel) {
+        if (! $circleModel) {
             abort(404, 'Circle not found or not available for enrollment');
         }
 
@@ -189,7 +189,7 @@ class PublicQuranCircleController extends Controller
         Log::info('Circle enrollment form submitted', [
             'user_id' => $user->id,
             'circle_id' => $circle,
-            'form_data' => $request->all()
+            'form_data' => $request->all(),
         ]);
 
         // Check if student is already enrolled in this circle
@@ -225,15 +225,15 @@ class PublicQuranCircleController extends Controller
         try {
             // Get student profile for data
             $studentProfile = $user->studentProfile;
-            
+
             // Enroll the student in the circle
             $circleModel->enrollStudent($user, [
                 'current_level' => $request->current_level,
                 'progress_notes' => json_encode([
                     'learning_goals' => $request->learning_goals,
                     'notes' => $request->notes,
-                    'enrollment_date' => now()->toDateString()
-                ])
+                    'enrollment_date' => now()->toDateString(),
+                ]),
             ]);
 
             // TODO: Send notification to teacher and academy admin

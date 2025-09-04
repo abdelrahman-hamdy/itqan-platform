@@ -22,7 +22,7 @@ class ContentSecurityPolicy
             // Comprehensive CSP to block external script injection
             $csp = [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://unpkg.com",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://unpkg.com https://js.pusher.com",
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:",
                 "img-src 'self' data: blob: https:",

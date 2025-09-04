@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\QuranSession;
 use App\Enums\SessionStatus;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use App\Models\MeetingAttendance;
+use App\Models\QuranSession;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SessionStatusService
 {
@@ -21,6 +21,7 @@ class SessionStatusService
                 'session_id' => $session->id,
                 'current_status' => $session->status->value,
             ]);
+
             return false;
         }
 
@@ -48,6 +49,34 @@ class SessionStatusService
                 'session_id' => $session->id,
                 'current_status' => $session->status->value,
             ]);
+
+            return false;
+        }
+
+        // NEW: Validate session time has arrived (with 15-minute early grace period)
+        $allowEarlyJoinMinutes = 15; // Allow joining 15 minutes early
+        $earliestJoinTime = $session->scheduled_at->copy()->subMinutes($allowEarlyJoinMinutes);
+
+        if (now()->lt($earliestJoinTime)) {
+            Log::warning('Cannot transition to ONGOING: session time has not arrived', [
+                'session_id' => $session->id,
+                'scheduled_at' => $session->scheduled_at,
+                'current_time' => now(),
+                'earliest_join_time' => $earliestJoinTime,
+            ]);
+
+            return false;
+        }
+
+        // NEW: Safety check - don't allow transition for sessions too far in future
+        $maxFutureHours = 2; // Don't allow ongoing status for sessions more than 2 hours in future
+        if ($session->scheduled_at->gt(now()->addHours($maxFutureHours))) {
+            Log::warning('Cannot transition to ONGOING: session too far in future', [
+                'session_id' => $session->id,
+                'scheduled_at' => $session->scheduled_at,
+                'current_time' => now(),
+            ]);
+
             return false;
         }
 
@@ -67,14 +96,16 @@ class SessionStatusService
     /**
      * Transition session from ONGOING to COMPLETED
      * Called when session naturally ends or teacher marks it complete
+     * CRITICAL FIX: Also closes the LiveKit meeting room to prevent new joins
      */
     public function transitionToCompleted(QuranSession $session): bool
     {
-        if (!in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
+        if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
             Log::warning('Cannot transition to COMPLETED: invalid current status', [
                 'session_id' => $session->id,
                 'current_status' => $session->status->value,
             ]);
+
             return false;
         }
 
@@ -83,6 +114,25 @@ class SessionStatusService
             'ended_at' => now(),
             'actual_duration_minutes' => $this->calculateActualDuration($session),
         ]);
+
+        // CRITICAL FIX: Close the LiveKit meeting room to prevent new joins
+        if ($session->meeting_room_name) {
+            try {
+                $meetingService = app(\App\Services\SessionMeetingService::class);
+                $meetingService->closeMeeting($session);
+
+                Log::info('Meeting room closed on session completion', [
+                    'session_id' => $session->id,
+                    'room_name' => $session->meeting_room_name,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to close meeting room on completion', [
+                    'session_id' => $session->id,
+                    'room_name' => $session->meeting_room_name,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         // Handle subscription counting for individual sessions
         if ($session->session_type === 'individual') {
@@ -104,11 +154,12 @@ class SessionStatusService
      */
     public function transitionToCancelled(QuranSession $session, ?string $reason = null, ?int $cancelledBy = null): bool
     {
-        if (!in_array($session->status, [SessionStatus::SCHEDULED, SessionStatus::READY])) {
+        if (! in_array($session->status, [SessionStatus::SCHEDULED, SessionStatus::READY])) {
             Log::warning('Cannot transition to CANCELLED: invalid current status', [
                 'session_id' => $session->id,
                 'current_status' => $session->status->value,
             ]);
+
             return false;
         }
 
@@ -140,14 +191,16 @@ class SessionStatusService
                 'session_id' => $session->id,
                 'session_type' => $session->session_type,
             ]);
+
             return false;
         }
 
-        if (!in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
+        if (! in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
             Log::warning('Cannot transition to ABSENT: invalid current status', [
                 'session_id' => $session->id,
                 'current_status' => $session->status->value,
             ]);
+
             return false;
         }
 
@@ -181,12 +234,26 @@ class SessionStatusService
         }
 
         $circle = $this->getCircleForSession($session);
-        if (!$circle) {
+        if (! $circle) {
             return false;
         }
 
         $preparationMinutes = $circle->preparation_minutes ?? 15;
         $preparationTime = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
+
+        // NEW: Add safety check - don't process sessions too far in future
+        $maxFutureHours = 24; // Don't process sessions more than 24h in future
+        $maxFutureTime = now()->addHours($maxFutureHours);
+
+        if ($session->scheduled_at->gt($maxFutureTime)) {
+            return false; // Skip sessions too far in future
+        }
+
+        // NEW: Also don't process sessions older than 24 hours
+        $minPastTime = now()->subHours(24);
+        if ($session->scheduled_at->lt($minPastTime)) {
+            return false; // Skip very old sessions
+        }
 
         return now()->gte($preparationTime);
     }
@@ -201,7 +268,7 @@ class SessionStatusService
         }
 
         $circle = $this->getCircleForSession($session);
-        if (!$circle) {
+        if (! $circle) {
             return false;
         }
 
@@ -213,7 +280,7 @@ class SessionStatusService
             ->where('total_duration_minutes', '>', 0)
             ->exists();
 
-        return now()->gt($graceDeadline) && !$hasParticipants;
+        return now()->gt($graceDeadline) && ! $hasParticipants;
     }
 
     /**
@@ -221,12 +288,12 @@ class SessionStatusService
      */
     public function shouldAutoComplete(QuranSession $session): bool
     {
-        if (!in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
+        if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
             return false;
         }
 
         $circle = $this->getCircleForSession($session);
-        if (!$circle) {
+        if (! $circle) {
             return false;
         }
 
@@ -296,8 +363,8 @@ class SessionStatusService
      */
     private function getCircleForSession(QuranSession $session)
     {
-        return $session->session_type === 'individual' 
-            ? $session->individualCircle 
+        return $session->session_type === 'individual'
+            ? $session->individualCircle
             : $session->circle;
     }
 
@@ -306,31 +373,60 @@ class SessionStatusService
      */
     private function calculateActualDuration(QuranSession $session): int
     {
-        if (!$session->started_at) {
+        if (! $session->started_at) {
             return 0;
         }
 
         $endTime = $session->ended_at ?? now();
+
         return $session->started_at->diffInMinutes($endTime);
     }
 
     /**
      * Handle individual session completion logic
+     * CRITICAL FIX: Use StudentSessionReport as primary source, not MeetingAttendance
      */
     private function handleIndividualSessionCompletion(QuranSession $session): void
     {
-        // Check if student attended based on meeting attendance
+        // CRITICAL FIX: Check StudentSessionReport first (most reliable source)
+        $studentReport = \App\Models\StudentSessionReport::where('session_id', $session->id)
+            ->where('student_id', $session->student_id)
+            ->first();
+
+        if ($studentReport) {
+            // Use StudentSessionReport data (teacher-verified, comprehensive)
+            if ($studentReport->attendance_status === 'absent') {
+                $session->update(['status' => SessionStatus::ABSENT]);
+                Log::info('Individual session marked as ABSENT based on StudentSessionReport', [
+                    'session_id' => $session->id,
+                    'student_id' => $session->student_id,
+                    'report_status' => $studentReport->attendance_status,
+                    'report_minutes' => $studentReport->actual_attendance_minutes,
+                ]);
+            } else {
+                Log::info('Individual session kept as COMPLETED based on StudentSessionReport', [
+                    'session_id' => $session->id,
+                    'student_id' => $session->student_id,
+                    'report_status' => $studentReport->attendance_status,
+                    'report_minutes' => $studentReport->actual_attendance_minutes,
+                ]);
+            }
+
+            return;
+        }
+
+        // Fallback: Check MeetingAttendance only if no StudentSessionReport exists
         $studentAttendance = $session->meetingAttendances()
             ->where('user_id', $session->student_id)
             ->where('user_type', 'student')
             ->first();
 
         if ($studentAttendance && $studentAttendance->attendance_status === 'absent') {
-            // If student was absent, change session status to ABSENT
             $session->update(['status' => SessionStatus::ABSENT]);
-            Log::info('Individual session marked as ABSENT due to student absence', [
+            Log::info('Individual session marked as ABSENT based on MeetingAttendance (fallback)', [
                 'session_id' => $session->id,
                 'student_id' => $session->student_id,
+                'no_student_report' => true,
             ]);
         }
     }
@@ -345,7 +441,7 @@ class SessionStatusService
                 ->where('user_id', $session->student_id)
                 ->first();
 
-            if (!$attendance) {
+            if (! $attendance) {
                 $student = $session->student;
                 if ($student) {
                     MeetingAttendance::create([

@@ -6,7 +6,7 @@ use App\Filament\Resources\InteractiveCourseResource\Pages;
 use App\Models\InteractiveCourse;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Subject;
-use App\Models\GradeLevel;
+use App\Models\AcademicGradeLevel;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
@@ -80,7 +80,7 @@ class InteractiveCourseResource extends BaseResource
                                     ->label('المرحلة الدراسية')
                                     ->options(function () {
                                         $academyId = AcademyContextService::getCurrentAcademyId();
-                                        return $academyId ? GradeLevel::forAcademy($academyId)->pluck('name', 'id') : [];
+                                        return $academyId ? AcademicGradeLevel::where('academy_id', $academyId)->pluck('name', 'id') : [];
                                     })
                                     ->required()
                                     ->searchable(),

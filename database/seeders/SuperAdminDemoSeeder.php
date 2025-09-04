@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Academy;
 use App\Models\User;
 use App\Models\Subject;
-use App\Models\GradeLevel;
+use App\Models\AcademicGradeLevel;
 use Illuminate\Support\Facades\Hash;
 
 class SuperAdminDemoSeeder extends Seeder
@@ -209,15 +209,15 @@ class SuperAdminDemoSeeder extends Seeder
         $academies = Academy::all();
         
         $gradeLevels = [
-            ['name' => 'ابتدائي', 'name_en' => 'Primary', 'level' => 1],
-            ['name' => 'إعدادي', 'name_en' => 'Preparatory', 'level' => 2],
-            ['name' => 'ثانوي', 'name_en' => 'Secondary', 'level' => 3],
-            ['name' => 'جامعي', 'name_en' => 'University', 'level' => 4],
+            ['name' => 'ابتدائي', 'name_en' => 'Primary'],
+            ['name' => 'إعدادي', 'name_en' => 'Preparatory'],
+            ['name' => 'ثانوي', 'name_en' => 'Secondary'],
+            ['name' => 'جامعي', 'name_en' => 'University'],
         ];
 
         foreach ($academies as $academy) {
             foreach ($gradeLevels as $gradeLevel) {
-                GradeLevel::create(array_merge($gradeLevel, [
+                AcademicGradeLevel::create(array_merge($gradeLevel, [
                     'academy_id' => $academy->id,
                     'description' => 'المرحلة ' . $gradeLevel['name'],
                 ]));

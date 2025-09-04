@@ -1669,10 +1669,10 @@ class LiveKitControls {
         });
 
         messageElement.innerHTML = `
-            <div class="${isOwn ? 'bg-blue-600' : 'bg-gray-700'} rounded-lg px-3 py-2 max-w-xs">
-                <p class="text-xs text-gray-300 mb-1">${isOwn ? 'أنت' : sender}</p>
-                <p class="text-white text-sm">${message}</p>
-                <p class="text-xs text-gray-400 mt-1">${timestamp}</p>
+            <div class="${isOwn ? 'bg-blue-600' : 'bg-white'} rounded-lg px-3 py-2 max-w-xs border border-gray-200">
+                <p class="text-xs ${isOwn ? 'text-blue-100' : 'text-gray-500'} mb-1">${isOwn ? 'أنت' : sender}</p>
+                <p class="${isOwn ? 'text-white' : 'text-gray-800'} text-sm">${message}</p>
+                <p class="text-xs ${isOwn ? 'text-blue-200' : 'text-gray-400'} mt-1">${timestamp}</p>
             </div>
         `;
 

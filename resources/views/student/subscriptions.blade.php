@@ -32,6 +32,82 @@
         </div>
         @endif
 
+        <!-- Academic Subscriptions -->
+        @if(isset($academicSubscriptions) && $academicSubscriptions->count() > 0)
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-900">الاشتراكات الأكاديمية</h2>
+                <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                    {{ $academicSubscriptions->count() }} اشتراك نشط
+                </span>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                @foreach($academicSubscriptions as $subscription)
+                    <div class="border border-gray-200 rounded-lg p-6 hover:border-primary transition-colors">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 class="font-bold text-gray-900">{{ $subscription->teacher->user->name ?? 'معلم غير محدد' }}</h3>
+                                <p class="text-sm text-gray-600">{{ $subscription->subject->name ?? 'مادة غير محددة' }}</p>
+                                <p class="text-xs text-gray-500">{{ $subscription->gradeLevel->name ?? 'مرحلة غير محددة' }}</p>
+                            </div>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full
+                                {{ $subscription->status === 'active' ? 'bg-green-100 text-green-800' : 
+                                   ($subscription->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
+                                {{ $subscription->status === 'active' ? 'نشط' : 
+                                   ($subscription->status === 'pending' ? 'في الانتظار' : $subscription->status) }}
+                            </span>
+                        </div>
+                        
+                        <!-- Subscription Details -->
+                        <div class="space-y-2 text-sm text-gray-600 mb-4">
+                            <div class="flex justify-between">
+                                <span>المبلغ الشهري:</span>
+                                <span class="font-medium text-gray-900">{{ number_format($subscription->final_monthly_amount) }} {{ $subscription->currency }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>عدد الجلسات الأسبوعية:</span>
+                                <span class="font-medium text-gray-900">{{ $subscription->sessions_per_week }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>مدة الجلسة:</span>
+                                <span class="font-medium text-gray-900">{{ $subscription->session_duration_minutes }} دقيقة</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>تاريخ البدء:</span>
+                                <span class="font-medium text-gray-900">{{ $subscription->start_date?->format('d/m/Y') ?? 'غير محدد' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Stats -->
+                        @if($subscription->total_sessions_scheduled > 0)
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>التقدم</span>
+                                    <span>{{ $subscription->total_sessions_completed }}/{{ $subscription->total_sessions_scheduled }}</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ $subscription->completion_rate ?? 0 }}%"></div>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">{{ number_format($subscription->completion_rate ?? 0, 1) }}% مكتمل</div>
+                            </div>
+                        @endif
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-2 pt-4 border-t border-gray-200">
+                            <button class="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-opacity-90 transition-colors text-sm">
+                                عرض التفاصيل
+                            </button>
+                            <button class="px-4 py-2 text-gray-600 hover:text-primary transition-colors text-sm">
+                                <i class="ri-calendar-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         <!-- Quran Trial Requests -->
         @if($quranTrialRequests->count() > 0)
         <div class="bg-white rounded-xl shadow-sm p-6 mb-8">

@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Academy;
-use App\Models\User;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
-use Agence104\LiveKit\VideoGrant;
-use Agence104\LiveKit\RoomServiceClient;
 use Agence104\LiveKit\RoomCreateOptions;
+use Agence104\LiveKit\RoomServiceClient;
+use Agence104\LiveKit\VideoGrant;
+use App\Models\Academy;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -16,19 +16,29 @@ use Illuminate\Support\Str;
 class LiveKitService
 {
     private ?string $apiKey;
+
     private ?string $apiSecret;
+
     private ?string $serverUrl;
+
     private ?RoomServiceClient $roomService = null;
 
     public function __construct()
     {
         $this->apiKey = config('livekit.api_key', '');
         $this->apiSecret = config('livekit.api_secret', '');
-        $this->serverUrl = config('livekit.server_url', 'wss://localhost');
-        
+        $this->serverUrl = config('livekit.server_url', 'wss://localhost'); // For frontend connections
+
+        // Use HTTPS URL for backend API calls
+        $apiUrl = config('livekit.api_url', str_replace('wss://', 'https://', $this->serverUrl));
+
         // Only initialize RoomServiceClient if we have valid credentials
-        if ($this->apiKey && $this->apiSecret && $this->serverUrl) {
-            $this->roomService = new RoomServiceClient($this->serverUrl, $this->apiKey, $this->apiSecret);
+        if ($this->apiKey && $this->apiSecret && $apiUrl) {
+            Log::info('Initializing LiveKit RoomServiceClient', [
+                'api_url' => $apiUrl,
+                'api_key' => $this->apiKey,
+            ]);
+            $this->roomService = new RoomServiceClient($apiUrl, $this->apiKey, $this->apiSecret);
         }
     }
 
@@ -37,10 +47,10 @@ class LiveKitService
      */
     public function isConfigured(): bool
     {
-        return $this->roomService !== null && 
-               !empty($this->apiKey) && 
-               !empty($this->apiSecret) && 
-               !empty($this->serverUrl);
+        return $this->roomService !== null &&
+               ! empty($this->apiKey) &&
+               ! empty($this->apiSecret) &&
+               ! empty($this->serverUrl);
     }
 
     /**
@@ -54,13 +64,13 @@ class LiveKitService
         array $options = []
     ): array {
         try {
-            if (!$this->isConfigured()) {
+            if (! $this->isConfigured()) {
                 throw new \Exception('LiveKit is not properly configured. Please check API credentials.');
             }
 
             // Generate deterministic room name
             $roomName = $this->generateRoomName($academy, $sessionType, $sessionId);
-            
+
             // Check if room already exists
             $existingRoom = $this->getRoomInfo($roomName);
             if ($existingRoom) {
@@ -69,7 +79,7 @@ class LiveKitService
                     'session_id' => $sessionId,
                     'academy_id' => $academy->id,
                 ]);
-                
+
                 return [
                     'platform' => 'livekit',
                     'room_name' => $roomName,
@@ -103,10 +113,10 @@ class LiveKitService
                     'expires_at' => $options['expires_at'] ?? $startTime->copy()->addHours(3),
                 ];
             }
-            
+
             // Create new room with custom settings
             $roomOptions = $this->createRoomOptionsObject($roomName, $options);
-            
+
             Log::info('Attempting to create new LiveKit room', [
                 'room_name' => $roomName,
                 'session_id' => $sessionId,
@@ -114,9 +124,9 @@ class LiveKitService
                 'max_participants' => $roomOptions->getMaxParticipants(),
                 'empty_timeout' => $roomOptions->getEmptyTimeout(),
             ]);
-            
+
             $room = $this->roomService->createRoom($roomOptions);
-            
+
             Log::info('LiveKit room created successfully', [
                 'room_name' => $roomName,
                 'session_id' => $sessionId,
@@ -163,8 +173,8 @@ class LiveKitService
                 'session_id' => $sessionId,
                 'academy_id' => $academy->id,
             ]);
-            
-            throw new \Exception('Failed to create meeting room: ' . $e->getMessage());
+
+            throw new \Exception('Failed to create meeting room: '.$e->getMessage());
         }
     }
 
@@ -172,16 +182,16 @@ class LiveKitService
      * Generate access token for participant to join room
      */
     public function generateParticipantToken(
-        string $roomName, 
-        User $user, 
+        string $roomName,
+        User $user,
         array $permissions = []
     ): string {
         try {
-            $tokenOptions = (new AccessTokenOptions())
-                ->setIdentity($user->id . '_' . Str::slug($user->first_name . '_' . $user->last_name))
+            $tokenOptions = (new AccessTokenOptions)
+                ->setIdentity($user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name))
                 ->setTtl(3600 * 3); // 3 hours
-            
-            $videoGrant = (new VideoGrant())
+
+            $videoGrant = (new VideoGrant)
                 ->setRoomJoin()
                 ->setRoomName($roomName)
                 ->setCanPublish($permissions['can_publish'] ?? true)
@@ -211,8 +221,8 @@ class LiveKitService
                 'user_id' => $user->id,
                 'room_name' => $roomName,
             ]);
-            
-            throw new \Exception('Failed to generate access token: ' . $e->getMessage());
+
+            throw new \Exception('Failed to generate access token: '.$e->getMessage());
         }
     }
 
@@ -235,9 +245,9 @@ class LiveKitService
                             'type' => 's3',
                             'bucket' => config('livekit.recording.s3_bucket'),
                             'region' => config('livekit.recording.s3_region'),
-                        ]
-                    ]
-                ]
+                        ],
+                    ],
+                ],
             ];
 
             // Recording functionality not yet implemented in this SDK version
@@ -247,14 +257,13 @@ class LiveKitService
             ]);
 
             throw new \Exception('Recording functionality not yet implemented. Please use LiveKit Dashboard or API directly.');
-
         } catch (\Exception $e) {
             Log::error('Failed to start recording', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
             ]);
-            
-            throw new \Exception('Failed to start recording: ' . $e->getMessage());
+
+            throw new \Exception('Failed to start recording: '.$e->getMessage());
         }
     }
 
@@ -268,16 +277,15 @@ class LiveKitService
             Log::info('Recording stop requested', [
                 'recording_id' => $recordingId,
             ]);
-            
-            throw new \Exception('Recording functionality not yet implemented. Please use LiveKit Dashboard or API directly.');
 
+            throw new \Exception('Recording functionality not yet implemented. Please use LiveKit Dashboard or API directly.');
         } catch (\Exception $e) {
             Log::error('Failed to stop recording', [
                 'error' => $e->getMessage(),
                 'recording_id' => $recordingId,
             ]);
-            
-            throw new \Exception('Failed to stop recording: ' . $e->getMessage());
+
+            throw new \Exception('Failed to stop recording: '.$e->getMessage());
         }
     }
 
@@ -287,36 +295,38 @@ class LiveKitService
     public function getRoomInfo(string $roomName): ?array
     {
         try {
-            if (!$this->isConfigured()) {
+            if (! $this->isConfigured()) {
                 Log::warning('LiveKit service not configured properly');
+
                 return null;
             }
 
             $roomsResponse = $this->roomService->listRooms([$roomName]);
-            
+
             // Get rooms array from response
             $rooms = [];
             if ($roomsResponse && method_exists($roomsResponse, 'getRooms')) {
                 $rooms = $roomsResponse->getRooms();
             }
-            
+
             Log::info('LiveKit listRooms response', [
                 'room_name' => $roomName,
                 'rooms_count' => count($rooms),
-                'server_url' => $this->serverUrl
+                'server_url' => $this->serverUrl,
             ]);
-            
+
             if (empty($rooms)) {
                 Log::warning('Room not found on LiveKit server', [
                     'room_name' => $roomName,
-                    'server_url' => $this->serverUrl
+                    'server_url' => $this->serverUrl,
                 ]);
+
                 return null;
             }
 
             $room = $rooms[0];
             $participantsResponse = $this->roomService->listParticipants($roomName);
-            
+
             // Convert participants response to array
             $participants = [];
             if ($participantsResponse && method_exists($participantsResponse, 'getParticipants')) {
@@ -345,6 +355,7 @@ class LiveKitService
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
             ]);
+
             return null;
         }
     }
@@ -363,7 +374,7 @@ class LiveKitService
 
             // Delete room
             $this->roomService->deleteRoom($roomName);
-            
+
             Log::info('LiveKit room ended and deleted', [
                 'room_name' => $roomName,
             ]);
@@ -375,6 +386,7 @@ class LiveKitService
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
             ]);
+
             return false;
         }
     }
@@ -399,6 +411,7 @@ class LiveKitService
                 'room_name' => $roomName,
                 'duration_minutes' => $durationMinutes,
             ]);
+
             return false;
         }
     }
@@ -409,7 +422,7 @@ class LiveKitService
     public function handleWebhook(array $webhookData): void
     {
         $event = $webhookData['event'] ?? '';
-        
+
         Log::info('LiveKit webhook received', [
             'event' => $event,
             'data' => $webhookData,
@@ -419,19 +432,19 @@ class LiveKitService
             case 'room_started':
                 $this->handleRoomStarted($webhookData);
                 break;
-                
+
             case 'room_finished':
                 $this->handleRoomFinished($webhookData);
                 break;
-                
+
             case 'participant_joined':
                 $this->handleParticipantJoined($webhookData);
                 break;
-                
+
             case 'participant_left':
                 $this->handleParticipantLeft($webhookData);
                 break;
-                
+
             case 'recording_finished':
                 $this->handleRecordingFinished($webhookData);
                 break;
@@ -444,7 +457,7 @@ class LiveKitService
     {
         $academySlug = Str::slug($academy->subdomain);
         $sessionSlug = Str::slug($sessionType);
-        
+
         // Use deterministic naming based on session ID only - NO timestamp
         return "{$academySlug}-{$sessionSlug}-session-{$sessionId}";
     }
@@ -452,12 +465,12 @@ class LiveKitService
     private function generateMeetingUrl(string $roomName): string
     {
         // This would be your frontend meeting room URL
-        return config('app.url') . "/meeting/{$roomName}";
+        return config('app.url')."/meeting/{$roomName}";
     }
 
     private function createRoomOptionsObject(string $roomName, array $options): RoomCreateOptions
     {
-        return (new RoomCreateOptions())
+        return (new RoomCreateOptions)
             ->setName($roomName)
             ->setMaxParticipants($options['max_participants'] ?? 50)
             ->setEmptyTimeout($options['empty_timeout'] ?? 300)
@@ -471,7 +484,7 @@ class LiveKitService
 
     private function buildRoomOptions(string $roomName, array $options): RoomCreateOptions
     {
-        return (new RoomCreateOptions())
+        return (new RoomCreateOptions)
             ->setName($roomName)
             ->setMaxParticipants($options['max_participants'] ?? 50)
             ->setEmptyTimeout($options['empty_timeout'] ?? 300)

@@ -21,7 +21,7 @@
           {{ $fullName }}
         </h3>
         <p class="text-xs text-gray-400">
-          {{ $student->gradeLevel?->name ? 'المرحلة الدراسية: ' . $student->gradeLevel->name : ($student->student_code ?? 'طالب') }}
+          {{ $student && $student->gradeLevel?->name ? 'المرحلة الدراسية: ' . $student->gradeLevel->name : ($student?->student_code ?? 'طالب') }}
         </p>
       </div>
     </div>
@@ -106,10 +106,37 @@
         </div>
       </div>
 
+      <!-- Teachers & Lessons -->
+      <div class="mb-6">
+        <h4 class="text-xs font-medium text-gray-400 mb-3">المعلمون والدروس</h4>
+        <div class="space-y-1">
+          <a href="{{ route('student.quran-teachers', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.quran-teachers') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-user-star-line ml-3"></i>
+            معلمو القرآن الكريم
+          </a>
+          <a href="{{ route('student.academic-teachers', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.academic-teachers') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-user-3-line ml-3"></i>
+            المعلمون الأكاديميون
+          </a>
+          <a href="{{ route('student.academic-private-lessons', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.academic-private-lessons*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-book-open-line ml-3"></i>
+            دروسي الخاصة
+          </a>
+        </div>
+      </div>
+
       <!-- Communication -->
       <div class="mb-6">
         <h4 class="text-xs font-medium text-gray-400 mb-3">التواصل</h4>
         <div class="space-y-1">
+          <a href="{{ url('/chat') }}" 
+             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->is('chat*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-message-3-line ml-3"></i>
+            الرسائل والمحادثات
+          </a>
           <a href="#" 
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">
             <i class="ri-customer-service-2-line ml-3"></i>

@@ -64,7 +64,7 @@ class Course extends Model
      */
     public function gradeLevel(): BelongsTo
     {
-        return $this->belongsTo(GradeLevel::class);
+        return $this->belongsTo(AcademicGradeLevel::class);
     }
 
     /**

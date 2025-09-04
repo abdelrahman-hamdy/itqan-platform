@@ -6,10 +6,10 @@ use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\User;
 use App\Services\QuranSessionSchedulingService;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class QuranGroupCircleScheduleController extends Controller
 {
@@ -27,8 +27,8 @@ class QuranGroupCircleScheduleController extends Controller
     public function index($subdomain, Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->isQuranTeacher()) {
+
+        if (! $user->isQuranTeacher()) {
             abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
         }
 
@@ -49,12 +49,12 @@ class QuranGroupCircleScheduleController extends Controller
     public function create($subdomain, $circle)
     {
         $user = Auth::user();
-        
+
         // Find the circle
         $circle = QuranCircle::findOrFail($circle);
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             abort(403, 'غير مسموح لك بإدارة هذه الحلقة');
         }
 
@@ -70,9 +70,9 @@ class QuranGroupCircleScheduleController extends Controller
     public function store($subdomain, Request $request, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -140,7 +140,7 @@ class QuranGroupCircleScheduleController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ في حفظ الجدول: ' . $e->getMessage()
+                'message' => 'حدث خطأ في حفظ الجدول: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -151,16 +151,16 @@ class QuranGroupCircleScheduleController extends Controller
     public function activate($subdomain, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
-        if (!$circle->schedule) {
+        if (! $circle->schedule) {
             return response()->json([
                 'success' => false,
-                'message' => 'يجب إنشاء جدول زمني أولاً'
+                'message' => 'يجب إنشاء جدول زمني أولاً',
             ], 400);
         }
 
@@ -176,7 +176,7 @@ class QuranGroupCircleScheduleController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ في تفعيل الجدول: ' . $e->getMessage()
+                'message' => 'حدث خطأ في تفعيل الجدول: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -187,16 +187,16 @@ class QuranGroupCircleScheduleController extends Controller
     public function deactivate($subdomain, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
-        if (!$circle->schedule) {
+        if (! $circle->schedule) {
             return response()->json([
                 'success' => false,
-                'message' => 'لا يوجد جدول زمني لإلغاء تفعيله'
+                'message' => 'لا يوجد جدول زمني لإلغاء تفعيله',
             ], 400);
         }
 
@@ -212,7 +212,7 @@ class QuranGroupCircleScheduleController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ في إلغاء تفعيل الجدول: ' . $e->getMessage()
+                'message' => 'حدث خطأ في إلغاء تفعيل الجدول: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -223,9 +223,9 @@ class QuranGroupCircleScheduleController extends Controller
     public function previewSessions($subdomain, Request $request, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -272,7 +272,7 @@ class QuranGroupCircleScheduleController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ في معاينة الجلسات: ' . $e->getMessage()
+                'message' => 'حدث خطأ في معاينة الجلسات: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -283,9 +283,9 @@ class QuranGroupCircleScheduleController extends Controller
     public function show($subdomain, QuranCircle $circle)
     {
         $user = Auth::user();
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             abort(403, 'غير مسموح لك بالوصول لهذه الحلقة');
         }
 
@@ -293,11 +293,11 @@ class QuranGroupCircleScheduleController extends Controller
             'schedule',
             'sessions' => function ($query) {
                 $query->where('is_auto_generated', true)
-                      ->orderBy('scheduled_at', 'desc')
-                      ->limit(50); // Last 50 sessions
+                    ->orderBy('scheduled_at', 'desc')
+                    ->limit(50); // Last 50 sessions
             },
             'students',
-            'academy'
+            'academy',
         ]);
 
         // Get upcoming sessions
@@ -318,12 +318,12 @@ class QuranGroupCircleScheduleController extends Controller
         // Prepare teacher data structure that the view expects
         $teacherData = [
             'upcomingSessions' => $upcomingSessions,
-            'recentSessions' => $recentSessions
+            'recentSessions' => $recentSessions,
         ];
-        
+
         // Determine user role
         $userRole = 'teacher'; // Since this is in teacher routes
-        
+
         // Get the academy for the view
         $academy = $circle->academy;
 
@@ -336,9 +336,9 @@ class QuranGroupCircleScheduleController extends Controller
     public function scheduleSession($subdomain, Request $request, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -363,13 +363,13 @@ class QuranGroupCircleScheduleController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'تم جدولة الجلسة بنجاح',
-                'session' => $session
+                'session' => $session,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ أثناء جدولة الجلسة: ' . $e->getMessage()
+                'message' => 'حدث خطأ أثناء جدولة الجلسة: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -380,16 +380,16 @@ class QuranGroupCircleScheduleController extends Controller
     public function generateSessions($subdomain, QuranCircle $circle): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
-        if (!$circle->schedule || !$circle->schedule->is_active) {
+        if (! $circle->schedule || ! $circle->schedule->is_active) {
             return response()->json([
                 'success' => false,
-                'message' => 'الجدول الزمني غير نشط'
+                'message' => 'الجدول الزمني غير نشط',
             ], 400);
         }
 
@@ -398,7 +398,7 @@ class QuranGroupCircleScheduleController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $generatedCount > 0 
+                'message' => $generatedCount > 0
                     ? "تم إنشاء {$generatedCount} جلسة جديدة"
                     : 'لا توجد جلسات جديدة للإنشاء',
                 'generated_count' => $generatedCount,
@@ -407,7 +407,7 @@ class QuranGroupCircleScheduleController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ في إنشاء الجلسات: ' . $e->getMessage()
+                'message' => 'حدث خطأ في إنشاء الجلسات: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -418,12 +418,12 @@ class QuranGroupCircleScheduleController extends Controller
     public function progressReport($subdomain, $circle)
     {
         $user = Auth::user();
-        
+
         // Find the circle
         $circle = QuranCircle::findOrFail($circle);
-        
+
         // Check ownership - user should be the teacher of this circle
-        if (!$circle->quranTeacher || $circle->quranTeacher->user_id !== $user->id) {
+        if (! $circle->quranTeacher || $circle->quranTeacher->id !== $user->id) {
             abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
         }
 
@@ -434,29 +434,29 @@ class QuranGroupCircleScheduleController extends Controller
                 $query->orderBy('scheduled_at', 'desc');
             },
             'schedule',
-            'academy'
+            'academy',
         ]);
 
         // Get detailed session statistics for attendance analysis
         $totalSessions = $circle->sessions->count();
         $completedSessions = $circle->sessions->where('status', 'completed');
         $scheduledSessions = $circle->sessions->where('status', 'scheduled');
-        
+
         // Enhanced attendance analysis with different statuses
         $attendedSessions = $completedSessions->where('attendance_status', 'attended')->count();
         $lateSessions = $completedSessions->where('attendance_status', 'late')->count();
         $absentSessions = $completedSessions->where('attendance_status', 'absent')->count();
         $leftEarlySessions = $completedSessions->where('attendance_status', 'left_early')->count();
-        
+
         // For sessions without explicit attendance_status, assume attended if completed
         $completedWithoutStatus = $completedSessions->whereNull('attendance_status')->count();
         $totalAttended = $attendedSessions + $lateSessions + $leftEarlySessions + $completedWithoutStatus;
-        
+
         // Performance metrics calculation
         $avgRecitation = $completedSessions->avg('recitation_quality') ?? 0;
         $avgTajweed = $completedSessions->avg('tajweed_accuracy') ?? 0;
         $avgDuration = $completedSessions->avg('actual_duration_minutes') ?? 0;
-        
+
         // Group circle specific metrics
         $enrolledStudents = $circle->students->count();
         $maxStudents = $circle->max_students ?? 0;
@@ -481,28 +481,28 @@ class QuranGroupCircleScheduleController extends Controller
                 ->where('scheduled_at', '>=', now())
                 ->where('status', 'scheduled')
                 ->count(),
-            
+
             // Group circle specific metrics
             'enrolled_students' => $enrolledStudents,
             'max_students' => $maxStudents,
             'enrollment_rate' => $enrollmentRate,
             'available_spots' => max(0, $maxStudents - $enrolledStudents),
-            
+
             // Enhanced attendance metrics
-            'attendance_rate' => $completedSessions->count() > 0 
-                ? ($totalAttended / $completedSessions->count()) * 100 
+            'attendance_rate' => $completedSessions->count() > 0
+                ? ($totalAttended / $completedSessions->count()) * 100
                 : 0,
             'attended_sessions' => $attendedSessions,
             'late_sessions' => $lateSessions,
             'absent_sessions' => $absentSessions,
             'left_early_sessions' => $leftEarlySessions,
-            
+
             // Performance and progress metrics
             'avg_recitation_quality' => $avgRecitation,
             'avg_tajweed_accuracy' => $avgTajweed,
             'avg_session_duration' => $avgDuration,
             'avg_session_attendance' => $avgSessionAttendance,
-            
+
             // Learning analytics
             'consistency_score' => $this->calculateGroupConsistencyScore($circle),
             'schedule_adherence' => $this->calculateScheduleAdherence($circle),
@@ -517,7 +517,7 @@ class QuranGroupCircleScheduleController extends Controller
     private function calculateGroupConsistencyScore($circle): float
     {
         $sessions = $circle->sessions()->where('status', 'completed')->orderBy('scheduled_at')->get();
-        
+
         if ($sessions->count() < 2) {
             return 0;
         }
@@ -525,7 +525,7 @@ class QuranGroupCircleScheduleController extends Controller
         $completionPattern = $sessions->map(function ($session) {
             // Score based on session completion and quality
             $baseScore = $session->status === 'completed' ? 1.0 : 0.0;
-            
+
             // Bonus for quality metrics
             if ($session->recitation_quality > 0) {
                 $baseScore += ($session->recitation_quality / 10) * 0.2;
@@ -533,7 +533,7 @@ class QuranGroupCircleScheduleController extends Controller
             if ($session->tajweed_accuracy > 0) {
                 $baseScore += ($session->tajweed_accuracy / 10) * 0.2;
             }
-            
+
             return min(1.0, $baseScore);
         });
 
@@ -545,17 +545,17 @@ class QuranGroupCircleScheduleController extends Controller
      */
     private function calculateScheduleAdherence($circle): float
     {
-        if (!$circle->schedule) {
+        if (! $circle->schedule) {
             return 0;
         }
 
         $scheduledSessions = $circle->sessions()->where('status', '!=', 'template')->get();
         $completedOnTime = $scheduledSessions->filter(function ($session) {
-            return $session->status === 'completed' && 
-                   (!$session->started_at || $session->started_at->lte($session->scheduled_at->addMinutes(15)));
+            return $session->status === 'completed' &&
+                   (! $session->started_at || $session->started_at->lte($session->scheduled_at->addMinutes(15)));
         })->count();
 
-        return $scheduledSessions->count() > 0 
+        return $scheduledSessions->count() > 0
             ? round(($completedOnTime / $scheduledSessions->count()) * 10, 1)
             : 0;
     }
@@ -566,12 +566,12 @@ class QuranGroupCircleScheduleController extends Controller
     public function getStats($subdomain, $circle): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Find the circle
         $circle = QuranCircle::findOrFail($circle);
-        
+
         // Check ownership
-        if (!$user->quranTeacherProfile || $circle->quran_teacher_id !== $user->quranTeacherProfile->id) {
+        if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
         }
 
@@ -585,7 +585,7 @@ class QuranGroupCircleScheduleController extends Controller
             'cancelled_sessions' => $circle->sessions()->where('status', 'cancelled')->count(),
             'enrolled_students' => $circle->enrolled_students,
             'attendance_rate' => $circle->sessions()->where('status', 'completed')->count() > 0
-                ? ($circle->sessions()->where('attendance_status', 'attended')->count() / 
+                ? ($circle->sessions()->where('attendance_status', 'attended')->count() /
                    $circle->sessions()->where('status', 'completed')->count()) * 100
                 : 0,
             'schedule_active' => $circle->schedule && $circle->schedule->is_active,
@@ -594,7 +594,7 @@ class QuranGroupCircleScheduleController extends Controller
 
         return response()->json([
             'success' => true,
-            'stats' => $stats
+            'stats' => $stats,
         ]);
     }
 
@@ -604,18 +604,18 @@ class QuranGroupCircleScheduleController extends Controller
     public function studentProgressReport($subdomain, $circle, $student)
     {
         $user = Auth::user();
-        
+
         // Find the circle and student
         $circle = QuranCircle::findOrFail($circle);
         $student = User::findOrFail($student);
-        
+
         // Check ownership - user should be the teacher of this circle
-        if (!$circle->quranTeacher || $circle->quranTeacher->user_id !== $user->id) {
+        if (! $circle->quranTeacher || $circle->quranTeacher->id !== $user->id) {
             abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
         }
 
         // Verify the student is enrolled in this circle
-        if (!$circle->students->contains($student)) {
+        if (! $circle->students->contains($student)) {
             abort(404, 'الطالب غير مسجل في هذه الحلقة');
         }
 
@@ -624,39 +624,51 @@ class QuranGroupCircleScheduleController extends Controller
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        // Calculate student-specific statistics for this circle
-        $attendedSessionIds = \App\Models\QuranSessionAttendance::where('student_id', $student->id)
-            ->whereIn('attendance_status', ['present', 'late', 'partial'])
-            ->pluck('session_id')
-            ->toArray();
+        // Calculate student-specific statistics for this circle using new report system
+        $studentReports = \App\Models\StudentSessionReport::where('student_id', $student->id)
+            ->whereIn('session_id', $sessions->pluck('id'))
+            ->get();
+
+        $attendedReports = $studentReports->whereIn('attendance_status', ['present', 'late', 'partial']);
 
         $stats = [
             'total_sessions' => $circle->sessions()->count(),
-            'attended_sessions' => $sessions->whereIn('status', ['completed'])->count(),
-            'missed_sessions' => $sessions->where('status', 'completed')->whereNotIn('id', $attendedSessionIds)->count(),
-            'attendance_rate' => $sessions->where('status', 'completed')->count() > 0 ? 
-                (count($attendedSessionIds) / $sessions->where('status', 'completed')->count()) * 100 : 0,
-            'avg_recitation_quality' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
-                ->whereIn('session_id', $sessions->pluck('id'))
-                ->whereNotNull('recitation_quality')
-                ->avg('recitation_quality') ?: 0,
-            'avg_tajweed_accuracy' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
-                ->whereIn('session_id', $sessions->pluck('id'))
-                ->whereNotNull('tajweed_accuracy')
-                ->avg('tajweed_accuracy') ?: 0,
-            'latest_progress' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
-                ->whereIn('session_id', $sessions->pluck('id'))
-                ->latest()
-                ->first(),
-            'improvement_trend' => 'stable', // Could be calculated based on recent performance
-            'total_pages_memorized' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
-                ->whereIn('session_id', $sessions->pluck('id'))
-                ->sum('papers_memorized_today') ?: 0,
-            'total_verses_memorized' => \App\Models\QuranSessionAttendance::where('student_id', $student->id)
-                ->whereIn('session_id', $sessions->pluck('id'))
-                ->sum('verses_memorized_today') ?: 0,
+            'attended_sessions' => $attendedReports->count(),
+            'missed_sessions' => $studentReports->where('attendance_status', 'absent')->count(),
+            'attendance_rate' => $sessions->where('status', 'completed')->count() > 0 ?
+                ($attendedReports->count() / $sessions->where('status', 'completed')->count()) * 100 : 0,
+            'avg_memorization_degree' => $studentReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0,
+            'avg_reservation_degree' => $studentReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?: 0,
+            'avg_attendance_percentage' => $studentReports->avg('attendance_percentage') ?: 0,
+            'avg_connection_quality' => $studentReports->avg('connection_quality_score') ?: 0,
+            'latest_report' => $studentReports->sortByDesc('created_at')->first(),
+            'improvement_trend' => $this->calculateImprovementTrend($studentReports),
         ];
 
         return view('teacher.group-circles.student-progress', compact('circle', 'student', 'sessions', 'stats'));
+    }
+
+    /**
+     * Calculate improvement trend based on recent performance
+     */
+    protected function calculateImprovementTrend($reports): string
+    {
+        if ($reports->count() < 2) {
+            return 'insufficient_data';
+        }
+
+        $recentReports = $reports->sortByDesc('created_at')->take(5);
+        $olderReports = $reports->sortByDesc('created_at')->skip(5)->take(5);
+
+        $recentAvg = $recentReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0;
+        $olderAvg = $olderReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0;
+
+        if ($recentAvg > $olderAvg + 0.5) {
+            return 'improving';
+        } elseif ($recentAvg < $olderAvg - 0.5) {
+            return 'declining';
+        } else {
+            return 'stable';
+        }
     }
 }

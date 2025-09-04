@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\QuranCircleResource\Pages;
 
 use App\Filament\Resources\QuranCircleResource;
+use App\Services\AcademyContextService;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,7 +19,7 @@ class CreateQuranCircle extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Add the academy ID and created_by automatically
-        $data['academy_id'] = Auth::user()->academy_id ?? 1; // Default academy or get from user
+        $data['academy_id'] = AcademyContextService::getCurrentAcademyId() ?? Auth::user()->academy_id;
         $data['created_by'] = Auth::id();
 
         // Generate circle code using the model method

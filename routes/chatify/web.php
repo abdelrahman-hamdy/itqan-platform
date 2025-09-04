@@ -51,6 +51,11 @@ Route::post('/makeSeen', 'MessagesController@seen')->name('messages.seen');
 Route::get('/getContacts', 'MessagesController@getContacts')->name('contacts.get');
 
 /**
+ * Get contextual contacts based on student subscriptions
+ */
+Route::get('/getContextualContacts', 'MessagesController@getContextualContacts')->name('contacts.contextual');
+
+/**
  * Update contact item data
  */
 Route::post('/updateContacts', 'MessagesController@updateContactItem')->name('contacts.update');
@@ -96,6 +101,18 @@ Route::post('/updateSettings', 'MessagesController@updateSettings')->name('avata
  */
 Route::post('/setActiveStatus', 'MessagesController@setActiveStatus')->name('activeStatus.set');
 
+/**
+ * Group Chat Routes
+ */
+Route::prefix('groups')->group(function () {
+    Route::get('/', 'MessagesController@getGroups')->name('groups.list');
+    Route::post('/send', 'MessagesController@sendToGroup')->name('groups.send');
+    Route::post('/messages', 'MessagesController@fetchGroupMessages')->name('groups.messages');
+    Route::post('/create', 'MessagesController@createGroup')->name('groups.create');
+    Route::post('/add-member', 'MessagesController@addGroupMember')->name('groups.addMember');
+    Route::post('/remove-member', 'MessagesController@removeGroupMember')->name('groups.removeMember');
+    Route::post('/leave', 'MessagesController@leaveGroup')->name('groups.leave');
+});
 
 
 

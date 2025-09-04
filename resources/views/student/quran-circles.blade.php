@@ -123,6 +123,13 @@
                 دخول الجلسة
               </a>
               @endif
+              @if($circle->teacher && $circle->teacher->user)
+              <a href="{{ route('user', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $circle->teacher->user->id]) }}"
+                 class="px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
+                <i class="ri-message-3-line ml-1"></i>
+                مراسلة المعلم
+              </a>
+              @endif
               <a href="{{ route('student.circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}"
                  class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="ri-information-line"></i>
@@ -188,12 +195,19 @@
               @endif
             </div>
 
-            <div class="mt-6">
+            <div class="mt-6 flex space-x-2 space-x-reverse">
               <a href="{{ route('student.circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}"
-                 class="w-full bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center block">
+                 class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
                 <i class="ri-information-line ml-1"></i>
                 عرض التفاصيل
               </a>
+              @if($circle->teacher && $circle->teacher->user)
+              <a href="{{ route('user', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $circle->teacher->user->id]) }}"
+                 class="px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
+                <i class="ri-message-3-line ml-1"></i>
+                مراسلة المعلم
+              </a>
+              @endif
             </div>
           </div>
           @endforeach

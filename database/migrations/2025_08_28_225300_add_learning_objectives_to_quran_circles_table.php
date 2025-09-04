@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('quran_circles', function (Blueprint $table) {
-            $table->json('learning_objectives')->nullable()->after('admin_notes');
+            // Add learning_objectives column without specifying 'after' since admin_notes might not exist
+            if (! Schema::hasColumn('quran_circles', 'learning_objectives')) {
+                $table->json('learning_objectives')->nullable();
+            }
         });
     }
 
@@ -22,7 +25,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('quran_circles', function (Blueprint $table) {
-            $table->dropColumn('learning_objectives');
+            if (Schema::hasColumn('quran_circles', 'learning_objectives')) {
+                $table->dropColumn('learning_objectives');
+            }
         });
     }
 };

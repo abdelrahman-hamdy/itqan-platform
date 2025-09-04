@@ -134,12 +134,17 @@ class ManageSessionMeetings extends Command
 
     /**
      * Check if current time is off-hours (midnight to 6 AM)
+     * DISABLED FOR DEBUGGING - sessions can be scheduled at any time
      */
     private function isOffHours(): bool
     {
-        $hour = now()->hour;
+        // TEMPORARY: Disable off-hours check for debugging
+        // Sessions can be scheduled at any time, including early morning
+        return false;
 
-        return $hour >= 0 && $hour < 6;
+        // Original logic (commented out for debugging):
+        // $hour = now()->hour;
+        // return $hour >= 0 && $hour < 6;
     }
 
     /**

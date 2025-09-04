@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QuranHomework extends Model
@@ -82,7 +81,7 @@ class QuranHomework extends Model
         'bonus_points',
         'total_score',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
@@ -125,7 +124,7 @@ class QuranHomework extends Model
         'evaluation_criteria' => 'array',
         'improvement_areas' => 'array',
         'strengths_noted' => 'array',
-        'next_steps' => 'array'
+        'next_steps' => 'array',
     ];
 
     // Relationships
@@ -188,7 +187,7 @@ class QuranHomework extends Model
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now())
-                    ->whereNotIn('status', ['submitted', 'evaluated', 'completed']);
+            ->whereNotIn('status', ['submitted', 'evaluated', 'completed']);
     }
 
     public function scopeDueToday($query)
@@ -199,7 +198,7 @@ class QuranHomework extends Model
     public function scopeDueSoon($query, $days = 3)
     {
         return $query->whereBetween('due_date', [now(), now()->addDays($days)])
-                    ->whereNotIn('status', ['submitted', 'evaluated', 'completed']);
+            ->whereNotIn('status', ['submitted', 'evaluated', 'completed']);
     }
 
     public function scopeByStudent($query, $studentId)
@@ -245,19 +244,19 @@ class QuranHomework extends Model
     public function scopeNeedsEvaluation($query)
     {
         return $query->where('status', 'submitted')
-                    ->whereNull('evaluated_at');
+            ->whereNull('evaluated_at');
     }
 
     public function scopeNeedsFollowUp($query)
     {
         return $query->where('follow_up_required', true)
-                    ->where('status', 'evaluated');
+            ->where('status', 'evaluated');
     }
 
     public function scopeParentReviewRequired($query)
     {
         return $query->where('parent_reviewed', false)
-                    ->where('status', 'evaluated');
+            ->where('status', 'evaluated');
     }
 
     public function scopeHighScoring($query, $minScore = 8.0)
@@ -275,7 +274,7 @@ class QuranHomework extends Model
             'research' => 'بحث وتفسير',
             'writing' => 'كتابة وإملاء',
             'listening' => 'استماع وتدبر',
-            'practice' => 'تطبيق عملي'
+            'practice' => 'تطبيق عملي',
         ];
 
         return $types[$this->homework_type] ?? $this->homework_type;
@@ -290,7 +289,7 @@ class QuranHomework extends Model
             'evaluated' => 'تم التقييم',
             'completed' => 'مكتمل',
             'overdue' => 'متأخر',
-            'cancelled' => 'ملغي'
+            'cancelled' => 'ملغي',
         ];
 
         return $statuses[$this->status] ?? $this->status;
@@ -303,7 +302,7 @@ class QuranHomework extends Model
             'partial' => 'تسليم جزئي',
             'complete' => 'تسليم كامل',
             'late' => 'تسليم متأخر',
-            'resubmission' => 'إعادة تسليم'
+            'resubmission' => 'إعادة تسليم',
         ];
 
         return $statuses[$this->submission_status] ?? $this->submission_status;
@@ -315,7 +314,7 @@ class QuranHomework extends Model
             'low' => 'منخفضة',
             'medium' => 'متوسطة',
             'high' => 'عالية',
-            'urgent' => 'عاجلة'
+            'urgent' => 'عاجلة',
         ];
 
         return $priorities[$this->priority] ?? $this->priority;
@@ -328,7 +327,7 @@ class QuranHomework extends Model
             'easy' => 'سهل',
             'medium' => 'متوسط',
             'hard' => 'صعب',
-            'very_hard' => 'صعب جداً'
+            'very_hard' => 'صعب جداً',
         ];
 
         return $levels[$this->difficulty_level] ?? $this->difficulty_level;
@@ -341,7 +340,7 @@ class QuranHomework extends Model
 
     public function getVersesRangeTextAttribute(): string
     {
-        if (!$this->verse_from || !$this->verse_to) {
+        if (! $this->verse_from || ! $this->verse_to) {
             return 'غير محدد';
         }
 
@@ -356,15 +355,15 @@ class QuranHomework extends Model
     {
         $surahName = $this->surah_assignment_name;
         $versesRange = $this->verses_range_text;
-        
+
         return "{$this->homework_type_text} - سورة {$surahName} ({$versesRange})";
     }
 
     public function getIsOverdueAttribute(): bool
     {
-        return $this->due_date && 
-               $this->due_date->isPast() && 
-               !in_array($this->status, ['submitted', 'evaluated', 'completed']);
+        return $this->due_date &&
+               $this->due_date->isPast() &&
+               ! in_array($this->status, ['submitted', 'evaluated', 'completed']);
     }
 
     public function getIsDueTodayAttribute(): bool
@@ -374,7 +373,7 @@ class QuranHomework extends Model
 
     public function getDaysUntilDueAttribute(): int
     {
-        if (!$this->due_date) {
+        if (! $this->due_date) {
             return 999; // No deadline
         }
 
@@ -403,7 +402,7 @@ class QuranHomework extends Model
 
     public function getNeedsAttentionAttribute(): bool
     {
-        return $this->is_overdue || 
+        return $this->is_overdue ||
                ($this->status === 'submitted' && now()->diffInDays($this->submitted_at) > 2) ||
                $this->follow_up_required;
     }
@@ -416,7 +415,7 @@ class QuranHomework extends Model
             'text' => 'نص مكتوب',
             'file' => 'ملف مرفق',
             'live' => 'مباشر مع المعلم',
-            'mixed' => 'مختلط'
+            'mixed' => 'مختلط',
         ];
 
         return $methods[$this->submission_method] ?? $this->submission_method;
@@ -424,14 +423,23 @@ class QuranHomework extends Model
 
     public function getGradeTextAttribute(): string
     {
-        if (!$this->grade) {
+        if (! $this->grade) {
             return 'غير مقيم';
         }
 
-        if ($this->grade >= 9.0) return 'ممتاز';
-        if ($this->grade >= 8.0) return 'جيد جداً';
-        if ($this->grade >= 7.0) return 'جيد';
-        if ($this->grade >= 6.0) return 'مقبول';
+        if ($this->grade >= 9.0) {
+            return 'ممتاز';
+        }
+        if ($this->grade >= 8.0) {
+            return 'جيد جداً';
+        }
+        if ($this->grade >= 7.0) {
+            return 'جيد';
+        }
+        if ($this->grade >= 6.0) {
+            return 'مقبول';
+        }
+
         return 'يحتاج تحسين';
     }
 
@@ -443,25 +451,25 @@ class QuranHomework extends Model
     public function getTimeSpentFormattedAttribute(): string
     {
         $minutes = $this->time_spent_minutes ?? 0;
-        
+
         if ($minutes < 60) {
-            return $minutes . ' دقيقة';
+            return $minutes.' دقيقة';
         }
-        
+
         $hours = floor($minutes / 60);
         $remainingMinutes = $minutes % 60;
-        
+
         if ($remainingMinutes === 0) {
-            return $hours . ' ساعة';
+            return $hours.' ساعة';
         }
-        
-        return $hours . ' ساعة و ' . $remainingMinutes . ' دقيقة';
+
+        return $hours.' ساعة و '.$remainingMinutes.' دقيقة';
     }
 
     // Methods
     public function submit(array $submissionData): self
     {
-        if (!$this->can_submit) {
+        if (! $this->can_submit) {
             throw new \Exception('لا يمكن تسليم الواجب في الحالة الحالية');
         }
 
@@ -469,7 +477,7 @@ class QuranHomework extends Model
             'status' => 'submitted',
             'submitted_at' => now(),
             'submission_status' => 'complete',
-            'late_submission' => $this->is_overdue
+            'late_submission' => $this->is_overdue,
         ], $submissionData);
 
         $this->update($updateData);
@@ -479,7 +487,7 @@ class QuranHomework extends Model
 
     public function evaluate(array $evaluationData): self
     {
-        if (!$this->can_evaluate) {
+        if (! $this->can_evaluate) {
             throw new \Exception('لا يمكن تقييم الواجب في الحالة الحالية');
         }
 
@@ -494,7 +502,7 @@ class QuranHomework extends Model
             'status' => 'evaluated',
             'evaluated_at' => now(),
             'total_score' => $totalScore,
-            'grade' => $totalScore
+            'grade' => $totalScore,
         ], $evaluationData);
 
         $this->update($updateData);
@@ -512,20 +520,20 @@ class QuranHomework extends Model
         $this->update([
             'extension_requested' => true,
             'extension_reason' => $reason,
-            'new_due_date' => $requestedDate
+            'new_due_date' => $requestedDate,
         ]);
 
         return $this;
     }
 
-    public function grantExtension(\Carbon\Carbon $newDueDate, string $approvalNote = null): self
+    public function grantExtension(\Carbon\Carbon $newDueDate, ?string $approvalNote = null): self
     {
         $this->update([
             'extension_granted' => true,
             'due_date' => $newDueDate,
             'new_due_date' => null,
-            'teacher_feedback' => $this->teacher_feedback . "\n\nتم منح تمديد حتى: " . $newDueDate->format('Y-m-d') . 
-                                  ($approvalNote ? "\nملاحظة: " . $approvalNote : '')
+            'teacher_feedback' => $this->teacher_feedback."\n\nتم منح تمديد حتى: ".$newDueDate->format('Y-m-d').
+                                  ($approvalNote ? "\nملاحظة: ".$approvalNote : ''),
         ]);
 
         return $this;
@@ -540,11 +548,11 @@ class QuranHomework extends Model
         return $this;
     }
 
-    public function cancel(string $reason = null): self
+    public function cancel(?string $reason = null): self
     {
         $this->update([
             'status' => 'cancelled',
-            'teacher_feedback' => $this->teacher_feedback . "\n\nتم إلغاء الواجب: " . ($reason ?? 'بدون سبب محدد')
+            'teacher_feedback' => $this->teacher_feedback."\n\nتم إلغاء الواجب: ".($reason ?? 'بدون سبب محدد'),
         ]);
 
         return $this;
@@ -553,7 +561,7 @@ class QuranHomework extends Model
     public function sendReminder(): self
     {
         $this->update(['reminder_sent_at' => now()]);
-        
+
         // Here you would typically send actual notification/email
         // NotificationService::sendHomeworkReminder($this);
 
@@ -563,21 +571,21 @@ class QuranHomework extends Model
     public function recordTimeSpent(int $minutes): self
     {
         $this->increment('time_spent_minutes', $minutes);
-        
+
         return $this;
     }
 
     public function addAttempt(): self
     {
         $this->increment('attempts_count');
-        
+
         return $this;
     }
 
     public function updateProgress(float $percentage): self
     {
         $this->update(['completion_percentage' => min(100, max(0, $percentage))]);
-        
+
         return $this;
     }
 
@@ -586,7 +594,7 @@ class QuranHomework extends Model
         $this->update([
             'parent_feedback' => $feedback,
             'parent_reviewed' => true,
-            'parent_signature' => $parentSignature
+            'parent_signature' => $parentSignature,
         ]);
 
         return $this;
@@ -596,7 +604,7 @@ class QuranHomework extends Model
     {
         // Weighted average: Quality 40%, Accuracy 40%, Effort 20%
         $total = ($qualityScore * 0.4) + ($accuracyScore * 0.4) + ($effortScore * 0.2);
-        
+
         // Apply late penalty if applicable
         if ($this->late_submission && $this->late_penalty_applied) {
             $total = max(0, $total - 1.0); // Deduct 1 point for late submission
@@ -625,8 +633,8 @@ class QuranHomework extends Model
             'recitation_quality' => $this->quality_score,
             'tajweed_accuracy' => $this->accuracy_score,
             'overall_rating' => intval($this->total_score),
-            'teacher_notes' => "واجب مكتمل: {$this->title}",
-            'progress_status' => $this->total_score >= 8.0 ? 'excellent' : 'on_track'
+            'notes' => "واجب مكتمل: {$this->title}",
+            'progress_status' => $this->total_score >= 8.0 ? 'excellent' : 'on_track',
         ]);
     }
 
@@ -654,14 +662,15 @@ class QuranHomework extends Model
             'attempts_count' => 0,
             'completion_percentage' => 0,
             'time_spent_minutes' => 0,
-            'parent_reviewed' => false
+            'parent_reviewed' => false,
         ]));
     }
 
     private static function generateHomeworkCode(int $academyId): string
     {
         $count = self::where('academy_id', $academyId)->count() + 1;
-        return 'QH-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+
+        return 'QH-'.$academyId.'-'.str_pad($count, 6, '0', STR_PAD_LEFT);
     }
 
     public static function getStudentHomework(int $studentId, int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection
@@ -683,8 +692,8 @@ class QuranHomework extends Model
         }
 
         return $query->orderBy('due_date', 'asc')
-                    ->orderBy('priority', 'desc')
-                    ->get();
+            ->orderBy('priority', 'desc')
+            ->get();
     }
 
     public static function getTeacherHomework(int $teacherId, int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection
@@ -706,8 +715,8 @@ class QuranHomework extends Model
         }
 
         return $query->orderBy('due_date', 'asc')
-                    ->orderBy('submitted_at', 'asc')
-                    ->get();
+            ->orderBy('submitted_at', 'asc')
+            ->get();
     }
 
     public static function getOverdueHomework(int $academyId): \Illuminate\Database\Eloquent\Collection
@@ -727,4 +736,4 @@ class QuranHomework extends Model
             ->orderBy('due_date', 'asc')
             ->get();
     }
-} 
+}

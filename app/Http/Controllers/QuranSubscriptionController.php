@@ -107,6 +107,13 @@ class QuranSubscriptionController extends Controller
      */
     public function store(Request $request): RedirectResponse|JsonResponse
     {
+        // DEBUG: Check if academic subscription requests are wrongly coming here
+        \Log::error('QURAN SUBSCRIPTION STORE CALLED', [
+            'path' => $request->path(),
+            'method' => $request->method(),
+            'data' => $request->all(),
+        ]);
+        
         $academy = $this->getCurrentAcademy();
         
         $validated = $request->validate([

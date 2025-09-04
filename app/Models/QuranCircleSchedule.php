@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\ScopedToAcademy;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\ScopedToAcademy;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class QuranCircleSchedule extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -108,39 +108,39 @@ class QuranCircleSchedule extends Model
     public function scopeReadyForGeneration($query)
     {
         return $query->where('is_active', true)
-                    ->where('schedule_starts_at', '<=', now())
-                    ->where(function ($q) {
-                        $q->whereNull('schedule_ends_at')
-                          ->orWhere('schedule_ends_at', '>=', now());
-                    });
+            ->where('schedule_starts_at', '<=', now())
+            ->where(function ($q) {
+                $q->whereNull('schedule_ends_at')
+                    ->orWhere('schedule_ends_at', '>=', now());
+            });
     }
 
     // Methods
     public function generateUpcomingSessions(): int
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return 0;
         }
 
         $generatedCount = 0;
-        
+
         // Fix start date logic - start from now if last generated is in the future or null
         $startDate = now();
         if ($this->last_generated_at && Carbon::parse($this->last_generated_at)->isPast()) {
             $startDate = Carbon::parse($this->last_generated_at)->addDay();
         }
-        
+
         // Calculate end date based on circle's schedule period
         $schedulePeriod = $this->circle->schedule_period ?? 'month';
-        $daysToGenerate = match($schedulePeriod) {
+        $daysToGenerate = match ($schedulePeriod) {
             'week' => 7,
             'month' => 30,
             'two_months' => 60,
             default => 30
         };
-        
+
         $endDate = $startDate->copy()->addDays($daysToGenerate);
-        
+
         // Don't generate beyond schedule end date if set
         if ($this->schedule_ends_at) {
             $endDate = $endDate->min(Carbon::parse($this->schedule_ends_at));
@@ -149,22 +149,22 @@ class QuranCircleSchedule extends Model
         // Allow flexible session generation - teachers can schedule additional sessions as needed
         // We'll generate sessions for the time period without strict monthly limits
         // This supports cases where teachers need to add extra sessions beyond the standard monthly count
-        
+
         // Set a reasonable maximum to prevent excessive generation (e.g., 3 sessions per week max)
-        $maxSessionsPerGeneration = match($schedulePeriod) {
+        $maxSessionsPerGeneration = match ($schedulePeriod) {
             'week' => 21, // 3 sessions per day max for a week
-            'month' => 90, // 3 sessions per day max for a month  
+            'month' => 90, // 3 sessions per day max for a month
             'two_months' => 180, // 3 sessions per day max for two months
             default => 90
         };
-        
+
         // Count existing sessions in the generation period to avoid duplicates
         $existingSessionsInPeriod = QuranSession::where('circle_id', $this->circle_id)
             ->whereBetween('scheduled_at', [$startDate, $endDate])
             ->count();
-        
+
         $sessionsToGenerate = min($maxSessionsPerGeneration, $maxSessionsPerGeneration - $existingSessionsInPeriod);
-        
+
         if ($sessionsToGenerate <= 0) {
             return 0; // No sessions to generate in this period
         }
@@ -174,13 +174,13 @@ class QuranCircleSchedule extends Model
         while ($currentDate <= $endDate && $generatedCount < $sessionsToGenerate) {
             if ($this->shouldGenerateSessionForDate($currentDate)) {
                 $sessionTime = $this->getSessionTimeForDate($currentDate);
-                
+
                 if ($sessionTime) {
                     $this->createSessionForDateTime($currentDate->copy()->setTimeFromTimeString($sessionTime));
                     $generatedCount++;
                 }
             }
-            
+
             $currentDate->addDay();
         }
 
@@ -194,26 +194,26 @@ class QuranCircleSchedule extends Model
     private function shouldGenerateSessionForDate(Carbon $date): bool
     {
         $dayName = strtolower($date->format('l'));
-        
+
         foreach ($this->weekly_schedule as $schedule) {
             if (isset($schedule['day']) && $schedule['day'] === $dayName) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
     private function getSessionTimeForDate(Carbon $date): ?string
     {
         $dayName = strtolower($date->format('l'));
-        
+
         foreach ($this->weekly_schedule as $schedule) {
             if (isset($schedule['day']) && $schedule['day'] === $dayName) {
                 return $schedule['time'] ?? null;
             }
         }
-        
+
         return null;
     }
 
@@ -225,11 +225,14 @@ class QuranCircleSchedule extends Model
             'quran_teacher_id' => $this->quran_teacher_id,
             'scheduled_at' => $datetime,
         ])->first();
-        
+
         if ($existing) {
             return $existing;
         }
-        
+
+        // Get duration from circle, fallback to schedule default
+        $duration = $this->circle->session_duration_minutes ?? $this->default_duration_minutes ?? 60;
+
         return QuranSession::create([
             'academy_id' => $this->academy_id,
             'quran_teacher_id' => $this->quran_teacher_id,
@@ -244,7 +247,7 @@ class QuranCircleSchedule extends Model
             'description' => $this->generateSessionDescription($datetime),
             'lesson_objectives' => $this->default_lesson_objectives,
             'scheduled_at' => $datetime,
-            'duration_minutes' => $this->default_duration_minutes,
+            'duration_minutes' => $duration,
             'meeting_link' => $this->meeting_link,
             'meeting_id' => $this->meeting_id,
             'meeting_password' => $this->meeting_password,
@@ -260,7 +263,7 @@ class QuranCircleSchedule extends Model
     {
         $circleCode = $this->circle->circle_code ?? 'QC';
         $dateCode = $datetime->format('Ymd-Hi');
-        
+
         return "{$circleCode}-{$dateCode}";
     }
 
@@ -282,7 +285,7 @@ class QuranCircleSchedule extends Model
 
         $dayName = self::WEEKDAYS[strtolower($datetime->format('l'))] ?? $datetime->format('l');
         $circleName = $this->circle->name_ar ?? 'الحلقة';
-        
+
         return "{$circleName} - {$dayName} {$datetime->format('H:i')}";
     }
 
@@ -304,14 +307,14 @@ class QuranCircleSchedule extends Model
             ], $this->session_description_template);
         }
 
-        return "جلسة حلقة القرآن المجدولة تلقائياً";
+        return 'جلسة حلقة القرآن المجدولة تلقائياً';
     }
 
     public function activateSchedule(): int
     {
         // Update circle status and enrollment when schedule is activated
         $updated = $this->update(['is_active' => true]);
-        
+
         if ($updated) {
             $this->circle->update([
                 'status' => 'active',
@@ -320,25 +323,25 @@ class QuranCircleSchedule extends Model
                 'schedule_configured_at' => now(),
                 'schedule_configured_by' => $this->quran_teacher_id,
             ]);
-            
+
             // Generate initial sessions and return count
             return $this->generateUpcomingSessions();
         }
-        
+
         return 0;
     }
 
     public function deactivateSchedule(): bool
     {
         $updated = $this->update(['is_active' => false]);
-        
+
         if ($updated) {
             $this->circle->update([
                 'status' => 'inactive',
                 'enrollment_status' => 'closed',
                 'schedule_configured' => false,
             ]);
-            
+
             // Cancel future generated sessions
             $this->generatedSessions()
                 ->where('status', 'scheduled')
@@ -350,7 +353,7 @@ class QuranCircleSchedule extends Model
                     'cancelled_at' => now(),
                 ]);
         }
-        
+
         return $updated;
     }
 
@@ -362,7 +365,7 @@ class QuranCircleSchedule extends Model
         while ($currentDate <= $end) {
             if ($this->shouldGenerateSessionForDate($currentDate)) {
                 $sessionTime = $this->getSessionTimeForDate($currentDate);
-                
+
                 if ($sessionTime) {
                     $datetime = $currentDate->copy()->setTimeFromTimeString($sessionTime);
                     $sessions[] = [
@@ -374,7 +377,7 @@ class QuranCircleSchedule extends Model
                     ];
                 }
             }
-            
+
             $currentDate->addDay();
         }
 
@@ -390,20 +393,20 @@ class QuranCircleSchedule extends Model
         } else {
             foreach ($this->weekly_schedule as $index => $schedule) {
                 if (empty($schedule['day'])) {
-                    $errors[] = "اليوم مطلوب في الجدول رقم " . ($index + 1);
+                    $errors[] = 'اليوم مطلوب في الجدول رقم '.($index + 1);
                 }
-                
+
                 if (empty($schedule['time'])) {
-                    $errors[] = "الوقت مطلوب في الجدول رقم " . ($index + 1);
+                    $errors[] = 'الوقت مطلوب في الجدول رقم '.($index + 1);
                 }
-                
-                if (!in_array($schedule['day'], array_keys(self::WEEKDAYS))) {
-                    $errors[] = "يوم غير صحيح في الجدول رقم " . ($index + 1);
+
+                if (! in_array($schedule['day'], array_keys(self::WEEKDAYS))) {
+                    $errors[] = 'يوم غير صحيح في الجدول رقم '.($index + 1);
                 }
             }
         }
 
-        if (!$this->schedule_starts_at) {
+        if (! $this->schedule_starts_at) {
             $errors[] = 'تاريخ بداية الجدول مطلوب';
         }
 
@@ -418,15 +421,15 @@ class QuranCircleSchedule extends Model
     protected static function booted()
     {
         static::creating(function ($schedule) {
-            if (!isset($schedule->generate_ahead_days)) {
+            if (! isset($schedule->generate_ahead_days)) {
                 $schedule->generate_ahead_days = 30;
             }
-            
-            if (!isset($schedule->generate_before_hours)) {
+
+            if (! isset($schedule->generate_before_hours)) {
                 $schedule->generate_before_hours = 1;
             }
-            
-            if (!isset($schedule->default_duration_minutes)) {
+
+            if (! isset($schedule->default_duration_minutes)) {
                 $schedule->default_duration_minutes = 60;
             }
         });

@@ -3,30 +3,29 @@
 namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages;
-use App\Filament\Teacher\Resources\QuranIndividualCircleResource\RelationManagers;
 use App\Models\QuranIndividualCircle;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
-use Filament\Support\Enums\FontWeight;
 
 class QuranIndividualCircleResource extends Resource
 {
     protected static ?string $model = QuranIndividualCircle::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
-    
+
     protected static ?string $navigationLabel = 'الحلقات الفردية';
-    
+
     protected static ?string $modelLabel = 'حلقة فردية';
-    
+
     protected static ?string $pluralModelLabel = 'الحلقات الفردية';
-    
+
     protected static ?int $navigationSort = 10;
 
     public static function form(Form $form): Form
@@ -165,7 +164,7 @@ class QuranIndividualCircleResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight(FontWeight::SemiBold),
-                    
+
                 Tables\Columns\TextColumn::make('specialization')
                     ->label('التخصص')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -210,7 +209,7 @@ class QuranIndividualCircleResource extends Resource
 
                 Tables\Columns\TextColumn::make('progress_percentage')
                     ->label('نسبة التقدم')
-                    ->formatStateUsing(fn (float $state): string => number_format($state, 1) . '%')
+                    ->formatStateUsing(fn (float $state): string => number_format($state, 1).'%')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('current_surah')
@@ -282,7 +281,7 @@ class QuranIndividualCircleResource extends Resource
                 Tables\Actions\Action::make('calendar')
                     ->label('فتح التقويم')
                     ->icon('heroicon-o-calendar-days')
-                    ->url(fn (QuranIndividualCircle $record): string => route('teacher.calendar', ['subdomain' => Auth::user()->academy->subdomain ?? 'itqan-academy']) . '?circle=' . $record->id)
+                    ->url(fn (QuranIndividualCircle $record): string => route('teacher.calendar', ['subdomain' => Auth::user()->academy->subdomain ?? 'itqan-academy']).'?circle='.$record->id)
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([
@@ -304,7 +303,7 @@ class QuranIndividualCircleResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // RelationManagers\SessionsRelationManager::class,
+            \App\Filament\Teacher\Resources\QuranIndividualCircleResource\RelationManagers\SessionsRelationManager::class,
         ];
     }
 
@@ -312,9 +311,15 @@ class QuranIndividualCircleResource extends Resource
     {
         return [
             'index' => Pages\ListQuranIndividualCircles::route('/'),
-            // 'view' => Pages\ViewQuranIndividualCircle::route('/{record}'),
+            'create' => Pages\CreateQuranIndividualCircle::route('/create'),
+            'view' => Pages\ViewQuranIndividualCircle::route('/{record}'),
             'edit' => Pages\EditQuranIndividualCircle::route('/{record}/edit'),
         ];
+    }
+
+    public static function getBreadcrumb(): string
+    {
+        return static::$pluralModelLabel ?? 'الحلقات الفردية';
     }
 
     public static function canCreate(): bool

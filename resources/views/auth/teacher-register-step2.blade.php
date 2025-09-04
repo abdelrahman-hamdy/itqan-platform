@@ -116,12 +116,16 @@
                     <!-- Qualification Degree -->
                     <div class="mb-4">
                         <label for="qualification_degree" class="block text-sm font-medium text-gray-700 mb-2">
-                            الدرجة العلمية *
+                            المؤهل التعليمي *
                         </label>
-                        <input id="qualification_degree" name="qualification_degree" type="text" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('qualification_degree') border-red-500 @enderror"
-                               placeholder="مثال: بكالوريوس، ماجستير، دكتوراه"
-                               value="{{ old('qualification_degree') }}">
+                        <select id="qualification_degree" name="qualification_degree" required 
+                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('qualification_degree') border-red-500 @enderror">
+                            <option value="">اختر المؤهل التعليمي</option>
+                            <option value="bachelor" {{ old('qualification_degree') == 'bachelor' ? 'selected' : '' }}>بكالوريوس</option>
+                            <option value="master" {{ old('qualification_degree') == 'master' ? 'selected' : '' }}>ماجستير</option>
+                            <option value="phd" {{ old('qualification_degree') == 'phd' ? 'selected' : '' }}>دكتوراه</option>
+                            <option value="other" {{ old('qualification_degree') == 'other' ? 'selected' : '' }}>أخرى</option>
+                        </select>
                         @error('qualification_degree')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

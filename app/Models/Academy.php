@@ -59,6 +59,14 @@ class Academy extends Model
     ];
 
     /**
+     * Get the route key for the model (use subdomain for tenant routing)
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'subdomain';
+    }
+
+    /**
      * Get all users belonging to this academy
      */
     public function users(): HasMany
@@ -175,7 +183,7 @@ class Academy extends Model
      */
     public function gradeLevels(): HasMany
     {
-        return $this->hasMany(GradeLevel::class);
+        return $this->hasMany(AcademicGradeLevel::class);
     }
 
     /**

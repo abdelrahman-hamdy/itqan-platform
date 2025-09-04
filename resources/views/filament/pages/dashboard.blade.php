@@ -67,6 +67,10 @@
                            class="block text-blue-100 hover:text-white transition-colors">
                             إدارة المدرسين
                         </a>
+                        <a href="{{ route('filament.admin.resources.academic-packages.index') }}" 
+                           class="block text-blue-100 hover:text-white transition-colors">
+                            الباقات الأكاديمية
+                        </a>
                         <a href="{{ route('filament.admin.resources.recorded-courses.index') }}" 
                            class="block text-blue-100 hover:text-white transition-colors">
                             الدورات المسجلة

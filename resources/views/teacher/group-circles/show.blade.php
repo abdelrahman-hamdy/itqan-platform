@@ -3,6 +3,17 @@
     :description="'إدارة الحلقة الجماعية: ' . $circle->name">
 
 <div>
+    <!-- Breadcrumb -->
+    <nav class="mb-8">
+        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
+            <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">{{ auth()->user()->name }}</a></li>
+            <li>/</li>
+            <li><a href="{{ route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">الحلقات الجماعية</a></li>
+            <li>/</li>
+            <li class="text-gray-900">{{ $circle->name }}</li>
+        </ol>
+    </nav>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
@@ -19,7 +30,7 @@
                 :sessions="$allSessions" 
                 title="إدارة جلسات الحلقة الجماعية"
                 view-type="teacher"
-                :show-tabs="true"
+                :show-tabs="false"
                 :circle="$circle"
                 empty-message="لا توجد جلسات مجدولة بعد" />
         </div>

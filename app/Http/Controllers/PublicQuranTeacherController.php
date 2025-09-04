@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\QuranTeacherProfile;
-use App\Models\QuranPackage;
-use App\Models\QuranTrialRequest;
-use App\Models\QuranSubscription;
 use App\Models\Academy;
+use App\Models\QuranPackage;
+use App\Models\QuranSubscription;
+use App\Models\QuranTeacherProfile;
+use App\Models\QuranTrialRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -21,8 +21,8 @@ class PublicQuranTeacherController extends Controller
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
@@ -37,15 +37,15 @@ class PublicQuranTeacherController extends Controller
         return view('public.quran-teachers.index', compact('academy', 'teachers'));
     }
 
-        /**
+    /**
      * Display the specified teacher profile
      */
     public function show(Request $request, $subdomain, $teacherId)
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
@@ -57,15 +57,12 @@ class PublicQuranTeacherController extends Controller
             ->with(['academy', 'user'])
             ->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(404, 'Teacher not found');
         }
 
-        // Check if teacher offers trial sessions
-        if (!$teacher->offers_trial_sessions) {
-            return redirect()->route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])
-                ->with('error', 'هذا المعلم لا يقدم جلسات تجريبية حالياً');
-        }
+        // This check has been removed - teacher page should show regardless of trial session setting
+        // The trial session section will be conditionally displayed in the view
 
         // Get available packages for this academy
         $packages = QuranPackage::where('academy_id', $academy->id)
@@ -96,10 +93,10 @@ class PublicQuranTeacherController extends Controller
         }
 
         return view('public.quran-teachers.show', compact(
-            'academy', 
-            'teacher', 
-            'packages', 
-            'stats', 
+            'academy',
+            'teacher',
+            'packages',
+            'stats',
             'offersTrialSessions',
             'existingTrialRequest'
         ));
@@ -111,8 +108,8 @@ class PublicQuranTeacherController extends Controller
     public function showTrialBooking(Request $request, $subdomain, $teacherId)
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
@@ -122,7 +119,7 @@ class PublicQuranTeacherController extends Controller
             ->where('approval_status', 'approved')
             ->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(404, 'Teacher not found');
         }
 
@@ -141,8 +138,8 @@ class PublicQuranTeacherController extends Controller
     public function showSubscriptionBooking(Request $request, $subdomain, $teacherId, $packageId)
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
@@ -152,7 +149,7 @@ class PublicQuranTeacherController extends Controller
             ->where('approval_status', 'approved')
             ->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(404, 'Teacher not found');
         }
 
@@ -161,7 +158,7 @@ class PublicQuranTeacherController extends Controller
             ->where('is_active', true)
             ->first();
 
-        if (!$package) {
+        if (! $package) {
             abort(404, 'Package not found');
         }
 
@@ -180,8 +177,8 @@ class PublicQuranTeacherController extends Controller
     public function submitTrialRequest(Request $request, $subdomain, $teacherId)
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
@@ -191,12 +188,12 @@ class PublicQuranTeacherController extends Controller
             ->where('approval_status', 'approved')
             ->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(404, 'Teacher not found');
         }
 
         // Check if user is authenticated and is a student
-        if (!Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== 'student') {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
                 ->with('error', 'يجب تسجيل الدخول كطالب لحجز جلسة تجريبية');
         }
@@ -207,7 +204,7 @@ class PublicQuranTeacherController extends Controller
         Log::info('Trial form submitted', [
             'user_id' => $user->id,
             'teacher_id' => $teacherId,
-            'form_data' => $request->all()
+            'form_data' => $request->all(),
         ]);
 
         // Check if student already has a trial request with this teacher
@@ -244,7 +241,7 @@ class PublicQuranTeacherController extends Controller
         try {
             // Get student profile for data
             $studentProfile = $user->studentProfile;
-            
+
             // Create the trial request
             $trialRequest = QuranTrialRequest::create([
                 'academy_id' => $academy->id,
@@ -265,12 +262,38 @@ class PublicQuranTeacherController extends Controller
             // TODO: Send notification to teacher
             // TODO: Send confirmation email to student
 
+            Log::info('Trial request created successfully', [
+                'trial_request_id' => $trialRequest->id,
+                'user_id' => $user->id,
+                'teacher_id' => $teacherId,
+                'academy_id' => $academy->id,
+                'request_code' => $trialRequest->request_code,
+            ]);
+
             return redirect()->route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])
                 ->with('success', 'تم إرسال طلب الجلسة التجريبية بنجاح! سيتواصل معك المعلم خلال 24 ساعة');
 
         } catch (\Exception $e) {
+            // Log the actual error for debugging
+            Log::error('Trial request creation failed', [
+                'user_id' => $user->id,
+                'teacher_id' => $teacherId,
+                'academy_id' => $academy->id,
+                'request_data' => $request->all(),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'stack_trace' => $e->getTraceAsString(),
+            ]);
+
+            // Return a more helpful error message in development
+            $errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى';
+            if (config('app.debug')) {
+                $errorMessage .= ' - '.$e->getMessage();
+            }
+
             return redirect()->back()
-                ->with('error', 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى')
+                ->with('error', $errorMessage)
                 ->withInput();
         }
     }
@@ -281,8 +304,8 @@ class PublicQuranTeacherController extends Controller
     public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId)
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
@@ -292,7 +315,7 @@ class PublicQuranTeacherController extends Controller
             ->where('approval_status', 'approved')
             ->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(404, 'Teacher not found');
         }
 
@@ -301,12 +324,12 @@ class PublicQuranTeacherController extends Controller
             ->where('is_active', true)
             ->first();
 
-        if (!$package) {
+        if (! $package) {
             abort(404, 'Package not found');
         }
 
         // Check if user is authenticated and is a student
-        if (!Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== 'student') {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
                 ->with('error', 'يجب تسجيل الدخول كطالب للاشتراك');
         }
@@ -318,7 +341,7 @@ class PublicQuranTeacherController extends Controller
             'user_id' => $user->id,
             'teacher_id' => $teacherId,
             'package_id' => $packageId,
-            'form_data' => $request->all()
+            'form_data' => $request->all(),
         ]);
 
         // Validate the request
@@ -351,22 +374,23 @@ class PublicQuranTeacherController extends Controller
                 'teacher_id' => $teacherId,
                 'package_id' => $packageId,
                 'billing_cycle' => $request->billing_cycle,
-                'current_level' => $request->current_level
+                'current_level' => $request->current_level,
             ]);
 
             // Calculate the price based on billing cycle
             $price = $package->getPriceForBillingCycle($request->billing_cycle);
-            
-            if (!$price) {
+
+            if (! $price) {
                 Log::warning('Invalid billing cycle for package', [
                     'package_id' => $packageId,
                     'billing_cycle' => $request->billing_cycle,
                     'available_prices' => [
                         'monthly' => $package->monthly_price,
                         'quarterly' => $package->quarterly_price,
-                        'yearly' => $package->yearly_price
-                    ]
+                        'yearly' => $package->yearly_price,
+                    ],
                 ]);
+
                 return redirect()->back()
                     ->with('error', 'دورة الفوترة المختارة غير متاحة لهذه الباقة')
                     ->withInput();
@@ -386,8 +410,9 @@ class PublicQuranTeacherController extends Controller
                 Log::warning('Student already has active subscription', [
                     'existing_subscription_id' => $existingSubscription->id,
                     'student_id' => $user->id,
-                    'teacher_id' => $teacherId
+                    'teacher_id' => $teacherId,
                 ]);
+
                 return redirect()->back()
                     ->with('error', 'لديك اشتراك نشط أو معلق مع هذا المعلم')
                     ->withInput();
@@ -395,7 +420,7 @@ class PublicQuranTeacherController extends Controller
 
             // Calculate subscription dates
             $startDate = now();
-            $endDate = match($request->billing_cycle) {
+            $endDate = match ($request->billing_cycle) {
                 'monthly' => $startDate->copy()->addMonth(),
                 'quarterly' => $startDate->copy()->addMonths(3),
                 'yearly' => $startDate->copy()->addYear(),
@@ -404,17 +429,17 @@ class PublicQuranTeacherController extends Controller
 
             Log::info('Subscription dates calculated', [
                 'start_date' => $startDate->toDateTimeString(),
-                'end_date' => $endDate->toDateTimeString()
+                'end_date' => $endDate->toDateTimeString(),
             ]);
 
             // Get student profile for data
             $studentProfile = $user->studentProfile;
-            
+
             // Prepare subscription data
             $subscriptionData = [
                 'academy_id' => $academy->id,
                 'student_id' => $user->id,
-                'quran_teacher_id' => $teacher->id,
+                'quran_teacher_id' => $teacher->user_id,
                 'package_id' => $package->id,
                 'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
                 'subscription_type' => 'individual', // Default to individual sessions
@@ -454,7 +479,7 @@ class PublicQuranTeacherController extends Controller
             ];
 
             Log::info('Creating subscription with data', ['subscription_data' => $subscriptionData]);
-            
+
             // Create the subscription
             $subscription = QuranSubscription::create($subscriptionData);
 
@@ -462,24 +487,24 @@ class PublicQuranTeacherController extends Controller
 
             // Simulate fake payment processing
             Log::info('Simulating payment processing for subscription', ['subscription_id' => $subscription->id]);
-            
+
             // Update subscription to mark as paid and active (fake payment success)
             $subscription->update([
                 'payment_status' => 'paid',
                 'subscription_status' => 'active',
-                'last_payment_at' => now()
+                'last_payment_at' => now(),
             ]);
 
             Log::info('Fake payment processed successfully', [
                 'subscription_id' => $subscription->id,
                 'final_status' => 'active',
-                'payment_status' => 'paid'
+                'payment_status' => 'paid',
             ]);
 
             // Redirect back to teacher profile with success message
             return redirect()->route('public.quran-teachers.show', [
-                'subdomain' => $academy->subdomain, 
-                'teacher' => $teacher->id
+                'subdomain' => $academy->subdomain,
+                'teacher' => $teacher->id,
             ])->with('success', 'تم إنشاء الاشتراك بنجاح! تم قبول الدفع وأصبح الاشتراك نشطاً. يمكنك الآن حجز الجلسات مع المعلم');
 
         } catch (\Exception $e) {
@@ -493,15 +518,15 @@ class PublicQuranTeacherController extends Controller
                 'error_message' => $e->getMessage(),
                 'error_file' => $e->getFile(),
                 'error_line' => $e->getLine(),
-                'stack_trace' => $e->getTraceAsString()
+                'stack_trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Return a more helpful error message in development
             $errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى';
             if (config('app.debug')) {
-                $errorMessage .= ' - ' . $e->getMessage();
+                $errorMessage .= ' - '.$e->getMessage();
             }
-            
+
             return redirect()->back()
                 ->with('error', $errorMessage)
                 ->withInput();

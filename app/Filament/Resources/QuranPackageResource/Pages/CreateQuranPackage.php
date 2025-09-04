@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\QuranPackageResource\Pages;
 
 use App\Filament\Resources\QuranPackageResource;
-use Filament\Actions;
+use App\Services\AcademyContextService;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,9 +19,9 @@ class CreateQuranPackage extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Add the academy ID and created_by automatically
-        $data['academy_id'] = Auth::user()->academy_id ?? 1;
+        $data['academy_id'] = AcademyContextService::getCurrentAcademyId() ?? Auth::user()->academy_id;
         $data['created_by'] = Auth::id();
-        
+
         return $data;
     }
 
@@ -34,4 +34,4 @@ class CreateQuranPackage extends CreateRecord
     {
         return 'تم إنشاء باقة القرآن بنجاح';
     }
-} 
+}

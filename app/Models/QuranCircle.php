@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\WeekDays;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,15 +32,12 @@ class QuranCircle extends Model
         'min_students_to_start',
         'session_duration_minutes',
         'monthly_sessions_count',
-        'schedule_days',
-        'schedule_time',
         'monthly_fee',
         'teacher_monthly_revenue', // Teacher's monthly salary from this circle
         'sessions_completed',
 
         'status',
         'enrollment_status',
-        'admin_notes',
         'learning_objectives', // Re-added for circle goals
 
         'last_session_at',
@@ -59,12 +57,13 @@ class QuranCircle extends Model
         'preparation_minutes',
         'ending_buffer_minutes',
         'late_join_grace_period_minutes',
+        'schedule_time',
+        'schedule_days',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'schedule_days' => 'array',
         'learning_objectives' => 'array', // Cast for circle goals
 
         'max_students' => 'integer',
@@ -89,6 +88,7 @@ class QuranCircle extends Model
         'preparation_minutes' => 'integer',
         'ending_buffer_minutes' => 'integer',
         'late_join_grace_period_minutes' => 'integer',
+        'schedule_days' => 'array',
     ];
 
     // Constants
@@ -117,14 +117,68 @@ class QuranCircle extends Model
         return $this->belongsTo(Academy::class);
     }
 
-    public function quranTeacher(): BelongsTo
+    public function teacher(): BelongsTo
     {
-        return $this->belongsTo(QuranTeacherProfile::class);
+        return $this->belongsTo(\App\Models\User::class, 'quran_teacher_id');
+    }
+
+    public function teacherUser(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'quran_teacher_id');
+    }
+
+    // Fixed relationship pointing to User model
+    public function quranTeacher()
+    {
+        return $this->belongsTo('\App\Models\User', 'quran_teacher_id', 'id');
+    }
+
+    // Test new relationship name
+    public function circleTeacher()
+    {
+        return $this->belongsTo('\App\Models\User', 'quran_teacher_id', 'id');
+    }
+
+    public function teacherProfile(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'quran_teacher_id');
+    }
+
+    // Temporary workaround for quranTeacher relationship
+    public function getQuranTeacherAttribute()
+    {
+        if (! $this->quran_teacher_id) {
+            return null;
+        }
+
+        // Create a mock object that matches the expected structure
+        $user = \App\Models\User::find($this->quran_teacher_id);
+        if (! $user) {
+            return null;
+        }
+
+        // Get teacher profile if exists
+        $teacherProfile = $user->quranTeacherProfile;
+
+        // Return an object that has both user properties and the user relationship
+        return (object) [
+            'id' => $teacherProfile ? $teacherProfile->id : $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'user_type' => $user->user_type,
+            'full_name' => $user->name,
+            'user' => $user,
+            // Add other properties that views might expect
+            'teaching_experience_years' => $teacherProfile->teaching_experience_years ?? null,
+            'bio' => $teacherProfile->bio ?? null,
+            'qualification' => $teacherProfile->educational_qualification ?? null,
+            'avatar' => $user->avatar,
+        ];
     }
 
     public function students(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'quran_circle_students', 'circle_id', 'student_id')
+        return $this->belongsToMany(\App\Models\User::class, 'quran_circle_students', 'circle_id', 'student_id')
             ->withPivot([
                 'enrolled_at',
                 'status',
@@ -260,7 +314,7 @@ class QuranCircle extends Model
         if (is_bool($this->status) || is_numeric($this->status)) {
             return $this->status ? 'نشط' : 'غير نشط';
         }
-        
+
         // Handle string status values (for backward compatibility)
         $statuses = [
             'planning' => 'قيد التخطيط',
@@ -354,7 +408,7 @@ class QuranCircle extends Model
 
     public function getScheduleTextAttribute(): string
     {
-        if (empty($this->schedule_days) || empty($this->schedule_times)) {
+        if (! $this->schedule || ! $this->schedule->weekly_schedule) {
             return 'لم يتم تحديد الجدول بعد';
         }
 
@@ -368,31 +422,43 @@ class QuranCircle extends Model
             'saturday' => 'السبت',
         ];
 
-        $scheduleDays = array_map(fn ($day) => $days[$day] ?? $day, $this->schedule_days);
-        $times = implode(', ', $this->schedule_times);
+        $scheduleText = collect($this->schedule->weekly_schedule)
+            ->map(function ($item) use ($days) {
+                $day = $days[strtolower($item['day'])] ?? $item['day'];
+                $time = $item['time'] ?? 'غير محدد';
 
-        return implode(', ', $scheduleDays).' - '.$times;
+                return "{$day} - {$time}";
+            })
+            ->join('، ');
+
+        return $scheduleText ?: 'لم يتم تحديد الجدول بعد';
     }
 
     public function getScheduleDaysTextAttribute(): string
     {
-        if (empty($this->schedule_days)) {
-            return 'لم يتم تحديد الأيام بعد';
+        // First, check if we have direct schedule_days attribute
+        if (! empty($this->schedule_days) && is_array($this->schedule_days)) {
+            return WeekDays::getDisplayNames($this->schedule_days);
         }
 
-        $days = [
-            'sunday' => 'الأحد',
-            'monday' => 'الاثنين',
-            'tuesday' => 'الثلاثاء',
-            'wednesday' => 'الأربعاء',
-            'thursday' => 'الخميس',
-            'friday' => 'الجمعة',
-            'saturday' => 'السبت',
-        ];
+        // Fallback to the schedule relationship if available
+        if ($this->schedule && $this->schedule->weekly_schedule) {
+            $scheduleDays = collect($this->schedule->weekly_schedule)
+                ->pluck('day')
+                ->unique()
+                ->filter()
+                ->map(function ($day) {
+                    try {
+                        return WeekDays::from(strtolower($day))->label();
+                    } catch (\ValueError $e) {
+                        return $day; // Fallback to original value if not a valid enum
+                    }
+                });
 
-        $scheduleDays = array_map(fn ($day) => $days[strtolower($day)] ?? $day, $this->schedule_days);
-        
-        return implode('، ', $scheduleDays);
+            return implode('، ', $scheduleDays->toArray());
+        }
+
+        return 'لم يتم تحديد الأيام بعد';
     }
 
     public function getAgeRangeTextAttribute(): string

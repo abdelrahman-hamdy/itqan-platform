@@ -52,7 +52,7 @@ class StudentProfile extends Model
                 // Get academy ID from grade level or user
                 $academyId = 1; // Default fallback
                 if ($model->grade_level_id) {
-                    $gradeLevel = \App\Models\GradeLevel::find($model->grade_level_id);
+                    $gradeLevel = \App\Models\AcademicGradeLevel::find($model->grade_level_id);
                     $academyId = $gradeLevel ? $gradeLevel->academy_id : 1;
                 } elseif ($model->user_id) {
                     $user = \App\Models\User::find($model->user_id);
@@ -85,7 +85,7 @@ class StudentProfile extends Model
 
     public function gradeLevel(): BelongsTo
     {
-        return $this->belongsTo(GradeLevel::class);
+        return $this->belongsTo(AcademicGradeLevel::class, 'grade_level_id');
     }
 
     /**

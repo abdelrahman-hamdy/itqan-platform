@@ -25,7 +25,7 @@
     />
 
     <!-- Session Details -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="space-y-6">
         <!-- Session Information -->
         <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">معلومات الجلسة</h3>

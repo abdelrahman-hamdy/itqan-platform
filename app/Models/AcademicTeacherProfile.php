@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Traits\ScopedToAcademy;
 use Illuminate\Support\Facades\DB;
+use App\Models\Subject;
+use App\Models\AcademicSubject;
 
 class AcademicTeacherProfile extends Model
 {
@@ -25,12 +28,14 @@ class AcademicTeacherProfile extends Model
         'teacher_code',
         'education_level',
         'university',
-        'graduation_year',
         'qualification_degree',
         'teaching_experience_years',
         'certifications',
         'subject_ids',
         'grade_level_ids',
+        'subjects_text',
+        'grade_levels_text',
+        'package_ids',
         'available_days',
         'available_time_start',
         'available_time_end',
@@ -46,11 +51,13 @@ class AcademicTeacherProfile extends Model
         'languages' => 'array',
         'subject_ids' => 'array',
         'grade_level_ids' => 'array',
+        'subjects_text' => 'array',
+        'grade_levels_text' => 'array',
+        'package_ids' => 'array',
         'available_days' => 'array',
         'approved_at' => 'datetime',
         'is_active' => 'boolean',
         'rating' => 'decimal:2',
-        'graduation_year' => 'integer',
         'teaching_experience_years' => 'integer',
         'session_price_individual' => 'decimal:2',
         'total_students' => 'integer',
@@ -142,17 +149,25 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
-     * Get the subjects this teacher can teach based on subject_ids array
+     * Get the subjects this teacher can teach
      */
-    public function getSubjectsAttribute()
+    public function subjects(): BelongsToMany
     {
-        if (empty($this->subject_ids)) {
-            return collect();
-        }
-        
-        return Subject::whereIn('id', $this->subject_ids)
-                      ->where('academy_id', $this->academy_id)
-                      ->get();
+        return $this->belongsToMany(Subject::class, 'academic_teacher_subjects', 'teacher_id', 'subject_id')
+            ->where('subjects.academy_id', $this->academy_id)
+            ->withPivot(['proficiency_level', 'years_experience', 'is_primary', 'certification'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the grade levels this teacher can teach
+     */
+    public function gradeLevels(): BelongsToMany
+    {
+        return $this->belongsToMany(AcademicGradeLevel::class, 'academic_teacher_grade_levels', 'teacher_id', 'grade_level_id')
+            ->where('academic_grade_levels.academy_id', $this->academy_id)
+            ->withPivot(['years_experience', 'specialization_notes'])
+            ->withTimestamps();
     }
 
     /**
@@ -164,8 +179,41 @@ class AcademicTeacherProfile extends Model
             return collect();
         }
         
-        return AcademicGradeLevel::whereIn('id', $this->grade_level_ids)
+        // Ensure grade_level_ids is an array
+        $gradeLevelIds = $this->grade_level_ids;
+        if (is_string($gradeLevelIds)) {
+            $gradeLevelIds = json_decode($gradeLevelIds, true) ?: [];
+        }
+        if (!is_array($gradeLevelIds)) {
+            return collect();
+        }
+        
+        return AcademicGradeLevel::whereIn('id', $gradeLevelIds)
                                  ->where('academy_id', $this->academy_id)
+                                 ->get();
+    }
+
+    /**
+     * Get the packages this teacher can offer based on package_ids array
+     */
+    public function getPackagesAttribute()
+    {
+        if (empty($this->package_ids)) {
+            return collect();
+        }
+        
+        // Ensure package_ids is an array
+        $packageIds = $this->package_ids;
+        if (is_string($packageIds)) {
+            $packageIds = json_decode($packageIds, true) ?: [];
+        }
+        if (!is_array($packageIds)) {
+            return collect();
+        }
+        
+        return \App\Models\AcademicPackage::whereIn('id', $packageIds)
+                                 ->where('academy_id', $this->academy_id)
+                                 ->where('is_active', true)
                                  ->get();
     }
 
@@ -272,7 +320,11 @@ class AcademicTeacherProfile extends Model
      */
     public function canTeachSubject(int $subjectId): bool
     {
-        return in_array($subjectId, $this->subject_ids ?? []);
+        $subjectIds = $this->subject_ids ?? [];
+        if (is_string($subjectIds)) {
+            $subjectIds = json_decode($subjectIds, true) ?: [];
+        }
+        return is_array($subjectIds) && in_array($subjectId, $subjectIds);
     }
 
     /**
@@ -280,7 +332,11 @@ class AcademicTeacherProfile extends Model
      */
     public function canTeachGradeLevel(int $gradeLevelId): bool
     {
-        return in_array($gradeLevelId, $this->grade_level_ids ?? []);
+        $gradeLevelIds = $this->grade_level_ids ?? [];
+        if (is_string($gradeLevelIds)) {
+            $gradeLevelIds = json_decode($gradeLevelIds, true) ?: [];
+        }
+        return is_array($gradeLevelIds) && in_array($gradeLevelId, $gradeLevelIds);
     }
 
     /**

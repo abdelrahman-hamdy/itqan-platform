@@ -29,7 +29,7 @@ use App\Filament\Resources\QuranCircleResource;
 use App\Filament\Resources\QuranSubscriptionResource;
 use App\Filament\Resources\QuranPackageResource;
 use App\Filament\Resources\InteractiveCourseResource;
-use App\Filament\Resources\GradeLevelResource;
+
 use App\Filament\Resources\SubjectResource;
 use App\Filament\Resources\AcademicSettingsResource;
 
@@ -80,7 +80,6 @@ class AcademyPanelProvider extends PanelProvider
                 
                 // إدارة التعليم الأكاديمي
                 InteractiveCourseResource::class,
-                GradeLevelResource::class,
                 SubjectResource::class,
                 
                 // إدارة الدورات المسجلة

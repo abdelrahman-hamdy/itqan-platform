@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -69,7 +68,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/quran', [App\Http\Controllers\StudentProfileController::class, 'quranProfile'])->name('student.quran');
 
         Route::get('/interactive-courses', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
-        Route::get('/academic-teachers', [App\Http\Controllers\StudentProfileController::class, 'academicTeachers'])->name('student.academic-teachers');
+        // Academic teachers route moved to web.php for subdomain compatibility
 
         // Note: student.courses route is now handled in web.php
 
@@ -77,9 +76,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             return view('student.assignments');
         })->name('student.assignments');
 
-        // Quran sessions and subscription management
-
-        Route::get('/quran/sessions/{subscriptionId}', [App\Http\Controllers\StudentProfileController::class, 'quranSessions'])->name('student.quran.sessions');
+        // Quran sessions management moved to individual circles
 
         // Course detail pages - REMOVED: Moved to main web.php with ID-based routing
         // Route::get('/courses/{course}', [App\Http\Controllers\StudentProfileController::class, 'courseShow'])->name('student.courses.show');
@@ -92,13 +89,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/circles/{circleId}/enroll', [App\Http\Controllers\StudentProfileController::class, 'enrollInCircle'])->name('student.circles.enroll');
         Route::post('/circles/{circleId}/leave', [App\Http\Controllers\StudentProfileController::class, 'leaveCircle'])->name('student.circles.leave');
 
-        // Individual circles management
-        // Route moved to web.php as unified route for both teachers and students
-        // Route::get('/individual-circles/{circleId}', [App\Http\Controllers\StudentProfileController::class, 'showIndividualCircle'])->name('student.individual-circles.show');
+        // Individual circles management - MOVED to web.php unified route
 
-        // Session routes for students
-        Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForStudent'])->name('student.sessions.show');
-        Route::put('/sessions/{sessionId}/feedback', [App\Http\Controllers\QuranSessionController::class, 'addFeedback'])->name('student.sessions.feedback');
+        // Session routes for students - MOVED to web.php for subdomain compatibility
     });
 
     // Parent routes (profile-based, no dashboard)
@@ -128,13 +121,36 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     });
 
     // Teacher routes (profile-based with dashboard access)
-    Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->group(function () {
-        // Main teacher route redirects to profile
+    Route::middleware(['auth', 'role:teacher,quran_teacher,academic_teacher'])->prefix('teacher')->group(function () {
+        // Main teacher route with smart dashboard redirect
         Route::get('/', function () {
-            $subdomain = request()->route('subdomain') ?? Auth::user()->academy->subdomain ?? 'itqan-academy';
-
+            $user = Auth::user();
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            
+            // Smart redirect based on teacher type
+            if ($user->isAcademicTeacher()) {
+                return redirect("/academic-teacher-panel");
+            } elseif ($user->isQuranTeacher()) {
+                return redirect("/teacher-panel");
+            }
+            
+            // Fallback to profile for other teacher types
             return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
         })->name('teacher.dashboard');
+
+        // Direct panel access redirect (for when users bookmark panel URLs)
+        Route::get('/panel-redirect', function () {
+            $user = Auth::user();
+            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            
+            if ($user->isAcademicTeacher()) {
+                return redirect("/academic-teacher-panel");
+            } elseif ($user->isQuranTeacher()) {
+                return redirect("/teacher-panel");
+            }
+            
+            return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
+        })->name('teacher.panel.redirect');
 
         // Teacher profile routes
         Route::get('/profile', [App\Http\Controllers\TeacherProfileController::class, 'index'])->name('teacher.profile');
@@ -167,6 +183,23 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             Route::put('/session/{session}/link', [App\Http\Controllers\MeetingLinkController::class, 'updateSessionMeetingLink'])->name('session.update');
             Route::put('/trial/{trialRequest}/link', [App\Http\Controllers\MeetingLinkController::class, 'updateTrialMeetingLink'])->name('trial.update');
             Route::post('/session/{session}/generate', [App\Http\Controllers\MeetingLinkController::class, 'generateMeetingLink'])->name('session.generate');
+        });
+
+        // Academic Teacher Routes (Individual Lessons)
+        Route::middleware('role:academic_teacher')->prefix('academic')->name('teacher.academic.')->group(function () {
+            // Individual Academic Lessons
+            Route::get('/lessons', [App\Http\Controllers\AcademicIndividualLessonController::class, 'index'])->name('lessons.index');
+            Route::get('/lessons/{lesson}', [App\Http\Controllers\AcademicIndividualLessonController::class, 'show'])->name('lessons.show');
+            Route::get('/lessons/{lesson}/progress', [App\Http\Controllers\AcademicIndividualLessonController::class, 'progressReport'])->name('lessons.progress');
+            Route::put('/lessons/{lesson}/settings', [App\Http\Controllers\AcademicIndividualLessonController::class, 'updateSettings'])->name('lessons.update-settings');
+
+            // Academic Sessions
+            Route::get('/sessions', [App\Http\Controllers\AcademicSessionController::class, 'index'])->name('sessions.index');
+            Route::get('/sessions/{session}', [App\Http\Controllers\AcademicSessionController::class, 'show'])->name('sessions.show');
+            Route::put('/sessions/{session}/evaluation', [App\Http\Controllers\AcademicSessionController::class, 'updateEvaluation'])->name('sessions.evaluation');
+            Route::put('/sessions/{session}/status', [App\Http\Controllers\AcademicSessionController::class, 'updateStatus'])->name('sessions.status');
+            Route::put('/sessions/{session}/reschedule', [App\Http\Controllers\AcademicSessionController::class, 'reschedule'])->name('sessions.reschedule');
+            Route::put('/sessions/{session}/cancel', [App\Http\Controllers\AcademicSessionController::class, 'cancel'])->name('sessions.cancel');
         });
     });
 

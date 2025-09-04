@@ -146,7 +146,7 @@ class LiveKitParticipants {
                 <div class="flex items-center flex-1 min-w-0">
                     <span class="font-semibold truncate" id="overlay-name-${participantId}">${this.getParticipantDisplayName(participant)}</span>
                     ${this.isParticipantTeacher(participant, isLocal) ? 
-                        '<span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap flex-shrink-0 shadow-sm">معلم</span>' : 
+                        '<span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap flex-shrink-0 shadow-sm mr-1">معلم</span>' : 
                         ''
                     }
                 </div>
@@ -238,10 +238,10 @@ class LiveKitParticipants {
         const shouldShowMicOn = isLocal;
 
         const cameraStatusClass = shouldShowCameraOn ? 'text-green-500' : 'text-red-500';
-        const cameraStatusIcon = shouldShowCameraOn ? 'fas fa-video' : 'fas fa-video-slash';
+        const cameraStatusIcon = shouldShowCameraOn ? 'ri-vidicon-line' : 'ri-vidicon-off-line';
 
         const micStatusClass = shouldShowMicOn ? 'text-green-500' : 'text-red-500';
-        const micStatusIcon = shouldShowMicOn ? 'fas fa-microphone' : 'fas fa-microphone-slash';
+        const micStatusIcon = shouldShowMicOn ? 'ri-mic-line' : 'ri-mic-off-line';
 
         placeholder.innerHTML = `
             <div class="flex flex-col items-center text-center">

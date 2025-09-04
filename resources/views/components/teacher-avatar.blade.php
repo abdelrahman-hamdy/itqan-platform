@@ -26,16 +26,16 @@
     };
 
     // For teachers, we might have different naming patterns
-    $teacherName = $teacher->full_name ?? 
-                   ($teacher->first_name && $teacher->last_name ? $teacher->first_name . ' ' . $teacher->last_name : null) ?? 
-                   $teacher->first_name ?? 
-                   $teacher->name ??
-                   ($teacher->user ? ($teacher->user->name ?? 'معلم') : 'معلم');
+    $teacherName = $teacher?->full_name ?? 
+                   ($teacher?->first_name && $teacher?->last_name ? $teacher->first_name . ' ' . $teacher->last_name : null) ?? 
+                   $teacher?->first_name ?? 
+                   $teacher?->name ??
+                   ($teacher?->user ? ($teacher->user->name ?? 'معلم') : 'معلم');
                    
     // Check for avatar in different possible locations
-    $avatarPath = $teacher->avatar ?? 
-                  $teacher->user?->avatar ?? 
-                  ($teacher->teacherProfile?->avatar ?? null);
+    $avatarPath = $teacher?->avatar ?? 
+                  $teacher?->user?->avatar ?? 
+                  ($teacher?->teacherProfile?->avatar ?? null);
 @endphp
 
 <div {{ $attributes->merge(['class' => 'relative flex-shrink-0']) }}>

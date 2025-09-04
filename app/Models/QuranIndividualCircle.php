@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\ScopedToAcademy;
 
 class QuranIndividualCircle extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -48,7 +48,7 @@ class QuranIndividualCircle extends Model
         'materials_used',
         'learning_objectives',
         'notes',
-        'teacher_notes',
+
         'preparation_minutes',
         'ending_buffer_minutes',
         'late_join_grace_period_minutes',
@@ -195,18 +195,18 @@ class QuranIndividualCircle extends Model
         $prefix = 'QIC'; // Quran Individual Circle
         $academyCode = $this->academy->code ?? 'AC';
         $timestamp = now()->format('Ymd');
-        
+
         // Generate unique code by checking database for collisions
         $attempt = 0;
         do {
             $attempt++;
             // Use timestamp with microseconds and random string for better uniqueness
-            $random = strtoupper(substr(uniqid() . bin2hex(random_bytes(2)), -6));
+            $random = strtoupper(substr(uniqid().bin2hex(random_bytes(2)), -6));
             $code = "{$prefix}-{$academyCode}-{$timestamp}-{$random}";
         } while (
             self::where('circle_code', $code)->exists() && $attempt < 10
         );
-        
+
         return $code;
     }
 
@@ -243,21 +243,21 @@ class QuranIndividualCircle extends Model
     private function generateSessionCode(int $sequence): string
     {
         $baseCode = "{$this->circle_code}-S{$sequence}";
-        
+
         // Check if this session code already exists for this academy (including soft deleted)
         $attempt = 0;
         $sessionCode = $baseCode;
         while (
             QuranSession::withTrashed()
-                        ->where('academy_id', $this->academy_id)
-                        ->where('session_code', $sessionCode)
-                        ->exists() && $attempt < 10
+                ->where('academy_id', $this->academy_id)
+                ->where('session_code', $sessionCode)
+                ->exists() && $attempt < 10
         ) {
             $attempt++;
             // Add timestamp suffix if collision occurs for better uniqueness
-            $sessionCode = $baseCode . "-" . now()->format('His') . "-A{$attempt}";
+            $sessionCode = $baseCode.'-'.now()->format('His')."-A{$attempt}";
         }
-        
+
         return $sessionCode;
     }
 
@@ -266,7 +266,7 @@ class QuranIndividualCircle extends Model
         $scheduled = $this->scheduledSessions()->count();
         $completed = $this->completedSessions()->count();
         $unscheduled = $this->sessions()->where('status', 'unscheduled')->count();
-        
+
         $this->update([
             'sessions_scheduled' => $scheduled,
             'sessions_completed' => $completed,
@@ -277,8 +277,8 @@ class QuranIndividualCircle extends Model
     public function updateProgress(): void
     {
         $completedSessions = $this->completedSessions()->count();
-        $progressPercentage = $this->total_sessions > 0 
-            ? ($completedSessions / $this->total_sessions) * 100 
+        $progressPercentage = $this->total_sessions > 0
+            ? ($completedSessions / $this->total_sessions) * 100
             : 0;
 
         $this->update([
@@ -302,7 +302,7 @@ class QuranIndividualCircle extends Model
 
     public function canScheduleSession(): bool
     {
-        return $this->status === 'active' && 
+        return $this->status === 'active' &&
                $this->sessions_remaining > 0 &&
                $this->templateSessions()->whereNull('scheduled_at')->exists();
     }
@@ -321,7 +321,7 @@ class QuranIndividualCircle extends Model
     }
 
     // Paper-based helper methods
-    
+
     /**
      * Convert verses to papers (وجه)
      * Each paper (وجه) = approximately 15 verses
@@ -330,7 +330,7 @@ class QuranIndividualCircle extends Model
     {
         return round($verses / 15, 2);
     }
-    
+
     /**
      * Convert papers to verses
      * Each paper (وجه) = approximately 15 verses
@@ -339,7 +339,7 @@ class QuranIndividualCircle extends Model
     {
         return (int) round($papers * 15);
     }
-    
+
     /**
      * Get current position in paper format
      */
@@ -349,10 +349,10 @@ class QuranIndividualCircle extends Model
             'page' => $this->current_page,
             'face' => $this->current_face,
             'papers_count' => $this->papers_memorized,
-            'papers_precise' => $this->papers_memorized_precise
+            'papers_precise' => $this->papers_memorized_precise,
         ];
     }
-    
+
     /**
      * Update progress using paper count
      */
@@ -361,37 +361,39 @@ class QuranIndividualCircle extends Model
         $this->update([
             'papers_memorized' => (int) floor($papersMemorized),
             'papers_memorized_precise' => $papersMemorized,
-            'verses_memorized' => $this->convertPapersToVerses($papersMemorized)
+            'verses_memorized' => $this->convertPapersToVerses($papersMemorized),
         ]);
     }
-    
+
     /**
      * Get progress summary in Arabic using papers
      */
     public function getProgressSummaryInPapers(): string
     {
-        if (!$this->current_page || !$this->current_face) {
+        if (! $this->current_page || ! $this->current_face) {
             return 'لم يتم تحديد التقدم';
         }
-        
+
         $papersCount = $this->papers_memorized_precise ?? $this->papers_memorized;
         $faceName = $this->current_face == 1 ? 'الوجه الأول' : 'الوجه الثاني';
-        
+
         return "الصفحة {$this->current_page} - {$faceName} ({$papersCount} وجه محفوظ)";
     }
 
     // Boot method to handle model events
     protected static function booted()
     {
+        parent::booted();
+
         static::creating(function ($circle) {
             if (empty($circle->circle_code)) {
                 $circle->circle_code = $circle->generateCircleCode();
             }
-            
+
             if (empty($circle->name)) {
                 $circle->name = "الحلقة الفردية - {$circle->student->name}";
             }
-            
+
             // Calculate sessions remaining
             $circle->sessions_remaining = $circle->total_sessions;
         });
@@ -405,11 +407,11 @@ class QuranIndividualCircle extends Model
             if ($circle->isDirty(['sessions_completed', 'total_sessions'])) {
                 $circle->sessions_remaining = $circle->total_sessions - $circle->sessions_completed;
             }
-            
+
             // Auto-sync paper and verse fields when one changes
-            if ($circle->isDirty('papers_memorized_precise') && !$circle->isDirty('verses_memorized')) {
+            if ($circle->isDirty('papers_memorized_precise') && ! $circle->isDirty('verses_memorized')) {
                 $circle->verses_memorized = $circle->convertPapersToVerses($circle->papers_memorized_precise);
-            } elseif ($circle->isDirty('verses_memorized') && !$circle->isDirty('papers_memorized_precise')) {
+            } elseif ($circle->isDirty('verses_memorized') && ! $circle->isDirty('papers_memorized_precise')) {
                 $circle->papers_memorized_precise = $circle->convertVersesToPapers($circle->verses_memorized);
                 $circle->papers_memorized = (int) floor($circle->papers_memorized_precise);
             }

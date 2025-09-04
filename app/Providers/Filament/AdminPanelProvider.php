@@ -72,6 +72,7 @@ class AdminPanelProvider extends PanelProvider
                 'إدارة النظام',
                 'إدارة المستخدمين',
                 'إدارة القرآن',
+                'النظام الأكاديمي',
                 'إدارة التعليم الأكاديمي',
                 'إدارة الدورات المسجلة',
                 'الإعدادات',
@@ -99,14 +100,20 @@ class AdminPanelProvider extends PanelProvider
             
             // إدارة التعليم الأكاديمي
             \App\Filament\Resources\InteractiveCourseResource::class,
-            \App\Filament\Resources\GradeLevelResource::class,
+            \App\Filament\Resources\AcademicGradeLevelResource::class,
             \App\Filament\Resources\SubjectResource::class,
             \App\Filament\Resources\RecordedCourseResource::class,
+            \App\Filament\Resources\AcademicPackageResource::class,
             
             // الإعدادات
             \App\Filament\Resources\AcademicSettingsResource::class,
             \App\Filament\Resources\GoogleSettingsResource::class,
             \App\Filament\Resources\VideoSettingsResource::class,
+            
+            // Business Services - Access controlled by resource authorization
+            \App\Filament\Resources\BusinessServiceCategoryResource::class,
+            \App\Filament\Resources\BusinessServiceRequestResource::class,
+            \App\Filament\Resources\PortfolioItemResource::class,
         ];
 
         // Add resources based on user role

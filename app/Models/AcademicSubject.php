@@ -84,7 +84,7 @@ class AcademicSubject extends Model
      */
     public function teachers(): BelongsToMany
     {
-        return $this->belongsToMany(AcademicTeacher::class, 'academic_teacher_subjects', 'subject_id', 'teacher_id')
+        return $this->belongsToMany(AcademicTeacherProfile::class, 'academic_teacher_subjects', 'subject_id', 'teacher_id')
                     ->withPivot(['proficiency_level', 'years_experience', 'is_primary', 'certification'])
                     ->withTimestamps();
     }

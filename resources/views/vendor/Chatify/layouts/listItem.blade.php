@@ -37,8 +37,9 @@ $lastMessageBody = strlen($lastMessageBody) > 30 ? mb_substr($lastMessageBody, 0
         {{-- center side --}}
         <td>
         <p data-id="{{ $user->id }}" data-type="user">
-            {{ strlen($user->name) > 12 ? trim(substr($user->name,0,12)).'..' : $user->name }}
+            {{ strlen($user->getChatifyName()) > 12 ? trim(substr($user->getChatifyName(),0,12)).'..' : $user->getChatifyName() }}
             <span class="contact-item-time" data-time="{{$lastMessage->created_at}}">{{ $lastMessage->timeAgo }}</span></p>
+        <span style="display: block; font-size: 11px; color: #888; margin-bottom: 3px;">{{ $user->getUserTypeLabel() }}</span>
         <span>
             {{-- Last Message user indicator --}}
             {!!
@@ -75,7 +76,9 @@ $lastMessageBody = strlen($lastMessageBody) > 30 ? mb_substr($lastMessageBody, 0
         {{-- center side --}}
         <td>
             <p data-id="{{ $user->id }}" data-type="user">
-            {{ strlen($user->name) > 12 ? trim(substr($user->name,0,12)).'..' : $user->name }}
+            {{ strlen($user->getChatifyName()) > 12 ? trim(substr($user->getChatifyName(),0,12)).'..' : $user->getChatifyName() }}
+            </p>
+            <span style="font-size: 11px; color: #888;">{{ $user->getUserTypeLabel() }}</span>
         </td>
 
     </tr>

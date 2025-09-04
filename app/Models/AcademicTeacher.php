@@ -112,7 +112,7 @@ class AcademicTeacher extends Model
      */
     public function gradeLevels(): BelongsToMany
     {
-        return $this->belongsToMany(GradeLevel::class, 'academic_teacher_grade_levels', 'teacher_id', 'grade_level_id')
+        return $this->belongsToMany(AcademicGradeLevel::class, 'academic_teacher_grade_levels', 'teacher_id', 'grade_level_id')
                     ->withPivot(['years_experience', 'specialization_notes'])
                     ->withTimestamps();
     }

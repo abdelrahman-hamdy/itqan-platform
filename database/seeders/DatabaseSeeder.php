@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Academy;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
                 'phone' => '+966501234567',
                 'user_type' => 'super_admin',
                 'status' => 'active',
+                'active_status' => true,
                 'password' => Hash::make('password123'),
                 'email_verified_at' => now(),
             ]

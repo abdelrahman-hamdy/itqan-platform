@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
-use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class MeetingLinkController extends Controller
 {
@@ -20,16 +19,16 @@ class MeetingLinkController extends Controller
         $user = Auth::user();
         $academy = $user->academy;
 
-        if (!$user->isQuranTeacher()) {
+        if (! $user->isQuranTeacher()) {
             return response()->json(['error' => 'غير مصرح لك بالوصول'], 403);
         }
 
         $session = QuranSession::where('id', $sessionId)
             ->where('academy_id', $academy->id)
-            ->where('quran_teacher_id', $user->quranTeacherProfile->id)
+            ->where('quran_teacher_id', $user->id)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return response()->json(['error' => 'لم يتم العثور على الجلسة'], 404);
         }
 
@@ -45,14 +44,14 @@ class MeetingLinkController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'error' => 'بيانات غير صحيحة',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         try {
             // Validate and format meeting link
             $meetingLink = $this->validateAndFormatMeetingLink($request->meeting_link);
-            
+
             $session->update([
                 'meeting_link' => $meetingLink,
                 'meeting_password' => $request->meeting_password,
@@ -66,13 +65,13 @@ class MeetingLinkController extends Controller
                     'meeting_link' => $session->meeting_link,
                     'meeting_password' => $session->meeting_password,
                     'meeting_id' => $session->meeting_id,
-                ]
+                ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'حدث خطأ أثناء تحديث رابط الاجتماع',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -85,7 +84,7 @@ class MeetingLinkController extends Controller
         $user = Auth::user();
         $academy = $user->academy;
 
-        if (!$user->isQuranTeacher()) {
+        if (! $user->isQuranTeacher()) {
             return response()->json(['error' => 'غير مصرح لك بالوصول'], 403);
         }
 
@@ -94,7 +93,7 @@ class MeetingLinkController extends Controller
             ->where('teacher_id', $user->quranTeacherProfile->id)
             ->first();
 
-        if (!$trialRequest) {
+        if (! $trialRequest) {
             return response()->json(['error' => 'لم يتم العثور على طلب الجلسة التجريبية'], 404);
         }
 
@@ -109,14 +108,14 @@ class MeetingLinkController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'error' => 'بيانات غير صحيحة',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         try {
             // Validate and format meeting link
             $meetingLink = $this->validateAndFormatMeetingLink($request->meeting_link);
-            
+
             $trialRequest->update([
                 'meeting_link' => $meetingLink,
                 'meeting_password' => $request->meeting_password,
@@ -128,13 +127,13 @@ class MeetingLinkController extends Controller
                 'data' => [
                     'meeting_link' => $trialRequest->meeting_link,
                     'meeting_password' => $trialRequest->meeting_password,
-                ]
+                ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'حدث خطأ أثناء تحديث رابط الاجتماع',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -147,16 +146,16 @@ class MeetingLinkController extends Controller
         $user = Auth::user();
         $academy = $user->academy;
 
-        if (!$user->isQuranTeacher()) {
+        if (! $user->isQuranTeacher()) {
             return response()->json(['error' => 'غير مصرح لك بالوصول'], 403);
         }
 
         $session = QuranSession::where('id', $sessionId)
             ->where('academy_id', $academy->id)
-            ->where('quran_teacher_id', $user->quranTeacherProfile->id)
+            ->where('quran_teacher_id', $user->id)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return response()->json(['error' => 'لم يتم العثور على الجلسة'], 404);
         }
 
@@ -169,13 +168,13 @@ class MeetingLinkController extends Controller
                 'data' => [
                     'meeting_link' => $meetingLink,
                     'meeting_id' => $session->meeting_id,
-                ]
+                ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'حدث خطأ أثناء إنشاء رابط الاجتماع',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -191,41 +190,41 @@ class MeetingLinkController extends Controller
                 'url_pattern' => 'https://meet.google.com/',
                 'example' => 'https://meet.google.com/abc-defg-hij',
                 'icon' => 'ri-google-line',
-                'color' => 'text-blue-600'
+                'color' => 'text-blue-600',
             ],
             'zoom' => [
                 'name' => 'Zoom',
                 'url_pattern' => 'https://zoom.us/j/',
                 'example' => 'https://zoom.us/j/1234567890',
                 'icon' => 'ri-video-line',
-                'color' => 'text-blue-500'
+                'color' => 'text-blue-500',
             ],
             'teams' => [
                 'name' => 'Microsoft Teams',
                 'url_pattern' => 'https://teams.microsoft.com/',
                 'example' => 'https://teams.microsoft.com/l/meetup-join/...',
                 'icon' => 'ri-microsoft-line',
-                'color' => 'text-blue-700'
+                'color' => 'text-blue-700',
             ],
             'webex' => [
                 'name' => 'Cisco Webex',
                 'url_pattern' => 'https://webex.com/',
                 'example' => 'https://company.webex.com/meet/username',
                 'icon' => 'ri-vidicon-line',
-                'color' => 'text-green-600'
+                'color' => 'text-green-600',
             ],
             'jitsi' => [
                 'name' => 'Jitsi Meet',
                 'url_pattern' => 'https://meet.jit.si/',
                 'example' => 'https://meet.jit.si/YourRoomName',
                 'icon' => 'ri-video-chat-line',
-                'color' => 'text-orange-600'
-            ]
+                'color' => 'text-orange-600',
+            ],
         ];
 
         return response()->json([
             'success' => true,
-            'data' => $platforms
+            'data' => $platforms,
         ]);
     }
 
@@ -238,12 +237,12 @@ class MeetingLinkController extends Controller
         $url = trim($url);
 
         // Ensure the URL has a protocol
-        if (!preg_match('/^https?:\/\//', $url)) {
-            $url = 'https://' . $url;
+        if (! preg_match('/^https?:\/\//', $url)) {
+            $url = 'https://'.$url;
         }
 
         // Validate URL format
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        if (! filter_var($url, FILTER_VALIDATE_URL)) {
             throw new \Exception('رابط الاجتماع غير صحيح');
         }
 
@@ -255,7 +254,7 @@ class MeetingLinkController extends Controller
             'webex.com',
             'meet.jit.si',
             'gotomeeting.com',
-            'join.skype.com'
+            'join.skype.com',
         ];
 
         $urlHost = parse_url($url, PHP_URL_HOST);
@@ -268,7 +267,7 @@ class MeetingLinkController extends Controller
             }
         }
 
-        if (!$isKnownPlatform) {
+        if (! $isKnownPlatform) {
             // Log for monitoring but don't block - allow custom meeting platforms
             Log::info('Unknown meeting platform used', ['url' => $url, 'host' => $urlHost]);
         }
@@ -283,19 +282,19 @@ class MeetingLinkController extends Controller
     {
         $urlHost = parse_url($url, PHP_URL_HOST);
         $urlPath = parse_url($url, PHP_URL_PATH);
-        
+
         // Google Meet
         if (str_contains($urlHost, 'meet.google.com')) {
             return basename($urlPath);
         }
-        
+
         // Zoom
         if (str_contains($urlHost, 'zoom.us')) {
             if (preg_match('/\/j\/(\d+)/', $urlPath, $matches)) {
                 return $matches[1];
             }
         }
-        
+
         // Jitsi
         if (str_contains($urlHost, 'meet.jit.si')) {
             return basename($urlPath);

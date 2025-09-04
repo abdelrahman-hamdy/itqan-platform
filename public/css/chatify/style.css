@@ -168,10 +168,17 @@ body {
 .messenger-search[type="text"] {
   margin: 0px 10px;
   width: calc(100% - 20px);
-  border: none;
+  border: 1px solid transparent;
   padding: 8px 10px;
   border-radius: 6px;
   outline: none;
+}
+
+.messenger-search[type="text"]:focus,
+.messenger-search[type="text"]:focus-visible {
+  outline: none;
+  border: 1px solid #333 !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3) !important;
 }
 .messenger-listView-tabs {
   display: inline-flex;
@@ -550,6 +557,8 @@ body {
   align-items: center;
   justify-content: center;
   margin: 0;
+  gap: 8px;
+  padding: 4px;
 }
 .messenger-sendCard input[type="file"] {
   display: none;
@@ -565,12 +574,24 @@ body {
 }
 .messenger-sendCard label {
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.messenger-sendCard label:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 .messenger-sendCard svg {
-  margin: 9px 10px;
+  margin: 0;
   color: #bdcbd6;
   cursor: pointer;
-  font-size: 21px;
+  font-size: 18px;
   transition: transform 0.15s;
 }
 
@@ -580,14 +601,16 @@ body {
 .m-send {
   font-size: 14px;
   width: 100%;
-  border: none;
-  padding: 10px;
-  outline: none;
+  border: 1px solid #e1e5e9 !important;
+  padding: 12px 16px !important;
+  outline: none !important;
   resize: none;
-  background: transparent;
+  background: #f8f9fa !important;
   font-family: sans-serif;
-  height: 44px;
+  height: 48px !important;
   max-height: 200px;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
 }
 .attachment-preview {
   position: relative;
@@ -636,7 +659,26 @@ body {
   color: #fff;
 }
 #message-form > button {
-  height: 40px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 6px;
+  min-width: fit-content;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#message-form > button:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+#message-form > button .send-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--send-input-icons-color);
 }
 .file-download {
   font-size: 12px;
@@ -1141,17 +1183,22 @@ div.loadingPlaceholder-date {
   margin-bottom: 0.5rem; /* 8px */
 }
 
-.messenger [type="text"]:focus {
-  outline: 1px solid var(--primary-color);
-  border-color: var(--primary-color) !important;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 2px var(--primary-color);
+.messenger [type="text"]:focus,
+.messenger [type="text"]:focus-visible {
+  outline: none !important;
+  border: 1px solid #333 !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3) !important;
+  transition: none !important;
 }
 
-.messenger textarea:focus {
-  outline: none;
-  border: none;
-  box-shadow: none;
+.messenger textarea:focus,
+.messenger textarea:focus-visible,
+.m-send:focus,
+.m-send:focus-visible {
+  outline: none !important;
+  border: 1px solid #333 !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3) !important;
+  transition: none !important;
 }
 .message-card .actions {
   opacity: 0.6;
@@ -1181,4 +1228,113 @@ div.loadingPlaceholder-date {
 .emoji-picker__emojis::-webkit-scrollbar-thumb {
   border-radius: 4px;
   background: transparent;
+}
+
+/* Chat Footer Layout Fix - Force Override */
+.messenger-sendCard {
+  display: flex !important;
+  margin: 10px !important;
+  margin-bottom: 1rem !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+}
+
+.messenger-sendCard form {
+  width: 100% !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  height: 48px !important;
+}
+
+.messenger-sendCard label {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+  flex-shrink: 0 !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.messenger-sendCard label:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.messenger-sendCard label span {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 20px !important;
+}
+
+#message-form > button.send-button {
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 16px !important;
+  border-radius: 8px !important;
+  min-width: fit-content !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+  flex-shrink: 0 !important;
+  border: none !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  outline: none !important;
+}
+
+#message-form > button.send-button:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+#message-form > button.send-button .send-label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--send-input-icons-color) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.messenger-sendCard svg {
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #666 !important;
+  cursor: pointer !important;
+  font-size: 18px !important;
+  transition: transform 0.15s !important;
+}
+
+/* Remove all focus styles and replace with hover effects */
+input.messenger-search[type="text"]:focus,
+input.messenger-search[type="text"]:focus-visible,
+.messenger input[type="text"]:focus,
+.messenger input[type="text"]:focus-visible,
+textarea.m-send:focus,
+textarea.m-send:focus-visible,
+.messenger textarea:focus,
+.messenger textarea:focus-visible {
+  outline: none !important;
+  border: 1px solid #e1e5e9 !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+/* Hover effects instead of focus */
+input.messenger-search[type="text"]:hover,
+.messenger input[type="text"]:hover,
+textarea.m-send:hover,
+.messenger textarea:hover {
+  outline: none !important;
+  border: 1px solid #333 !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2) !important;
+  transition: all 0.2s ease !important;
 }

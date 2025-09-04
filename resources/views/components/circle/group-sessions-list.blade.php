@@ -47,7 +47,7 @@
         <div class="space-y-4">
             @forelse($limitedSessions as $session)
                 <div class="session-item attendance-indicator rounded-xl p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer"
-                     data-session-type="{{ strtolower($session->status->value) }}"
+                     data-session-type="{{ $session->status ? strtolower($session->status->value) : 'unknown' }}"
                      onclick="openSessionDetail({{ $session->id }})">
                     <div class="flex items-center justify-between">
                         <!-- Session Info -->

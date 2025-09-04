@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\ScopedToAcademy;
 
 class QuranTrialRequest extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -36,7 +36,7 @@ class QuranTrialRequest extends Model
         'rating',
         'feedback',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
@@ -45,16 +45,22 @@ class QuranTrialRequest extends Model
         'scheduled_at' => 'datetime',
         'responded_at' => 'datetime',
         'completed_at' => 'datetime',
-        'rating' => 'integer'
+        'rating' => 'integer',
     ];
 
     // Status constants
     const STATUS_PENDING = 'pending';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_REJECTED = 'rejected';
+
     const STATUS_SCHEDULED = 'scheduled';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_CANCELLED = 'cancelled';
+
     const STATUS_NO_SHOW = 'no_show';
 
     const STATUSES = [
@@ -64,14 +70,18 @@ class QuranTrialRequest extends Model
         self::STATUS_SCHEDULED => 'مجدول',
         self::STATUS_COMPLETED => 'مكتمل',
         self::STATUS_CANCELLED => 'ملغي',
-        self::STATUS_NO_SHOW => 'غياب'
+        self::STATUS_NO_SHOW => 'غياب',
     ];
 
     // Learning level constants
     const LEVEL_BEGINNER = 'beginner';
+
     const LEVEL_BASIC = 'basic';
+
     const LEVEL_INTERMEDIATE = 'intermediate';
+
     const LEVEL_ADVANCED = 'advanced';
+
     const LEVEL_EXPERT = 'expert';
 
     const LEVELS = [
@@ -79,18 +89,20 @@ class QuranTrialRequest extends Model
         self::LEVEL_BASIC => 'أساسي (أقرأ ببطء)',
         self::LEVEL_INTERMEDIATE => 'متوسط (أقرأ بطلاقة)',
         self::LEVEL_ADVANCED => 'متقدم (أحفظ أجزاء من القرآن)',
-        self::LEVEL_EXPERT => 'متمكن (أحفظ أكثر من 10 أجزاء)'
+        self::LEVEL_EXPERT => 'متمكن (أحفظ أكثر من 10 أجزاء)',
     ];
 
     // Preferred time constants
     const TIME_MORNING = 'morning';
+
     const TIME_AFTERNOON = 'afternoon';
+
     const TIME_EVENING = 'evening';
 
     const TIMES = [
         self::TIME_MORNING => 'صباحاً (6:00 - 12:00)',
         self::TIME_AFTERNOON => 'بعد الظهر (12:00 - 18:00)',
-        self::TIME_EVENING => 'مساءً (18:00 - 22:00)'
+        self::TIME_EVENING => 'مساءً (18:00 - 22:00)',
     ];
 
     /**
@@ -99,16 +111,19 @@ class QuranTrialRequest extends Model
     public static function generateRequestCode($academyId)
     {
         $academyId = $academyId ?: 1;
-        $prefix = 'QTR-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
-        
+        $prefix = 'QTR-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
+
         // Get the highest existing sequence number for this academy
-        $maxNumber = static::where('academy_id', $academyId)
-            ->where('request_code', 'LIKE', $prefix . '%')
+        // Include soft-deleted records to avoid code duplication
+        $maxNumber = static::withTrashed()
+            ->where('academy_id', $academyId)
+            ->where('request_code', 'LIKE', $prefix.'%')
             ->selectRaw('MAX(CAST(SUBSTRING(request_code, -6) AS UNSIGNED)) as max_num')
             ->value('max_num') ?: 0;
-        
+
         $nextNumber = $maxNumber + 1;
-        return $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -214,10 +229,10 @@ class QuranTrialRequest extends Model
 
     public function getTimeLabelAttribute(): string
     {
-        if (!$this->preferred_time) {
+        if (! $this->preferred_time) {
             return 'غير محدد';
         }
-        
+
         return self::TIMES[$this->preferred_time] ?? $this->preferred_time;
     }
 
@@ -249,7 +264,7 @@ class QuranTrialRequest extends Model
     /**
      * Actions
      */
-    public function approve(string $teacherResponse = null): bool
+    public function approve(?string $teacherResponse = null): bool
     {
         return $this->update([
             'status' => self::STATUS_APPROVED,
@@ -258,7 +273,7 @@ class QuranTrialRequest extends Model
         ]);
     }
 
-    public function reject(string $teacherResponse = null): bool
+    public function reject(?string $teacherResponse = null): bool
     {
         return $this->update([
             'status' => self::STATUS_REJECTED,
@@ -267,7 +282,7 @@ class QuranTrialRequest extends Model
         ]);
     }
 
-    public function schedule(\DateTime $scheduledAt, string $meetingLink = null, string $meetingPassword = null): bool
+    public function schedule(\DateTime $scheduledAt, ?string $meetingLink = null, ?string $meetingPassword = null): bool
     {
         return $this->update([
             'status' => self::STATUS_SCHEDULED,
@@ -277,7 +292,7 @@ class QuranTrialRequest extends Model
         ]);
     }
 
-    public function complete(int $rating = null, string $feedback = null): bool
+    public function complete(?int $rating = null, ?string $feedback = null): bool
     {
         return $this->update([
             'status' => self::STATUS_COMPLETED,

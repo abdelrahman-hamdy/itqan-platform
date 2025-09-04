@@ -25,6 +25,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\Auth;
@@ -132,17 +133,41 @@ class TeacherProfileResource extends Resource
                             ->label('الشهادات والإجازات')
                             ->placeholder('أضف شهادة جديدة'),
                             
-                        TagsInput::make('languages')
-                            ->label('اللغات')
-                            ->placeholder('أضف لغة جديدة')
-                            ->suggestions([
-                                'العربية',
-                                'الإنجليزية',
-                                'الفرنسية',
-                                'التركية',
-                                'الأردية',
-                                'الماليزية',
-                            ]),
+                        CheckboxList::make('languages')
+                            ->label('اللغات التي أجيدها')
+                            ->options(function () {
+                                $academyId = auth()->user()->academy_id;
+                                if (!$academyId) {
+                                    $availableLanguages = ['arabic', 'english'];
+                                } else {
+                                    $settings = \App\Models\AcademicSettings::getForAcademy($academyId);
+                                    $availableLanguages = $settings->available_languages ?? ['arabic', 'english'];
+                                }
+                                
+                                $languageNames = [
+                                    'arabic' => 'العربية',
+                                    'english' => 'الإنجليزية',
+                                    'french' => 'الفرنسية',
+                                    'german' => 'الألمانية',
+                                    'turkish' => 'التركية',
+                                    'spanish' => 'الإسبانية',
+                                    'chinese' => 'الصينية',
+                                    'japanese' => 'اليابانية',
+                                    'korean' => 'الكورية',
+                                    'italian' => 'الإيطالية',
+                                    'portuguese' => 'البرتغالية',
+                                    'russian' => 'الروسية',
+                                    'hindi' => 'الهندية',
+                                    'urdu' => 'الأردية',
+                                    'persian' => 'الفارسية',
+                                ];
+                                
+                                return collect($availableLanguages)
+                                    ->mapWithKeys(fn($lang) => [$lang => $languageNames[$lang] ?? $lang])
+                                    ->toArray();
+                            })
+                            ->default(['arabic'])
+                            ->columns(2),
                     ]),
 
                 Section::make('أوقات العمل')
@@ -186,6 +211,27 @@ class TeacherProfileResource extends Resource
                             ->label('النبذة التعريفية بالإنجليزية')
                             ->rows(4)
                             ->maxLength(1000),
+                    ]),
+
+                Section::make('الأسعار والرسوم')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('session_price_individual')
+                                    ->label('سعر الحصة الفردية')
+                                    ->numeric()
+                                    ->prefix('ر.س')
+                                    ->minValue(0)
+                                    ->step(5)
+                                    ->helperText('سعر الحصة الواحدة للطالب الواحد'),
+                                TextInput::make('session_price_group')
+                                    ->label('سعر الحصة الجماعية')
+                                    ->numeric()
+                                    ->prefix('ر.س')
+                                    ->minValue(0)
+                                    ->step(5)
+                                    ->helperText('سعر الحصة الواحدة للطالب في المجموعة'),
+                            ]),
                     ]),
 
                 Section::make('الإعدادات')

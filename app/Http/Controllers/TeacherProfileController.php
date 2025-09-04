@@ -132,14 +132,14 @@ class TeacherProfileController extends Controller
         $student->load([
             'studentProfile',
             'academy',
-            'quranCircles' => function ($query) use ($teacherProfile, $user) {
+            'quranCircles' => function ($query) use ($user) {
                 if ($user->isQuranTeacher()) {
-                    $query->where('quran_teacher_id', $teacherProfile->id);
+                    $query->where('quran_teacher_id', $user->id);
                 }
             },
-            'quranIndividualCircles' => function ($query) use ($teacherProfile, $user) {
+            'quranIndividualCircles' => function ($query) use ($user) {
                 if ($user->isQuranTeacher()) {
-                    $query->where('quran_teacher_id', $teacherProfile->id)
+                    $query->where('quran_teacher_id', $user->id)
                         ->with(['sessions' => function ($sessionQuery) {
                             $sessionQuery->orderBy('scheduled_at', 'desc');
                         }]);
@@ -289,7 +289,7 @@ class TeacherProfileController extends Controller
         $academy = $user->academy;
 
         // Get assigned Quran circles (admin creates and assigns)
-        $assignedCircles = QuranCircle::where('quran_teacher_id', $teacherProfile->id)
+        $assignedCircles = QuranCircle::where('quran_teacher_id', $user->id)
             ->where('academy_id', $user->academy_id)
             ->with(['students', 'academy'])
             ->get();
@@ -304,7 +304,7 @@ class TeacherProfileController extends Controller
             ->get();
 
         // Get active subscriptions
-        $activeSubscriptions = \App\Models\QuranSubscription::where('quran_teacher_id', $teacherProfile->id)
+        $activeSubscriptions = \App\Models\QuranSubscription::where('quran_teacher_id', $user->id)
             ->where('academy_id', $academy->id)
             ->whereIn('subscription_status', ['active', 'pending'])
             ->whereIn('payment_status', ['paid', 'pending'])
@@ -314,7 +314,7 @@ class TeacherProfileController extends Controller
             ->get();
 
         // Get recent sessions
-        $recentSessions = \App\Models\QuranSession::where('quran_teacher_id', $teacherProfile->id)
+        $recentSessions = \App\Models\QuranSession::where('quran_teacher_id', $user->id)
             ->where('academy_id', $academy->id)
             ->whereIn('status', ['scheduled', 'completed'])
             ->with(['student', 'subscription'])
@@ -383,13 +383,13 @@ class TeacherProfileController extends Controller
     private function calculateQuranTeacherStats($user, $teacherProfile, $currentMonth)
     {
         // Total students from assigned circles
-        $totalStudents = User::whereHas('quranCircles', function ($query) use ($teacherProfile) {
-            $query->where('quran_teacher_id', $teacherProfile->id);
+        $totalStudents = User::whereHas('quranCircles', function ($query) use ($user) {
+            $query->where('quran_teacher_id', $user->id);
         })->count();
 
         // Active circles
-        $activeCircles = QuranCircle::where('quran_teacher_id', $teacherProfile->id)
-            ->where('status', 'active')
+        $activeCircles = QuranCircle::where('quran_teacher_id', $user->id)
+            ->where('status', true)
             ->count();
 
         // This month sessions

@@ -1,0 +1,77 @@
+@props(['teacher', 'teacherType' => 'academic'])
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <h3 class="text-lg font-bold text-gray-900 mb-4">
+    <i class="ri-user-star-line text-primary ml-2"></i>
+    معلومات المعلم
+  </h3>
+  <div class="flex items-center gap-4 mb-4">
+    <x-teacher-avatar :teacher="$teacher" size="lg" />
+    <div>
+      <h4 class="font-bold text-gray-900">{{ $teacher->full_name ?? $teacher->user->name }}</h4>
+      <p class="text-gray-600">
+        @if($teacherType === 'quran')
+          معلم القرآن الكريم المعتمد
+        @else
+          معلم أكاديمي معتمد
+        @endif
+      </p>
+      @if($teacher->teacher_code)
+        <p class="text-sm text-gray-500">{{ $teacher->teacher_code }}</p>
+      @endif
+    </div>
+  </div>
+  
+  @if(($teacher->rating ?? 0) > 0)
+    <div class="flex items-center mt-3">
+      <div class="flex text-yellow-400">
+        @for($i = 1; $i <= 5; $i++)
+          <i class="ri-star-{{ $i <= $teacher->rating ? 'fill' : 'line' }} text-sm"></i>
+        @endfor
+      </div>
+      <span class="text-sm text-gray-600 mr-2">({{ $teacher->rating }})</span>
+    </div>
+  @endif
+
+  <!-- Experience -->
+  @if($teacher->experience_years ?? $teacher->teaching_experience_years)
+    <div class="flex items-center gap-2 text-sm text-gray-600 mb-2 mt-3">
+      <i class="ri-award-line text-blue-500"></i>
+      <span>{{ $teacher->experience_years ?? $teacher->teaching_experience_years }} سنوات خبرة</span>
+    </div>
+  @endif
+
+  <!-- Degree/Education Level -->
+  @if($teacher->education_level ?? $teacher->qualification_degree)
+    <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
+      <i class="ri-graduation-cap-line text-green-500"></i>
+      <span>
+        @if($teacher->education_level)
+          {{ match($teacher->education_level) {
+              'diploma' => 'دبلوم',
+              'bachelor' => 'بكالوريوس', 
+              'master' => 'ماجستير',
+              'phd' => 'دكتوراه',
+              default => $teacher->education_level
+          } }}
+        @else
+          {{ $teacher->qualification_degree }}
+        @endif
+        @if($teacher->university)
+          - {{ $teacher->university }}
+        @endif
+      </span>
+    </div>
+  @endif
+
+  @if($teacherType === 'academic' && $teacher->subjects && $teacher->subjects->count() > 0)
+    <div class="mb-3">
+      <h5 class="text-sm font-medium text-gray-700 mb-2">التخصصات:</h5>
+      <div class="flex flex-wrap gap-2">
+        @foreach($teacher->subjects as $subject)
+          <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{{ $subject->name }}</span>
+        @endforeach
+      </div>
+    </div>
+  @endif
+</div>

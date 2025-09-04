@@ -2,33 +2,28 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Enums\QuranSurah;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 use App\Models\QuranSession;
-use Filament\Forms;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Actions\ActionGroup;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Forms\Components\TimePicker;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Filament\Actions;
 
 class QuranSessionResource extends Resource
 {
@@ -50,8 +45,8 @@ class QuranSessionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        
-        if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
+
+        if (! $user->isQuranTeacher() || ! $user->quranTeacherProfile) {
             return parent::getEloquentQuery()->whereRaw('1 = 0'); // Return no results
         }
 
@@ -59,12 +54,13 @@ class QuranSessionResource extends Resource
         $userId = $user->id;
 
         return parent::getEloquentQuery()
-            ->where(function($query) use ($teacherProfileId, $userId) {
+            ->where(function ($query) use ($teacherProfileId, $userId) {
                 // Include both teacher profile ID (group sessions) and user ID (individual sessions)
                 $query->where('quran_teacher_id', $teacherProfileId)
-                      ->orWhere('quran_teacher_id', $userId);
+                    ->orWhere('quran_teacher_id', $userId);
             })
-            ->where('academy_id', $user->academy_id);
+            ->where('academy_id', $user->academy_id)
+            ->with(['student', 'subscription', 'circle', 'individualCircle', 'sessionHomework']);
     }
 
     public static function form(Form $form): Form
@@ -79,7 +75,7 @@ class QuranSessionResource extends Resource
                                     ->label('عنوان الجلسة')
                                     ->required()
                                     ->maxLength(255),
-                                
+
                                 Select::make('session_type')
                                     ->label('نوع الجلسة')
                                     ->options([
@@ -89,12 +85,12 @@ class QuranSessionResource extends Resource
                                         'makeup' => 'تعويضية',
                                     ])
                                     ->required(),
-                                
+
                                 DateTimePicker::make('scheduled_at')
                                     ->label('موعد الجلسة')
                                     ->required()
                                     ->native(false),
-                                
+
                                 TextInput::make('duration_minutes')
                                     ->label('مدة الجلسة (بالدقائق)')
                                     ->numeric()
@@ -103,147 +99,94 @@ class QuranSessionResource extends Resource
                                     ->dehydrated()
                                     ->helperText('المدة محددة بناءً على باقة القرآن المشترك بها'),
                             ]),
-                            
+
                         Textarea::make('description')
                             ->label('وصف الجلسة')
                             ->rows(3),
-                            
+
                         Textarea::make('lesson_objectives')
                             ->label('أهداف الدرس')
                             ->rows(3),
-                            
-                        Grid::make(3)
-                            ->schema([
-                                TextInput::make('monthly_session_number')
-                                    ->label('رقم الجلسة الشهرية')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(31)
-                                    ->helperText('رقم الجلسة ضمن الشهر (1، 2، 3...)')
-                                    ->placeholder('سيتم تعيينه تلقائياً'),
-                                    
-                                DatePicker::make('session_month')
-                                    ->label('شهر الجلسة')
-                                    ->displayFormat('Y-m')
-                                    ->format('Y-m-01')
-                                    ->helperText('الشهر الذي تنتمي إليه الجلسة')
-                                    ->default(now()->format('Y-m-01')),
-                                    
-                                Toggle::make('counts_toward_subscription')
-                                    ->label('تحتسب ضمن الاشتراك')
-                                    ->helperText('هل تحتسب هذه الجلسة ضمن جلسات الاشتراك؟')
-                                    ->default(true),
-                            ]),
+
+                        Toggle::make('counts_toward_subscription')
+                            ->label('تحتسب ضمن الاشتراك')
+                            ->helperText('هل تحتسب هذه الجلسة ضمن جلسات الاشتراك؟')
+                            ->default(true),
                     ]),
 
-                Section::make('معلومات الاجتماع')
+                Section::make('الواجب المنزلي')
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('location_type')
-                                    ->label('نوع الموقع')
-                                    ->options([
-                                        'online' => 'عبر الإنترنت',
-                                        'in_person' => 'حضورياً',
-                                    ])
-                                    ->default('online')
-                                    ->live(),
-                                
-                                TextInput::make('meeting_link')
-                                    ->label('رابط الاجتماع')
-                                    ->url()
-                                    ->visible(fn ($get) => $get('location_type') === 'online'),
-                                    
-                                TextInput::make('meeting_id')
-                                    ->label('معرف الاجتماع')
-                                    ->visible(fn ($get) => $get('location_type') === 'online'),
-                                    
-                                TextInput::make('meeting_password')
-                                    ->label('كلمة مرور الاجتماع')
-                                    ->visible(fn ($get) => $get('location_type') === 'online'),
-                            ]),
-                            
-                        Textarea::make('location_details')
-                            ->label('تفاصيل الموقع')
-                            ->visible(fn ($get) => $get('location_type') === 'in_person')
-                            ->rows(2),
-                            
-                        Toggle::make('recording_enabled')
-                            ->label('تسجيل الجلسة')
+                        // New Memorization Section
+                        Toggle::make('sessionHomework.has_new_memorization')
+                            ->label('حفظ جديد')
+                            ->live()
                             ->default(false),
-                    ]),
 
-                Section::make('محتوى الدرس')
-                    ->schema([
-                        Grid::make(3)
-                            ->schema([
-                                TextInput::make('current_surah')
-                                    ->label('رقم السورة الحالية')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(114),
-                                    
-                                TextInput::make('verses_covered_start')
-                                    ->label('من الآية')
-                                    ->numeric()
-                                    ->minValue(1),
-                                    
-                                TextInput::make('verses_covered_end')
-                                    ->label('إلى الآية')
-                                    ->numeric()
-                                    ->minValue(1),
-                            ]),
-                            
-                        Textarea::make('homework_details')
-                            ->label('تفاصيل الواجب المنزلي')
-                            ->rows(3),
-                            
-                        Textarea::make('next_session_plan')
-                            ->label('خطة الجلسة القادمة')
-                            ->rows(3),
-                    ]),
-
-                Section::make('التقييم والملاحظات')
-                    ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('recitation_quality')
-                                    ->label('جودة التلاوة (من 10)')
+                                Select::make('sessionHomework.new_memorization_surah')
+                                    ->label('سورة الحفظ الجديد')
+                                    ->options(QuranSurah::getAllSurahs())
+                                    ->searchable()
+                                    ->visible(fn ($get) => $get('sessionHomework.has_new_memorization')),
+
+                                TextInput::make('sessionHomework.new_memorization_pages')
+                                    ->label('عدد الأوجه')
                                     ->numeric()
-                                    ->minValue(0)
+                                    ->step(0.5)
+                                    ->minValue(0.5)
                                     ->maxValue(10)
-                                    ->step(0.5),
-                                    
-                                TextInput::make('tajweed_accuracy')
-                                    ->label('دقة التجويد (من 10)')
+                                    ->suffix('وجه')
+                                    ->visible(fn ($get) => $get('sessionHomework.has_new_memorization')),
+
+                            ])
+                            ->visible(fn ($get) => $get('sessionHomework.has_new_memorization')),
+
+                        // Review Section
+                        Toggle::make('sessionHomework.has_review')
+                            ->label('مراجعة')
+                            ->live()
+                            ->default(false),
+
+                        Grid::make(2)
+                            ->schema([
+                                Select::make('sessionHomework.review_surah')
+                                    ->label('سورة المراجعة')
+                                    ->options(QuranSurah::getAllSurahs())
+                                    ->searchable()
+                                    ->visible(fn ($get) => $get('sessionHomework.has_review')),
+
+                                TextInput::make('sessionHomework.review_pages')
+                                    ->label('عدد أوجه المراجعة')
                                     ->numeric()
-                                    ->minValue(0)
-                                    ->maxValue(10)
-                                    ->step(0.5),
-                                    
-                                TextInput::make('mistakes_count')
-                                    ->label('عدد الأخطاء')
-                                    ->numeric()
-                                    ->minValue(0),
-                                    
-                                TextInput::make('verses_memorized_today')
-                                    ->label('الآيات المحفوظة اليوم')
-                                    ->numeric()
-                                    ->minValue(0),
-                            ]),
-                            
-                        Textarea::make('teacher_feedback')
-                            ->label('ملاحظات المعلم')
-                            ->rows(4),
-                            
-                        Textarea::make('areas_for_improvement')
-                            ->label('مجالات التحسين')
-                            ->rows(3),
-                            
-                        Textarea::make('session_notes')
-                            ->label('ملاحظات عامة')
-                            ->rows(3),
+                                    ->step(0.5)
+                                    ->minValue(0.5)
+                                    ->maxValue(20)
+                                    ->suffix('وجه')
+                                    ->visible(fn ($get) => $get('sessionHomework.has_review')),
+
+                            ])
+                            ->visible(fn ($get) => $get('sessionHomework.has_review')),
+
+                        // Comprehensive Review Section
+                        Toggle::make('sessionHomework.has_comprehensive_review')
+                            ->label('مراجعة شاملة')
+                            ->live()
+                            ->default(false),
+
+                        CheckboxList::make('sessionHomework.comprehensive_review_surahs')
+                            ->label('سور المراجعة الشاملة')
+                            ->options(QuranSurah::getAllSurahs())
+                            ->searchable()
+                            ->columns(3)
+                            ->visible(fn ($get) => $get('sessionHomework.has_comprehensive_review')),
+
+                        Textarea::make('sessionHomework.additional_instructions')
+                            ->label('تعليمات إضافية')
+                            ->rows(3)
+                            ->placeholder('أي تعليمات أو ملاحظات إضافية للطلاب'),
                     ]),
+
             ]);
     }
 
@@ -255,17 +198,17 @@ class QuranSessionResource extends Resource
                     ->label('رمز الجلسة')
                     ->searchable()
                     ->sortable(),
-                    
+
                 TextColumn::make('title')
                     ->label('عنوان الجلسة')
                     ->searchable()
                     ->limit(30),
-                    
+
                 TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
-                    
+
                 BadgeColumn::make('session_type')
                     ->label('نوع الجلسة')
                     ->colors([
@@ -281,35 +224,35 @@ class QuranSessionResource extends Resource
                         'makeup' => 'تعويضية',
                         default => $state,
                     }),
-                    
+
                 TextColumn::make('scheduled_at')
                     ->label('موعد الجلسة')
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
-                    
+
                 TextColumn::make('duration_minutes')
                     ->label('المدة')
                     ->suffix(' دقيقة')
                     ->sortable(),
-                    
+
                 TextColumn::make('monthly_session_number')
                     ->label('رقم الجلسة')
                     ->sortable()
                     ->toggleable(),
-                    
+
                 TextColumn::make('session_month')
                     ->label('الشهر')
                     ->date('Y-m')
                     ->sortable()
                     ->toggleable(),
-                    
+
                 TextColumn::make('counts_toward_subscription')
                     ->label('تحتسب ضمن الاشتراك')
                     ->badge()
                     ->color(fn (bool $state): string => $state ? 'success' : 'gray')
                     ->formatStateUsing(fn (bool $state): string => $state ? 'نعم' : 'لا')
                     ->toggleable(),
-                    
+
                 BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
@@ -331,7 +274,7 @@ class QuranSessionResource extends Resource
                         'rescheduled' => 'مؤجلة',
                         default => $state instanceof \App\Enums\SessionStatus ? $state->label() : $state,
                     }),
-                    
+
                 BadgeColumn::make('attendance_status')
                     ->label('الحضور')
                     ->colors([
@@ -348,11 +291,11 @@ class QuranSessionResource extends Resource
                         null => 'غير محدد',
                         default => $state,
                     }),
-                    
+
                 TextColumn::make('current_surah')
                     ->label('السورة')
                     ->sortable(),
-                    
+
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
@@ -368,7 +311,7 @@ class QuranSessionResource extends Resource
                         'trial' => 'تجريبية',
                         'makeup' => 'تعويضية',
                     ]),
-                    
+
                 SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
@@ -378,7 +321,7 @@ class QuranSessionResource extends Resource
                         'cancelled' => 'ملغية',
                         'no_show' => 'غياب',
                     ]),
-                    
+
                 SelectFilter::make('attendance_status')
                     ->label('الحضور')
                     ->options([
@@ -387,16 +330,16 @@ class QuranSessionResource extends Resource
                         'late' => 'متأخر',
                         'pending' => 'في الانتظار',
                     ]),
-                    
+
                 Filter::make('today')
                     ->label('جلسات اليوم')
                     ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-                    
+
                 Filter::make('this_week')
                     ->label('جلسات هذا الأسبوع')
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [
                         now()->startOfWeek(),
-                        now()->endOfWeek()
+                        now()->endOfWeek(),
                     ])),
             ])
             ->actions([
@@ -436,7 +379,7 @@ class QuranSessionResource extends Resource
                                 'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
                             ]);
                         }),
-                ])
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

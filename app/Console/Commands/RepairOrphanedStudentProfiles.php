@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\StudentProfile;
-use App\Models\GradeLevel;
+use App\Models\AcademicGradeLevel;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -96,14 +96,14 @@ class RepairOrphanedStudentProfiles extends Command
     private function assignToDefaultGradeLevel($profiles, $academy)
     {
         // Try to find an appropriate default grade level
-        $defaultGradeLevel = GradeLevel::where('academy_id', $academy->id)
+                    $defaultGradeLevel = AcademicGradeLevel::where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->orderBy('level')
+            ->orderBy('name')
             ->first();
             
         if (!$defaultGradeLevel) {
             // Create a default grade level if none exists
-            $defaultGradeLevel = GradeLevel::create([
+            $defaultGradeLevel = AcademicGradeLevel::create([
                 'academy_id' => $academy->id,
                 'name' => 'مرحلة عامة',
                 'name_en' => 'General Level',

@@ -6,7 +6,7 @@ use App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\Subject;
-use App\Models\GradeLevel;
+use App\Models\AcademicGradeLevel;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
@@ -111,13 +111,8 @@ class AcademicTeacherProfileResource extends BaseResource
                                 Forms\Components\TextInput::make('university')
                                     ->label('الجامعة')
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('graduation_year')
-                                    ->label('سنة التخرج')
-                                    ->numeric()
-                                    ->minValue(1970)
-                                    ->maxValue(date('Y')),
                                 Forms\Components\TextInput::make('qualification_degree')
-                                    ->label('التخصص')
+                                    ->label('المؤهل التعليمي')
                                     ->maxLength(255),
                             ]),
                         Forms\Components\TextInput::make('teaching_experience_years')
@@ -167,42 +162,50 @@ class AcademicTeacherProfileResource extends BaseResource
 
                 Forms\Components\Section::make('التخصص التدريسي')
                     ->schema([
-                        Forms\Components\CheckboxList::make('subject_ids')
+                        Forms\Components\TagsInput::make('subjects_text')
                             ->label('المواد التي يمكن تدريسها')
-                            ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
-                                // Get academy_id from the record being edited, or from the form data for new records
-                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
-                                
-                                if (!$academyId) {
-                                    return [];
-                                }
-                                
-                                $subjects = Subject::forAcademy($academyId)
-                                    ->active()
-                                    ->pluck('name', 'id')
-                                    ->toArray();
-                                
-                                return $subjects;
-                            })
-                            ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
-                                // Get academy_id from the record being edited, or from the form data for new records
-                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
-                                
-                                if (!$academyId) {
-                                    return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
-                                }
-                                
-                                $count = Subject::forAcademy($academyId)->active()->count();
-                                if ($count === 0) {
-                                    return 'لا توجد مواد متاحة في هذه الأكاديمية. يرجى إضافة المواد أولاً من قسم إدارة المواد.';
-                                }
-                                
-                                return "يوجد {$count} مادة متاحة للاختيار";
-                            })
-                            ->required()
-                            ->columns(3),
-                        Forms\Components\CheckboxList::make('grade_level_ids')
+                            ->placeholder('أضف مادة دراسية')
+                            ->helperText('اكتب المادة الدراسية واضغط Enter لإضافتها. مثال: الرياضيات، الفيزياء، الكيمياء')
+                            ->suggestions([
+                                'الرياضيات',
+                                'الفيزياء', 
+                                'الكيمياء',
+                                'الأحياء',
+                                'اللغة العربية',
+                                'اللغة الإنجليزية',
+                                'التاريخ',
+                                'الجغرافيا',
+                                'التربية الإسلامية',
+                                'العلوم',
+                                'الحاسوب',
+                                'الرياضة'
+                            ])
+                            ->required(),
+                        Forms\Components\TagsInput::make('grade_levels_text')
                             ->label('المراحل الدراسية')
+                            ->placeholder('أضف مرحلة دراسية')
+                            ->helperText('اكتب المرحلة الدراسية واضغط Enter لإضافتها. مثال: الابتدائية، المتوسطة، الثانوية')
+                            ->suggestions([
+                                'الابتدائية',
+                                'المتوسطة',
+                                'الثانوية',
+                                'الجامعية',
+                                'الصف الأول الابتدائي',
+                                'الصف الثاني الابتدائي',
+                                'الصف الثالث الابتدائي',
+                                'الصف الرابع الابتدائي',
+                                'الصف الخامس الابتدائي',
+                                'الصف السادس الابتدائي',
+                                'الصف الأول المتوسط',
+                                'الصف الثاني المتوسط',
+                                'الصف الثالث المتوسط',
+                                'الصف الأول الثانوي',
+                                'الصف الثاني الثانوي',
+                                'الصف الثالث الثانوي'
+                            ])
+                            ->required(),
+                        Forms\Components\CheckboxList::make('package_ids')
+                            ->label('الباقات التي يمكن تدريسها')
                             ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
                                 // Get academy_id from the record being edited, or from the form data for new records
                                 $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
@@ -211,14 +214,15 @@ class AcademicTeacherProfileResource extends BaseResource
                                     return [];
                                 }
                                 
-                                $gradeLevels = GradeLevel::forAcademy($academyId)
-                                    ->active()
-                                    ->orderBy('level')
+                                $packages = \App\Models\AcademicPackage::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->orderBy('sort_order')
+                                    ->orderBy('name_ar')
                                     ->get()
-                                    ->pluck('name', 'id')
+                                    ->pluck('name_ar', 'id')
                                     ->toArray();
                                 
-                                return $gradeLevels;
+                                return $packages;
                             })
                             ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
                                 // Get academy_id from the record being edited, or from the form data for new records
@@ -228,15 +232,14 @@ class AcademicTeacherProfileResource extends BaseResource
                                     return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
                                 }
                                 
-                                $count = GradeLevel::forAcademy($academyId)->active()->count();
+                                $count = \App\Models\AcademicPackage::where('academy_id', $academyId)->where('is_active', true)->count();
                                 if ($count === 0) {
-                                    return 'لا توجد مراحل دراسية متاحة في هذه الأكاديمية. يرجى إضافة المراحل الدراسية أولاً من قسم إدارة المراحل.';
+                                    return 'لا توجد باقات أكاديمية متاحة في هذه الأكاديمية. يرجى إضافة الباقات أولاً من قسم إدارة الباقات الأكاديمية.';
                                 }
                                 
-                                return "يوجد {$count} مرحلة دراسية متاحة للاختيار";
+                                return "يوجد {$count} باقة أكاديمية متاحة للاختيار";
                             })
-                            ->required()
-                            ->columns(3),
+                            ->columns(2),
                     ]),
 
                 Forms\Components\Section::make('الأوقات المتاحة والأسعار')

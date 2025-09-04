@@ -104,14 +104,37 @@ class QuranTeacherProfileResource extends BaseResource
                             ->helperText('مثل: إجازة في القراءات، شهادة تجويد، إلخ'),
                         Forms\Components\CheckboxList::make('languages')
                             ->label('اللغات التي يجيدها')
-                            ->options([
-                                'arabic' => 'العربية',
-                                'english' => 'الإنجليزية',
-                                'french' => 'الفرنسية',
-                                'urdu' => 'الأردو',
-                                'turkish' => 'التركية',
-                                'malay' => 'الماليزية',
-                            ])
+                            ->options(function () {
+                                $academyId = \App\Services\AcademyContextService::getCurrentAcademy()?->id;
+                                if (!$academyId) {
+                                    $availableLanguages = ['arabic', 'english'];
+                                } else {
+                                    $settings = \App\Models\AcademicSettings::getForAcademy($academyId);
+                                    $availableLanguages = $settings->available_languages ?? ['arabic', 'english'];
+                                }
+                                
+                                $languageNames = [
+                                    'arabic' => 'العربية',
+                                    'english' => 'الإنجليزية',
+                                    'french' => 'الفرنسية',
+                                    'german' => 'الألمانية',
+                                    'turkish' => 'التركية',
+                                    'spanish' => 'الإسبانية',
+                                    'chinese' => 'الصينية',
+                                    'japanese' => 'اليابانية',
+                                    'korean' => 'الكورية',
+                                    'italian' => 'الإيطالية',
+                                    'portuguese' => 'البرتغالية',
+                                    'russian' => 'الروسية',
+                                    'hindi' => 'الهندية',
+                                    'urdu' => 'الأردية',
+                                    'persian' => 'الفارسية',
+                                ];
+                                
+                                return collect($availableLanguages)
+                                    ->mapWithKeys(fn($lang) => [$lang => $languageNames[$lang] ?? $lang])
+                                    ->toArray();
+                            })
                             ->default(['arabic'])
                             ->columns(2),
                     ]),
@@ -142,6 +165,29 @@ class QuranTeacherProfileResource extends BaseResource
                             ])
                             ->columns(2)
                             ->required(),
+                    ]),
+
+                Forms\Components\Section::make('الأسعار والرسوم')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('session_price_individual')
+                                    ->label('سعر الحصة الفردية')
+                                    ->numeric()
+                                    ->prefix('ر.س')
+                                    ->minValue(0)
+                                    ->step(5)
+                                    ->default(50)
+                                    ->helperText('سعر الحصة الواحدة للطالب الواحد'),
+                                Forms\Components\TextInput::make('session_price_group')
+                                    ->label('سعر الحصة الجماعية')
+                                    ->numeric()
+                                    ->prefix('ر.س')
+                                    ->minValue(0)
+                                    ->step(5)
+                                    ->default(30)
+                                    ->helperText('سعر الحصة الواحدة للطالب في المجموعة'),
+                            ]),
                     ]),
 
                 Forms\Components\Section::make('السيرة الذاتية')

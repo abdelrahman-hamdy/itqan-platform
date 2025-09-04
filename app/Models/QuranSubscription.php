@@ -53,7 +53,7 @@ class QuranSubscription extends Model
         'notes',
         'metadata',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
@@ -78,14 +78,14 @@ class QuranSubscription extends Model
         'next_payment_at' => 'datetime',
         'last_payment_at' => 'datetime',
         'reviewed_at' => 'datetime',
-        'metadata' => 'array'
+        'metadata' => 'array',
     ];
 
     // Constants
     const BILLING_CYCLES = [
         'monthly' => 'شهرية',
         'quarterly' => 'ربع سنوية (ثلاثة أشهر)',
-        'yearly' => 'سنوية'
+        'yearly' => 'سنوية',
     ];
 
     // Relationships
@@ -99,9 +99,54 @@ class QuranSubscription extends Model
         return $this->belongsTo(User::class, 'student_id');
     }
 
-    public function quranTeacher(): BelongsTo
+    // Real user relationship - renamed to avoid conflict with accessor
+    public function quranTeacherUser(): BelongsTo
     {
-        return $this->belongsTo(QuranTeacherProfile::class, 'quran_teacher_id');
+        return $this->belongsTo(User::class, 'quran_teacher_id');
+    }
+
+    // Accessor that works with the quranTeacher.user pattern
+    public function getQuranTeacherAttribute()
+    {
+        // Debug: check if accessor is being called
+        \Log::info('QuranSubscription getQuranTeacherAttribute called for ID: '.$this->id);
+
+        if (! $this->quran_teacher_id) {
+            return null;
+        }
+
+        // Get the user directly
+        $user = \App\Models\User::find($this->quran_teacher_id);
+        if (! $user) {
+            return null;
+        }
+
+        // Get teacher profile if exists
+        $teacherProfile = $user->quranTeacherProfile;
+
+        // Return an object that has both user properties and the user relationship
+        $result = (object) [
+            'id' => $teacherProfile ? $teacherProfile->id : $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'user_type' => $user->user_type,
+            'full_name' => $user->name,
+            'user' => $user,
+            // Add other properties that views might expect
+            'teaching_experience_years' => $teacherProfile->teaching_experience_years ?? null,
+            'bio_arabic' => $teacherProfile->bio_arabic ?? null,
+            'bio_english' => $teacherProfile->bio_english ?? null,
+            'educational_qualification' => $teacherProfile->educational_qualification ?? null,
+            'avatar' => $user->avatar,
+            'teacher_code' => $teacherProfile->teacher_code ?? null,
+            'rating' => $teacherProfile->rating ?? 0,
+            'total_students' => $teacherProfile->total_students ?? 0,
+            'total_sessions' => $teacherProfile->total_sessions ?? 0,
+        ];
+
+        \Log::info('QuranSubscription accessor returning object with user property');
+
+        return $result;
     }
 
     public function package(): BelongsTo
@@ -138,34 +183,34 @@ class QuranSubscription extends Model
     public function scopeActive($query)
     {
         return $query->where('subscription_status', 'active')
-                    ->where(function($q) {
-                        $q->where('expires_at', '>', now())
-                          ->orWhereNull('expires_at');
-                    });
+            ->where(function ($q) {
+                $q->where('expires_at', '>', now())
+                    ->orWhereNull('expires_at');
+            });
     }
 
     public function scopeExpired($query)
     {
         return $query->where('expires_at', '<=', now())
-                    ->where('subscription_status', '!=', 'cancelled');
+            ->where('subscription_status', '!=', 'cancelled');
     }
 
     public function scopeExpiringSoon($query, $days = 7)
     {
         return $query->where('subscription_status', 'active')
-                    ->whereBetween('expires_at', [now(), now()->addDays($days)]);
+            ->whereBetween('expires_at', [now(), now()->addDays($days)]);
     }
 
     public function scopeInTrial($query)
     {
         return $query->where('is_trial_active', true)
-                    ->where('trial_used', '<', 'trial_sessions');
+            ->where('trial_used', '<', 'trial_sessions');
     }
 
     public function scopeTrialExpired($query)
     {
         return $query->where('is_trial_active', true)
-                    ->whereRaw('trial_used >= trial_sessions');
+            ->whereRaw('trial_used >= trial_sessions');
     }
 
     public function scopePaused($query)
@@ -191,7 +236,7 @@ class QuranSubscription extends Model
     public function scopeNeedsRenewal($query)
     {
         return $query->where('sessions_remaining', '<=', 3)
-                    ->where('subscription_status', 'active');
+            ->where('subscription_status', 'active');
     }
 
     // Accessors
@@ -203,7 +248,7 @@ class QuranSubscription extends Model
             'paused' => 'متوقف مؤقتاً',
             'cancelled' => 'ملغي',
             'pending' => 'في الانتظار',
-            'suspended' => 'معلق'
+            'suspended' => 'معلق',
         ];
 
         return $statuses[$this->subscription_status] ?? $this->subscription_status;
@@ -216,7 +261,7 @@ class QuranSubscription extends Model
             'pending' => 'في انتظار الدفع',
             'failed' => 'فشل الدفع',
             'refunded' => 'مسترد',
-            'cancelled' => 'ملغي'
+            'cancelled' => 'ملغي',
         ];
 
         return $statuses[$this->payment_status] ?? $this->payment_status;
@@ -229,7 +274,7 @@ class QuranSubscription extends Model
             'standard' => 'الباقة المعيارية',
             'premium' => 'الباقة المميزة',
             'intensive' => 'الباقة المكثفة',
-            'custom' => 'باقة مخصصة'
+            'custom' => 'باقة مخصصة',
         ];
 
         return $types[$this->package_type] ?? $this->package_type;
@@ -237,17 +282,17 @@ class QuranSubscription extends Model
 
     public function getFormattedPriceAttribute(): string
     {
-        return number_format((float)$this->total_price, 2) . ' ' . $this->currency;
+        return number_format((float) $this->total_price, 2).' '.$this->currency;
     }
 
     public function getFormattedPricePerSessionAttribute(): string
     {
-        return number_format((float)$this->price_per_session, 2) . ' ' . $this->currency;
+        return number_format((float) $this->price_per_session, 2).' '.$this->currency;
     }
 
     public function getCurrentSurahFormattedAttribute(): string
     {
-        if (!$this->current_surah) {
+        if (! $this->current_surah) {
             return 'لم يتم تحديد السورة بعد';
         }
 
@@ -258,7 +303,7 @@ class QuranSubscription extends Model
             // ... add all 114 surahs
         ];
 
-        return $surahNames[$this->current_surah] ?? 'سورة رقم ' . $this->current_surah;
+        return $surahNames[$this->current_surah] ?? 'سورة رقم '.$this->current_surah;
     }
 
     public function getMemorizationLevelTextAttribute(): string
@@ -269,7 +314,7 @@ class QuranSubscription extends Model
             'intermediate' => 'متوسط',
             'advanced' => 'متقدم',
             'expert' => 'متقن',
-            'hafiz' => 'حافظ'
+            'hafiz' => 'حافظ',
         ];
 
         return $levels[$this->memorization_level] ?? $this->memorization_level;
@@ -277,7 +322,7 @@ class QuranSubscription extends Model
 
     public function getDaysRemainingAttribute(): int
     {
-        if (!$this->expires_at) {
+        if (! $this->expires_at) {
             return -1; // Unlimited
         }
 
@@ -286,7 +331,7 @@ class QuranSubscription extends Model
 
     public function getIsActiveAttribute(): bool
     {
-        return $this->subscription_status === 'active' && 
+        return $this->subscription_status === 'active' &&
                ($this->expires_at === null || $this->expires_at->isFuture());
     }
 
@@ -325,7 +370,7 @@ class QuranSubscription extends Model
         $this->update([
             'sessions_used' => $this->sessions_used + 1,
             'sessions_remaining' => $this->sessions_remaining - 1,
-            'last_session_at' => now()
+            'last_session_at' => now(),
         ]);
 
         // Check if subscription should be marked as completed
@@ -338,13 +383,13 @@ class QuranSubscription extends Model
 
     public function useTrialSession(): self
     {
-        if (!$this->is_trial_active || $this->trial_used >= $this->trial_sessions) {
+        if (! $this->is_trial_active || $this->trial_used >= $this->trial_sessions) {
             throw new \Exception('لا توجد جلسات تجريبية متبقية');
         }
 
         $this->update([
             'trial_used' => $this->trial_used + 1,
-            'last_session_at' => now()
+            'last_session_at' => now(),
         ]);
 
         // Check if trial should be deactivated
@@ -360,7 +405,7 @@ class QuranSubscription extends Model
         $this->update([
             'total_sessions' => $this->total_sessions + $sessionsCount,
             'sessions_remaining' => $this->sessions_remaining + $sessionsCount,
-            'total_price' => $this->total_price + ($price ?? ($sessionsCount * $this->price_per_session))
+            'total_price' => $this->total_price + ($price ?? ($sessionsCount * $this->price_per_session)),
         ]);
 
         return $this;
@@ -371,7 +416,7 @@ class QuranSubscription extends Model
         $this->update([
             'subscription_status' => 'paused',
             'paused_at' => now(),
-            'pause_reason' => $reason
+            'pause_reason' => $reason,
         ]);
 
         return $this;
@@ -380,12 +425,12 @@ class QuranSubscription extends Model
     public function resume(): self
     {
         $pausedDays = $this->paused_at ? now()->diffInDays($this->paused_at) : 0;
-        
+
         $this->update([
             'subscription_status' => 'active',
             'paused_at' => null,
             'pause_reason' => null,
-            'expires_at' => $this->expires_at ? $this->expires_at->addDays($pausedDays) : null
+            'expires_at' => $this->expires_at ? $this->expires_at->addDays($pausedDays) : null,
         ]);
 
         return $this;
@@ -397,7 +442,7 @@ class QuranSubscription extends Model
             'subscription_status' => 'cancelled',
             'cancelled_at' => now(),
             'cancellation_reason' => $reason,
-            'auto_renew' => false
+            'auto_renew' => false,
         ]);
 
         return $this;
@@ -407,7 +452,7 @@ class QuranSubscription extends Model
     {
         $this->update([
             'subscription_status' => 'completed',
-            'auto_renew' => false
+            'auto_renew' => false,
         ]);
 
         return $this;
@@ -424,7 +469,7 @@ class QuranSubscription extends Model
             'starts_at' => now(),
             'expires_at' => now()->addMonth(),
             'last_payment_at' => now(),
-            'next_payment_at' => $this->billing_cycle === 'monthly' ? now()->addMonth() : null
+            'next_payment_at' => $this->billing_cycle === 'monthly' ? now()->addMonth() : null,
         ], $newPackageData);
 
         $this->update($renewalData);
@@ -448,7 +493,7 @@ class QuranSubscription extends Model
             $updateData['progress_percentage'] = min(100, max(0, $progressPercentage));
         }
 
-        if (!empty($updateData)) {
+        if (! empty($updateData)) {
             $this->update($updateData);
         }
 
@@ -460,7 +505,7 @@ class QuranSubscription extends Model
         $this->update([
             'rating' => $rating,
             'review_text' => $reviewText,
-            'reviewed_at' => now()
+            'reviewed_at' => now(),
         ]);
 
         // Update teacher's rating
@@ -471,7 +516,7 @@ class QuranSubscription extends Model
 
     public function calculateNextPayment(): ?\Carbon\Carbon
     {
-        if (!$this->auto_renew || $this->subscription_status !== 'active') {
+        if (! $this->auto_renew || $this->subscription_status !== 'active') {
             return null;
         }
 
@@ -487,10 +532,10 @@ class QuranSubscription extends Model
     public function extendExpiry(int $days): self
     {
         if ($this->expires_at) {
-            $newExpiry = $this->expires_at->isFuture() 
+            $newExpiry = $this->expires_at->isFuture()
                 ? $this->expires_at->addDays($days)
                 : now()->addDays($days);
-                
+
             $this->update(['expires_at' => $newExpiry]);
         }
 
@@ -507,7 +552,7 @@ class QuranSubscription extends Model
             'progress_percentage' => 0,
             'verses_memorized' => 0,
             'subscription_status' => 'pending',
-            'payment_status' => 'pending'
+            'payment_status' => 'pending',
         ]));
 
         return $subscription;
@@ -521,42 +566,43 @@ class QuranSubscription extends Model
             'subscription_status' => 'active',
             'payment_status' => 'free',
             'total_price' => 0,
-            'price_per_session' => 0
+            'price_per_session' => 0,
         ]));
     }
 
     public static function generateSubscriptionCode(int $academyId): string
     {
         $academyId = $academyId ?: 1;
-        $prefix = 'QS-' . $academyId . '-';
-        
+        $prefix = 'QS-'.$academyId.'-';
+
         // Use a retry approach with randomization for concurrent requests
         $maxRetries = 20;
-        
+
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
             // Get the highest existing sequence number for this academy (including soft deleted)
             $maxNumber = static::withTrashed()
                 ->where('academy_id', $academyId)
-                ->where('subscription_code', 'LIKE', $prefix . '%')
+                ->where('subscription_code', 'LIKE', $prefix.'%')
                 ->selectRaw('MAX(CAST(SUBSTRING(subscription_code, -6) AS UNSIGNED)) as max_num')
                 ->value('max_num') ?: 0;
-            
+
             // Generate next sequence number (add random offset for concurrent requests)
             $nextNumber = $maxNumber + 1 + $attempt + mt_rand(0, 5);
-            $newCode = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-            
+            $newCode = $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+
             // Check if this code already exists (including soft deleted)
-            if (!static::withTrashed()->where('subscription_code', $newCode)->exists()) {
+            if (! static::withTrashed()->where('subscription_code', $newCode)->exists()) {
                 return $newCode;
             }
-            
+
             // Add a small delay to reduce contention
             usleep(5000 + ($attempt * 2000)); // 5ms + increasing delay
         }
-        
+
         // Fallback: use timestamp-based suffix if all retries failed
         $timestamp = substr(str_replace('.', '', microtime(true)), -6);
-        return $prefix . $timestamp;
+
+        return $prefix.$timestamp;
     }
 
     public static function getExpiringSoon(int $academyId, int $days = 7): \Illuminate\Database\Eloquent\Collection
@@ -576,6 +622,19 @@ class QuranSubscription extends Model
     }
 
     /**
+     * Check if student already has an active individual subscription with this teacher
+     */
+    public static function hasActiveIndividualSubscription($studentId, $teacherId, $academyId): bool
+    {
+        return static::where('student_id', $studentId)
+            ->where('quran_teacher_id', $teacherId)
+            ->where('academy_id', $academyId)
+            ->where('subscription_type', 'individual')
+            ->where('subscription_status', 'active')
+            ->exists();
+    }
+
+    /**
      * Create individual circle for individual subscriptions
      */
     public function createIndividualCircle(): ?QuranIndividualCircle
@@ -591,14 +650,15 @@ class QuranSubscription extends Model
         }
 
         // Ensure we have required data
-        if (!$this->quran_teacher_id || !$this->student_id || !$this->package) {
+        if (! $this->quran_teacher_id || ! $this->student_id || ! $this->package) {
             return null;
         }
 
-        // Get the actual user ID from the teacher profile
-        $teacherUserId = $this->quranTeacher?->user_id;
-        if (!$teacherUserId) {
-            throw new \Exception('Teacher profile is not linked to a user account');
+        // Get the teacher user ID directly (workaround for relationship caching issue)
+        $teacherUserId = $this->quran_teacher_id; // Already the user ID since we fixed the foreign key
+        $teacherUser = \App\Models\User::find($teacherUserId);
+        if (! $teacherUser || $teacherUser->user_type !== 'quran_teacher') {
+            throw new \Exception('Valid teacher user not found');
         }
 
         $circle = QuranIndividualCircle::create([
@@ -630,7 +690,7 @@ class QuranSubscription extends Model
             $this->individualCircle->update([
                 'total_sessions' => $this->total_sessions,
                 'sessions_remaining' => $this->total_sessions - $this->individualCircle->sessions_completed,
-                'status' => $this->subscription_status === 'active' ? 'active' : 
+                'status' => $this->subscription_status === 'active' ? 'active' :
                            ($this->subscription_status === 'cancelled' ? 'cancelled' : 'pending'),
             ]);
         }
@@ -639,11 +699,42 @@ class QuranSubscription extends Model
     // Boot method to handle model events
     protected static function booted()
     {
+        // Validate before creating individual subscription
+        static::creating(function ($subscription) {
+            if ($subscription->subscription_type === 'individual') {
+                // Check for existing active individual subscription with same teacher
+                if (static::hasActiveIndividualSubscription(
+                    $subscription->student_id,
+                    $subscription->quran_teacher_id,
+                    $subscription->academy_id
+                )) {
+                    throw new \Exception('لديك اشتراك فردي نشط بالفعل مع هذا المعلم');
+                }
+            }
+        });
+
+        // Validate before updating subscription status
+        static::updating(function ($subscription) {
+            if ($subscription->subscription_type === 'individual' &&
+                $subscription->isDirty('subscription_status') &&
+                $subscription->subscription_status === 'active') {
+
+                // Check for existing active individual subscription with same teacher
+                if (static::hasActiveIndividualSubscription(
+                    $subscription->student_id,
+                    $subscription->quran_teacher_id,
+                    $subscription->academy_id
+                )) {
+                    throw new \Exception('لديك اشتراك فردي نشط بالفعل مع هذا المعلم');
+                }
+            }
+        });
+
         // Create individual circle after subscription is created
         static::created(function ($subscription) {
             if ($subscription->subscription_type === 'individual') {
                 $circle = $subscription->createIndividualCircle();
-                
+
                 // If subscription is already active, ensure circle is also active
                 if ($circle && $subscription->subscription_status === 'active' && $circle->status !== 'active') {
                     $circle->update(['status' => 'active']);
@@ -653,7 +744,7 @@ class QuranSubscription extends Model
 
         // Update individual circle when subscription status changes
         static::updated(function ($subscription) {
-            if ($subscription->subscription_type === 'individual' && 
+            if ($subscription->subscription_type === 'individual' &&
                 $subscription->isDirty(['subscription_status', 'total_sessions'])) {
                 $subscription->updateIndividualCircle();
             }
@@ -682,4 +773,4 @@ class QuranSubscription extends Model
             }
         });
     }
-} 
+}

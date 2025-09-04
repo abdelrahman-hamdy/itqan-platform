@@ -41,6 +41,8 @@ class QuranTeacherProfile extends Model
         'rating',
         'total_students',
         'total_sessions',
+        'session_price_individual',
+        'session_price_group',
     ];
 
     protected $casts = [
@@ -53,6 +55,8 @@ class QuranTeacherProfile extends Model
         'rating' => 'decimal:2',
         'total_students' => 'integer',
         'total_sessions' => 'integer',
+        'session_price_individual' => 'decimal:2',
+        'session_price_group' => 'decimal:2',
         'teaching_experience_years' => 'integer',
         'available_time_start' => 'datetime:H:i',
         'available_time_end' => 'datetime:H:i',
@@ -102,6 +106,12 @@ class QuranTeacherProfile extends Model
         parent::boot();
 
         static::creating(function ($model) {
+            if (empty($model->teacher_code)) {
+                $model->teacher_code = static::generateTeacherCode($model->academy_id);
+            }
+        });
+
+        static::saving(function ($model) {
             if (empty($model->teacher_code)) {
                 $model->teacher_code = static::generateTeacherCode($model->academy_id);
             }

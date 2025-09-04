@@ -230,6 +230,45 @@ class AcademicSettingsResource extends BaseSettingsResource
                             ->required(),
                     ]),
 
+                Forms\Components\Section::make('إعدادات الباقات الافتراضية')
+                    ->description('الباقات التي ستُختار تلقائياً للمعلمين الجدد')
+                    ->schema([
+                        Forms\Components\CheckboxList::make('default_package_ids')
+                            ->label('الباقات الافتراضية للمعلمين الجدد')
+                            ->options(function () {
+                                $academyId = AcademyContextService::getCurrentAcademyId();
+                                
+                                if (!$academyId) {
+                                    return [];
+                                }
+                                
+                                return \App\Models\AcademicPackage::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->orderBy('sort_order')
+                                    ->orderBy('name_ar')
+                                    ->pluck('name_ar', 'id')
+                                    ->toArray();
+                            })
+                            ->helperText(function () {
+                                $academyId = AcademyContextService::getCurrentAcademyId();
+                                
+                                if (!$academyId) {
+                                    return 'لا يمكن تحديد الأكاديمية.';
+                                }
+                                
+                                $count = \App\Models\AcademicPackage::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->count();
+                                    
+                                if ($count === 0) {
+                                    return 'لا توجد باقات أكاديمية متاحة. يرجى إضافة الباقات أولاً من قسم إدارة الباقات الأكاديمية.';
+                                }
+                                
+                                return "الباقات المختارة ستظهر تلقائياً في ملف المعلم الجديد. يوجد {$count} باقة متاحة للاختيار.";
+                            })
+                            ->columns(2),
+                    ]),
+
                 Forms\Components\Section::make('ملاحظات إدارية')
                     ->schema([
                         Forms\Components\Textarea::make('notes')
@@ -304,6 +343,29 @@ class AcademicSettingsResource extends BaseSettingsResource
                             ->suffix(' يوم قبل البدء'),
                     ])
                     ->columns(2),
+
+                Components\Section::make('الباقات الافتراضية')
+                    ->schema([
+                        Components\TextEntry::make('default_package_ids')
+                            ->label('الباقات الافتراضية للمعلمين الجدد')
+                            ->formatStateUsing(function ($state, $record) {
+                                if (empty($state)) {
+                                    return 'لم يتم تحديد باقات افتراضية';
+                                }
+                                
+                                $packageIds = is_array($state) ? $state : json_decode($state, true);
+                                if (!is_array($packageIds) || empty($packageIds)) {
+                                    return 'لم يتم تحديد باقات افتراضية';
+                                }
+                                
+                                $packages = \App\Models\AcademicPackage::whereIn('id', $packageIds)
+                                    ->where('academy_id', $record->academy_id)
+                                    ->pluck('name_ar');
+                                    
+                                return $packages->count() > 0 ? $packages->join(', ') : 'لم يتم تحديد باقات افتراضية';
+                            }),
+                    ])
+                    ->columns(1),
 
                 Components\Section::make('ملاحظات')
                     ->schema([

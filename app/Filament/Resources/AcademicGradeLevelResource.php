@@ -1,0 +1,178 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\AcademicGradeLevelResource\Pages;
+use App\Models\AcademicGradeLevel;
+use Filament\Forms;
+use Filament\Forms\Form;
+use App\Filament\Resources\BaseResource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use App\Services\AcademyContextService;
+
+class AcademicGradeLevelResource extends BaseResource
+{
+    protected static ?string $model = AcademicGradeLevel::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    
+    protected static ?string $navigationLabel = 'الصفوف الدراسية';
+    
+    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+    
+    protected static ?string $modelLabel = 'صف دراسي';
+    
+    protected static ?string $pluralModelLabel = 'الصفوف الدراسية';
+
+    protected static ?int $navigationSort = 3;
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        // Apply academy scoping manually since trait is not working
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        if ($academyId) {
+            $query->where('academy_id', $academyId);
+        }
+        
+        return $query;
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Section::make('معلومات الصف الدراسي')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('اسم الصف (عربي)')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->placeholder('مثل: الصف الأول، الصف الثاني، الصف الثالث'),
+
+                                Forms\Components\TextInput::make('name_en')
+                                    ->label('اسم الصف (إنجليزي)')
+                                    ->maxLength(255)
+                                    ->placeholder('Primary, Middle, High School'),
+                            ]),
+
+                        Forms\Components\Textarea::make('description')
+                            ->label('وصف الصف')
+                            ->maxLength(500)
+                            ->rows(3)
+                            ->placeholder('وصف تفصيلي للصف الدراسي ومتطلباته')
+                            ->columnSpanFull(),
+                    ]),
+
+
+
+                Forms\Components\Section::make('الإعدادات الإضافية')
+                    ->schema([
+                        Forms\Components\ColorPicker::make('color_code')
+                            ->label('لون المرحلة')
+                            ->default('#10B981'),
+
+                                                        Forms\Components\Toggle::make('is_active')
+                                    ->label('نشط')
+                                    ->default(true)
+                                    ->helperText('هل هذا الصف متاح للتسجيل؟'),
+
+                        Forms\Components\Textarea::make('notes')
+                            ->label('ملاحظات')
+                            ->maxLength(1000)
+                            ->rows(3)
+                            ->placeholder('ملاحظات إضافية حول الصف')
+                            ->columnSpanFull(),
+                    ]),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                static::getAcademyColumn(), // Add academy column when viewing all academies
+                Tables\Columns\TextColumn::make('name')
+                    ->label('اسم الصف')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('medium'),
+
+                Tables\Columns\TextColumn::make('name_en')
+                    ->label('الاسم بالإنجليزية')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+
+
+                Tables\Columns\TextColumn::make('academy.name')
+                    ->label('الأكاديمية')
+                    ->badge()
+                    ->color('info')
+                    ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
+
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('نشط')
+                    ->boolean()
+                    ->trueColor('success')
+                    ->falseColor('danger')
+                    ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('تاريخ الإنشاء')
+                    ->dateTime('Y-m-d H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('حالة النشاط')
+                    ->placeholder('الكل')
+                    ->trueLabel('نشط')
+                    ->falseLabel('غير نشط'),
+
+
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label('عرض'),
+                Tables\Actions\EditAction::make()
+                    ->label('تعديل'),
+                Tables\Actions\DeleteAction::make()
+                    ->label('حذف'),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('حذف المحدد'),
+                ]),
+            ])
+            ->defaultSort('name', 'asc');
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $academyId = AcademyContextService::getCurrentAcademyId();
+        return $academyId ? static::getModel()::where('academy_id', $academyId)->count() : '0';
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'primary';
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListAcademicGradeLevels::route('/'),
+            'create' => Pages\CreateAcademicGradeLevel::route('/create'),
+            'view' => Pages\ViewAcademicGradeLevel::route('/{record}'),
+            'edit' => Pages\EditAcademicGradeLevel::route('/{record}/edit'),
+        ];
+    }
+}

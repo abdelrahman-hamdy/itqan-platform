@@ -105,6 +105,105 @@ class MeetingAttendanceService
     }
 
     /**
+     * Handle user joining a meeting (Polymorphic version for any session type)
+     */
+    public function handleUserJoinPolymorphic($session, User $user, string $sessionType): bool
+    {
+        try {
+            // Create or get existing attendance record
+            $attendance = MeetingAttendance::findOrCreateForUserPolymorphic($session, $user, $sessionType);
+
+            // Record the join event
+            $joinSuccess = $attendance->recordJoin();
+            
+            if (!$joinSuccess) {
+                return false;
+            }
+
+            // For academic sessions, different status transition logic
+            if ($sessionType === 'academic') {
+                // If this is the first participant and session is READY, transition to ONGOING
+                if ($session->status === SessionStatus::READY) {
+                    $session->update(['status' => SessionStatus::ONGOING]);
+                }
+            } else {
+                // Existing Quran session logic
+                if ($session->status === SessionStatus::READY) {
+                    $this->sessionStatusService->transitionToOngoing($session);
+                }
+            }
+
+            Log::info('User joined meeting successfully (polymorphic)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
+                'user_type' => $attendance->user_type,
+                'join_count' => $attendance->join_count,
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle user join (polymorphic)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Handle user leaving a meeting (Polymorphic version for any session type)
+     */
+    public function handleUserLeavePolymorphic($session, User $user, string $sessionType): bool
+    {
+        try {
+            // Find existing attendance record
+            $attendance = MeetingAttendance::where('session_id', $session->id)
+                ->where('user_id', $user->id)
+                ->where('session_type', $sessionType)
+                ->first();
+
+            if (!$attendance) {
+                Log::warning('User tried to leave meeting but no attendance record found (polymorphic)', [
+                    'session_id' => $session->id,
+                    'user_id' => $user->id,
+                    'session_type' => $sessionType,
+                ]);
+                return false;
+            }
+
+            // Record the leave event
+            $leaveSuccess = $attendance->recordLeave();
+
+            if (!$leaveSuccess) {
+                return false;
+            }
+
+            Log::info('User left meeting successfully (polymorphic)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
+                'leave_count' => $attendance->leave_count,
+                'total_duration' => $attendance->total_duration_minutes,
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle user leave (polymorphic)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * Calculate final attendance for all participants of a session
      */
     public function calculateFinalAttendance(QuranSession $session): array

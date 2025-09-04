@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class QuranSession extends Model
 {
@@ -226,11 +226,37 @@ class QuranSession extends Model
     }
 
     /**
+     * العلاقة مع تقارير الطلاب الجديدة
+     */
+    public function studentReports(): HasMany
+    {
+        return $this->hasMany(StudentSessionReport::class, 'session_id');
+    }
+
+    /**
      * Enhanced meeting attendance tracking
      */
     public function meetingAttendances(): HasMany
     {
         return $this->hasMany(MeetingAttendance::class, 'session_id');
+    }
+
+    /**
+     * New homework system relationships
+     */
+    public function sessionHomework(): HasOne
+    {
+        return $this->hasOne(QuranSessionHomework::class, 'session_id');
+    }
+
+    public function homeworkAssignments(): HasMany
+    {
+        return $this->hasMany(QuranHomeworkAssignment::class, 'session_id');
+    }
+
+    public function autoTrackedAttendances(): HasMany
+    {
+        return $this->hasMany(QuranSessionAttendance::class, 'session_id')->where('auto_tracked', true);
     }
 
     // Scopes
@@ -267,7 +293,7 @@ class QuranSession extends Model
     public function scopeUpcoming($query)
     {
         return $query->where('scheduled_at', '>', now())
-                    ->where('status', 'scheduled');
+            ->where('status', 'scheduled');
     }
 
     public function scopePast($query)
@@ -279,7 +305,7 @@ class QuranSession extends Model
     {
         return $query->whereBetween('scheduled_at', [
             now()->startOfWeek(),
-            now()->endOfWeek()
+            now()->endOfWeek(),
         ]);
     }
 
@@ -309,13 +335,14 @@ class QuranSession extends Model
     }
 
     // Status Management Methods
-    
+
     /**
      * Get the status enum instance
      */
     public function getStatusEnum(): SessionStatus
     {
         $statusValue = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
+
         return SessionStatus::from($statusValue);
     }
 
@@ -324,8 +351,8 @@ class QuranSession extends Model
      */
     public function isUpcoming(): bool
     {
-        return $this->status === SessionStatus::SCHEDULED && 
-               $this->scheduled_at && 
+        return $this->status === SessionStatus::SCHEDULED &&
+               $this->scheduled_at &&
                $this->scheduled_at->isFuture();
     }
 
@@ -334,11 +361,12 @@ class QuranSession extends Model
      */
     public function isReadyToStart(): bool
     {
-        if (!$this->scheduled_at || $this->status !== SessionStatus::SCHEDULED) {
+        if (! $this->scheduled_at || $this->status !== SessionStatus::SCHEDULED) {
             return false;
         }
-        
+
         $minutesUntilSession = now()->diffInMinutes($this->scheduled_at, false);
+
         return $minutesUntilSession <= 30 && $minutesUntilSession >= -10; // Can start 30 min before, 10 min after
     }
 
@@ -347,7 +375,7 @@ class QuranSession extends Model
      */
     public function markAsOngoing(): bool
     {
-        if (!$this->status->canStart()) {
+        if (! $this->status->canStart()) {
             return false;
         }
 
@@ -364,7 +392,7 @@ class QuranSession extends Model
      */
     public function markAsCompleted(array $additionalData = []): bool
     {
-        if (!$this->status->canComplete()) {
+        if (! $this->status->canComplete()) {
             return false;
         }
 
@@ -395,7 +423,7 @@ class QuranSession extends Model
      */
     public function markAsCancelled(?string $reason = null, ?string $cancelledBy = null): bool
     {
-        if (!$this->status->canCancel()) {
+        if (! $this->status->canCancel()) {
             return false;
         }
 
@@ -418,8 +446,8 @@ class QuranSession extends Model
     public function markAsAbsent(?string $reason = null): bool
     {
         // Prevent marking future sessions as absent
-        if ($this->session_type !== 'individual' || 
-            !$this->status->canComplete() ||
+        if ($this->session_type !== 'individual' ||
+            ! $this->status->canComplete() ||
             ($this->scheduled_at && $this->scheduled_at->isFuture())) {
             return false;
         }
@@ -454,31 +482,35 @@ class QuranSession extends Model
     }
 
     /**
-     * Record attendance for session
+     * Initialize student reports for session
      */
-    protected function recordSessionAttendance(string $attendanceStatus): void
+    protected function initializeStudentReports(): void
     {
         if ($this->session_type === 'individual' && $this->student) {
             // For individual sessions
-            QuranSessionAttendance::updateOrCreate([
+            StudentSessionReport::firstOrCreate([
                 'session_id' => $this->id,
                 'student_id' => $this->student_id,
+                'teacher_id' => $this->quran_teacher_id,
+                'academy_id' => $this->academy_id,
             ], [
-                'attendance_status' => $attendanceStatus,
-                'join_time' => $attendanceStatus === 'present' ? ($this->started_at ?? now()) : null,
-                'leave_time' => $attendanceStatus === 'present' ? ($this->ended_at ?? now()) : null,
+                'attendance_status' => 'absent', // Default to absent until meeting data is available
+                'is_auto_calculated' => true,
+                'evaluated_at' => now(),
             ]);
         } elseif ($this->session_type === 'circle' && $this->circle) {
-            // For group sessions - record for all enrolled students
+            // For group sessions - create reports for all enrolled students
             $students = $this->circle->students;
             foreach ($students as $student) {
-                QuranSessionAttendance::updateOrCreate([
+                StudentSessionReport::firstOrCreate([
                     'session_id' => $this->id,
                     'student_id' => $student->id,
+                    'teacher_id' => $this->quran_teacher_id,
+                    'academy_id' => $this->academy_id,
                 ], [
-                    'attendance_status' => $attendanceStatus === 'cancelled' ? 'cancelled' : 'absent', // Default to absent for group sessions
-                    'join_time' => null,
-                    'leave_time' => null,
+                    'attendance_status' => 'absent', // Default to absent until meeting data is available
+                    'is_auto_calculated' => true,
+                    'evaluated_at' => now(),
                 ]);
             }
         }
@@ -487,29 +519,29 @@ class QuranSession extends Model
     /**
      * Update subscription usage if this session counts towards subscription
      */
-    protected function updateSubscriptionUsage(): void
+    public function updateSubscriptionUsage(): void
     {
         // Only count towards subscription if session is completed or marked as absent
-        if (!$this->countsTowardsSubscription()) {
+        if (! $this->countsTowardsSubscription()) {
             return;
         }
 
         // For individual sessions with subscription
         if ($this->session_type === 'individual' && $this->individualCircle && $this->individualCircle->subscription) {
             $subscription = $this->individualCircle->subscription;
-            
+
             // Check if this session was already counted
             $alreadyCounted = $this->isCountedInSubscription();
-            
-            if (!$alreadyCounted) {
+
+            if (! $alreadyCounted) {
                 try {
                     $subscription->useSession();
-                    
+
                     // Mark this session as counted
                     $this->update(['subscription_counted' => true]);
-                    
+
                 } catch (\Exception $e) {
-                    Log::warning("Failed to update subscription usage for session {$this->id}: " . $e->getMessage());
+                    Log::warning("Failed to update subscription usage for session {$this->id}: ".$e->getMessage());
                 }
             }
         }
@@ -532,10 +564,10 @@ class QuranSession extends Model
     public function getStatusDisplayData(): array
     {
         // Get circle configuration if available
-        $circle = $this->session_type === 'individual' 
-            ? $this->individualCircle 
+        $circle = $this->session_type === 'individual'
+            ? $this->individualCircle
             : $this->circle;
-        
+
         return [
             'status' => $this->status->value,
             'label' => $this->status->label(),
@@ -543,19 +575,19 @@ class QuranSession extends Model
             'color' => $this->status->color(),
             'can_join' => in_array($this->status, [
                 SessionStatus::READY,
-                SessionStatus::ONGOING
+                SessionStatus::ONGOING,
             ]),
             'can_complete' => in_array($this->status, [
                 SessionStatus::READY,
-                SessionStatus::ONGOING
+                SessionStatus::ONGOING,
             ]),
             'can_cancel' => in_array($this->status, [
                 SessionStatus::SCHEDULED,
-                SessionStatus::READY
+                SessionStatus::READY,
             ]),
             'can_reschedule' => in_array($this->status, [
                 SessionStatus::SCHEDULED,
-                SessionStatus::READY
+                SessionStatus::READY,
             ]),
             'is_upcoming' => $this->status === SessionStatus::SCHEDULED && $this->scheduled_at && $this->scheduled_at->isFuture(),
             'is_active' => in_array($this->status, [SessionStatus::READY, SessionStatus::ONGOING]),
@@ -586,7 +618,7 @@ class QuranSession extends Model
             // Individual sessions: direct student_id match
             $subQuery->where('student_id', $studentId)
                 // OR group sessions: student enrolled in the circle (use correct session_type)
-                ->orWhere(function($groupQuery) use ($studentId) {
+                ->orWhere(function ($groupQuery) use ($studentId) {
                     $groupQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
                         ->whereHas('circle.students', function ($circleQuery) use ($studentId) {
                             $circleQuery->where('student_id', $studentId);
@@ -608,7 +640,7 @@ class QuranSession extends Model
             'circle' => 'حلقة جماعية',
             'makeup' => 'جلسة تعويضية',
             'trial' => 'جلسة تجريبية',
-            'assessment' => 'جلسة تقييم'
+            'assessment' => 'جلسة تقييم',
         ];
 
         return $types[$this->session_type] ?? $this->session_type;
@@ -626,7 +658,7 @@ class QuranSession extends Model
             'absent' => 'غائب',
             'late' => 'متأخر',
             'left_early' => 'غادر مبكراً',
-            'partial' => 'حضور جزئي'
+            'partial' => 'حضور جزئي',
         ];
 
         return $statuses[$this->attendance_status] ?? $this->attendance_status;
@@ -637,7 +669,7 @@ class QuranSession extends Model
         $types = [
             'online' => 'عبر الإنترنت',
             'physical' => 'حضوري',
-            'hybrid' => 'مختلط'
+            'hybrid' => 'مختلط',
         ];
 
         return $types[$this->location_type] ?? $this->location_type;
@@ -661,19 +693,19 @@ class QuranSession extends Model
     public function getDurationTextAttribute(): string
     {
         $duration = $this->actual_duration_minutes ?? $this->duration_minutes;
-        
+
         if ($duration < 60) {
-            return $duration . ' دقيقة';
+            return $duration.' دقيقة';
         }
-        
+
         $hours = floor($duration / 60);
         $minutes = $duration % 60;
-        
+
         if ($minutes === 0) {
-            return $hours . ' ساعة';
+            return $hours.' ساعة';
         }
-        
-        return $hours . ' ساعة و ' . $minutes . ' دقيقة';
+
+        return $hours.' ساعة و '.$minutes.' دقيقة';
     }
 
     public function getIsUpcomingAttribute(): bool
@@ -698,7 +730,7 @@ class QuranSession extends Model
 
     public function getCanStartAttribute(): bool
     {
-        return $this->status === SessionStatus::SCHEDULED && 
+        return $this->status === SessionStatus::SCHEDULED &&
                $this->scheduled_at &&
                $this->scheduled_at->diffInMinutes(now()) <= 15;
     }
@@ -723,33 +755,33 @@ class QuranSession extends Model
         if ($this->current_page && $this->current_face) {
             $faceName = $this->current_face == 1 ? 'الوجه الأول' : 'الوجه الثاني';
             $papersMemorized = $this->papers_memorized_today ?? 0;
-            
+
             $summary = "الصفحة {$this->current_page} - {$faceName}";
-            
+
             if ($papersMemorized > 0) {
                 $summary .= " (حُفظ {$papersMemorized} وجه)";
             }
-            
+
             return $summary;
         }
-        
+
         // Fallback to verse-based progress
-        if (!$this->current_surah || !$this->current_verse) {
+        if (! $this->current_surah || ! $this->current_verse) {
             return 'لم يتم تحديد التقدم';
         }
 
         $surahName = $this->getSurahName($this->current_surah);
         $versesMemorized = $this->verses_memorized_today ?? 0;
-        
+
         $summary = "سورة {$surahName} - آية {$this->current_verse}";
-        
+
         if ($versesMemorized > 0) {
             $summary .= " (حُفظت {$versesMemorized} آيات)";
         }
 
         return $summary;
     }
-    
+
     /**
      * Convert verses to papers (وجه)
      * Each paper (وجه) = approximately 15 verses
@@ -758,7 +790,7 @@ class QuranSession extends Model
     {
         return round($verses / 15, 2);
     }
-    
+
     /**
      * Convert papers to verses
      * Each paper (وجه) = approximately 15 verses
@@ -767,7 +799,7 @@ class QuranSession extends Model
     {
         return (int) round($papers * 15);
     }
-    
+
     /**
      * Update session progress using papers
      */
@@ -778,7 +810,7 @@ class QuranSession extends Model
             'current_face' => $face,
             'papers_memorized_today' => $papersMemorized,
             'papers_covered_today' => $papersCovered,
-            'verses_memorized_today' => $this->convertPapersToVerses($papersMemorized)
+            'verses_memorized_today' => $this->convertPapersToVerses($papersMemorized),
         ]);
     }
 
@@ -789,17 +821,18 @@ class QuranSession extends Model
             'tajweed_accuracy' => $this->tajweed_accuracy,
             'mistakes_count' => $this->mistakes_count,
             'overall_rating' => $this->overall_rating,
-            'verses_memorized' => $this->verses_memorized_today
+            'verses_memorized' => $this->verses_memorized_today,
         ];
     }
 
     public function getTimeDurationAttribute(): int
     {
-        if (!$this->started_at) {
+        if (! $this->started_at) {
             return 0;
         }
 
         $endTime = $this->ended_at ?? now();
+
         return $this->started_at->diffInMinutes($endTime);
     }
 
@@ -807,12 +840,12 @@ class QuranSession extends Model
     public function start(): self
     {
         if ($this->status !== 'scheduled') {
-            throw new \Exception('لا يمكن بدء الجلسة. الحالة الحالية: ' . $this->status_text);
+            throw new \Exception('لا يمكن بدء الجلسة. الحالة الحالية: '.$this->status_text);
         }
 
         $this->update([
             'status' => 'ongoing',
-            'started_at' => now()
+            'started_at' => now(),
         ]);
 
         return $this;
@@ -820,8 +853,8 @@ class QuranSession extends Model
 
     public function complete(array $sessionData = []): self
     {
-        if (!in_array($this->status, ['ongoing', 'scheduled'])) {
-            throw new \Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: ' . $this->status_text);
+        if (! in_array($this->status, ['ongoing', 'scheduled'])) {
+            throw new \Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: '.$this->status_text);
         }
 
         $endTime = now();
@@ -831,7 +864,7 @@ class QuranSession extends Model
             'status' => 'completed',
             'ended_at' => $endTime,
             'actual_duration_minutes' => $actualDuration,
-            'attendance_status' => 'attended'
+            'attendance_status' => 'attended',
         ], $sessionData);
 
         $this->update($updateData);
@@ -856,7 +889,7 @@ class QuranSession extends Model
 
     public function cancel(string $reason, ?User $cancelledBy = null): self
     {
-        if (!$this->can_cancel) {
+        if (! $this->can_cancel) {
             throw new \Exception('لا يمكن إلغاء الجلسة في هذا الوقت');
         }
 
@@ -864,7 +897,7 @@ class QuranSession extends Model
             'status' => 'cancelled',
             'cancellation_reason' => $reason,
             'cancelled_by' => $cancelledBy?->id,
-            'cancelled_at' => now()
+            'cancelled_at' => now(),
         ]);
 
         return $this;
@@ -872,7 +905,7 @@ class QuranSession extends Model
 
     public function reschedule(\Carbon\Carbon $newDateTime, ?string $reason = null): self
     {
-        if (!$this->can_reschedule) {
+        if (! $this->can_reschedule) {
             throw new \Exception('لا يمكن إعادة جدولة الجلسة في هذا الوقت');
         }
 
@@ -880,7 +913,7 @@ class QuranSession extends Model
             'rescheduled_from' => $this->scheduled_at,
             'scheduled_at' => $newDateTime,
             'reschedule_reason' => $reason,
-            'status' => 'rescheduled'
+            'status' => 'rescheduled',
         ]);
 
         return $this;
@@ -891,7 +924,7 @@ class QuranSession extends Model
         $this->update([
             'status' => 'missed',
             'attendance_status' => 'absent',
-            'ended_at' => $this->scheduled_at->addMinutes($this->duration_minutes)
+            'ended_at' => $this->scheduled_at->addMinutes($this->duration_minutes),
         ]);
 
         return $this;
@@ -908,12 +941,12 @@ class QuranSession extends Model
             'session_code' => self::generateSessionCode($this->academy_id),
             'session_type' => $this->session_type,
             'status' => 'scheduled',
-            'title' => 'جلسة تعويضية - ' . $this->title,
+            'title' => 'جلسة تعويضية - '.$this->title,
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => $this->duration_minutes,
             'location_type' => $this->location_type,
             'is_makeup_session' => true,
-            'makeup_session_for' => $this->id
+            'makeup_session_for' => $this->id,
         ], $additionalData);
 
         return self::create($makeupData);
@@ -935,7 +968,7 @@ class QuranSession extends Model
             'recitation_quality' => $this->recitation_quality,
             'tajweed_accuracy' => $this->tajweed_accuracy,
             'areas_for_improvement' => $this->areas_for_improvement,
-            'notes' => $this->session_notes
+            'notes' => $this->session_notes,
         ]);
     }
 
@@ -949,7 +982,7 @@ class QuranSession extends Model
             'subscription_id' => $this->quran_subscription_id,
             'circle_id' => $this->circle_id,
             'assigned_at' => now(),
-            'status' => 'assigned'
+            'status' => 'assigned',
         ]));
     }
 
@@ -959,9 +992,9 @@ class QuranSession extends Model
         if ($this->meeting_room_name && $this->isMeetingValid()) {
             return $this->meeting_link;
         }
-        
+
         $livekitService = app(\App\Services\LiveKitService::class);
-        
+
         // Set default options
         $defaultOptions = [
             'recording_enabled' => $this->recording_enabled ?? false,
@@ -969,9 +1002,9 @@ class QuranSession extends Model
             'max_duration' => $this->duration_minutes ?? 120, // Use session duration
             'session_type' => $this->session_type,
         ];
-        
+
         $mergedOptions = array_merge($defaultOptions, $options);
-        
+
         // Generate meeting using LiveKit service only if none exists
         $meetingInfo = $livekitService->createMeeting(
             $this->academy,
@@ -980,7 +1013,7 @@ class QuranSession extends Model
             $this->scheduled_at ?? now(),
             $mergedOptions
         );
-        
+
         // Update session with meeting info
         $this->update([
             'meeting_link' => $meetingInfo['meeting_url'],
@@ -1002,7 +1035,7 @@ class QuranSession extends Model
      */
     public function getMeetingInfo(): ?array
     {
-        if (!$this->meeting_data) {
+        if (! $this->meeting_data) {
             return null;
         }
 
@@ -1014,7 +1047,7 @@ class QuranSession extends Model
      */
     public function isMeetingValid(): bool
     {
-        if (!$this->meeting_link) {
+        if (! $this->meeting_link) {
             return false;
         }
 
@@ -1030,7 +1063,7 @@ class QuranSession extends Model
      */
     public function getMeetingJoinUrl(): ?string
     {
-        if (!$this->isMeetingValid()) {
+        if (! $this->isMeetingValid()) {
             return null;
         }
 
@@ -1042,21 +1075,21 @@ class QuranSession extends Model
      */
     public function generateParticipantToken(User $user, array $permissions = []): string
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             throw new \Exception('Meeting room not created yet');
         }
 
         $livekitService = app(\App\Services\LiveKitService::class);
-        
+
         // Set permissions based on user role
         $defaultPermissions = [
             'can_publish' => true,
             'can_subscribe' => true,
             'can_update_metadata' => in_array($user->user_type, ['quran_teacher', 'academic_teacher']),
         ];
-        
+
         $mergedPermissions = array_merge($defaultPermissions, $permissions);
-        
+
         return $livekitService->generateParticipantToken(
             $this->meeting_room_name,
             $user,
@@ -1069,29 +1102,29 @@ class QuranSession extends Model
      */
     public function startRecording(array $options = []): array
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             throw new \Exception('Meeting room not created yet');
         }
 
         $livekitService = app(\App\Services\LiveKitService::class);
-        
+
         $recordingOptions = [
             'layout' => $options['layout'] ?? 'grid',
             'video_quality' => $options['video_quality'] ?? 'high',
             'audio_only' => $options['audio_only'] ?? false,
         ];
-        
+
         $recordingInfo = $livekitService->startRecording($this->meeting_room_name, $recordingOptions);
-        
+
         // Update session with recording info
         $meetingData = $this->meeting_data ?? [];
         $meetingData['recording'] = $recordingInfo;
-        
+
         $this->update([
             'recording_url' => $recordingInfo['recording_id'], // Temporary until file is ready
             'meeting_data' => $meetingData,
         ]);
-        
+
         return $recordingInfo;
     }
 
@@ -1100,24 +1133,24 @@ class QuranSession extends Model
      */
     public function stopRecording(): array
     {
-        if (!$this->meeting_data || !isset($this->meeting_data['recording'])) {
+        if (! $this->meeting_data || ! isset($this->meeting_data['recording'])) {
             throw new \Exception('No active recording found');
         }
 
         $livekitService = app(\App\Services\LiveKitService::class);
         $recordingId = $this->meeting_data['recording']['recording_id'];
-        
+
         $result = $livekitService->stopRecording($recordingId);
-        
+
         // Update session with final recording info
         $meetingData = $this->meeting_data;
         $meetingData['recording'] = array_merge($meetingData['recording'], $result);
-        
+
         $this->update([
             'recording_url' => $result['file_info']['download_url'] ?? null,
             'meeting_data' => $meetingData,
         ]);
-        
+
         return $result;
     }
 
@@ -1126,12 +1159,12 @@ class QuranSession extends Model
      */
     public function getRoomInfo(): ?array
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return null;
         }
 
         $livekitService = app(\App\Services\LiveKitService::class);
-        
+
         return $livekitService->getRoomInfo($this->meeting_room_name);
     }
 
@@ -1140,21 +1173,21 @@ class QuranSession extends Model
      */
     public function endMeeting(): bool
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return false;
         }
 
         $livekitService = app(\App\Services\LiveKitService::class);
-        
+
         $success = $livekitService->endMeeting($this->meeting_room_name);
-        
+
         if ($success) {
             $this->update([
                 'ended_at' => now(),
                 'status' => 'completed',
             ]);
         }
-        
+
         return $success;
     }
 
@@ -1163,18 +1196,18 @@ class QuranSession extends Model
      */
     public function setMeetingDuration(int $durationMinutes): bool
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return false;
         }
 
         $livekitService = app(\App\Services\LiveKitService::class);
-        
+
         $success = $livekitService->setMeetingDuration($this->meeting_room_name, $durationMinutes);
-        
+
         if ($success) {
             $this->update(['duration_minutes' => $durationMinutes]);
         }
-        
+
         return $success;
     }
 
@@ -1184,19 +1217,19 @@ class QuranSession extends Model
     public function isUserInMeeting(User $user): bool
     {
         $roomInfo = $this->getRoomInfo();
-        
-        if (!$roomInfo || !isset($roomInfo['participants'])) {
+
+        if (! $roomInfo || ! isset($roomInfo['participants'])) {
             return false;
         }
-        
-        $userIdentity = $user->id . '_' . Str::slug($user->first_name . '_' . $user->last_name);
-        
+
+        $userIdentity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
+
         foreach ($roomInfo['participants'] as $participant) {
             if ($participant['id'] === $userIdentity) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -1207,7 +1240,7 @@ class QuranSession extends Model
     {
         $roomInfo = $this->getRoomInfo();
         $meetingData = $this->meeting_data ?? [];
-        
+
         return [
             'is_active' => $roomInfo ? $roomInfo['is_active'] : false,
             'participant_count' => $roomInfo ? $roomInfo['participant_count'] : 0,
@@ -1221,14 +1254,14 @@ class QuranSession extends Model
 
     public function addFeedback(string $feedbackType, string $feedback, ?User $feedbackBy = null): self
     {
-        $feedbackField = $feedbackType . '_feedback';
-        
-        if (!in_array($feedbackField, ['teacher_feedback', 'student_feedback', 'parent_feedback'])) {
+        $feedbackField = $feedbackType.'_feedback';
+
+        if (! in_array($feedbackField, ['teacher_feedback', 'student_feedback', 'parent_feedback'])) {
             throw new \Exception('نوع التعليق غير صحيح');
         }
 
         $this->update([
-            $feedbackField => $feedback
+            $feedbackField => $feedback,
         ]);
 
         return $this;
@@ -1265,7 +1298,7 @@ class QuranSession extends Model
         return self::create(array_merge($data, [
             'session_code' => self::generateSessionCode($data['academy_id']),
             'status' => 'scheduled',
-            'is_makeup_session' => false
+            'is_makeup_session' => false,
         ]));
     }
 
@@ -1275,13 +1308,13 @@ class QuranSession extends Model
         do {
             $attempt++;
             $count = self::where('academy_id', $academyId)->count() + $attempt;
-            $sessionCode = 'QSE-' . $academyId . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+            $sessionCode = 'QSE-'.$academyId.'-'.str_pad($count, 6, '0', STR_PAD_LEFT);
         } while (
             self::where('academy_id', $academyId)
                 ->where('session_code', $sessionCode)
                 ->exists() && $attempt < 100
         );
-        
+
         return $sessionCode;
     }
 
@@ -1293,23 +1326,23 @@ class QuranSession extends Model
             if ($session->circle_id && $session->generatedFromSchedule) {
                 // This was a group circle session generated from a schedule
                 $schedule = $session->generatedFromSchedule;
-                
+
                 if ($schedule && $schedule->is_active) {
                     // Check if we need to generate more sessions for this month
                     $currentMonth = now()->format('Y-m');
                     $currentMonthSessions = self::where('circle_id', $session->circle_id)
                         ->whereRaw("DATE_FORMAT(scheduled_at, '%Y-%m') = ?", [$currentMonth])
                         ->count();
-                    
+
                     $monthlyLimit = $schedule->circle->monthly_sessions_count ?? 4;
-                    
+
                     if ($currentMonthSessions < $monthlyLimit) {
                         // Try to generate replacement sessions
                         $schedule->generateUpcomingSessions();
                     }
                 }
             }
-            
+
             // Update individual circle counts if needed
             if ($session->individual_circle_id && $session->individualCircle) {
                 $session->individualCircle->updateSessionCounts();
@@ -1332,7 +1365,7 @@ class QuranSession extends Model
                 // Individual sessions: direct student_id match
                 $subQuery->where('student_id', $filters['student_id'])
                     // OR group sessions: student enrolled in the circle (use correct session_type)
-                    ->orWhere(function($groupQuery) use ($filters) {
+                    ->orWhere(function ($groupQuery) use ($filters) {
                         $groupQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
                             ->whereHas('circle.students', function ($circleQuery) use ($filters) {
                                 $circleQuery->where('student_id', $filters['student_id']);
@@ -1370,4 +1403,114 @@ class QuranSession extends Model
             ->with(['quranTeacher.user', 'student'])
             ->get();
     }
-} 
+
+    /**
+     * Create homework assignments for all students in the session
+     */
+    public function createHomeworkAssignmentsForStudents(): void
+    {
+        if (! $this->sessionHomework) {
+            return;
+        }
+
+        $students = $this->getStudentsForSession();
+
+        foreach ($students as $student) {
+            QuranHomeworkAssignment::firstOrCreate([
+                'session_homework_id' => $this->sessionHomework->id,
+                'student_id' => $student->id,
+                'session_id' => $this->id,
+            ]);
+        }
+    }
+
+    /**
+     * Get students for this session based on session type
+     */
+    public function getStudentsForSession()
+    {
+        if ($this->session_type === 'group' && $this->circle) {
+            return $this->circle->students;
+        } elseif ($this->session_type === 'individual' && $this->student_id) {
+            return collect([User::find($this->student_id)]);
+        }
+
+        return collect();
+    }
+
+    /**
+     * Accessor for students - dynamically returns students based on session type
+     */
+    public function getStudentsAttribute()
+    {
+        return $this->getStudentsForSession();
+    }
+
+    /**
+     * Get homework statistics for this session
+     */
+    public function getHomeworkStatsAttribute(): array
+    {
+        $homework = $this->sessionHomework;
+        if (! $homework) {
+            return ['has_homework' => false];
+        }
+
+        $assignments = $homework->assignments()->with('student')->get();
+
+        return [
+            'has_homework' => true,
+            'total_pages' => $homework->total_pages,
+            'new_memorization_pages' => $homework->new_memorization_pages,
+            'review_pages' => $homework->review_pages,
+            'total_students' => $assignments->count(),
+            'completed_count' => $assignments->where('completion_status', 'completed')->count(),
+            'in_progress_count' => $assignments->where('completion_status', 'in_progress')->count(),
+            'partially_completed_count' => $assignments->where('completion_status', 'partially_completed')->count(),
+            'not_started_count' => $assignments->where('completion_status', 'not_started')->count(),
+            'average_completion' => $assignments->avg('completion_percentage') ?? 0,
+            'average_score' => $assignments->whereNotNull('overall_score')->avg('overall_score') ?? 0,
+            'assignments' => $assignments,
+        ];
+    }
+
+    /**
+     * Get attendance statistics for this session
+     */
+    public function getAttendanceStatsAttribute(): array
+    {
+        $attendances = $this->attendances()->with('student')->get();
+
+        return [
+            'total_students' => $attendances->count(),
+            'present_count' => $attendances->where('attendance_status', 'present')->count(),
+            'late_count' => $attendances->where('attendance_status', 'late')->count(),
+            'absent_count' => $attendances->where('attendance_status', 'absent')->count(),
+            'left_early_count' => $attendances->where('attendance_status', 'left_early')->count(),
+            'auto_tracked_count' => $attendances->where('auto_tracked', true)->count(),
+            'manually_overridden_count' => $attendances->where('manually_overridden', true)->count(),
+            'average_participation' => $attendances->whereNotNull('participation_score')->avg('participation_score') ?? 0,
+            'attendances' => $attendances,
+        ];
+    }
+
+    /**
+     * Check if session has active homework
+     */
+    public function getHasActiveHomeworkAttribute(): bool
+    {
+        return $this->sessionHomework && $this->sessionHomework->is_active;
+    }
+
+    /**
+     * Get the student for individual sessions
+     */
+    public function getStudentAttribute()
+    {
+        if ($this->student_id) {
+            return User::find($this->student_id);
+        }
+
+        return null;
+    }
+}

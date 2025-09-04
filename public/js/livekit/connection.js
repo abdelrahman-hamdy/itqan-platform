@@ -238,9 +238,15 @@ class LiveKitConnection {
             this.isConnecting = false;
             this.reconnectAttempts = 0;
             console.log('✅ Connected to room successfully');
+            
+            // CRITICAL FIX: Record attendance when successfully connected
+            this.recordAttendanceJoin();
         } else if (state === 'disconnected') {
             this.isConnecting = false;
             console.log('❌ Disconnected from room');
+            
+            // CRITICAL FIX: Record attendance when disconnected
+            this.recordAttendanceLeave();
             this.handleDisconnection();
         } else if (state === 'reconnecting') {
             this.isConnecting = true;
@@ -387,10 +393,106 @@ class LiveKitConnection {
     }
 
     /**
+     * Record attendance join via API (fallback for webhook issues)
+     */
+    async recordAttendanceJoin() {
+        try {
+            console.log('📝 Recording attendance join...');
+            
+            // Extract session ID from room name (format: academy-session-type-session-id)
+            const sessionId = this.extractSessionIdFromRoomName(this.config.roomName);
+            if (!sessionId) {
+                console.warn('⚠️ Could not extract session ID from room name:', this.config.roomName);
+                return;
+            }
+
+            const response = await fetch('/api/meetings/attendance/join', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.config.csrfToken
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    room_name: this.config.roomName
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Attendance join recorded:', data);
+            } else {
+                const error = await response.text();
+                console.warn('⚠️ Failed to record attendance join:', error);
+            }
+        } catch (error) {
+            console.error('❌ Error recording attendance join:', error);
+        }
+    }
+
+    /**
+     * Record attendance leave via API (fallback for webhook issues)
+     */
+    async recordAttendanceLeave() {
+        try {
+            console.log('📝 Recording attendance leave...');
+            
+            const sessionId = this.extractSessionIdFromRoomName(this.config.roomName);
+            if (!sessionId) {
+                console.warn('⚠️ Could not extract session ID from room name:', this.config.roomName);
+                return;
+            }
+
+            const response = await fetch('/api/meetings/attendance/leave', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.config.csrfToken
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    room_name: this.config.roomName
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Attendance leave recorded:', data);
+            } else {
+                const error = await response.text();
+                console.warn('⚠️ Failed to record attendance leave:', error);
+            }
+        } catch (error) {
+            console.error('❌ Error recording attendance leave:', error);
+        }
+    }
+
+    /**
+     * Extract session ID from room name
+     * Expected format: academy-session-type-session-id (e.g., "itqan-academy-individual-session-29")
+     */
+    extractSessionIdFromRoomName(roomName) {
+        if (!roomName) return null;
+        
+        const parts = roomName.split('-');
+        if (parts.length >= 4 && parts[parts.length - 2] === 'session') {
+            const sessionId = parseInt(parts[parts.length - 1]);
+            return isNaN(sessionId) ? null : sessionId;
+        }
+        
+        return null;
+    }
+
+    /**
      * Destroy the connection and clean up
      */
     destroy() {
         console.log('🧹 Destroying LiveKit connection...');
+
+        // Record leave when destroying connection
+        if (this.isConnected) {
+            this.recordAttendanceLeave();
+        }
 
         if (this.room) {
             this.room.removeAllListeners();

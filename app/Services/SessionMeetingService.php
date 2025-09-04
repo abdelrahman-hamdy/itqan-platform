@@ -2,16 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\QuranSession;
 use App\Enums\SessionStatus;
+use App\Models\QuranSession;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SessionMeetingService
 {
     private LiveKitService $livekitService;
+
     private SessionStatusService $sessionStatusService;
 
     public function __construct(
@@ -29,32 +29,32 @@ class SessionMeetingService
     {
         // Check if meeting room should be active based on timing
         $sessionTiming = $this->getSessionTiming($session);
-        
-        if (!$forceCreate && !$sessionTiming['is_available']) {
+
+        if (! $forceCreate && ! $sessionTiming['is_available']) {
             throw new \Exception($sessionTiming['message']);
         }
 
         // Create or get existing meeting room
-        if (!$session->meeting_room_name) {
+        if (! $session->meeting_room_name) {
             $session->generateMeetingLink();
         }
 
         // Verify room exists on LiveKit server
         $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
-        
-        if (!$roomInfo) {
+
+        if (! $roomInfo) {
             // Room doesn't exist on server, recreate it
             Log::info('Meeting room not found on server, recreating', [
                 'session_id' => $session->id,
                 'room_name' => $session->meeting_room_name,
             ]);
-            
+
             $session->generateMeetingLink([
                 'max_participants' => 50,
                 'empty_timeout' => $this->calculateEmptyTimeout($session),
                 'max_duration' => $this->calculateMaxDuration($session),
             ]);
-            
+
             $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
         }
 
@@ -71,7 +71,7 @@ class SessionMeetingService
      */
     public function getSessionTiming(QuranSession $session): array
     {
-        if (!$session->scheduled_at) {
+        if (! $session->scheduled_at) {
             return [
                 'is_available' => true,
                 'is_scheduled' => false,
@@ -83,21 +83,22 @@ class SessionMeetingService
         $now = Carbon::now();
         $sessionStart = $session->scheduled_at;
         $sessionEnd = $sessionStart->copy()->addMinutes($session->duration_minutes ?? 60);
-        
+
         // Get circle configuration for timing
         $circle = $this->getCircleForSession($session);
         $preparationMinutes = $circle?->preparation_minutes ?? 15;
         $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
-        
+
         // Allow joining based on circle configuration
         $joinableStart = $sessionStart->copy()->subMinutes($preparationMinutes);
-        
+
         // Keep room available based on circle configuration
         $roomExpiry = $sessionEnd->copy()->addMinutes($endingBufferMinutes);
 
         if ($now->lt($joinableStart)) {
             // Too early to join
             $minutesUntilJoinable = $now->diffInMinutes($joinableStart);
+
             return [
                 'is_available' => false,
                 'is_scheduled' => true,
@@ -110,6 +111,7 @@ class SessionMeetingService
         } elseif ($now->between($joinableStart, $sessionStart)) {
             // Pre-session period (15 minutes before)
             $minutesUntilStart = $now->diffInMinutes($sessionStart);
+
             return [
                 'is_available' => true,
                 'is_scheduled' => true,
@@ -122,6 +124,7 @@ class SessionMeetingService
         } elseif ($now->between($sessionStart, $sessionEnd)) {
             // During session
             $minutesRemaining = $now->diffInMinutes($sessionEnd);
+
             return [
                 'is_available' => true,
                 'is_scheduled' => true,
@@ -134,6 +137,7 @@ class SessionMeetingService
         } elseif ($now->between($sessionEnd, $roomExpiry)) {
             // Post-session grace period
             $minutesSinceEnd = $sessionEnd->diffInMinutes($now);
+
             return [
                 'is_available' => true,
                 'is_scheduled' => true,
@@ -180,13 +184,13 @@ class SessionMeetingService
             try {
                 $this->ensureMeetingAvailable($session, true);
                 $results['started']++;
-                
+
                 Log::info('Auto-created meeting for upcoming session', [
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at,
                     'room_name' => $session->meeting_room_name,
                 ]);
-                
+
             } catch (\Exception $e) {
                 $results['errors']++;
                 Log::error('Failed to auto-create meeting for session', [
@@ -247,11 +251,11 @@ class SessionMeetingService
     /**
      * Mark session meeting as persistent (survives teacher disconnect)
      */
-    public function markSessionPersistent(QuranSession $session, int $durationMinutes = null): void
+    public function markSessionPersistent(QuranSession $session, ?int $durationMinutes = null): void
     {
         $duration = $durationMinutes ?? $session->duration_minutes ?? 60;
         $expirationMinutes = $duration + 30; // Session duration + 30 minutes grace
-        
+
         Cache::put(
             $this->getSessionPersistenceKey($session),
             [
@@ -259,7 +263,7 @@ class SessionMeetingService
                 'room_name' => $session->meeting_room_name,
                 'created_at' => now(),
                 'expires_at' => now()->addMinutes($expirationMinutes),
-                'scheduled_end' => $session->scheduled_at 
+                'scheduled_end' => $session->scheduled_at
                     ? $session->scheduled_at->addMinutes($duration)
                     : now()->addMinutes($duration),
             ],
@@ -279,12 +283,13 @@ class SessionMeetingService
     public function shouldSessionPersist(QuranSession $session): bool
     {
         $persistenceData = Cache::get($this->getSessionPersistenceKey($session));
-        
-        if (!$persistenceData) {
+
+        if (! $persistenceData) {
             return false;
         }
 
         $expiresAt = Carbon::parse($persistenceData['expires_at']);
+
         return now()->lt($expiresAt);
     }
 
@@ -302,7 +307,7 @@ class SessionMeetingService
     public function removeSessionPersistence(QuranSession $session): void
     {
         Cache::forget($this->getSessionPersistenceKey($session));
-        
+
         Log::info('Removed session persistence', [
             'session_id' => $session->id,
             'room_name' => $session->meeting_room_name,
@@ -317,15 +322,15 @@ class SessionMeetingService
         if ($session->scheduled_at) {
             $sessionEnd = $session->scheduled_at->copy()
                 ->addMinutes($session->duration_minutes ?? 60);
-            
+
             $minutesUntilEnd = now()->diffInMinutes($sessionEnd, false);
-            
+
             if ($minutesUntilEnd > 0) {
                 // Keep room alive for session duration + 30 minutes
                 return ($minutesUntilEnd + 30) * 60; // Convert to seconds
             }
         }
-        
+
         // Default: 30 minutes empty timeout
         return 30 * 60;
     }
@@ -336,7 +341,7 @@ class SessionMeetingService
     private function calculateMaxDuration(QuranSession $session): int
     {
         $baseDuration = $session->duration_minutes ?? 60;
-        
+
         // Add 1 hour buffer for late starts and overtime
         return ($baseDuration + 60) * 60; // Convert to seconds
     }
@@ -351,21 +356,21 @@ class SessionMeetingService
             if ($session->meeting_room_name) {
                 $this->livekitService->endMeeting($session->meeting_room_name);
             }
-            
+
             // Update session status
             $session->update([
                 'status' => SessionStatus::COMPLETED,
                 'meeting_ended_at' => now(),
             ]);
-            
+
             // Remove persistence
             $this->removeSessionPersistence($session);
-            
+
             Log::info('Cleaned up expired session', [
                 'session_id' => $session->id,
                 'room_name' => $session->meeting_room_name,
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error during session cleanup', [
                 'session_id' => $session->id,
@@ -388,7 +393,7 @@ class SessionMeetingService
      */
     public function getRoomActivity(QuranSession $session): array
     {
-        if (!$session->meeting_room_name) {
+        if (! $session->meeting_room_name) {
             return [
                 'exists' => false,
                 'participants' => 0,
@@ -397,8 +402,8 @@ class SessionMeetingService
         }
 
         $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
-        
-        if (!$roomInfo) {
+
+        if (! $roomInfo) {
             return [
                 'exists' => false,
                 'participants' => 0,
@@ -425,33 +430,38 @@ class SessionMeetingService
             'errors' => [],
         ];
 
-        // Get sessions that should have meetings created
-        $readySessions = QuranSession::where('status', SessionStatus::SCHEDULED)
+        // Get sessions that are already READY but don't have meetings yet
+        $readySessions = QuranSession::where('status', SessionStatus::READY)
             ->whereNull('meeting_room_name')
             ->with(['academy', 'circle', 'individualCircle'])
-            ->get()
-            ->filter(function ($session) {
-                return $this->sessionStatusService->shouldTransitionToReady($session);
-            });
+            ->get();
+
+        Log::info('Found ready sessions without meetings', [
+            'count' => $readySessions->count(),
+            'session_ids' => $readySessions->pluck('id')->toArray(),
+        ]);
 
         foreach ($readySessions as $session) {
             try {
-                // Transition to READY first
-                if ($this->sessionStatusService->transitionToReady($session)) {
-                    // Then create the meeting
-                    $session->generateMeetingLink([
-                        'max_participants' => 50,
-                        'empty_timeout' => $this->calculateEmptyTimeout($session),
-                        'max_duration' => $this->calculateMaxDuration($session),
-                    ]);
+                // Session is already READY, just create the meeting
+                Log::info('Creating meeting for ready session', [
+                    'session_id' => $session->id,
+                    'scheduled_at' => $session->scheduled_at,
+                    'status' => $session->status->value,
+                ]);
 
-                    $results['meetings_created']++;
-                    
-                    Log::info('Meeting created for ready session', [
-                        'session_id' => $session->id,
-                        'room_name' => $session->meeting_room_name,
-                    ]);
-                }
+                $session->generateMeetingLink([
+                    'max_participants' => 50,
+                    'empty_timeout' => $this->calculateEmptyTimeout($session),
+                    'max_duration' => $this->calculateMaxDuration($session),
+                ]);
+
+                $results['meetings_created']++;
+
+                Log::info('Meeting created for ready session', [
+                    'session_id' => $session->id,
+                    'room_name' => $session->meeting_room_name,
+                ]);
 
                 $results['sessions_processed']++;
 
@@ -543,14 +553,14 @@ class SessionMeetingService
 
             // Process status transitions
             $transitionSessions = QuranSession::whereIn('status', [
-                SessionStatus::SCHEDULED, 
-                SessionStatus::READY, 
-                SessionStatus::ONGOING
+                SessionStatus::SCHEDULED,
+                SessionStatus::READY,
+                SessionStatus::ONGOING,
             ])->with(['academy', 'circle', 'individualCircle'])->get();
 
             $transitionResults = $this->sessionStatusService->processStatusTransitions($transitionSessions);
-            $results['status_transitions'] = $transitionResults['transitions_to_ready'] 
-                + $transitionResults['transitions_to_absent'] 
+            $results['status_transitions'] = $transitionResults['transitions_to_ready']
+                + $transitionResults['transitions_to_absent']
                 + $transitionResults['transitions_to_completed'];
 
             // Terminate expired meetings
@@ -577,8 +587,8 @@ class SessionMeetingService
      */
     private function getCircleForSession(QuranSession $session)
     {
-        return $session->session_type === 'individual' 
-            ? $session->individualCircle 
+        return $session->session_type === 'individual'
+            ? $session->individualCircle
             : $session->circle;
     }
 }

@@ -4,9 +4,8 @@ namespace App\Console\Commands;
 
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
-use App\Services\SessionStatusService;
 use App\Services\CronJobLogger;
-use Carbon\Carbon;
+use App\Services\SessionStatusService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -41,7 +40,7 @@ class UpdateSessionStatusesCommand extends Command
         $isDryRun = $this->option('dry-run');
         $isVerbose = $this->option('details') || $isDryRun;
         $academyId = $this->option('academy-id');
-        
+
         // Start enhanced logging
         $executionData = CronJobLogger::logCronStart('sessions:update-statuses', [
             'dry_run' => $isDryRun,
@@ -62,7 +61,7 @@ class UpdateSessionStatusesCommand extends Command
         try {
             // Get base query
             $query = QuranSession::query();
-            
+
             if ($academyId) {
                 $query->where('academy_id', $academyId);
                 if ($isVerbose) {
@@ -74,17 +73,29 @@ class UpdateSessionStatusesCommand extends Command
             $sessionsToProcess = $query->whereIn('status', [
                 SessionStatus::SCHEDULED,
                 SessionStatus::READY,
-                SessionStatus::ONGOING
+                SessionStatus::ONGOING,
             ])->with(['academy', 'circle', 'individualCircle', 'meetingAttendances'])->get();
 
             if ($isVerbose) {
                 $this->info("📊 Found {$sessionsToProcess->count()} sessions to process");
             }
 
+            CronJobLogger::logCronProgress('sessions:update-statuses', $executionData['execution_id'],
+                "Found {$sessionsToProcess->count()} sessions to process", [
+                    'sessions_count' => $sessionsToProcess->count(),
+                    'academy_id' => $academyId,
+                ]);
+
             if ($sessionsToProcess->isEmpty()) {
                 if ($isVerbose) {
                     $this->info('✅ No sessions require status updates');
                 }
+
+                CronJobLogger::logCronEnd('sessions:update-statuses', $executionData, [
+                    'processed_sessions' => 0,
+                    'transitions' => [],
+                ]);
+
                 return self::SUCCESS;
             }
 
@@ -93,128 +104,163 @@ class UpdateSessionStatusesCommand extends Command
                 $stats = $this->simulateStatusTransitions($sessionsToProcess, $isVerbose);
             } else {
                 $rawStats = $this->sessionStatusService->processStatusTransitions($sessionsToProcess);
-                // Convert to expected format for display
-                $stats = [
-                    'total_processed' => $sessionsToProcess->count(),
-                    'marked_ready' => $rawStats['transitions_to_ready'],
-                    'marked_absent' => $rawStats['transitions_to_absent'],
-                    'marked_completed' => $rawStats['transitions_to_completed'],
-                    'errors' => count($rawStats['errors']),
-                    'error_details' => $rawStats['errors'],
-                ];
+                $stats = $this->formatStats($rawStats, $isVerbose);
             }
 
-            // Final statistics
-            $executionTime = round(microtime(true) - $executionData['start_time'], 2);
-            
-            if ($isVerbose) {
-                $this->info('📊 Session Status Update Results:');
-                $this->table(['Metric', 'Count'], [
-                    ['Total sessions processed', $stats['total_processed']],
-                    ['Marked as ready', $stats['marked_ready']],
-                    ['Marked as absent', $stats['marked_absent']],
-                    ['Auto-completed sessions', $stats['marked_completed']],
-                    ['Errors encountered', $stats['errors']],
-                    ['Execution time', "{$executionTime}s"],
-                ]);
+            // Display results
+            $this->displayResults($stats, $isDryRun, $isVerbose);
 
-                // Display errors if any
-                if ($stats['errors'] > 0 && isset($stats['error_details'])) {
-                    $this->error('❌ Errors encountered:');
-                    foreach ($stats['error_details'] as $error) {
-                        $this->error("Session {$error['session_id']}: {$error['error']}");
-                    }
-                }
-            }
-
-            // Log summary
-            Log::info('Enhanced session status update completed', [
-                'execution_time' => $executionTime,
-                'stats' => $stats,
+            // Log completion
+            CronJobLogger::logCronEnd('sessions:update-statuses', $executionData, [
+                'processed_sessions' => $sessionsToProcess->count(),
+                'transitions' => $stats,
                 'academy_id' => $academyId,
                 'dry_run' => $isDryRun,
             ]);
 
-            // Log completion
-            if ($stats['errors'] > 0) {
-                CronJobLogger::logCronEnd('sessions:update-statuses', $executionData, $stats, 'warning');
-                $this->warn("⚠️  Completed with {$stats['errors']} errors. Check logs for details.");
-                return self::FAILURE;
-            } else {
-                CronJobLogger::logCronEnd('sessions:update-statuses', $executionData, $stats, 'success');
-            }
-
-            if ($isVerbose) {
-                $this->info('✅ Enhanced session status update completed successfully');
-            }
-
             return self::SUCCESS;
 
         } catch (\Exception $e) {
+            $this->error('❌ Session status update failed: '.$e->getMessage());
+
+            if ($isVerbose) {
+                $this->error('Stack trace: '.$e->getTraceAsString());
+            }
+
             CronJobLogger::logCronError('sessions:update-statuses', $executionData, $e);
-            $this->error('❌ Session status update failed: ' . $e->getMessage());
-            Log::error('Enhanced session status update command failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'academy_id' => $academyId,
-            ]);
 
             return self::FAILURE;
         }
     }
 
     /**
-     * Simulate status transitions for dry-run mode
+     * Simulate status transitions for dry run mode
      */
     private function simulateStatusTransitions($sessions, bool $isVerbose): array
     {
         $stats = [
-            'total_processed' => $sessions->count(),
-            'marked_ready' => 0,
-            'marked_absent' => 0,
-            'marked_completed' => 0,
+            'scheduled_to_ready' => 0,
+            'ready_to_absent' => 0,
+            'ongoing_to_completed' => 0,
             'errors' => 0,
+            'details' => [],
         ];
 
         foreach ($sessions as $session) {
-            $currentStatus = $session->status;
-            $shouldTransitionToReady = $this->sessionStatusService->shouldTransitionToReady($session);
-            $shouldTransitionToAbsent = $this->sessionStatusService->shouldTransitionToAbsent($session);
-            $shouldAutoComplete = $this->sessionStatusService->shouldAutoComplete($session);
+            try {
+                // Check for READY transition
+                if ($this->sessionStatusService->shouldTransitionToReady($session)) {
+                    $stats['scheduled_to_ready']++;
+                    $stats['details'][] = "Would transition session {$session->id} from SCHEDULED to READY";
 
-            if ($shouldTransitionToReady) {
-                $stats['marked_ready']++;
-                if ($isVerbose) {
-                    $circle = $session->session_type === 'individual' ? $session->individualCircle : $session->circle;
-                    $prepMinutes = $circle?->preparation_minutes ?? 15;
-                    $this->line("🟢 Would mark session {$session->id} as READY ({$prepMinutes}min before start: {$session->scheduled_at->format('H:i')})");
+                    if ($isVerbose) {
+                        $this->info("🔄 Would transition session {$session->id} to READY");
+                    }
                 }
-            } elseif ($shouldTransitionToAbsent) {
-                $stats['marked_absent']++;
-                if ($isVerbose) {
-                    $circle = $session->session_type === 'individual' ? $session->individualCircle : $session->circle;
-                    $graceMinutes = $circle?->late_join_grace_period_minutes ?? 15;
-                    $this->line("🔴 Would mark session {$session->id} as ABSENT (no attendance after {$graceMinutes}min grace period)");
+
+                // Check for ABSENT transition (individual sessions only)
+                if ($this->sessionStatusService->shouldTransitionToAbsent($session)) {
+                    $stats['ready_to_absent']++;
+                    $stats['details'][] = "Would transition session {$session->id} from READY to ABSENT";
+
+                    if ($isVerbose) {
+                        $this->info("⏰ Would mark session {$session->id} as ABSENT");
+                    }
                 }
-            } elseif ($shouldAutoComplete) {
-                $stats['marked_completed']++;
-                if ($isVerbose) {
-                    $circle = $session->session_type === 'individual' ? $session->individualCircle : $session->circle;
-                    $bufferMinutes = $circle?->ending_buffer_minutes ?? 5;
-                    $this->line("⏰ Would auto-complete session {$session->id} (exceeded duration + {$bufferMinutes}min buffer)");
+
+                // Check for auto-completion
+                if ($this->sessionStatusService->shouldAutoComplete($session)) {
+                    $stats['ongoing_to_completed']++;
+                    $stats['details'][] = "Would transition session {$session->id} from ONGOING to COMPLETED";
+
+                    if ($isVerbose) {
+                        $this->info("✅ Would auto-complete session {$session->id}");
+                    }
                 }
-            } elseif ($isVerbose) {
-                $this->line("⚪ Session {$session->id} remains {$currentStatus->label()}");
+
+            } catch (\Exception $e) {
+                $stats['errors']++;
+                $stats['details'][] = "Error processing session {$session->id}: {$e->getMessage()}";
+
+                if ($isVerbose) {
+                    $this->error("❌ Error simulating session {$session->id}: {$e->getMessage()}");
+                }
             }
         }
 
-        if ($isVerbose) {
-            $this->info("\n🔍 Dry run summary:");
-            $this->info("• Using circle-specific timing configurations");
-            $this->info("• Enhanced business logic for individual vs group sessions");
-            $this->info("• Improved absence detection for individual sessions");
+        return $stats;
+    }
+
+    /**
+     * Format raw stats from the service
+     */
+    private function formatStats(array $rawStats, bool $isVerbose): array
+    {
+        $stats = [
+            'scheduled_to_ready' => $rawStats['transitions_to_ready'] ?? 0,
+            'ready_to_absent' => $rawStats['transitions_to_absent'] ?? 0,
+            'ongoing_to_completed' => $rawStats['transitions_to_completed'] ?? 0,
+            'errors' => count($rawStats['errors'] ?? []),
+            'details' => [],
+        ];
+
+        // Add error details
+        foreach ($rawStats['errors'] ?? [] as $error) {
+            $stats['details'][] = "Error processing session {$error['session_id']}: {$error['error']}";
+
+            if ($isVerbose) {
+                $this->error("❌ Session {$error['session_id']}: {$error['error']}");
+            }
         }
 
         return $stats;
+    }
+
+    /**
+     * Display execution results
+     */
+    private function displayResults(array $stats, bool $isDryRun, bool $isVerbose): void
+    {
+        $mode = $isDryRun ? 'Simulation' : 'Execution';
+        $this->info("\n📊 {$mode} Results:");
+        $this->info('═══════════════════════════════════════════════════');
+
+        $totalTransitions = $stats['scheduled_to_ready'] + $stats['ready_to_absent'] + $stats['ongoing_to_completed'];
+
+        if ($totalTransitions === 0 && $stats['errors'] === 0) {
+            $this->info('✅ No status changes required - all sessions are in correct states');
+
+            return;
+        }
+
+        if ($stats['scheduled_to_ready'] > 0) {
+            $verb = $isDryRun ? 'Would transition' : 'Transitioned';
+            $this->info("🔄 {$verb} {$stats['scheduled_to_ready']} sessions from SCHEDULED to READY");
+        }
+
+        if ($stats['ready_to_absent'] > 0) {
+            $verb = $isDryRun ? 'Would mark' : 'Marked';
+            $this->info("⏰ {$verb} {$stats['ready_to_absent']} individual sessions as ABSENT");
+        }
+
+        if ($stats['ongoing_to_completed'] > 0) {
+            $verb = $isDryRun ? 'Would auto-complete' : 'Auto-completed';
+            $this->info("✅ {$verb} {$stats['ongoing_to_completed']} ongoing sessions");
+        }
+
+        if ($stats['errors'] > 0) {
+            $this->error("❌ Encountered {$stats['errors']} errors during processing");
+
+            if ($isVerbose && ! empty($stats['details'])) {
+                $this->error('Error details:');
+                foreach ($stats['details'] as $detail) {
+                    if (strpos($detail, 'Error') !== false) {
+                        $this->error("  • {$detail}");
+                    }
+                }
+            }
+        }
+
+        $this->info("\n📈 Summary: {$totalTransitions} status transitions processed");
     }
 }

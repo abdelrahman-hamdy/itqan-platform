@@ -125,7 +125,7 @@
 
             <!-- Single Action Button -->
             <div class="mt-6">
-              <a href="{{ route('student.quran.sessions', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'subscriptionId' => $subscription->id]) }}" 
+              <a href="{{ route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id]) }}" 
                  class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
                 <i class="ri-book-open-line ml-2"></i>
                 عرض حلقة القرآن
@@ -161,19 +161,7 @@
           @foreach($quranTeachers as $teacher)
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
             <div class="flex items-start justify-between mb-4">
-              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                @if($teacher->avatar)
-                  <img src="{{ asset('storage/' . $teacher->avatar) }}" alt="{{ $teacher->full_name }}" class="w-full h-full rounded-lg object-cover">
-                @elseif($teacher->user)
-                  <span class="text-blue-600 font-semibold">
-                    {{ substr($teacher->user->first_name ?? $teacher->first_name, 0, 1) }}{{ substr($teacher->user->last_name ?? $teacher->last_name, 0, 1) }}
-                  </span>
-                @else
-                  <span class="text-blue-600 font-semibold">
-                    {{ substr($teacher->first_name, 0, 1) }}{{ substr($teacher->last_name, 0, 1) }}
-                  </span>
-                @endif
-              </div>
+              <x-teacher-avatar :teacher="$teacher" size="sm" class="flex-shrink-0" />
               <div class="flex items-center">
                 <i class="ri-star-fill text-yellow-400 text-sm"></i>
                 <span class="text-sm text-gray-600 mr-1">{{ number_format($teacher->average_rating ?? $teacher->rating ?? 4.8, 1) }}</span>
@@ -231,15 +219,16 @@
 
             <div class="mt-6 flex space-x-2 space-x-reverse">
               <a href="{{ route('public.quran-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) }}" 
-                 class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
-                <i class="ri-eye-line ml-1"></i>
+                 class="flex-1 bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
+                <i class="ri-eye-line ml-2"></i>
                 عرض الملف الشخصي
               </a>
-              <a href="{{ route('public.quran-teachers.trial', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) }}" 
-                 class="px-3 py-2 border-2 border-primary rounded-lg text-sm text-primary hover:bg-primary hover:text-white transition-colors" 
-                 title="احجز جلسة تجريبية">
-                <i class="ri-calendar-check-line"></i>
+              @if($teacher->user)
+              <a href="{{ route('user', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $teacher->user->id]) }}"
+                 class="px-3 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
+                <i class="ri-message-3-line"></i>
               </a>
+              @endif
             </div>
           </div>
           @endforeach

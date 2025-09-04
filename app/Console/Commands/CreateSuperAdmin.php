@@ -2,14 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
 use App\Models\Academy;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 
 class CreateSuperAdmin extends Command
 {
     protected $signature = 'make:super-admin {email?} {password?}';
+
     protected $description = 'Create a super admin user';
 
     public function handle()
@@ -22,6 +23,7 @@ class CreateSuperAdmin extends Command
         // Check if user already exists
         if (User::where('email', $email)->exists()) {
             $this->error('User with this email already exists.');
+
             return 1;
         }
 
@@ -31,15 +33,17 @@ class CreateSuperAdmin extends Command
             'last_name' => 'Admin',
             'email' => $email,
             'password' => Hash::make($password),
-            'role' => 'super_admin',
+            'user_type' => 'super_admin',
+            'status' => 'active',
+            'active_status' => true,
             'academy_id' => null, // Super admin doesn't belong to any specific academy
             'email_verified_at' => now(),
         ]);
 
-        $this->info("Super admin created successfully!");
+        $this->info('Super admin created successfully!');
         $this->info("Email: {$email}");
         $this->info("Password: {$password}");
-        $this->info("Access: /admin");
+        $this->info('Access: /admin');
 
         return 0;
     }

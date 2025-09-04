@@ -7,70 +7,29 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Traits\ScopedToAcademy;
 
 class AcademicGradeLevel extends Model
 {
-    use HasFactory;
+    use HasFactory, ScopedToAcademy;
 
     protected $fillable = [
         'academy_id',
         'name',
         'name_en',
         'description',
-        'level_number',
-        'education_system',
-        'academic_year_start',
-        'academic_year_end',
-        'total_subjects',
-        'core_subjects_count',
-        'elective_subjects_count',
-        'total_credit_hours',
-        'min_credit_hours',
-        'max_credit_hours',
-        'graduation_requirements',
-        'assessment_system',
-        'grading_scale',
-        'pass_percentage',
-        'curriculum_framework',
-        'learning_outcomes',
-        'skill_requirements',
         'is_active',
-        'display_order',
         'color_code',
-        'icon',
         'created_by',
         'notes',
     ];
 
     protected $casts = [
-        'level_number' => 'integer',
-        'total_subjects' => 'integer',
-        'core_subjects_count' => 'integer',
-        'elective_subjects_count' => 'integer',
-        'total_credit_hours' => 'integer',
-        'min_credit_hours' => 'integer',
-        'max_credit_hours' => 'integer',
-        'pass_percentage' => 'decimal:2',
-        'display_order' => 'integer',
         'is_active' => 'boolean',
-        'graduation_requirements' => 'array',
-        'learning_outcomes' => 'array',
-        'skill_requirements' => 'array',
-        'grading_scale' => 'array',
-        'academic_year_start' => 'date',
-        'academic_year_end' => 'date',
     ];
 
     protected $attributes = [
         'is_active' => true,
-        'pass_percentage' => 60.0,
-        'total_subjects' => 8,
-        'core_subjects_count' => 6,
-        'elective_subjects_count' => 2,
-        'total_credit_hours' => 24,
-        'min_credit_hours' => 18,
-        'max_credit_hours' => 30,
-        'display_order' => 1,
     ];
 
     /**

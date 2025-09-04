@@ -10,6 +10,7 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -33,11 +34,14 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->runInBackground();
 
-        if ($isLocal) {
-            $prepareCommand->everyMinute(); // Every minute for development
-        } else {
-            $prepareCommand->everyFifteenMinutes(); // Every 15 minutes for production
-        }
+        // Set to every minute for testing regardless of environment
+        $prepareCommand->everyMinute(); // Every minute for testing
+
+        // if ($isLocal) {
+        //     $prepareCommand->everyMinute(); // Every minute for development
+        // } else {
+        //     $prepareCommand->everyFifteenMinutes(); // Every 15 minutes for production
+        // }
 
         // Generate weekly sessions
         $generateCommand = $schedule->command('sessions:generate --queue')
@@ -78,11 +82,14 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->runInBackground();
 
-        if ($isLocal) {
-            $quranSessionsCommand->everyThreeMinutes(); // Every 3 minutes for development
-        } else {
-            $quranSessionsCommand->daily()->at('01:00'); // Daily for production
-        }
+        // Set to every minute for testing regardless of environment
+        $quranSessionsCommand->everyMinute(); // Every minute for testing
+
+        // if ($isLocal) {
+        //     $quranSessionsCommand->everyThreeMinutes(); // Every 3 minutes for development
+        // } else {
+        //     $quranSessionsCommand->daily()->at('01:00'); // Daily for production
+        // }
 
         // Extend Quran circle schedules
         $extendCommand = $schedule->command('quran:extend-schedules --days=180')
@@ -96,5 +103,17 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (Throwable $e, $request) {
+            if (str_contains($request->path(), 'academic-packages') && str_contains($request->path(), 'subscribe')) {
+                \Log::error('ACADEMIC SUBSCRIPTION EXCEPTION CAUGHT', [
+                    'exception' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'path' => $request->path(),
+                    'method' => $request->method(),
+                    'data' => $request->all(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+        });
     })->create();

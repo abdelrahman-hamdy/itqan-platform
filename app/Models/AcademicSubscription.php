@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Carbon\Carbon;
 
 class AcademicSubscription extends Model
 {
@@ -19,7 +19,10 @@ class AcademicSubscription extends Model
         'teacher_id',
         'subject_id',
         'grade_level_id',
+        'subject_name',
+        'grade_level_name',
         'session_request_id',
+        'academic_package_id',
         'subscription_code',
         'subscription_type',
         'sessions_per_week',
@@ -55,6 +58,7 @@ class AcademicSubscription extends Model
         'notes',
         'student_notes',
         'teacher_notes',
+
         'total_sessions_scheduled',
         'total_sessions_completed',
         'total_sessions_missed',
@@ -84,6 +88,12 @@ class AcademicSubscription extends Model
         'completion_rate' => 'decimal:2',
     ];
 
+    // Relationships
+    public function academicPackage(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPackage::class, 'academic_package_id');
+    }
+
     protected $attributes = [
         'subscription_type' => 'private',
         'session_duration_minutes' => 60,
@@ -111,14 +121,14 @@ class AcademicSubscription extends Model
             if (empty($model->subscription_code)) {
                 $model->subscription_code = $model->generateSubscriptionCode();
             }
-            
+
             // Calculate sessions per month and amounts
             if ($model->sessions_per_week && $model->hourly_rate) {
                 $model->sessions_per_month = $model->sessions_per_week * 4.33; // Average weeks per month
                 $model->monthly_amount = $model->sessions_per_month * $model->hourly_rate;
                 $model->final_monthly_amount = $model->monthly_amount - $model->discount_amount;
             }
-            
+
             // Set next billing date if not set
             if (empty($model->next_billing_date)) {
                 $model->next_billing_date = $model->calculateNextBillingDate($model->start_date);
@@ -147,7 +157,15 @@ class AcademicSubscription extends Model
      */
     public function teacher(): BelongsTo
     {
-        return $this->belongsTo(AcademicTeacher::class, 'teacher_id');
+        return $this->belongsTo(AcademicTeacherProfile::class, 'teacher_id');
+    }
+
+    /**
+     * العلاقة مع بروفايل المعلم الأكاديمي (alternative name to avoid caching issues)
+     */
+    public function academicTeacher(): BelongsTo
+    {
+        return $this->belongsTo(AcademicTeacherProfile::class, 'teacher_id');
     }
 
     /**
@@ -163,7 +181,7 @@ class AcademicSubscription extends Model
      */
     public function gradeLevel(): BelongsTo
     {
-        return $this->belongsTo(GradeLevel::class);
+        return $this->belongsTo(AcademicGradeLevel::class);
     }
 
     /**
@@ -188,6 +206,14 @@ class AcademicSubscription extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'subscription_id');
+    }
+
+    /**
+     * Get the academic sessions for this subscription
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(\App\Models\AcademicSession::class, 'academic_subscription_id');
     }
 
     /**
@@ -220,8 +246,8 @@ class AcademicSubscription extends Model
     public function scopeDueForRenewal($query, $days = 7)
     {
         return $query->where('next_billing_date', '<=', Carbon::now()->addDays($days))
-                    ->where('status', 'active')
-                    ->where('auto_renewal', true);
+            ->where('status', 'active')
+            ->where('auto_renewal', true);
     }
 
     /**
@@ -239,7 +265,8 @@ class AcademicSubscription extends Model
     {
         $academyId = $this->academy_id;
         $count = static::where('academy_id', $academyId)->count() + 1;
-        return 'SUB-' . $academyId . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+
+        return 'SUB-'.$academyId.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -376,7 +403,7 @@ class AcademicSubscription extends Model
      */
     public function renew(float $amount): bool
     {
-        if (!$this->is_active && $this->status !== 'paused') {
+        if (! $this->is_active && $this->status !== 'paused') {
             return false;
         }
 
@@ -433,7 +460,7 @@ class AcademicSubscription extends Model
      */
     public function updateTrialSession(Carbon $date, string $status): bool
     {
-        if (!$this->has_trial_session) {
+        if (! $this->has_trial_session) {
             return false;
         }
 

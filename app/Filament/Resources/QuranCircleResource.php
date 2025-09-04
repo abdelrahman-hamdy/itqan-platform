@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\WeekDays;
 use App\Filament\Resources\QuranCircleResource\Pages;
 use App\Models\QuranCircle;
 use App\Traits\ScopedToAcademy;
@@ -58,7 +59,7 @@ class QuranCircleResource extends BaseResource
                                 Select::make('quran_teacher_id')
                                     ->label('معلم القرآن')
                                     ->options(\App\Models\QuranTeacherProfile::all()
-                                        ->pluck('full_name', 'id'))
+                                        ->pluck('full_name', 'user_id'))
                                     ->searchable()
                                     ->preload()
                                     ->required(),
@@ -176,6 +177,14 @@ class QuranCircleResource extends BaseResource
                                     ->required(),
                             ]),
 
+                        Select::make('schedule_days')
+                            ->label('أيام الانعقاد')
+                            ->options(WeekDays::options())
+                            ->multiple()
+                            ->native(false)
+                            ->helperText('أيام انعقاد الحلقة - للمعلومات العامة')
+                            ->columnSpanFull(),
+
                         Select::make('schedule_time')
                             ->label('الساعة')
                             ->options([
@@ -205,22 +214,8 @@ class QuranCircleResource extends BaseResource
                                 '23:00' => '11:00 م',
                             ])
                             ->native(false)
-                            ->required()
+                            ->searchable()
                             ->helperText('تحديد الساعة المحددة لبداية الجلسات'),
-
-                        Select::make('schedule_days')
-                            ->label('أيام الانعقاد')
-                            ->options([
-                                'sunday' => 'الأحد',
-                                'monday' => 'الاثنين',
-                                'tuesday' => 'الثلاثاء',
-                                'wednesday' => 'الأربعاء',
-                                'thursday' => 'الخميس',
-                                'friday' => 'الجمعة',
-                                'saturday' => 'السبت',
-                            ])
-                            ->multiple()
-                            ->required(),
                     ]),
 
                 Section::make('إعدادات الاجتماعات')
@@ -381,41 +376,25 @@ class QuranCircleResource extends BaseResource
                     ->alignCenter(),
 
                 TextColumn::make('schedule_days')
-                    ->label('الأيام')
+                    ->label('أيام الانعقاد')
                     ->formatStateUsing(function ($state) {
-                        if (is_array($state)) {
-                            $days = [];
-                            foreach ($state as $day) {
-                                $days[] = match ($day) {
-                                    'saturday' => 'السبت',
-                                    'sunday' => 'الأحد',
-                                    'monday' => 'الاثنين',
-                                    'tuesday' => 'الثلاثاء',
-                                    'wednesday' => 'الأربعاء',
-                                    'thursday' => 'الخميس',
-                                    'friday' => 'الجمعة',
-                                    default => $day,
-                                };
-                            }
-
-                            return implode(', ', $days);
+                        if (! is_array($state) || empty($state)) {
+                            return 'غير محدد';
                         }
 
-                        return match ($state) {
-                            'saturday' => 'السبت',
-                            'sunday' => 'الأحد',
-                            'monday' => 'الاثنين',
-                            'tuesday' => 'الثلاثاء',
-                            'wednesday' => 'الأربعاء',
-                            'thursday' => 'الخميس',
-                            'friday' => 'الجمعة',
-                            default => $state,
-                        };
-                    }),
+                        return WeekDays::getDisplayNames($state);
+                    })
+                    ->wrap(),
 
                 TextColumn::make('schedule_time')
-                    ->label('الوقت')
-                    ->time('H:i'),
+                    ->label('الساعة')
+                    ->placeholder('غير محدد'),
+
+                TextColumn::make('schedule_status')
+                    ->label('حالة الجدولة')
+                    ->getStateUsing(fn ($record) => $record->schedule ? 'مُجدولة' : 'غير مُجدولة')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'مُجدولة' ? 'success' : 'warning'),
 
                 TextColumn::make('monthly_fee')
                     ->label('الرسوم الشهرية')

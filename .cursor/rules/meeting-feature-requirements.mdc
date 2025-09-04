@@ -1,5 +1,7 @@
 ---
-alwaysApply: true
+description: Guidlines for building and integrting Livekit meetings for sessions.
+globs: 
+alwaysApply: false
 ---
 # LiveKit Meeting Feature Requirements
 

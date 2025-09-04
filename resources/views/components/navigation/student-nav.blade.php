@@ -1,4 +1,10 @@
 <!-- Student Navigation Component -->
+@php
+  $user = auth()->user();
+  $academy = $user ? $user->academy : null;
+  $academyName = $academy ? $academy->name : 'أكاديمية إتقان';
+  $subdomain = $academy ? $academy->subdomain : 'itqan-academy';
+@endphp
 <nav id="navigation" class="bg-white shadow-lg fixed top-0 left-0 right-0 z-50" role="navigation" aria-label="التنقل الرئيسي للطالب">
   <div class="w-full px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-20">
@@ -8,7 +14,7 @@
           <div class="w-8 h-8 flex items-center justify-center">
             <i class="ri-book-open-line text-2xl text-primary"></i>
           </div>
-          <span class="mr-2 text-xl font-bold text-primary">{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</span>
+          <span class="mr-2 text-xl font-bold text-primary">{{ $academyName }}</span>
         </div>
         <div class="hidden md:flex items-center space-x-6 space-x-reverse">
           @php
@@ -19,19 +25,19 @@
             $isAcademicTeachersActive = in_array($currentRoute, ['student.academic-teachers']);
             $isRecordedCoursesActive = in_array($currentRoute, ['courses.index', 'courses.show', 'courses.learn']);
           @endphp
-          <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.quran-circles', ['subdomain' => $subdomain]) }}" 
              class="{{ $isQuranCirclesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
              aria-label="استعرض حلقات القرآن المتاحة">حلقات القرآن الجماعية</a>
-          <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.quran-teachers', ['subdomain' => $subdomain]) }}" 
              class="{{ $isQuranTeachersActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
              aria-label="استعرض معلمي القرآن">معلمو القرآن</a>
-          <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.interactive-courses', ['subdomain' => $subdomain]) }}" 
              class="{{ $isInteractiveCoursesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
              aria-label="استعرض الكورسات التفاعلية">الكورسات التفاعلية</a>
-          <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('student.academic-teachers', ['subdomain' => $subdomain]) }}" 
              class="{{ $isAcademicTeachersActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
              aria-label="استعرض المعلمين الأكاديميين">المعلمون الأكاديميون</a>
-          <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          <a href="{{ route('courses.index', ['subdomain' => $subdomain]) }}" 
              class="{{ $isRecordedCoursesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
              aria-label="استعرض الكورسات المسجلة">الكورسات المسجلة</a>
         </div>
@@ -59,12 +65,12 @@
         </button>
 
         <!-- Messages -->
-        <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+        <a href="{{ route('chat', ['subdomain' => $subdomain]) }}" class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors" aria-label="فتح الرسائل">
           <i class="ri-message-3-line text-xl"></i>
           <span class="absolute top-0 left-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full">
             2
           </span>
-        </button>
+        </a>
 
         <!-- User Dropdown -->
         <div class="relative" x-data="{ open: false }">
@@ -74,15 +80,15 @@
                   aria-haspopup="true">
             <div class="flex items-center space-x-3 space-x-reverse">
               @php
-                $student = auth()->user()->studentProfile;
+                $student = $user ? $user->studentProfile : null;
                 $studentName = $student ? 
                              ($student->first_name && $student->last_name ? $student->first_name . ' ' . $student->last_name : $student->first_name) :
-                             auth()->user()->name;
+                             ($user ? $user->name : 'ضيف');
               @endphp
               <x-student-avatar :student="$student" size="sm" />
               <div class="hidden md:block text-right">
                 <p class="text-sm font-medium text-gray-900">
-                  {{ $student->first_name ?? auth()->user()->name }}
+                  {{ $student->first_name ?? ($user ? $user->name : 'ضيف') }}
                 </p>
                 <p class="text-xs text-gray-500">
                   طالب
@@ -105,13 +111,13 @@
                role="menu" 
                aria-orientation="vertical">
             <div class="py-1" role="none">
-              <a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+              <a href="{{ route('student.profile', ['subdomain' => $subdomain]) }}" 
                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" role="menuitem">
                 <i class="ri-user-line ml-2"></i>
                 الملف الشخصي
               </a>
               <div class="border-t border-gray-100"></div>
-              <form method="POST" action="{{ route('logout', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}">
+              <form method="POST" action="{{ route('logout', ['subdomain' => $subdomain]) }}">
                 @csrf
                 <button type="submit" 
                         class="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50" 
@@ -139,15 +145,15 @@
     <!-- Mobile Navigation Menu -->
     <div class="md:hidden hidden" id="mobile-menu">
       <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-        <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+        <a href="{{ route('student.quran-circles', ['subdomain' => $subdomain]) }}" 
            class="block px-3 py-2 {{ $isQuranCirclesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">حلقات القرآن</a>
-        <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+        <a href="{{ route('student.quran-teachers', ['subdomain' => $subdomain]) }}" 
            class="block px-3 py-2 {{ $isQuranTeachersActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">معلمو القرآن</a>
-        <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+        <a href="{{ route('student.interactive-courses', ['subdomain' => $subdomain]) }}" 
            class="block px-3 py-2 {{ $isInteractiveCoursesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات التفاعلية</a>
-        <a href="{{ route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+        <a href="{{ route('student.academic-teachers', ['subdomain' => $subdomain]) }}" 
            class="block px-3 py-2 {{ $isAcademicTeachersActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">المعلمون الأكاديميون</a>
-        <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+        <a href="{{ route('courses.index', ['subdomain' => $subdomain]) }}" 
            class="block px-3 py-2 {{ $isRecordedCoursesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات المسجلة</a>
       </div>
     </div>

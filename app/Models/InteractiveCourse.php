@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Carbon\Carbon;
 
 class InteractiveCourse extends Model
 {
@@ -65,9 +64,9 @@ class InteractiveCourse extends Model
 
         static::creating(function ($model) {
             if (empty($model->course_code)) {
-                $academyId = $model->academy_id ?? 1;
+                $academyId = $model->academy_id ?? \App\Services\AcademyContextService::getCurrentAcademyId() ?? \App\Services\AcademyContextService::getDefaultAcademy()?->id ?? 2;
                 $count = static::where('academy_id', $academyId)->count() + 1;
-                $model->course_code = 'IC-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $model->course_code = 'IC-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
             }
 
             // Calculate total sessions
@@ -114,7 +113,7 @@ class InteractiveCourse extends Model
 
     public function gradeLevel(): BelongsTo
     {
-        return $this->belongsTo(GradeLevel::class);
+        return $this->belongsTo(AcademicGradeLevel::class);
     }
 
     public function enrollments(): HasMany
@@ -137,12 +136,12 @@ class InteractiveCourse extends Model
      */
     public function getDisplayNameAttribute(): string
     {
-        return $this->title . ' (' . $this->course_code . ')';
+        return $this->title.' ('.$this->course_code.')';
     }
 
     public function getCourseTypeInArabicAttribute(): string
     {
-        return match($this->course_type) {
+        return match ($this->course_type) {
             'intensive' => 'مكثف',
             'regular' => 'منتظم',
             'exam_prep' => 'تحضير للامتحانات',
@@ -152,7 +151,7 @@ class InteractiveCourse extends Model
 
     public function getStatusInArabicAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'draft' => 'مسودة',
             'published' => 'منشور',
             'active' => 'نشط',
@@ -164,7 +163,7 @@ class InteractiveCourse extends Model
 
     public function getPaymentTypeInArabicAttribute(): string
     {
-        return match($this->payment_type) {
+        return match ($this->payment_type) {
             'fixed_amount' => 'مبلغ ثابت',
             'per_student' => 'لكل طالب',
             'per_session' => 'لكل جلسة',
@@ -184,14 +183,14 @@ class InteractiveCourse extends Model
 
     public function isEnrollmentOpen(): bool
     {
-        return $this->status === 'published' 
+        return $this->status === 'published'
             && $this->enrollment_deadline >= now()->toDateString()
             && $this->getAvailableSlots() > 0;
     }
 
     public function canStart(): bool
     {
-        return $this->status === 'published' 
+        return $this->status === 'published'
             && $this->start_date <= now()->toDateString()
             && $this->getCurrentEnrollmentCount() > 0;
     }

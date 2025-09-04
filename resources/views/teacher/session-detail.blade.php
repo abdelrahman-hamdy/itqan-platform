@@ -3,291 +3,472 @@
 @section('title', $session->title ?? 'تفاصيل الجلسة')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <!-- Session Header -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $session->title ?? 'جلسة القرآن الكريم' }}</h1>
-                <p class="text-gray-600">{{ $session->description ?? 'جلسة تعليم القرآن الكريم' }}</p>
-            </div>
-            <div class="text-right">
-                <p class="text-sm text-gray-500">تاريخ الجلسة</p>
-                <p class="text-lg font-semibold text-gray-900">{{ $session->scheduled_at ? $session->scheduled_at->format('Y-m-d H:i') : 'غير محدد' }}</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Enhanced LiveKit Meeting Interface -->
-    <x-meetings.livekit-interface 
-        :session="$session" 
-        user-type="quran_teacher"
-    />
-
-    <!-- Session Details -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Session Information -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">معلومات الجلسة</h3>
-            <div class="space-y-3">
-                <div class="flex justify-between">
-                    <span class="text-gray-600">الحالة:</span>
-                    <span class="font-medium text-gray-900">
-                        @if($session->status === 'scheduled')
-                            <span class="text-blue-600">مجدولة</span>
-                        @elseif($session->status === 'in_progress')
-                            <span class="text-green-600">جارية</span>
-                        @elseif($session->status === 'completed')
-                            <span class="text-gray-600">مكتملة</span>
-                        @elseif($session->status === 'cancelled')
-                            <span class="text-red-600">ملغية</span>
-                        @else
-                            {{ $session->status }}
-                        @endif
-                    </span>
-                </div>
-                
-                <div class="flex justify-between">
-                    <span class="text-gray-600">المدة:</span>
-                    <span class="font-medium text-gray-900">{{ $session->duration_minutes ?? 60 }} دقيقة</span>
-                </div>
-                
-                <div class="flex justify-between">
-                    <span class="text-gray-600">نوع الجلسة:</span>
-                    <span class="font-medium text-gray-900">
-                        @if($session->quran_circle_id)
-                            مجموعة
-                        @elseif($session->individual_circle_id)
-                            فردية
-                        @elseif($session->quran_subscription_id)
-                            اشتراك
-                        @else
-                            غير محدد
-                        @endif
-                    </span>
-                </div>
-                
-                @if($session->meeting_room_name)
-                <div class="flex justify-between">
-                    <span class="text-gray-600">اسم الغرفة:</span>
-                    <span class="font-medium text-gray-900 font-mono text-sm">{{ $session->meeting_room_name }}</span>
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Participants -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">المشاركون</h3>
-            <div class="space-y-3">
-                @if($session->teacher)
-                <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {{ substr($session->teacher->name, 0, 1) }}
-                    </div>
-                    <div>
-                        <p class="font-medium text-gray-900">{{ $session->teacher->name }}</p>
-                        <p class="text-sm text-blue-600">المعلم</p>
-                    </div>
-                </div>
-                @endif
-                
-                @if($session->students && $session->students->count() > 0)
-                    @foreach($session->students->take(5) as $student)
-                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-semibold">
-                            {{ substr($student->name, 0, 1) }}
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-900">{{ $student->name }}</p>
-                            <p class="text-sm text-gray-600">طالب</p>
-                        </div>
-                    </div>
-                    @endforeach
-                    
-                    @if($session->students->count() > 5)
-                    <p class="text-sm text-gray-500 text-center">و {{ $session->students->count() - 5 }} طالب آخر</p>
-                    @endif
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Breadcrumb -->
+        <nav class="mb-8">
+            <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
+                <li><a href="{{ route('teacher.profile', ['subdomain' => request()->route('subdomain')]) }}" class="hover:text-primary">ملفي الشخصي</a></li>
+                <li>/</li>
+                @if($session->circle_id && $session->circle)
+                    <li><a href="{{ route('teacher.group-circles.index', ['subdomain' => request()->route('subdomain')]) }}" class="hover:text-primary">الحلقات الجماعية</a></li>
+                    <li>/</li>
+                    <li><a href="{{ route('teacher.group-circles.show', ['subdomain' => request()->route('subdomain'), 'circle' => $session->circle->id]) }}" class="hover:text-primary">{{ $session->circle->name ?? 'الحلقة' }}</a></li>
+                @elseif($session->individual_circle_id && $session->individualCircle)
+                    <li><a href="{{ route('teacher.individual-circles.index', ['subdomain' => request()->route('subdomain')]) }}" class="hover:text-primary">الحلقات الفردية</a></li>
+                    <li>/</li>
+                    <li><a href="{{ route('individual-circles.show', ['subdomain' => request()->route('subdomain'), 'circle' => $session->individualCircle->id]) }}" class="hover:text-primary">{{ $session->individualCircle->subscription->package->name ?? 'الحلقة الفردية' }}</a></li>
                 @else
-                    <p class="text-gray-500 text-center">لا يوجد طلاب مسجلين</p>
+                    <li><a href="{{ route('teacher.sessions.index', ['subdomain' => request()->route('subdomain')]) }}" class="hover:text-primary">جلساتي</a></li>
                 @endif
-            </div>
-        </div>
-    </div>
+                <li>/</li>
+                <li class="text-gray-900">{{ $session->title ?? 'تفاصيل الجلسة' }}</li>
+            </ol>
+        </nav>
 
-    <!-- Teacher Notes Section -->
-    @if(auth()->user()->user_type === 'quran_teacher')
-    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">ملاحظات المعلم</h3>
-        <form id="notesForm" class="space-y-4">
-            @csrf
-            <div>
-                <label for="teacher_notes" class="block text-sm font-medium text-gray-700 mb-2">
-                    ملاحظات الجلسة
-                </label>
-                <textarea 
-                    id="teacher_notes" 
-                    name="teacher_notes" 
-                    rows="4"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="أضف ملاحظاتك حول الجلسة..."
-                >{{ $session->teacher_notes ?? '' }}</textarea>
-            </div>
-            
-            <div>
-                <label for="student_progress" class="block text-sm font-medium text-gray-700 mb-2">
-                    تقدم الطالب
-                </label>
-                <textarea 
-                    id="student_progress" 
-                    name="student_progress" 
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="سجل تقدم الطالب في هذه الجلسة..."
-                >{{ $session->student_progress ?? '' }}</textarea>
-            </div>
-            
-            <div>
-                <label for="homework_assigned" class="block text-sm font-medium text-gray-700 mb-2">
-                    الواجبات المنزلية
-                </label>
-                <textarea 
-                    id="homework_assigned" 
-                    name="homework_assigned" 
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="حدد الواجبات المنزلية للطالب..."
-                >{{ $session->homework_assigned ?? '' }}</textarea>
-            </div>
-            
-            <div class="flex gap-3">
-                <button 
-                    type="submit" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                    حفظ الملاحظات
-                </button>
-                
-                @if($session->status !== 'completed')
-                <button 
-                    type="button" 
-                    id="completeSessionBtn"
-                    class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                    إنهاء الجلسة
-                </button>
+        <div class="space-y-6">
+                <!-- Session Header -->
+                <x-sessions.session-header :session="$session" view-type="teacher" />
+
+                <!-- Enhanced LiveKit Meeting Interface -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <x-meetings.livekit-interface 
+                        :session="$session" 
+                        user-type="quran_teacher"
+                    />
+                </div>
+
+                <!-- Homework Management -->
+                <x-sessions.homework-management 
+                    :session="$session" 
+                    view-type="teacher" />
+
+                <!-- Students Section -->
+                @if($session->session_type === 'group' && $session->students && $session->students->count() > 0)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">طلاب الجلسة ({{ $session->students->count() }})</h3>
+                    
+                    <div class="space-y-4">
+                        @foreach($session->students as $student)
+                            <x-sessions.student-item 
+                                :student="$student" 
+                                :session="$session"
+                                :show-chat="false"
+                                size="sm" 
+                            />
+                        @endforeach
+                    </div>
+                </div>
+                @elseif($session->session_type === 'individual' && $session->student)
+                <!-- Individual Student Info -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">الطالب</h3>
+                    
+                    <x-sessions.student-item 
+                        :student="$session->student" 
+                        :session="$session"
+                        :show-chat="true"
+                        size="md" 
+                    />
+                </div>
                 @endif
-            </div>
-        </form>
-    </div>
-    @endif
+        </div>
 </div>
 
-@push('scripts')
+<!-- Student Evaluation Modal -->
+<div id="studentEvaluationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 id="evaluationModalTitle" class="text-xl font-bold text-gray-900">تقييم الطالب</h3>
+                <button id="closeEvaluationModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="ri-close-line text-2xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <form id="studentEvaluationForm" class="space-y-6">
+                @csrf
+                <input type="hidden" id="evalStudentId" name="student_id">
+                <input type="hidden" id="evalReportId" name="report_id">
+                
+                <!-- Student Info Display -->
+                <div id="studentInfoDisplay" class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center gap-3">
+                        <div id="studentAvatarDisplay"></div>
+                        <div>
+                            <h4 id="studentNameDisplay" class="font-semibold text-gray-900"></h4>
+                            <p id="attendanceInfoDisplay" class="text-sm text-gray-600"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Degrees -->
+                <div id="homeworkDegreeFields" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="newMemorizationDegreeField" class="hidden">
+                        <label for="newMemorizationDegree" class="block text-sm font-medium text-gray-700 mb-2">
+                            درجة الحفظ الجديد (0-10)
+                        </label>
+                        <input type="number" 
+                               id="newMemorizationDegree" 
+                               name="new_memorization_degree" 
+                               min="0" 
+                               max="10" 
+                               step="0.5"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div id="reviewDegreeField" class="hidden">
+                        <label for="reservationDegree" class="block text-sm font-medium text-gray-700 mb-2">
+                            درجة المراجعة (0-10)
+                        </label>
+                        <input type="number" 
+                               id="reservationDegree" 
+                               name="reservation_degree" 
+                               min="0" 
+                               max="10" 
+                               step="0.5"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                
+                <!-- Attendance Status Override -->
+                <div>
+                    <label for="attendanceStatus" class="block text-sm font-medium text-gray-700 mb-2">
+                        حالة الحضور (يدوي)
+                    </label>
+                    <select id="attendanceStatus" 
+                            name="attendance_status" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">إبقاء الحالة المحسوبة تلقائياً</option>
+                        <option value="present">حاضر</option>
+                        <option value="late">متأخر</option>
+                        <option value="partial">حضور جزئي</option>
+                        <option value="absent">غائب</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">اتركها فارغة للاحتفاظ بالحالة المحسوبة تلقائياً</p>
+                </div>
+                
+                <!-- Notes -->
+                <div>
+                    <label for="evaluationNotes" class="block text-sm font-medium text-gray-700 mb-2">
+                        ملاحظات التقييم
+                    </label>
+                    <textarea id="evaluationNotes" 
+                              name="notes" 
+                              rows="4"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="أضف ملاحظاتك حول أداء الطالب..."></textarea>
+                </div>
+                
+                <!-- Auto-calculated Attendance Info (Read-only) -->
+                <div id="autoAttendanceInfo" class="bg-blue-50 rounded-lg p-4">
+                    <h5 class="font-medium text-blue-900 mb-2">معلومات الحضور المحسوبة تلقائياً</h5>
+                    <div class="text-sm text-blue-800 space-y-1">
+                        <div>وقت الدخول: <span id="autoEnterTime">-</span></div>
+                        <div>وقت الخروج: <span id="autoLeaveTime">-</span></div>
+                        <div>مدة الحضور: <span id="autoAttendanceMinutes">-</span> دقيقة</div>
+                        <div>نسبة الحضور: <span id="autoAttendancePercentage">-</span>%</div>
+                        <div>جودة الاتصال: <span id="autoConnectionQuality">-</span>/100</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-end space-x-3 space-x-reverse pt-6 border-t border-gray-200">
+                    <button type="button" id="cancelEvaluationBtn" 
+                            class="px-6 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors font-medium">
+                        إلغاء
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
+                        حفظ التقييم
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-// Teacher notes functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const notesForm = document.getElementById('notesForm');
-    const completeSessionBtn = document.getElementById('completeSessionBtn');
-    
-    if (notesForm) {
-        notesForm.addEventListener('submit', async function(e) {
+    // Student management functions
+    function changeStudentStatus(studentId) {
+        // Show notification for now - will be implemented with backend routes
+        showNotification('تغيير حالة الطالب قيد التطوير', 'info');
+        console.log('Change status for student:', studentId);
+    }
+
+    // Student evaluation modal functions
+    function editStudentReport(studentId, reportId) {
+        const modal = document.getElementById('studentEvaluationModal');
+        const form = document.getElementById('studentEvaluationForm');
+        
+        // Set hidden fields
+        document.getElementById('evalStudentId').value = studentId;
+        document.getElementById('evalReportId').value = reportId || '';
+        
+        // Reset form
+        form.reset();
+        document.getElementById('evalStudentId').value = studentId;
+        document.getElementById('evalReportId').value = reportId || '';
+        
+        // Load current data if editing existing report
+        if (reportId && reportId !== 'null') {
+            loadExistingReportData(reportId);
+        } else {
+            // Load student basic info for new report
+            loadStudentBasicInfo(studentId);
+        }
+        
+        // Show modal
+        modal.classList.remove('hidden');
+    }
+
+    function loadExistingReportData(reportId) {
+        fetch(`{{ url('/') }}/teacher/student-reports/${reportId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const report = data.report;
+                    
+                    // Fill form fields
+                    document.getElementById('newMemorizationDegree').value = report.new_memorization_degree || '';
+                    document.getElementById('reservationDegree').value = report.reservation_degree || '';
+                    document.getElementById('evaluationNotes').value = report.notes || '';
+                    
+                    // Set attendance status if manually set
+                    if (report.manually_evaluated) {
+                        document.getElementById('attendanceStatus').value = report.attendance_status || '';
+                    }
+                    
+                    // Update student info display
+                    updateStudentInfoDisplay(report.student, report);
+                    
+                    // Update auto-calculated attendance info
+                    updateAutoAttendanceInfo(report);
+                    
+                    // Load homework fields for existing report
+                    loadHomeworkFields();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading report:', error);
+                showNotification('خطأ في تحميل بيانات التقرير', 'error');
+            });
+    }
+
+    function loadStudentBasicInfo(studentId) {
+        fetch(`{{ url('/') }}/teacher/students/${studentId}/basic-info`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateStudentInfoDisplay(data.student, null);
+                    // Load homework data to show conditional fields
+                    loadHomeworkFields();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading student info:', error);
+            });
+    }
+
+    function loadHomeworkFields() {
+        fetch(`{{ url('/') }}/teacher/sessions/{{ $session->id }}/homework`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.homework) {
+                    const homework = data.homework;
+                    
+                    // Show/hide fields based on homework configuration
+                    const newMemField = document.getElementById('newMemorizationDegreeField');
+                    const reviewField = document.getElementById('reviewDegreeField');
+                    
+                    if (homework.has_new_memorization) {
+                        newMemField.classList.remove('hidden');
+                    } else {
+                        newMemField.classList.add('hidden');
+                    }
+                    
+                    if (homework.has_review) {
+                        reviewField.classList.remove('hidden');
+                    } else {
+                        reviewField.classList.add('hidden');
+                    }
+                } else {
+                    // No homework, hide all degree fields
+                    document.getElementById('newMemorizationDegreeField').classList.add('hidden');
+                    document.getElementById('reviewDegreeField').classList.add('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading homework fields:', error);
+                // On error, hide fields
+                document.getElementById('newMemorizationDegreeField').classList.add('hidden');
+                document.getElementById('reviewDegreeField').classList.add('hidden');
+            });
+    }
+
+    function updateStudentInfoDisplay(student, report = null) {
+        document.getElementById('studentNameDisplay').textContent = student.name;
+        
+        // Update avatar
+        const avatarDiv = document.getElementById('studentAvatarDisplay');
+        avatarDiv.innerHTML = `
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                ${student.name.charAt(0)}
+            </div>
+        `;
+        
+        // Update attendance info
+        let attendanceText = 'بدون معلومات حضور';
+        if (report) {
+            attendanceText = `الحضور: ${getAttendanceStatusArabic(report.attendance_status)}`;
+            if (report.attendance_percentage) {
+                attendanceText += ` (${Math.round(report.attendance_percentage)}%)`;
+            }
+        }
+        document.getElementById('attendanceInfoDisplay').textContent = attendanceText;
+    }
+
+    function updateAutoAttendanceInfo(report) {
+        document.getElementById('autoEnterTime').textContent = 
+            report.meeting_enter_time ? new Date(report.meeting_enter_time).toLocaleTimeString('ar-SA') : '-';
+        document.getElementById('autoLeaveTime').textContent = 
+            report.meeting_leave_time ? new Date(report.meeting_leave_time).toLocaleTimeString('ar-SA') : '-';
+        document.getElementById('autoAttendanceMinutes').textContent = 
+            report.actual_attendance_minutes || '-';
+        document.getElementById('autoAttendancePercentage').textContent = 
+            report.attendance_percentage ? Math.round(report.attendance_percentage) : '-';
+        document.getElementById('autoConnectionQuality').textContent = 
+            report.connection_quality_score || '-';
+    }
+
+    function getAttendanceStatusArabic(status) {
+        const statusMap = {
+            'present': 'حاضر',
+            'late': 'متأخر',
+            'partial': 'جزئي',
+            'absent': 'غائب'
+        };
+        return statusMap[status] || 'غير محدد';
+    }
+
+    // Modal event handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('studentEvaluationModal');
+        const closeBtn = document.getElementById('closeEvaluationModalBtn');
+        const cancelBtn = document.getElementById('cancelEvaluationBtn');
+        const form = document.getElementById('studentEvaluationForm');
+        
+        // Close modal events
+        closeBtn?.addEventListener('click', function() {
+            modal.classList.add('hidden');
+        });
+        
+        cancelBtn?.addEventListener('click', function() {
+            modal.classList.add('hidden');
+        });
+        
+        // Close on backdrop click
+        modal?.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+        
+        // Form submission
+        form?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const formData = new FormData(notesForm);
+            const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
             
             try {
-                const response = await fetch(`{{ route('teacher.sessions.update-notes', ['subdomain' => request()->route('subdomain'), 'sessionId' => $session->id]) }}`, {
+                const response = await fetch(`{{ url('/') }}/teacher/student-reports/update`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': data._token
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({
+                        ...data,
+                        session_id: {{ $session->id }}
+                    })
                 });
                 
                 const result = await response.json();
                 
                 if (result.success) {
-                    showNotification('تم حفظ الملاحظات بنجاح', 'success');
-                } else {
-                    showNotification('فشل في حفظ الملاحظات', 'error');
-                }
-            } catch (error) {
-                console.error('Error saving notes:', error);
-                showNotification('حدث خطأ أثناء حفظ الملاحظات', 'error');
-            }
-        });
-    }
-    
-    if (completeSessionBtn) {
-        completeSessionBtn.addEventListener('click', async function() {
-            if (!confirm('هل أنت متأكد من إنهاء هذه الجلسة؟')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`{{ route('teacher.sessions.complete', ['subdomain' => request()->route('subdomain'), 'sessionId' => $session->id]) }}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showNotification('تم إنهاء الجلسة بنجاح', 'success');
-                    completeSessionBtn.style.display = 'none';
+                    showNotification('تم حفظ التقييم بنجاح', 'success');
+                    modal.classList.add('hidden');
                     
-                    // Refresh page after 2 seconds
+                    // Reload page to show updated data
                     setTimeout(() => {
                         window.location.reload();
-                    }, 2000);
+                    }, 1000);
                 } else {
-                    showNotification('فشل في إنهاء الجلسة', 'error');
+                    showNotification(result.message || 'خطأ في حفظ التقييم', 'error');
                 }
             } catch (error) {
-                console.error('Error completing session:', error);
-                showNotification('حدث خطأ أثناء إنهاء الجلسة', 'error');
+                console.error('Error saving evaluation:', error);
+                showNotification('خطأ في حفظ التقييم', 'error');
             }
         });
-    }
-});
+    });
 
-function showNotification(message, type = 'info', duration = 5000) {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 transform translate-x-full transition-transform duration-300`;
-    
-    const colors = {
-        success: 'bg-green-500 text-white',
-        error: 'bg-red-500 text-white',
-        warning: 'bg-yellow-500 text-white',
-        info: 'bg-blue-500 text-white'
-    };
-    
-    notification.className += ` ${colors[type] || colors.info}`;
-    
-    notification.innerHTML = `
-        <div class="flex items-center justify-between">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 hover:opacity-70">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.classList.remove('translate-x-full'), 100);
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        setTimeout(() => notification.remove(), 300);
-    }, duration);
-}
+    function viewStudentReport(studentId) {
+        // Show notification for now - will be implemented with backend routes
+        showNotification('تقرير الطالب قيد التطوير', 'info');
+        console.log('View report for student:', studentId);
+    }
+
+    function messageStudent(studentId) {
+        // Show notification for now - will be implemented with backend routes
+        showNotification('إرسال رسالة للطالب قيد التطوير', 'info');
+        console.log('Message student:', studentId);
+    }
+
+    // Notification function
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+        
+        // Set colors based on type
+        const colors = {
+            info: 'bg-blue-500 text-white',
+            success: 'bg-green-500 text-white',
+            warning: 'bg-yellow-500 text-white',
+            error: 'bg-red-500 text-white'
+        };
+        
+        notification.className += ` ${colors[type] || colors.info}`;
+        notification.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="ri-information-line"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white opacity-70 hover:opacity-100">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 5000);
+    }
 </script>
-@endpush
+
+
 
 @endsection

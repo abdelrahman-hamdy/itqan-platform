@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Models\Academy;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -9,6 +10,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -17,7 +19,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Models\Academy;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class TeacherPanelProvider extends PanelProvider
@@ -27,7 +28,8 @@ class TeacherPanelProvider extends PanelProvider
         return $panel
             ->id('teacher')
             ->path('/teacher-panel')
-            ->tenant(Academy::class)
+            ->tenant(Academy::class, slugAttribute: 'subdomain')
+            ->tenantDomain('{tenant:subdomain}.'.config('app.domain'))
             ->colors([
                 'primary' => Color::Green,
                 'success' => Color::Emerald,
@@ -71,7 +73,6 @@ class TeacherPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                // Add role middleware here later: 'role:teacher'
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
@@ -91,7 +92,7 @@ class TeacherPanelProvider extends PanelProvider
                         'headerToolbar' => [
                             'left' => 'prev,next today',
                             'center' => 'title',
-                            'right' => 'dayGridMonth,timeGridWeek,timeGridDay'
+                            'right' => 'dayGridMonth,timeGridWeek,timeGridDay',
                         ],
                         'slotMinTime' => '06:00:00',
                         'slotMaxTime' => '23:00:00',
@@ -103,7 +104,11 @@ class TeacherPanelProvider extends PanelProvider
                             'startTime' => '08:00',
                             'endTime' => '22:00',
                         ],
-                    ])
-            ]);
+                    ]),
+            ])
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => '<script src="'.asset('js/teacher-breadcrumb-fix.js').'"></script>'
+            );
     }
 }
