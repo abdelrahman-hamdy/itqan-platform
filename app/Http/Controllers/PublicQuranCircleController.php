@@ -28,7 +28,7 @@ class PublicQuranCircleController extends Controller
         $circles = QuranCircle::where('academy_id', $academy->id)
             ->where('status', true)
             ->where('enrollment_status', 'open')
-            ->with(['academy', 'quranTeacher.user'])
+            ->with(['academy', 'quranTeacher'])
             ->withCount(['students', 'sessions'])
             ->paginate(12);
 
@@ -51,7 +51,7 @@ class PublicQuranCircleController extends Controller
         $circleModel = QuranCircle::where('id', $circle)
             ->where('academy_id', $academy->id)
             ->where('status', true)
-            ->with(['academy', 'quranTeacher.user', 'students', 'schedule'])
+            ->with(['academy', 'quranTeacher', 'students', 'schedule'])
             ->first();
 
         if (! $circleModel) {
