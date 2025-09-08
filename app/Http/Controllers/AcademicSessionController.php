@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicSession;
-use App\Models\AcademicIndividualLesson;
-use App\Models\InteractiveCourseSession;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\JsonResponse;
 
 class AcademicSessionController extends Controller
 {
@@ -28,7 +26,7 @@ class AcademicSessionController extends Controller
         }
 
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile) {
+        if (! $teacherProfile) {
             abort(404, 'ملف المعلم غير موجود');
         }
 
@@ -70,7 +68,7 @@ class AcademicSessionController extends Controller
             $viewType = 'student';
         }
 
-        if (!$canAccess) {
+        if (! $canAccess) {
             abort(403, 'غير مسموح لك بالوصول لهذه الجلسة');
         }
 
@@ -79,8 +77,11 @@ class AcademicSessionController extends Controller
             'academicTeacher',
             'academicIndividualLesson.academicSubject',
             'academicIndividualLesson.academicGradeLevel',
-            'interactiveCourseSession.course'
+            'interactiveCourseSession.course',
         ]);
+
+        // Automatic meeting creation fallback for ready/ongoing sessions
+        $session->ensureMeetingExists();
 
         return view('teacher.academic-sessions.show', compact('session', 'viewType'));
     }
@@ -94,23 +95,23 @@ class AcademicSessionController extends Controller
         $session = AcademicSession::findOrFail($sessionId);
 
         // Check if user is the student for this session
-        if (!$user->isStudent() || (int) $session->student_id !== (int) $user->id) {
+        if (! $user->isStudent() || (int) $session->student_id !== (int) $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح لك بإضافة تقييم لهذه الجلسة'], 403);
         }
 
         // Validate request
         $request->validate([
-            'feedback' => 'required|string|max:1000'
+            'feedback' => 'required|string|max:1000',
         ]);
 
         // Update session with student feedback
         $session->update([
-            'student_feedback' => $request->feedback
+            'student_feedback' => $request->feedback,
         ]);
 
         return response()->json([
-            'success' => true, 
-            'message' => 'تم إرسال تقييمك بنجاح'
+            'success' => true,
+            'message' => 'تم إرسال تقييمك بنجاح',
         ]);
     }
 
@@ -123,14 +124,14 @@ class AcademicSessionController extends Controller
         $session = AcademicSession::findOrFail($sessionId);
 
         // Check if user is the student for this session
-        if (!$user->isStudent() || (int) $session->student_id !== (int) $user->id) {
+        if (! $user->isStudent() || (int) $session->student_id !== (int) $user->id) {
             return response()->json(['success' => false, 'message' => 'غير مسموح لك بتسليم الواجب لهذه الجلسة'], 403);
         }
 
         // Validate request
         $request->validate([
             'homework_submission' => 'required|string|max:2000',
-            'homework_file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,jpeg,png'
+            'homework_file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,jpeg,png',
         ]);
 
         // Handle file upload
@@ -155,12 +156,12 @@ class AcademicSessionController extends Controller
         );
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'تم تسليم الواجب بنجاح',
             'data' => [
                 'submission' => $request->homework_submission,
-                'file_path' => $homeworkFilePath
-            ]
+                'file_path' => $homeworkFilePath,
+            ],
         ]);
     }
 
@@ -173,12 +174,12 @@ class AcademicSessionController extends Controller
         $session = AcademicSession::findOrFail($sessionId);
 
         // Only teachers can update evaluation
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
         }
 
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
+        if (! $teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بتقييم هذه الجلسة'], 403);
         }
 
@@ -199,7 +200,7 @@ class AcademicSessionController extends Controller
         // Handle file upload
         if ($request->hasFile('homework_file')) {
             $file = $request->file('homework_file');
-            $fileName = time() . '_' . $file->getClientOriginalName();
+            $fileName = time().'_'.$file->getClientOriginalName();
             $filePath = $file->storeAs('academic-homework', $fileName, 'public');
             $validated['homework_file'] = $filePath;
         }
@@ -209,7 +210,7 @@ class AcademicSessionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم حفظ تقييم الجلسة بنجاح',
-            'session' => $session->fresh()
+            'session' => $session->fresh(),
         ]);
     }
 
@@ -222,12 +223,12 @@ class AcademicSessionController extends Controller
         $session = AcademicSession::findOrFail($sessionId);
 
         // Only teachers can update status
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
         }
 
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
+        if (! $teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بتعديل هذه الجلسة'], 403);
         }
 
@@ -238,9 +239,9 @@ class AcademicSessionController extends Controller
         ]);
 
         // Update timestamps based on status
-        if ($validated['status'] === 'ongoing' && !$session->started_at) {
+        if ($validated['status'] === 'ongoing' && ! $session->started_at) {
             $validated['started_at'] = now();
-        } elseif ($validated['status'] === 'completed' && !$session->ended_at) {
+        } elseif ($validated['status'] === 'completed' && ! $session->ended_at) {
             $validated['ended_at'] = now();
             if ($session->started_at) {
                 $validated['actual_duration_minutes'] = $session->started_at->diffInMinutes(now());
@@ -252,7 +253,7 @@ class AcademicSessionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث حالة الجلسة بنجاح',
-            'session' => $session->fresh()
+            'session' => $session->fresh(),
         ]);
     }
 
@@ -265,12 +266,12 @@ class AcademicSessionController extends Controller
         $session = AcademicSession::findOrFail($sessionId);
 
         // Only teachers can reschedule
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
         }
 
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
+        if (! $teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بإعادة جدولة هذه الجلسة'], 403);
         }
 
@@ -292,7 +293,7 @@ class AcademicSessionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم إعادة جدولة الجلسة بنجاح',
-            'session' => $session->fresh()
+            'session' => $session->fresh(),
         ]);
     }
 
@@ -305,12 +306,12 @@ class AcademicSessionController extends Controller
         $session = AcademicSession::findOrFail($sessionId);
 
         // Only teachers can cancel
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
         }
 
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
+        if (! $teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بإلغاء هذه الجلسة'], 403);
         }
 
@@ -330,7 +331,7 @@ class AcademicSessionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم إلغاء الجلسة بنجاح',
-            'session' => $session->fresh()
+            'session' => $session->fresh(),
         ]);
     }
 }

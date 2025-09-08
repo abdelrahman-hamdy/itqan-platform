@@ -2,15 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\QuranSession;
-use App\Models\VideoSettings;
-use App\Models\TeacherVideoSettings;
+use App\Enums\SessionStatus;
 use App\Models\Academy;
-use App\Models\User;
+use App\Models\QuranSession;
+use App\Models\TeacherVideoSettings;
+use App\Models\VideoSettings;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Collection;
 
 class AutoMeetingCreationService
 {
@@ -42,12 +42,12 @@ class AutoMeetingCreationService
 
             foreach ($academies as $academy) {
                 $academyResults = $this->createMeetingsForAcademy($academy);
-                
+
                 $results['total_sessions_processed'] += $academyResults['sessions_processed'];
                 $results['meetings_created'] += $academyResults['meetings_created'];
                 $results['meetings_failed'] += $academyResults['meetings_failed'];
-                
-                if (!empty($academyResults['errors'])) {
+
+                if (! empty($academyResults['errors'])) {
                     $results['errors'][$academy->id] = $academyResults['errors'];
                 }
             }
@@ -57,9 +57,9 @@ class AutoMeetingCreationService
         } catch (\Exception $e) {
             Log::error('Failed to process auto meeting creation for all academies', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             $results['errors']['global'] = $e->getMessage();
         }
 
@@ -82,18 +82,19 @@ class AutoMeetingCreationService
 
         Log::info('Processing academy for auto meeting creation', [
             'academy_id' => $academy->id,
-            'academy_name' => $academy->name
+            'academy_name' => $academy->name,
         ]);
 
         try {
             // Get video settings for this academy
             $videoSettings = VideoSettings::forAcademy($academy);
-            
+
             // Skip if auto creation is disabled
-            if (!$videoSettings->shouldAutoCreateMeetings()) {
+            if (! $videoSettings->shouldAutoCreateMeetings()) {
                 Log::info('Auto meeting creation disabled for academy', [
-                    'academy_id' => $academy->id
+                    'academy_id' => $academy->id,
                 ]);
+
                 return $results;
             }
 
@@ -103,7 +104,7 @@ class AutoMeetingCreationService
 
             Log::info('Found eligible sessions for meeting creation', [
                 'academy_id' => $academy->id,
-                'session_count' => $eligibleSessions->count()
+                'session_count' => $eligibleSessions->count(),
             ]);
 
             // Create meetings for each eligible session
@@ -111,23 +112,23 @@ class AutoMeetingCreationService
                 try {
                     $this->createMeetingForSession($session, $videoSettings);
                     $results['meetings_created']++;
-                    
+
                     Log::info('Meeting created for session', [
                         'session_id' => $session->id,
-                        'academy_id' => $academy->id
+                        'academy_id' => $academy->id,
                     ]);
-                    
+
                 } catch (\Exception $e) {
                     $results['meetings_failed']++;
                     $results['errors'][] = [
                         'session_id' => $session->id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ];
-                    
+
                     Log::error('Failed to create meeting for session', [
                         'session_id' => $session->id,
                         'academy_id' => $academy->id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
@@ -136,12 +137,12 @@ class AutoMeetingCreationService
             Log::error('Failed to process academy for auto meeting creation', [
                 'academy_id' => $academy->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             $results['errors'][] = [
                 'type' => 'academy_processing_error',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
 
@@ -154,25 +155,25 @@ class AutoMeetingCreationService
     private function getEligibleSessions(Academy $academy, VideoSettings $videoSettings): Collection
     {
         $now = now();
-        
+
         // Calculate the time window for meeting creation
         $startTime = $now;
         $endTime = $now->copy()->addHours(2); // Look ahead 2 hours
-        
+
         // Get sessions that:
         // 1. Belong to this academy
         // 2. Are scheduled in the near future
         // 3. Don't already have meeting rooms created
         // 4. Are in 'scheduled' status
         // 5. Should have meetings created now based on the timing settings
-        
+
         $sessions = QuranSession::where('academy_id', $academy->id)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED)
             ->whereNull('meeting_room_name') // No meeting room created yet
             ->whereNotNull('scheduled_at')
             ->whereBetween('scheduled_at', [
                 $startTime,
-                $endTime
+                $endTime,
             ])
             ->with(['academy', 'teacher', 'individualCircle', 'circle'])
             ->get()
@@ -180,16 +181,16 @@ class AutoMeetingCreationService
                 // Check if it's time to create the meeting
                 $scheduledAt = Carbon::parse($session->scheduled_at);
                 $createAt = $videoSettings->getMeetingCreationTime($scheduledAt);
-                
+
                 // Should create meeting if current time is past the creation time
                 return now()->gte($createAt);
             })
             ->filter(function ($session) use ($videoSettings) {
                 // Check time and day restrictions
                 $scheduledAt = Carbon::parse($session->scheduled_at);
-                
-                return $videoSettings->isTimeAllowed($scheduledAt) 
-                    && !$videoSettings->isDayBlocked($scheduledAt);
+
+                return $videoSettings->isTimeAllowed($scheduledAt)
+                    && ! $videoSettings->isDayBlocked($scheduledAt);
             });
 
         return $sessions;
@@ -201,7 +202,7 @@ class AutoMeetingCreationService
     private function createMeetingForSession(QuranSession $session, VideoSettings $videoSettings): void
     {
         DB::beginTransaction();
-        
+
         try {
             // Get teacher settings to merge with academy settings
             $teacherSettings = null;
@@ -226,18 +227,18 @@ class AutoMeetingCreationService
             Log::info('Successfully created meeting for session', [
                 'session_id' => $session->id,
                 'meeting_url' => $meetingUrl,
-                'room_name' => $session->meeting_room_name
+                'room_name' => $session->meeting_room_name,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Failed to create meeting for session', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             throw $e;
         }
     }
@@ -246,8 +247,8 @@ class AutoMeetingCreationService
      * Build meeting options combining academy and teacher settings
      */
     private function buildMeetingOptions(
-        QuranSession $session, 
-        VideoSettings $videoSettings, 
+        QuranSession $session,
+        VideoSettings $videoSettings,
         ?TeacherVideoSettings $teacherSettings
     ): array {
         $options = [
@@ -260,7 +261,7 @@ class AutoMeetingCreationService
         // Apply teacher preferences if available
         if ($teacherSettings) {
             $meetingConfig = $teacherSettings->getMeetingConfiguration($videoSettings);
-            
+
             // Override academy settings with teacher preferences
             $options = array_merge($options, [
                 'max_participants' => $meetingConfig['max_participants'],
@@ -294,21 +295,21 @@ class AutoMeetingCreationService
         try {
             // Find sessions that should have ended
             $expiredSessions = QuranSession::whereNotNull('meeting_room_name')
-                ->where('status', ['scheduled', 'ongoing'])
+                ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING])
                 ->whereNotNull('scheduled_at')
                 ->with('academy')
                 ->get()
                 ->filter(function ($session) {
                     $videoSettings = VideoSettings::forAcademy($session->academy);
-                    
-                    if (!$videoSettings->auto_end_meetings) {
+
+                    if (! $videoSettings->auto_end_meetings) {
                         return false;
                     }
-                    
+
                     $scheduledEndTime = Carbon::parse($session->scheduled_at)
                         ->addMinutes($session->duration_minutes ?? 60);
                     $actualEndTime = $videoSettings->getMeetingEndTime($scheduledEndTime);
-                    
+
                     return now()->gte($actualEndTime);
                 });
 
@@ -317,31 +318,31 @@ class AutoMeetingCreationService
             foreach ($expiredSessions as $session) {
                 try {
                     $success = $session->endMeeting();
-                    
+
                     if ($success) {
                         $results['meetings_ended']++;
                         Log::info('Ended expired meeting', [
                             'session_id' => $session->id,
-                            'room_name' => $session->meeting_room_name
+                            'room_name' => $session->meeting_room_name,
                         ]);
                     } else {
                         $results['meetings_failed_to_end']++;
                         Log::warning('Failed to end expired meeting', [
                             'session_id' => $session->id,
-                            'room_name' => $session->meeting_room_name
+                            'room_name' => $session->meeting_room_name,
                         ]);
                     }
-                    
+
                 } catch (\Exception $e) {
                     $results['meetings_failed_to_end']++;
                     $results['errors'][] = [
                         'session_id' => $session->id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ];
-                    
+
                     Log::error('Error ending expired meeting', [
                         'session_id' => $session->id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
@@ -349,16 +350,17 @@ class AutoMeetingCreationService
         } catch (\Exception $e) {
             Log::error('Failed to cleanup expired meetings', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             $results['errors'][] = [
                 'type' => 'cleanup_process_error',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
 
         Log::info('Expired meetings cleanup completed', $results);
+
         return $results;
     }
 
@@ -370,7 +372,7 @@ class AutoMeetingCreationService
         return [
             'total_auto_generated_meetings' => QuranSession::where('meeting_auto_generated', true)->count(),
             'active_meetings' => QuranSession::whereNotNull('meeting_room_name')
-                ->whereIn('status', ['scheduled', 'ongoing'])
+                ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING])
                 ->count(),
             'meetings_created_today' => QuranSession::where('meeting_auto_generated', true)
                 ->whereDate('meeting_created_at', today())
@@ -389,8 +391,8 @@ class AutoMeetingCreationService
     {
         try {
             $videoSettings = VideoSettings::forAcademy($session->academy);
-            
-            if (!$videoSettings->shouldAutoCreateMeetings()) {
+
+            if (! $videoSettings->shouldAutoCreateMeetings()) {
                 throw new \Exception('Auto meeting creation is disabled for this academy');
             }
 
@@ -407,15 +409,15 @@ class AutoMeetingCreationService
                 'message' => 'Test meeting created successfully',
                 'session_id' => $session->id,
                 'meeting_url' => $session->meeting_link,
-                'room_name' => $session->meeting_room_name
+                'room_name' => $session->meeting_room_name,
             ];
 
         } catch (\Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create test meeting: ' . $e->getMessage(),
+                'message' => 'Failed to create test meeting: '.$e->getMessage(),
                 'session_id' => $session->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }

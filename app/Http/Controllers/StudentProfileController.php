@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicProgress;
-use App\Models\AcademicTeacherProfile;
-use App\Models\AcademicSubscription;
 use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Models\AcademicTeacherProfile;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
@@ -96,7 +96,7 @@ class StudentProfileController extends Controller
                 'subject',
                 'gradeLevel',
             ])
-            ->select('id', 'academy_id', 'title', 'description', 'thumbnail_url', 'difficulty_level', 'subject_id', 'grade_level_id')
+            ->select('id', 'academy_id', 'title', 'description', 'thumbnail_url', 'difficulty_level', 'subject_id', 'grade_level_id', 'price', 'avg_rating', 'total_enrollments')
             ->get();
 
         // Get student's academic private sessions
@@ -222,7 +222,7 @@ class StudentProfileController extends Controller
         }
 
         // Get grade levels for the current academy
-                    $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $user->academy_id)
+        $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $user->academy_id)
             ->active()
             ->ordered()
             ->get();
@@ -832,7 +832,9 @@ class StudentProfileController extends Controller
 
         // Get all available interactive courses for this academy
         $availableCourses = InteractiveCourse::where('academy_id', $academy->id)
-            ->where('status', 'available')
+            ->where('status', 'published')
+            ->where('is_published', true)
+            ->where('enrollment_deadline', '>=', now()->toDateString())
             ->with(['assignedTeacher', 'subject', 'gradeLevel'])
             ->orderBy('created_at', 'desc')
             ->paginate(12);
@@ -851,6 +853,89 @@ class StudentProfileController extends Controller
             'availableCourses',
             'enrolledCourses'
         ));
+    }
+
+    public function showInteractiveCourse($subdomain, $course)
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            abort(401, 'User not authenticated');
+        }
+
+        // Get academy from subdomain parameter
+        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+
+        // Ensure user belongs to this academy (security check)
+        if ($user->academy_id !== $academy->id) {
+            abort(403, 'Access denied to this academy');
+        }
+
+        // Find the course and ensure it belongs to the academy
+        $courseModel = InteractiveCourse::where('id', $course)
+            ->where('academy_id', $academy->id)
+            ->firstOrFail();
+
+        // Load course relationships
+        $courseModel->load([
+            'assignedTeacher',
+            'subject',
+            'gradeLevel',
+            'enrollments.student.user',
+            'sessions' => function ($query) {
+                $query->orderBy('scheduled_date');
+            },
+        ]);
+
+        // Determine user type and permissions
+        $userType = $user->user_type;
+        $isTeacher = $userType === 'academic_teacher';
+        $isStudent = $userType === 'student';
+
+        // For teachers: Check if they are assigned to this course
+        if ($isTeacher) {
+            $teacherProfile = $user->academicTeacherProfile;
+            if (! $teacherProfile || $courseModel->assigned_teacher_id !== $teacherProfile->id) {
+                abort(403, 'Access denied - not assigned to this course');
+            }
+        }
+
+        // For students: Check enrollment and get enrollment data
+        $isEnrolled = null;
+        $enrollmentStats = [];
+
+        if ($isStudent) {
+            $isEnrolled = $courseModel->enrollments->where('student_id', $user->id)->first();
+            $enrollmentStats = [
+                'total_enrolled' => $courseModel->enrollments->count(),
+                'available_spots' => max(0, $courseModel->max_students - $courseModel->enrollments->count()),
+                'enrollment_deadline' => $courseModel->enrollment_deadline,
+            ];
+        }
+
+        // For teachers: Get additional teacher data
+        $teacherData = [];
+        if ($isTeacher) {
+            $teacherData = [
+                'total_students' => $courseModel->enrollments->count(),
+                'total_sessions' => $courseModel->sessions->count(),
+                'completed_sessions' => $courseModel->sessions->where('status', 'completed')->count(),
+                'upcoming_sessions' => $courseModel->sessions->where('session_date', '>', now())->count(),
+            ];
+        }
+
+        // Choose view based on user type
+        $viewName = $isTeacher ? 'teacher.interactive-course-detail' : 'student.interactive-course-detail';
+
+        return view($viewName, [
+            'course' => $courseModel,
+            'isEnrolled' => $isEnrolled,
+            'enrollmentStats' => $enrollmentStats,
+            'teacherData' => $teacherData,
+            'userType' => $userType,
+            'isTeacher' => $isTeacher,
+            'isStudent' => $isStudent,
+        ]);
     }
 
     public function academicTeachers()
@@ -880,22 +965,22 @@ class StudentProfileController extends Controller
             // Get subjects and grade levels
             $teacher->subjects = $teacher->subjects;
             $teacher->gradeLevels = $teacher->gradeLevels;
-            
+
             // Calculate average rating from interactive courses or use profile rating
             $teacher->average_rating = $teacher->rating ?? 4.8;
-            
+
             // Get active students count (this could be expanded based on actual enrollment system)
             $teacher->students_count = $teacher->total_students ?? 0;
-            
+
             // Format hourly rate
             $teacher->hourly_rate = $teacher->session_price_individual;
-            
+
             // Set bio from profile or generate default
             $teacher->bio = $teacher->notes ?? 'معلم أكاديمي مؤهل متخصص في التدريس';
-            
+
             // Set experience years
             $teacher->experience_years = $teacher->teaching_experience_years;
-            
+
             // Set qualification
             $teacher->qualification = $teacher->qualification_degree ?? $teacher->education_level;
 
@@ -948,16 +1033,17 @@ class StudentProfileController extends Controller
             ->with(['academicTeacher', 'academicPackage'])
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             abort(404, 'Academic subscription not found or you do not have access');
         }
 
         // Get sessions for this subscription (like Quran individual circles)
         $upcomingSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', ['scheduled', 'ready', 'unscheduled'])
+            ->whereIn('status', ['scheduled', 'ready', 'unscheduled', 'ongoing']) // Include ongoing sessions
             ->where(function ($query) {
                 $query->where('scheduled_at', '>', now())
-                    ->orWhereNull('scheduled_at'); // Include unscheduled sessions
+                    ->orWhereNull('scheduled_at') // Include unscheduled sessions
+                    ->orWhere('status', 'ongoing'); // Include ongoing sessions regardless of time
             })
             ->orderByRaw('scheduled_at IS NULL') // Put unscheduled sessions first
             ->orderBy('scheduled_at')
@@ -978,11 +1064,10 @@ class StudentProfileController extends Controller
         return view('student.academic-private-lessons.show', compact(
             'subscription',
             'allSessions',
-            'upcomingSessions', 
+            'upcomingSessions',
             'pastSessions'
         ));
     }
-
 
     /**
      * Download certificate for completed course
@@ -1026,11 +1111,11 @@ class StudentProfileController extends Controller
                 'academicTeacher.user',
                 'academicSubscription.academicPackage',
                 'sessionReports',
-                'academy'
+                'academy',
             ])
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             abort(404, 'Academic session not found');
         }
 

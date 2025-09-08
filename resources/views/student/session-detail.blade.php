@@ -3,8 +3,7 @@
 @section('title', $session->title ?? 'تفاصيل الجلسة')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div>
         <!-- Breadcrumb -->
         <nav class="mb-8">
             <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
@@ -91,7 +90,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show notification if session is starting soon
     @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 10 && $session->scheduled_at->diffInMinutes(now()) >= 0)
-        showNotification('الجلسة ستبدأ خلال {{ $session->scheduled_at->diffInMinutes(now()) }} دقيقة', 'info', 8000);
+        @php
+            $timeData = formatTimeRemaining($session->scheduled_at);
+        @endphp
+        showNotification('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', 'info', 8000);
     @endif
 });
 
@@ -128,4 +130,5 @@ function showNotification(message, type = 'info', duration = 5000) {
 </script>
 @endpush
 
+</div>
 @endsection

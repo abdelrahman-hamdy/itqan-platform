@@ -28,7 +28,7 @@ class StudentProgress extends Model
         'notes',
         'bookmarked_at',
         'rating',
-        'review_text'
+        'review_text',
     ];
 
     protected $casts = [
@@ -42,7 +42,7 @@ class StudentProgress extends Model
         'rating' => 'integer',
         'completed_at' => 'datetime',
         'last_accessed_at' => 'datetime',
-        'bookmarked_at' => 'datetime'
+        'bookmarked_at' => 'datetime',
     ];
 
     // Relationships
@@ -75,7 +75,7 @@ class StudentProgress extends Model
     public function scopeInProgress($query)
     {
         return $query->where('is_completed', false)
-                    ->where('progress_percentage', '>', 0);
+            ->where('progress_percentage', '>', 0);
     }
 
     public function scopeNotStarted($query)
@@ -119,11 +119,11 @@ class StudentProgress extends Model
         if ($this->is_completed) {
             return 'مكتمل';
         }
-        
+
         if ($this->progress_percentage > 0) {
             return 'قيد المشاهدة';
         }
-        
+
         return 'لم يبدأ';
     }
 
@@ -132,34 +132,34 @@ class StudentProgress extends Model
         if ($this->is_completed) {
             return 'success';
         }
-        
+
         if ($this->progress_percentage > 0) {
             return 'warning';
         }
-        
+
         return 'secondary';
     }
 
     public function getIsBookmarkedAttribute(): bool
     {
-        return !is_null($this->bookmarked_at);
+        return ! is_null($this->bookmarked_at);
     }
 
     public function getCompletionTimeAttribute(): ?string
     {
-        if (!$this->completed_at) {
+        if (! $this->completed_at) {
             return null;
         }
-        
+
         return $this->completed_at->diffForHumans();
     }
 
     // Methods
-    public function updateProgress(int $currentSeconds, int $totalSeconds = null): self
+    public function updateProgress(int $currentSeconds, ?int $totalSeconds = null): self
     {
         $totalSeconds = $totalSeconds ?? $this->total_time_seconds ?? $currentSeconds;
         $progressPercentage = $totalSeconds > 0 ? min(100, ($currentSeconds / $totalSeconds) * 100) : 0;
-        
+
         $this->update([
             'current_position_seconds' => $currentSeconds,
             'watch_time_seconds' => max($this->watch_time_seconds ?? 0, $currentSeconds),
@@ -167,9 +167,9 @@ class StudentProgress extends Model
             'progress_percentage' => $progressPercentage,
             'last_accessed_at' => now(),
             'is_completed' => $progressPercentage >= 90, // Consider 90% as completed
-            'completed_at' => $progressPercentage >= 90 && !$this->completed_at ? now() : $this->completed_at
+            'completed_at' => $progressPercentage >= 90 && ! $this->completed_at ? now() : $this->completed_at,
         ]);
-        
+
         return $this;
     }
 
@@ -179,27 +179,27 @@ class StudentProgress extends Model
             'is_completed' => true,
             'completed_at' => now(),
             'progress_percentage' => 100,
-            'last_accessed_at' => now()
+            'last_accessed_at' => now(),
         ]);
-        
+
         return $this;
     }
 
     public function addBookmark(): self
     {
         $this->update([
-            'bookmarked_at' => now()
+            'bookmarked_at' => now(),
         ]);
-        
+
         return $this;
     }
 
     public function removeBookmark(): self
     {
         $this->update([
-            'bookmarked_at' => null
+            'bookmarked_at' => null,
         ]);
-        
+
         return $this;
     }
 
@@ -208,17 +208,17 @@ class StudentProgress extends Model
         if ($this->is_bookmarked) {
             return $this->removeBookmark();
         }
-        
+
         return $this->addBookmark();
     }
 
-    public function addRating(int $rating, string $reviewText = null): self
+    public function addRating(int $rating, ?string $reviewText = null): self
     {
         $this->update([
             'rating' => $rating,
-            'review_text' => $reviewText
+            'review_text' => $reviewText,
         ]);
-        
+
         return $this;
     }
 
@@ -228,13 +228,13 @@ class StudentProgress extends Model
         $existingNotes[] = [
             'text' => $note,
             'timestamp' => now()->toISOString(),
-            'position_seconds' => $this->current_position_seconds
+            'position_seconds' => $this->current_position_seconds,
         ];
-        
+
         $this->update([
-            'notes' => json_encode($existingNotes)
+            'notes' => json_encode($existingNotes),
         ]);
-        
+
         return $this;
     }
 
@@ -256,41 +256,41 @@ class StudentProgress extends Model
             'notes' => null,
             'bookmarked_at' => null,
             'rating' => null,
-            'review_text' => null
+            'review_text' => null,
         ]);
-        
+
         return $this;
     }
 
     private function formatDuration(int $seconds): string
     {
         if ($seconds < 60) {
-            return $seconds . ' ثانية';
+            return $seconds.' ثانية';
         }
-        
+
         $minutes = floor($seconds / 60);
         $remainingSeconds = $seconds % 60;
-        
+
         if ($minutes < 60) {
-            return $minutes . ' دقيقة' . ($remainingSeconds > 0 ? ' و ' . $remainingSeconds . ' ثانية' : '');
+            return $minutes.' دقيقة'.($remainingSeconds > 0 ? ' و '.$remainingSeconds.' ثانية' : '');
         }
-        
+
         $hours = floor($minutes / 60);
         $remainingMinutes = $minutes % 60;
-        
-        return $hours . ' ساعة' . 
-               ($remainingMinutes > 0 ? ' و ' . $remainingMinutes . ' دقيقة' : '') .
-               ($remainingSeconds > 0 ? ' و ' . $remainingSeconds . ' ثانية' : '');
+
+        return $hours.' ساعة'.
+               ($remainingMinutes > 0 ? ' و '.$remainingMinutes.' دقيقة' : '').
+               ($remainingSeconds > 0 ? ' و '.$remainingSeconds.' ثانية' : '');
     }
 
     // Static methods
-    public static function getOrCreate(User $user, RecordedCourse $course, Lesson $lesson = null): self
+    public static function getOrCreate(User $user, RecordedCourse $course, ?Lesson $lesson = null): self
     {
         $attributes = [
             'user_id' => $user->id,
             'recorded_course_id' => $course->id,
         ];
-        
+
         if ($lesson) {
             $attributes['lesson_id'] = $lesson->id;
             $attributes['course_section_id'] = $lesson->course_section_id;
@@ -298,13 +298,13 @@ class StudentProgress extends Model
         } else {
             $attributes['progress_type'] = 'course';
         }
-        
+
         return self::firstOrCreate($attributes, [
             'progress_percentage' => 0,
             'watch_time_seconds' => 0,
-            'total_time_seconds' => $lesson ? $lesson->video_duration_seconds : 0,
+            'total_time_seconds' => $lesson ? (($lesson->duration_minutes ?? 0) * 60) : 0,
             'is_completed' => false,
-            'last_accessed_at' => now()
+            'last_accessed_at' => now(),
         ]);
     }
-} 
+}

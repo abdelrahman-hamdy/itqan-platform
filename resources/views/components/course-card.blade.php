@@ -1,0 +1,150 @@
+@props(['course', 'academy', 'showEnrollmentStatus' => false])
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden card-hover">
+  <!-- Course Image -->
+  <div class="relative">
+    @if($course->getFirstMediaUrl('thumbnails'))
+      <img src="{{ $course->getFirstMediaUrl('thumbnails') }}" alt="{{ $course->title }}" class="w-full h-48 object-cover">
+    @elseif($course->thumbnail_url)
+      <img src="{{ $course->thumbnail_url }}" alt="{{ $course->title }}" class="w-full h-48 object-cover">
+    @else
+      <div class="w-full h-48 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+        <i class="ri-play-circle-line text-white text-4xl"></i>
+      </div>
+    @endif
+    
+    <!-- Course Price Badge -->
+    <div class="absolute top-3 right-3">
+      @if($course->is_free)
+        <span class="px-3 py-2 bg-green-500 text-white text-sm rounded-full font-semibold">مجاني</span>
+      @else
+        <span class="px-3 py-2 bg-green-500 text-white text-sm rounded-full font-semibold">
+          {{ number_format($course->price) }} ر.س
+        </span>
+      @endif
+    </div>
+  </div>
+
+  <!-- Course Content -->
+  <div class="p-6">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex-1">
+        <h3 class="font-semibold text-gray-900 mb-1 line-clamp-2">{{ $course->title }}</h3>
+      </div>
+      @if($course->avg_rating)
+        <div class="flex items-center">
+          <i class="ri-star-fill text-yellow-400 text-sm"></i>
+          <span class="text-sm text-gray-600 mr-1">{{ number_format($course->avg_rating, 1) }}</span>
+        </div>
+      @endif
+    </div>
+
+    <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ $course->description }}</p>
+
+    <!-- Course Meta -->
+    <div class="space-y-2 mb-4">
+      @if($course->subject)
+        <div class="flex items-center text-sm text-gray-600">
+          <i class="ri-book-line ml-2"></i>
+          <span>{{ $course->subject->name }}</span>
+        </div>
+      @endif
+      @if($course->gradeLevel || $course->difficulty_level)
+        <div class="flex items-center justify-between text-sm text-gray-600">
+          @if($course->gradeLevel)
+            <div class="flex items-center">
+              <i class="ri-graduation-cap-line ml-2"></i>
+              <span>{{ $course->gradeLevel->name }}</span>
+            </div>
+          @endif
+          @if($course->difficulty_level)
+            <div class="flex items-center">
+              <i class="ri-bar-chart-2-line text-green-600 ml-2"></i>
+              <span>
+                @switch($course->difficulty_level)
+                  @case('easy') سهل @break
+                  @case('medium') متوسط @break
+                  @case('hard') صعب @break
+                  @default {{ $course->difficulty_level }}
+                @endswitch
+              </span>
+            </div>
+          @endif
+        </div>
+      @endif
+      @if($course->total_enrollments)
+        <div class="flex items-center text-sm text-gray-600">
+          <i class="ri-group-line ml-2"></i>
+          <span>{{ $course->total_enrollments }} طالب مسجل</span>
+        </div>
+      @endif
+    </div>
+
+    <!-- Course Footer -->
+    @auth
+      @if(auth()->user()->user_type === 'student')
+        <!-- Student View: Continue Learning Button -->
+        <div class="w-full">
+          @php
+            $enrollment = $course->enrollments->first();
+            $isEnrolled = $enrollment !== null;
+          @endphp
+          
+          @if($isEnrolled)
+            <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
+               class="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center">
+              <i class="ri-play-line ml-2"></i>
+              متابعة التعلم
+            </a>
+          @else
+            <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
+               class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors flex items-center justify-center">
+              <i class="ri-eye-line ml-2"></i>
+              عرض التفاصيل
+            </a>
+          @endif
+        </div>
+      @else
+        <!-- Non-Student View: Price and Details -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            @if($course->price > 0)
+              <span class="text-xl font-bold text-green-600">{{ number_format($course->price) }} ر.س</span>
+              @if($course->original_price && $course->original_price > $course->price)
+                <span class="text-sm text-gray-500 line-through mr-2">{{ number_format($course->original_price) }} ر.س</span>
+              @endif
+            @else
+              <span class="text-xl font-bold text-green-600">مجاني</span>
+            @endif
+          </div>
+          <div class="flex space-x-2 space-x-reverse">
+            <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
+               class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+              عرض التفاصيل
+            </a>
+          </div>
+        </div>
+      @endif
+    @else
+      <!-- Guest View: Price and Details -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          @if($course->price > 0)
+            <span class="text-xl font-bold text-green-600">{{ number_format($course->price) }} ر.س</span>
+            @if($course->original_price && $course->original_price > $course->price)
+              <span class="text-sm text-gray-500 line-through mr-2">{{ number_format($course->original_price) }} ر.س</span>
+            @endif
+          @else
+            <span class="text-xl font-bold text-green-600">مجاني</span>
+          @endif
+        </div>
+        <div class="flex space-x-2 space-x-reverse">
+          <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
+             class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+            عرض التفاصيل
+          </a>
+        </div>
+      </div>
+    @endauth
+  </div>
+</div>

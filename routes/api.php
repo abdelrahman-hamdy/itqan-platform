@@ -1,74 +1,47 @@
 <?php
 
-use App\Http\Controllers\Api\MeetingDataChannelController;
+use App\Http\Controllers\Api\ProgressController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
-
-Route::middleware('auth:web')->get('/user', function (Request $request) {
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Interactive Course Recording API Routes
-Route::middleware(['auth:web', 'role:academic_teacher'])->prefix('interactive-courses')->group(function () {
-    Route::post('/recording/start', [App\Http\Controllers\InteractiveCourseRecordingController::class, 'startRecording']);
-    Route::post('/recording/stop', [App\Http\Controllers\InteractiveCourseRecordingController::class, 'stopRecording']);
-    Route::get('/session/{sessionId}/recordings', [App\Http\Controllers\InteractiveCourseRecordingController::class, 'getSessionRecordings']);
-    Route::delete('/recording/{recordingId}', [App\Http\Controllers\InteractiveCourseRecordingController::class, 'deleteRecording']);
-    Route::get('/recording/{recordingId}/download', [App\Http\Controllers\InteractiveCourseRecordingController::class, 'downloadRecording']);
+// Progress tracking routes - use web middleware for session-based auth
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/courses/{courseId}/progress', [ProgressController::class, 'getCourseProgress']);
+    Route::get('/courses/{courseId}/lessons/{lessonId}/progress', [ProgressController::class, 'getLessonProgress']);
+    Route::post('/courses/{courseId}/lessons/{lessonId}/progress', [ProgressController::class, 'updateLessonProgress']);
+    Route::post('/courses/{courseId}/lessons/{lessonId}/complete', [ProgressController::class, 'markLessonComplete']);
+    Route::post('/courses/{courseId}/lessons/{lessonId}/toggle', [ProgressController::class, 'toggleLessonCompletion']);
+});
+
+// Unified Meeting API routes - used by session detail pages
+// These are NOT separate meeting routes but API endpoints for session pages
+Route::middleware(['web', 'auth', 'verified'])->prefix('sessions')->group(function () {
+    // Meeting management endpoints called from session detail pages
+    Route::post('/meeting/create', [App\Http\Controllers\UnifiedMeetingController::class, 'createMeeting'])
+        ->name('api.sessions.meeting.create');
+
+    Route::post('/meeting/token', [App\Http\Controllers\UnifiedMeetingController::class, 'getParticipantToken'])
+        ->name('api.sessions.meeting.token');
+
+    Route::get('/meeting/info', [App\Http\Controllers\UnifiedMeetingController::class, 'getRoomInfo'])
+        ->name('api.sessions.meeting.info');
+
+    Route::post('/meeting/end', [App\Http\Controllers\UnifiedMeetingController::class, 'endMeeting'])
+        ->name('api.sessions.meeting.end');
+
+    Route::post('/meeting/leave', [App\Http\Controllers\UnifiedMeetingController::class, 'recordLeave'])
+        ->name('api.sessions.meeting.leave');
 });
 
 // Server time endpoint for session timer synchronization
 Route::get('/server-time', function () {
     return response()->json([
         'timestamp' => now()->toISOString(),
-        'unix_timestamp' => now()->timestamp,
+        'unix_timestamp' => now()->getTimestamp(),
         'timezone' => config('app.timezone'),
     ]);
-});
-
-// CSRF token refresh endpoint
-Route::get('/csrf-token', function () {
-    return response()->json([
-        'token' => csrf_token(),
-    ]);
-});
-
-// Removed LiveKit routes - moved to web.php for proper session authentication
-
-// Meeting Data Channel API Routes
-Route::middleware(['auth:web'])->group(function () {
-    // Session-specific data channel routes
-    Route::prefix('sessions/{session}')->group(function () {
-        // Teacher control commands
-        Route::post('commands/send', [MeetingDataChannelController::class, 'sendTeacherCommand']);
-        Route::post('commands/mute-all', [MeetingDataChannelController::class, 'muteAllStudents']);
-        Route::post('commands/allow-microphones', [MeetingDataChannelController::class, 'allowStudentMicrophones']);
-        Route::post('commands/clear-hand-raises', [MeetingDataChannelController::class, 'clearAllHandRaises']);
-        Route::post('commands/grant-microphone', [MeetingDataChannelController::class, 'grantMicrophoneToStudent']);
-
-        // Participant interaction
-        Route::post('acknowledge', [MeetingDataChannelController::class, 'acknowledgeMessage']);
-        Route::get('state', [MeetingDataChannelController::class, 'getMeetingState']);
-        Route::get('commands', [MeetingDataChannelController::class, 'getPendingCommands']);
-
-        // Real-time communication
-        Route::get('events', [MeetingDataChannelController::class, 'streamEvents']);
-
-        // Delivery tracking
-        Route::get('commands/{messageId}/status', [MeetingDataChannelController::class, 'getCommandDeliveryStatus']);
-
-        // Testing
-        Route::post('test-connectivity', [MeetingDataChannelController::class, 'testConnectivity']);
-    });
-});
+})->name('api.server-time');

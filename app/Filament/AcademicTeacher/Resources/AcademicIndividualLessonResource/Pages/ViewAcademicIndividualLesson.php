@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
+
+use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource;
+use Filament\Actions;
+use Filament\Resources\Pages\ViewRecord;
+
+class ViewAcademicIndividualLesson extends ViewRecord
+{
+    protected static string $resource = AcademicIndividualLessonResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\EditAction::make()
+                ->label('تعديل'),
+        ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'تفاصيل الدرس الفردي';
+    }
+}

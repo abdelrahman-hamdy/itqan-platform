@@ -140,7 +140,7 @@ class QuranIndividualCircle extends Model
 
     public function completedSessions(): HasMany
     {
-        return $this->sessions()->where('status', 'completed');
+        return $this->sessions()->whereIn('status', ['completed', 'absent']);
     }
 
     public function templateSessions(): HasMany

@@ -361,7 +361,7 @@ class QuranCircle extends Model
             'memorization' => 'حفظ القرآن',
             'recitation' => 'تلاوة وتجويد',
             'interpretation' => 'تفسير',
-            'arabic_language' => 'اللغة العربية القرآنية',
+            'arabic_language' => 'اللغة العربية',
             'complete' => 'شامل',
         ];
 

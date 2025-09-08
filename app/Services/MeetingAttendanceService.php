@@ -2,13 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\QuranSession;
-use App\Models\User;
-use App\Models\MeetingAttendance;
+use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use App\Models\MeetingAttendance;
+use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class MeetingAttendanceService
 {
@@ -22,7 +21,7 @@ class MeetingAttendanceService
     /**
      * Handle user joining a meeting
      */
-    public function handleUserJoin(QuranSession $session, User $user): bool
+    public function handleUserJoin(MeetingCapable $session, User $user): bool
     {
         try {
             // Create or get existing attendance record
@@ -30,8 +29,8 @@ class MeetingAttendanceService
 
             // Record the join event
             $joinSuccess = $attendance->recordJoin();
-            
-            if (!$joinSuccess) {
+
+            if (! $joinSuccess) {
                 return false;
             }
 
@@ -55,6 +54,7 @@ class MeetingAttendanceService
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -62,7 +62,7 @@ class MeetingAttendanceService
     /**
      * Handle user leaving a meeting
      */
-    public function handleUserLeave(QuranSession $session, User $user): bool
+    public function handleUserLeave(MeetingCapable $session, User $user): bool
     {
         try {
             // Find existing attendance record
@@ -70,18 +70,19 @@ class MeetingAttendanceService
                 ->where('user_id', $user->id)
                 ->first();
 
-            if (!$attendance) {
+            if (! $attendance) {
                 Log::warning('User tried to leave meeting but no attendance record found', [
                     'session_id' => $session->id,
                     'user_id' => $user->id,
                 ]);
+
                 return false;
             }
 
             // Record the leave event
             $leaveSuccess = $attendance->recordLeave();
 
-            if (!$leaveSuccess) {
+            if (! $leaveSuccess) {
                 return false;
             }
 
@@ -100,6 +101,7 @@ class MeetingAttendanceService
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -115,8 +117,8 @@ class MeetingAttendanceService
 
             // Record the join event
             $joinSuccess = $attendance->recordJoin();
-            
-            if (!$joinSuccess) {
+
+            if (! $joinSuccess) {
                 return false;
             }
 
@@ -150,6 +152,7 @@ class MeetingAttendanceService
                 'session_type' => $sessionType,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -166,19 +169,20 @@ class MeetingAttendanceService
                 ->where('session_type', $sessionType)
                 ->first();
 
-            if (!$attendance) {
+            if (! $attendance) {
                 Log::warning('User tried to leave meeting but no attendance record found (polymorphic)', [
                     'session_id' => $session->id,
                     'user_id' => $user->id,
                     'session_type' => $sessionType,
                 ]);
+
                 return false;
             }
 
             // Record the leave event
             $leaveSuccess = $attendance->recordLeave();
 
-            if (!$leaveSuccess) {
+            if (! $leaveSuccess) {
                 return false;
             }
 
@@ -199,6 +203,7 @@ class MeetingAttendanceService
                 'session_type' => $sessionType,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -206,7 +211,7 @@ class MeetingAttendanceService
     /**
      * Calculate final attendance for all participants of a session
      */
-    public function calculateFinalAttendance(QuranSession $session): array
+    public function calculateFinalAttendance(MeetingCapable $session): array
     {
         $results = [
             'session_id' => $session->id,
@@ -255,7 +260,7 @@ class MeetingAttendanceService
             $results['errors'][] = [
                 'general' => $e->getMessage(),
             ];
-            
+
             Log::error('Failed to calculate final attendance for session', [
                 'session_id' => $session->id,
                 'error' => $e->getMessage(),
@@ -281,8 +286,8 @@ class MeetingAttendanceService
                 $sessionResults = $this->calculateFinalAttendance($session);
                 $results['processed_sessions']++;
                 $results['total_attendances_calculated'] += $sessionResults['calculated_count'];
-                
-                if (!empty($sessionResults['errors'])) {
+
+                if (! empty($sessionResults['errors'])) {
                     $results['errors'][$session->id] = $sessionResults['errors'];
                 }
 
@@ -302,13 +307,13 @@ class MeetingAttendanceService
      * Handle reconnection detection
      * If user rejoins within 2 minutes, treat as same session
      */
-    public function handleReconnection(QuranSession $session, User $user): bool
+    public function handleReconnection(MeetingCapable $session, User $user): bool
     {
         $attendance = $session->meetingAttendances()
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$attendance || !$attendance->last_leave_time) {
+        if (! $attendance || ! $attendance->last_leave_time) {
             return false; // Not a reconnection
         }
 
@@ -347,7 +352,7 @@ class MeetingAttendanceService
     /**
      * Get attendance statistics for a session
      */
-    public function getAttendanceStatistics(QuranSession $session): array
+    public function getAttendanceStatistics(MeetingCapable $session): array
     {
         $attendances = $session->meetingAttendances()->calculated()->get();
 
@@ -375,12 +380,12 @@ class MeetingAttendanceService
     public function cleanupOldAttendanceRecords(int $daysOld = 7): int
     {
         $cutoffDate = now()->subDays($daysOld);
-        
+
         $cleaned = MeetingAttendance::where('is_calculated', false)
             ->where('created_at', '<', $cutoffDate)
             ->whereHas('session', function ($query) use ($cutoffDate) {
                 $query->where('scheduled_at', '<', $cutoffDate)
-                      ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED, SessionStatus::ABSENT]);
+                    ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED, SessionStatus::ABSENT]);
             })
             ->delete();
 
@@ -397,7 +402,7 @@ class MeetingAttendanceService
     /**
      * Force recalculation of attendance for a session
      */
-    public function recalculateAttendance(QuranSession $session): array
+    public function recalculateAttendance(MeetingCapable $session): array
     {
         // Reset calculation status
         $session->meetingAttendances()->update([
@@ -412,7 +417,7 @@ class MeetingAttendanceService
     /**
      * Export attendance data for reporting
      */
-    public function exportAttendanceData(QuranSession $session): array
+    public function exportAttendanceData(MeetingCapable $session): array
     {
         $attendances = $session->meetingAttendances()->calculated()->get();
 

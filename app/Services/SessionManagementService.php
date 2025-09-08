@@ -63,7 +63,6 @@ class SessionManagementService
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
             'monthly_session_number' => $monthlySessionNumber,
-            'counts_toward_subscription' => true,
             'created_by' => Auth::id(),
         ]);
     }
@@ -113,7 +112,6 @@ class SessionManagementService
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
             'monthly_session_number' => $monthlySessionNumber,
-            'counts_toward_subscription' => true,
             'created_by' => Auth::id(),
         ]);
     }
@@ -227,7 +225,6 @@ class SessionManagementService
     {
         $totalSessions = $circle->total_sessions;
         $usedSessions = $circle->sessions()
-            ->where('counts_toward_subscription', true)
             ->whereIn('status', ['completed', 'scheduled', 'in_progress'])
             ->count();
 
@@ -241,7 +238,6 @@ class SessionManagementService
     {
         return $circle->sessions()
             ->where('session_month', $month.'-01')
-            ->where('counts_toward_subscription', true)
             ->count();
     }
 
@@ -287,7 +283,6 @@ class SessionManagementService
 
         $sessions = $circle->sessions()
             ->where('session_month', $month.'-01')
-            ->where('counts_toward_subscription', true)
             ->get();
 
         $maxSessions = $circle instanceof QuranCircle

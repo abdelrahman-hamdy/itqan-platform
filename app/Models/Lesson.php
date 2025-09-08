@@ -120,7 +120,10 @@ class Lesson extends Model implements HasMedia
     public function getOrderAttribute(): int
     {
         // Calculate order dynamically based on position in course lessons
-        $lessons = $this->recordedCourse->lessons()->pluck('id')->toArray();
+        // Use direct query to avoid circular reference
+        $lessons = static::where('recorded_course_id', $this->recorded_course_id)
+            ->pluck('id')
+            ->toArray();
         $position = array_search($this->id, $lessons);
 
         return $position !== false ? $position + 1 : 0;

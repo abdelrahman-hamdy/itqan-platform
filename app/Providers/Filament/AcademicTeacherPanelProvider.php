@@ -6,7 +6,6 @@ use App\Models\Academy;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -109,8 +108,8 @@ class AcademicTeacherPanelProvider extends PanelProvider
                     ]),
             ])
             ->renderHook(
-                PanelsRenderHook::HEAD_END,
-                fn (): string => '<script src="'.asset('js/academic-teacher-breadcrumb-fix.js').'"></script>'
+                PanelsRenderHook::TOPBAR_END,
+                fn (): string => view('filament.academic-teacher.render-hooks.messages-count')->render()
             );
     }
 }

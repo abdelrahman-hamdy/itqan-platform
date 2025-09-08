@@ -766,7 +766,6 @@ class Calendar extends Page
                         'session_type' => 'individual',
                         'status' => 'scheduled',
                         'is_scheduled' => true,
-                        'counts_toward_subscription' => true, // CRITICAL: Ensure this counts toward limits
                         'title' => "جلسة فردية - {$circle->student->name}",
                         'scheduled_at' => $sessionDateTime,
                         'duration_minutes' => $circle->session_duration_minutes ?? 60,

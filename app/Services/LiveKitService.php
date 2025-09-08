@@ -187,8 +187,17 @@ class LiveKitService
         array $permissions = []
     ): string {
         try {
+            // Create participant identity and metadata with Arabic name
+            $participantIdentity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
+            $metadata = json_encode([
+                'name' => $user->name, // Full Arabic name
+                'role' => $this->isTeacher($user) ? 'teacher' : 'student',
+                'user_id' => $user->id,
+            ]);
+
             $tokenOptions = (new AccessTokenOptions)
-                ->setIdentity($user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name))
+                ->setIdentity($participantIdentity)
+                ->setMetadata($metadata)
                 ->setTtl(3600 * 3); // 3 hours
 
             $videoGrant = (new VideoGrant)

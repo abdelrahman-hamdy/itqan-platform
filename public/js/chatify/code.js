@@ -271,14 +271,24 @@ let app_modal = function ({
 /**
  *-------------------------------------------------------------
  * Slide to bottom on [action] - e.g. [message received, sent, loaded]
+ * DEBUG: This file was modified at 2025-09-04 14:32
  *-------------------------------------------------------------
  */
-function scrollToBottom(container) {
-  $(container)
-    .stop()
-    .animate({
-      scrollTop: $(container)[0].scrollHeight,
-    });
+function scrollToBottom(container, instant = false) {
+  console.log('🔧 scrollToBottom called with instant:', instant);
+  if (instant) {
+    // Instant scroll with no animation for initial load
+    console.log('✅ Using INSTANT scroll - no animation');
+    $(container)[0].scrollTop = $(container)[0].scrollHeight;
+  } else {
+    // Smooth scroll only for new messages
+    console.log('🔄 Using SMOOTH scroll animation');
+    $(container)
+      .stop()
+      .animate({
+        scrollTop: $(container)[0].scrollHeight,
+      });
+  }
 }
 
 /**
@@ -559,8 +569,10 @@ function fetchMessages(id, newFetch = false) {
       success: (data) => {
         setMessagesLoading(false);
         if (messagesPage == 1) {
+          console.log('🚨 INITIAL CHAT LOAD - Setting messages and scrolling to bottom');
           messagesElement.html(data.messages);
-          scrollToBottom(messagesContainer);
+          console.log('📜 Messages HTML set, now calling scrollToBottom with instant=true');
+          scrollToBottom(messagesContainer, true); // Instant scroll for initial load
         } else {
           const lastMsg = messagesElement.find(
             messagesElement.find(".message-card")[0]

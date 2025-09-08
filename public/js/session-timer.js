@@ -4,6 +4,9 @@
  * Persists state across page reloads and maintains accuracy
  */
 
+// Prevent duplicate declarations
+if (typeof window.SmartSessionTimer === 'undefined') {
+
 class SmartSessionTimer {
     constructor(config) {
         this.sessionId = config.sessionId;
@@ -287,7 +290,8 @@ class SmartSessionTimer {
         if (timing.phase === this.phases.ENDED) {
             timeToShow = 0; // Always show 00:00 when ended
         } else if (timing.phase === this.phases.OVERTIME) {
-            timeToShow = 0; // Always show 00:00 in overtime
+            // FIXED: Show countdown for additional time instead of 00:00
+            timeToShow = timing.timeRemaining; // Show remaining additional time
         } else {
             timeToShow = useCountDown ? timing.timeRemaining : timing.timeElapsed;
         }
@@ -459,3 +463,5 @@ class SmartSessionTimer {
 
 // Export for use in other modules
 window.SmartSessionTimer = SmartSessionTimer;
+
+} // End of duplicate declaration check

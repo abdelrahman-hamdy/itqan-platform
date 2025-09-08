@@ -97,10 +97,11 @@ class QuranIndividualCircleController extends Controller
         ]);
 
         $upcomingSessions = $circleModel->sessions()
-            ->whereIn('status', ['scheduled', 'in_progress', 'unscheduled'])
+            ->whereIn('status', ['scheduled', 'in_progress', 'unscheduled', 'ongoing', 'ready'])
             ->where(function ($query) {
                 $query->where('scheduled_at', '>', now())
-                    ->orWhereNull('scheduled_at'); // Include unscheduled sessions
+                    ->orWhereNull('scheduled_at') // Include unscheduled sessions
+                    ->orWhereIn('status', ['ongoing', 'ready']); // Include ongoing and ready sessions regardless of time
             })
             ->orderByRaw('scheduled_at IS NULL') // Put scheduled sessions first
             ->orderBy('scheduled_at')

@@ -1,12 +1,14 @@
 @props([
     'circle',
-    'viewType' => 'student' // 'student' or 'teacher'
+    'viewType' => 'student', // 'student' or 'teacher'
+    'context' => 'quran' // 'quran' or 'academic'
 ])
 
 @php
     $student = $circle->student;
-    $teacher = $circle->quranTeacher;
+    $teacher = $context === 'academic' ? ($circle->teacher ?? null) : ($circle->quranTeacher ?? null);
     $isTeacher = $viewType === 'teacher';
+    $isAcademic = $context === 'academic';
 @endphp
 
 <!-- Enhanced Individual Circle Header -->
@@ -16,10 +18,18 @@
         <div class="flex-1">
             <div class="flex items-center justify-between mb-2">
                 <h1 class="text-3xl font-bold text-gray-900">
-                    @if($isTeacher)
-                        الحلقة الفردية - {{ $student->name ?? 'طالب' }}
+                    @if($isAcademic)
+                        @if($isTeacher)
+                            الدرس الخاص - {{ $student->name ?? 'طالب' }}
+                        @else
+                            {{ $circle->subject->name ?? $circle->subject_name ?? 'الدرس الخاص' }}
+                        @endif
                     @else
-                        {{ $circle->subscription->package->name ?? 'الحلقة الفردية' }}
+                        @if($isTeacher)
+                            الحلقة الفردية - {{ $student->name ?? 'طالب' }}
+                        @else
+                            {{ $circle->subscription->package->name ?? 'الحلقة الفردية' }}
+                        @endif
                     @endif
                 </h1>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
@@ -30,10 +40,18 @@
             
             <!-- Circle Description -->
             <p class="text-gray-600 mb-4 leading-relaxed">
-                @if($isTeacher)
-                    حلقة فردية لتعليم القرآن الكريم مع الطالب {{ $student->name ?? '' }}
+                @if($isAcademic)
+                    @if($isTeacher)
+                        درس خاص في {{ $circle->subject->name ?? $circle->subject_name ?? 'المادة' }} مع الطالب {{ $student->name ?? '' }}
+                    @else
+                        درس خاص في {{ $circle->subject->name ?? $circle->subject_name ?? 'المادة الأكاديمية' }}
+                    @endif
                 @else
-                    حلقة فردية لتعليم القرآن الكريم
+                    @if($isTeacher)
+                        حلقة فردية لتعليم القرآن الكريم مع الطالب {{ $student->name ?? '' }}
+                    @else
+                        حلقة فردية لتعليم القرآن الكريم
+                    @endif
                 @endif
             </p>
             

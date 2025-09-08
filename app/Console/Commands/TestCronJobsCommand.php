@@ -2,16 +2,16 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Jobs\PrepareUpcomingSessions;
-use App\Jobs\GenerateWeeklyScheduleSessions;
+use App\Enums\SessionStatus;
 use App\Jobs\CleanupExpiredTokens;
-use App\Models\QuranSession;
+use App\Jobs\GenerateWeeklyScheduleSessions;
+use App\Jobs\PrepareUpcomingSessions;
 use App\Models\GoogleToken;
+use App\Models\QuranSession;
 use App\Models\SessionSchedule;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 
 class TestCronJobsCommand extends Command
 {
@@ -55,7 +55,7 @@ class TestCronJobsCommand extends Command
         }
 
         $this->displayResults($results);
-        
+
         return 0;
     }
 
@@ -65,7 +65,7 @@ class TestCronJobsCommand extends Command
     private function testPrepareSessionsJob($dryRun, $verbose): array
     {
         $this->info('📋 اختبار وظيفة تحضير الجلسات القادمة...');
-        
+
         $result = [
             'name' => 'Prepare Upcoming Sessions',
             'status' => 'unknown',
@@ -76,10 +76,10 @@ class TestCronJobsCommand extends Command
         try {
             // Find sessions that need preparation (next 2 hours)
             $upcomingSessions = QuranSession::with(['quranSubscription.student', 'quranCircle', 'teacher'])
-                ->where('status', 'scheduled')
+                ->where('status', SessionStatus::SCHEDULED)
                 ->whereBetween('scheduled_at', [
                     now(),
-                    now()->addHours(2)
+                    now()->addHours(2),
                 ])
                 ->whereNull('preparation_completed_at')
                 ->get();
@@ -91,7 +91,7 @@ class TestCronJobsCommand extends Command
                     'type' => $session->quran_subscription_id ? 'individual' : 'group',
                     'scheduled_at' => $session->scheduled_at->format('Y-m-d H:i:s'),
                     'teacher' => $session->teacher->name ?? 'N/A',
-                    'has_meeting_link' => !empty($session->meeting_link),
+                    'has_meeting_link' => ! empty($session->meeting_link),
                 ];
             });
 
@@ -110,26 +110,27 @@ class TestCronJobsCommand extends Command
                 );
             }
 
-            if (!$dryRun && $upcomingSessions->count() > 0) {
+            if (! $dryRun && $upcomingSessions->count() > 0) {
                 // Dispatch the job
                 PrepareUpcomingSessions::dispatch();
                 $result['message'] = "تم إرسال وظيفة تحضير {$upcomingSessions->count()} جلسة إلى طابور المعالجة";
                 $result['status'] = 'dispatched';
-            } else if ($upcomingSessions->count() > 0) {
+            } elseif ($upcomingSessions->count() > 0) {
                 $result['message'] = "تم العثور على {$upcomingSessions->count()} جلسة تحتاج تحضير (وضع التجربة)";
                 $result['status'] = 'ready';
             } else {
-                $result['message'] = "لا توجد جلسات تحتاج تحضير في الوقت الحالي";
+                $result['message'] = 'لا توجد جلسات تحتاج تحضير في الوقت الحالي';
                 $result['status'] = 'no_action_needed';
             }
 
         } catch (\Exception $e) {
             $result['status'] = 'error';
-            $result['message'] = 'خطأ: ' . $e->getMessage();
+            $result['message'] = 'خطأ: '.$e->getMessage();
             Log::error('Test prepare sessions job failed', ['error' => $e->getMessage()]);
         }
 
         $this->displayJobResult($result);
+
         return $result;
     }
 
@@ -139,7 +140,7 @@ class TestCronJobsCommand extends Command
     private function testGenerateSessionsJob($dryRun, $verbose): array
     {
         $this->info('📅 اختبار وظيفة إنشاء الجلسات الأسبوعية...');
-        
+
         $result = [
             'name' => 'Generate Weekly Sessions',
             'status' => 'unknown',
@@ -154,7 +155,7 @@ class TestCronJobsCommand extends Command
                 ->where('start_date', '<=', now())
                 ->where(function ($query) {
                     $query->whereNull('end_date')
-                          ->orWhere('end_date', '>=', now());
+                        ->orWhere('end_date', '>=', now());
                 })
                 ->get();
 
@@ -189,31 +190,32 @@ class TestCronJobsCommand extends Command
             // Count existing sessions for next 2 weeks
             $existingSessions = QuranSession::whereBetween('scheduled_at', [
                 now(),
-                now()->addWeeks(2)
+                now()->addWeeks(2),
             ])->count();
 
             $result['details']['existing_sessions_next_2_weeks'] = $existingSessions;
 
-            if (!$dryRun && $activeSchedules->count() > 0) {
+            if (! $dryRun && $activeSchedules->count() > 0) {
                 // Dispatch the job
                 GenerateWeeklyScheduleSessions::dispatch(2); // Generate for 2 weeks
                 $result['message'] = "تم إرسال وظيفة إنشاء الجلسات لـ {$activeSchedules->count()} جدولة نشطة";
                 $result['status'] = 'dispatched';
-            } else if ($activeSchedules->count() > 0) {
+            } elseif ($activeSchedules->count() > 0) {
                 $result['message'] = "تم العثور على {$activeSchedules->count()} جدولة نشطة (وضع التجربة)";
                 $result['status'] = 'ready';
             } else {
-                $result['message'] = "لا توجد جدولات نشطة لإنشاء جلسات منها";
+                $result['message'] = 'لا توجد جدولات نشطة لإنشاء جلسات منها';
                 $result['status'] = 'no_schedules';
             }
 
         } catch (\Exception $e) {
             $result['status'] = 'error';
-            $result['message'] = 'خطأ: ' . $e->getMessage();
+            $result['message'] = 'خطأ: '.$e->getMessage();
             Log::error('Test generate sessions job failed', ['error' => $e->getMessage()]);
         }
 
         $this->displayJobResult($result);
+
         return $result;
     }
 
@@ -223,7 +225,7 @@ class TestCronJobsCommand extends Command
     private function testCleanupTokensJob($dryRun, $verbose): array
     {
         $this->info('🧹 اختبار وظيفة تنظيف الرموز المنتهية الصلاحية...');
-        
+
         $result = [
             'name' => 'Cleanup Expired Tokens',
             'status' => 'unknown',
@@ -264,12 +266,12 @@ class TestCronJobsCommand extends Command
                 );
             }
 
-            if (!$dryRun && ($expiredTokens->count() > 0 || $totalTokens > 0)) {
+            if (! $dryRun && ($expiredTokens->count() > 0 || $totalTokens > 0)) {
                 // Dispatch the job
                 CleanupExpiredTokens::dispatch();
                 $result['message'] = "تم إرسال وظيفة تنظيف الرموز ({$expiredTokens->count()} منتهي الصلاحية من {$totalTokens})";
                 $result['status'] = 'dispatched';
-            } else if ($expiredTokens->count() > 0) {
+            } elseif ($expiredTokens->count() > 0) {
                 $result['message'] = "تم العثور على {$expiredTokens->count()} رمز منتهي الصلاحية من أصل {$totalTokens} (وضع التجربة)";
                 $result['status'] = 'ready';
             } else {
@@ -279,11 +281,12 @@ class TestCronJobsCommand extends Command
 
         } catch (\Exception $e) {
             $result['status'] = 'error';
-            $result['message'] = 'خطأ: ' . $e->getMessage();
+            $result['message'] = 'خطأ: '.$e->getMessage();
             Log::error('Test cleanup tokens job failed', ['error' => $e->getMessage()]);
         }
 
         $this->displayJobResult($result);
+
         return $result;
     }
 
@@ -338,13 +341,13 @@ class TestCronJobsCommand extends Command
         $this->line('  • للتحقق من طابور المعالجة: php artisan queue:work');
         $this->line('  • لعرض الوظائف المتعطلة: php artisan queue:failed');
         $this->line('  • لمراقبة الطابور: php artisan queue:monitor');
-        
+
         $this->newLine();
         $this->info('🔧 لاختبار وظيفة واحدة فقط:');
         $this->line('  • php artisan test:cron-jobs --job=prepare');
         $this->line('  • php artisan test:cron-jobs --job=generate');
         $this->line('  • php artisan test:cron-jobs --job=cleanup');
-        
+
         $this->newLine();
         $this->info('⚙️ لتشغيل المُجدوِل يدوياً:');
         $this->line('  • php artisan schedule:run');
@@ -357,22 +360,22 @@ class TestCronJobsCommand extends Command
     public function testScheduler()
     {
         $this->info('🕒 اختبار المُجدوِل (Scheduler)...');
-        
+
         try {
             // Check if any scheduled commands are due
             $schedule = app(\Illuminate\Console\Scheduling\Schedule::class);
             $events = $schedule->events();
-            
-            $this->line("  • عدد الوظائف المجدولة: " . count($events));
-            
+
+            $this->line('  • عدد الوظائف المجدولة: '.count($events));
+
             foreach ($events as $event) {
                 $command = $event->command ?? $event->description ?? 'Unknown';
                 $expression = $event->getExpression();
                 $this->line("    - {$command} ({$expression})");
             }
-            
+
         } catch (\Exception $e) {
-            $this->error('فشل في اختبار المُجدوِل: ' . $e->getMessage());
+            $this->error('فشل في اختبار المُجدوِل: '.$e->getMessage());
         }
     }
 }

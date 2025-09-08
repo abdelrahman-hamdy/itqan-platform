@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 class AcademicSessionMeetingService
 {
     private LiveKitService $livekitService;
+
     private SessionStatusService $sessionStatusService;
 
     public function __construct(
@@ -29,19 +30,19 @@ class AcademicSessionMeetingService
         // Check if meeting room should be active based on timing
         $sessionTiming = $this->getSessionTiming($session);
 
-        if (!$forceCreate && !$sessionTiming['is_available']) {
+        if (! $forceCreate && ! $sessionTiming['is_available']) {
             throw new \Exception($sessionTiming['message']);
         }
 
         // Create or get existing meeting room
-        if (!$session->meeting_room_name) {
+        if (! $session->meeting_room_name) {
             $session->generateMeetingLink();
         }
 
         // Verify room exists on LiveKit server
         $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
 
-        if (!$roomInfo) {
+        if (! $roomInfo) {
             // Room doesn't exist on server, recreate it
             Log::info('Academic meeting room not found on server, recreating', [
                 'session_id' => $session->id,
@@ -63,7 +64,7 @@ class AcademicSessionMeetingService
             'session_timing' => $sessionTiming,
             'join_url' => route('student.academic-sessions.show', [
                 'subdomain' => $session->academy->subdomain,
-                'sessionId' => $session->id
+                'sessionId' => $session->id,
             ]),
         ];
     }
@@ -73,7 +74,7 @@ class AcademicSessionMeetingService
      */
     public function getSessionTiming(AcademicSession $session): array
     {
-        if (!$session->scheduled_at) {
+        if (! $session->scheduled_at) {
             return [
                 'is_available' => true,
                 'is_scheduled' => false,
@@ -285,7 +286,7 @@ class AcademicSessionMeetingService
     {
         $persistenceData = Cache::get($this->getSessionPersistenceKey($session));
 
-        if (!$persistenceData) {
+        if (! $persistenceData) {
             return false;
         }
 
@@ -358,9 +359,25 @@ class AcademicSessionMeetingService
                 $this->livekitService->endMeeting($session->meeting_room_name);
             }
 
+            // FIXED: Check attendance before marking session status for individual sessions
+            if ($session->session_type === 'individual') {
+                // For individual sessions, check if student attended
+                $studentAttended = $this->checkStudentAttendance($session);
+                $sessionStatus = $studentAttended ? SessionStatus::COMPLETED : SessionStatus::ABSENT;
+
+                Log::info('Individual academic session status based on attendance', [
+                    'session_id' => $session->id,
+                    'student_attended' => $studentAttended,
+                    'final_status' => $sessionStatus->value,
+                ]);
+            } else {
+                // For group sessions, always mark as completed
+                $sessionStatus = SessionStatus::COMPLETED;
+            }
+
             // Update session status
             $session->update([
-                'status' => SessionStatus::COMPLETED,
+                'status' => $sessionStatus,
                 'ended_at' => now(),
             ]);
 
@@ -394,7 +411,7 @@ class AcademicSessionMeetingService
      */
     public function getRoomActivity(AcademicSession $session): array
     {
-        if (!$session->meeting_room_name) {
+        if (! $session->meeting_room_name) {
             return [
                 'exists' => false,
                 'participants' => 0,
@@ -404,7 +421,7 @@ class AcademicSessionMeetingService
 
         $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
 
-        if (!$roomInfo) {
+        if (! $roomInfo) {
             return [
                 'exists' => false,
                 'participants' => 0,
@@ -501,7 +518,7 @@ class AcademicSessionMeetingService
             ->filter(function ($session) {
                 // For academic sessions, check if they should be auto-completed
                 // (e.g., if they're more than duration + buffer past their scheduled end)
-                if (!$session->scheduled_at) {
+                if (! $session->scheduled_at) {
                     return false;
                 }
 
@@ -578,7 +595,7 @@ class AcademicSessionMeetingService
             foreach ($transitionSessions as $session) {
                 try {
                     $oldStatus = $session->status;
-                    
+
                     // Check if session should transition to READY
                     if ($session->status === SessionStatus::SCHEDULED && $session->scheduled_at) {
                         $preparationTime = $session->scheduled_at->copy()->subMinutes(15);
@@ -587,7 +604,7 @@ class AcademicSessionMeetingService
                             $transitionsCount++;
                         }
                     }
-                    
+
                     // Check if session should transition to ONGOING
                     if ($session->status === SessionStatus::READY && $session->scheduled_at) {
                         if (now()->gte($session->scheduled_at)) {
@@ -595,7 +612,7 @@ class AcademicSessionMeetingService
                             $transitionsCount++;
                         }
                     }
-                    
+
                 } catch (\Exception $e) {
                     Log::error('Failed to process academic session status transition', [
                         'session_id' => $session->id,
@@ -603,7 +620,7 @@ class AcademicSessionMeetingService
                     ]);
                 }
             }
-            
+
             $results['status_transitions'] = $transitionsCount;
 
             // Terminate expired meetings
@@ -623,5 +640,37 @@ class AcademicSessionMeetingService
         }
 
         return $results;
+    }
+
+    /**
+     * Check if student attended the individual academic session
+     */
+    private function checkStudentAttendance(AcademicSession $session): bool
+    {
+        // Get meeting attendance data
+        $meetingAttendance = MeetingAttendance::where('session_id', $session->id)
+            ->where('user_id', $session->student_id)
+            ->first();
+
+        if (! $meetingAttendance) {
+            return false; // No attendance record = absent
+        }
+
+        // Calculate final attendance to ensure sync is done
+        $meetingAttendance->calculateFinalAttendance();
+
+        // Check if student attended for meaningful duration
+        $minimumMinutes = max(5, ($session->duration_minutes ?? 30) * 0.1); // At least 10% or 5 minutes
+        $actualMinutes = $meetingAttendance->total_duration_minutes;
+
+        Log::info('Checking academic student attendance', [
+            'session_id' => $session->id,
+            'student_id' => $session->student_id,
+            'actual_minutes' => $actualMinutes,
+            'minimum_required' => $minimumMinutes,
+            'attended' => $actualMinutes >= $minimumMinutes,
+        ]);
+
+        return $actualMinutes >= $minimumMinutes;
     }
 }

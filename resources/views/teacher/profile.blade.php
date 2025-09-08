@@ -238,19 +238,56 @@
         @else
           <!-- Academic Teacher Content -->
           
-          <!-- Created Courses -->
-          <div id="created-courses">
+          <!-- Private Academic Lessons -->
+          <div id="academic-private-sessions">
             @include('components.cards.learning-section-card', [
-              'title' => 'دوراتي التي أنشأتها',
-              'subtitle' => 'إدارة الدورات التي قمت بإنشائها وتطويرها',
-              'icon' => 'ri-book-line',
+              'title' => 'الدروس الخاصة',
+              'subtitle' => 'الجلسات الفردية والدروس الخاصة مع الطلاب',
+              'icon' => 'ri-user-3-line',
+              'iconBgColor' => 'bg-orange-500',
+              'hideDots' => true,
+              'items' => $privateLessons->take(3)->map(function($subscription) {
+                return [
+                  'title' => $subscription->student->name ?? 'طالب',
+                  'description' => ($subscription->subject->name ?? $subscription->subject_name ?? 'مادة') . ' - ' . 
+                                   ($subscription->gradeLevel->name ?? $subscription->grade_level_name ?? 'مستوى') . 
+                                   ' - ' . $subscription->sessions_per_week . ' جلسة/أسبوع',
+                  'icon' => 'ri-user-3-line',
+                  'iconBgColor' => 'bg-orange-100',
+                  'iconColor' => 'text-orange-600',
+                  'status' => $subscription->status === 'active' ? 'active' : ($subscription->status === 'pending' ? 'pending' : 'completed'),
+                  'progress' => $subscription->completion_rate ?? 0,
+                  'link' => route('teacher.academic.lessons.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'lesson' => $subscription->id])
+                ];
+              })->toArray(),
+              'footer' => [
+                'text' => 'عرض جميع الدروس الخاصة',
+                'link' => '#'
+              ],
+              'stats' => [
+                ['icon' => 'ri-user-3-line', 'value' => $privateLessons->count() . ' درس خاص'],
+                ['icon' => 'ri-calendar-line', 'value' => $privateLessons->where('status', 'active')->count() . ' درس نشط']
+              ],
+              'emptyTitle' => 'لا توجد دروس خاصة',
+              'emptyDescription' => 'ستظهر الدروس الخاصة مع الطلاب هنا عند حجزها',
+              'emptyActionText' => 'إعداد الدروس الخاصة'
+            ])
+          </div>
+
+          <!-- Interactive Courses -->
+          <div id="interactive-courses">
+            @include('components.cards.learning-section-card', [
+              'title' => 'الدورات التفاعلية',
+              'subtitle' => 'جميع الدورات التفاعلية التي تديرها سواء أنشأتها أو كُلفت بها',
+              'icon' => 'ri-book-open-line',
               'iconBgColor' => 'bg-blue-500',
               'hideDots' => true,
               'items' => collect()
                 ->merge($createdInteractiveCourses->take(2)->map(function($course) {
                   return [
                     'title' => $course->title,
-                    'description' => 'دورة تفاعلية - ' . $course->enrollments->count() . ' طالب مسجل',
+                    'description' => 'دورة من إنشائك - ' . $course->enrollments->count() . ' طالب مسجل' .
+                                     ($course->schedule_days ? ' - ' . $course->schedule_days : ''),
                     'icon' => 'ri-book-open-line',
                     'iconBgColor' => 'bg-blue-100',
                     'iconColor' => 'text-blue-600',
@@ -258,121 +295,30 @@
                     'link' => '#'
                   ];
                 }))
-                ->merge($createdRecordedCourses->take(2)->map(function($course) {
+                ->merge($assignedInteractiveCourses->take(2)->map(function($course) {
                   return [
                     'title' => $course->title,
-                    'description' => 'دورة مسجلة - ' . $course->enrollments->count() . ' طالب مسجل',
-                    'icon' => 'ri-video-line',
-                    'iconBgColor' => 'bg-purple-100',
-                    'iconColor' => 'text-purple-600',
+                    'description' => 'دورة مكلف بها - ' . $course->enrollments->count() . ' طالب مسجل' .
+                                     ($course->schedule_days ? ' - ' . $course->schedule_days : ''),
+                    'icon' => 'ri-graduation-cap-line',
+                    'iconBgColor' => 'bg-blue-100',
+                    'iconColor' => 'text-blue-600',
                     'status' => $course->is_approved ? 'active' : 'pending',
                     'link' => '#'
                   ];
                 }))
                 ->toArray(),
               'footer' => [
-                'text' => 'عرض جميع دوراتي',
+                'text' => 'عرض جميع الدورات التفاعلية',
                 'link' => '#'
               ],
               'stats' => [
-                ['icon' => 'ri-book-line', 'value' => ($createdInteractiveCourses->count() + $createdRecordedCourses->count()) . ' دورة منشأة'],
-                ['icon' => 'ri-user-line', 'value' => ($createdInteractiveCourses->sum(fn($c) => $c->enrollments->count()) + $createdRecordedCourses->sum(fn($c) => $c->enrollments->count())) . ' طالب مسجل']
+                ['icon' => 'ri-book-open-line', 'value' => ($createdInteractiveCourses->count() + $assignedInteractiveCourses->count()) . ' دورة تفاعلية'],
+                ['icon' => 'ri-user-line', 'value' => ($createdInteractiveCourses->sum(fn($c) => $c->enrollments->count()) + $assignedInteractiveCourses->sum(fn($c) => $c->enrollments->count())) . ' طالب مسجل']
               ],
-              'emptyTitle' => 'لم تقم بإنشاء دورات بعد',
-              'emptyDescription' => 'ابدأ بإنشاء دورتك الأولى وشاركها مع الطلاب',
-              'emptyActionText' => 'إنشاء دورة جديدة'
-            ])
-          </div>
-
-          <!-- Assigned Courses -->
-          <div id="assigned-courses">
-            @include('components.cards.learning-section-card', [
-              'title' => 'الدورات المكلف بإدارتها',
-              'subtitle' => 'الدورات التي تم تكليفك بإدارتها من قبل الإدارة',
-              'icon' => 'ri-graduation-cap-line',
-              'iconBgColor' => 'bg-green-500',
-              'hideDots' => true,
-              'items' => collect()
-                ->merge($assignedInteractiveCourses->take(2)->map(function($course) {
-                  return [
-                    'title' => $course->title,
-                    'description' => 'دورة تفاعلية - مكلف من الإدارة',
-                    'icon' => 'ri-graduation-cap-line',
-                    'iconBgColor' => 'bg-green-100',
-                    'iconColor' => 'text-green-600',
-                    'status' => 'active',
-                    'link' => '#'
-                  ];
-                }))
-                ->merge($assignedRecordedCourses->take(2)->map(function($course) {
-                  return [
-                    'title' => $course->title,
-                    'description' => 'دورة مسجلة - مكلف من الإدارة',
-                    'icon' => 'ri-video-line',
-                    'iconBgColor' => 'bg-green-100',
-                    'iconColor' => 'text-green-600',
-                    'status' => 'active',
-                    'link' => '#'
-                  ];
-                }))
-                ->toArray(),
-              'footer' => [
-                'text' => 'عرض جميع الدورات المكلفة',
-                'link' => '#'
-              ],
-              'stats' => [
-                ['icon' => 'ri-graduation-cap-line', 'value' => ($assignedInteractiveCourses->count() + $assignedRecordedCourses->count()) . ' دورة مكلفة'],
-                ['icon' => 'ri-check-line', 'value' => $assignedInteractiveCourses->where('is_approved', true)->count() + $assignedRecordedCourses->where('is_approved', true)->count() . ' دورة نشطة']
-              ],
-              'emptyTitle' => 'لم يتم تكليفك بدورات بعد',
-              'emptyDescription' => 'سيقوم المشرف بتكليفك بالدورات المناسبة لخبرتك',
-              'emptyActionText' => 'تواصل مع المشرف'
-            ])
-          </div>
-
-          <!-- Academic Private Sessions -->
-          <div id="academic-private-sessions">
-            @include('components.cards.learning-section-card', [
-              'title' => 'الجلسات الخاصة الأكاديمية',
-              'subtitle' => 'الجلسات الفردية مع الطلاب في المواد الأكاديمية',
-              'icon' => 'ri-user-3-line',
-              'iconBgColor' => 'bg-orange-500',
-              'hideDots' => true,
-              'items' => [],
-              'footer' => [
-                'text' => 'عرض جميع الجلسات الخاصة',
-                'link' => '#'
-              ],
-              'stats' => [
-                ['icon' => 'ri-user-3-line', 'value' => '0 جلسة نشطة'],
-                ['icon' => 'ri-calendar-line', 'value' => '0 جلسة مجدولة']
-              ],
-              'emptyTitle' => 'لا توجد جلسات خاصة',
-              'emptyDescription' => 'ستظهر الجلسات الخاصة مع الطلاب هنا عند حجزها',
-              'emptyActionText' => 'إعداد الجلسات الخاصة'
-            ])
-          </div>
-
-          <!-- Class Schedule -->
-          <div id="class-schedule">
-            @include('components.cards.learning-section-card', [
-              'title' => 'جدول الحصص الأكاديمية',
-              'subtitle' => 'الحصص الدراسية المجدولة والقادمة',
-              'icon' => 'ri-calendar-2-line',
-              'iconBgColor' => 'bg-indigo-500',
-              'hideDots' => true,
-              'items' => [],
-              'footer' => [
-                'text' => 'عرض الجدول الكامل',
-                'link' => '#'
-              ],
-              'stats' => [
-                ['icon' => 'ri-calendar-line', 'value' => '0 حصة هذا الأسبوع'],
-                ['icon' => 'ri-time-line', 'value' => '0 ساعة تدريس']
-              ],
-              'emptyTitle' => 'لا توجد حصص مجدولة',
-              'emptyDescription' => 'ستظهر الحصص الدراسية المجدولة هنا',
-              'emptyActionText' => 'عرض التقويم'
+              'emptyTitle' => 'لا توجد دورات تفاعلية',
+              'emptyDescription' => 'ستظهر الدورات التفاعلية التي تديرها هنا عند تكليفك بها',
+              'emptyActionText' => 'التواصل مع الإدارة'
             ])
           </div>
         @endif

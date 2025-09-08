@@ -24,7 +24,7 @@ class ContentSecurityPolicy
                 "default-src 'self'",
                 "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://unpkg.com https://js.pusher.com",
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:",
+                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:",
                 "img-src 'self' data: blob: https:",
                 "connect-src 'self' ws: wss: blob: https:",
                 "media-src 'self' blob: data:",

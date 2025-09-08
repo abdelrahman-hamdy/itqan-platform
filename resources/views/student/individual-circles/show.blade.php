@@ -18,17 +18,17 @@
             <!-- Circle Header -->
             <x-circle.individual-header :circle="$individualCircle" view-type="student" />
 
-            <!-- Enhanced Sessions List -->
+            <!-- Quran Sessions Section -->
             @php
                 $allSessions = collect($upcomingSessions)->merge($pastSessions)->sortByDesc('scheduled_at');
             @endphp
             
-            <x-sessions.enhanced-sessions-list 
+            <x-sessions.unified-sessions-section 
                 :sessions="$allSessions" 
                 title="جلسات الحلقة الفردية"
                 view-type="student"
-                :show-tabs="false"
                 :circle="$individualCircle"
+                :show-tabs="false"
                 empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 

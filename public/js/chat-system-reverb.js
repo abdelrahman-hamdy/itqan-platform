@@ -4,13 +4,19 @@
  */
 
 class ChatSystem {
-  constructor(config) {
-    this.config = config;
+  constructor() {
+    this.config = window.chatConfig || {};
     this.ws = null;
     this.connectionStatus = 'disconnected';
     this.currentContactId = null;
     this.messages = new Map();
     this.contacts = [];
+    
+    // Infinite scroll state
+    this.isLoadingMessages = false;
+    this.currentPage = new Map(); // Track current page for each contact
+    this.hasMoreMessages = new Map(); // Track if more messages available for each contact
+    this.lastMessageId = new Map(); // Track last message ID for each contact
     
     console.log('🚀 Initializing Chat System with Reverb WebSocket');
     console.log('📋 Config:', this.config);
@@ -20,9 +26,11 @@ class ChatSystem {
 
   init() {
     this.setupWebSocket();
-    // Don't load contacts immediately - wait for WebSocket connection
+    // Load contacts immediately - don't wait for WebSocket connection
+    this.loadContacts();
     this.setupEventListeners();
     this.setupAutoResize();
+    this.setupInfiniteScroll();
   }
 
   /**
@@ -33,6 +41,7 @@ class ChatSystem {
     
     try {
       const wsUrl = `ws://127.0.0.1:8085/app/vil71wafgpp6do1miwn1?protocol=7&client=js&version=1.0.0`;
+      console.log('🚀 Chat System Reverb Loaded - FIXED SCROLL VERSION');
       console.log('🚀 Connecting to Reverb at:', wsUrl);
       
       this.ws = new WebSocket(wsUrl);
@@ -198,8 +207,6 @@ class ChatSystem {
 
   handleWebSocketMessage(message) {
     console.log('📨 [USER ' + this.config.userId + '] Handling WebSocket message event:', message.event);
-    console.log('📨 [USER ' + this.config.userId + '] Message channel:', message.channel);
-    console.log('📨 [USER ' + this.config.userId + '] Message data:', message.data);
     
     if (message.event === 'pusher:connection_established') {
       console.log('✅ [USER ' + this.config.userId + '] Connection established');
@@ -230,26 +237,30 @@ class ChatSystem {
     
     // Handle different possible message event names
     if (message.event === 'messaging' || message.event === 'message' || message.event === 'new-message') {
-      console.log('📨 New chat message received via WebSocket:', message.data);
+      console.log('📨 New chat message received via WebSocket');
       let messageData;
       
       try {
         messageData = typeof message.data === 'string' ? JSON.parse(message.data) : message.data;
-        console.log('📨 Parsed message data:', messageData);
         
         // Extract the actual message from the HTML response
         if (messageData.message && typeof messageData.message === 'string' && messageData.message.includes('message-card')) {
-          console.log('📨 Received HTML message, extracting data from broadcast');
           // For HTML responses, we'll trigger a message refresh instead
           if (this.currentContactId) {
             this.loadMessages(this.currentContactId);
           }
+          // Always refresh contacts list for sidebar updates
+          console.log('📋 Refreshing contacts for sidebar after HTML message');
+          this.loadContacts();
         } else {
+          // Handle structured message data
+          console.log('📨 Handling structured message data for sidebar');
           this.handleIncomingMessage(messageData);
         }
       } catch (e) {
         console.error('❌ Failed to parse message data:', e);
-        console.log('📨 Raw message data:', message.data);
+        // Still refresh contacts on error
+        this.loadContacts();
       }
       
       return;
@@ -278,33 +289,45 @@ class ChatSystem {
   handleIncomingMessage(data) {
     console.log('💬 Processing incoming WebSocket message:', data);
     
-    // Add message to UI for ANY user (including own messages from other tabs/devices)
-    if (data.from_id && this.currentContactId) {
-      // Only show if we're viewing the conversation with this contact
-      const contactId = data.from_id == this.config.userId ? data.to_id : data.from_id;
-      
-      if (contactId == this.currentContactId) {
-        // Check if message already exists to prevent duplicates
-        const messageExists = document.querySelector(`[data-message-id="${data.id}"]`);
-        if (!messageExists) {
-          this.addMessageToUI({
-            id: data.id,
-            body: data.body,
-            from_id: data.from_id,
-            created_at: data.created_at,
-            attachment: data.attachment
-          }, false);
-        }
-      }
-      
-      // Update contact list for any message
-      this.updateContactLastMessage(contactId, data.body);
-      
-      // Show notification if not in focus and not own message
-      if (!document.hasFocus() && data.from_id !== this.config.userId) {
-        this.showNotification('رسالة جديدة', data.body);
+    if (!data.from_id) {
+      console.warn('⚠️ Received message without from_id:', data);
+      return;
+    }
+    
+    // Determine the contact ID (the other person in the conversation)
+    const contactId = data.from_id == this.config.userId ? data.to_id : data.from_id;
+    
+    // Add message to UI if we're viewing the conversation with this contact
+    if (this.currentContactId && contactId == this.currentContactId) {
+      // Check if message already exists to prevent duplicates
+      const messageExists = document.querySelector(`[data-message-id="${data.id}"]`);
+      if (!messageExists) {
+        this.addMessageToUI({
+          id: data.id,
+          body: data.body,
+          from_id: data.from_id,
+          created_at: data.created_at,
+          attachment: data.attachment
+        }, false);
       }
     }
+    
+    // Always update contact list for any message
+    this.updateContactLastMessage(contactId, data.body);
+    
+    // Show notification if not in focus and not own message
+    if (!document.hasFocus() && data.from_id !== this.config.userId) {
+      this.showNotification('رسالة جديدة', data.body);
+    }
+    
+    // Trigger custom event for top bar updates
+    window.dispatchEvent(new CustomEvent('new-message-received', { 
+      detail: { 
+        fromId: data.from_id, 
+        toId: data.to_id,
+        message: data.body 
+      } 
+    }));
   }
 
   /**
@@ -316,23 +339,23 @@ class ChatSystem {
     
     try {
       const response = await fetch(this.config.apiEndpoints.contacts, {
+        method: 'GET',
         headers: {
-          'X-CSRF-TOKEN': this.config.csrfToken,
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        credentials: 'same-origin'
       });
-      
-      console.log('📞 Contacts response status:', response.status);
-      
-      if (!response.ok) {
-        console.error('❌ Contacts API failed:', response.status, response.statusText);
-        return;
-      }
-      
+
       const data = await response.json();
-      console.log('📞 Contacts data received:', data);
+      console.log('📞 Contacts API response:', data);
       
-      this.contacts = data.contacts || [];
+      // Map contacts and fix property name mismatch (backend 'unseen' -> frontend 'unreadCount')
+      this.contacts = (data.contacts || []).map(contact => ({
+        ...contact,
+        unreadCount: contact.unseen || 0  // Map 'unseen' to 'unreadCount'
+      }));
       console.log('📞 Contacts processed:', this.contacts.length, 'contacts');
       
       this.renderContacts();
@@ -341,9 +364,9 @@ class ChatSystem {
       console.error('❌ Failed to load contacts:', error);
       
       // Show error in UI
-      const contactsList = document.querySelector('.contacts-list');
+      const contactsList = document.querySelector('#contacts-list');
       if (contactsList) {
-        contactsList.innerHTML = '<div class="error-message">فشل في تحميل جهات الاتصال</div>';
+        contactsList.innerHTML = '<div class="error-message p-4 text-center text-red-600">فشل في تحميل جهات الاتصال</div>';
       }
     }
   }
@@ -427,6 +450,11 @@ class ChatSystem {
       </div>
       <div class="flex-shrink-0 text-right">
         <div class="text-xs ${statusColor}">${statusText}</div>
+        ${contact.unreadCount && contact.unreadCount > 0 ? 
+          `<div class="mt-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            ${contact.unreadCount > 9 ? '9+' : contact.unreadCount}
+          </div>` : ''
+        }
       </div>
     `;
     
@@ -507,6 +535,7 @@ class ChatSystem {
    * Select a contact and load conversation
    */
   async selectContact(contactId) {
+    console.log('🎯 FIRST-TIME CHAT CLICK: selectContact called for:', contactId);
     this.currentContactId = contactId;
     
     // Find the selected contact data
@@ -525,8 +554,66 @@ class ChatSystem {
     // Update chat header with contact information
     this.updateChatHeader(selectedContactData);
     
+    // FORCE IMMEDIATE BOTTOM POSITION BEFORE LOADING
+    const messagesListEl = document.querySelector('#messages-list');
+    if (messagesListEl) {
+      console.log('🚨 FORCING INITIAL SCROLL TO BOTTOM BEFORE MESSAGE LOAD');
+      messagesListEl.scrollTop = messagesListEl.scrollHeight;
+    }
+    
     // Load messages for this contact
     await this.loadMessages(contactId);
+    
+    // Mark all messages from this contact as read
+    await this.markMessagesAsRead(contactId);
+    
+    // Clear unread count for selected contact (after marking as read)
+    if (selectedContactData && selectedContactData.unreadCount > 0) {
+      console.log('📋 Clearing unread count for contact:', selectedContactData.name);
+      selectedContactData.unreadCount = 0;
+      // Re-render to update the UI without unread badge
+      this.renderContacts();
+    }
+  }
+
+  /**
+   * Mark all messages from a contact as read
+   */
+  async markMessagesAsRead(contactId) {
+    try {
+      console.log('📖 Marking messages as read for contact:', contactId);
+      
+      const formData = new FormData();
+      formData.append('id', contactId);
+      
+      const response = await fetch('/chat/api/makeSeen', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': this.config.csrfToken,
+          'Accept': 'application/json'
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        console.error('❌ Failed to mark messages as read:', response.status, response.statusText);
+        return false;
+      }
+      
+      const data = await response.json();
+      console.log('✅ Messages marked as read successfully:', data);
+      
+      // Trigger unread count update in top bar
+      window.dispatchEvent(new CustomEvent('messages-marked-read', {
+        detail: { contactId: contactId }
+      }));
+      
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Error marking messages as read:', error);
+      return false;
+    }
   }
 
   /**
@@ -579,13 +666,15 @@ class ChatSystem {
   /**
    * Load messages for a specific contact
    */
-  async loadMessages(contactId) {
+  async loadMessages(contactId, page = 1, prepend = false) {
     try {
-      console.log('💬 Loading messages for contact:', contactId);
+      console.log('💬 Loading messages for contact:', contactId, 'page:', page);
       console.log('💬 Fetch endpoint:', this.config.apiEndpoints.fetchMessages);
       
       const formData = new FormData();
       formData.append('id', contactId);
+      formData.append('page', page);
+      formData.append('per_page', 30); // Standard pagination size
       
       const response = await fetch(this.config.apiEndpoints.fetchMessages, {
         method: 'POST',
@@ -606,11 +695,173 @@ class ChatSystem {
       const data = await response.json();
       console.log('💬 Messages data:', data);
       
-      this.messages.set(contactId, data.messages || []);
-      this.renderMessages(contactId);
+      // Initialize pagination state for this contact
+      if (!this.currentPage.has(contactId)) {
+        this.currentPage.set(contactId, 1);
+        this.hasMoreMessages.set(contactId, true);
+      }
+      
+      // Update pagination state
+      this.currentPage.set(contactId, page);
+      this.hasMoreMessages.set(contactId, page < data.last_page);
+      this.lastMessageId.set(contactId, data.last_message_id);
+      
+      console.log(`📊 Pagination state for contact ${contactId}:`, {
+        currentPage: page,
+        lastPage: data.last_page,
+        hasMore: page < data.last_page,
+        totalMessages: data.total
+      });
+      
+      if (prepend) {
+        // Prepend older messages to beginning of array
+        const existingMessages = this.messages.get(contactId) || [];
+        this.messages.set(contactId, [...(data.messages || []), ...existingMessages]);
+      } else {
+        // Replace messages (initial load)
+        this.messages.set(contactId, data.messages || []);
+      }
+      
+      this.renderMessages(contactId, prepend);
       
     } catch (error) {
       console.error('❌ Failed to load messages:', error);
+    }
+  }
+
+  /**
+   * Setup infinite scroll for messages container
+   */
+  setupInfiniteScroll() {
+    // Use event delegation since messages-list might not exist yet
+    document.addEventListener('scroll', (e) => {
+      const messagesList = document.getElementById('messages-list');
+      if (e.target === messagesList) {
+        // Check if user scrolled to top (with small threshold)
+        if (messagesList.scrollTop <= 10) {
+          console.log('🔝 Scrolled to top, loading older messages...');
+          this.loadOlderMessages();
+        }
+        
+        // Handle scroll-to-bottom button visibility
+        this.handleScrollToBottomButton(messagesList);
+      }
+    }, true); // Use capture phase
+
+    // Setup scroll-to-bottom button click handler
+    this.setupScrollToBottomButton();
+
+    console.log('🔄 Infinite scroll setup completed with event delegation');
+  }
+
+  /**
+   * Setup scroll-to-bottom button functionality
+   */
+  setupScrollToBottomButton() {
+    const scrollButton = document.getElementById('scroll-to-bottom');
+    if (scrollButton) {
+      scrollButton.addEventListener('click', () => {
+        this.scrollToBottomSmooth();
+      });
+    }
+  }
+
+  /**
+   * Handle scroll-to-bottom button visibility
+   */
+  handleScrollToBottomButton(messagesList) {
+    if (!messagesList) return;
+    
+    const scrollButton = document.getElementById('scroll-to-bottom');
+    if (!scrollButton) return;
+    
+    const isNearBottom = messagesList.scrollHeight - messagesList.scrollTop - messagesList.clientHeight < 100;
+    
+    if (isNearBottom) {
+      scrollButton.classList.add('hidden');
+    } else {
+      scrollButton.classList.remove('hidden');
+    }
+  }
+
+  /**
+   * Scroll to bottom with smooth animation (ONLY when user clicks button or new message)
+   */
+  scrollToBottomSmooth() {
+    const messagesList = document.getElementById('messages-list');
+    if (messagesList) {
+      messagesList.scrollTo({
+        top: messagesList.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  /**
+   * Load older messages when user scrolls to top
+   */
+  async loadOlderMessages() {
+    if (!this.currentContactId || this.isLoadingMessages) {
+      return;
+    }
+
+    const hasMore = this.hasMoreMessages.get(this.currentContactId);
+    if (hasMore === false) {
+      console.log('📝 No more messages to load for contact:', this.currentContactId);
+      return;
+    }
+
+    this.isLoadingMessages = true;
+    const currentPage = this.currentPage.get(this.currentContactId) || 1;
+    const nextPage = currentPage + 1;
+
+    console.log('📜 Loading older messages - Page:', nextPage);
+
+    // Show loading indicator at top
+    this.showLoadingIndicator(true);
+
+    try {
+      await this.loadMessages(this.currentContactId, nextPage, true);
+      console.log('✅ Older messages loaded successfully');
+    } catch (error) {
+      console.error('❌ Failed to load older messages:', error);
+      this.isLoadingMessages = false;
+    } finally {
+      this.showLoadingIndicator(false);
+    }
+  }
+
+  /**
+   * Show/hide loading indicator at top of messages
+   */
+  showLoadingIndicator(show) {
+    let indicator = document.getElementById('messages-loading-top');
+    
+    if (!indicator && show) {
+      // Create loading indicator
+      indicator = document.createElement('div');
+      indicator.id = 'messages-loading-top';
+      indicator.className = 'flex items-center justify-center py-3 text-gray-500';
+      indicator.innerHTML = `
+        <div class="flex items-center space-x-2 space-x-reverse">
+          <i class="ri-loader-2-line animate-spin text-blue-600"></i>
+          <span class="text-sm">جارٍ تحميل الرسائل القديمة...</span>
+        </div>
+      `;
+      
+      const messagesList = document.getElementById('messages-list');
+      if (messagesList) {
+        messagesList.prepend(indicator);
+      }
+    }
+    
+    if (indicator) {
+      indicator.style.display = show ? 'flex' : 'none';
+      if (!show) {
+        setTimeout(() => {
+          indicator.remove();
+        }, 300);
+      }
     }
   }
 
@@ -634,51 +885,116 @@ class ChatSystem {
   }
 
   /**
-   * Render messages in chat area
+   * Render messages in chat area - REDESIGNED FOR INSTANT BOTTOM POSITIONING
    */
-  renderMessages(contactId) {
-    console.log('🎬 Rendering messages for contact:', contactId);
+  renderMessages(contactId, prepend = false) {
+    console.log('🎬 Rendering messages for contact:', contactId, 'prepend:', prepend);
     
-    // Show active chat area, hide empty state
     const emptyState = document.querySelector('#chat-empty-state');
     const activeChat = document.querySelector('#active-chat');
-    
-    if (emptyState) emptyState.classList.add('hidden');
-    if (activeChat) activeChat.classList.remove('hidden');
-    
-    // Hide messages loading, show messages list with animation
     const messagesLoadingEl = document.querySelector('#messages-loading');
     const messagesListEl = document.querySelector('#messages-list');
-    
-    if (messagesLoadingEl) messagesLoadingEl.style.display = 'none';
-    if (messagesListEl) {
-      messagesListEl.classList.remove('hidden', 'opacity-0', 'translate-y-2');
-      messagesListEl.classList.add('opacity-100', 'translate-y-0');
-      messagesListEl.style.display = 'block';
-    }
 
     if (!messagesListEl) {
       console.error('❌ #messages-list element not found!');
       return;
     }
 
+    // Show chat UI instantly
+    if (emptyState) emptyState.classList.add('hidden');
+    if (activeChat) activeChat.classList.remove('hidden');
+    if (messagesLoadingEl) messagesLoadingEl.style.display = 'none';
+    
+    // Make messages list visible IMMEDIATELY with no transitions
+    messagesListEl.classList.remove('hidden');
+    messagesListEl.style.display = 'block';
+    messagesListEl.style.opacity = '1';
+    messagesListEl.style.transform = 'none';
+    messagesListEl.style.transition = 'none';
+    messagesListEl.style.scrollBehavior = 'auto';
+    
+    // FORCE IMMEDIATE SCROLL TO BOTTOM AFTER VISIBILITY CHANGE
+    messagesListEl.scrollTop = messagesListEl.scrollHeight;
+
     const messages = this.messages.get(contactId) || [];
-    messagesListEl.innerHTML = '';
     
-    messages.forEach((message, index) => {
-      const messageElement = this.createMessageElement(message);
-      messagesListEl.appendChild(messageElement);
+    if (prepend) {
+      // Infinite loading - preserve scroll position
+      const scrollBefore = messagesListEl.scrollTop;
+      const heightBefore = messagesListEl.scrollHeight;
       
-      // Add staggered animation for each message
+      messagesListEl.innerHTML = '';
+      messages.forEach(message => {
+        const messageElement = this.createMessageElement(message);
+        messageElement.classList.add('animate-in'); // Show immediately
+        messagesListEl.appendChild(messageElement);
+      });
+      
+      // Restore scroll position instantly
+      const heightAfter = messagesListEl.scrollHeight;
+      messagesListEl.scrollTop = scrollBefore + (heightAfter - heightBefore);
+      this.isLoadingMessages = false;
+      
+    } else {
+      // Initial load - INSTANT BOTTOM POSITIONING
+      messagesListEl.innerHTML = '';
+      
+      // Add all messages without any delays
+      messages.forEach(message => {
+        const messageElement = this.createMessageElement(message);
+        messageElement.classList.add('animate-in'); // Show immediately
+        messagesListEl.appendChild(messageElement);
+      });
+      
+      // MULTIPLE AGGRESSIVE SCROLL ATTEMPTS FOR FIRST LOAD
+      console.log('🔥 INITIAL LOAD: Multiple scroll attempts starting...');
+      messagesListEl.scrollTop = messagesListEl.scrollHeight;
+      
+      // Immediate next-frame attempt
+      requestAnimationFrame(() => {
+        messagesListEl.scrollTop = messagesListEl.scrollHeight;
+        console.log('🔄 Frame 1 - Position:', messagesListEl.scrollTop, 'Height:', messagesListEl.scrollHeight);
+        
+        // Double frame attempt
+        requestAnimationFrame(() => {
+          messagesListEl.scrollTop = messagesListEl.scrollHeight;
+          console.log('🔄 Frame 2 - Position:', messagesListEl.scrollTop, 'Height:', messagesListEl.scrollHeight);
+        });
+      });
+      
+      // Also use timeout-based attempts
+      this.scrollToBottomInstant(messagesListEl);
+      console.log('✅ INITIAL SCROLL POSITION SET TO:', messagesListEl.scrollTop, 'HEIGHT:', messagesListEl.scrollHeight);
+    }
+  }
+  
+  /**
+   * Scroll to bottom instantly without any animation or delay
+   */
+  scrollToBottomInstant(messagesListEl) {
+    if (!messagesListEl) {
+      messagesListEl = document.getElementById('messages-list');
+    }
+    if (messagesListEl) {
+      // Force layout calculation and multiple scroll attempts
+      messagesListEl.scrollTop = messagesListEl.scrollHeight;
+      
+      // Multiple immediate attempts to ensure full bottom positioning
       setTimeout(() => {
-        messageElement.classList.add('animate-in');
-      }, index * 50 + 10); // 50ms delay between each message
-    });
-    
-    // Scroll after all animations start
-    setTimeout(() => {
-      this.scrollToBottom();
-    }, messages.length * 50 + 200);
+        messagesListEl.scrollTop = messagesListEl.scrollHeight;
+        console.log('🔄 Retry 1 - Position:', messagesListEl.scrollTop, 'Height:', messagesListEl.scrollHeight);
+      }, 0);
+      
+      setTimeout(() => {
+        messagesListEl.scrollTop = messagesListEl.scrollHeight;
+        console.log('🔄 Retry 2 - Position:', messagesListEl.scrollTop, 'Height:', messagesListEl.scrollHeight);
+      }, 1);
+      
+      setTimeout(() => {
+        messagesListEl.scrollTop = messagesListEl.scrollHeight;
+        console.log('🔄 Final - Position:', messagesListEl.scrollTop, 'Height:', messagesListEl.scrollHeight);
+      }, 10);
+    }
   }
 
   createMessageElement(message) {
@@ -807,16 +1123,16 @@ class ChatSystem {
 
     messagesList.appendChild(messageElement);
     
-    // Add smooth animation
+    // Add smooth animation for NEW messages only
     setTimeout(() => {
-      messageElement.classList.add('animate-in');
+      messageElement.classList.add('new-message-animation');
     }, 10);
     
     console.log('✅ Message added to UI successfully');
     
-    // Scroll after a brief delay to allow animation
+    // Only use smooth scroll for NEW messages, not initial load
     setTimeout(() => {
-      this.scrollToBottom();
+      this.scrollToBottomSmooth();
     }, 100);
   }
 
@@ -1002,10 +1318,42 @@ class ChatSystem {
   }
 
   updateContactLastMessage(contactId, message) {
+    console.log('📋 Updating contact last message for ID:', contactId, 'Message:', message);
+    
     const contact = this.contacts.find(c => c.id == contactId);
     if (contact) {
+      console.log('✅ Found contact to update:', contact.name);
+      
+      // Update contact data
       contact.lastMessage = message;
+      contact.lastMessageTime = new Date().toISOString();
+      
+      // Update unread count if not currently viewing this contact
+      if (this.currentContactId != contactId) {
+        contact.unreadCount = (contact.unreadCount || 0) + 1;
+        console.log('📈 Increased unread count for', contact.name, 'to:', contact.unreadCount);
+      }
+      
+      // Move contact to top of list for recent activity
+      const contactIndex = this.contacts.indexOf(contact);
+      this.contacts.splice(contactIndex, 1);
+      this.contacts.unshift(contact);
+      
+      // Re-render contacts to show updates
+      console.log('🔄 Re-rendering contacts after message update');
       this.renderContacts();
+      
+      // Force a UI refresh to ensure changes are visible
+      setTimeout(() => {
+        console.log('🔄 Force refreshing contact list after 100ms');
+        this.renderContacts();
+      }, 100);
+      
+    } else {
+      console.warn('⚠️ Contact not found for ID:', contactId, 'Available contacts:', this.contacts.map(c => c.id));
+      // If contact not found, refresh the entire contact list
+      console.log('🔄 Contact not found, refreshing entire contact list');
+      this.loadContacts();
     }
   }
 

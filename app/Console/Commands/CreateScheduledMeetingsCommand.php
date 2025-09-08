@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
+use App\Enums\SessionStatus;
 use App\Services\AutoMeetingCreationService;
-use Carbon\Carbon;
+use Illuminate\Console\Command;
 
 class CreateScheduledMeetingsCommand extends Command
 {
@@ -35,7 +35,7 @@ class CreateScheduledMeetingsCommand extends Command
     {
         $startTime = microtime(true);
         $this->info('🎥 Starting automatic meeting creation process...');
-        $this->info('📅 Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('📅 Current time: '.now()->format('Y-m-d H:i:s'));
 
         try {
             // Check for specific academy
@@ -52,36 +52,37 @@ class CreateScheduledMeetingsCommand extends Command
             if ($academyId) {
                 // Process specific academy
                 $academy = \App\Models\Academy::find($academyId);
-                if (!$academy) {
+                if (! $academy) {
                     $this->error("❌ Academy with ID {$academyId} not found");
+
                     return self::FAILURE;
                 }
 
                 $this->info("🏫 Processing academy: {$academy->name} (ID: {$academy->id})");
-                
-                if (!$isDryRun) {
+
+                if (! $isDryRun) {
                     $results = $this->autoMeetingService->createMeetingsForAcademy($academy);
                 } else {
                     $results = $this->simulateAcademyProcessing($academy);
                 }
-                
+
                 $this->displayAcademyResults($results, $isVerbose);
 
             } else {
                 // Process all academies
                 $this->info('🌍 Processing all active academies...');
-                
-                if (!$isDryRun) {
+
+                if (! $isDryRun) {
                     $results = $this->autoMeetingService->createMeetingsForAllAcademies();
                 } else {
                     $results = $this->simulateAllAcademiesProcessing();
                 }
-                
+
                 $this->displayOverallResults($results, $isVerbose);
             }
 
             // Show statistics
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 $this->displayStatistics();
             }
 
@@ -91,20 +92,22 @@ class CreateScheduledMeetingsCommand extends Command
             // Determine exit code based on results
             if (isset($results['meetings_failed']) && $results['meetings_failed'] > 0) {
                 $this->warn('⚠️  Some meetings failed to create. Check logs for details.');
+
                 return self::INVALID;
             }
 
             $this->info('✅ Meeting creation process completed successfully');
+
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('💥 Fatal error during meeting creation: ' . $e->getMessage());
-            
+            $this->error('💥 Fatal error during meeting creation: '.$e->getMessage());
+
             if ($this->getOutput()->isVerbose()) {
                 $this->error('Stack trace:');
                 $this->error($e->getTraceAsString());
             }
-            
+
             return self::FAILURE;
         }
     }
@@ -117,12 +120,12 @@ class CreateScheduledMeetingsCommand extends Command
         $this->info('📊 Academy Results:');
         $this->line("  • Sessions processed: {$results['sessions_processed']}");
         $this->line("  • Meetings created: {$results['meetings_created']}");
-        
+
         if ($results['meetings_failed'] > 0) {
             $this->error("  • Meetings failed: {$results['meetings_failed']}");
         }
 
-        if ($verbose && !empty($results['errors'])) {
+        if ($verbose && ! empty($results['errors'])) {
             $this->warn('  • Errors encountered:');
             foreach ($results['errors'] as $error) {
                 $this->line("    - Session {$error['session_id']}: {$error['error']}");
@@ -139,12 +142,12 @@ class CreateScheduledMeetingsCommand extends Command
         $this->line("  • Academies processed: {$results['total_academies_processed']}");
         $this->line("  • Total sessions processed: {$results['total_sessions_processed']}");
         $this->line("  • Total meetings created: {$results['meetings_created']}");
-        
+
         if ($results['meetings_failed'] > 0) {
             $this->error("  • Total meetings failed: {$results['meetings_failed']}");
         }
 
-        if ($verbose && !empty($results['errors'])) {
+        if ($verbose && ! empty($results['errors'])) {
             $this->warn('  • Errors by academy:');
             foreach ($results['errors'] as $academyId => $errors) {
                 $this->line("    Academy {$academyId}:");
@@ -165,7 +168,7 @@ class CreateScheduledMeetingsCommand extends Command
     private function displayStatistics(): void
     {
         $stats = $this->autoMeetingService->getStatistics();
-        
+
         $this->info('📈 System Statistics:');
         $this->line("  • Total auto-generated meetings: {$stats['total_auto_generated_meetings']}");
         $this->line("  • Active meetings: {$stats['active_meetings']}");
@@ -180,9 +183,10 @@ class CreateScheduledMeetingsCommand extends Command
     private function simulateAcademyProcessing(\App\Models\Academy $academy): array
     {
         $videoSettings = \App\Models\VideoSettings::forAcademy($academy);
-        
-        if (!$videoSettings->shouldAutoCreateMeetings()) {
-            $this->warn("  ⚠️  Auto meeting creation is disabled for this academy");
+
+        if (! $videoSettings->shouldAutoCreateMeetings()) {
+            $this->warn('  ⚠️  Auto meeting creation is disabled for this academy');
+
             return [
                 'academy_id' => $academy->id,
                 'academy_name' => $academy->name,
@@ -196,9 +200,9 @@ class CreateScheduledMeetingsCommand extends Command
         // Count sessions that would be processed
         $now = now();
         $endTime = $now->copy()->addHours(2);
-        
+
         $eligibleCount = \App\Models\QuranSession::where('academy_id', $academy->id)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED)
             ->whereNull('meeting_room_name')
             ->whereNotNull('scheduled_at')
             ->whereBetween('scheduled_at', [$now, $endTime])

@@ -162,18 +162,6 @@
                               placeholder="أضف ملاحظاتك حول أداء الطالب..."></textarea>
                 </div>
                 
-                <!-- Auto-calculated Attendance Info (Read-only) -->
-                <div id="autoAttendanceInfo" class="bg-blue-50 rounded-lg p-4">
-                    <h5 class="font-medium text-blue-900 mb-2">معلومات الحضور المحسوبة تلقائياً</h5>
-                    <div class="text-sm text-blue-800 space-y-1">
-                        <div>وقت الدخول: <span id="autoEnterTime">-</span></div>
-                        <div>وقت الخروج: <span id="autoLeaveTime">-</span></div>
-                        <div>مدة الحضور: <span id="autoAttendanceMinutes">-</span> دقيقة</div>
-                        <div>نسبة الحضور: <span id="autoAttendancePercentage">-</span>%</div>
-                        <div>جودة الاتصال: <span id="autoConnectionQuality">-</span>/100</div>
-                    </div>
-                </div>
-                
                 <div class="flex items-center justify-end space-x-3 space-x-reverse pt-6 border-t border-gray-200">
                     <button type="button" id="cancelEvaluationBtn" 
                             class="px-6 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors font-medium">

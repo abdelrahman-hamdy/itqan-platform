@@ -42,7 +42,7 @@
 }
 
 .chat-interface .message-card.mc-receiver .message-card-content {
-  background: #f3f4f6;
+  background: #fff;
   color: #1f2937;
   border-radius: 18px 18px 18px 4px;
   padding: 12px 16px;
@@ -175,14 +175,19 @@
   color: #6b7280 !important;
 }
 
-/* Smooth animations for chat bubbles */
+/* Instant visibility for chat bubbles - NO animations for initial load */
 .chat-interface .message-card {
   opacity: 1;
   transform: translateY(0);
-  transition: all 0.3s ease-out;
 }
 
 .chat-interface .message-card.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Animation ONLY for new messages (not initial load) */
+.chat-interface .message-card.new-message-animation {
   animation: slideInMessage 0.4s ease-out forwards;
 }
 
@@ -206,9 +211,6 @@
       <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0" style="min-height: 72px;">
         <div class="flex items-center justify-between h-10">
           <h2 class="text-lg font-semibold text-gray-900">جهات الاتصال</h2>
-          <button id="refresh-contacts" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100">
-            <i class="ri-refresh-line text-lg"></i>
-          </button>
         </div>
       </div>
       
@@ -268,9 +270,7 @@
               </div>
             </div>
             <div class="flex items-center space-x-2 space-x-reverse flex-shrink-0">
-              <button id="chat-options" class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100">
-                <i class="ri-more-line text-lg"></i>
-              </button>
+              <!-- Options removed for cleaner interface -->
             </div>
           </div>
         </div>
@@ -283,6 +283,13 @@
           <!-- Gradient Overlay -->
           <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-indigo-600/20 z-1"></div>
           
+          <!-- Scroll to Bottom Button -->
+          <div id="scroll-to-bottom" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30">
+            <button class="bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 rounded-full w-12 h-12 shadow-lg transition-all duration-200 flex items-center justify-center border border-gray-200">
+              <i class="ri-arrow-down-line text-lg"></i>
+            </button>
+          </div>
+          
           <!-- Loading State -->
           <div id="messages-loading" class="absolute inset-0 flex items-center justify-center bg-gray-50 z-20">
             <div class="text-center text-gray-500">
@@ -292,7 +299,7 @@
           </div>
           
           <!-- Messages List -->
-          <div id="messages-list" class="chat-messages-list p-4 space-y-4 hidden min-h-full absolute inset-0 z-2 overflow-y-auto opacity-0 transition-all duration-500 ease-in-out transform translate-y-2">
+          <div id="messages-list" class="chat-messages-list p-4 space-y-4 hidden min-h-full absolute inset-0 z-2 overflow-y-auto" style="scroll-behavior: auto !important; transition: none !important;">
             <!-- Messages will be loaded here -->
           </div>
           

@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use App\Services\LiveKitService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class LiveKitMeetingController extends Controller
 {
@@ -26,14 +27,14 @@ class LiveKitMeetingController extends Controller
         try {
             // Use sessionId from route if provided, otherwise from request body
             $actualSessionId = $sessionId ?? $request->input('session_id');
-            
-            if (!$actualSessionId) {
+
+            if (! $actualSessionId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Session ID is required'
+                    'message' => 'Session ID is required',
                 ], 400);
             }
-            
+
             $validator = Validator::make(array_merge($request->all(), ['session_id' => $actualSessionId]), [
                 'session_id' => 'required|exists:quran_sessions,id',
                 'max_participants' => 'nullable|integer|min:2|max:100',
@@ -45,15 +46,15 @@ class LiveKitMeetingController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
             $session = QuranSession::findOrFail($actualSessionId);
-            
+
             // Check if user has permission to create meeting for this session
             $user = $request->user();
-            
+
             // Debug logging to understand the authorization issue
             Log::info('Meeting creation authorization debug', [
                 'user_id' => $user->id,
@@ -61,18 +62,18 @@ class LiveKitMeetingController extends Controller
                 'session_id' => $session->id,
                 'session_quran_teacher_id' => $session->quran_teacher_id,
                 'session_student_id' => $session->student_id,
-                'can_manage' => $this->canManageSession($user, $session)
+                'can_manage' => $this->canManageSession($user, $session),
             ]);
-            
-            if (!$this->canManageSession($user, $session)) {
+
+            if (! $this->canManageSession($user, $session)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized to manage this session',
                     'debug' => [
                         'user_type' => $user->user_type,
                         'user_id' => $user->id,
-                        'session_teacher_id' => $session->quran_teacher_id
-                    ]
+                        'session_teacher_id' => $session->quran_teacher_id,
+                    ],
                 ], 403);
             }
 
@@ -84,7 +85,7 @@ class LiveKitMeetingController extends Controller
                     'meeting_info' => [
                         'meeting_url' => $session->meeting_link,
                         'room_name' => $session->meeting_room_name,
-                    ]
+                    ],
                 ], 409);
             }
 
@@ -105,7 +106,7 @@ class LiveKitMeetingController extends Controller
                     'meeting_id' => $session->meeting_id,
                     'platform' => 'livekit',
                     'created_at' => now()->toISOString(),
-                ]
+                ],
             ]);
 
         } catch (\Exception $e) {
@@ -117,7 +118,7 @@ class LiveKitMeetingController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create meeting: ' . $e->getMessage()
+                'message' => 'Failed to create meeting: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -128,22 +129,26 @@ class LiveKitMeetingController extends Controller
     public function getParticipantToken(Request $request, int $sessionId): JsonResponse
     {
         try {
-            $session = QuranSession::findOrFail($sessionId);
+            // Get session type from request or try to detect it
+            $sessionType = $request->input('session_type', 'quran');
+
+            // Load the appropriate session model based on type
+            $session = $this->getSessionByType($sessionType, $sessionId);
             $user = $request->user();
 
             // Check if user has permission to join this session
-            if (!$this->canJoinSession($user, $session)) {
+            if (! $this->canJoinSession($user, $session)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized to join this session'
+                    'message' => 'Unauthorized to join this session',
                 ], 403);
             }
 
             // Check if meeting exists
-            if (!$session->meeting_room_name) {
+            if (! $session->meeting_room_name) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Meeting not created yet'
+                    'message' => 'Meeting not created yet',
                 ], 404);
             }
 
@@ -162,10 +167,10 @@ class LiveKitMeetingController extends Controller
                     'access_token' => $token,
                     'server_url' => config('livekit.server_url'),
                     'room_name' => $session->meeting_room_name,
-                    'participant_identity' => $user->id . '_' . \Illuminate\Support\Str::slug($user->first_name . '_' . $user->last_name),
+                    'participant_identity' => $user->id.'_'.\Illuminate\Support\Str::slug($user->first_name.'_'.$user->last_name),
                     'permissions' => $permissions,
                     'expires_at' => now()->addHours(3)->toISOString(),
-                ]
+                ],
             ]);
 
         } catch (\Exception $e) {
@@ -177,7 +182,7 @@ class LiveKitMeetingController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate access token: ' . $e->getMessage()
+                'message' => 'Failed to generate access token: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -192,56 +197,56 @@ class LiveKitMeetingController extends Controller
             $user = $request->user();
 
             // Check if user has permission to access this session
-            if (!$this->canJoinSession($user, $session) && !$this->canManageSession($user, $session)) {
+            if (! $this->canJoinSession($user, $session) && ! $this->canManageSession($user, $session)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized to access this session'
+                    'message' => 'Unauthorized to access this session',
                 ], 403);
             }
 
             // Check if meeting exists
-            if (!$session->meeting_room_name) {
+            if (! $session->meeting_room_name) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Meeting not created yet'
+                    'message' => 'Meeting not created yet',
                 ], 404);
             }
 
             // Get room information from LiveKit service
             $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
-            
-            if (!$roomInfo) {
+
+            if (! $roomInfo) {
                 Log::warning('Room not found on LiveKit server, attempting to recreate', [
                     'session_id' => $sessionId,
                     'room_name' => $session->meeting_room_name,
                 ]);
-                
+
                 // Try to recreate the room since it exists in database but not on LiveKit server
                 try {
                     $session->generateMeetingLink();
-                    
+
                     // Try to get room info again after recreation
                     $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
-                    
-                    if (!$roomInfo) {
+
+                    if (! $roomInfo) {
                         return response()->json([
                             'success' => false,
-                            'message' => 'Unable to get room information after recreation attempt'
+                            'message' => 'Unable to get room information after recreation attempt',
                         ], 404);
                     }
                 } catch (\Exception $e) {
                     Log::error('Failed to recreate room', [
                         'session_id' => $sessionId,
                         'room_name' => $session->meeting_room_name,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
-                    
+
                     // As a final fallback, provide basic room info from database
                     Log::info('Providing fallback room info from database', [
                         'session_id' => $sessionId,
                         'room_name' => $session->meeting_room_name,
                     ]);
-                    
+
                     return response()->json([
                         'success' => true,
                         'room_name' => $session->meeting_room_name,
@@ -253,8 +258,8 @@ class LiveKitMeetingController extends Controller
                             'created_at' => $session->meeting_created_at ?? $session->created_at,
                             'participants' => [],
                             'is_active' => false,
-                            'fallback_mode' => true
-                        ]
+                            'fallback_mode' => true,
+                        ],
                     ]);
                 }
             }
@@ -263,7 +268,7 @@ class LiveKitMeetingController extends Controller
                 'success' => true,
                 'room_name' => $session->meeting_room_name,
                 'server_url' => config('livekit.server_url'),
-                'data' => $roomInfo
+                'data' => $roomInfo,
             ]);
 
         } catch (\Exception $e) {
@@ -275,23 +280,23 @@ class LiveKitMeetingController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get room information: ' . $e->getMessage()
+                'message' => 'Failed to get room information: '.$e->getMessage(),
             ], 500);
         }
     }
-    
+
     private function canManageSession($user, QuranSession $session): bool
     {
         // Super admin can manage any session
         if ($user->user_type === 'super_admin') {
             return true;
         }
-        
+
         // Academy admin can manage sessions in their academy
         if ($user->user_type === 'admin' && $session->academy_id === $user->academy_id) {
             return true;
         }
-        
+
         // Supervisor can manage sessions in their academy
         if ($user->user_type === 'supervisor' && $session->academy_id === $user->academy_id) {
             return true;
@@ -305,7 +310,19 @@ class LiveKitMeetingController extends Controller
         return false;
     }
 
-    private function canJoinSession($user, QuranSession $session): bool
+    /**
+     * Get session by type and ID
+     */
+    private function getSessionByType(string $sessionType, int $sessionId)
+    {
+        return match ($sessionType) {
+            'quran' => QuranSession::findOrFail($sessionId),
+            'academic' => AcademicSession::findOrFail($sessionId),
+            default => throw new \InvalidArgumentException("Invalid session type: {$sessionType}")
+        };
+    }
+
+    private function canJoinSession($user, $session): bool
     {
         // Super admin, admin, and teachers can join any session
         if (in_array($user->user_type, ['super_admin', 'admin', 'quran_teacher', 'academic_teacher'])) {
@@ -317,44 +334,86 @@ class LiveKitMeetingController extends Controller
             if ($session->student_id === $user->id) {
                 return true;
             }
-            
-            // Check if this is a group/circle session and user is enrolled in the circle
-            if ($session->circle_id && $session->circle) {
-                return $session->circle->students()->where('student_id', $user->id)->exists();
+
+            // Handle QuranSession specific checks
+            if ($session instanceof QuranSession) {
+                // Check if this is a group/circle session and user is enrolled in the circle
+                if ($session->circle_id && $session->circle) {
+                    return $session->circle->students()->where('student_id', $user->id)->exists();
+                }
+
+                // Check if this is a subscription session
+                if ($session->quran_subscription_id && $session->subscription) {
+                    return $session->subscription->student_id === $user->id;
+                }
+
+                // Check if this is an individual circle session
+                if ($session->individual_circle_id && $session->individualCircle) {
+                    return $session->individualCircle->student_id === $user->id;
+                }
             }
-            
-            // Check if this is a subscription session
-            if ($session->quran_subscription_id && $session->subscription) {
-                return $session->subscription->student_id === $user->id;
-            }
-            
-            // Check if this is an individual circle session
-            if ($session->individual_circle_id && $session->individualCircle) {
-                return $session->individualCircle->student_id === $user->id;
+
+            // Handle AcademicSession specific checks
+            if ($session instanceof AcademicSession) {
+                // Check if this is an academic subscription session
+                if ($session->academic_subscription_id && $session->academicSubscription) {
+                    return $session->academicSubscription->student_id === $user->id;
+                }
+
+                // Check if this is an individual lesson session
+                if ($session->academic_individual_lesson_id && $session->academicIndividualLesson) {
+                    return $session->academicIndividualLesson->student_id === $user->id;
+                }
+
+                // Check if this is an interactive course session
+                if ($session->interactive_course_session_id && $session->interactiveCourseSession) {
+                    return $session->interactiveCourseSession->students()->where('student_id', $user->id)->exists();
+                }
             }
         }
 
         if ($user->user_type === 'parent') {
             $childrenIds = $user->children()->pluck('id');
-            
+
             // Check individual sessions
             if (in_array($session->student_id, $childrenIds->toArray())) {
                 return true;
             }
-            
-            // Check group/circle sessions
-            if ($session->circle_id && $session->circle) {
-                return $session->circle->students()->whereIn('student_id', $childrenIds)->exists();
+
+            // Handle QuranSession specific checks
+            if ($session instanceof QuranSession) {
+                // Check group/circle sessions
+                if ($session->circle_id && $session->circle) {
+                    return $session->circle->students()->whereIn('student_id', $childrenIds)->exists();
+                }
+
+                // Check subscription sessions
+                if ($session->quran_subscription_id && $session->subscription) {
+                    return in_array($session->subscription->student_id, $childrenIds->toArray());
+                }
+
+                // Check individual circle sessions
+                if ($session->individual_circle_id && $session->individualCircle) {
+                    return in_array($session->individualCircle->student_id, $childrenIds->toArray());
+                }
             }
-            
-            // Check subscription sessions
-            if ($session->quran_subscription_id && $session->subscription) {
-                return in_array($session->subscription->student_id, $childrenIds->toArray());
-            }
-            
-            // Check individual circle sessions
-            if ($session->individual_circle_id && $session->individualCircle) {
-                return in_array($session->individualCircle->student_id, $childrenIds->toArray());
+
+            // Handle AcademicSession specific checks
+            if ($session instanceof AcademicSession) {
+                // Check academic subscription sessions
+                if ($session->academic_subscription_id && $session->academicSubscription) {
+                    return in_array($session->academicSubscription->student_id, $childrenIds->toArray());
+                }
+
+                // Check individual lesson sessions
+                if ($session->academic_individual_lesson_id && $session->academicIndividualLesson) {
+                    return in_array($session->academicIndividualLesson->student_id, $childrenIds->toArray());
+                }
+
+                // Check interactive course sessions
+                if ($session->interactive_course_session_id && $session->interactiveCourseSession) {
+                    return $session->interactiveCourseSession->students()->whereIn('student_id', $childrenIds)->exists();
+                }
             }
         }
 

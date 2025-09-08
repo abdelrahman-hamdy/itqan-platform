@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -63,6 +64,6 @@ class MeetingCommandEvent implements ShouldBroadcast
      */
     public function shouldBroadcast(): bool
     {
-        return $this->session->is_live || $this->session->status->value === 'ongoing';
+        return $this->session->is_live || $this->session->status === SessionStatus::ONGOING;
     }
 }

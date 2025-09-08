@@ -264,108 +264,7 @@
           <!-- Courses Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($debugRecordedCourses->take(6) as $course)
-              @php
-                $enrollment = $course->enrollments->first();
-                $isEnrolled = $enrollment !== null;
-                $progressPercentage = $isEnrolled ? ($enrollment->progress_percentage ?? 0) : 0;
-                $instructorName = $course->instructor && $course->instructor->user 
-                  ? trim($course->instructor->user->first_name . ' ' . $course->instructor->user->last_name)
-                  : 'مدرب غير محدد';
-              @endphp
-              
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
-                <!-- Course Image -->
-                <div class="relative h-40 bg-gradient-to-br from-primary to-secondary">
-                  @if($course->featured_image)
-                    <img src="{{ $course->featured_image }}" alt="{{ $course->title }}" 
-                         class="w-full h-full object-cover">
-                  @endif
-                  
-                  <!-- Status Badge -->
-                  <div class="absolute top-3 right-3">
-                    @if($isEnrolled)
-                      <span class="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
-                        مسجل
-                      </span>
-                    @else
-                      <span class="px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded-full">
-                        متاح
-                      </span>
-                    @endif
-                  </div>
-
-                  <!-- Duration Badge -->
-                  @if($course->duration_hours)
-                    <div class="absolute bottom-3 left-3">
-                      <span class="px-2 py-1 bg-black bg-opacity-60 text-white text-xs rounded-md">
-                        <i class="ri-time-line ml-1"></i>
-                        {{ $course->duration_hours }} ساعة
-                      </span>
-                    </div>
-                  @endif
-                </div>
-
-                <!-- Course Content -->
-                <div class="p-4">
-                  <div class="mb-3">
-                    <h3 class="font-bold text-base text-gray-900 mb-1 line-clamp-2">
-                      {{ $course->title }}
-                    </h3>
-                    <p class="text-gray-600 text-sm line-clamp-2">
-                      {{ $course->description }}
-                    </p>
-                  </div>
-
-                  <!-- Course Meta -->
-                  <div class="flex items-center text-sm text-gray-500 mb-3">
-                    <i class="ri-user-line ml-1"></i>
-                    <span>{{ $instructorName }}</span>
-                  </div>
-
-                  <!-- Progress Bar (if enrolled) -->
-                  @if($isEnrolled && $progressPercentage > 0)
-                    <div class="mb-3">
-                      <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600">التقدم</span>
-                        <span class="text-primary font-medium">{{ $progressPercentage }}%</span>
-                      </div>
-                      <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-primary h-2 rounded-full transition-all duration-300" 
-                             style="width: {{ $progressPercentage }}%"></div>
-                      </div>
-                    </div>
-                  @endif
-
-                  <!-- Course Stats -->
-                  <div class="flex justify-between text-sm text-gray-500 mb-4">
-                    <div class="flex items-center">
-                      <i class="ri-play-circle-line ml-1"></i>
-                      <span>{{ $course->total_lessons ?? 0 }} درس</span>
-                    </div>
-                    @if($course->difficulty_level)
-                      <div class="flex items-center">
-                        <i class="ri-bar-chart-line ml-1"></i>
-                        <span>{{ $course->difficulty_level }}</span>
-                      </div>
-                    @endif
-                  </div>
-
-                  <!-- Action Button -->
-                  <div class="text-center">
-                    @if($isEnrolled)
-                      <a href="#" class="inline-block w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                        <i class="ri-play-line ml-1"></i>
-                        متابعة التعلم
-                      </a>
-                    @else
-                      <a href="#" class="inline-block w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm">
-                        <i class="ri-add-circle-line ml-1"></i>
-                        التسجيل في الكورس
-                      </a>
-                    @endif
-                  </div>
-                </div>
-              </div>
+              <x-course-card :course="$course" :academy="auth()->user()->academy" />
             @endforeach
           </div>
         @else
@@ -551,6 +450,7 @@
   <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-3 rounded-full shadow-lg z-50">
     <i class="ri-menu-line text-xl"></i>
   </button>
+
 
 </body>
 </html> 

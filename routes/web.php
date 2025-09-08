@@ -7,10 +7,9 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RecordedCourseController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Models\Academy;
-use App\Models\QuranSession;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Route;
 
 // Include authentication routes
 require __DIR__.'/auth.php';
@@ -88,13 +87,13 @@ Route::get('/api/sessions/{session}/debug-resolution', function (Request $reques
     // Check what exists in both tables
     $academicSession = \App\Models\AcademicSession::find($session);
     $quranSession = \App\Models\QuranSession::find($session);
-    
+
     // Test our current resolution logic
     $resolvedSession = \App\Models\AcademicSession::find($session);
-    if (!$resolvedSession) {
+    if (! $resolvedSession) {
         $resolvedSession = \App\Models\QuranSession::find($session);
     }
-    
+
     return response()->json([
         'success' => true,
         'message' => 'DEBUG: Session Resolution Analysis',
@@ -104,7 +103,7 @@ Route::get('/api/sessions/{session}/debug-resolution', function (Request $reques
             'id' => $academicSession->id,
             'status' => $academicSession->getRawOriginal('status'),
             'scheduled_at' => $academicSession->scheduled_at,
-            'class' => get_class($academicSession)
+            'class' => get_class($academicSession),
         ] : null,
         'quran_session_exists' => $quranSession ? true : false,
         'quran_session_data' => $quranSession ? [
@@ -112,7 +111,7 @@ Route::get('/api/sessions/{session}/debug-resolution', function (Request $reques
             'status' => $quranSession->getRawOriginal('status'),
             'scheduled_at' => $quranSession->scheduled_at,
             'session_type' => $quranSession->session_type,
-            'class' => get_class($quranSession)
+            'class' => get_class($quranSession),
         ] : null,
         'current_logic_resolves_to' => $resolvedSession ? [
             'id' => $resolvedSession->id,
@@ -128,19 +127,18 @@ Route::get('/api/sessions/{session}/debug-resolution', function (Request $reques
     ]);
 });
 
-
 // Session-type-specific status APIs (these are clearer and avoid conflicts)
 Route::get('/api/academic-sessions/{session}/status', function (Request $request, $session) {
-    if (!auth()->check()) {
+    if (! auth()->check()) {
         return response()->json([
             'message' => 'يجب تسجيل الدخول لعرض حالة الجلسة',
             'status' => 'unauthenticated',
             'can_join' => false,
             'button_text' => 'يجب تسجيل الدخول',
-            'button_class' => 'bg-gray-400 cursor-not-allowed'
+            'button_class' => 'bg-gray-400 cursor-not-allowed',
         ], 401);
     }
-    
+
     $user = $request->user();
     $userType = $user->hasRole('academic_teacher') ? 'academic_teacher' : 'student';
     $session = \App\Models\AcademicSession::findOrFail($session);
@@ -159,9 +157,9 @@ Route::get('/api/academic-sessions/{session}/status', function (Request $request
 
     // Check if user can join meeting based on timing and status
     if ($userType === 'academic_teacher' && in_array($session->status, [
-        App\Enums\SessionStatus::READY, 
+        App\Enums\SessionStatus::READY,
         App\Enums\SessionStatus::ONGOING,
-        App\Enums\SessionStatus::SCHEDULED
+        App\Enums\SessionStatus::SCHEDULED,
     ])) {
         if ($session->scheduled_at) { // NULL check
             $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
@@ -172,8 +170,8 @@ Route::get('/api/academic-sessions/{session}/status', function (Request $request
         }
     } elseif ($userType === 'student' && in_array($session->status, [
         App\Enums\SessionStatus::READY,
-        App\Enums\SessionStatus::ONGOING, 
-        App\Enums\SessionStatus::SCHEDULED
+        App\Enums\SessionStatus::ONGOING,
+        App\Enums\SessionStatus::SCHEDULED,
     ])) {
         if ($session->scheduled_at) { // NULL check
             $sessionEnd = $session->scheduled_at->copy()->addMinutes(($session->duration_minutes ?? 30) + $endingBufferMinutes);
@@ -185,34 +183,35 @@ Route::get('/api/academic-sessions/{session}/status', function (Request $request
 
     // Determine message and button state based on session status
     $statusValue = is_object($session->status) && method_exists($session->status, 'value') ? $session->status->value : $session->status;
-    
+
     switch ($session->status) {
         case App\Enums\SessionStatus::READY:
-            $message = 'الجلسة جاهزة للانضمام';
-            $buttonText = $canJoinMeeting ? 'انضم للجلسة' : 'غير متاح';
-            $buttonClass = $canJoinMeeting ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed';
+            $message = 'الجلسة جاهزة';
+            $buttonText = 'غير متاح';
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $canJoinMeeting = false;
             break;
-        
+
         case App\Enums\SessionStatus::ONGOING:
             $message = 'الجلسة جارية حالياً';
             $buttonText = $canJoinMeeting ? 'انضم للجلسة' : 'غير متاح';
             $buttonClass = $canJoinMeeting ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed';
             break;
-            
+
         case App\Enums\SessionStatus::COMPLETED:
             $message = 'تم إنهاء الجلسة';
             $buttonText = 'الجلسة منتهية';
             $buttonClass = 'bg-gray-400 cursor-not-allowed';
             $canJoinMeeting = false;
             break;
-            
+
         case App\Enums\SessionStatus::CANCELLED:
             $message = 'تم إلغاء الجلسة';
             $buttonText = 'الجلسة ملغية';
             $buttonClass = 'bg-red-400 cursor-not-allowed';
             $canJoinMeeting = false;
             break;
-            
+
         case App\Enums\SessionStatus::SCHEDULED:
             if ($canJoinMeeting) {
                 $message = 'يمكنك الانضمام للجلسة الآن';
@@ -220,8 +219,9 @@ Route::get('/api/academic-sessions/{session}/status', function (Request $request
                 $buttonClass = 'bg-green-500 hover:bg-green-600';
             } else {
                 if ($session->scheduled_at) { // NULL check
-                    $minutesUntilReady = now()->diffInMinutes($session->scheduled_at->copy()->subMinutes($preparationMinutes), false);
-                    $message = $minutesUntilReady > 0 ? "الجلسة ستكون متاحة خلال {$minutesUntilReady} دقيقة" : 'الجلسة ستكون متاحة قريباً';
+                    $preparationTime = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
+                    $timeData = formatTimeRemaining($preparationTime);
+                    $message = ! $timeData['is_past'] ? "الجلسة ستكون متاحة خلال {$timeData['formatted']}" : 'الجلسة ستكون متاحة قريباً';
                 } else {
                     $message = 'الجلسة محجوزة ولكن لم يتم تحديد موعد';
                 }
@@ -230,14 +230,14 @@ Route::get('/api/academic-sessions/{session}/status', function (Request $request
                 $canJoinMeeting = false;
             }
             break;
-            
+
         case App\Enums\SessionStatus::UNSCHEDULED:
             $message = 'الجلسة غير مجدولة بعد';
             $buttonText = 'في انتظار الجدولة';
             $buttonClass = 'bg-gray-400 cursor-not-allowed';
             $canJoinMeeting = false;
             break;
-            
+
         default:
             $message = 'حالة غير معروفة';
             $buttonText = 'غير متاح';
@@ -251,28 +251,28 @@ Route::get('/api/academic-sessions/{session}/status', function (Request $request
         'button_text' => $buttonText,
         'button_class' => $buttonClass,
         'can_join' => $canJoinMeeting,
-        'session_type' => 'academic'
+        'session_type' => 'academic',
     ]);
 })->name('api.academic-sessions.status');
 
 Route::get('/api/quran-sessions/{session}/status', function (Request $request, $session) {
-    if (!auth()->check()) {
+    if (! auth()->check()) {
         return response()->json([
             'message' => 'يجب تسجيل الدخول لعرض حالة الجلسة',
             'status' => 'unauthenticated',
             'can_join' => false,
             'button_text' => 'يجب تسجيل الدخول',
-            'button_class' => 'bg-gray-400 cursor-not-allowed'
+            'button_class' => 'bg-gray-400 cursor-not-allowed',
         ], 401);
     }
-    
+
     $user = $request->user();
     $userType = $user->hasRole('quran_teacher') ? 'quran_teacher' : 'student';
     $session = \App\Models\QuranSession::findOrFail($session);
 
     // Quran sessions use circle configuration
-    $circle = $session->session_type === 'individual' 
-        ? $session->individualCircle 
+    $circle = $session->session_type === 'individual'
+        ? $session->individualCircle
         : $session->circle;
     $preparationMinutes = $circle?->preparation_minutes ?? 15;
     $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
@@ -286,9 +286,9 @@ Route::get('/api/quran-sessions/{session}/status', function (Request $request, $
 
     // Check if user can join meeting based on timing and status
     if ($userType === 'quran_teacher' && in_array($session->status, [
-        App\Enums\SessionStatus::READY, 
+        App\Enums\SessionStatus::READY,
         App\Enums\SessionStatus::ONGOING,
-        App\Enums\SessionStatus::SCHEDULED
+        App\Enums\SessionStatus::SCHEDULED,
     ])) {
         if ($session->scheduled_at) { // NULL check
             $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
@@ -299,8 +299,8 @@ Route::get('/api/quran-sessions/{session}/status', function (Request $request, $
         }
     } elseif ($userType === 'student' && in_array($session->status, [
         App\Enums\SessionStatus::READY,
-        App\Enums\SessionStatus::ONGOING, 
-        App\Enums\SessionStatus::SCHEDULED
+        App\Enums\SessionStatus::ONGOING,
+        App\Enums\SessionStatus::SCHEDULED,
     ])) {
         if ($session->scheduled_at) { // NULL check
             $sessionEnd = $session->scheduled_at->copy()->addMinutes(($session->duration_minutes ?? 30) + $endingBufferMinutes);
@@ -312,34 +312,35 @@ Route::get('/api/quran-sessions/{session}/status', function (Request $request, $
 
     // Determine message and button state based on session status
     $statusValue = is_object($session->status) && method_exists($session->status, 'value') ? $session->status->value : $session->status;
-    
+
     switch ($session->status) {
         case App\Enums\SessionStatus::READY:
-            $message = 'الجلسة جاهزة للانضمام';
-            $buttonText = $canJoinMeeting ? 'انضم للجلسة' : 'غير متاح';
-            $buttonClass = $canJoinMeeting ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed';
+            $message = 'الجلسة جاهزة';
+            $buttonText = 'غير متاح';
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $canJoinMeeting = false;
             break;
-        
+
         case App\Enums\SessionStatus::ONGOING:
             $message = 'الجلسة جارية حالياً';
             $buttonText = $canJoinMeeting ? 'انضم للجلسة' : 'غير متاح';
             $buttonClass = $canJoinMeeting ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed';
             break;
-            
+
         case App\Enums\SessionStatus::COMPLETED:
             $message = 'تم إنهاء الجلسة';
             $buttonText = 'الجلسة منتهية';
             $buttonClass = 'bg-gray-400 cursor-not-allowed';
             $canJoinMeeting = false;
             break;
-            
+
         case App\Enums\SessionStatus::CANCELLED:
             $message = 'تم إلغاء الجلسة';
             $buttonText = 'الجلسة ملغية';
             $buttonClass = 'bg-red-400 cursor-not-allowed';
             $canJoinMeeting = false;
             break;
-            
+
         case App\Enums\SessionStatus::SCHEDULED:
             if ($canJoinMeeting) {
                 $message = 'يمكنك الانضمام للجلسة الآن';
@@ -347,8 +348,9 @@ Route::get('/api/quran-sessions/{session}/status', function (Request $request, $
                 $buttonClass = 'bg-green-500 hover:bg-green-600';
             } else {
                 if ($session->scheduled_at) { // NULL check
-                    $minutesUntilReady = now()->diffInMinutes($session->scheduled_at->copy()->subMinutes($preparationMinutes), false);
-                    $message = $minutesUntilReady > 0 ? "الجلسة ستكون متاحة خلال {$minutesUntilReady} دقيقة" : 'الجلسة ستكون متاحة قريباً';
+                    $preparationTime = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
+                    $timeData = formatTimeRemaining($preparationTime);
+                    $message = ! $timeData['is_past'] ? "الجلسة ستكون متاحة خلال {$timeData['formatted']}" : 'الجلسة ستكون متاحة قريباً';
                 } else {
                     $message = 'الجلسة محجوزة ولكن لم يتم تحديد موعد';
                 }
@@ -357,14 +359,14 @@ Route::get('/api/quran-sessions/{session}/status', function (Request $request, $
                 $canJoinMeeting = false;
             }
             break;
-            
+
         case App\Enums\SessionStatus::UNSCHEDULED:
             $message = 'الجلسة غير مجدولة بعد';
             $buttonText = 'في انتظار الجدولة';
             $buttonClass = 'bg-gray-400 cursor-not-allowed';
             $canJoinMeeting = false;
             break;
-            
+
         default:
             $message = 'حالة غير معروفة';
             $buttonText = 'غير متاح';
@@ -378,24 +380,24 @@ Route::get('/api/quran-sessions/{session}/status', function (Request $request, $
         'button_text' => $buttonText,
         'button_class' => $buttonClass,
         'can_join' => $canJoinMeeting,
-        'session_type' => 'quran'
+        'session_type' => 'quran',
     ]);
 })->name('api.quran-sessions.status');
 
 // Session-type-specific attendance APIs
 Route::get('/api/academic-sessions/{session}/attendance-status', function (Request $request, $session) {
-    if (!auth()->check()) {
+    if (! auth()->check()) {
         return response()->json(['message' => 'Unauthenticated'], 401);
     }
-    
+
     $user = $request->user();
     $session = \App\Models\AcademicSession::findOrFail($session);
 
     // For completed sessions, use stored data to avoid sync errors
-    $statusValue = is_object($session->status) && method_exists($session->status, 'value') 
-        ? $session->status->value 
+    $statusValue = is_object($session->status) && method_exists($session->status, 'value')
+        ? $session->status->value
         : $session->status;
-        
+
     if ($statusValue === 'completed') {
         // Get stored session report data
         $sessionReport = \App\Models\AcademicSessionReport::where('session_id', $session->id)
@@ -432,18 +434,18 @@ Route::get('/api/academic-sessions/{session}/attendance-status', function (Reque
 })->name('api.academic-sessions.attendance-status');
 
 Route::get('/api/quran-sessions/{session}/attendance-status', function (Request $request, $session) {
-    if (!auth()->check()) {
+    if (! auth()->check()) {
         return response()->json(['message' => 'Unauthenticated'], 401);
     }
-    
+
     $user = $request->user();
     $session = \App\Models\QuranSession::findOrFail($session);
 
     // For completed sessions, use stored data to avoid sync errors
-    $statusValue = is_object($session->status) && method_exists($session->status, 'value') 
-        ? $session->status->value 
+    $statusValue = is_object($session->status) && method_exists($session->status, 'value')
+        ? $session->status->value
         : $session->status;
-        
+
     if ($statusValue === 'completed') {
         // Get stored session report data
         $sessionReport = \App\Models\StudentSessionReport::where('session_id', $session->id)
@@ -482,23 +484,23 @@ Route::get('/api/quran-sessions/{session}/attendance-status', function (Request 
 // LEGACY: General session status API (for backward compatibility)
 Route::get('/api/sessions/{session}/status', function (Request $request, $session) {
     // Check authentication first
-    if (!auth()->check()) {
+    if (! auth()->check()) {
         return response()->json([
             'message' => 'يجب تسجيل الدخول لعرض حالة الجلسة',
             'status' => 'unauthenticated',
             'can_join' => false,
             'button_text' => 'يجب تسجيل الدخول',
-            'button_class' => 'bg-gray-400 cursor-not-allowed'
+            'button_class' => 'bg-gray-400 cursor-not-allowed',
         ], 401);
     }
-    
+
     $user = $request->user();
     $userType = $user->hasRole('quran_teacher') ? 'quran_teacher' : 'student';
 
     // Smart session resolution - check both types and find the one that exists
     $academicSession = \App\Models\AcademicSession::find($session);
     $quranSession = \App\Models\QuranSession::find($session);
-    
+
     // Use whichever exists (prioritize the one that actually has this ID)
     if ($academicSession && $quranSession) {
         // If both exist with same ID, determine by user context
@@ -522,244 +524,309 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
         $preparationMinutes = 15; // Default for academic sessions
         $endingBufferMinutes = 5;
     } else {
-            // Quran sessions use circle configuration
-            $circle = $session->session_type === 'individual'
-                ? $session->individualCircle
-                : $session->circle;
-            $preparationMinutes = $circle?->preparation_minutes ?? 15;
-            $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
-        }
+        // Quran sessions use circle configuration
+        $circle = $session->session_type === 'individual'
+            ? $session->individualCircle
+            : $session->circle;
+        $preparationMinutes = $circle?->preparation_minutes ?? 15;
+        $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
+    }
 
-        // Determine if user can join
-        $canJoinMeeting = in_array($session->status, [
-            SessionStatus::READY,
-            SessionStatus::ONGOING,
-        ]);
+    // Determine if user can join
+    $canJoinMeeting = in_array($session->status, [
+        SessionStatus::READY,
+        SessionStatus::ONGOING,
+    ]);
 
-        // CRITICAL FIX: Teachers can ALWAYS join ongoing/ready sessions regardless of status
-        if ($userType === 'quran_teacher' && in_array($session->status, [
-            SessionStatus::READY,
-            SessionStatus::ONGOING,
-            SessionStatus::ABSENT,  // Teachers can join even if marked absent (student absence)
-            SessionStatus::SCHEDULED,
-        ])) {
-            $now = now();
-            // Only check timing if session is scheduled
-            if ($session->scheduled_at) {
-                $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
-                $sessionEnd = $session->scheduled_at->copy()->addMinutes(($session->duration_minutes ?? 30) + $endingBufferMinutes);
+    // CRITICAL FIX: Teachers can ALWAYS join ongoing/ready sessions regardless of status
+    if ($userType === 'quran_teacher' && in_array($session->status, [
+        SessionStatus::READY,
+        SessionStatus::ONGOING,
+        SessionStatus::ABSENT,  // Teachers can join even if marked absent (student absence)
+        SessionStatus::SCHEDULED,
+    ])) {
+        $now = now();
+        // Only check timing if session is scheduled
+        if ($session->scheduled_at) {
+            $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
+            $sessionEnd = $session->scheduled_at->copy()->addMinutes(($session->duration_minutes ?? 30) + $endingBufferMinutes);
 
-                if ($now->gte($preparationStart) && $now->lt($sessionEnd)) {
-                    $canJoinMeeting = true;
-                }
+            if ($now->gte($preparationStart) && $now->lt($sessionEnd)) {
+                $canJoinMeeting = true;
             }
         }
+    }
 
-        // Allow students to join even if marked absent, as long as session is not completed
-        if ($userType === 'student' && in_array($session->status, [
-            SessionStatus::ABSENT,
-            SessionStatus::SCHEDULED,
-        ])) {
-            $now = now();
-            // Only check timing if session is scheduled
-            if ($session->scheduled_at) {
-                $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
-                $sessionEnd = $session->scheduled_at->copy()->addMinutes(($session->duration_minutes ?? 30) + $endingBufferMinutes);
+    // Allow students to join even if marked absent, as long as session is not completed
+    if ($userType === 'student' && in_array($session->status, [
+        SessionStatus::ABSENT,
+        SessionStatus::SCHEDULED,
+    ])) {
+        $now = now();
+        // Only check timing if session is scheduled
+        if ($session->scheduled_at) {
+            $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
+            $sessionEnd = $session->scheduled_at->copy()->addMinutes(($session->duration_minutes ?? 30) + $endingBufferMinutes);
 
-                if ($now->gte($preparationStart) && $now->lt($sessionEnd)) {
-                    $canJoinMeeting = true;
-                }
+            if ($now->gte($preparationStart) && $now->lt($sessionEnd)) {
+                $canJoinMeeting = true;
             }
         }
+    }
 
-        // Determine status messages and button styling
-        $message = '';
-        $buttonText = '';
-        $buttonClass = '';
+    // Determine status messages and button styling
+    $message = '';
+    $buttonText = '';
+    $buttonClass = '';
 
-        switch ($session->status) {
-            case SessionStatus::READY:
+    switch ($session->status) {
+        case SessionStatus::READY:
+            if ($canJoinMeeting) {
                 $message = $userType === 'quran_teacher'
                     ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع'
-                    : 'الجلسة جاهزة - يمكنك الانضمام الآن';
+                    : 'الجلسة جاهزة - انضم الآن';
                 $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'انضم للجلسة';
                 $buttonClass = 'bg-green-600 hover:bg-green-700';
-                break;
+                $buttonDisabled = false;
+            } else {
+                $message = $userType === 'quran_teacher'
+                    ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع'
+                    : 'الجلسة جاهزة';
+                $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'غير متاح';
+                $buttonClass = $userType === 'quran_teacher' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed';
+                $buttonDisabled = $userType !== 'quran_teacher';
+            }
+            break;
 
-            case SessionStatus::ONGOING:
-                $message = 'الجلسة جارية الآن - انضم للمشاركة';
-                $buttonText = 'انضمام للجلسة الجارية';
-                $buttonClass = 'bg-orange-600 hover:bg-orange-700 animate-pulse';
-                break;
+        case SessionStatus::ONGOING:
+            $message = 'الجلسة جارية الآن - انضم للمشاركة';
+            $buttonText = 'انضمام للجلسة الجارية';
+            $buttonClass = 'bg-orange-600 hover:bg-orange-700 animate-pulse';
+            break;
 
-            case SessionStatus::SCHEDULED:
-                if ($canJoinMeeting) {
-                    $message = 'جاري تحضير الاجتماع - يمكنك الانضمام الآن';
+        case SessionStatus::SCHEDULED:
+            if ($canJoinMeeting) {
+                $message = 'جاري تحضير الاجتماع - يمكنك الانضمام الآن';
+                $buttonText = 'انضم للجلسة';
+                $buttonClass = 'bg-blue-600 hover:bg-blue-700';
+            } else {
+                // Only calculate timing if session is scheduled
+                if ($session->scheduled_at) {
+                    $preparationTime = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
+                    $timeData = formatTimeRemaining($preparationTime);
+                    $message = ! $timeData['is_past']
+                        ? 'سيتم تحضير الاجتماع خلال '.$timeData['formatted']
+                        : 'جاري تحضير الاجتماع...';
+                } else {
+                    $message = 'الجلسة محجوزة ولكن لم يتم تحديد موعد';
+                }
+                $buttonText = 'في انتظار تحضير الاجتماع';
+                $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            }
+            break;
+
+        case SessionStatus::ABSENT:
+            if ($canJoinMeeting) {
+                if ($userType === 'quran_teacher') {
+                    $message = 'الجلسة نشطة - يمكنك بدء أو الانضمام للاجتماع';
                     $buttonText = 'انضم للجلسة';
-                    $buttonClass = 'bg-blue-600 hover:bg-blue-700';
+                    $buttonClass = 'bg-green-600 hover:bg-green-700';
                 } else {
-                    // Only calculate timing if session is scheduled
-                    if ($session->scheduled_at) {
-                        $minutesUntilReady = now()->diffInMinutes($session->scheduled_at->copy()->subMinutes($preparationMinutes), false);
-                        $message = $minutesUntilReady > 0
-                            ? 'سيتم تحضير الاجتماع خلال '.ceil($minutesUntilReady).' دقيقة'
-                            : 'جاري تحضير الاجتماع...';
-                    } else {
-                        $message = 'الجلسة محجوزة ولكن لم يتم تحديد موعد';
-                    }
-                    $buttonText = 'في انتظار تحضير الاجتماع';
+                    $message = 'تم تسجيل غيابك ولكن يمكنك الانضمام الآن';
+                    $buttonText = 'انضم للجلسة (غائب)';
+                    $buttonClass = 'bg-yellow-600 hover:bg-yellow-700';
+                }
+            } else {
+                if ($userType === 'quran_teacher') {
+                    $message = 'انتهت فترة الجلسة';
+                    $buttonText = 'الجلسة منتهية';
                     $buttonClass = 'bg-gray-400 cursor-not-allowed';
-                }
-                break;
-
-            case SessionStatus::ABSENT:
-                if ($canJoinMeeting) {
-                    if ($userType === 'quran_teacher') {
-                        $message = 'الجلسة نشطة - يمكنك بدء أو الانضمام للاجتماع';
-                        $buttonText = 'انضم للجلسة';
-                        $buttonClass = 'bg-green-600 hover:bg-green-700';
-                    } else {
-                        $message = 'تم تسجيل غيابك ولكن يمكنك الانضمام الآن';
-                        $buttonText = 'انضم للجلسة (غائب)';
-                        $buttonClass = 'bg-yellow-600 hover:bg-yellow-700';
-                    }
                 } else {
-                    if ($userType === 'quran_teacher') {
-                        $message = 'انتهت فترة الجلسة';
-                        $buttonText = 'الجلسة منتهية';
-                        $buttonClass = 'bg-gray-400 cursor-not-allowed';
-                    } else {
-                        $message = 'تم تسجيل غياب الطالب';
-                        $buttonText = 'غياب الطالب';
-                        $buttonClass = 'bg-red-400 cursor-not-allowed';
-                    }
+                    $message = 'تم تسجيل غياب الطالب';
+                    $buttonText = 'غياب الطالب';
+                    $buttonClass = 'bg-red-400 cursor-not-allowed';
                 }
-                break;
-
-            case SessionStatus::COMPLETED:
-                $message = 'تم إنهاء الجلسة بنجاح';
-                $buttonText = 'الجلسة منتهية';
-                $buttonClass = 'bg-gray-400 cursor-not-allowed';
-                $canJoinMeeting = false;
-                break;
-
-            case SessionStatus::CANCELLED:
-                $message = 'تم إلغاء الجلسة';
-                $buttonText = 'الجلسة ملغية';
-                $buttonClass = 'bg-red-400 cursor-not-allowed';
-                $canJoinMeeting = false;
-                break;
-
-            case SessionStatus::UNSCHEDULED:
-                $message = 'الجلسة غير مجدولة بعد';
-                $buttonText = 'في انتظار الجدولة';
-                $buttonClass = 'bg-gray-400 cursor-not-allowed';
-                $canJoinMeeting = false;
-                break;
-
-            default:
-                // Handle case where status might be a string or enum
-                $statusLabel = is_object($session->status) && method_exists($session->status, 'label') 
-                    ? $session->status->label() 
-                    : (string) $session->status;
-                $message = 'حالة الجلسة: ' . $statusLabel;
-                $buttonText = 'غير متاح';
-                $buttonClass = 'bg-gray-400 cursor-not-allowed';
-                $canJoinMeeting = false;
-        }
-
-        return response()->json([
-            'status' => is_object($session->status) && method_exists($session->status, 'value') 
-                ? $session->status->value 
-                : $session->status,
-            'can_join' => $canJoinMeeting,
-            'message' => $message,
-            'button_text' => $buttonText,
-            'button_class' => $buttonClass,
-            'session_info' => [
-                'scheduled_at' => $session->scheduled_at?->toISOString(),
-                'duration_minutes' => $session->duration_minutes,
-                'preparation_minutes' => $preparationMinutes,
-                'meeting_room_name' => $session->meeting_room_name,
-            ],
-        ]);
-    })->name('api.sessions.status');
-
-    Route::get('/api/sessions/{session}/attendance-status', function (Request $request, $session) {
-        $user = $request->user();
-
-        // Smart session resolution - check both types and find the one that exists
-        $academicSession = \App\Models\AcademicSession::find($session);
-        $quranSession = \App\Models\QuranSession::find($session);
-        
-        // Use whichever exists (prioritize the one that actually has this ID)
-        if ($academicSession && $quranSession) {
-            // If both exist with same ID, determine by user context
-            if ($user->hasRole('academic_teacher') || $user->studentProfile?->academicSessions()->where('id', $session)->exists()) {
-                $session = $academicSession;
-            } else {
-                $session = $quranSession;
             }
-        } elseif ($academicSession) {
+            break;
+
+        case SessionStatus::COMPLETED:
+            $message = 'تم إنهاء الجلسة بنجاح';
+            $buttonText = 'الجلسة منتهية';
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $canJoinMeeting = false;
+            break;
+
+        case SessionStatus::CANCELLED:
+            $message = 'تم إلغاء الجلسة';
+            $buttonText = 'الجلسة ملغية';
+            $buttonClass = 'bg-red-400 cursor-not-allowed';
+            $canJoinMeeting = false;
+            break;
+
+        case SessionStatus::UNSCHEDULED:
+            $message = 'الجلسة غير مجدولة بعد';
+            $buttonText = 'في انتظار الجدولة';
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $canJoinMeeting = false;
+            break;
+
+        default:
+            // Handle case where status might be a string or enum
+            $statusLabel = is_object($session->status) && method_exists($session->status, 'label')
+                ? $session->status->label()
+                : (string) $session->status;
+            $message = 'حالة الجلسة: '.$statusLabel;
+            $buttonText = 'غير متاح';
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $canJoinMeeting = false;
+    }
+
+    return response()->json([
+        'status' => is_object($session->status) && method_exists($session->status, 'value')
+            ? $session->status->value
+            : $session->status,
+        'can_join' => $canJoinMeeting,
+        'message' => $message,
+        'button_text' => $buttonText,
+        'button_class' => $buttonClass,
+        'session_info' => [
+            'scheduled_at' => $session->scheduled_at?->toISOString(),
+            'duration_minutes' => $session->duration_minutes,
+            'preparation_minutes' => $preparationMinutes,
+            'meeting_room_name' => $session->meeting_room_name,
+        ],
+    ]);
+})->name('api.sessions.status');
+
+Route::get('/api/sessions/{session}/attendance-status', function (Request $request, $session) {
+    $user = $request->user();
+
+    // Smart session resolution - check both types and find the one that exists
+    $academicSession = \App\Models\AcademicSession::find($session);
+    $quranSession = \App\Models\QuranSession::find($session);
+
+    // Use whichever exists (prioritize the one that actually has this ID)
+    if ($academicSession && $quranSession) {
+        // If both exist with same ID, determine by user context
+        if ($user->hasRole('academic_teacher') || $user->studentProfile?->academicSessions()->where('id', $session)->exists()) {
             $session = $academicSession;
-        } elseif ($quranSession) {
+        } else {
             $session = $quranSession;
+        }
+    } elseif ($academicSession) {
+        $session = $academicSession;
+    } elseif ($quranSession) {
+        $session = $quranSession;
+    } else {
+        abort(404, 'الجلسة غير موجودة');
+    }
+
+    $statusValue = is_object($session->status) && method_exists($session->status, 'value')
+        ? $session->status->value
+        : $session->status;
+
+    // Check if user has ever joined this session
+    $meetingAttendance = \App\Models\MeetingAttendance::where('session_id', $session->id)
+        ->where('user_id', $user->id)
+        ->first();
+
+    $hasEverJoined = $meetingAttendance !== null;
+
+    // ENHANCED: Handle session timing and states properly
+    $now = now();
+    $sessionStart = $session->scheduled_at;
+    $sessionEnd = $sessionStart ? $sessionStart->copy()->addMinutes($session->duration_minutes ?? 60) : null;
+
+    // Determine session timing state
+    $isBeforeSession = $sessionStart && $now->isBefore($sessionStart);
+    $isDuringSession = $sessionStart && $sessionEnd && $now->between($sessionStart, $sessionEnd);
+    $isAfterSession = $sessionEnd && $now->isAfter($sessionEnd);
+
+    // For completed sessions OR sessions that have ended by time
+    if ($statusValue === 'completed' || $isAfterSession) {
+        // Get stored session report data based on session type
+        if ($session instanceof \App\Models\AcademicSession) {
+            $sessionReport = \App\Models\AcademicSessionReport::where('session_id', $session->id)
+                ->where('student_id', $user->id)
+                ->first();
         } else {
-            abort(404, 'الجلسة غير موجودة');
+            $sessionReport = \App\Models\StudentSessionReport::where('session_id', $session->id)
+                ->where('student_id', $user->id)
+                ->first();
         }
 
-        // CRITICAL FIX: For completed sessions, use stored data directly to avoid sync errors
-        $statusValue = is_object($session->status) && method_exists($session->status, 'value') 
-            ? $session->status->value 
-            : $session->status;
-        if ($statusValue === 'completed') {
-            // Get stored session report data based on session type
-            if ($session instanceof \App\Models\AcademicSession) {
-                $sessionReport = \App\Models\AcademicSessionReport::where('session_id', $session->id)
-                    ->where('student_id', $user->id)
-                    ->first();
-            } else {
-                $sessionReport = \App\Models\StudentSessionReport::where('session_id', $session->id)
-                    ->where('student_id', $user->id)
-                    ->first();
+        if ($sessionReport) {
+            // Use report data but enhance attendance status description
+            $attendanceStatus = $sessionReport->attendance_status ?? 'absent';
+            $duration = $sessionReport->actual_attendance_minutes ?? 0;
+
+            // Enhanced status for completed sessions
+            if (! $hasEverJoined) {
+                $attendanceStatus = 'not_attended'; // Never joined
+            } elseif ($duration > 0 && $attendanceStatus === 'partial') {
+                $attendanceStatus = 'partial_attendance'; // Joined but insufficient time
             }
 
-            if ($sessionReport) {
-                $status = [
-                    'is_currently_in_meeting' => false, // Completed sessions = not in meeting
-                    'attendance_status' => $sessionReport->attendance_status ?? 'absent',
-                    'attendance_percentage' => number_format($sessionReport->attendance_percentage ?? 0, 2),
-                    'duration_minutes' => $sessionReport->actual_attendance_minutes ?? 0,
-                    'join_count' => 0, // Not relevant for completed sessions
-                    'is_late' => $sessionReport->is_late ?? false,
-                    'late_minutes' => $sessionReport->late_minutes ?? 0,
-                    'last_updated' => $sessionReport->updated_at,
-                ];
-            } else {
-                // Fallback if no report exists
-                $status = [
-                    'is_currently_in_meeting' => false,
-                    'attendance_status' => 'absent',
-                    'attendance_percentage' => '0.00',
-                    'duration_minutes' => 0,
-                    'join_count' => 0,
-                ];
-            }
+            $status = [
+                'is_currently_in_meeting' => false, // Session is over
+                'attendance_status' => $attendanceStatus,
+                'attendance_percentage' => number_format($sessionReport->attendance_percentage ?? 0, 2),
+                'duration_minutes' => $duration,
+                'join_count' => $meetingAttendance?->join_count ?? 0,
+                'is_late' => $sessionReport->is_late ?? false,
+                'late_minutes' => $sessionReport->late_minutes ?? 0,
+                'last_updated' => $sessionReport->updated_at,
+                'session_state' => 'completed',
+                'has_ever_joined' => $hasEverJoined,
+            ];
         } else {
-            // For active sessions, use appropriate service based on session type
-            if ($session instanceof \App\Models\AcademicSession) {
-                $academicService = app(\App\Services\AcademicAttendanceService::class);
-                $status = $academicService->getCurrentAttendanceStatus($session, $user);
-            } else {
-                $unifiedService = app(\App\Services\UnifiedAttendanceService::class);
-                $status = $unifiedService->getCurrentAttendanceStatus($session, $user);
-            }
+            // No report exists - student never participated
+            $status = [
+                'is_currently_in_meeting' => false,
+                'attendance_status' => $hasEverJoined ? 'not_enough_time' : 'not_attended',
+                'attendance_percentage' => '0.00',
+                'duration_minutes' => $meetingAttendance?->total_duration_minutes ?? 0,
+                'join_count' => $meetingAttendance?->join_count ?? 0,
+                'session_state' => 'completed',
+                'has_ever_joined' => $hasEverJoined,
+            ];
+        }
+    } elseif ($isBeforeSession) {
+        // Session hasn't started yet
+        $status = [
+            'is_currently_in_meeting' => false,
+            'attendance_status' => 'not_started',
+            'attendance_percentage' => '0.00',
+            'duration_minutes' => 0,
+            'join_count' => 0,
+            'session_state' => 'scheduled',
+            'has_ever_joined' => false,
+            'minutes_until_start' => max(0, ceil($now->diffInMinutes($sessionStart, false))),
+        ];
+    } else {
+        // Session is active or scheduled - use real-time data
+        if ($session instanceof \App\Models\AcademicSession) {
+            $academicService = app(\App\Services\AcademicAttendanceService::class);
+            $status = $academicService->getCurrentAttendanceStatus($session, $user);
+        } else {
+            $unifiedService = app(\App\Services\UnifiedAttendanceService::class);
+            $status = $unifiedService->getCurrentAttendanceStatus($session, $user);
         }
 
-        return response()->json($status);
-    })->name('api.sessions.attendance-status');
+        // Add session state info
+        $status['session_state'] = $isDuringSession ? 'ongoing' : 'scheduled';
+        $status['has_ever_joined'] = $hasEverJoined;
 
-// TEMPORARY: Test API endpoints accessibility  
+        // Override status for users who haven't joined yet during scheduled time
+        if (! $hasEverJoined && ($statusValue === 'scheduled' || $isDuringSession)) {
+            $status['attendance_status'] = 'not_joined_yet';
+        }
+    }
+
+    return response()->json($status);
+})->name('api.sessions.attendance-status');
+
+// TEMPORARY: Test API endpoints accessibility
 Route::get('/debug-api-test', function () {
     return response()->json([
         'success' => true,
@@ -768,7 +835,7 @@ Route::get('/debug-api-test', function () {
         'routes_exist' => [
             'status' => \Illuminate\Support\Facades\Route::has('api.sessions.status'),
             'attendance' => \Illuminate\Support\Facades\Route::has('api.sessions.attendance-status'),
-        ]
+        ],
     ]);
 });
 
@@ -784,7 +851,7 @@ Route::get('/api/test-no-auth', function (Request $request) {
             'origin' => $request->header('Origin'),
             'referer' => $request->header('Referer'),
             'user-agent' => $request->header('User-Agent'),
-        ]
+        ],
     ]);
 });
 
@@ -883,9 +950,7 @@ Route::get('/academy/{subdomain}', function ($subdomain) {
 Route::domain(config('app.domain'))->group(function () {
 
     // Platform Landing Page
-    Route::get('/', function () {
-        return view('platform.landing');
-    })->name('platform.home');
+    Route::get('/', [App\Http\Controllers\PlatformController::class, 'home'])->name('platform.home');
 
     // Platform About Page
     Route::get('/about', function () {
@@ -901,8 +966,6 @@ Route::domain(config('app.domain'))->group(function () {
     Route::get('/features', function () {
         return view('platform.features');
     })->name('platform.features');
-
-
 
     // Business Services
     Route::get('/business-services', [\App\Http\Controllers\BusinessServiceController::class, 'index'])
@@ -963,17 +1026,17 @@ Route::domain(config('app.domain'))->group(function () {
     // Catch-all for other routes - redirect to appropriate academy
     Route::fallback(function () {
         $path = request()->path();
-        
+
         // Don't redirect admin routes
         if (str_starts_with($path, 'admin')) {
             abort(404);
         }
-        
+
         // Redirect learning-related routes to default academy
         if (in_array($path, ['login', 'register', 'dashboard', 'profile', 'courses', 'quran-teachers', 'quran-circles', 'student/register', 'teacher/register'])) {
             return redirect('http://itqan-academy.'.config('app.domain').'/'.$path);
         }
-        
+
         // For other routes, show 404 or redirect to platform home
         abort(404);
     });
@@ -990,10 +1053,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Academy Home Page
     Route::get('/', [AcademyHomepageController::class, 'show'])->name('academy.home');
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -1017,10 +1076,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     | MUST COME BEFORE course routes to avoid conflicts
     */
 
-    // Lesson Viewing & Progress (ID-based)
+    // Lesson Viewing & Progress (ID-based) - Specific routes first to avoid conflicts
+    Route::get('/courses/{courseId}/lessons/{lessonId}/progress', [LessonController::class, 'getProgress'])->name('lessons.progress.get')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
+    Route::post('/courses/{courseId}/lessons/{lessonId}/progress', [LessonController::class, 'updateProgress'])->name('lessons.progress.update')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
+    Route::post('/courses/{courseId}/lessons/{lessonId}/complete', [LessonController::class, 'markComplete'])->name('lessons.complete')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
     Route::get('/courses/{courseId}/lessons/{lessonId}', [LessonController::class, 'show'])->name('lessons.show')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
-    Route::post('/courses/{courseId}/lessons/{lessonId}/progress', [LessonController::class, 'updateProgress'])->name('lessons.progress')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
-    Route::post('/courses/{courseId}/lessons/{lessonId}/complete', [LessonController::class, 'markCompleted'])->name('lessons.complete')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
 
     // Lesson Interactions
     Route::post('/courses/{courseId}/lessons/{lessonId}/bookmark', [LessonController::class, 'addBookmark'])->name('lessons.bookmark')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
@@ -1032,6 +1092,21 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // Lesson Resources
     Route::get('/courses/{courseId}/lessons/{lessonId}/transcript', [LessonController::class, 'getTranscript'])->name('lessons.transcript')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
     Route::get('/courses/{courseId}/lessons/{lessonId}/materials', [LessonController::class, 'downloadMaterials'])->name('lessons.materials')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
+    Route::get('/courses/{courseId}/lessons/{lessonId}/video', [LessonController::class, 'serveVideo'])->name('lessons.video')->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
+    Route::options('/courses/{courseId}/lessons/{lessonId}/video', [LessonController::class, 'serveVideoOptions'])->where(['courseId' => '[0-9]+', 'lessonId' => '[0-9]+']);
+
+    // Course progress route
+    Route::get('/courses/{courseId}/progress', [RecordedCourseController::class, 'getProgress'])
+        ->name('courses.progress')
+        ->where('courseId', '[0-9]+');
+
+    // API Progress routes (using web middleware for session auth)
+    Route::middleware('auth')->prefix('api')->group(function () {
+        Route::get('/courses/{courseId}/progress', [App\Http\Controllers\Api\ProgressController::class, 'getCourseProgress']);
+        Route::get('/courses/{courseId}/lessons/{lessonId}/progress', [App\Http\Controllers\Api\ProgressController::class, 'getLessonProgress']);
+        Route::post('/courses/{courseId}/lessons/{lessonId}/progress', [App\Http\Controllers\Api\ProgressController::class, 'updateLessonProgress']);
+        Route::post('/courses/{courseId}/lessons/{lessonId}/complete', [App\Http\Controllers\Api\ProgressController::class, 'markLessonComplete']);
+    });
 
     // Course Detail - Public Access (shows different content based on auth status)
     Route::get('/courses/{id}', [RecordedCourseController::class, 'show'])
@@ -1116,7 +1191,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Student session routes (moved from auth.php for subdomain compatibility)
         Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForStudent'])->name('student.sessions.show');
         Route::put('/sessions/{sessionId}/feedback', [App\Http\Controllers\QuranSessionController::class, 'addFeedback'])->name('student.sessions.feedback');
-        
+
         // Academic session routes for students
         Route::get('/academic-sessions/{sessionId}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSession'])->name('student.academic-sessions.show');
         Route::put('/academic-sessions/{sessionId}/feedback', [App\Http\Controllers\AcademicSessionController::class, 'addStudentFeedback'])->name('student.academic-sessions.feedback');
@@ -1211,6 +1286,30 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/quran-circles/{circle}/enroll', [App\Http\Controllers\PublicQuranCircleController::class, 'showEnrollment'])->name('public.quran-circles.enroll');
         Route::post('/quran-circles/{circle}/enroll', [App\Http\Controllers\PublicQuranCircleController::class, 'submitEnrollment'])->name('public.quran-circles.enroll.submit');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Interactive Courses Routes
+    |--------------------------------------------------------------------------
+    */
+
+    // Public Interactive Courses Listing
+    Route::get('/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])->name('public.interactive-courses.index');
+
+    // Individual Interactive Course Details
+    Route::get('/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])->name('public.interactive-courses.show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Recorded Courses Routes
+    |--------------------------------------------------------------------------
+    */
+
+    // Public Recorded Courses Listing
+    Route::get('/recorded-courses', [App\Http\Controllers\PublicRecordedCourseController::class, 'index'])->name('public.recorded-courses.index');
+
+    // Individual Recorded Course Details
+    Route::get('/recorded-courses/{course}', [App\Http\Controllers\PublicRecordedCourseController::class, 'show'])->name('public.recorded-courses.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -1344,48 +1443,62 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         ]);
     });
 
+    /*
+    |--------------------------------------------------------------------------
+    | Student Interactive Courses Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth', 'role:student'])->group(function () {
+        Route::get('/interactive-courses', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
+    });
+
+    // Interactive course detail - accessible by both students and teachers
+    Route::middleware(['auth', 'role:student,academic_teacher'])->group(function () {
+        Route::get('/interactive-courses/{course}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])->name('interactive-courses.show');
+    });
+
     // Chat Route - Role-based views (within subdomain group)
     Route::middleware(['auth'])->get('/chat', function () {
         $user = auth()->user();
         $userType = $user->user_type;
-        
+
         // Map user types to view names
         $viewMap = [
             'student' => 'chat.student',
             'quran_teacher' => 'chat.teacher',
-            'academic_teacher' => 'chat.academic-teacher', 
+            'academic_teacher' => 'chat.academic-teacher',
             'parent' => 'chat.parent',
             'supervisor' => 'chat.supervisor',
             'academy_admin' => 'chat.academy-admin',
             'admin' => 'chat.academy-admin', // Super admin uses academy admin view
         ];
-        
+
         // Get the appropriate view or default to student
         $view = $viewMap[$userType] ?? 'chat.student';
-        
+
         return view($view);
     })->name('chat');
-    
+
     // Temporary debug route for testing message broadcast
-    Route::get('/test-broadcast/{userId}', function($userId) {
+    Route::get('/test-broadcast/{userId}', function ($userId) {
         try {
-            \Log::info('🧪 Testing broadcast to user: ' . $userId);
-            $result = \Chatify\Facades\ChatifyMessenger::push("private-chatify." . $userId, 'messaging', [
+            \Log::info('🧪 Testing broadcast to user: '.$userId);
+            $result = \Chatify\Facades\ChatifyMessenger::push('private-chatify.'.$userId, 'messaging', [
                 'from_id' => 999,
                 'to_id' => $userId,
-                'message' => '<div class="test-message">Test broadcast message</div>'
+                'message' => '<div class="test-message">Test broadcast message</div>',
             ]);
-            \Log::info('🧪 Broadcast result: ' . ($result ? 'success' : 'failed'));
+            \Log::info('🧪 Broadcast result: '.($result ? 'success' : 'failed'));
+
             return response()->json(['status' => 'broadcasted', 'result' => $result]);
         } catch (\Exception $e) {
-            \Log::error('🧪 Broadcast failed: ' . $e->getMessage());
+            \Log::error('🧪 Broadcast failed: '.$e->getMessage());
+
             return response()->json(['error' => $e->getMessage()]);
         }
     })->middleware('auth');
 
 });
-
-
 
 /*
 |--------------------------------------------------------------------------

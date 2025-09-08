@@ -60,9 +60,9 @@ class ViewQuranCircle extends ViewRecord
                                     ->badge()
                                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                                         'children' => 'أطفال',
-                                        'teenagers' => 'مراهقون',
+                                        'youth' => 'شباب',
                                         'adults' => 'بالغون',
-                                        'mixed' => 'مختلطة',
+                                        'all_ages' => 'كل الفئات',
                                         default => $state ?? 'غير محدد',
                                     }),
                                 Infolists\Components\TextEntry::make('gender_type')

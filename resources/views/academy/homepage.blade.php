@@ -21,7 +21,7 @@
       theme: {
         extend: {
           colors: {
-            primary: "{{ $academy->primary_color ?? '#4169E1' }}",
+            primary: "{{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }}",
             secondary: "{{ $academy->secondary_color ?? '#6495ED' }}",
           },
           borderRadius: {
@@ -46,7 +46,32 @@
     }
 
     .hero-bg {
-      background: linear-gradient(135deg, {{ $academy->primary_color ?? '#4169E1' }} 0%, {{ $academy->secondary_color ?? '#6495ED' }} 50%, #87CEEB 100%);
+      background: linear-gradient(135deg, {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 0%, {{ $academy->secondary_color ?? '#6495ED' }} 50%, {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 100%);
+      position: relative;
+    }
+    
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, 
+        {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 0%, 
+        {{ $academy->secondary_color ?? '#6495ED' }} 25%, 
+        {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 50%, 
+        {{ $academy->secondary_color ?? '#6495ED' }} 75%, 
+        {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 8s ease infinite;
+      opacity: 0.9;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     .quran-section-bg {
@@ -64,6 +89,38 @@
     .card-hover:hover {
       transform: translateY(-4px);
       box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+
+    /* See More Card Specific Styles */
+    .see-more-card {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .see-more-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+      background-color: rgba(65, 105, 225, 0.02);
+    }
+
+    /* Arrow Animation for See More Cards */
+    .see-more-arrow {
+      animation: arrow-slide 3s ease-in-out infinite;
+    }
+
+    @keyframes arrow-slide {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      25% {
+        transform: translateX(4px);
+      }
+      50% {
+        transform: translateX(0);
+      }
+      75% {
+        transform: translateX(-2px);
+      }
     }
 
     .stats-counter {
@@ -152,7 +209,543 @@
       font-size: 14px;
       color: #0369a1;
     }
+    
+    /* Enhanced trust badges for hero section */
+    .trust-badge-enhanced {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 16px;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .trust-badge-enhanced:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .trust-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .trust-icon i {
+      font-size: 20px;
+      color: white;
+    }
+    
+    .trust-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .trust-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      line-height: 1.2;
+    }
+    
+    .trust-subtitle {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.2;
+    }
+    
+    /* Light trust badges for light background hero section */
+    .trust-badge-light {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 16px;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .trust-badge-light:hover {
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .trust-icon-light {
+      width: 40px;
+      height: 40px;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .trust-icon-light i {
+      font-size: 20px;
+      color: #3b82f6;
+    }
+    
+    .trust-content-light {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .trust-title-light {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1f2937;
+      line-height: 1.2;
+    }
+    
+    .trust-subtitle-light {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.2;
+    }
+    
+    /* Modern Hero Section Styles */
+    .hero-gradient-text {
+      background: linear-gradient(135deg, #3B82F6, #10B981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .floating-card {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .floating-card:nth-child(2) {
+      animation-delay: 2s;
+    }
+    
+    .floating-card:nth-child(3) {
+      animation-delay: 4s;
+    }
+    
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    .pulse-dot {
+      animation: pulse-dot 2s infinite;
+    }
+    
+    @keyframes pulse-dot {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.5;
+        transform: scale(1.1);
+      }
+    }
+    
+    .gradient-border {
+      position: relative;
+      background: linear-gradient(135deg, #3B82F6, #10B981);
+      padding: 2px;
+      border-radius: 1rem;
+    }
+    
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      background: white;
+      border-radius: calc(1rem - 2px);
+    }
+    
+    .modern-shadow {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Feature Cards */
+    .feature-card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    
+    .feature-icon i {
+      font-size: 28px;
+    }
+    
+    .quran-icon {
+      background: rgba(16, 185, 129, 0.1);
+      color: #10B981;
+    }
+    
+    .individual-icon {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3B82F6;
+    }
+    
+    .private-icon {
+      background: rgba(245, 158, 11, 0.1);
+      color: #F59E0B;
+    }
+    
+    .interactive-icon {
+      background: rgba(139, 92, 246, 0.1);
+      color: #8B5CF6;
+    }
+    
+    .feature-content {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .feature-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+      line-height: 1.3;
+    }
+    
+    .feature-subtitle {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+    
+    /* Statistics Section Styles */
+    .stat-number {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    
+    .stats-counter {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, {{ $academy->brand_color ?? '#3B82F6' }}, {{ $academy->secondary_color ?? '#8B5CF6' }});
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+    
+    .stat-suffix {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    
+    /* Testimonials Carousel Styles */
+    .testimonials-carousel {
+      padding: 0 60px;
+      position: relative;
+    }
+    
+    .carousel-container {
+      position: relative;
+      margin: 0 16px; /* Space for navigation buttons on all screens */
+    }
+    
+    #testimonials-track {
+      display: flex;
+      transition: transform 0.3s ease-in-out;
+    }
+    
+    .carousel-item {
+      flex-shrink: 0;
+    }
+    
+    /* Testimonial Card Design */
+    .testimonial-card {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 20px;
+      padding: 28px;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .testimonial-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, {{ $academy->brand_color ?? '#3B82F6' }}, {{ $academy->secondary_color ?? '#8B5CF6' }});
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .testimonial-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+    
+    .testimonial-card:hover::before {
+      opacity: 1;
+    }
+    
+    /* Testimonial Header */
+    .testimonial-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .testimonial-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-left: 12px;
+      border: 2px solid {{ $academy->brand_color ?? '#3B82F6' }};
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .testimonial-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .testimonial-info {
+      flex: 1;
+    }
+    
+    .testimonial-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 2px 0;
+      line-height: 1.4;
+    }
+    
+    .testimonial-role {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0;
+      line-height: 1.3;
+    }
+    
+    /* Rating Stars */
+    .testimonial-rating {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 16px;
+    }
+    
+    .testimonial-rating i {
+      color: #fbbf24;
+      font-size: 16px;
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+    }
+    
+    /* Testimonial Content */
+    .testimonial-content {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #4b5563;
+      margin: 0;
+      font-style: normal;
+      position: relative;
+      flex: 1;
+    }
+    
+    .testimonial-content::before {
+      content: '"';
+      font-size: 32px;
+      color: {{ $academy->brand_color ?? '#3B82F6' }};
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      opacity: 0.2;
+      font-family: serif;
+      font-weight: bold;
+    }
+    
+    /* Navigation Buttons */
+    .carousel-nav-btn {
+      width: 56px;
+      height: 56px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      color: {{ $academy->brand_color ?? '#3B82F6' }};
+      font-weight: bold;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .carousel-nav-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Pagination Dots */
+    .carousel-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #d1d5db;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .carousel-dot.bg-primary {
+      background: {{ $academy->brand_color ?? '#3B82F6' }};
+      transform: scale(1.3);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .testimonials-carousel {
+        padding: 0 50px;
+      }
+      
+      .carousel-container {
+        margin: 0 12px; /* Space for buttons on medium screens */
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .testimonials-carousel {
+        padding: 0 40px;
+      }
+      
+      .carousel-container {
+        margin: 0 8px; /* Space for buttons on tablet screens */
+      }
+      
+      .testimonial-card {
+        padding: 24px;
+      }
+      
+      .testimonial-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+      }
+      
+      .testimonial-name {
+        font-size: 15px;
+      }
+      
+      .testimonial-role {
+        font-size: 12px;
+      }
+      
+      .testimonial-content {
+        font-size: 14px;
+      }
+      
+      .testimonial-rating i {
+        font-size: 14px;
+      }
+      
+      .carousel-nav-btn {
+        width: 48px;
+        height: 48px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .testimonials-carousel {
+        padding: 0 30px;
+      }
+      
+      .carousel-container {
+        margin: 0 4px; /* Minimal space for mobile screens */
+      }
+      
+      .testimonial-card {
+        padding: 20px;
+      }
+      
+      .testimonial-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+      }
+      
+      .testimonial-name {
+        font-size: 14px;
+      }
+      
+      .testimonial-role {
+        font-size: 11px;
+      }
+      
+      .testimonial-content {
+        font-size: 13px;
+      }
+      
+      .testimonial-rating i {
+        font-size: 13px;
+      }
+    }
   </style>
+  
+  <!-- Global Styles -->
+  @include('components.global-styles')
 </head>
 
 <body class="bg-gray-50 text-gray-900">
@@ -161,7 +754,7 @@
   <a href="#navigation" class="skip-link">تخطي إلى التنقل</a>
   
   <!-- Navigation -->
-  @include('academy.components.navigation', ['academy' => $academy])
+  @include('academy.components.topbar', ['academy' => $academy])
   
   <!-- Hero Section -->
   @include('academy.components.hero-section', ['academy' => $academy])

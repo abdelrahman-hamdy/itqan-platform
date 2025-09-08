@@ -184,14 +184,7 @@
                                     {{ $statusData['label'] }}
                                 </span>
                                 
-                                <!-- Action Buttons -->
-                                @if($session->status === App\Enums\SessionStatus::READY || $session->status === App\Enums\SessionStatus::ONGOING)
-                                    <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
-                                       onclick="event.stopPropagation()"
-                                       class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-lg transform hover:scale-105">
-                                        <i class="ri-video-line ml-1"></i>
-                                        {{ $session->status === App\Enums\SessionStatus::ONGOING ? 'انضمام للجلسة الجارية' : 'انضمام للجلسة' }}
-                                    </a>
+                                <!-- Action Buttons - Removed join button as requested -->
                                 @elseif($session->status === App\Enums\SessionStatus::SCHEDULED && $session->scheduled_at && $session->scheduled_at->isFuture())
                                     @php
                                         $timeRemaining = humanize_time_remaining_arabic($session->scheduled_at);

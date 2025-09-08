@@ -33,17 +33,12 @@
                 <div class="flex justify-between">
                     <span class="text-gray-600">الحالة:</span>
                     <span class="font-medium text-gray-900">
-                        @if($session->status === 'scheduled')
-                            <span class="text-blue-600">مجدولة</span>
-                        @elseif($session->status === 'in_progress')
-                            <span class="text-green-600">جارية</span>
-                        @elseif($session->status === 'completed')
-                            <span class="text-gray-600">مكتملة</span>
-                        @elseif($session->status === 'cancelled')
-                            <span class="text-red-600">ملغية</span>
-                        @else
-                            {{ $session->status }}
-                        @endif
+                        <x-sessions.status-display 
+                            :session="$session" 
+                            variant="text" 
+                            size="md" 
+                            :show-icon="false" 
+                            :show-label="true" />
                     </span>
                 </div>
                 

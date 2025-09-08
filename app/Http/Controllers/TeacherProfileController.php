@@ -353,11 +353,20 @@ class TeacherProfileController extends Controller
         // For now, recorded courses don't have assignment - only creation
         $assignedRecordedCourses = collect(); // Empty for now
 
+        // Get private academic lessons (subscriptions)
+        $privateLessons = \App\Models\AcademicSubscription::where('teacher_id', $teacherProfile->id)
+            ->where('academy_id', $academy->id)
+            ->with(['student', 'subject', 'gradeLevel'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
         return [
             'createdInteractiveCourses' => $createdInteractiveCourses,
             'createdRecordedCourses' => $createdRecordedCourses,
             'assignedInteractiveCourses' => $assignedInteractiveCourses,
             'assignedRecordedCourses' => $assignedRecordedCourses,
+            'privateLessons' => $privateLessons,
             'teacherType' => 'academic',
         ];
     }

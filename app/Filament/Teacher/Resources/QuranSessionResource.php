@@ -107,11 +107,6 @@ class QuranSessionResource extends Resource
                         Textarea::make('lesson_objectives')
                             ->label('أهداف الدرس')
                             ->rows(3),
-
-                        Toggle::make('counts_toward_subscription')
-                            ->label('تحتسب ضمن الاشتراك')
-                            ->helperText('هل تحتسب هذه الجلسة ضمن جلسات الاشتراك؟')
-                            ->default(true),
                     ]),
 
                 Section::make('الواجب المنزلي')
@@ -270,9 +265,7 @@ class QuranSessionResource extends Resource
                         'completed' => 'مكتملة',
                         'cancelled' => 'ملغية',
                         'absent' => 'غياب الطالب',
-                        'missed' => 'فائتة',
-                        'rescheduled' => 'مؤجلة',
-                        default => $state instanceof \App\Enums\SessionStatus ? $state->label() : $state,
+                        default => $state,
                     }),
 
                 BadgeColumn::make('attendance_status')

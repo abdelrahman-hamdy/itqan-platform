@@ -82,9 +82,9 @@ class QuranCircleResource extends BaseResource
                                     ->label('الفئة العمرية')
                                     ->options([
                                         'children' => 'أطفال (5-12 سنة)',
-                                        'teenagers' => 'مراهقون (13-17 سنة)',
+                                        'youth' => 'شباب (13-17 سنة)',
                                         'adults' => 'بالغون (18+ سنة)',
-                                        'mixed' => 'مختلطة',
+                                        'all_ages' => 'كل الفئات',
                                     ])
                                     ->required(),
 
@@ -103,7 +103,7 @@ class QuranCircleResource extends BaseResource
                                         'memorization' => 'حفظ القرآن',
                                         'recitation' => 'تلاوة وتجويد',
                                         'interpretation' => 'تفسير',
-                                        'arabic_language' => 'اللغة العربية القرآنية',
+                                        'arabic_language' => 'اللغة العربية',
                                         'complete' => 'شامل',
                                     ])
                                     ->default('memorization')

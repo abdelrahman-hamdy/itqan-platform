@@ -357,9 +357,25 @@ class SessionMeetingService
                 $this->livekitService->endMeeting($session->meeting_room_name);
             }
 
+            // FIXED: Check attendance before marking session status for individual sessions
+            if ($session->session_type === 'individual') {
+                // For individual sessions, check if student attended
+                $studentAttended = $this->checkStudentAttendance($session);
+                $sessionStatus = $studentAttended ? SessionStatus::COMPLETED : SessionStatus::ABSENT;
+
+                Log::info('Individual session status based on attendance', [
+                    'session_id' => $session->id,
+                    'student_attended' => $studentAttended,
+                    'final_status' => $sessionStatus->value,
+                ]);
+            } else {
+                // For group sessions, always mark as completed
+                $sessionStatus = SessionStatus::COMPLETED;
+            }
+
             // Update session status
             $session->update([
-                'status' => SessionStatus::COMPLETED,
+                'status' => $sessionStatus,
                 'meeting_ended_at' => now(),
             ]);
 
@@ -590,5 +606,37 @@ class SessionMeetingService
         return $session->session_type === 'individual'
             ? $session->individualCircle
             : $session->circle;
+    }
+
+    /**
+     * Check if student attended the individual session
+     */
+    private function checkStudentAttendance(QuranSession $session): bool
+    {
+        // Get meeting attendance data
+        $meetingAttendance = MeetingAttendance::where('session_id', $session->id)
+            ->where('user_id', $session->student_id)
+            ->first();
+
+        if (! $meetingAttendance) {
+            return false; // No attendance record = absent
+        }
+
+        // Calculate final attendance to ensure sync is done
+        $meetingAttendance->calculateFinalAttendance();
+
+        // Check if student attended for meaningful duration
+        $minimumMinutes = max(5, ($session->duration_minutes ?? 30) * 0.1); // At least 10% or 5 minutes
+        $actualMinutes = $meetingAttendance->total_duration_minutes;
+
+        Log::info('Checking student attendance', [
+            'session_id' => $session->id,
+            'student_id' => $session->student_id,
+            'actual_minutes' => $actualMinutes,
+            'minimum_required' => $minimumMinutes,
+            'attended' => $actualMinutes >= $minimumMinutes,
+        ]);
+
+        return $actualMinutes >= $minimumMinutes;
     }
 }

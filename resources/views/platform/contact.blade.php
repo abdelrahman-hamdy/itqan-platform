@@ -4,26 +4,81 @@
 
 @section('content')
     <!-- Hero Section -->
-    <div class="hero-gradient text-white py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl md:text-6xl font-bold mb-6">اتصل بنا</h1>
-            <p class="text-xl md:text-2xl mb-8 text-green-100">نحن هنا لمساعدتك في تحقيق مشاريعك وأهدافك</p>
+    <div class="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 py-20 pt-40" style="min-height: 70vh;">
+        <!-- Background Pattern Layer -->
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute inset-0" style="background-image: url('/storage/app-design-assets/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
+        </div>
+        
+        <!-- Enhanced Background Elements -->
+        <div class="absolute top-0 right-0 w-[40rem] h-[40rem] bg-gradient-to-br from-blue-500/20 via-blue-600/30 to-indigo-600/25 rounded-full blur-3xl opacity-60 animate-pulse" style="animation-duration: 6s;"></div>
+        <div class="absolute bottom-0 left-0 w-[45rem] h-[45rem] bg-gradient-to-tr from-emerald-500/20 via-green-600/25 to-teal-600/20 rounded-full blur-3xl opacity-55 animate-bounce" style="animation-duration: 8s;"></div>
+        <div class="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] bg-gradient-to-l from-cyan-500/20 via-teal-600/25 to-blue-600/20 rounded-full blur-3xl opacity-50 animate-ping" style="animation-duration: 10s;"></div>
+        <div class="absolute top-0 left-0 w-[38rem] h-[38rem] bg-gradient-to-br from-purple-500/20 via-violet-600/25 to-indigo-600/20 rounded-full blur-3xl opacity-45 animate-pulse" style="animation-duration: 7s; animation-delay: 2s;"></div>
+        <div class="absolute bottom-0 right-0 w-[42rem] h-[42rem] bg-gradient-to-tl from-indigo-500/20 via-blue-600/25 to-purple-600/20 rounded-full blur-3xl opacity-50 animate-bounce" style="animation-duration: 9s; animation-delay: 3s;"></div>
+        
+        <!-- Additional subtle elements -->
+        <div class="absolute top-1/4 left-1/4 w-[20rem] h-[20rem] bg-gradient-to-r from-rose-500/15 to-pink-600/20 rounded-full blur-2xl opacity-30 animate-pulse" style="animation-duration: 12s; animation-delay: 1s;"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-[25rem] h-[25rem] bg-gradient-to-r from-amber-500/15 to-yellow-600/20 rounded-full blur-2xl opacity-25 animate-bounce" style="animation-duration: 11s; animation-delay: 4s;"></div>
+        
+        <!-- Content -->
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <!-- Animated Label -->
+            <div class="mb-8" data-aos="fade-up">
+                <span class="inline-flex items-center gap-3 px-6 py-3 bg-white/10 text-blue-100 rounded-full text-sm font-semibold border border-blue-300/30 backdrop-blur-sm">
+                    <i class="ri-phone-line text-lg"></i>
+                    تواصل معنا
+                </span>
+            </div>
+            
+            <!-- Main Heading -->
+            <h1 class="text-4xl md:text-6xl font-bold mb-6 leading-relaxed text-white" data-aos="fade-up" data-aos-delay="200">
+                <span class="bg-gradient-to-r from-white via-blue-100 to-indigo-100 bg-clip-text text-transparent">
+                    اتصل بنا
+                </span>
+            </h1>
+            
+            <!-- Subtitle -->
+            <p class="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto" data-aos="fade-up" data-aos-delay="400">
+                نحن هنا لمساعدتك في تحقيق مشاريعك وأهدافك، تواصل معنا الآن
+            </p>
+            
+            <!-- Action Button -->
+            <div class="flex justify-center" data-aos="fade-up" data-aos-delay="600">
+                <a href="#contact-info" class="bg-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-700 transition-all transform hover:scale-105">
+                    <i class="ri-message-line ml-2"></i>
+                    أرسل رسالة
+                </a>
+            </div>
         </div>
     </div>
 
     <!-- Contact Information -->
-    <div class="py-24 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="contact-info" class="py-24 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
+        <!-- Section Top Border -->
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-100 via-indigo-100 to-purple-100"></div>
+        
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-5">
+            <div class="absolute inset-0" style="background-image: url('/storage/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                <div>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-8">معلومات التواصل</h2>
+                <div data-aos="fade-right">
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-8 leading-relaxed">
+                        <span class="flex items-center gap-4">
+                            <i class="ri-information-line text-5xl text-blue-600"></i>
+                            <span class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                                معلومات التواصل
+                            </span>
+                        </span>
+                    </h2>
                     
                     <div class="space-y-8">
                         <div class="flex items-start space-x-4 space-x-reverse">
-                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                </svg>
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-mail-line text-xl text-blue-600"></i>
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900 mb-2">البريد الإلكتروني</h3>
@@ -33,10 +88,8 @@
                         </div>
                         
                         <div class="flex items-start space-x-4 space-x-reverse">
-                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                                </svg>
+                            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-phone-line text-xl text-indigo-600"></i>
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900 mb-2">الهاتف</h3>
@@ -46,11 +99,8 @@
                         </div>
                         
                         <div class="flex items-start space-x-4 space-x-reverse">
-                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-map-pin-line text-xl text-purple-600"></i>
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900 mb-2">العنوان</h3>
@@ -60,10 +110,8 @@
                         </div>
                         
                         <div class="flex items-start space-x-4 space-x-reverse">
-                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-time-line text-xl text-blue-600"></i>
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900 mb-2">ساعات العمل</h3>
@@ -76,58 +124,57 @@
                     <div class="mt-12">
                         <h3 class="text-xl font-semibold text-gray-900 mb-4">تابعنا على وسائل التواصل الاجتماعي</h3>
                         <div class="flex space-x-4 space-x-reverse">
-                            <a href="#" class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center hover:bg-green-200 transition-colors">
-                                <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-                                </svg>
+                            <a href="#" class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors">
+                                <i class="ri-twitter-x-line text-xl text-blue-600"></i>
                             </a>
-                            <a href="#" class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center hover:bg-green-200 transition-colors">
-                                <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
-                                </svg>
+                            <a href="#" class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center hover:bg-indigo-200 transition-colors">
+                                <i class="ri-facebook-line text-xl text-indigo-600"></i>
                             </a>
-                            <a href="#" class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center hover:bg-green-200 transition-colors">
-                                <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                                </svg>
+                            <a href="#" class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center hover:bg-purple-200 transition-colors">
+                                <i class="ri-linkedin-line text-xl text-purple-600"></i>
                             </a>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-gray-50 rounded-2xl p-8">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-6">أرسل لنا رسالة</h3>
+                <div class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 rounded-2xl p-8 border border-gray-200 shadow-xl" data-aos="fade-left">
+                    <h3 class="text-3xl font-bold text-gray-900 mb-6">
+                        <span class="flex items-center gap-3">
+                            <i class="ri-message-line text-3xl text-blue-600"></i>
+                            أرسل لنا رسالة
+                        </span>
+                    </h3>
                     
                     <form class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">الاسم الأول *</label>
                                 <input type="text" id="first_name" name="first_name" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                             <div>
                                 <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">الاسم الأخير *</label>
                                 <input type="text" id="last_name" name="last_name" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                         </div>
                         
                         <div>
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني *</label>
                             <input type="email" id="email" name="email" required 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                         
                         <div>
                             <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
                             <input type="tel" id="phone" name="phone" 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                         
                         <div>
                             <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">الموضوع *</label>
                             <select id="subject" name="subject" required 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">اختر الموضوع</option>
                                 <option value="general">استفسار عام</option>
                                 <option value="business">خدمات الأعمال</option>
@@ -140,62 +187,114 @@
                         <div>
                             <label for="message" class="block text-sm font-medium text-gray-700 mb-2">الرسالة *</label>
                             <textarea id="message" name="message" rows="6" required 
-                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                       placeholder="اكتب رسالتك هنا..."></textarea>
                         </div>
                         
                         <button type="submit" 
-                                class="w-full bg-green-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors transform hover:scale-105">
+                                class="w-full py-4 px-6 bg-blue-600 text-white rounded-2xl font-semibold hover:bg-blue-700 transition-all transform hover:scale-105">
+                            <i class="ri-send-plane-line ml-2"></i>
                             إرسال الرسالة
                         </button>
                     </form>
                 </div>
             </div>
         </div>
-    </div>
+        
+        <!-- Section Bottom Border -->
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-100 via-teal-100 to-green-100"></div>
+    </section>
 
     <!-- FAQ Section -->
-    <div class="py-24 bg-gray-50">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">الأسئلة الشائعة</h2>
+    <section class="py-24 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 relative overflow-hidden">
+        <!-- Section Top Border -->
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-100 via-teal-100 to-cyan-100"></div>
+        
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-5">
+            <div class="absolute inset-0" style="background-image: url('/storage/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+        </div>
+        
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-16" data-aos="fade-up">
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-relaxed">
+                    <span class="flex items-center justify-center gap-4">
+                        <i class="ri-question-line text-5xl text-emerald-600"></i>
+                        <span class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
+                            الأسئلة الشائعة
+                        </span>
+                    </span>
+                </h2>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    إجابات على أكثر الأسئلة شيوعاً
+                    إجابات على أكثر الأسئلة شيوعاً لمساعدتك في الحصول على المعلومات التي تحتاجها
                 </p>
             </div>
             
             <div class="space-y-6">
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-3">كيف يمكنني طلب خدمة من منصة إتقان؟</h3>
-                    <p class="text-gray-600">يمكنك طلب الخدمة من خلال صفحة خدمات الأعمال، حيث ستجد نموذج طلب شامل لملء تفاصيل مشروعك.</p>
+                <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-200" data-aos="fade-up" data-aos-delay="100">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-3">
+                        <i class="ri-question-answer-line text-emerald-600"></i>
+                        كيف يمكنني طلب خدمة من منصة إتقان؟
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">يمكنك طلب الخدمة من خلال صفحة خدمات الأعمال، حيث ستجد نموذج طلب شامل لملء تفاصيل مشروعك.</p>
                 </div>
                 
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-3">ما هي أنواع الخدمات التي تقدمونها؟</h3>
-                    <p class="text-gray-600">نقدم خدمات متنوعة تشمل التصميم، البرمجة، التسويق الرقمي، والاستشارات في مختلف المجالات.</p>
+                <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-200" data-aos="fade-up" data-aos-delay="200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-3">
+                        <i class="ri-service-line text-emerald-600"></i>
+                        ما هي أنواع الخدمات التي تقدمونها؟
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">نقدم خدمات متنوعة تشمل التصميم، البرمجة، التسويق الرقمي، والاستشارات في مختلف المجالات.</p>
                 </div>
                 
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-3">كم تستغرق مدة تنفيذ المشروع؟</h3>
-                    <p class="text-gray-600">تختلف مدة التنفيذ حسب حجم وتعقيد المشروع، عادةً ما تستغرق المشاريع الصغيرة أسبوعين إلى شهر، والمشاريع الكبيرة من 2 إلى 6 أشهر.</p>
+                <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-200" data-aos="fade-up" data-aos-delay="300">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-3">
+                        <i class="ri-time-line text-emerald-600"></i>
+                        كم تستغرق مدة تنفيذ المشروع؟
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">تختلف مدة التنفيذ حسب حجم وتعقيد المشروع، عادةً ما تستغرق المشاريع الصغيرة أسبوعين إلى شهر، والمشاريع الكبيرة من 2 إلى 6 أشهر.</p>
                 </div>
                 
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-3">هل تقدمون خدمات الدعم بعد إنجاز المشروع؟</h3>
-                    <p class="text-gray-600">نعم، نقدم خدمات الدعم والصيانة بعد إنجاز المشروع، ويمكن توقيع عقود صيانة دورية حسب احتياجاتك.</p>
+                <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-200" data-aos="fade-up" data-aos-delay="400">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-3">
+                        <i class="ri-customer-service-2-line text-emerald-600"></i>
+                        هل تقدمون خدمات الدعم بعد إنجاز المشروع؟
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">نعم، نقدم خدمات الدعم والصيانة بعد إنجاز المشروع، ويمكن توقيع عقود صيانة دورية حسب احتياجاتك.</p>
                 </div>
             </div>
         </div>
-    </div>
+        
+        <!-- Section Bottom Border -->
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-100 via-teal-100 to-cyan-100"></div>
+    </section>
 
     <!-- CTA Section -->
-    <div class="py-24 bg-green-600 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4">هل أنت مستعد لبدء مشروعك؟</h2>
-            <p class="text-xl mb-8 text-green-100">دعنا نعمل معاً لتحقيق رؤيتك وأهدافك</p>
-            <a href="{{ route('platform.business-services') }}" class="bg-white text-green-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors transform hover:scale-105">
-                اطلب خدمتك الآن
-            </a>
+    <section class="py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-5">
+            <div class="absolute inset-0" style="background-image: url('/storage/app-design-assets/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
         </div>
-    </div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h2 class="text-4xl md:text-5xl font-bold text-white mb-6 leading-relaxed" data-aos="fade-up">
+                هل أنت مستعد لبدء مشروعك؟
+            </h2>
+            <p class="text-xl mb-12 text-blue-100 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="200">
+                دعنا نعمل معاً لتحقيق رؤيتك وأهدافك ونقل أعمالك إلى المستوى التالي
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="400">
+                <a href="{{ route('platform.business-services') }}" 
+                   class="bg-green-600 text-white px-8 py-4 rounded-2xl font-semibold hover:bg-green-700 transition-all transform hover:scale-105">
+                    <i class="ri-briefcase-line ml-2"></i>
+                    اطلب خدمتك الآن
+                </a>
+                <a href="{{ route('platform.portfolio') }}" 
+                   class="bg-sky-600 text-white px-8 py-4 rounded-2xl font-semibold hover:bg-sky-700 transition-all transform hover:scale-105">
+                    <i class="ri-eye-line ml-2"></i>
+                    شاهد أعمالنا
+                </a>
+            </div>
+        </div>
+    </section>
 @endsection

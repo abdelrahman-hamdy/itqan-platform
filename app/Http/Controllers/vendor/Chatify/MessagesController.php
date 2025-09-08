@@ -17,6 +17,8 @@ use App\Services\ChatGroupService;
 use Illuminate\Support\Facades\Request as FacadesRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Events\MessageSentEvent;
+use App\Events\MessageReadEvent;
 class MessagesController extends Controller
 {
     protected $perPage = 30;
@@ -970,6 +972,14 @@ class MessagesController extends Controller
                     
                     \Log::info('💬 Push result', ['success' => $result ? 'true' : 'false']);
                     
+                    // Broadcast MessageSentEvent for real-time unread count updates
+                    broadcast(new MessageSentEvent(
+                        Auth::user()->id,
+                        $request['id'],
+                        $this->getAcademyId(),
+                        false // individual message
+                    ));
+                    
                 } catch (\Exception $e) {
                     \Log::error('💬 Pusher notification failed: ' . $e->getMessage(), [
                         'exception' => $e->getTraceAsString()
@@ -1047,10 +1057,22 @@ class MessagesController extends Controller
 
         // make as seen
         $userId = $request['id'];
+        $academyId = $this->getAcademyId();
+        
         $seen = Message::where('from_id', $userId)
             ->where('to_id', Auth::user()->id)
-            ->where('academy_id', $this->getAcademyId())
+            ->where('academy_id', $academyId)
             ->update(['seen' => 1]);
+            
+        // Broadcast MessageReadEvent for real-time unread count updates
+        if ($seen > 0) {
+            broadcast(new MessageReadEvent(
+                Auth::user()->id,
+                $userId,
+                $academyId
+            ));
+        }
+        
         // send the response
         return Response::json([
             'status' => $seen,
@@ -1092,29 +1114,53 @@ class MessagesController extends Controller
                 ->where('status', 'active')
                 ->get();
 
-            $contacts = [];
+            // Bulk fetch all relevant user IDs for permission check
+            $allowedUserIds = [];
             foreach ($users as $user) {
                 if ($this->canMessage($user)) {
-                    // Get last message between users
-                    $lastMessage = Message::where('academy_id', $academyId)
-                        ->where(function($q) use ($user, $currentUserId) {
-                            $q->where(function($subQ) use ($user, $currentUserId) {
-                                $subQ->where('from_id', $currentUserId)
-                                     ->where('to_id', $user->id);
-                            })->orWhere(function($subQ) use ($user, $currentUserId) {
-                                $subQ->where('from_id', $user->id)
-                                     ->where('to_id', $currentUserId);
-                            });
-                        })
-                        ->latest()
-                        ->first();
-                    
-                    // Get unseen count
-                    $unseenCount = Message::where('from_id', $user->id)
-                        ->where('to_id', $currentUserId)
-                        ->where('academy_id', $academyId)
-                        ->where('seen', 0)
-                        ->count();
+                    $allowedUserIds[] = $user->id;
+                }
+            }
+
+            // Bulk fetch last messages for all allowed contacts (single query)
+            $lastMessages = Message::where('academy_id', $academyId)
+                ->where(function($q) use ($allowedUserIds, $currentUserId) {
+                    $q->where(function($subQ) use ($allowedUserIds, $currentUserId) {
+                        $subQ->where('from_id', $currentUserId)
+                             ->whereIn('to_id', $allowedUserIds);
+                    })->orWhere(function($subQ) use ($allowedUserIds, $currentUserId) {
+                        $subQ->whereIn('from_id', $allowedUserIds)
+                             ->where('to_id', $currentUserId);
+                    });
+                })
+                ->select('from_id', 'to_id', 'body', 'created_at', 
+                    \DB::raw('ROW_NUMBER() OVER (PARTITION BY 
+                        CASE 
+                            WHEN from_id = ' . $currentUserId . ' THEN to_id 
+                            ELSE from_id 
+                        END 
+                        ORDER BY created_at DESC) as rn'))
+                ->get()
+                ->where('rn', 1)
+                ->keyBy(function($message) use ($currentUserId) {
+                    return $message->from_id == $currentUserId ? $message->to_id : $message->from_id;
+                });
+
+            // Bulk fetch unseen counts for all allowed contacts (single query)
+            $unseenCounts = Message::where('academy_id', $academyId)
+                ->whereIn('from_id', $allowedUserIds)
+                ->where('to_id', $currentUserId)
+                ->where('seen', 0)
+                ->select('from_id', \DB::raw('COUNT(*) as unseen_count'))
+                ->groupBy('from_id')
+                ->pluck('unseen_count', 'from_id')
+                ->toArray();
+
+            $contacts = [];
+            foreach ($users as $user) {
+                if (in_array($user->id, $allowedUserIds)) {
+                    $lastMessage = $lastMessages->get($user->id);
+                    $unseenCount = $unseenCounts[$user->id] ?? 0;
                     
                     $contacts[] = [
                         'id' => $user->id,
@@ -1123,7 +1169,7 @@ class MessagesController extends Controller
                         'avatar' => $user->getChatifyAvatar(),
                         'user_type' => $user->user_type,
                         'activeStatus' => $user->active_status ?? 0,
-                        'isOnline' => ($user->active_status ?? 0) == 1, // Convert to boolean for JavaScript
+                        'isOnline' => ($user->active_status ?? 0) == 1,
                         'lastSeen' => $user->last_seen ?? $user->updated_at,
                         'lastMessage' => $lastMessage ? [
                             'body' => $lastMessage->body,
@@ -1153,6 +1199,67 @@ class MessagesController extends Controller
                 'contacts' => [],
                 'total' => 0,
                 'error' => 'Failed to load contacts'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get unread messages count for the current user
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getUnreadCount(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $academyId = $this->getAcademyId();
+            
+            // Count unread individual messages (messages sent TO the current user that haven't been seen)
+            $unreadIndividual = Message::where('academy_id', $academyId)
+                ->where('to_id', $user->id)
+                ->where('from_id', '!=', $user->id)  // Don't count messages sent by current user
+                ->where('seen', 0)  // Use 'seen' column for individual messages
+                ->whereNull('group_id')  // Only individual messages, not group messages
+                ->count();
+            
+            // Count unread group messages
+            $unreadGroups = 0;
+            $userGroups = $user->chatGroupMemberships()
+                ->with('group')
+                ->whereHas('group', function ($query) use ($academyId) {
+                    $query->where('academy_id', $academyId);
+                })
+                ->get();
+            
+            foreach ($userGroups as $membership) {
+                // Count messages in this group that are newer than user's last read time
+                // and not sent by the current user
+                $lastReadAt = $membership->last_read_at ?? $membership->created_at ?? '1970-01-01 00:00:00';
+                
+                $unreadGroupMessages = Message::where('academy_id', $academyId)
+                    ->where('group_id', $membership->group_id)
+                    ->where('from_id', '!=', $user->id)  // Don't count messages sent by current user
+                    ->where('created_at', '>', $lastReadAt)
+                    ->count();
+                    
+                $unreadGroups += $unreadGroupMessages;
+            }
+            
+            $totalUnread = $unreadIndividual + $unreadGroups;
+            
+            return Response::json([
+                'unread_count' => $totalUnread,
+                'individual' => $unreadIndividual,
+                'groups' => $unreadGroups
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error getting unread count: ' . $e->getMessage());
+            
+            return Response::json([
+                'unread_count' => 0,
+                'error' => 'Failed to get unread count'
             ], 500);
         }
     }

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Traits\ScopedToAcademy;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,14 +16,9 @@ class AcademicSessionReport extends Model
         'student_id',
         'teacher_id',
         'academy_id',
-        'academic_grade',
-        'lesson_understanding_degree',
-        'participation_degree',
-        'homework_completion_degree',
+        'student_performance_grade', // Simple grade from 1-10
         'notes',
-        'homework_description',
-        'homework_file',
-        'homework_submitted_at',
+        'homework_text',
         'homework_feedback',
         'meeting_enter_time',
         'meeting_leave_time',
@@ -42,13 +36,9 @@ class AcademicSessionReport extends Model
     ];
 
     protected $casts = [
-        'academic_grade' => 'decimal:1',
-        'lesson_understanding_degree' => 'decimal:1',
-        'participation_degree' => 'decimal:1',
-        'homework_completion_degree' => 'decimal:1',
+        'student_performance_grade' => 'integer', // 1-10 grade
         'meeting_enter_time' => 'datetime',
         'meeting_leave_time' => 'datetime',
-        'homework_submitted_at' => 'datetime',
         'actual_attendance_minutes' => 'integer',
         'is_late' => 'boolean',
         'late_minutes' => 'integer',
@@ -234,22 +224,35 @@ class AcademicSessionReport extends Model
      */
     public function hasSubmittedHomework(): bool
     {
-        return !empty($this->homework_file) || !empty($this->homework_description);
+        return ! empty($this->homework_text);
     }
 
     /**
-     * Get overall session performance score (0-10)
+     * Get overall session performance score (1-10)
      */
-    public function getOverallPerformanceAttribute(): float
+    public function getOverallPerformanceAttribute(): ?int
     {
-        $scores = array_filter([
-            $this->academic_grade,
-            $this->lesson_understanding_degree,
-            $this->participation_degree,
-            $this->homework_completion_degree,
-        ]);
+        return $this->student_performance_grade;
+    }
 
-        return count($scores) > 0 ? round(array_sum($scores) / count($scores), 1) : 0.0;
+    /**
+     * Get performance level in Arabic
+     */
+    public function getPerformanceLevelAttribute(): string
+    {
+        $grade = $this->student_performance_grade;
+
+        if ($grade === null) {
+            return 'غير مقيم';
+        }
+
+        return match (true) {
+            $grade >= 9 => 'ممتاز',
+            $grade >= 8 => 'جيد جداً',
+            $grade >= 7 => 'جيد',
+            $grade >= 6 => 'مقبول',
+            default => 'يحتاج تحسين'
+        };
     }
 
     /**
@@ -293,7 +296,7 @@ class AcademicSessionReport extends Model
     {
         return $query->where(function ($q) {
             $q->whereNotNull('homework_file')
-              ->orWhereNotNull('homework_description');
+                ->orWhereNotNull('homework_description');
         });
     }
 }

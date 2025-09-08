@@ -1,16 +1,18 @@
 @props([
     'circle',
-    'viewType' => 'student' // 'student' or 'teacher'
+    'viewType' => 'student', // 'student' or 'teacher'
+    'type' => 'quran' // 'quran' or 'academic'
 ])
 
 @php
     $isTeacher = $viewType === 'teacher';
+    $isAcademic = $type === 'academic';
     $student = $circle->student;
-    $teacher = $circle->quranTeacher; // This IS a User model directly
+    $teacher = $isAcademic ? ($circle->teacher ?? null) : ($circle->quranTeacher ?? null);
     
     // Get next session for students
     $nextSession = null;
-    if (!$isTeacher) {
+    if (!$isTeacher && !$isAcademic) {
         $nextSession = $circle->sessions()
             ->where('scheduled_at', '>', now())
             ->where('status', 'scheduled')
@@ -25,11 +27,19 @@
     <div class="space-y-3">
         @if($isTeacher)
             <!-- Teacher Actions -->
-            <a href="{{ route('teacher.individual-circles.progress', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
-               class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                <i class="ri-line-chart-line ml-2"></i>
-                عرض التقرير التفصيلي
-            </a>
+            @if($isAcademic)
+                <a href="#" onclick="alert('سيتم تنفيذ التقرير التفصيلي قريباً')" 
+                   class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="ri-line-chart-line ml-2"></i>
+                    عرض التقرير التفصيلي
+                </a>
+            @else
+                <a href="{{ route('teacher.individual-circles.progress', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
+                   class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="ri-line-chart-line ml-2"></i>
+                    عرض التقرير التفصيلي
+                </a>
+            @endif
 
             @if($student)
                 <a href="/chat/{{ $student->id }}?subdomain={{ request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy' }}" 
@@ -39,11 +49,13 @@
                 </a>
             @endif
 
-            <button type="button" onclick="updateCircleSettings()" 
-                class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                <i class="ri-settings-line ml-2"></i>
-                إعدادات الحلقة
-            </button>
+            @if(!$isAcademic)
+                <button type="button" onclick="updateCircleSettings()" 
+                    class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="ri-settings-line ml-2"></i>
+                    إعدادات الحلقة
+                </button>
+            @endif
         @else
             <!-- Student Actions -->
             @if($nextSession && $nextSession->scheduled_at->diffInMinutes(now()) <= 30 && $nextSession->scheduled_at->diffInMinutes(now()) >= -5)
@@ -54,16 +66,16 @@
                 </a>
             @endif
 
-            @if($circle->quranTeacher)
-                <a href="/chat/{{ $circle->quranTeacher->id }}?subdomain={{ request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy' }}" 
+            @if($teacher)
+                <a href="/chat/{{ $teacher->id }}?subdomain={{ request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy' }}" 
                    class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                     <i class="ri-message-3-line ml-2"></i>
                     مراسلة المعلم
                 </a>
             @endif
             
-            @if($circle->quranTeacher)
-                <a href="{{ route('public.quran-teachers.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $circle->quranTeacher->quranTeacherProfile->id ?? $circle->quranTeacher->id]) }}" 
+            @if($teacher && !$isAcademic)
+                <a href="{{ route('public.quran-teachers.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->quranTeacherProfile->id ?? $teacher->id]) }}" 
                    class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
                     <i class="ri-user-line ml-2"></i>
                     ملف المعلم
@@ -76,11 +88,19 @@
                 طلب إعادة جدولة
             </button>
 
-            <a href="{{ route('student.quran-circles', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
-               class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                <i class="ri-group-line ml-2"></i>
-                جميع الحلقات
-            </a>
+            @if($isAcademic)
+                <a href="{{ route('student.academic-teachers', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+                   class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="ri-group-line ml-2"></i>
+                    جميع المعلمين الأكاديميين
+                </a>
+            @else
+                <a href="{{ route('student.quran-circles', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+                   class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="ri-group-line ml-2"></i>
+                    جميع الحلقات
+                </a>
+            @endif
         @endif
     </div>
 </div>
@@ -90,6 +110,11 @@
     function updateCircleSettings() {
         // This will be implemented when we create the settings functionality
         alert('سيتم تنفيذ إعدادات الحلقة قريباً');
+    }
+    
+    function updateLessonSettings() {
+        // This will be implemented when we create the settings functionality
+        alert('سيتم تنفيذ إعدادات الدرس قريباً');
     }
 </script>
 @endif 

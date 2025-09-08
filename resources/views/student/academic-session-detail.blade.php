@@ -167,7 +167,10 @@
 
 
             <!-- Attendance Status -->
-            @if(in_array($session->status, ['ongoing', 'completed', 'absent']))
+            @php
+                $statusValue = is_object($session->status) ? $session->status->value : $session->status;
+            @endphp
+            @if(in_array($statusValue, ['ongoing', 'completed', 'absent']))
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-user-check-line text-primary ml-2"></i>
@@ -176,7 +179,7 @@
                     
                     <div id="attendanceStatus" class="space-y-3">
                         <!-- This will be populated by JavaScript for ongoing sessions -->
-                        @if($session->status === 'completed' || $session->status === 'absent')
+                        @if($statusValue === 'completed' || $statusValue === 'absent')
                             @php
                                 // Get student attendance report
                                 $studentReport = $session->sessionReports()->where('student_id', auth()->id())->first();
@@ -363,7 +366,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show notification if session is starting soon
     @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 10 && $session->scheduled_at->diffInMinutes(now()) >= 0)
-        showNotification('الجلسة ستبدأ خلال {{ $session->scheduled_at->diffInMinutes(now()) }} دقيقة', 'info', 8000);
+        @php
+            $timeData = formatTimeRemaining($session->scheduled_at);
+        @endphp
+        showNotification('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', 'info', 8000);
     @endif
 });
 

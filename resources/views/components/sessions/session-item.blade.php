@@ -40,30 +40,24 @@
         <!-- Session Info -->
         <div class="flex items-center space-x-4 space-x-reverse">
             <!-- Session Status Indicator with Animated Circles -->
-            <div class="flex flex-col items-center">
-                @if($session->status === SessionStatus::COMPLETED)
-                    <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
-                    <span class="text-xs text-green-600 font-bold">مكتملة</span>
-                @elseif($session->status === SessionStatus::ONGOING)
-                    <div class="w-4 h-4 bg-orange-500 rounded-full mb-1 animate-pulse"></div>
-                    <span class="text-xs text-orange-600 font-bold">جارية</span>
-                @elseif($session->status === SessionStatus::READY)
-                    <div class="w-4 h-4 bg-green-400 rounded-full mb-1 animate-bounce"></div>
-                    <span class="text-xs text-green-600 font-bold">جاهزة</span>
-                @elseif($session->status === SessionStatus::SCHEDULED)
-                    <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
-                    <span class="text-xs text-blue-600 font-bold">مجدولة</span>
-                @elseif($session->status === SessionStatus::CANCELLED)
-                    <div class="w-4 h-4 bg-gray-400 rounded-full mb-1"></div>
-                    <span class="text-xs text-gray-500 font-bold">ملغاة</span>
-                @elseif($session->status === SessionStatus::ABSENT)
-                    <div class="w-4 h-4 bg-red-500 rounded-full mb-1"></div>
-                    <span class="text-xs text-red-600 font-bold">غائب</span>
-                @else
-                    <div class="w-4 h-4 bg-gray-300 rounded-full mb-1"></div>
-                    <span class="text-xs text-gray-500 font-bold">{{ $statusLabel }}</span>
-                @endif
-            </div>
+            @php
+                // Get status data for use throughout the component
+                $statusData = method_exists($session, 'getStatusDisplayData') 
+                    ? $session->getStatusDisplayData() 
+                    : [
+                        'status' => is_object($session->status) ? $session->status->value : $session->status,
+                        'label' => $statusLabel ?? 'غير محدد',
+                        'color' => 'gray'
+                    ];
+                $statusValue = $statusData['status'];
+            @endphp
+            
+            <x-sessions.status-display 
+                :session="$session" 
+                variant="indicator" 
+                size="sm" 
+                :show-icon="false" 
+                :show-label="true" />
             
             <!-- Session Details -->
             <div class="flex-1">
@@ -103,15 +97,15 @@
                     @endif
                     
                     <!-- Live indicator for ongoing sessions -->
-                    @if($session->status === SessionStatus::ONGOING)
-                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium animate-pulse flex items-center gap-1">
-                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                    @if($statusValue === 'ongoing')
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium animate-pulse flex items-center gap-1">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
                             مباشرة الآن
                         </span>
                     @endif
                     
                     <!-- Ready indicator -->
-                    @if($session->status === SessionStatus::READY)
+                    @if($statusValue === 'ready')
                         <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
                             <i class="ri-video-line"></i>
                             جاهزة للانضمام
@@ -126,7 +120,7 @@
                     </span>
                     <span class="flex items-center space-x-1 space-x-reverse">
                         <i class="ri-time-line"></i>
-                        <span>{{ $session->scheduled_at ? $session->scheduled_at->format('H:i') : '--:--' }}</span>
+                        <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                     </span>
                     @if($session->actual_duration_minutes)
                         <span class="flex items-center space-x-1 space-x-reverse">
@@ -171,7 +165,7 @@
                 @endif
 
                 <!-- Meeting timing info for active sessions -->
-                @if(in_array($session->status, [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING]))
+                @if(in_array($statusValue, ['scheduled', 'ready', 'ongoing']))
                     @php
                         // Handle both session types for meeting preparation
                         if ($isAcademicSession) {
@@ -215,18 +209,18 @@
                     {{ $statusLabel }}
                 </span>
                 
-                <!-- Action Button for active sessions -->
-                @if(in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING]) && $viewType === 'student')
+                <!-- Action Button for active sessions - removed join button for ready status -->
+                @if($statusValue === 'ongoing' && $viewType === 'student')
                     <a href="{{ route($sessionRoute, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
                        onclick="event.stopPropagation()"
                        class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-lg">
                         <i class="ri-video-line ml-1"></i>
-                        {{ $session->status === SessionStatus::ONGOING ? 'انضمام الآن' : 'انضم للجلسة' }}
+                        انضمام الآن
                     </a>
                 @endif
                 
                 <!-- Performance Indicators for completed sessions -->
-                @if($session->status === SessionStatus::COMPLETED)
+                @if($statusValue === 'completed')
                     @if($isAcademicSession)
                         <!-- Academic session performance -->
                         @if(isset($session->academic_performance_score) || isset($session->engagement_score))

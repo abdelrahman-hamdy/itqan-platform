@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\SessionStatus;
 use App\Services\AutoMeetingCreationService;
 use Illuminate\Console\Command;
 
@@ -133,7 +134,7 @@ class CleanupExpiredMeetingsCommand extends Command
     {
         // Count sessions that would be cleaned up
         $expiredSessions = \App\Models\QuranSession::whereNotNull('meeting_id')
-            ->whereIn('status', ['scheduled', 'ongoing'])
+            ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING])
             ->whereNotNull('scheduled_at')
             ->with('academy')
             ->get()

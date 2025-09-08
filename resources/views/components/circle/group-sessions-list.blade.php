@@ -53,27 +53,12 @@
                         <!-- Session Info -->
                         <div class="flex items-center space-x-4 space-x-reverse">
                             <!-- Session Status Indicator -->
-                            <div class="flex flex-col items-center">
-                                @if($session->status === App\Enums\SessionStatus::COMPLETED)
-                                    <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
-                                    <span class="text-xs text-green-600 font-bold">مكتملة</span>
-                                @elseif($session->status === App\Enums\SessionStatus::ONGOING)
-                                    <div class="w-4 h-4 bg-orange-500 rounded-full mb-1 animate-pulse"></div>
-                                    <span class="text-xs text-orange-600 font-bold">جارية</span>
-                                @elseif($session->status === App\Enums\SessionStatus::READY)
-                                    <div class="w-4 h-4 bg-green-400 rounded-full mb-1 animate-bounce"></div>
-                                    <span class="text-xs text-green-600 font-bold">جاهزة</span>
-                                @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
-                                    <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
-                                    <span class="text-xs text-blue-600 font-bold">مجدولة</span>
-                                @elseif($session->status === App\Enums\SessionStatus::CANCELLED)
-                                    <div class="w-4 h-4 bg-gray-400 rounded-full mb-1"></div>
-                                    <span class="text-xs text-gray-500 font-bold">ملغاة</span>
-                                @else
-                                    <div class="w-4 h-4 bg-gray-300 rounded-full mb-1"></div>
-                                    <span class="text-xs text-gray-500 font-bold">{{ $session->status->label() }}</span>
-                                @endif
-                            </div>
+                            <x-sessions.status-display 
+                                :session="$session" 
+                                variant="indicator" 
+                                size="sm" 
+                                :show-icon="false" 
+                                :show-label="true" />
                             
                             <!-- Session Details -->
                             <div class="flex-1">

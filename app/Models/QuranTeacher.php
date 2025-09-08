@@ -46,7 +46,7 @@ class QuranTeacher extends Model
         'total_students',
         'created_by',
         'updated_by',
-        'notes'
+        'notes',
     ];
 
     protected $casts = [
@@ -62,7 +62,7 @@ class QuranTeacher extends Model
         'total_reviews' => 'integer',
         'total_sessions' => 'integer',
         'total_students' => 'integer',
-        'approved_at' => 'datetime'
+        'approved_at' => 'datetime',
     ];
 
     // Constants
@@ -70,7 +70,7 @@ class QuranTeacher extends Model
         'bachelor' => 'بكالوريوس',
         'master' => 'ماجستير',
         'phd' => 'دكتوراه',
-        'other' => 'أخرى'
+        'other' => 'أخرى',
     ];
 
     // Relationships
@@ -113,7 +113,7 @@ class QuranTeacher extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'active')
-                    ->where('approval_status', 'approved');
+            ->where('approval_status', 'approved');
     }
 
     public function scopeApproved($query)
@@ -139,8 +139,8 @@ class QuranTeacher extends Model
     public function scopeAvailableForCircles($query)
     {
         return $query->where('status', 'active')
-                    ->where('approval_status', 'approved')
-                    ->where('max_students_per_circle', '>', 1);
+            ->where('approval_status', 'approved')
+            ->where('max_students_per_circle', '>', 1);
     }
 
     public function scopeByRating($query, $minRating = 4.0)
@@ -151,7 +151,7 @@ class QuranTeacher extends Model
     // Accessors
     public function getFullNameAttribute(): string
     {
-        return trim($this->first_name . ' ' . $this->last_name) ?: 'Unknown Teacher';
+        return trim($this->first_name.' '.$this->last_name) ?: 'Unknown Teacher';
     }
 
     public function getStatusTextAttribute(): string
@@ -160,7 +160,7 @@ class QuranTeacher extends Model
             'active' => 'نشط',
             'inactive' => 'غير نشط',
             'suspended' => 'معلق',
-            'pending' => 'في الانتظار'
+            'pending' => 'في الانتظار',
         ];
 
         return $statuses[$this->status] ?? $this->status;
@@ -172,7 +172,7 @@ class QuranTeacher extends Model
             'pending' => 'في انتظار الموافقة',
             'approved' => 'تم الاعتماد',
             'rejected' => 'مرفوض',
-            'under_review' => 'قيد المراجعة'
+            'under_review' => 'قيد المراجعة',
         ];
 
         return $statuses[$this->approval_status] ?? $this->approval_status;
@@ -184,8 +184,8 @@ class QuranTeacher extends Model
             'memorization' => 'حفظ القرآن',
             'recitation' => 'تلاوة وتجويد',
             'interpretation' => 'تفسير القرآن',
-            'arabic_language' => 'اللغة العربية القرآنية',
-            'general' => 'عام'
+            'arabic_language' => 'اللغة العربية',
+            'general' => 'عام',
         ];
 
         return $specializations[$this->specialization] ?? $this->specialization;
@@ -193,7 +193,7 @@ class QuranTeacher extends Model
 
     public function getIjazahTypeTextAttribute(): string
     {
-        if (!$this->has_ijazah) {
+        if (! $this->has_ijazah) {
             return 'لا يوجد إجازة';
         }
 
@@ -202,7 +202,7 @@ class QuranTeacher extends Model
             'recitation' => 'إجازة قراءة',
             'ten_readings' => 'إجازة القراءات العشر',
             'teaching' => 'إجازة تدريس',
-            'general' => 'إجازة عامة'
+            'general' => 'إجازة عامة',
         ];
 
         return $types[$this->ijazah_type] ?? $this->ijazah_type;
@@ -211,8 +211,8 @@ class QuranTeacher extends Model
     public function getFormattedRatesAttribute(): array
     {
         return [
-            'individual' => number_format($this->hourly_rate_individual, 2) . ' ' . $this->currency,
-            'group' => number_format($this->hourly_rate_group, 2) . ' ' . $this->currency
+            'individual' => number_format($this->hourly_rate_individual, 2).' '.$this->currency,
+            'group' => number_format($this->hourly_rate_group, 2).' '.$this->currency,
         ];
     }
 
@@ -225,10 +225,10 @@ class QuranTeacher extends Model
             'wednesday' => 'الأربعاء',
             'thursday' => 'الخميس',
             'friday' => 'الجمعة',
-            'saturday' => 'السبت'
+            'saturday' => 'السبت',
         ];
 
-        $availableDays = array_map(function($day) use ($days) {
+        $availableDays = array_map(function ($day) use ($days) {
             return $days[$day] ?? $day;
         }, $this->available_days ?? []);
 
@@ -238,11 +238,20 @@ class QuranTeacher extends Model
     public function getExperienceLevelAttribute(): string
     {
         $years = $this->teaching_experience_years;
-        
-        if ($years < 1) return 'مبتدئ';
-        if ($years < 3) return 'متوسط الخبرة';
-        if ($years < 5) return 'خبير';
-        if ($years < 10) return 'خبير متقدم';
+
+        if ($years < 1) {
+            return 'مبتدئ';
+        }
+        if ($years < 3) {
+            return 'متوسط الخبرة';
+        }
+        if ($years < 5) {
+            return 'خبير';
+        }
+        if ($years < 10) {
+            return 'خبير متقدم';
+        }
+
         return 'خبير محنك';
     }
 
@@ -253,7 +262,7 @@ class QuranTeacher extends Model
             'approval_status' => 'approved',
             'approved_at' => now(),
             'approved_by' => $approver->id,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         return $this;
@@ -264,7 +273,7 @@ class QuranTeacher extends Model
         $this->update([
             'approval_status' => 'rejected',
             'status' => 'inactive',
-            'notes' => $reason
+            'notes' => $reason,
         ]);
 
         return $this;
@@ -274,7 +283,7 @@ class QuranTeacher extends Model
     {
         $this->update([
             'status' => 'suspended',
-            'notes' => $reason
+            'notes' => $reason,
         ]);
 
         return $this;
@@ -283,7 +292,7 @@ class QuranTeacher extends Model
     public function activate(): self
     {
         $this->update([
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         return $this;
@@ -321,7 +330,7 @@ class QuranTeacher extends Model
 
         $this->update([
             'rating' => round($avgRating, 1),
-            'total_reviews' => $totalReviews
+            'total_reviews' => $totalReviews,
         ]);
 
         return $this;
@@ -336,7 +345,7 @@ class QuranTeacher extends Model
 
         $this->update([
             'total_sessions' => $totalSessions,
-            'total_students' => $totalStudents
+            'total_students' => $totalStudents,
         ]);
 
         return $this;
@@ -364,7 +373,7 @@ class QuranTeacher extends Model
 
     public function canAcceptNewStudents(): bool
     {
-        return $this->status === 'active' 
+        return $this->status === 'active'
             && $this->approval_status === 'approved';
     }
 
@@ -378,14 +387,15 @@ class QuranTeacher extends Model
             'rating' => 0,
             'total_reviews' => 0,
             'total_sessions' => 0,
-            'total_students' => 0
+            'total_students' => 0,
         ]));
     }
 
     private static function generateTeacherCode(int $academyId): string
     {
         $count = self::where('academy_id', $academyId)->count() + 1;
-        return 'QT-' . $academyId . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+
+        return 'QT-'.$academyId.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
     }
 
     public static function getAvailableTeachers(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection
@@ -415,7 +425,7 @@ class QuranTeacher extends Model
         }
 
         return $query->orderBy('rating', 'desc')
-                    ->orderBy('total_students', 'desc')
-                    ->get();
+            ->orderBy('total_students', 'desc')
+            ->get();
     }
-} 
+}

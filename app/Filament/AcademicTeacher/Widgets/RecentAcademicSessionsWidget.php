@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class RecentAcademicSessionsWidget extends BaseWidget
 {
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
@@ -54,13 +54,7 @@ class RecentAcademicSessionsWidget extends BaseWidget
                         'danger' => 'cancelled',
                         'info' => 'ongoing',
                     ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'scheduled' => 'مجدولة',
-                        'completed' => 'مكتملة',
-                        'cancelled' => 'ملغية',
-                        'ongoing' => 'جارية',
-                        default => $state,
-                    }),
+                    ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SessionStatus ? $state->label() : $state),
             ])
             ->paginated(false);
     }

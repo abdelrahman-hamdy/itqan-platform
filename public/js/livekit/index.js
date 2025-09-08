@@ -534,6 +534,9 @@ class LiveKitMeeting {
 
             // Add local participant to UI first
             this.participants.addParticipant(localParticipant);
+            
+            // Update participants list immediately to show local participant
+            this.participants.updateParticipantsList();
 
             // Request media permissions with better error handling
             let mediaPermissionsGranted = false;

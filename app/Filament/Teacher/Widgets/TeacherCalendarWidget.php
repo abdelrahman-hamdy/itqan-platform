@@ -155,7 +155,6 @@ class TeacherCalendarWidget extends FullCalendarWidget
                         'duration' => $session->duration_minutes,
                         'monthlySessionNumber' => $session->monthly_session_number,
                         'sessionMonth' => $session->session_month,
-                        'countsTowardSubscription' => $session->counts_toward_subscription,
                         'isMovable' => $session->session_type === 'individual', // Only individual sessions are movable
                         'isPassed' => $isPassed,
                         'classNames' => $classNames,

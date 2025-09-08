@@ -299,29 +299,39 @@ class LiveKitConnection {
     }
 
     /**
-     * Get LiveKit token from the server
+     * Get LiveKit token from the unified session API
      * @returns {Promise<string>} LiveKit token
      */
     async getLiveKitToken() {
-        console.log('🔑 Getting LiveKit token...');
+        console.log('🔑 Getting LiveKit token from unified API...');
 
         try {
-            const requestData = {
-                room_name: this.config.roomName,
-                participant_name: this.config.participantName,
-                user_type: this.config.role === 'teacher' ? 'quran_teacher' : 'student'
-            };
+            // Get session ID from window object (set in Blade template)
+            const sessionId = window.sessionId;
+            if (!sessionId) {
+                throw new Error('Session ID not found. Please refresh the page.');
+            }
 
-            console.log('🔑 Sending token request with data:', requestData);
+            console.log('🔑 Using session ID:', sessionId);
 
-            const response = await fetch('/api/meetings/livekit/token', {
+            // Get session type from window object (set in Blade template)
+            const sessionType = window.sessionType || 'quran';
+            console.log('🔑 Using session type:', sessionType);
+
+            // Use unified API endpoint for getting participant token
+            const response = await fetch('/api/sessions/meeting/token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.config.csrfToken
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': this.config.csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify(requestData)
+                body: JSON.stringify({
+                    session_type: sessionType,
+                    session_id: sessionId
+                })
             });
 
             if (!response.ok) {
@@ -332,12 +342,12 @@ class LiveKitConnection {
 
             const data = await response.json();
 
-            if (!data.token) {
-                throw new Error('Invalid token response: ' + (data.error || 'Unknown error'));
+            if (!data.success || !data.data?.access_token) {
+                throw new Error('Invalid token response: ' + (data.message || data.error || 'Unknown error'));
             }
 
-            console.log('✅ Token received successfully');
-            return data.token;
+            console.log('✅ Token received successfully from unified API');
+            return data.data.access_token;
 
         } catch (error) {
             console.error('❌ Failed to get LiveKit token:', error);
@@ -393,71 +403,62 @@ class LiveKitConnection {
     }
 
     /**
-     * Record attendance join via API (fallback for webhook issues)
+     * Record attendance join via unified API (fallback for webhook issues)
      */
     async recordAttendanceJoin() {
         try {
-            console.log('📝 Recording attendance join...');
+            console.log('📝 Recording attendance join via unified API...');
             
-            // Extract session ID from room name (format: academy-session-type-session-id)
-            const sessionId = this.extractSessionIdFromRoomName(this.config.roomName);
+            // Get session ID and type from window object (set in Blade template)
+            const sessionId = window.sessionId;
+            const sessionType = window.sessionType || 'quran';
+            
             if (!sessionId) {
-                console.warn('⚠️ Could not extract session ID from room name:', this.config.roomName);
+                console.warn('⚠️ Session ID not available for attendance recording');
                 return;
             }
 
-            const response = await fetch('/api/meetings/attendance/join', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.config.csrfToken
-                },
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    room_name: this.config.roomName
-                })
-            });
+            // This is handled automatically by the unified API when generating token
+            // But we can call the leave endpoint just to be sure
+            console.log('✅ Attendance join will be recorded automatically by unified API');
 
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Attendance join recorded:', data);
-            } else {
-                const error = await response.text();
-                console.warn('⚠️ Failed to record attendance join:', error);
-            }
         } catch (error) {
             console.error('❌ Error recording attendance join:', error);
         }
     }
 
     /**
-     * Record attendance leave via API (fallback for webhook issues)
+     * Record attendance leave via unified API (fallback for webhook issues)
      */
     async recordAttendanceLeave() {
         try {
-            console.log('📝 Recording attendance leave...');
+            console.log('📝 Recording attendance leave via unified API...');
             
-            const sessionId = this.extractSessionIdFromRoomName(this.config.roomName);
+            // Get session ID and type from window object (set in Blade template)
+            const sessionId = window.sessionId;
+            const sessionType = window.sessionType || 'quran';
+            
             if (!sessionId) {
-                console.warn('⚠️ Could not extract session ID from room name:', this.config.roomName);
+                console.warn('⚠️ Session ID not available for attendance recording');
                 return;
             }
 
-            const response = await fetch('/api/meetings/attendance/leave', {
+            const response = await fetch('/api/sessions/meeting/leave', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': this.config.csrfToken
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({
-                    session_id: sessionId,
-                    room_name: this.config.roomName
+                    session_type: sessionType,
+                    session_id: sessionId
                 })
             });
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('✅ Attendance leave recorded:', data);
+                console.log('✅ Attendance leave recorded via unified API:', data);
             } else {
                 const error = await response.text();
                 console.warn('⚠️ Failed to record attendance leave:', error);

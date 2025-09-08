@@ -26,22 +26,25 @@
             
             // Test 3: Get Token
             try {
-                const response = await fetch('/api/meetings/livekit/token', {
-                    method: 'POST',
+                const sessionId = window.sessionId || '45'; // Use session 45 as fallback (academic session)
+                const sessionType = window.sessionType || 'academic'; // Use academic as fallback
+                const response = await fetch(`/api/meetings/${sessionId}/token?session_type=${sessionType}`, {
+                    method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                    },
-                    body: JSON.stringify({
-                        room_name: 'test-room-' + Date.now(),
-                        participant_name: 'Test User',
-                        user_type: 'student'
-                    })
+                    }
                 });
                 
                 if (response.ok) {
                     const data = await response.json();
-                    html += `<p><b>Token Generation:</b> ✅ Success</p>`;
+                    if (data.success && data.data?.access_token) {
+                        html += `<p><b>Token Generation:</b> ✅ Success</p>`;
+                        html += `<p><b>Token Length:</b> ${data.data.access_token.length}</p>`;
+                    } else {
+                        html += `<p><b>Token Generation:</b> ❌ Failed - Invalid response format</p>`;
+                        html += `<p><b>Response:</b> ${JSON.stringify(data)}</p>`;
+                    }
                     
                     // Test 4: Connection
                     const room = new window.LiveKit.Room({
@@ -55,7 +58,7 @@
                     });
                     
                     try {
-                        await room.connect('wss://test-rn3dlic1.livekit.cloud', data.token);
+                        await room.connect('wss://test-rn3dlic1.livekit.cloud', data.data.access_token);
                         html += `<p><b>LiveKit Connection:</b> ✅ Connected!</p>`;
                         html += `<p><b>Room:</b> ${room.name}</p>`;
                         html += `<p><b>Participant:</b> ${room.localParticipant.identity}</p>`;

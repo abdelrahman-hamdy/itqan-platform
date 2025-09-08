@@ -20,14 +20,14 @@
             <!-- Circle Header -->
             <x-circle.individual-header :circle="$circle" view-type="teacher" />
 
-            <!-- Enhanced Sessions List -->
-            <x-sessions.enhanced-sessions-list 
-                :sessions="$circle->sessions" 
-                title="إدارة جلسات الحلقة الفردية"
-                view-type="teacher"
-                :show-tabs="false"
-                :circle="$circle"
-                empty-message="لا توجد جلسات مجدولة بعد" />
+            <!-- Quran Sessions Section -->
+                    <x-sessions.unified-sessions-section
+            :sessions="$circle->sessions"
+            title="إدارة جلسات الحلقة الفردية"
+            view-type="teacher"
+            :circle="$circle"
+            :show-tabs="false"
+            empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 
         <!-- Sidebar -->

@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
+use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
+use App\Traits\HasMeetings;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class AcademicSession extends Model
+class AcademicSession extends Model implements MeetingCapable
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasMeetings, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -207,7 +208,7 @@ class AcademicSession extends Model
     {
         return $this->hasMany(AcademicSessionReport::class, 'session_id');
     }
-    
+
     public function meetingAttendances(): HasMany
     {
         return $this->hasMany(MeetingAttendance::class, 'session_id');
@@ -291,10 +292,6 @@ class AcademicSession extends Model
         return $query->where('scheduled_at', '>', now());
     }
 
-
-
-
-
     /**
      * Meeting management methods
      */
@@ -346,7 +343,7 @@ class AcademicSession extends Model
      */
     public function getMeetingInfo(): ?array
     {
-        if (!$this->meeting_data) {
+        if (! $this->meeting_data) {
             return null;
         }
 
@@ -358,7 +355,7 @@ class AcademicSession extends Model
      */
     public function isMeetingValid(): bool
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return false;
         }
 
@@ -374,7 +371,7 @@ class AcademicSession extends Model
      */
     public function getMeetingJoinUrl(): ?string
     {
-        if (!$this->isMeetingValid()) {
+        if (! $this->isMeetingValid()) {
             return null;
         }
 
@@ -386,7 +383,7 @@ class AcademicSession extends Model
      */
     public function generateParticipantToken(User $user, array $permissions = []): string
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             throw new \Exception('Meeting room not created yet');
         }
 
@@ -413,7 +410,7 @@ class AcademicSession extends Model
      */
     public function getRoomInfo(): ?array
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return null;
         }
 
@@ -427,7 +424,7 @@ class AcademicSession extends Model
      */
     public function endMeeting(): bool
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return false;
         }
 
@@ -452,11 +449,11 @@ class AcademicSession extends Model
     {
         $roomInfo = $this->getRoomInfo();
 
-        if (!$roomInfo || !isset($roomInfo['participants'])) {
+        if (! $roomInfo || ! isset($roomInfo['participants'])) {
             return false;
         }
 
-        $userIdentity = $user->id . '_' . Str::slug($user->first_name . '_' . $user->last_name);
+        $userIdentity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
 
         foreach ($roomInfo['participants'] as $participant) {
             if ($participant['id'] === $userIdentity) {
@@ -474,7 +471,7 @@ class AcademicSession extends Model
     {
         $roomInfo = $this->getRoomInfo();
 
-        if (!$roomInfo) {
+        if (! $roomInfo) {
             return [
                 'participant_count' => 0,
                 'is_active' => false,
@@ -524,28 +521,29 @@ class AcademicSession extends Model
 
     public function hasHomework(): bool
     {
-        return !empty($this->homework_description) || !empty($this->homework_file);
+        return ! empty($this->homework_description) || ! empty($this->homework_file);
     }
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->title . ' (' . $this->session_code . ')';
+        return $this->title.' ('.$this->session_code.')';
     }
 
     public function getFormattedDurationAttribute(): string
     {
         $hours = intval($this->duration_minutes / 60);
         $minutes = $this->duration_minutes % 60;
-        
+
         if ($hours > 0) {
-            return $hours . 'h ' . $minutes . 'm';
+            return $hours.'h '.$minutes.'m';
         }
-        return $minutes . 'm';
+
+        return $minutes.'m';
     }
 
     public function getStatusBadgeColorAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'scheduled' => 'blue',
             'ongoing' => 'green',
             'completed' => 'gray',
@@ -553,5 +551,285 @@ class AcademicSession extends Model
             'rescheduled' => 'yellow',
             default => 'gray'
         };
+    }
+
+    /**
+     * Get session status display data (DRY principle - copied from QuranSession)
+     */
+    public function getStatusDisplayData(): array
+    {
+        // Convert string status to enum if needed
+        $status = is_string($this->status) ? \App\Enums\SessionStatus::from($this->status) : $this->status;
+
+        return [
+            'status' => $status->value,
+            'label' => $status->label(),
+            'icon' => $status->icon(),
+            'color' => $status->color(),
+            'can_join' => in_array($status, [
+                \App\Enums\SessionStatus::READY,
+                \App\Enums\SessionStatus::ONGOING,
+            ]),
+            'can_complete' => in_array($status, [
+                \App\Enums\SessionStatus::READY,
+                \App\Enums\SessionStatus::ONGOING,
+            ]),
+            'can_cancel' => in_array($status, [
+                \App\Enums\SessionStatus::SCHEDULED,
+                \App\Enums\SessionStatus::READY,
+            ]),
+            'can_reschedule' => in_array($status, [
+                \App\Enums\SessionStatus::SCHEDULED,
+                \App\Enums\SessionStatus::READY,
+            ]),
+            'is_upcoming' => $status === \App\Enums\SessionStatus::SCHEDULED && $this->scheduled_at && $this->scheduled_at->isFuture(),
+            'is_active' => in_array($status, [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]),
+            'preparation_minutes' => 15, // Default for academic sessions
+            'ending_buffer_minutes' => 5, // Default for academic sessions
+            'grace_period_minutes' => 15, // Default for academic sessions
+        ];
+    }
+
+    // ========================================
+    // MeetingCapable Interface Implementation
+    // ========================================
+
+    /**
+     * Check if a user can join the meeting
+     */
+    public function canUserJoinMeeting(User $user): bool
+    {
+        // Super admin can join any meeting
+        if ($user->user_type === 'super_admin') {
+            return true;
+        }
+
+        // Academy admin can join any meeting in their academy
+        if ($user->user_type === 'academy_admin' && $user->academy_id === $this->academy_id) {
+            return true;
+        }
+
+        // Academic teacher can join if they are the teacher for this session
+        if ($user->user_type === 'academic_teacher' && $user->id === $this->academic_teacher_id) {
+            return true;
+        }
+
+        // Student can join if they are the student for this session
+        if ($user->user_type === 'student' && $user->id === $this->student_id) {
+            return true;
+        }
+
+        // For interactive courses, check if user is enrolled
+        if ($this->session_type === 'interactive_course' && $this->interactiveCourseSession) {
+            $course = $this->interactiveCourseSession->interactiveCourse;
+            if ($course) {
+                // Check if student is enrolled in the course
+                if ($user->user_type === 'student') {
+                    return $course->enrollments()->where('student_id', $user->id)->exists();
+                }
+                // Check if user is the course teacher
+                if ($user->user_type === 'academic_teacher') {
+                    return $course->academic_teacher_id === $user->id;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a user can manage the meeting (create, end, etc.)
+     */
+    public function canUserManageMeeting(User $user): bool
+    {
+        // Super admin can manage any meeting
+        if ($user->user_type === 'super_admin') {
+            return true;
+        }
+
+        // Academy admin can manage any meeting in their academy
+        if ($user->user_type === 'academy_admin' && $user->academy_id === $this->academy_id) {
+            return true;
+        }
+
+        // Academic teacher can manage if they are the teacher for this session
+        if ($user->user_type === 'academic_teacher' && $user->id === $this->academic_teacher_id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the meeting type identifier
+     */
+    public function getMeetingType(): string
+    {
+        return 'academic';
+    }
+
+    /**
+     * Get the academy for this session
+     */
+    public function getAcademy(): Academy
+    {
+        return $this->academy;
+    }
+
+    /**
+     * Get the meeting start time
+     */
+    public function getMeetingStartTime(): ?Carbon
+    {
+        return $this->scheduled_at;
+    }
+
+    /**
+     * Get the meeting end time
+     */
+    public function getMeetingEndTime(): ?Carbon
+    {
+        if ($this->scheduled_at && $this->duration_minutes) {
+            return $this->scheduled_at->addMinutes($this->duration_minutes);
+        }
+
+        return $this->ended_at;
+    }
+
+    /**
+     * Get all participants for this session
+     */
+    public function getParticipants(): array
+    {
+        $participants = [];
+
+        // Add the academic teacher
+        if ($this->academicTeacher && $this->academicTeacher->user) {
+            $participants[] = [
+                'id' => $this->academicTeacher->user->id,
+                'name' => trim($this->academicTeacher->user->first_name.' '.$this->academicTeacher->user->last_name),
+                'email' => $this->academicTeacher->user->email,
+                'role' => 'academic_teacher',
+                'is_teacher' => true,
+                'user' => $this->academicTeacher->user,
+            ];
+        }
+
+        // Add the student
+        if ($this->student) {
+            $participants[] = [
+                'id' => $this->student->id,
+                'name' => trim($this->student->first_name.' '.$this->student->last_name),
+                'email' => $this->student->email,
+                'role' => 'student',
+                'is_teacher' => false,
+                'user' => $this->student,
+            ];
+        }
+
+        // For interactive courses, add all enrolled students
+        if ($this->session_type === 'interactive_course' && $this->interactiveCourseSession) {
+            $course = $this->interactiveCourseSession->interactiveCourse;
+            if ($course) {
+                $enrolledStudents = $course->enrollments()->with('student')->get();
+                foreach ($enrolledStudents as $enrollment) {
+                    if ($enrollment->student && $enrollment->student->id !== $this->student_id) {
+                        $participants[] = [
+                            'id' => $enrollment->student->id,
+                            'name' => trim($enrollment->student->first_name.' '.$enrollment->student->last_name),
+                            'email' => $enrollment->student->email,
+                            'role' => 'student',
+                            'is_teacher' => false,
+                            'user' => $enrollment->student,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $participants;
+    }
+
+    /**
+     * Get meeting-specific configuration
+     */
+    public function getMeetingConfiguration(): array
+    {
+        $config = [
+            'session_type' => $this->session_type,
+            'session_id' => $this->id,
+            'session_code' => $this->session_code,
+            'academy_id' => $this->academy_id,
+            'duration_minutes' => $this->duration_minutes ?? 60,
+            'max_participants' => $this->session_type === 'interactive_course' ? 25 : 2,
+            'recording_enabled' => false, // Academic sessions typically don't need recording
+            'chat_enabled' => true,
+            'screen_sharing_enabled' => true,
+            'whiteboard_enabled' => true,
+            'breakout_rooms_enabled' => $this->session_type === 'interactive_course',
+            'waiting_room_enabled' => false,
+            'mute_on_join' => false,
+            'camera_on_join' => true,
+        ];
+
+        // Add session-specific settings based on type
+        if ($this->session_type === 'individual') {
+            $config['max_participants'] = 2;
+            $config['breakout_rooms_enabled'] = false;
+            $config['waiting_room_enabled'] = false;
+        } elseif ($this->session_type === 'interactive_course') {
+            $config['max_participants'] = 25;
+            $config['breakout_rooms_enabled'] = true;
+            $config['waiting_room_enabled'] = true;
+            $config['mute_on_join'] = true;
+        }
+
+        return $config;
+    }
+
+    /**
+     * Get the session type identifier for meeting purposes (MeetingCapable interface)
+     */
+    public function getMeetingSessionType(): string
+    {
+        return 'academic';
+    }
+
+    /**
+     * Get the expected duration of the meeting in minutes (MeetingCapable interface)
+     */
+    public function getMeetingDurationMinutes(): int
+    {
+        return $this->duration_minutes ?? 60;
+    }
+
+    /**
+     * Get all participants who should have access to this meeting (MeetingCapable interface)
+     */
+    public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection
+    {
+        $participants = collect();
+
+        // Add the academic teacher
+        if ($this->academicTeacher && $this->academicTeacher->user) {
+            $participants->push($this->academicTeacher->user);
+        }
+
+        // Add the student
+        if ($this->student) {
+            $participants->push($this->student);
+        }
+
+        // For interactive courses, add all enrolled students
+        if ($this->session_type === 'interactive_course' && $this->interactiveCourseSession) {
+            $course = $this->interactiveCourseSession->interactiveCourse;
+            if ($course) {
+                $enrolledStudents = $course->enrollments()->with('student')->get()->pluck('student');
+                $participants = $participants->merge($enrolledStudents);
+            }
+        }
+
+        // Remove duplicates and null values
+        return $participants->filter()->unique('id');
     }
 }

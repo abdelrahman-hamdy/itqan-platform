@@ -109,6 +109,14 @@ class RecordedCourse extends Model implements HasMedia
             ->withTimestamps();
     }
 
+    public function enrolledStudents(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'course_subscriptions', 'recorded_course_id', 'student_id')
+            ->wherePivot('status', 'active')
+            ->withPivot(['enrolled_at', 'progress_percentage', 'status'])
+            ->withTimestamps();
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(CourseReview::class, 'course_id');
@@ -158,18 +166,22 @@ class RecordedCourse extends Model implements HasMedia
         }
 
         // Get currency from academy or use default SAR
-        $currency = $this->academy->currency ?? 'SAR';
+        $currency = $this->academy?->currency ?? 'SAR';
+
+        // Format price with Arabic numerals
+        $formattedPrice = number_format($this->price, 0);
+        $formattedDiscountPrice = $this->discount_price ? number_format($this->discount_price, 0) : null;
 
         if ($this->discount_price && $this->discount_price < $this->price) {
-            return $this->discount_price.' '.$currency.' (خصم من '.$this->price.')';
+            return $formattedDiscountPrice.' '.$currency.' <span class="line-through text-gray-500 text-sm">'.$formattedPrice.' '.$currency.'</span>';
         }
 
-        return $this->price.' '.$currency;
+        return $formattedPrice.' '.$currency;
     }
 
     public function getTotalLessonsAttribute(): int
     {
-        return $this->lessons()->count();
+        return $this->lessons()->where('is_published', true)->count();
     }
 
     public function getProgressPercentageAttribute(): float
@@ -179,7 +191,14 @@ class RecordedCourse extends Model implements HasMedia
             return 0;
         }
 
-        return ($this->completed_lessons_count / $totalLessons) * 100;
+        $completedLessons = $this->lessons()
+            ->whereHas('progress', function ($query) {
+                $query->where('user_id', auth()->id())
+                    ->where('is_completed', true);
+            })
+            ->count();
+
+        return ($completedLessons / $totalLessons) * 100;
     }
 
     public function getDurationFormattedAttribute(): string
@@ -212,10 +231,10 @@ class RecordedCourse extends Model implements HasMedia
     {
         $this->update([
             'total_sections' => $this->sections()->count(),
-            'total_duration_minutes' => 0, // TODO: Calculate from actual video durations when available
-            'total_enrollments' => $this->enrollments()->count(),
-            'avg_rating' => 0, // Default to 0 for now
-            'total_reviews' => 0, // Default to 0 for now
+            'total_duration_minutes' => $this->lessons()->sum('duration_minutes') ?? 0,
+            'total_enrollments' => $this->enrollments()->where('status', 'active')->count(),
+            'avg_rating' => $this->reviews()->avg('rating') ?? 0,
+            'total_reviews' => $this->reviews()->count(),
         ]);
     }
 
@@ -279,6 +298,18 @@ class RecordedCourse extends Model implements HasMedia
 
     protected static function booted(): void
     {
+        static::creating(function (RecordedCourse $course) {
+            // Auto-generate course code if not provided
+            if (empty($course->course_code)) {
+                $course->course_code = 'RC-'.strtoupper(substr($course->title ?? 'COURSE', 0, 3)).'-'.time();
+            }
+
+            // Set published_at when course is published
+            if ($course->is_published && ! $course->published_at) {
+                $course->published_at = now();
+            }
+        });
+
         static::created(function (RecordedCourse $course) {
             // Create a default section for this course
             $course->sections()->create([
@@ -290,6 +321,13 @@ class RecordedCourse extends Model implements HasMedia
                 'order' => 1,
                 'created_by' => auth()->id() ?? 1,
             ]);
+        });
+
+        static::updating(function (RecordedCourse $course) {
+            // Set published_at when course is published for the first time
+            if ($course->is_published && ! $course->published_at && $course->getOriginal('is_published') == false) {
+                $course->published_at = now();
+            }
         });
     }
 

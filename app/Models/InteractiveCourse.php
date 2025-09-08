@@ -108,12 +108,12 @@ class InteractiveCourse extends Model
 
     public function subject(): BelongsTo
     {
-        return $this->belongsTo(Subject::class);
+        return $this->belongsTo(AcademicSubject::class, 'subject_id');
     }
 
     public function gradeLevel(): BelongsTo
     {
-        return $this->belongsTo(AcademicGradeLevel::class);
+        return $this->belongsTo(AcademicGradeLevel::class, 'grade_level_id');
     }
 
     public function enrollments(): HasMany
@@ -129,6 +129,12 @@ class InteractiveCourse extends Model
     public function teacherPayments(): HasMany
     {
         return $this->hasMany(InteractiveTeacherPayment::class, 'course_id');
+    }
+
+    public function enrolledStudents(): HasMany
+    {
+        return $this->hasMany(InteractiveCourseEnrollment::class, 'course_id')
+            ->where('enrollment_status', 'enrolled');
     }
 
     /**

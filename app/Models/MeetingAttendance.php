@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\AcademicSession;
+use App\Contracts\MeetingCapable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -57,7 +57,7 @@ class MeetingAttendance extends Model
         if ($this->session_type === 'academic') {
             return $this->belongsTo(AcademicSession::class, 'session_id');
         }
-        
+
         // Default to QuranSession for backwards compatibility
         return $this->belongsTo(QuranSession::class, 'session_id');
     }
@@ -297,10 +297,55 @@ class MeetingAttendance extends Model
      */
     public function isCurrentlyInMeeting(): bool
     {
+        // CRITICAL FIX: Auto-close stale cycles for ended sessions
+        $this->autoCloseStaleCycles();
+
         $cycles = $this->join_leave_cycles ?? [];
         $lastCycle = end($cycles);
 
         return $lastCycle && isset($lastCycle['joined_at']) && ! isset($lastCycle['left_at']);
+    }
+
+    /**
+     * Auto-close stale cycles for sessions that have ended
+     */
+    private function autoCloseStaleCycles(): void
+    {
+        $cycles = $this->join_leave_cycles ?? [];
+        $hasChanges = false;
+
+        foreach ($cycles as $index => $cycle) {
+            // If cycle has join but no leave
+            if (isset($cycle['joined_at']) && ! isset($cycle['left_at'])) {
+                $joinTime = Carbon::parse($cycle['joined_at']);
+
+                // If join was more than 30 minutes ago, auto-close it
+                if ($joinTime->diffInMinutes(now()) > 30) {
+                    // Close with a reasonable end time (30 minutes after join or session end)
+                    $estimatedLeaveTime = $joinTime->copy()->addMinutes(30);
+
+                    $cycles[$index]['left_at'] = $estimatedLeaveTime->toISOString();
+                    $cycles[$index]['duration_minutes'] = 30; // Default 30 minute session
+                    $hasChanges = true;
+
+                    Log::info('Auto-closed stale attendance cycle', [
+                        'session_id' => $this->session_id,
+                        'user_id' => $this->user_id,
+                        'join_time' => $joinTime,
+                        'estimated_leave_time' => $estimatedLeaveTime,
+                    ]);
+                }
+            }
+        }
+
+        if ($hasChanges) {
+            $this->update([
+                'join_leave_cycles' => $cycles,
+                'leave_count' => $this->leave_count + 1,
+                'total_duration_minutes' => $this->calculateTotalDuration($cycles),
+                'last_leave_time' => Carbon::parse(end($cycles)['left_at']),
+            ]);
+        }
     }
 
     /**
@@ -369,9 +414,9 @@ class MeetingAttendance extends Model
     }
 
     /**
-     * Static method to find or create meeting attendance (QuranSession - backwards compatibility)
+     * Static method to find or create meeting attendance for any session type
      */
-    public static function findOrCreateForUser(QuranSession $session, User $user): self
+    public static function findOrCreateForUser(MeetingCapable $session, User $user): self
     {
         return static::firstOrCreate([
             'session_id' => $session->id,
@@ -395,7 +440,7 @@ class MeetingAttendance extends Model
     public static function findOrCreateForUserPolymorphic($session, User $user, string $sessionType): self
     {
         $userType = 'student'; // Default
-        
+
         if ($sessionType === 'academic') {
             $userType = $user->user_type === 'academic_teacher' ? 'teacher' : 'student';
         } else {

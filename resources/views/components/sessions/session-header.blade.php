@@ -58,7 +58,7 @@
                 @if($session->scheduled_at)
                 <span class="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full">
                     <i class="ri-time-line ml-1"></i>
-                    {{ $session->scheduled_at->format('H:i') }}
+                    {{ formatTimeArabic($session->scheduled_at) }}
                 </span>
                 @endif
                 
@@ -69,12 +69,6 @@
                 </span>
                 @endif
                 
-                @if($session->session_type === 'group' && $session->circle)
-                <span class="inline-flex items-center px-3 py-1 bg-orange-50 text-orange-700 text-sm font-medium rounded-full">
-                    <i class="ri-group-line ml-1"></i>
-                    {{ $session->circle->name ?? 'حلقة جماعية' }}
-                </span>
-                @endif
             </div>
         </div>
     </div>

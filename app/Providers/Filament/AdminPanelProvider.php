@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\AcademyContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -16,15 +17,12 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
-
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Services\AcademyContextService;
-use App\Http\Middleware\AcademyContext;
 
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
-    {        
+    {
         return $panel
             ->default()
             ->id('admin')
@@ -82,14 +80,18 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->renderHook(
-                'panels::topbar.start', 
+                'panels::topbar.start',
                 fn (): string => view('filament.hooks.academy-selector')->render()
             );
     }
-    
+
     protected function getResources(): array
     {
-        $resources = [
+        // Register all resources - each resource will handle its own visibility through canViewAny()
+        return [
+            // إدارة النظام - Super Admin Resources
+            \App\Filament\Resources\AcademyManagementResource::class,
+
             // إدارة المستخدمين - Academy Level
             \App\Filament\Resources\UserResource::class,
             \App\Filament\Resources\AdminResource::class,
@@ -97,55 +99,40 @@ class AdminPanelProvider extends PanelProvider
             \App\Filament\Resources\ParentProfileResource::class,
             \App\Filament\Resources\SupervisorProfileResource::class,
             \App\Filament\Resources\AcademicTeacherProfileResource::class,
-            
+
+            // إدارة القرآن - Super Admin Resources
+            \App\Filament\Resources\QuranCircleResource::class,
+            \App\Filament\Resources\QuranPackageResource::class,
+
+            // إدارة القرآن - Academy Level Resources
+            \App\Filament\Resources\QuranTeacherProfileResource::class,
+            \App\Filament\Resources\QuranSubscriptionResource::class,
+            \App\Filament\Resources\QuranTrialRequestResource::class,
+
             // إدارة التعليم الأكاديمي
             \App\Filament\Resources\InteractiveCourseResource::class,
             \App\Filament\Resources\AcademicGradeLevelResource::class,
             \App\Filament\Resources\SubjectResource::class,
             \App\Filament\Resources\RecordedCourseResource::class,
             \App\Filament\Resources\AcademicPackageResource::class,
-            
+
             // الإعدادات
             \App\Filament\Resources\AcademicSettingsResource::class,
             \App\Filament\Resources\GoogleSettingsResource::class,
             \App\Filament\Resources\VideoSettingsResource::class,
-            
+
             // Business Services - Access controlled by resource authorization
             \App\Filament\Resources\BusinessServiceCategoryResource::class,
             \App\Filament\Resources\BusinessServiceRequestResource::class,
             \App\Filament\Resources\PortfolioItemResource::class,
         ];
-
-        // Add resources based on user role
-        if (AcademyContextService::isSuperAdmin()) {
-            // Super Admin sees global resources
-            $resources = array_merge($resources, [
-                \App\Filament\Resources\SuperAdminQuranTeacherResource::class,
-                \App\Filament\Resources\SuperAdminQuranSubscriptionResource::class,
-                \App\Filament\Resources\SuperAdminQuranTrialRequestResource::class,
-                \App\Filament\Resources\AcademyManagementResource::class,
-                \App\Filament\Resources\QuranCircleResource::class,
-                \App\Filament\Resources\QuranPackageResource::class,
-            ]);
-        } else {
-            // Regular admins see academy-scoped resources
-            $resources = array_merge($resources, [
-                \App\Filament\Resources\QuranTeacherProfileResource::class,
-                \App\Filament\Resources\QuranSubscriptionResource::class,
-                \App\Filament\Resources\QuranTrialRequestResource::class,
-                \App\Filament\Resources\QuranCircleResource::class,
-                \App\Filament\Resources\QuranPackageResource::class,
-            ]);
-        }
-
-        return $resources;
     }
 
     public function boot(): void
     {
         // Temporarily increase memory limit to debug memory exhaustion
         ini_set('memory_limit', '2048M');
-        
+
         // Set Arabic locale for the admin panel
         app()->setLocale('ar');
     }

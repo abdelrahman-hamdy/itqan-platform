@@ -51,6 +51,25 @@ class CreateRecordedCourse extends CreateRecord
 
     protected function afterCreate(): void
     {
+        // Get or create the default section
+        $defaultSection = $this->record->sections()->first();
+        if (! $defaultSection) {
+            $defaultSection = $this->record->sections()->create([
+                'title' => 'دروس الكورس',
+                'title_en' => 'Course Lessons',
+                'description' => 'دروس الكورس الرئيسية',
+                'description_en' => 'Main course lessons',
+                'is_published' => true,
+                'order' => 1,
+                'created_by' => auth()->id() ?? 1,
+            ]);
+        }
+
+        // Update any lessons that were created with null course_section_id
+        $this->record->lessons()->whereNull('course_section_id')->update([
+            'course_section_id' => $defaultSection->id,
+        ]);
+
         // Update course statistics after creation
         $this->record->updateStats();
     }

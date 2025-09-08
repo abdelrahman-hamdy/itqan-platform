@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use App\Services\UnifiedAttendanceService;
 use Illuminate\Http\JsonResponse;
@@ -25,11 +26,24 @@ class MeetingAttendanceController extends Controller
     {
         try {
             $request->validate([
-                'session_id' => 'required|exists:quran_sessions,id',
+                'session_id' => 'required|integer',
+                'session_type' => 'required|in:quran,academic',
                 'room_name' => 'required|string',
             ]);
 
-            $session = QuranSession::findOrFail($request->session_id);
+            $sessionType = $request->input('session_type');
+            $sessionId = $request->input('session_id');
+
+            // Get session polymorphically
+            $session = $this->getSessionByType($sessionType, $sessionId);
+
+            if (! $session) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'الجلسة غير موجودة',
+                ], 404);
+            }
+
             $user = Auth::user();
 
             // Verify user has access to this session
@@ -40,14 +54,15 @@ class MeetingAttendanceController extends Controller
                 ], 403);
             }
 
-            // Record the join event
-            $success = $this->attendanceService->handleUserJoin($session, $user);
+            // Record the join event polymorphically
+            $success = $this->attendanceService->handleUserJoinPolymorphic($session, $user, $sessionType);
 
             if ($success) {
                 // Get updated attendance status
-                $attendanceStatus = $this->getAttendanceStatus($session, $user);
+                $attendanceStatus = $this->getUserAttendanceDetails($session, $user, $sessionType);
 
                 Log::info('Meeting join recorded successfully', [
+                    'session_type' => $sessionType,
                     'session_id' => $session->id,
                     'user_id' => $user->id,
                     'attendance_status' => $attendanceStatus,
@@ -87,19 +102,32 @@ class MeetingAttendanceController extends Controller
     {
         try {
             $request->validate([
-                'session_id' => 'required|exists:quran_sessions,id',
+                'session_id' => 'required|integer',
+                'session_type' => 'required|in:quran,academic',
                 'room_name' => 'required|string',
             ]);
 
-            $session = QuranSession::findOrFail($request->session_id);
+            $sessionType = $request->input('session_type');
+            $sessionId = $request->input('session_id');
+
+            // Get session polymorphically
+            $session = $this->getSessionByType($sessionType, $sessionId);
+
+            if (! $session) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'الجلسة غير موجودة',
+                ], 404);
+            }
+
             $user = Auth::user();
 
-            // Record the leave event
-            $success = $this->attendanceService->handleUserLeave($session, $user);
+            // Record the leave event polymorphically
+            $success = $this->attendanceService->handleUserLeavePolymorphic($session, $user, $sessionType);
 
             if ($success) {
                 // Get updated attendance status
-                $attendanceStatus = $this->getAttendanceStatus($session, $user);
+                $attendanceStatus = $this->getUserAttendanceDetails($session, $user, $sessionType);
 
                 Log::info('Meeting leave recorded successfully', [
                     'session_id' => $session->id,
@@ -140,13 +168,26 @@ class MeetingAttendanceController extends Controller
     {
         try {
             $request->validate([
-                'session_id' => 'required|exists:quran_sessions,id',
+                'session_id' => 'required|integer',
+                'session_type' => 'required|in:quran,academic',
             ]);
 
-            $session = QuranSession::findOrFail($request->session_id);
+            $sessionType = $request->input('session_type');
+            $sessionId = $request->input('session_id');
+
+            // Get session polymorphically
+            $session = $this->getSessionByType($sessionType, $sessionId);
+
+            if (! $session) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'الجلسة غير موجودة',
+                ], 404);
+            }
+
             $user = Auth::user();
 
-            $attendanceStatus = $this->getAttendanceStatus($session, $user);
+            $attendanceStatus = $this->getUserAttendanceDetails($session, $user, $sessionType);
 
             return response()->json([
                 'success' => true,
@@ -170,21 +211,53 @@ class MeetingAttendanceController extends Controller
     }
 
     /**
-     * Check if user can access the session
+     * Alias for getStatus method (for backward compatibility)
      */
-    private function userCanAccessSession(QuranSession $session, $user): bool
+    public function getAttendanceStatus(Request $request): JsonResponse
     {
+        return $this->getStatus($request);
+    }
+
+    /**
+     * Get session by type polymorphically
+     */
+    private function getSessionByType(string $sessionType, int $sessionId)
+    {
+        return match ($sessionType) {
+            'quran' => QuranSession::find($sessionId),
+            'academic' => AcademicSession::find($sessionId),
+            default => null,
+        };
+    }
+
+    /**
+     * Check if user can access the session (polymorphic)
+     */
+    private function userCanAccessSession($session, $user): bool
+    {
+        // Handle both Quran and Academic sessions
+        $sessionClass = get_class($session);
+        $teacherIdField = $sessionClass === QuranSession::class ? 'quran_teacher_id' : 'academic_teacher_id';
+
         Log::info('Checking user access to session', [
             'session_id' => $session->id,
+            'session_class' => $sessionClass,
             'session_type' => $session->session_type,
             'user_id' => $user->id,
             'user_type' => $user->user_type,
-            'session_teacher_id' => $session->quran_teacher_id,
+            'session_teacher_id' => $session->{$teacherIdField} ?? null,
             'session_student_id' => $session->student_id ?? 'null',
         ]);
 
+        // Super Admin can access all sessions
+        if ($user->user_type === 'super_admin') {
+            Log::info('Access granted: User is Super Admin');
+
+            return true;
+        }
+
         // Teachers can access if they're the session teacher
-        if ($session->quran_teacher_id === $user->id) {
+        if (isset($session->{$teacherIdField}) && $session->{$teacherIdField} === $user->id) {
             Log::info('Access granted: User is the session teacher');
 
             return true;
@@ -192,9 +265,8 @@ class MeetingAttendanceController extends Controller
 
         // Students can access if they're enrolled in the session
         if ($session->session_type === 'individual') {
-            // CRITICAL FIX: student_id field contains user_id, not student_profile_id
             if ($session->student_id === $user->id) {
-                Log::info('Access granted: User is the individual session student (by user_id)');
+                Log::info('Access granted: User is the individual session student');
 
                 return true;
             }
@@ -207,27 +279,27 @@ class MeetingAttendanceController extends Controller
             }
         }
 
-        if ($session->session_type === 'group' && $session->circle && $session->circle->students()->where('student_profiles.user_id', $user->id)->exists()) {
-            Log::info('Access granted: User is enrolled in the group session circle');
+        // For Quran group sessions
+        if ($sessionClass === QuranSession::class && $session->session_type === 'group' && $session->circle && $session->circle->students()->where('student_profiles.user_id', $user->id)->exists()) {
+            Log::info('Access granted: User is enrolled in the Quran group session circle');
 
             return true;
         }
 
-        Log::warning('Access denied: User cannot access this session', [
-            'session_id' => $session->id,
-            'user_id' => $user->id,
-            'session_type' => $session->session_type,
-            'session_student_id' => $session->student_id ?? 'null',
-            'user_student_profile_id' => $user->student_profile?->id ?? 'null',
-        ]);
+        // For Academic interactive sessions (future implementation)
+        if ($sessionClass === AcademicSession::class && $session->session_type === 'interactive') {
+            // TODO: Add logic for academic interactive sessions when implemented
+        }
+
+        Log::warning('Access denied: User cannot access this session');
 
         return false;
     }
 
     /**
-     * Get attendance status for a user in a session
+     * Get attendance status for a user in a session (polymorphic)
      */
-    private function getAttendanceStatus(QuranSession $session, $user): array
+    private function getUserAttendanceDetails($session, $user, string $sessionType = 'quran'): array
     {
         $attendance = $session->meetingAttendances()->where('user_id', $user->id)->first();
 
@@ -243,7 +315,7 @@ class MeetingAttendanceController extends Controller
         }
 
         // Calculate real-time attendance status
-        $status = $this->calculateAttendanceStatus($session, $attendance);
+        $status = $this->calculateAttendanceStatus($session, $attendance, $sessionType);
 
         return [
             'status' => $status,
@@ -257,9 +329,9 @@ class MeetingAttendanceController extends Controller
     }
 
     /**
-     * Calculate attendance status based on timing
+     * Calculate attendance status based on timing (polymorphic)
      */
-    private function calculateAttendanceStatus(QuranSession $session, $attendance): string
+    private function calculateAttendanceStatus($session, $attendance, string $sessionType = 'quran'): string
     {
         if (! $attendance->first_join_time) {
             return 'absent';

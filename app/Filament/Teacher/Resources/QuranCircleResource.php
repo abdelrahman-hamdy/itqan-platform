@@ -81,9 +81,9 @@ class QuranCircleResource extends Resource
                                     ->label('الفئة العمرية')
                                     ->options([
                                         'children' => 'أطفال (5-12 سنة)',
-                                        'teenagers' => 'مراهقون (13-17 سنة)',
+                                        'youth' => 'شباب (13-17 سنة)',
                                         'adults' => 'بالغون (18+ سنة)',
-                                        'mixed' => 'مختلطة',
+                                        'all_ages' => 'كل الفئات',
                                     ])
                                     ->required(),
 
@@ -102,7 +102,7 @@ class QuranCircleResource extends Resource
                                         'memorization' => 'حفظ القرآن',
                                         'recitation' => 'تلاوة وتجويد',
                                         'interpretation' => 'تفسير',
-                                        'arabic_language' => 'اللغة العربية القرآنية',
+                                        'arabic_language' => 'اللغة العربية',
                                         'complete' => 'شامل',
                                     ])
                                     ->default('memorization')
@@ -295,15 +295,15 @@ class QuranCircleResource extends Resource
                     ->label('الفئة العمرية')
                     ->colors([
                         'primary' => 'children',
-                        'success' => 'teenagers',
+                        'success' => 'youth',
                         'warning' => 'adults',
-                        'info' => 'mixed',
+                        'info' => 'all_ages',
                     ])
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'children' => 'أطفال',
-                        'teenagers' => 'مراهقون',
+                        'youth' => 'شباب',
                         'adults' => 'بالغون',
-                        'mixed' => 'مختلطة',
+                        'all_ages' => 'كل الفئات',
                         null => 'غير محدد',
                         default => $state,
                     }),
@@ -401,9 +401,9 @@ class QuranCircleResource extends Resource
                     ->label('الفئة العمرية')
                     ->options([
                         'children' => 'أطفال',
-                        'teenagers' => 'مراهقون',
+                        'youth' => 'شباب',
                         'adults' => 'بالغون',
-                        'mixed' => 'مختلطة',
+                        'all_ages' => 'كل الفئات',
                     ]),
 
                 SelectFilter::make('memorization_level')

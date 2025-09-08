@@ -60,11 +60,23 @@
     
     switch($session->status) {
         case App\Enums\SessionStatus::READY:
-            $meetingMessage = $userType === 'quran_teacher' 
-                ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع' 
-                : 'الجلسة جاهزة - يمكنك الانضمام الآن';
-            $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'انضم للجلسة';
-            $buttonClass = 'bg-green-600 hover:bg-green-700';
+            if ($session->meeting_room_name) {
+                // Meeting room exists, both teachers and students can join
+                $meetingMessage = $userType === 'quran_teacher' 
+                    ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع' 
+                    : 'الجلسة جاهزة - يمكنك الانضمام الآن';
+                $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'انضم للجلسة';
+                $buttonClass = $userType === 'quran_teacher' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
+                $buttonDisabled = false;
+            } else {
+                // No meeting room yet, only teachers can start
+                $meetingMessage = $userType === 'quran_teacher' 
+                    ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع' 
+                    : 'الجلسة جاهزة - في انتظار المعلم لبدء الاجتماع';
+                $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'في انتظار المعلم';
+                $buttonClass = $userType === 'quran_teacher' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed';
+                $buttonDisabled = $userType !== 'quran_teacher';
+            }
             break;
             
         case App\Enums\SessionStatus::ONGOING:
@@ -81,9 +93,10 @@
                 $buttonDisabled = false;
             } else {
                 if ($session->scheduled_at) {
-                    $minutesUntilReady = now()->diffInMinutes($session->scheduled_at->copy()->subMinutes($preparationMinutes), false);
-                    if ($minutesUntilReady > 0) {
-                        $meetingMessage = "سيتم تحضير الاجتماع خلال " . ceil($minutesUntilReady) . " دقيقة ({$preparationMinutes} دقيقة قبل الموعد)";
+                    $preparationTime = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
+                    $timeData = formatTimeRemaining($preparationTime);
+                    if (!$timeData['is_past']) {
+                        $meetingMessage = "سيتم تحضير الاجتماع خلال " . $timeData['formatted'] . " ({$preparationMinutes} دقيقة قبل الموعد)";
                     } else {
                         $meetingMessage = "جاري تحضير الاجتماع...";
                     }
@@ -1076,6 +1089,87 @@
         min-height: 180px !important;
     }
 
+    /* ===== CONTROL BUTTON HOVER FIXES ===== */
+    /* Fix: Camera and mic buttons should keep red color when off, not turn grey on hover */
+    #toggleMic.mic-off:hover,
+    #toggleCamera.camera-off:hover {
+        background-color: #dc2626 !important; /* Keep red color on hover when off */
+        transform: scale(1.05);
+    }
+
+    #toggleMic.mic-off,
+    #toggleCamera.camera-off {
+        background-color: #dc2626; /* Red when off */
+        color: white;
+    }
+
+    /* ===== TOOLTIP STYLES ===== */
+    .control-tooltip {
+        position: absolute;
+        bottom: 120%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 99999;
+        pointer-events: none;
+        animation: tooltipBounce 0.3s ease-out;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .control-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .control-button:hover .control-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(-4px);
+        animation: tooltipBounce 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes tooltipBounce {
+        0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(4px) scale(0.8);
+        }
+        60% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-6px) scale(1.05);
+        }
+        100% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-4px) scale(1);
+        }
+    }
+
+    /* Control button base styles */
+    .control-button {
+        position: relative;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .control-button:hover {
+        transform: scale(1.05);
+    }
+
+    .control-button:active {
+        transform: scale(0.95);
+    }
+
     /* Ensure meeting controls always appear above fullscreen content */
     .meeting-fullscreen #leaveMeeting,
     .meeting-fullscreen #fullscreenBtn,
@@ -1253,6 +1347,12 @@
             onPhaseChange: function(newPhase, oldPhase) {
                 console.log('⏰ Phase changed:', oldPhase, '→', newPhase);
                 updateSessionPhaseUI(newPhase);
+                
+                // AUTO-TERMINATION: End meeting when time expires
+                if (newPhase === 'ended' && oldPhase !== 'ended') {
+                    console.log('🔴 Session time expired - auto-terminating meeting');
+                    autoTerminateMeeting();
+                }
             },
             
             onTick: function(timing) {
@@ -1279,6 +1379,75 @@
     console.log('⏰ Initializing session timer immediately...');
     initializeSessionTimer();
     @endif
+
+    /**
+     * Auto-terminate meeting when time expires
+     */
+    function autoTerminateMeeting() {
+        console.log('🔴 Auto-terminating meeting - time expired');
+        
+        // Show notification to user
+        if (typeof showNotification !== 'undefined') {
+            showNotification('⏰ انتهى وقت الجلسة وتم إنهاؤها تلقائياً', 'info');
+        }
+        
+        // Disconnect from LiveKit room if connected
+        if (window.room && window.room.state === 'connected') {
+            console.log('🔴 Disconnecting from LiveKit room');
+            try {
+                window.room.disconnect();
+            } catch (error) {
+                console.error('Error disconnecting from room:', error);
+            }
+        }
+        
+        // Record attendance leave if tracking
+        if (window.attendanceTracker && window.attendanceTracker.isTracking) {
+            console.log('🔴 Recording final attendance leave');
+            window.attendanceTracker.recordLeave();
+        }
+        
+        // Disable meeting controls
+        const startMeetingBtn = document.getElementById('startMeeting');
+        const joinMeetingBtn = document.getElementById('joinMeeting');
+        const leaveMeetingBtn = document.getElementById('leaveMeeting');
+        
+        if (startMeetingBtn) {
+            startMeetingBtn.disabled = true;
+            startMeetingBtn.innerHTML = '<i class="ri-time-line text-xl"></i>';
+            startMeetingBtn.title = 'انتهت الجلسة';
+        }
+        
+        if (joinMeetingBtn) {
+            joinMeetingBtn.disabled = true;
+            joinMeetingBtn.innerHTML = '<i class="ri-time-line text-xl"></i>';
+            joinMeetingBtn.title = 'انتهت الجلسة';
+        }
+        
+        if (leaveMeetingBtn) {
+            leaveMeetingBtn.style.display = 'none';
+        }
+        
+        // Update UI to show session ended
+        const connectionStatus = document.getElementById('connectionStatus');
+        if (connectionStatus) {
+            connectionStatus.innerHTML = '<div class="flex items-center justify-center space-x-2 rtl:space-x-reverse"><i class="ri-time-line text-gray-500"></i><span class="text-gray-500">انتهت الجلسة</span></div>';
+        }
+        
+        // Hide video grid and show session ended message
+        const videoGrid = document.getElementById('videoGrid');
+        if (videoGrid) {
+            videoGrid.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-64 text-center">
+                    <i class="ri-time-line text-6xl text-gray-400 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">انتهت الجلسة</h3>
+                    <p class="text-gray-500">تم إنهاء الجلسة تلقائياً بانتهاء الوقت المحدد</p>
+                </div>
+            `;
+        }
+        
+        console.log('✅ Meeting auto-termination completed');
+    }
 
     // Initialize Attendance Status Tracking (only for students)
     // CRITICAL FIX: Don't start attendance tracking on page load - only when meeting actually starts
@@ -1867,51 +2036,102 @@
 
             <!-- Right Column: Controls & Status -->
             <div class="lg:w-80 space-y-4">
-                <!-- Attendance Status (Only for students) -->
+                <!-- Enhanced Attendance Status (Only for students) -->
                 @if($userType === 'student')
-                <div class="attendance-status bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200" id="attendance-status">
-                    <div class="flex items-center gap-3 mb-2">
+                <div class="attendance-status bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 shadow-sm" id="attendance-status">
+                    <div class="flex items-center gap-3 mb-3">
                         <div class="attendance-indicator flex items-center gap-2">
                             <span class="attendance-dot w-3 h-3 rounded-full bg-gray-400 transition-all duration-300"></span>
+                            <i class="attendance-icon ri-user-line text-lg text-gray-600"></i>
                             <h3 class="text-sm font-semibold text-gray-900">حالة الحضور</h3>
                         </div>
                     </div>
                     <div class="attendance-details">
-                        <div class="attendance-text text-sm text-gray-700 font-medium">لم تنضم بعد</div>
-                        <div class="attendance-time text-xs text-gray-500 mt-1">--</div>
+                        <div class="attendance-text text-sm text-gray-700 font-medium mb-1">جاري التحميل...</div>
+                        <div class="attendance-time text-xs text-gray-500">--</div>
                     </div>
-
-                </div>
-                @endif
-
-                <!-- Quick Actions -->
-                <div class="quick-actions bg-gray-50 rounded-lg p-4">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <i class="ri-tools-line text-gray-600"></i>
-                        إجراءات سريعة
-                    </h3>
-                    <div class="space-y-2">
-                        <button class="action-btn w-full bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 justify-center">
-                            <i class="ri-mic-line text-blue-600"></i>
-                            اختبار الصوت
-                        </button>
-                        <button class="action-btn w-full bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 justify-center">
-                            <i class="ri-camera-line text-blue-600"></i>
-                            اختبار الكاميرا
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Connection Status -->
-                <div id="connectionStatus" class="connection-status bg-blue-50 rounded-lg p-4 border border-blue-200" style="display: none;">
-                    <div class="flex items-center gap-2">
-                        <i class="ri-wifi-line text-blue-600"></i>
-                        <div>
-                            <div class="text-sm font-medium text-blue-900">حالة الاتصال</div>
-                            <div id="connectionText" class="text-xs text-blue-700">غير متصل</div>
+                    
+                    <!-- Optional: Progress bar for attendance percentage -->
+                    <div class="mt-3 hidden" id="attendance-progress">
+                        <div class="flex justify-between items-center text-xs text-gray-600 mb-1">
+                            <span>نسبة الحضور</span>
+                            <span class="attendance-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 0%" id="attendance-progress-bar"></div>
                         </div>
                     </div>
                 </div>
+                @endif
+
+                <!-- System Status -->
+                <div class="system-status bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <i class="ri-shield-check-line text-gray-600"></i>
+                        حالة النظام
+                    </h3>
+                    <div class="space-y-3">
+                        <!-- Camera Permission -->
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center" id="camera-status-icon">
+                                    <i class="ri-camera-line text-gray-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">كاميرا المتصفح</div>
+                                    <div class="text-xs text-gray-600" id="camera-status-text">جاري التحقق...</div>
+                                </div>
+                            </div>
+                            <button id="camera-permission-btn" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors hidden">
+                                منح الإذن
+                            </button>
+                        </div>
+
+                        <!-- Microphone Permission -->
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center" id="mic-status-icon">
+                                    <i class="ri-mic-line text-gray-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">ميكروفون المتصفح</div>
+                                    <div class="text-xs text-gray-600" id="mic-status-text">جاري التحقق...</div>
+                                </div>
+                            </div>
+                            <button id="mic-permission-btn" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors hidden">
+                                منح الإذن
+                            </button>
+                        </div>
+
+                        <!-- Network Status -->
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center" id="network-status-icon">
+                                    <i class="ri-wifi-line text-gray-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">حالة الاتصال</div>
+                                    <div class="text-xs text-gray-600" id="network-status-text">جاري التحقق...</div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500" id="network-speed"></div>
+                        </div>
+
+                        <!-- Browser Compatibility -->
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center" id="browser-status-icon">
+                                    <i class="ri-global-line text-gray-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">توافق المتصفح</div>
+                                    <div class="text-xs text-gray-600" id="browser-status-text">جاري التحقق...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1923,7 +2143,7 @@
     <h3 class="text-lg font-semibold text-gray-900 mb-4">إدارة حالة الجلسة</h3>
     
     <div class="flex flex-wrap gap-3">
-        @switch(is_object($session->status) && method_exists($session->status, 'value') ? $session->status->value : (string) $session->status)
+        @switch($session->status instanceof \BackedEnum ? $session->status->value : $session->status)
             @case('scheduled')
             @case('ready')
             @case('ongoing')
@@ -2134,9 +2354,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                 <div class="flex items-center gap-4 sm:gap-8">
                     <!-- Participant Count -->
                     <div class="flex items-center gap-2 text-white">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-                        </svg>
+                        <i class="ri-group-line text-lg text-white"></i>
                         <span id="participantCount" class="text-white font-semibold">0</span>
                         <span class="text-white">مشارك</span>
                     </div>
@@ -2150,9 +2368,7 @@ function showNotification(message, type = 'info', duration = 5000) {
 
                 <!-- Right side - Fullscreen button -->
                 <button id="fullscreenBtn" class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 z-1 relative">
-                    <svg id="fullscreenIcon" class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 11-1.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd" />
-                    </svg>
+                    <i id="fullscreenIcon" class="ri-fullscreen-line text-lg text-white"></i>
                     <span id="fullscreenText" class="hidden sm:inline">ملء الشاشة</span>
                 </button>
             </div>
@@ -2168,12 +2384,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                     </div>
 
                     <!-- Focus Mode Overlay -->
-                    <div id="focusOverlay" class="focus-overlay hidden">
-                        <!-- Close Focus Button -->
-                        <button id="closeFocusBtn" class="w-12 h-12 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white" title="إغلاق وضع التركيز">
-                            <i class="ri-close-line text-xl"></i>
-                        </button>
-                        
+                    <div id="focusOverlay" class="focus-overlay hidden">                        
                         <!-- Focused Video Container -->
                         <div id="focusedVideoContainer" class="focused-video-container">
                             <!-- Focused video will be moved here -->
@@ -2187,9 +2398,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                     <div class="bg-gray-700 px-4 py-3 flex items-center justify-between border-b border-gray-600">
                         <h3 id="sidebarTitle" class="text-white font-semibold">الدردشة</h3>
                         <button id="closeSidebarBtn" class="text-gray-300 hover:text-white transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
+                            <i class="ri-close-line text-xl"></i>
                         </button>
                     </div>
 
@@ -2215,9 +2424,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                                         id="sendChatBtn"
                                         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                                         onclick="window.meeting?.controls?.sendChatMessage()">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                                        </svg>
+                                        <i class="ri-send-plane-line text-lg"></i>
                                     </button>
                                 </div>
                             </div>
@@ -2265,10 +2472,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                                 <div id="raisedHandsList" class="space-y-3">
                                     <!-- Empty state -->
                                     <div id="noRaisedHandsMessage" class="text-center text-gray-400 py-8">
-                                        <svg class="w-12 h-12 mx-auto mb-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                        </svg>
+                                        <i class="ri-hand-heart-line text-5xl mx-auto mb-4 text-gray-500 block"></i>
                                         <p>لا يوجد طلاب رفعوا أيديهم</p>
                                     </div>
                                     <!-- Raised hands will be added here dynamically -->
@@ -2326,47 +2530,54 @@ function showNotification(message, type = 'info', duration = 5000) {
             <!-- Control Bar - Always at bottom -->
             <div class="control-bar bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-4 py-4 flex items-center justify-center gap-2 sm:gap-4 shadow-lg flex-wrap sm:flex-nowrap z-11">
                 <!-- Microphone Button -->
-                <button id="toggleMic" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95" title="إيقاف/تشغيل الميكروفون">
+                <button id="toggleMic" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
                     <i class="ri-mic-line text-xl"></i>
+                    <div class="control-tooltip">إيقاف/تشغيل الميكروفون</div>
                 </button>
 
                 <!-- Camera Button -->
-                <button id="toggleCamera" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95" title="إيقاف/تشغيل الكاميرا">
+                <button id="toggleCamera" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
                     <i class="ri-vidicon-line text-xl"></i>
+                    <div class="control-tooltip">إيقاف/تشغيل الكاميرا</div>
                 </button>
 
                 @if($userType === 'quran_teacher')
                 <!-- Screen Share Button (Teachers Only) -->
-                <button id="toggleScreenShare" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95" title="مشاركة الشاشة">
+                <button id="toggleScreenShare" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
                     <i class="ri-share-box-line text-xl"></i>
+                    <div class="control-tooltip">مشاركة الشاشة</div>
                 </button>
                 @endif
 
                 @if($userType !== 'quran_teacher')
                 <!-- Hand Raise Button -->
-                <button id="toggleHandRaise" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95" title="رفع اليد">
+                <button id="toggleHandRaise" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95">
                     <i class="ri-hand text-white text-xl"></i>
+                    <div class="control-tooltip">رفع اليد</div>
                 </button>
                 @endif
 
                 <!-- Chat Button -->
-                <button id="toggleChat" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95" title="إظهار/إخفاء الدردشة">
+                <button id="toggleChat" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
                     <i class="ri-chat-3-line text-xl"></i>
+                    <div class="control-tooltip">إظهار/إخفاء الدردشة</div>
                 </button>
 
                 <!-- Participants Button -->
-                <button id="toggleParticipants" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95" title="إظهار/إخفاء المشاركين">
+                <button id="toggleParticipants" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
                     <i class="ri-group-line text-xl"></i>
+                    <div class="control-tooltip">إظهار/إخفاء المشاركين</div>
                 </button>
 
                 @if($userType === 'quran_teacher')
                 <!-- Raised Hands Button (Teachers Only) -->
-                <button id="toggleRaisedHands" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95 relative" title="إدارة الأيدي المرفوعة">
+                <button id="toggleRaisedHands" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95 relative">
                     <i class="ri-hand text-white text-xl"></i>
                     <!-- Notification Badge -->
                     <div id="raisedHandsNotificationBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold hidden">
                         <span id="raisedHandsBadgeCount">0</span>
                     </div>
+                    <div class="control-tooltip">إدارة الأيدي المرفوعة</div>
                 </button>
                 @endif
 
@@ -2380,22 +2591,25 @@ function showNotification(message, type = 'info', duration = 5000) {
                 
                 @if($showRecording)
                 <!-- Recording Button (Interactive Courses Only) -->
-                <button id="toggleRecording" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95" title="بدء/إيقاف تسجيل الدورة">
+                <button id="toggleRecording" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative">
                     <i class="ri-record-circle-line text-xl" id="recordingIcon"></i>
                     <div id="recordingIndicator" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse hidden"></div>
+                    <div class="control-tooltip">بدء/إيقاف تسجيل الدورة</div>
                 </button>
                 @endif
 
                 @if($userType === 'quran_teacher')
                 <!-- Settings Button (Teachers Only) -->
-                <button id="toggleSettings" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95" title="الإعدادات">
+                <button id="toggleSettings" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
                     <i class="ri-settings-3-line text-xl"></i>
+                    <div class="control-tooltip">الإعدادات</div>
                 </button>
                 @endif
 
                 <!-- Leave Button -->
-                <button id="leaveMeeting" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative meeting-control-button" title="مغادرة الجلسة">
+                <button id="leaveMeeting" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative meeting-control-button">
                     <i class="ri-logout-box-line text-xl"></i>
+                    <div class="control-tooltip">مغادرة الجلسة</div>
                 </button>
             </div>
         </div>
@@ -2787,6 +3001,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const payload = {
                     session_id: this.sessionId,
+                    session_type: window.sessionType || 'quran',
                     room_name: this.roomName,
                 };
                 
@@ -2860,6 +3075,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     credentials: 'same-origin',
                     body: JSON.stringify({
                         session_id: this.sessionId,
+                        session_type: window.sessionType || 'quran',
                         room_name: this.roomName,
                     }),
                 });
@@ -2887,78 +3103,166 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         /**
-         * Update attendance status UI - FIX: Work with actual DOM structure
+         * Update attendance UI based on status data
+         * @param {Object} statusData - Attendance status data from API
          */
-        updateAttendanceUI(data) {
-            if (!data || !this.statusElement) return;
+        updateAttendanceUI(statusData) {
+            console.log('📊 Updating attendance UI with data:', statusData);
             
-            this.attendanceStatus = data;
-            
-            // Show the attendance status
-            this.statusElement.style.display = 'block';
-            
-            // Update status text
-            const statusLabels = {
-                'present': 'حاضر',
-                'late': 'متأخر', 
-                'partial': 'حضور جزئي',
-                'absent': 'غائب',
-                'loading': 'جاري التحميل...'
-            };
-            
-            const isInMeeting = data.is_currently_in_meeting;
-            
-            // CRITICAL FIX: Handle loading status and better status detection
-            let statusLabel;
-            if (data.attendance_status === 'loading') {
-                statusLabel = statusLabels['loading'];
-            } else if (isInMeeting) {
-                statusLabel = 'حاضر'; // User is currently in meeting
-            } else if (data.duration_minutes > 0) {
-                statusLabel = statusLabels[data.attendance_status] || 'حضر سابقاً';
-            } else {
-                statusLabel = statusLabels[data.attendance_status] || 'لم تنضم بعد';
+            if (!this.statusElement || !this.textElement || !this.timeElement || !this.dotElement) {
+                console.warn('⚠️ Attendance UI elements not found');
+                return;
             }
             
-            // Update text element
-            if (this.textElement) {
-                this.textElement.textContent = isInMeeting ? 
-                    `${statusLabel} (في الجلسة الآن)` : 
-                    statusLabel;
-            }
+            const {
+                is_currently_in_meeting,
+                attendance_status,
+                attendance_percentage,
+                duration_minutes,
+                join_count,
+                session_state,
+                has_ever_joined,
+                minutes_until_start
+            } = statusData;
             
-            // Update time info
-            if (this.timeElement) {
-                if (data.attendance_status === 'loading') {
-                    this.timeElement.textContent = 'جاري التحميل...';
-                } else if (data.duration_minutes > 0) {
-                    this.timeElement.textContent = `مدة الحضور: ${data.duration_minutes} دقيقة`;
+            let statusText = '';
+            let timeText = '';
+            let dotColor = 'bg-gray-400';
+            let containerColor = 'from-gray-50 to-gray-100';
+            let borderColor = 'border-gray-200';
+            let iconClass = 'ri-user-line';
+            
+            // Handle different session states and attendance statuses
+            if (session_state === 'scheduled' && attendance_status === 'not_started') {
+                // Session hasn't started yet
+                statusText = 'الجلسة لم تبدأ بعد';
+                if (minutes_until_start && minutes_until_start > 0) {
+                    timeText = `ستبدأ خلال ${minutes_until_start} دقيقة`;
                 } else {
-                    this.timeElement.textContent = '--';
+                    timeText = 'في انتظار البدء';
                 }
+                dotColor = 'bg-blue-400';
+                containerColor = 'from-blue-50 to-indigo-50';
+                borderColor = 'border-blue-200';
+                iconClass = 'ri-time-line';
+                
+            } else if (session_state === 'completed') {
+                // Session has ended - show final status
+                if (attendance_status === 'not_attended' || (!has_ever_joined && duration_minutes === 0)) {
+                    statusText = 'لم تحضر الجلسة';
+                    timeText = 'الجلسة انتهت';
+                    dotColor = 'bg-red-400';
+                    containerColor = 'from-red-50 to-pink-50';
+                    borderColor = 'border-red-200';
+                    iconClass = 'ri-close-circle-line';
+                    
+                } else if (attendance_status === 'partial_attendance' || attendance_status === 'partial') {
+                    statusText = 'حضور جزئي';
+                    timeText = `حضرت ${duration_minutes} دقيقة (${attendance_percentage}%)`;
+                    dotColor = 'bg-orange-400';
+                    containerColor = 'from-orange-50 to-red-50';
+                    borderColor = 'border-orange-200';
+                    iconClass = 'ri-time-line';
+                    
+                } else if (attendance_status === 'present') {
+                    statusText = 'حضرت الجلسة';
+                    timeText = `${duration_minutes} دقيقة (${attendance_percentage}%)`;
+                    dotColor = 'bg-green-400';
+                    containerColor = 'from-green-50 to-emerald-50';
+                    borderColor = 'border-green-200';
+                    iconClass = 'ri-check-circle-line';
+                    
+                } else if (attendance_status === 'late') {
+                    statusText = 'حضرت متأخراً';
+                    timeText = `${duration_minutes} دقيقة (${attendance_percentage}%)`;
+                    dotColor = 'bg-yellow-400';
+                    containerColor = 'from-yellow-50 to-amber-50';
+                    borderColor = 'border-yellow-200';
+                    iconClass = 'ri-time-line';
+                    
+                } else {
+                    statusText = 'الجلسة انتهت';
+                    timeText = duration_minutes > 0 ? `حضرت ${duration_minutes} دقيقة` : 'لم تحضر';
+                    dotColor = 'bg-gray-400';
+                    containerColor = 'from-gray-50 to-gray-100';
+                    borderColor = 'border-gray-200';
+                    iconClass = 'ri-calendar-check-line';
+                }
+                
+            } else if (is_currently_in_meeting) {
+                // Currently in the meeting
+                statusText = 'في الجلسة الآن';
+                timeText = `${duration_minutes} دقيقة`;
+                dotColor = 'bg-green-500 animate-pulse';
+                containerColor = 'from-green-50 to-emerald-50';
+                borderColor = 'border-green-200';
+                iconClass = 'ri-live-line';
+                
+            } else if (attendance_status === 'not_joined_yet') {
+                // Session is ongoing but user hasn't joined
+                statusText = 'لم تنضم بعد';
+                timeText = 'الجلسة جارية الآن';
+                dotColor = 'bg-orange-400 animate-pulse';
+                containerColor = 'from-orange-50 to-yellow-50';
+                borderColor = 'border-orange-200';
+                iconClass = 'ri-notification-line';
+                
+            } else if (duration_minutes > 0) {
+                // User has attended but is not currently in meeting
+                const statusLabels = {
+                    'present': 'حاضر',
+                    'late': 'متأخر',
+                    'partial': 'حضور جزئي',
+                    'absent': 'غائب'
+                };
+                
+                statusText = statusLabels[attendance_status] || 'غير محدد';
+                timeText = `${duration_minutes} دقيقة - انضم ${join_count} مرة`;
+                
+                if (attendance_status === 'present') {
+                    dotColor = 'bg-green-400';
+                    containerColor = 'from-green-50 to-emerald-50';
+                    borderColor = 'border-green-200';
+                    iconClass = 'ri-check-line';
+                } else if (attendance_status === 'late') {
+                    dotColor = 'bg-yellow-400';
+                    containerColor = 'from-yellow-50 to-amber-50';
+                    borderColor = 'border-yellow-200';
+                    iconClass = 'ri-time-line';
+                } else if (attendance_status === 'partial') {
+                    dotColor = 'bg-orange-400';
+                    containerColor = 'from-orange-50 to-red-50';
+                    borderColor = 'border-orange-200';
+                    iconClass = 'ri-time-line';
+                }
+                
+            } else {
+                // Default state
+                statusText = 'لم تنضم بعد';
+                timeText = '--';
+                dotColor = 'bg-gray-400';
+                containerColor = 'from-gray-50 to-gray-100';
+                borderColor = 'border-gray-200';
+                iconClass = 'ri-user-line';
             }
+            
+            // Update UI elements
+            this.textElement.textContent = statusText;
+            this.timeElement.textContent = timeText;
             
             // Update dot color
-            if (this.dotElement) {
-                // Reset all color classes
-                this.dotElement.className = 'attendance-dot w-3 h-3 rounded-full transition-all duration-300';
-                
-                if (data.attendance_status === 'loading') {
-                    this.dotElement.classList.add('bg-blue-400', 'animate-pulse');
-                } else if (isInMeeting) {
-                    this.dotElement.classList.add('bg-green-500', 'animate-pulse');
-                } else if (data.attendance_status === 'present') {
-                    this.dotElement.classList.add('bg-green-400');
-                } else if (data.attendance_status === 'late') {
-                    this.dotElement.classList.add('bg-yellow-400');
-                } else if (data.attendance_status === 'partial') {
-                    this.dotElement.classList.add('bg-orange-400');
-                } else {
-                    this.dotElement.classList.add('bg-gray-400');
-                }
+            this.dotElement.className = 'attendance-dot w-3 h-3 rounded-full transition-all duration-300 ' + dotColor;
+            
+            // Update container colors
+            this.statusElement.className = `attendance-status bg-gradient-to-r ${containerColor} rounded-lg p-4 border ${borderColor} shadow-sm`;
+            
+            // Update icon if there's an icon element
+            const iconElement = this.statusElement.querySelector('.attendance-icon');
+            if (iconElement) {
+                iconElement.className = `attendance-icon ${iconClass} text-lg`;
             }
             
-            console.log('📊 Attendance status updated:', data);
+            console.log('✅ Attendance UI updated successfully');
         }
         
         /**
@@ -3273,4 +3577,209 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+</script>
+
+<!-- System Status Checker -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // System Status Checker Class
+    class SystemStatusChecker {
+        constructor() {
+            this.init();
+        }
+
+        init() {
+            this.checkCameraPermission();
+            this.checkMicrophonePermission();
+            this.checkNetworkStatus();
+            this.checkBrowserCompatibility();
+            this.setupEventListeners();
+        }
+
+        async checkCameraPermission() {
+            try {
+                const result = await navigator.permissions.query({ name: 'camera' });
+                this.updatePermissionStatus('camera', result.state);
+                
+                result.addEventListener('change', () => {
+                    this.updatePermissionStatus('camera', result.state);
+                });
+            } catch (error) {
+                // Fallback: try to access camera directly
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    this.updatePermissionStatus('camera', 'granted');
+                    stream.getTracks().forEach(track => track.stop());
+                } catch (err) {
+                    this.updatePermissionStatus('camera', 'denied');
+                }
+            }
+        }
+
+        async checkMicrophonePermission() {
+            try {
+                const result = await navigator.permissions.query({ name: 'microphone' });
+                this.updatePermissionStatus('mic', result.state);
+                
+                result.addEventListener('change', () => {
+                    this.updatePermissionStatus('mic', result.state);
+                });
+            } catch (error) {
+                // Fallback: try to access microphone directly
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.updatePermissionStatus('mic', 'granted');
+                    stream.getTracks().forEach(track => track.stop());
+                } catch (err) {
+                    this.updatePermissionStatus('mic', 'denied');
+                }
+            }
+        }
+
+        updatePermissionStatus(type, state) {
+            const icon = document.getElementById(`${type}-status-icon`);
+            const text = document.getElementById(`${type}-status-text`);
+            const button = document.getElementById(`${type}-permission-btn`);
+
+            if (!icon || !text) return;
+
+            // Remove existing classes
+            icon.className = 'w-8 h-8 rounded-full flex items-center justify-center';
+            text.className = 'text-xs';
+
+            switch (state) {
+                case 'granted':
+                    icon.classList.add('bg-green-100');
+                    icon.innerHTML = '<i class="ri-check-line text-green-600"></i>';
+                    text.classList.add('text-green-600');
+                    text.textContent = 'مسموح';
+                    if (button) button.classList.add('hidden');
+                    break;
+                case 'denied':
+                    icon.classList.add('bg-red-100');
+                    icon.innerHTML = '<i class="ri-close-line text-red-600"></i>';
+                    text.classList.add('text-red-600');
+                    text.textContent = 'مرفوض';
+                    if (button) button.classList.remove('hidden');
+                    break;
+                case 'prompt':
+                    icon.classList.add('bg-yellow-100');
+                    icon.innerHTML = '<i class="ri-question-line text-yellow-600"></i>';
+                    text.classList.add('text-yellow-600');
+                    text.textContent = 'يحتاج إذن';
+                    if (button) button.classList.remove('hidden');
+                    break;
+                default:
+                    icon.classList.add('bg-gray-100');
+                    icon.innerHTML = `<i class="ri-${type === 'camera' ? 'camera' : 'mic'}-line text-gray-400"></i>`;
+                    text.classList.add('text-gray-600');
+                    text.textContent = 'غير معروف';
+                    if (button) button.classList.add('hidden');
+            }
+        }
+
+        checkNetworkStatus() {
+            const icon = document.getElementById('network-status-icon');
+            const text = document.getElementById('network-status-text');
+            const speed = document.getElementById('network-speed');
+
+            if (!icon || !text) return;
+
+            const updateNetworkStatus = () => {
+                if (navigator.onLine) {
+                    icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-green-100';
+                    icon.innerHTML = '<i class="ri-wifi-line text-green-600"></i>';
+                    text.className = 'text-xs text-green-600';
+                    text.textContent = 'متصل';
+                    
+                    // Check connection speed if available
+                    if (navigator.connection) {
+                        const connection = navigator.connection;
+                        const speedText = connection.effectiveType || connection.type || 'غير معروف';
+                        if (speed) speed.textContent = speedText;
+                    }
+                } else {
+                    icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-red-100';
+                    icon.innerHTML = '<i class="ri-wifi-off-line text-red-600"></i>';
+                    text.className = 'text-xs text-red-600';
+                    text.textContent = 'غير متصل';
+                    if (speed) speed.textContent = '';
+                }
+            };
+
+            // Initial check
+            updateNetworkStatus();
+
+            // Listen for network changes
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
+
+            // Check connection speed changes
+            if (navigator.connection) {
+                navigator.connection.addEventListener('change', updateNetworkStatus);
+            }
+        }
+
+        checkBrowserCompatibility() {
+            const icon = document.getElementById('browser-status-icon');
+            const text = document.getElementById('browser-status-text');
+
+            if (!icon || !text) return;
+
+            // Check for required APIs
+            const hasMediaDevices = !!navigator.mediaDevices;
+            const hasGetUserMedia = hasMediaDevices && !!navigator.mediaDevices.getUserMedia;
+            const hasWebRTC = !!(window.RTCPeerConnection || window.webkitRTCPeerConnection);
+            const hasPermissions = !!navigator.permissions;
+
+            const isCompatible = hasMediaDevices && hasGetUserMedia && hasWebRTC;
+
+            if (isCompatible) {
+                icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-green-100';
+                icon.innerHTML = '<i class="ri-check-line text-green-600"></i>';
+                text.className = 'text-xs text-green-600';
+                text.textContent = 'متوافق';
+            } else {
+                icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-red-100';
+                icon.innerHTML = '<i class="ri-error-warning-line text-red-600"></i>';
+                text.className = 'text-xs text-red-600';
+                text.textContent = 'غير متوافق';
+            }
+        }
+
+        setupEventListeners() {
+            // Camera permission button
+            const cameraBtn = document.getElementById('camera-permission-btn');
+            if (cameraBtn) {
+                cameraBtn.addEventListener('click', async () => {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        this.updatePermissionStatus('camera', 'granted');
+                        stream.getTracks().forEach(track => track.stop());
+                    } catch (error) {
+                        this.updatePermissionStatus('camera', 'denied');
+                    }
+                });
+            }
+
+            // Microphone permission button
+            const micBtn = document.getElementById('mic-permission-btn');
+            if (micBtn) {
+                micBtn.addEventListener('click', async () => {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        this.updatePermissionStatus('mic', 'granted');
+                        stream.getTracks().forEach(track => track.stop());
+                    } catch (error) {
+                        this.updatePermissionStatus('mic', 'denied');
+                    }
+                });
+            }
+        }
+    }
+
+    // Initialize system status checker
+    const systemStatusChecker = new SystemStatusChecker();
+    window.systemStatusChecker = systemStatusChecker; // Make globally accessible
+});
 </script>

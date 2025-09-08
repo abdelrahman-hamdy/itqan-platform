@@ -9,8 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PortfolioItemResource extends Resource
 {
@@ -140,8 +138,10 @@ class PortfolioItemResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('project_image')
                     ->label('الصورة')
-                    ->circular()
-                    ->size(60),
+                    ->size(80)
+                    ->disk('public')
+                    ->visibility('public')
+                    ->defaultImageUrl(asset('images/portfolio-placeholder.jpg')),
 
                 Tables\Columns\TextColumn::make('project_name')
                     ->label('اسم المشروع')
@@ -160,11 +160,6 @@ class PortfolioItemResource extends Resource
                     ->label('الوصف')
                     ->limit(80)
                     ->searchable(),
-
-                Tables\Columns\TextColumn::make('project_features')
-                    ->label('عدد المميزات')
-                    ->formatStateUsing(fn ($state): string => is_array($state) ? count($state) : '0')
-                    ->badge(),
 
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('الترتيب')

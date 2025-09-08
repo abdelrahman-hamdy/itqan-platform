@@ -4,32 +4,25 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AcademyManagementResource\Pages;
 use App\Models\Academy;
-use App\Models\User;
-use App\Models\RecordedCourse;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
-use App\Models\AcademicTeacher;
-use App\Models\QuranTeacher;
-use App\Models\StudentProfile;
-use Filament\Forms;
-use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Actions\Action;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\ColorPicker;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\RecordedCourse;
+use App\Models\User;
 use App\Services\AcademyContextService;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Form;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Table;
 
 class AcademyManagementResource extends BaseResource
 {
@@ -113,7 +106,7 @@ class AcademyManagementResource extends BaseResource
                             ->options(function () {
                                 return User::where('user_type', 'admin')
                                     ->get()
-                                    ->mapWithKeys(fn($user) => [$user->id => $user->name . ' (' . $user->email . ')']);
+                                    ->mapWithKeys(fn ($user) => [$user->id => $user->name.' ('.$user->email.')']);
                             })
                             ->searchable()
                             ->preload()
@@ -142,18 +135,39 @@ class AcademyManagementResource extends BaseResource
                                         // Handle empty values by setting default
                                         if ($state === null || $state === '') {
                                             $set('brand_color', '#0ea5e9');
+
                                             return;
                                         }
-                                        
+
                                         // Ensure the color format is correct
-                                        if (!str_starts_with($state, '#')) {
-                                            $set('brand_color', '#' . ltrim($state, '#'));
+                                        if (! str_starts_with($state, '#')) {
+                                            $set('brand_color', '#'.ltrim($state, '#'));
                                         }
                                     }),
                             ]),
 
-                        Grid::make(1)
+                        Grid::make(2)
                             ->schema([
+                                ColorPicker::make('secondary_color')
+                                    ->label('اللون الثانوي')
+                                    ->default('#10B981')
+                                    ->helperText('لون الواجهة الثانوي للأكاديمية')
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (?string $state, \Filament\Forms\Set $set) {
+                                        // Handle empty values by setting default
+                                        if ($state === null || $state === '') {
+                                            $set('secondary_color', '#10B981');
+
+                                            return;
+                                        }
+
+                                        // Ensure the color format is correct
+                                        if (! str_starts_with($state, '#')) {
+                                            $set('secondary_color', '#'.ltrim($state, '#'));
+                                        }
+                                    }),
+
                                 Select::make('theme')
                                     ->label('المظهر')
                                     ->options([
@@ -163,6 +177,7 @@ class AcademyManagementResource extends BaseResource
                                     ])
                                     ->default('light'),
                             ]),
+
                     ])
                     ->collapsible(),
 
@@ -237,14 +252,14 @@ class AcademyManagementResource extends BaseResource
                     ->badge()
                     ->color(fn (bool $state): string => $state ? 'success' : 'danger')
                     ->formatStateUsing(function (bool $state, $record): string {
-                        if (!$state) {
+                        if (! $state) {
                             return 'غير نشطة';
                         }
-                        
+
                         if ($record->maintenance_mode) {
                             return 'تحت الصيانة';
                         }
-                        
+
                         return 'نشطة';
                     }),
 
@@ -350,9 +365,10 @@ class AcademyManagementResource extends BaseResource
             'view' => Pages\ViewAcademyManagement::route('/{record}'),
         ];
     }
-public static function canViewAny(): bool
+
+    public static function canViewAny(): bool
     {
         // Only super admin can access academy management
         return AcademyContextService::isSuperAdmin();
     }
-} 
+}

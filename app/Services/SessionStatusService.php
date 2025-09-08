@@ -30,12 +30,53 @@ class SessionStatusService
             'preparation_completed_at' => now(),
         ]);
 
+        // Create meeting room when session becomes ready
+        $this->createMeetingForSession($session);
+
         Log::info('Session transitioned to READY', [
             'session_id' => $session->id,
             'scheduled_at' => $session->scheduled_at,
         ]);
 
         return true;
+    }
+
+    /**
+     * Create meeting room for session when it becomes ready
+     */
+    private function createMeetingForSession(QuranSession $session): void
+    {
+        try {
+            // Only create if meeting doesn't already exist
+            if ($session->meeting_room_name) {
+                Log::info('Meeting already exists for session', [
+                    'session_id' => $session->id,
+                    'room_name' => $session->meeting_room_name,
+                ]);
+
+                return;
+            }
+
+            // Use the session's generateMeetingLink method which creates the meeting
+            $meetingConfig = $session->getMeetingConfiguration();
+            $meetingUrl = $session->generateMeetingLink([
+                'max_participants' => $meetingConfig['max_participants'],
+                'recording_enabled' => $meetingConfig['recording_enabled'],
+            ]);
+
+            Log::info('Meeting created for ready session', [
+                'session_id' => $session->id,
+                'room_name' => $session->meeting_room_name,
+                'meeting_url' => $meetingUrl,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create meeting for ready session', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 
     /**

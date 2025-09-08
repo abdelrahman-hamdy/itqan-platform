@@ -7,6 +7,7 @@ use App\Models\AcademicSubject;
 use App\Models\Academy;
 use App\Models\CourseSubscription;
 use App\Models\RecordedCourse;
+use App\Models\StudentProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,10 @@ class RecordedCourseController extends Controller
 
         $query = RecordedCourse::where('academy_id', $academy->id)
             ->published()
-            ->with(['subject', 'gradeLevel']);
+            ->with(['subject', 'gradeLevel', 'academy'])
+            ->withCount(['lessons as total_lessons' => function ($query) {
+                $query->where('is_published', true);
+            }]);
 
         // If user is authenticated and is a student, load enrollments
         if ($user && $user->user_type === 'student') {
@@ -41,33 +45,16 @@ class RecordedCourseController extends Controller
             });
         }
 
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
+        if ($request->filled('subject_id')) {
+            $query->where('subject_id', $request->subject_id);
+        }
+
+        if ($request->filled('grade_level_id')) {
+            $query->where('grade_level_id', $request->grade_level_id);
         }
 
         if ($request->filled('level')) {
             $query->where('difficulty_level', $request->level);
-        }
-
-        if ($request->filled('price')) {
-            if ($request->price === 'free') {
-                $query->where('price', 0);
-            } elseif ($request->price === 'paid') {
-                $query->where('price', '>', 0);
-            }
-        }
-
-        // Student-specific filters
-        if ($user && $user->user_type === 'student' && $request->filled('status')) {
-            if ($request->status === 'enrolled') {
-                $query->whereHas('enrollments', function ($enrollmentQuery) use ($user) {
-                    $enrollmentQuery->where('student_id', $user->id);
-                });
-            } elseif ($request->status === 'not_enrolled') {
-                $query->whereDoesntHave('enrollments', function ($enrollmentQuery) use ($user) {
-                    $enrollmentQuery->where('student_id', $user->id);
-                });
-            }
         }
 
         // Sorting
@@ -91,12 +78,19 @@ class RecordedCourseController extends Controller
         $courses = $query->paginate(12);
 
         // Get filter options
-        $categories = RecordedCourse::where('academy_id', $academy->id)
-            ->where('is_published', true)
-            ->distinct()
-            ->pluck('category')
-            ->filter()
-            ->sort();
+        $subjects = AcademicSubject::where('academy_id', $academy->id)
+            ->whereHas('recordedCourses', function ($query) {
+                $query->where('is_published', true);
+            })
+            ->orderBy('name')
+            ->get();
+
+        $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
+            ->whereHas('recordedCourses', function ($query) {
+                $query->where('is_published', true);
+            })
+            ->orderBy('name')
+            ->get();
 
         $levels = RecordedCourse::where('academy_id', $academy->id)
             ->where('is_published', true)
@@ -105,7 +99,7 @@ class RecordedCourseController extends Controller
             ->filter()
             ->sort();
 
-        return view('courses.index', compact('courses', 'categories', 'levels', 'academy'));
+        return view('courses.index', compact('courses', 'subjects', 'gradeLevels', 'levels', 'academy'));
     }
 
     /**
@@ -180,13 +174,25 @@ class RecordedCourseController extends Controller
         $course->load([
             'subject',
             'gradeLevel',
+            'academy',
+            'sections' => function ($query) {
+                $query->where('is_published', true)->orderBy('order');
+            },
             'sections.lessons' => function ($query) {
                 $query->where('is_published', true)->orderBy('id');
             },
             'reviews' => function ($query) {
-                $query->latest()->take(5);
+                $query->with('user:id,name')->latest()->take(5);
             },
-        ]);
+        ])
+            ->loadCount([
+                'lessons as total_lessons' => function ($query) {
+                    $query->where('is_published', true);
+                },
+                'enrollments as active_enrollments' => function ($query) {
+                    $query->where('status', 'active');
+                },
+            ]);
 
         $user = Auth::user();
         $isEnrolled = false;
@@ -266,16 +272,16 @@ class RecordedCourseController extends Controller
                 'student_id' => $user->id,
                 'recorded_course_id' => $course->id,
                 'subscription_code' => $this->generateSubscriptionCode($course),
-                'enrollment_type' => $course->is_free ? 'free' : 'paid',
-                'payment_type' => 'one_time', // Fixed: use valid enum value
-                'price_paid' => $course->discount_price ?? $course->price,
+                'enrollment_type' => 'free', // Bypass payment for now
+                'payment_type' => 'one_time',
+                'price_paid' => 0, // Free enrollment
                 'original_price' => $course->price,
-                'discount_amount' => $course->discount_price ? ($course->price - $course->discount_price) : 0,
-                'currency' => $course->currency,
-                'payment_status' => $course->is_free ? 'paid' : 'pending', // Fixed: use valid enum value
-                'access_type' => 'lifetime', // Fixed: use valid enum value
+                'discount_amount' => $course->price, // Full discount
+                'currency' => $course->academy?->currency ?? 'SAR',
+                'payment_status' => 'paid', // Mark as paid to bypass payment
+                'access_type' => 'lifetime',
                 'lifetime_access' => true,
-                'certificate_eligible' => $course->completion_certificate,
+                'certificate_eligible' => true, // Default to true
                 'status' => 'active',
                 'enrolled_at' => now(),
                 'created_by' => $user->id,
@@ -284,13 +290,9 @@ class RecordedCourseController extends Controller
             CourseSubscription::create($enrollmentData);
         });
 
-        if ($course->is_free) {
-            return redirect()->route('courses.learn', ['subdomain' => $subdomain, 'id' => $course->id])
-                ->with('success', 'تم تسجيلك في الدورة بنجاح!');
-        } else {
-            return redirect()->route('courses.checkout', ['subdomain' => $subdomain, 'id' => $course->id])
-                ->with('message', 'يرجى إكمال عملية الدفع لتأكيد التسجيل');
-        }
+        // Always redirect to learning page since payment is bypassed
+        return redirect()->route('courses.learn', ['subdomain' => $subdomain, 'id' => $course->id])
+            ->with('success', 'تم تسجيلك في الدورة بنجاح!');
     }
 
     /**
@@ -347,16 +349,16 @@ class RecordedCourseController extends Controller
                     'student_id' => $user->id,
                     'recorded_course_id' => $course->id,
                     'subscription_code' => $this->generateSubscriptionCode($course),
-                    'enrollment_type' => $course->is_free ? 'free' : 'paid',
-                    'payment_type' => 'one_time', // Fixed: use valid enum value
-                    'price_paid' => $course->discount_price ?? $course->price,
+                    'enrollment_type' => 'free', // Bypass payment for now
+                    'payment_type' => 'one_time',
+                    'price_paid' => 0, // Free enrollment
                     'original_price' => $course->price,
-                    'discount_amount' => $course->discount_price ? ($course->price - $course->discount_price) : 0,
-                    'currency' => $course->currency,
-                    'payment_status' => $course->is_free ? 'paid' : 'pending', // Fixed: use valid enum value
-                    'access_type' => 'lifetime', // Fixed: use valid enum value
+                    'discount_amount' => $course->price, // Full discount
+                    'currency' => $course->academy?->currency ?? 'SAR',
+                    'payment_status' => 'paid', // Mark as paid to bypass payment
+                    'access_type' => 'lifetime',
                     'lifetime_access' => true,
-                    'certificate_eligible' => $course->completion_certificate,
+                    'certificate_eligible' => true, // Default to true
                     'status' => 'active',
                     'enrolled_at' => now(),
                     'created_by' => $user->id,
@@ -368,17 +370,50 @@ class RecordedCourseController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'تم تسجيلك في الدورة بنجاح!',
-                'redirect_url' => $course->is_free
-                    ? route('courses.learn', ['subdomain' => $subdomain, 'id' => $course->id])
-                    : route('courses.checkout', ['subdomain' => $subdomain, 'id' => $course->id]),
+                'redirect_url' => route('courses.learn', ['subdomain' => $subdomain, 'id' => $course->id]),
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('Course enrollment error: '.$e->getMessage(), [
+                'course_id' => $course->id,
+                'user_id' => $user->id,
+                'error' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى',
+                'debug' => app()->environment('local') ? $e->getMessage() : null,
             ], 500);
         }
+    }
+
+    /**
+     * Get course progress
+     */
+    public function getProgress($courseId)
+    {
+        $course = RecordedCourse::findOrFail($courseId);
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $totalLessons = $course->lessons->count();
+        $completedLessons = StudentProgress::where('user_id', $user->id)
+            ->where('recorded_course_id', $courseId)
+            ->where('is_completed', true)
+            ->count();
+
+        $progressPercentage = $totalLessons > 0 ? ($completedLessons / $totalLessons) * 100 : 0;
+
+        return response()->json([
+            'success' => true,
+            'progress_percentage' => $progressPercentage,
+            'completed_lessons' => $completedLessons,
+            'total_lessons' => $totalLessons,
+        ]);
     }
 
     /**
@@ -408,14 +443,25 @@ class RecordedCourseController extends Controller
         }
 
         $course->load([
+            'sections' => function ($query) {
+                $query->where('is_published', true)->orderBy('order');
+            },
             'sections.lessons' => function ($query) {
                 $query->where('is_published', true)->orderBy('id');
             },
-        ]);
+        ])
+            ->loadCount([
+                'lessons as total_lessons' => function ($query) {
+                    $query->where('is_published', true);
+                },
+            ]);
 
-        // Get user's progress (simplified for now)
+        // Get user's progress from StudentProgress table
         $totalLessons = $course->lessons()->where('is_published', true)->count();
-        $completedLessons = $enrollment->completed_lessons ?? 0;
+        $completedLessons = StudentProgress::where('user_id', $user->id)
+            ->where('recorded_course_id', $course->id)
+            ->where('is_completed', true)
+            ->count();
 
         return view('courses.learn', compact('course', 'academy', 'enrollment', 'totalLessons', 'completedLessons'));
     }

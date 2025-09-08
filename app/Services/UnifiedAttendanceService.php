@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\AttendanceStatus;
+use App\Models\AcademicSession;
+use App\Models\AcademicSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
@@ -23,6 +25,44 @@ class UnifiedAttendanceService
     public function __construct(MeetingAttendanceService $meetingAttendanceService)
     {
         $this->meetingAttendanceService = $meetingAttendanceService;
+    }
+
+    /**
+     * Handle user joining a meeting (polymorphic)
+     * Creates both MeetingAttendance (real-time) and session report (unified)
+     */
+    public function handleUserJoinPolymorphic($session, User $user, string $sessionType): bool
+    {
+        try {
+            // First, handle real-time tracking
+            $joinSuccess = $this->meetingAttendanceService->handleUserJoin($session, $user);
+
+            if (! $joinSuccess) {
+                return false;
+            }
+
+            // Then, create/update the appropriate session report
+            $this->createOrUpdateSessionReportPolymorphic($session, $user, $sessionType);
+
+            Log::info('Unified attendance - user joined (polymorphic)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
+                'session_class' => get_class($session),
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle unified user join (polymorphic)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /**
@@ -54,6 +94,42 @@ class UnifiedAttendanceService
             Log::error('Failed to handle unified user join', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
+     * Handle user leaving a meeting (polymorphic)
+     */
+    public function handleUserLeavePolymorphic($session, User $user, string $sessionType): bool
+    {
+        try {
+            // First, handle real-time tracking
+            $leaveSuccess = $this->meetingAttendanceService->handleUserLeave($session, $user);
+
+            if (! $leaveSuccess) {
+                return false;
+            }
+
+            // Then, sync to appropriate report
+            $this->syncAttendanceToReportPolymorphic($session, $user, $sessionType);
+
+            Log::info('Unified attendance - user left (polymorphic)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle unified user leave (polymorphic)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
                 'error' => $e->getMessage(),
             ]);
 
@@ -156,10 +232,10 @@ class UnifiedAttendanceService
     public function getCurrentAttendanceStatus(QuranSession $session, User $user): array
     {
         // CRITICAL FIX: Completely disable sync to avoid errors - use stored data only
-        $statusValue = is_object($session->status) && method_exists($session->status, 'value') 
-            ? $session->status->value 
+        $statusValue = is_object($session->status) && method_exists($session->status, 'value')
+            ? $session->status->value
             : $session->status;
-            
+
         Log::info('Sync disabled - using stored data for all sessions', [
             'session_id' => $session->id,
             'user_id' => $user->id,
@@ -292,26 +368,90 @@ class UnifiedAttendanceService
 
     /**
      * Sync attendance data from MeetingAttendance to StudentSessionReport
-     * CRITICAL FIX: Real-time sync with current attendance minutes
+     * CRITICAL FIX: Proper sync logic to transfer meeting attendance to reports
      */
     private function syncAttendanceToReport(QuranSession $session, User $user): void
     {
-        // CRITICAL FIX: Disable all sync operations - use stored data only
-        Log::info('Sync completely disabled - using stored StudentSessionReport data', [
+        Log::info('Syncing attendance from MeetingAttendance to StudentSessionReport', [
             'session_id' => $session->id,
             'user_id' => $user->id,
-            'user_type' => $user->user_type,
-            'session_status' => $session->status->value,
         ]);
 
-        // CRITICAL FIX: Skip all sync operations until logic is fixed
-        // The sync logic has bugs that corrupt correct attendance data
-        Log::info('Sync disabled to prevent data corruption', [
+        // Get meeting attendance data
+        $meetingAttendance = MeetingAttendance::where('session_id', $session->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $meetingAttendance) {
+            Log::info('No meeting attendance found - creating absent report', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+            ]);
+
+            // Create absent report
+            StudentSessionReport::updateOrCreate(
+                [
+                    'session_id' => $session->id,
+                    'student_id' => $user->id,
+                ],
+                [
+                    'attendance_status' => 'absent',
+                    'actual_attendance_minutes' => 0,
+                    'attendance_percentage' => 0,
+                    'join_count' => 0,
+                ]
+            );
+
+            return;
+        }
+
+        // Calculate attendance status based on meeting data
+        $totalMinutes = $meetingAttendance->total_duration_minutes;
+        $sessionDuration = $session->duration_minutes ?? 60;
+        $attendancePercentage = $sessionDuration > 0 ? ($totalMinutes / $sessionDuration) * 100 : 0;
+
+        // Determine status based on attendance
+        $attendanceStatus = 'absent';
+        if ($totalMinutes > 0) {
+            if ($attendancePercentage >= 80) {
+                $attendanceStatus = 'present';
+            } elseif ($attendancePercentage >= 50) {
+                $attendanceStatus = 'partial';
+            } else {
+                $attendanceStatus = 'partial';
+            }
+        }
+
+        Log::info('Calculated attendance status', [
             'session_id' => $session->id,
             'user_id' => $user->id,
-            'reason' => 'Sync logic incorrectly overwrites correct attendance status',
+            'total_minutes' => $totalMinutes,
+            'session_duration' => $sessionDuration,
+            'percentage' => $attendancePercentage,
+            'status' => $attendanceStatus,
         ]);
 
+        // Update or create session report
+        StudentSessionReport::updateOrCreate(
+            [
+                'session_id' => $session->id,
+                'student_id' => $user->id,
+            ],
+            [
+                'attendance_status' => $attendanceStatus,
+                'actual_attendance_minutes' => $totalMinutes,
+                'attendance_percentage' => round($attendancePercentage, 2),
+                'join_count' => $meetingAttendance->join_count,
+                'is_late' => false, // TODO: Calculate based on join time
+                'late_minutes' => 0,
+            ]
+        );
+
+        Log::info('Attendance synced successfully', [
+            'session_id' => $session->id,
+            'user_id' => $user->id,
+            'final_status' => $attendanceStatus,
+        ]);
     }
 
     /**
@@ -476,5 +616,101 @@ class UnifiedAttendanceService
         Log::info('Legacy attendance data migration completed', $results);
 
         return $results;
+    }
+
+    /**
+     * Create or update session report for a user (polymorphic)
+     */
+    private function createOrUpdateSessionReportPolymorphic($session, User $user, string $sessionType): void
+    {
+        // Check if user is a student
+        if ($user->user_type !== 'student' && ! $user->studentProfile) {
+            return; // Only create reports for students
+        }
+
+        if ($sessionType === 'quran') {
+            $this->createOrUpdateQuranSessionReport($session, $user);
+        } elseif ($sessionType === 'academic') {
+            $this->createOrUpdateAcademicSessionReport($session, $user);
+        }
+    }
+
+    /**
+     * Create or update Quran session report
+     */
+    private function createOrUpdateQuranSessionReport(QuranSession $session, User $user): void
+    {
+        $teacher = $session->quranTeacher;
+        if (! $teacher) {
+            Log::warning('No teacher found for Quran session', ['session_id' => $session->id]);
+
+            return;
+        }
+
+        // Create or get existing report
+        $report = StudentSessionReport::createOrUpdateReport(
+            $session->id,
+            $user->id,
+            $teacher->id,
+            $session->academy_id
+        );
+
+        // Sync attendance data immediately (disabled for now due to bugs)
+        // $this->syncAttendanceToReport($session, $user);
+    }
+
+    /**
+     * Create or update Academic session report
+     */
+    private function createOrUpdateAcademicSessionReport(AcademicSession $session, User $user): void
+    {
+        $teacher = $session->academicTeacher;
+        if (! $teacher) {
+            Log::warning('No teacher found for Academic session', ['session_id' => $session->id]);
+
+            return;
+        }
+
+        // Create or get existing Academic session report
+        $report = AcademicSessionReport::createOrUpdateReport(
+            $session->id,
+            $user->id,
+            $teacher->id,
+            $session->academy_id
+        );
+
+        // Sync attendance data immediately
+        $this->syncAttendanceToAcademicReport($session, $user);
+    }
+
+    /**
+     * Sync attendance data to report (polymorphic)
+     */
+    private function syncAttendanceToReportPolymorphic($session, User $user, string $sessionType): void
+    {
+        if ($sessionType === 'quran') {
+            $this->syncAttendanceToReport($session, $user);
+        } elseif ($sessionType === 'academic') {
+            $this->syncAttendanceToAcademicReport($session, $user);
+        }
+    }
+
+    /**
+     * Sync attendance data from MeetingAttendance to AcademicSessionReport
+     */
+    private function syncAttendanceToAcademicReport(AcademicSession $session, User $user): void
+    {
+        Log::info('Syncing attendance to academic session report', [
+            'session_id' => $session->id,
+            'user_id' => $user->id,
+        ]);
+
+        $report = AcademicSessionReport::where('session_id', $session->id)
+            ->where('student_id', $user->id)
+            ->first();
+
+        if ($report) {
+            $report->syncFromMeetingAttendance();
+        }
     }
 }

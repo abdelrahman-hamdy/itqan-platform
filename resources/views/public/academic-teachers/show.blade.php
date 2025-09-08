@@ -364,5 +364,90 @@
     </div>
   @endif
 
+  <!-- Interactive Courses Section -->
+  @if(isset($interactiveCourses) && $interactiveCourses->count() > 0)
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <i class="ri-video-line text-primary ml-2"></i>
+        الدورات التفاعلية
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @foreach($interactiveCourses as $course)
+          <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'course' => $course->id]) }}" 
+             target="_blank"
+             onclick="console.log('Course link clicked:', this.href); return true;"
+             class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow card-hover flex flex-col h-full group block cursor-pointer"
+             style="text-decoration: none !important; pointer-events: all !important;"
+             title="انقر للانتقال إلى صفحة الدورة: {{ $course->title }}">
+            
+            <!-- Course Header -->
+            <div class="mb-4">
+              <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">{{ $course->title }}</h3>
+              @if($course->description)
+                <p class="text-gray-600 text-sm line-clamp-3">{{ $course->description }}</p>
+              @endif
+            </div>
+            
+            <!-- Course Details -->
+            <div class="space-y-3 mb-4 flex-grow">
+              <!-- Subject -->
+              @if($course->subject)
+                <div class="flex items-center">
+                  <i class="ri-book-line text-blue-500 text-sm ml-3"></i>
+                  <span class="text-gray-700 text-sm">{{ $course->subject->name }}</span>
+                </div>
+              @endif
+              
+              <!-- Grade Level -->
+              @if($course->gradeLevel)
+                <div class="flex items-center">
+                  <i class="ri-graduation-cap-line text-purple-500 text-sm ml-3"></i>
+                  <span class="text-gray-700 text-sm">{{ $course->gradeLevel->name }}</span>
+                </div>
+              @endif
+              
+              <!-- Duration -->
+              @if($course->duration_weeks)
+                <div class="flex items-center">
+                  <i class="ri-time-line text-green-500 text-sm ml-3"></i>
+                  <span class="text-gray-700 text-sm">{{ $course->duration_weeks }} أسبوع</span>
+                </div>
+              @endif
+              
+              <!-- Price -->
+              @if($course->price && $course->price > 0)
+                <div class="flex items-center">
+                  <i class="ri-money-dollar-circle-line text-orange-500 text-sm ml-3"></i>
+                  <span class="text-gray-700 text-sm">{{ $course->price }} {{ $course->currency ?? 'ريال' }}</span>
+                </div>
+              @endif
+            </div>
+            
+            <!-- Course Status Badge -->
+            <div class="flex justify-between items-center mt-auto">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                {{ $course->status === 'published' ? 'متاحة' : 'غير متاحة' }}
+              </span>
+              
+              <!-- Enrollment Count -->
+              @if($course->enrollments_count ?? 0 > 0)
+                <div class="flex items-center text-gray-500 text-sm">
+                  <i class="ri-group-line ml-1"></i>
+                  <span>{{ $course->enrollments_count }} طالب</span>
+                </div>
+              @endif
+            </div>
+            
+            <!-- Hover Effect Arrow -->
+            <div class="flex justify-end mt-4">
+              <i class="ri-arrow-left-line text-primary opacity-0 group-hover:opacity-100 transition-opacity"></i>
+            </div>
+          </a>
+        @endforeach
+      </div>
+    </div>
+  @endif
+
 
 </x-layouts.student>

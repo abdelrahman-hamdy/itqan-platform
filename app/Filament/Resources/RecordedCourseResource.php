@@ -111,7 +111,7 @@ class RecordedCourseResource extends Resource
                                                 }
 
                                                 return $query->where('is_active', true)
-                                                    ->orderBy('level_number')
+                                                    ->orderBy('name')
                                                     ->pluck('name', 'id');
                                             })
                                             ->searchable()
@@ -174,7 +174,8 @@ class RecordedCourseResource extends Resource
                                             ->collection('thumbnails')
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                                             ->maxSize(10240) // 10MB max size
-                                            ->helperText('أقصى حجم: 10 ميجابايت'),
+                                            ->helperText('أقصى حجم: 10 ميجابايت')
+                                            ->nullable(),
 
                                         SpatieMediaLibraryFileUpload::make('materials')
                                             ->label('مواد الكورس')
@@ -197,11 +198,7 @@ class RecordedCourseResource extends Resource
                                             ->label('دروس الدورة')
                                             ->schema([
                                                 Forms\Components\Hidden::make('course_section_id')
-                                                    ->default(function ($livewire) {
-                                                        $record = $livewire->record ?? null;
-
-                                                        return $record ? $record->getDefaultSectionId() : null;
-                                                    }),
+                                                    ->default(1), // Will be updated after course creation
 
                                                 Forms\Components\Hidden::make('created_by')
                                                     ->default(auth()->id()),
@@ -237,7 +234,7 @@ class RecordedCourseResource extends Resource
                                                     ->maxSize(512 * 1024) // 512MB
                                                     ->columnSpanFull()
                                                     ->getUploadedFileNameForStorageUsing(
-                                                        fn (TemporaryUploadedFile $file): string => 'lesson_video_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                        fn (TemporaryUploadedFile $file): string => 'lesson_video_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension()
                                                     ),
 
                                                 Forms\Components\Grid::make(3)

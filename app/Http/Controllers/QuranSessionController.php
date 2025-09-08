@@ -61,6 +61,9 @@ class QuranSessionController extends Controller
             abort(404, 'الجلسة غير موجودة أو غير مصرح لك بالوصول إليها');
         }
 
+        // Automatic meeting creation fallback for ready/ongoing sessions
+        $session->ensureMeetingExists();
+
         return view('student.session-detail', compact('session', 'academy'));
     }
 
@@ -124,6 +127,9 @@ class QuranSessionController extends Controller
         if (! $session) {
             abort(404, 'الجلسة غير موجودة أو غير مصرح لك بالوصول إليها');
         }
+
+        // Automatic meeting creation fallback for ready/ongoing sessions
+        $session->ensureMeetingExists();
 
         return view('teacher.session-detail', compact('session', 'academy'));
     }

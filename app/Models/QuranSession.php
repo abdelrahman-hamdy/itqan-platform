@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
+use App\Traits\HasMeetings;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +15,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class QuranSession extends Model
+class QuranSession extends Model implements MeetingCapable
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasMeetings, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -1512,5 +1515,293 @@ class QuranSession extends Model
         }
 
         return null;
+    }
+
+    // ========================================
+    // MeetingCapable Interface Implementation
+    // ========================================
+
+    /**
+     * Check if a user can join this meeting
+     */
+    public function canUserJoinMeeting(User $user): bool
+    {
+        // Check basic permissions first
+        if (! $this->canUserManageMeeting($user) && ! $this->isUserParticipant($user)) {
+            return false;
+        }
+
+        // Check timing constraints
+        return $this->canJoinBasedOnTiming($user);
+    }
+
+    /**
+     * Check if user can join based on timing constraints
+     */
+    private function canJoinBasedOnTiming(User $user): bool
+    {
+        // If no scheduled time, allow join (for manual sessions)
+        if (! $this->scheduled_at) {
+            return true;
+        }
+
+        $now = now();
+        $sessionStart = $this->scheduled_at;
+        $sessionEnd = $sessionStart->copy()->addMinutes($this->duration_minutes ?? 60);
+
+        // Teachers and admins can join anytime within a wider window
+        if ($this->canUserManageMeeting($user)) {
+            // Allow teachers to join 30 minutes before and up to 2 hours after session end
+            $teacherStartWindow = $sessionStart->copy()->subMinutes(30);
+            $teacherEndWindow = $sessionEnd->copy()->addHours(2);
+
+            return $now->between($teacherStartWindow, $teacherEndWindow);
+        }
+
+        // Students can join 15 minutes before session and up to 30 minutes after session end
+        $studentStartWindow = $sessionStart->copy()->subMinutes(15);
+        $studentEndWindow = $sessionEnd->copy()->addMinutes(30);
+
+        return $now->between($studentStartWindow, $studentEndWindow);
+    }
+
+    /**
+     * Check if a user can manage this meeting (create, end, control participants)
+     */
+    public function canUserManageMeeting(User $user): bool
+    {
+        // Super admin can manage all meetings
+        if (in_array($user->user_type, ['super_admin', 'admin'])) {
+            return true;
+        }
+
+        // Teachers can manage their own sessions
+        if ($user->user_type === 'quran_teacher' && $this->quran_teacher_id === $user->id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the meeting type identifier (MeetingCapable interface)
+     */
+    public function getMeetingType(): string
+    {
+        return 'quran';
+    }
+
+    /**
+     * Get the session type identifier for meeting purposes
+     *
+     * @deprecated Use getMeetingType() instead
+     */
+    public function getMeetingSessionType(): string
+    {
+        return $this->getMeetingType();
+    }
+
+    /**
+     * Get the academy this session belongs to
+     */
+    public function getAcademy(): ?Academy
+    {
+        return $this->academy;
+    }
+
+    /**
+     * Get the scheduled start time for the meeting
+     */
+    public function getMeetingStartTime(): ?Carbon
+    {
+        return $this->scheduled_at;
+    }
+
+    /**
+     * Get the expected duration of the meeting in minutes
+     */
+    public function getMeetingDurationMinutes(): int
+    {
+        return $this->duration_minutes ?? 60;
+    }
+
+    /**
+     * Check if the meeting is currently active
+     */
+    public function isMeetingActive(): bool
+    {
+        return in_array($this->status, [SessionStatus::READY, SessionStatus::ONGOING]);
+    }
+
+    /**
+     * Get all participants who should have access to this meeting
+     */
+    public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection
+    {
+        $participants = collect();
+
+        // Add teacher
+        if ($this->quranTeacher) {
+            $participants->push($this->quranTeacher);
+        }
+
+        // Add students based on session type
+        if ($this->session_type === 'individual' && $this->student) {
+            $participants->push($this->student);
+        } elseif ($this->session_type === 'circle' && $this->circle) {
+            $participants = $participants->merge($this->circle->students);
+        }
+
+        return $participants;
+    }
+
+    /**
+     * Get extended meeting configuration specific to Quran sessions
+     */
+    protected function getExtendedMeetingConfiguration(): array
+    {
+        $circle = $this->session_type === 'individual'
+            ? $this->individualCircle
+            : $this->circle;
+
+        return [
+            'session_code' => $this->session_code,
+            'session_type_detail' => $this->session_type,
+            'preparation_minutes' => $circle?->preparation_minutes ?? 15,
+            'ending_buffer_minutes' => $circle?->ending_buffer_minutes ?? 5,
+            'grace_period_minutes' => $circle?->late_join_grace_period_minutes ?? 15,
+            'current_surah' => $this->current_surah,
+            'current_verse' => $this->current_verse,
+            'lesson_objectives' => $this->lesson_objectives,
+            'teacher_id' => $this->quran_teacher_id,
+            'student_id' => $this->student_id,
+            'circle_id' => $this->circle_id,
+            'individual_circle_id' => $this->individual_circle_id,
+        ];
+    }
+
+    /**
+     * Check if user is a participant in this session
+     */
+    public function isUserParticipant(User $user): bool
+    {
+        // Teacher is always a participant in their sessions
+        if ($user->user_type === 'quran_teacher' && $this->quran_teacher_id === $user->id) {
+            return true;
+        }
+
+        // For individual sessions, check if user is the enrolled student
+        if ($this->session_type === 'individual') {
+            return $this->student_id === $user->id;
+        }
+
+        // For group sessions, check if user is enrolled in the circle
+        if ($this->session_type === 'group' && $this->circle) {
+            return $this->circle->students()->where('users.id', $user->id)->exists();
+        }
+
+        return false;
+    }
+
+    // ========================================
+    // Additional MeetingCapable Interface Methods
+    // ========================================
+
+    /**
+     * Get the meeting end time
+     */
+    public function getMeetingEndTime(): ?Carbon
+    {
+        if ($this->scheduled_at && $this->duration_minutes) {
+            return $this->scheduled_at->addMinutes($this->duration_minutes);
+        }
+
+        return $this->ended_at;
+    }
+
+    /**
+     * Get all participants for this session (MeetingCapable interface)
+     */
+    public function getParticipants(): array
+    {
+        $participants = [];
+
+        // Add the teacher
+        if ($this->teacher) {
+            $participants[] = [
+                'id' => $this->teacher->id,
+                'name' => trim($this->teacher->first_name.' '.$this->teacher->last_name),
+                'email' => $this->teacher->email,
+                'role' => 'quran_teacher',
+                'is_teacher' => true,
+                'user' => $this->teacher,
+            ];
+        }
+
+        // For individual sessions, add the specific student
+        if ($this->session_type === 'individual' && $this->student) {
+            $participants[] = [
+                'id' => $this->student->id,
+                'name' => trim($this->student->first_name.' '.$this->student->last_name),
+                'email' => $this->student->email,
+                'role' => 'student',
+                'is_teacher' => false,
+                'user' => $this->student,
+            ];
+        }
+
+        // For group sessions, add all enrolled students from the circle
+        if ($this->session_type === 'circle' && $this->circle) {
+            $students = $this->circle->students()->get();
+            foreach ($students as $student) {
+                $participants[] = [
+                    'id' => $student->id,
+                    'name' => trim($student->first_name.' '.$student->last_name),
+                    'email' => $student->email,
+                    'role' => 'student',
+                    'is_teacher' => false,
+                    'user' => $student,
+                ];
+            }
+        }
+
+        return $participants;
+    }
+
+    /**
+     * Get meeting-specific configuration (MeetingCapable interface)
+     */
+    public function getMeetingConfiguration(): array
+    {
+        $config = [
+            'session_type' => $this->session_type,
+            'session_id' => $this->id,
+            'session_code' => $this->session_code,
+            'academy_id' => $this->academy_id,
+            'duration_minutes' => $this->duration_minutes ?? 60,
+            'max_participants' => $this->session_type === 'circle' ? 10 : 2,
+            'recording_enabled' => true, // Quran sessions may need recording for review
+            'chat_enabled' => true,
+            'screen_sharing_enabled' => true,
+            'whiteboard_enabled' => false, // Not typically needed for Quran sessions
+            'breakout_rooms_enabled' => false,
+            'waiting_room_enabled' => false,
+            'mute_on_join' => false,
+            'camera_on_join' => true,
+        ];
+
+        // Add session-specific settings based on type
+        if ($this->session_type === 'individual') {
+            $config['max_participants'] = 2;
+            $config['recording_enabled'] = true;
+            $config['waiting_room_enabled'] = false;
+        } elseif ($this->session_type === 'circle') {
+            $config['max_participants'] = 10;
+            $config['recording_enabled'] = true;
+            $config['waiting_room_enabled'] = true;
+            $config['mute_on_join'] = true; // Start muted in group sessions
+        }
+
+        return $config;
     }
 }

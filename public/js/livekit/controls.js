@@ -1392,6 +1392,11 @@ class LiveKitControls {
                 break;
             case 'participants':
                 this.isParticipantsListOpen = true;
+                // Update sidebar title
+                const participantsSidebarTitle = document.getElementById('sidebarTitle');
+                if (participantsSidebarTitle) {
+                    participantsSidebarTitle.textContent = 'المشاركين';
+                }
                 break;
             case 'raisedHands':
                 this.isHandRaiseQueueOpen = true;
@@ -1498,9 +1503,9 @@ class LiveKitControls {
 
         if (fullscreenIcon) {
             if (isFullscreen) {
-                fullscreenIcon.innerHTML = '<path fill-rule="evenodd" d="M5 9V5h4V3H3v6h2zm0 2v4h4v-2H5v-2zm6-8h4v4h-2V5h-2V3zm4 8v2h-2v2h4v-4h-2z" clip-rule="evenodd"/>';
+                fullscreenIcon.className = 'ri-fullscreen-exit-line text-lg text-white';
             } else {
-                fullscreenIcon.innerHTML = '<path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd"/>';
+                fullscreenIcon.className = 'ri-fullscreen-line text-lg text-white';
             }
         }
     }
@@ -1921,12 +1926,56 @@ class LiveKitControls {
     leaveMeeting() {
         console.log('🚪 Leaving meeting...');
 
+        // CRITICAL FIX: Record leave attendance BEFORE leaving
+        this.recordLeaveAttendance();
+
         if (this.config.onLeaveRequest) {
             this.config.onLeaveRequest();
         } else {
             // Fallback behavior - simply reload the current page
             console.log('🔄 Reloading current page after leaving meeting');
             window.location.reload();
+        }
+    }
+
+    /**
+     * Record leave attendance when user clicks leave button
+     */
+    async recordLeaveAttendance() {
+        try {
+            console.log('📝 Recording leave attendance via leave button...');
+            
+            // Get session ID and type from window object (set in Blade template)
+            const sessionId = window.sessionId;
+            const sessionType = window.sessionType || 'quran';
+            
+            if (!sessionId) {
+                console.warn('⚠️ Session ID not available for leave attendance recording');
+                return;
+            }
+
+            const response = await fetch('/api/sessions/meeting/leave', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    session_type: sessionType,
+                    session_id: sessionId
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Leave attendance recorded via leave button:', data);
+            } else {
+                const error = await response.text();
+                console.warn('⚠️ Failed to record leave attendance:', error);
+            }
+        } catch (error) {
+            console.error('❌ Error recording leave attendance via leave button:', error);
         }
     }
 

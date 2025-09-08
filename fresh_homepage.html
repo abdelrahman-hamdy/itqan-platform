@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>أكاديمية إتقان - منصة تعليمية شاملة</title>
+  <meta name="description" content="أكاديمية إتقان - منصة تعليمية متميزة لتعلم القرآن الكريم والعلوم الأكاديمية مع أفضل المعلمين المؤهلين">
+  <meta name="keywords" content="تعلم القرآن، دروس أكاديمية، معلمين مؤهلين، تعليم عربي، أكاديمية إتقان">
+  <meta property="og:title" content="أكاديمية إتقان - منصة تعليمية شاملة">
+  <meta property="og:description" content="منصة تعليمية متميزة لتعلم القرآن الكريم والعلوم الأكاديمية">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  
+  <!-- Load compiled assets with GSAP -->
+  <link rel="preload" as="style" href="https://itqan-academy.itqan-platform.test/build/assets/app-DzvmL8Is.css" /><link rel="preload" as="style" href="https://itqan-academy.itqan-platform.test/build/assets/app-DvB2Xm2x.css" /><link rel="modulepreload" href="https://itqan-academy.itqan-platform.test/build/assets/app-BGl3-fBb.js" /><link rel="stylesheet" href="https://itqan-academy.itqan-platform.test/build/assets/app-DzvmL8Is.css" data-navigate-track="reload" /><link rel="stylesheet" href="https://itqan-academy.itqan-platform.test/build/assets/app-DvB2Xm2x.css" data-navigate-track="reload" /><script type="module" src="https://itqan-academy.itqan-platform.test/build/assets/app-BGl3-fBb.js" data-navigate-track="reload"></script>  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#4169E1",
+            secondary: "#10B981",
+          },
+          borderRadius: {
+            none: "0px",
+            sm: "4px",
+            DEFAULT: "8px",
+            md: "12px",
+            lg: "16px",
+            xl: "20px",
+            "2xl": "24px",
+            "3xl": "32px",
+            full: "9999px",
+            button: "8px",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :where([class^="ri-"])::before {
+      content: "\f3c2";
+    }
+
+    .hero-bg {
+      background: linear-gradient(135deg, #4169E1 0%, #10B981 50%, #87CEEB 100%);
+    }
+
+    .quran-section-bg {
+      background: linear-gradient(135deg, #f8faff 0%, #e6f0ff 50%, #d4e6ff 100%);
+    }
+
+    .academic-section-bg {
+      background: linear-gradient(135deg, #fff8f0 0%, #fff0e6 50%, #ffe8d4 100%);
+    }
+
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+
+    .stats-counter {
+      font-family: 'Tajawal', sans-serif;
+      font-weight: bold;
+    }
+    
+    /* Accessibility Improvements */
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 6px;
+      background: #4169E1;
+      color: white;
+      padding: 8px;
+      text-decoration: none;
+      border-radius: 4px;
+      z-index: 1000;
+    }
+    
+    .skip-link:focus {
+      top: 6px;
+    }
+    
+    /* Focus indicators */
+    .focus\:ring-custom:focus {
+      outline: 2px solid #4169E1;
+      outline-offset: 2px;
+    }
+    
+    /* Loading states */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+      position: relative;
+    }
+    
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid #4169E1;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Carousel improvements */
+    .carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    
+    .carousel-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .carousel-dot.active {
+      background: #4169E1;
+    }
+    
+    /* Trust indicators */
+    .trust-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f0f9ff;
+      border: 1px solid #e0f2fe;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #0369a1;
+    }
+  </style>
+<script id="browser-logger-active">
+(function() {
+    const ENDPOINT = 'https://itqan-academy.itqan-platform.test/_boost/browser-logs';
+    const logQueue = [];
+    let flushTimeout = null;
+
+    console.log('🔍 Browser logger active (MCP server detected). Posting to: ' + ENDPOINT);
+
+    // Store original console methods
+    const originalConsole = {
+        log: console.log,
+        info: console.info,
+        error: console.error,
+        warn: console.warn,
+        table: console.table
+    };
+
+    // Helper to safely stringify values
+    function safeStringify(obj) {
+        const seen = new WeakSet();
+        return JSON.stringify(obj, (key, value) => {
+            if (typeof value === 'object' && value !== null) {
+                if (seen.has(value)) return '[Circular]';
+                seen.add(value);
+            }
+            if (value instanceof Error) {
+                return {
+                    name: value.name,
+                    message: value.message,
+                    stack: value.stack
+                };
+            }
+            return value;
+        });
+    }
+
+    // Batch and send logs
+    function flushLogs() {
+        if (logQueue.length === 0) return;
+
+        const batch = logQueue.splice(0, logQueue.length);
+
+        fetch(ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ logs: batch })
+        }).catch(err => {
+            // Silently fail to avoid infinite loops
+            originalConsole.error('Failed to send logs:', err);
+        });
+    }
+
+    // Debounced flush (100ms)
+    function scheduleFlush() {
+        if (flushTimeout) clearTimeout(flushTimeout);
+        flushTimeout = setTimeout(flushLogs, 100);
+    }
+
+    // Intercept console methods
+    ['log', 'info', 'error', 'warn', 'table'].forEach(method => {
+        console[method] = function(...args) {
+            // Call original method
+            originalConsole[method].apply(console, args);
+
+            // Capture log data
+            try {
+                logQueue.push({
+                    type: method,
+                    timestamp: new Date().toISOString(),
+                    data: args.map(arg => {
+                        try {
+                            return typeof arg === 'object' ? JSON.parse(safeStringify(arg)) : arg;
+                        } catch (e) {
+                            return String(arg);
+                        }
+                    }),
+                    url: window.location.href,
+                    userAgent: navigator.userAgent
+                });
+
+                scheduleFlush();
+            } catch (e) {
+                // Fail silently
+            }
+        };
+    });
+
+    // Global error handlers for uncaught errors
+    const originalOnError = window.onerror;
+    window.onerror = function boostErrorHandler(errorMsg, url, lineNumber, colNumber, error) {
+        try {
+            logQueue.push({
+                type: 'uncaught_error',
+                timestamp: new Date().toISOString(),
+                data: [{
+                    message: errorMsg,
+                    filename: url,
+                    lineno: lineNumber,
+                    colno: colNumber,
+                    error: error ? {
+                        name: error.name,
+                        message: error.message,
+                        stack: error.stack
+                    } : null
+                }],
+                url: window.location.href,
+                userAgent: navigator.userAgent
+            });
+
+            scheduleFlush();
+        } catch (e) {
+            // Fail silently
+        }
+
+        // Call original handler if it exists
+        if (originalOnError && typeof originalOnError === 'function') {
+            return originalOnError(errorMsg, url, lineNumber, colNumber, error);
+        }
+
+        // Let the error continue to propagate
+        return false;
+    }
+    window.addEventListener('error', (event) => {
+        try {
+            logQueue.push({
+                type: 'window_error',
+                timestamp: new Date().toISOString(),
+                data: [{
+                    message: event.message,
+                    filename: event.filename,
+                    lineno: event.lineno,
+                    colno: event.colno,
+                    error: event.error ? {
+                        name: event.error.name,
+                        message: event.error.message,
+                        stack: event.error.stack
+                    } : null
+                }],
+                url: window.location.href,
+                userAgent: navigator.userAgent
+            });
+
+            scheduleFlush();
+        } catch (e) {
+            // Fail silently
+        }
+
+        // Let the error continue to propagate
+        return false;
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+        try {
+            logQueue.push({
+                type: 'error',
+                timestamp: new Date().toISOString(),
+                data: [{
+                    message: 'Unhandled Promise Rejection',
+                    reason: event.reason instanceof Error ? {
+                        name: event.reason.name,
+                        message: event.reason.message,
+                        stack: event.reason.stack
+                    } : event.reason
+                }],
+                url: window.location.href,
+                userAgent: navigator.userAgent
+            });
+
+            scheduleFlush();
+        } catch (e) {
+            // Fail silently
+        }
+
+        // Let the rejection continue to propagate
+        return false;
+    });
+
+    // Flush on page unload
+    window.addEventListener('beforeunload', () => {
+        if (logQueue.length > 0) {
+            navigator.sendBeacon(ENDPOINT, JSON.stringify({ logs: logQueue }));
+        }
+    });
+})();
+</script>
+</head>
+
+<body class="bg-gray-50 text-gray-900">
+  <!-- Skip Navigation Links -->
+  <a href="#main-content" class="skip-link">تخطي إلى المحتوى الرئيسي</a>
+  <a href="#navigation" class="skip-link">تخطي إلى التنقل</a>
+  
+  <!-- Navigation -->
+  <!-- Navigation -->
+<nav id="navigation" class="bg-white shadow-lg sticky top-0 z-50" role="navigation" aria-label="التنقل الرئيسي">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-20">
+      <div class="flex items-center space-x-8 space-x-reverse">
+        <div class="flex items-center">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <i class="ri-book-open-line text-2xl text-primary"></i>
+          </div>
+          <span class="mr-2 text-xl font-bold text-primary">أكاديمية إتقان</span>
+        </div>
+        <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                      <a href="#quran" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى قسم القرآن الكريم">القرآن الكريم</a>
+                                <a href="#academic" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى القسم الأكاديمي">الأكاديمي</a>
+                                <a href="#courses" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى الكورسات المسجلة">الكورسات المسجلة</a>
+                    <a href="#about" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى قسم من نحن">من نحن</a>
+          <a href="#contact" class="text-gray-700 hover:text-primary transition-colors duration-200 focus:ring-custom" aria-label="انتقل إلى قسم اتصل بنا">اتصل بنا</a>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4 space-x-reverse">
+        <div class="relative">
+          <button class="flex items-center space-x-2 space-x-reverse text-gray-700 hover:text-primary focus:ring-custom" aria-label="اختيار اللغة" aria-expanded="false">
+            <span>العربية</span>
+            <div class="w-4 h-4 flex items-center justify-center">
+              <i class="ri-arrow-down-s-line"></i>
+            </div>
+          </button>
+          <div class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg hidden" role="menu">
+            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-50" role="menuitem">العربية</a>
+            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-50" role="menuitem">English</a>
+          </div>
+        </div>
+        <a href="https://itqan-academy.itqan-platform.test/login" class="bg-primary text-white px-6 py-2 !rounded-button hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="تسجيل الدخول إلى حسابك">
+          تسجيل الدخول
+        </a>
+        <button class="md:hidden focus:ring-custom" aria-label="فتح قائمة التنقل" aria-expanded="false" id="mobile-menu-button">
+          <div class="w-6 h-6 flex items-center justify-center">
+            <i class="ri-menu-line text-xl"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+    <!-- Mobile Navigation Menu -->
+    <div class="md:hidden hidden" id="mobile-menu">
+      <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+                  <a href="#quran" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom" aria-label="انتقل إلى قسم القرآن الكريم">القرآن الكريم</a>
+                          <a href="#academic" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom" aria-label="انتقل إلى القسم الأكاديمي">الأكاديمي</a>
+                          <a href="#courses" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom" aria-label="انتقل إلى الكورسات المسجلة">الكورسات المسجلة</a>
+                <a href="#about" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom" aria-label="انتقل إلى قسم من نحن">من نحن</a>
+        <a href="#contact" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom" aria-label="انتقل إلى قسم اتصل بنا">اتصل بنا</a>
+      </div>
+    </div>
+  </div>
+</nav>   
+  <!-- Hero Section -->
+  <!-- Hero Section -->
+<section id="main-content" class="relative overflow-hidden min-h-screen flex items-center bg-gradient-to-br from-gray-50 via-white to-blue-50" role="banner">
+  <div class="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-20 left-20 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
+  <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center">
+    <h1 class="text-6xl lg:text-7xl font-bold mb-8 leading-tight text-gray-900">
+      أكاديمية إتقان
+      <span class="block text-4xl lg:text-5xl mt-4 text-primary/80">للتعليم الشامل</span>
+    </h1>
+    <p class="text-2xl mb-12 text-gray-600 leading-relaxed max-w-3xl mx-auto">
+      الأكاديمية الرئيسية لمنصة إتقان التعليمية
+    </p>
+    <div class="flex flex-col sm:flex-row gap-6 justify-center mb-12">
+      <a href="https://itqan-academy.itqan-platform.test/register" 
+         class="bg-primary text-white px-10 py-5 !rounded-button text-xl font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" 
+         aria-label="ابدأ رحلتك التعليمية الآن">
+        ابدأ التعلم الآن
+      </a>
+      <a href="#services" 
+         class="bg-gray-50 text-gray-700 px-10 py-5 !rounded-button text-xl font-semibold hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap focus:ring-custom" 
+         aria-label="اكتشف خدماتنا التعليمية">
+        تعرف على خدماتنا
+      </a>
+    </div>
+    
+    <!-- Trust Indicators -->
+    <div class="flex flex-wrap justify-center gap-4 mb-8">
+      <div class="trust-badge">
+        <i class="ri-shield-check-line"></i>
+        <span>معتمد رسمياً</span>
+      </div>
+      <div class="trust-badge">
+        <i class="ri-award-line"></i>
+        <span>جودة مضمونة</span>
+      </div>
+      <div class="trust-badge">
+        <i class="ri-customer-service-2-line"></i>
+        <span>دعم 24/7</span>
+      </div>
+      <div class="trust-badge">
+        <i class="ri-money-dollar-circle-line"></i>
+        <span>ضمان استرداد المال</span>
+      </div>
+    </div>
+  </div>
+</section>   
+  <!-- Statistics Section -->
+  <!-- Statistics Section -->
+<section class="bg-white py-16" role="region" aria-labelledby="stats-heading">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 id="stats-heading" class="text-3xl font-bold text-center text-gray-900 mb-12">إنجازاتنا بالأرقام</h2>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+      <div class="text-center">
+        <div class="w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mx-auto mb-4" aria-hidden="true">
+          <i class="ri-user-line text-2xl text-primary"></i>
+        </div>
+        <div class="stats-counter text-3xl font-bold text-primary mb-2" data-target="15000">0</div>
+        <p class="text-gray-600">طالب وطالبة نشط</p>
+        <p class="text-sm text-gray-500 mt-1">من جميع أنحاء العالم</p>
+      </div>
+      <div class="text-center">
+        <div class="w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mx-auto mb-4" aria-hidden="true">
+          <i class="ri-user-star-line text-2xl text-primary"></i>
+        </div>
+        <div class="stats-counter text-3xl font-bold text-primary mb-2" data-target="500">0</div>
+        <p class="text-gray-600">معلم متخصص</p>
+        <p class="text-sm text-gray-500 mt-1">حاصلون على شهادات معتمدة</p>
+      </div>
+      <div class="text-center">
+        <div class="w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mx-auto mb-4" aria-hidden="true">
+          <i class="ri-book-line text-2xl text-primary"></i>
+        </div>
+        <div class="stats-counter text-3xl font-bold text-primary mb-2" data-target="1200">0</div>
+        <p class="text-gray-600">كورس تعليمي</p>
+        <p class="text-sm text-gray-500 mt-1">في مختلف التخصصات</p>
+      </div>
+      <div class="text-center">
+        <div class="w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mx-auto mb-4" aria-hidden="true">
+          <i class="ri-award-line text-2xl text-primary"></i>
+        </div>
+        <div class="stats-counter text-3xl font-bold text-primary mb-2" data-target="95">0</div>
+        <p class="text-gray-600">نسبة النجاح</p>
+        <p class="text-sm text-gray-500 mt-1">معدل إتمام الطلاب للكورسات</p>
+      </div>
+    </div>
+  </div>
+</section>   
+  <!-- Testimonials Section -->
+  <!-- Testimonials Section -->
+<section class="bg-gray-50 py-20" role="region" aria-labelledby="testimonials-heading">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 id="testimonials-heading" class="text-4xl font-bold text-gray-900 mb-4">آراء طلابنا</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم أكاديمية إتقان في تحقيق أهدافهم التعليمية
+      </p>
+    </div>
+    
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <!-- Default testimonials -->
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+          <div class="flex items-center mb-4">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face" alt="صورة أحمد محمد" class="w-12 h-12 rounded-full ml-4">
+            <div>
+              <h4 class="font-semibold text-gray-900">أحمد محمد</h4>
+              <p class="text-sm text-gray-600">طالب في قسم القرآن الكريم</p>
+            </div>
+          </div>
+          <div class="flex mb-4" aria-label="تقييم 5 نجوم">
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+          </div>
+          <p class="text-gray-700 leading-relaxed">
+            "تجربة رائعة مع أكاديمية إتقان. المعلمون متخصصون والمنهج واضح ومنظم. تمكنت من حفظ 5 أجزاء في 6 أشهر فقط."
+          </p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+          <div class="flex items-center mb-4">
+            <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=60&h=60&fit=crop&crop=face" alt="صورة فاطمة أحمد" class="w-12 h-12 rounded-full ml-4">
+            <div>
+              <h4 class="font-semibold text-gray-900">فاطمة أحمد</h4>
+              <p class="text-sm text-gray-600">طالبة في القسم الأكاديمي</p>
+            </div>
+          </div>
+          <div class="flex mb-4" aria-label="تقييم 5 نجوم">
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+          </div>
+          <p class="text-gray-700 leading-relaxed">
+            "الدروس الأكاديمية ممتازة والشرح واضح. تحسنت درجاتي بشكل كبير في الرياضيات والفيزياء بفضل المعلمين المتميزين."
+          </p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+          <div class="flex items-center mb-4">
+            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop&crop=face" alt="صورة محمد علي" class="w-12 h-12 rounded-full ml-4">
+            <div>
+              <h4 class="font-semibold text-gray-900">محمد علي</h4>
+              <p class="text-sm text-gray-600">ولي أمر</p>
+            </div>
+          </div>
+          <div class="flex mb-4" aria-label="تقييم 5 نجوم">
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+            <i class="ri-star-fill text-yellow-400"></i>
+          </div>
+          <p class="text-gray-700 leading-relaxed">
+            "أكاديمية إتقان غيرت مستوى ابني التعليمي. الدعم المستمر والمتابعة الدقيقة جعلته يحب التعلم أكثر."
+          </p>
+        </div>
+          </div>
+  </div>
+</section>   
+  <!-- Quran Section -->
+      <!-- Quran Section -->
+<section id="quran" class="py-24 bg-gradient-to-br from-emerald-50 via-white to-teal-50 relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-20">
+      <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-2xl mx-auto mb-8 shadow-lg">
+        <i class="ri-book-open-line text-4xl text-white"></i>
+      </div>
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+          قسم <span class="text-primary">القرآن الكريم</span>
+        </h2>
+        <p class="text-xl text-gray-600 leading-relaxed mb-8">
+          تعلم وحفظ القرآن الكريم مع معلمين متخصصين في بيئة تعليمية متميزة تجمع بين الأصالة والحداثة
+        </p>
+        <div class="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+          <div class="flex items-center gap-2">
+            <i class="ri-shield-check-line text-primary"></i>
+            <span>معلمون معتمدون</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="ri-time-line text-primary"></i>
+            <span>مواعيد مرنة</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="ri-award-line text-primary"></i>
+            <span>شهادات معتمدة</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Available Quran Circles Section -->
+    <div class="mb-24">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-4">
+        <div>
+          <h3 class="text-3xl font-bold text-gray-900 mb-2">حلقات التحفيظ المتاحة</h3>
+          <p class="text-gray-600">اختر الحلقة المناسبة لمستواك وابدأ رحلتك في حفظ القرآن الكريم</p>
+        </div>
+        <div class="flex gap-3">
+          <button class="circle-prev w-14 h-14 flex items-center justify-center bg-white rounded-xl shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all duration-300 focus:ring-custom border border-gray-100" aria-label="الحلقة السابقة">
+            <i class="ri-arrow-right-s-line text-xl text-gray-700"></i>
+          </button>
+          <button class="circle-next w-14 h-14 flex items-center justify-center bg-white rounded-xl shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all duration-300 focus:ring-custom border border-gray-100" aria-label="الحلقة التالية">
+            <i class="ri-arrow-left-s-line text-xl text-gray-700"></i>
+          </button>
+        </div>
+      </div>
+      <div class="circles-slider overflow-hidden">
+        <div class="circles-track flex gap-8 transition-transform duration-300 w-[calc(320px*3+2rem*2)] mx-auto">
+                      <!-- Default circles -->
+            <div class="bg-white rounded-xl shadow-lg p-6 min-w-[300px] card-hover">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h4 class="text-lg font-bold text-gray-900">حلقة سورة البقرة</h4>
+                  <p class="text-sm text-gray-600">مع الشيخ عبدالرحمن السديس</p>
+                </div>
+                <span class="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">متاح</span>
+              </div>
+              <div class="space-y-3 mb-4">
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-time-line"></i>
+                  </div>
+                  السبت والثلاثاء - 8:00 مساءً
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-group-line"></i>
+                  </div>
+                  8 من 12 طالب
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-calendar-line"></i>
+                  </div>
+                  يبدأ 15 أغسطس 2025
+                </div>
+              </div>
+              <a href="https://itqan-academy.itqan-platform.test/quran-circles" 
+                 class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
+                 aria-label="انضم لحلقة سورة البقرة">
+                انضم للحلقة
+              </a>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 min-w-[300px] card-hover">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h4 class="text-lg font-bold text-gray-900">حلقة جزء عم</h4>
+                  <p class="text-sm text-gray-600">مع الشيخ محمد الغامدي</p>
+                </div>
+                <span class="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">متاح</span>
+              </div>
+              <div class="space-y-3 mb-4">
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-time-line"></i>
+                  </div>
+                  الأحد والأربعاء - 7:00 مساءً
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-group-line"></i>
+                  </div>
+                  5 من 10 طالب
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-calendar-line"></i>
+                  </div>
+                  يبدأ 20 أغسطس 2025
+                </div>
+              </div>
+              <a href="https://itqan-academy.itqan-platform.test/quran-circles" 
+                 class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap text-center block">
+                انضم للحلقة
+              </a>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 min-w-[300px] card-hover">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h4 class="text-lg font-bold text-gray-900">حلقة سورة آل عمران</h4>
+                  <p class="text-sm text-gray-600">مع الشيخ فهد الكندري</p>
+                </div>
+                <span class="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">متاح</span>
+              </div>
+              <div class="space-y-3 mb-4">
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-time-line"></i>
+                  </div>
+                  الاثنين والخميس - 9:00 مساءً
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-group-line"></i>
+                  </div>
+                  6 من 12 طالب
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="w-5 h-5 flex items-center justify-center ml-2">
+                    <i class="ri-calendar-line"></i>
+                  </div>
+                  يبدأ 25 أغسطس 2025
+                </div>
+              </div>
+              <a href="https://itqan-academy.itqan-platform.test/quran-circles" 
+                 class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap text-center block">
+                انضم للحلقة
+              </a>
+            </div>
+                  </div>
+        <!-- Carousel Pagination Dots -->
+        <div class="carousel-dots" id="circles-dots">
+                  </div>
+      </div>
+      <div class="text-center mb-16 mt-12">
+        <a href="https://itqan-academy.itqan-platform.test/quran-circles" 
+           class="bg-white border-2 border-primary text-primary px-8 py-3 !rounded-button font-semibold hover:bg-primary hover:text-white transition-colors duration-200 whitespace-nowrap focus:ring-custom" 
+           aria-label="عرض جميع حلقات التحفيظ المتاحة">
+          عرض جميع حلقات التحفيظ
+        </a>
+      </div>
+      
+      <!-- Quran Teachers Section -->
+      <div class="mb-12">
+        <div class="flex justify-between items-center mb-8">
+          <h3 class="text-2xl font-bold text-gray-900">معلمو القرآن المتميزون</h3>
+          <div class="flex gap-2">
+            <button class="teacher-prev w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-md hover:bg-gray-50 focus:ring-custom" aria-label="المعلم السابق">
+              <i class="ri-arrow-right-s-line text-xl text-gray-600"></i>
+            </button>
+            <button class="teacher-next w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-md hover:bg-gray-50 focus:ring-custom" aria-label="المعلم التالي">
+              <i class="ri-arrow-left-s-line text-xl text-gray-600"></i>
+            </button>
+          </div>
+        </div>
+        <div class="teachers-slider overflow-hidden">
+          <div class="teachers-track flex gap-6 transition-transform duration-300">
+                          <div class="bg-white rounded-xl shadow-lg p-6 min-w-[280px] card-hover">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                                          <i class="ri-user-smile-line text-3xl text-gray-400"></i>
+                                      </div>
+                  <div>
+                    <h4 class="text-lg font-bold text-gray-900"></h4>
+                    <p class="text-sm text-gray-600">إجازة في القراءات العشر</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex text-yellow-400">
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-line"></i>
+                                      </div>
+                  <span class="text-sm text-gray-600">4.2 (120 تقييم)</span>
+                </div>
+                <div class="space-y-2 mb-4">
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-time-line"></i>
+                    </div>
+                    15 سنة خبرة
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-group-line"></i>
+                    </div>
+                    500+ طالب
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-book-open-line"></i>
+                    </div>
+                    متخصص في تعليم الكبار
+                  </div>
+                </div>
+                <a href="https://itqan-academy.itqan-platform.test/quran-teachers/1" 
+                   class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
+                   aria-label="عرض تفاصيل ">
+                  عرض التفاصيل
+                </a>
+              </div>
+                          <div class="bg-white rounded-xl shadow-lg p-6 min-w-[280px] card-hover">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                                          <i class="ri-user-smile-line text-3xl text-gray-400"></i>
+                                      </div>
+                  <div>
+                    <h4 class="text-lg font-bold text-gray-900"></h4>
+                    <p class="text-sm text-gray-600">إجازة في القراءات العشر</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex text-yellow-400">
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-line"></i>
+                                      </div>
+                  <span class="text-sm text-gray-600">4.7 (120 تقييم)</span>
+                </div>
+                <div class="space-y-2 mb-4">
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-time-line"></i>
+                    </div>
+                    15 سنة خبرة
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-group-line"></i>
+                    </div>
+                    500+ طالب
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-book-open-line"></i>
+                    </div>
+                    متخصص في تعليم الكبار
+                  </div>
+                </div>
+                <a href="https://itqan-academy.itqan-platform.test/quran-teachers/2" 
+                   class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
+                   aria-label="عرض تفاصيل ">
+                  عرض التفاصيل
+                </a>
+              </div>
+                          <div class="bg-white rounded-xl shadow-lg p-6 min-w-[280px] card-hover">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                                          <i class="ri-user-smile-line text-3xl text-gray-400"></i>
+                                      </div>
+                  <div>
+                    <h4 class="text-lg font-bold text-gray-900"></h4>
+                    <p class="text-sm text-gray-600">إجازة في القراءات العشر</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex text-yellow-400">
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                          <i class="ri-star-fill"></i>
+                                      </div>
+                  <span class="text-sm text-gray-600">5.0 (120 تقييم)</span>
+                </div>
+                <div class="space-y-2 mb-4">
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-time-line"></i>
+                    </div>
+                    15 سنة خبرة
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-group-line"></i>
+                    </div>
+                    500+ طالب
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-book-open-line"></i>
+                    </div>
+                    متخصص في تعليم الكبار
+                  </div>
+                </div>
+                <a href="https://itqan-academy.itqan-platform.test/quran-teachers/3" 
+                   class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom text-center block" 
+                   aria-label="عرض تفاصيل ">
+                  عرض التفاصيل
+                </a>
+              </div>
+                      </div>
+          <!-- Teachers Pagination Dots -->
+          <div class="carousel-dots" id="teachers-dots">
+                          <div class="carousel-dot active" data-slide="0" aria-label="المعلم 1"></div>
+                          <div class="carousel-dot " data-slide="1" aria-label="المعلم 2"></div>
+                          <div class="carousel-dot " data-slide="2" aria-label="المعلم 3"></div>
+                      </div>
+        </div>
+      </div>
+      <div class="text-center mt-8">
+        <a href="https://itqan-academy.itqan-platform.test/quran-teachers" 
+           class="bg-white border-2 border-primary text-primary px-8 py-3 !rounded-button font-semibold hover:bg-primary hover:text-white transition-colors duration-200 whitespace-nowrap focus:ring-custom" 
+           aria-label="عرض جميع معلمي القرآن الكريم">
+          عرض جميع معلمي القرآن الكريم
+        </a>
+      </div>
+    </div>
+  </div>
+</section>     
+  <!-- Academic Section -->
+      <!-- Academic Section -->
+<section id="academic" class="py-24 bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-20">
+      <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-secondary to-primary rounded-2xl mx-auto mb-8 shadow-lg">
+        <i class="ri-graduation-cap-line text-4xl text-white"></i>
+      </div>
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+          القسم <span class="text-secondary">الأكاديمي</span>
+        </h2>
+        <p class="text-xl text-gray-600 leading-relaxed mb-8">
+          تعلم المواد الأكاديمية لجميع المراحل الدراسية مع أفضل المعلمين المتخصصين وأحدث الطرق التعليمية
+        </p>
+        <div class="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+          <div class="flex items-center gap-2">
+            <i class="ri-microscope-line text-secondary"></i>
+            <span>مختبرات متطورة</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="ri-presentation-line text-secondary"></i>
+            <span>تعلم تفاعلي</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="ri-medal-line text-secondary"></i>
+            <span>نتائج مضمونة</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Interactive Courses Section -->
+    <div class="mb-24">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-4">
+        <div>
+          <h3 class="text-3xl font-bold text-gray-900 mb-2">الكورسات التفاعلية المتاحة</h3>
+          <p class="text-gray-600">كورسات شاملة ومتطورة تغطي جميع المواد الأكاديمية بأسلوب تفاعلي ممتع</p>
+        </div>
+        <div class="flex gap-3">
+          <button class="course-prev w-14 h-14 flex items-center justify-center bg-white rounded-xl shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all duration-300 focus:ring-custom border border-gray-100" aria-label="الكورس السابق">
+            <i class="ri-arrow-right-s-line text-xl text-gray-700"></i>
+          </button>
+          <button class="course-next w-14 h-14 flex items-center justify-center bg-white rounded-xl shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all duration-300 focus:ring-custom border border-gray-100" aria-label="الكورس التالي">
+            <i class="ri-arrow-left-s-line text-xl text-gray-700"></i>
+          </button>
+        </div>
+      </div>
+      <div class="courses-slider overflow-hidden">
+        <div class="courses-track flex gap-6 transition-transform duration-300">
+                      <!-- Default courses -->
+            <div class="bg-white rounded-xl shadow-lg min-w-[300px] card-hover">
+              <div class="relative">
+                <div class="h-40 bg-gradient-to-br from-purple-400 to-purple-600">
+                  <img src="https://readdy.ai/api/search-image?query=Mathematics%20education%20with%20modern%20digital%20tools%2C%20clean%20professional%20classroom%20environment%2C%20mathematical%20equations%20and%20graphs%20on%20screen&width=400&height=300&seq=course101&orientation=landscape" alt="الرياضيات المتقدمة" class="w-full h-full object-cover object-top">
+                </div>
+                <span class="absolute top-3 right-3 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">متاح</span>
+                <span class="absolute top-3 left-3 bg-primary text-white text-sm font-semibold px-3 py-1 rounded-full">الرياضيات</span>
+              </div>
+              <div class="p-4">
+                <h4 class="text-lg font-bold text-gray-900 mb-2">الرياضيات المتقدمة - الصف الثالث</h4>
+                <div class="space-y-2 text-sm">
+                  <div class="flex items-center justify-between text-gray-600">
+                    <div class="flex items-center">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-calendar-line"></i>
+                      </div>
+                      البداية: 15 أغسطس 2025
+                    </div>
+                    <div class="flex items-center">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-time-line"></i>
+                      </div>
+                      8 أسابيع
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center text-gray-600">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-group-line"></i>
+                      </div>
+                      15/20 طالب
+                    </div>
+                    <span class="font-bold text-primary">299 ر.س</span>
+                  </div>
+                </div>
+                <button class="w-full bg-primary text-white mt-4 py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل الكورس">
+                  عرض التفاصيل
+                </button>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg min-w-[300px] card-hover">
+              <div class="relative">
+                <div class="h-40 bg-gradient-to-br from-blue-400 to-blue-600">
+                  <img src="https://readdy.ai/api/search-image?query=Physics%20laboratory%20with%20modern%20equipment%2C%20scientific%20experiments%20setup%2C%20professional%20educational%20environment&width=400&height=300&seq=course102&orientation=landscape" alt="الفيزياء" class="w-full h-full object-cover object-top">
+                </div>
+                <span class="absolute top-3 right-3 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">متاح</span>
+                <span class="absolute top-3 left-3 bg-primary text-white text-sm font-semibold px-3 py-1 rounded-full">الفيزياء</span>
+              </div>
+              <div class="p-4">
+                <h4 class="text-lg font-bold text-gray-900 mb-2">الفيزياء - الصف الثاني</h4>
+                <div class="space-y-2 text-sm">
+                  <div class="flex items-center justify-between text-gray-600">
+                    <div class="flex items-center">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-calendar-line"></i>
+                      </div>
+                      البداية: 20 أغسطس 2025
+                    </div>
+                    <div class="flex items-center">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-time-line"></i>
+                      </div>
+                      10 أسابيع
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center text-gray-600">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-group-line"></i>
+                      </div>
+                      12/25 طالب
+                    </div>
+                    <span class="font-bold text-primary">349 ر.س</span>
+                  </div>
+                </div>
+                <button class="w-full bg-primary text-white mt-4 py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل الكورس">
+                  عرض التفاصيل
+                </button>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg min-w-[300px] card-hover">
+              <div class="relative">
+                <div class="h-40 bg-gradient-to-br from-green-400 to-green-600">
+                  <img src="https://readdy.ai/api/search-image?query=Chemistry%20class%20with%20modern%20lab%20equipment%2C%20scientific%20experiments%2C%20professional%20educational%20setting&width=400&height=300&seq=course103&orientation=landscape" alt="الكيمياء" class="w-full h-full object-cover object-top">
+                </div>
+                <span class="absolute top-3 right-3 bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full">قريباً</span>
+                <span class="absolute top-3 left-3 bg-primary text-white text-sm font-semibold px-3 py-1 rounded-full">الكيمياء</span>
+              </div>
+              <div class="p-4">
+                <h4 class="text-lg font-bold text-gray-900 mb-2">الكيمياء - الصف الثالث</h4>
+                <div class="space-y-2 text-sm">
+                  <div class="flex items-center justify-between text-gray-600">
+                    <div class="flex items-center">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-calendar-line"></i>
+                      </div>
+                      البداية: 1 سبتمبر 2025
+                    </div>
+                    <div class="flex items-center">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-time-line"></i>
+                      </div>
+                      12 أسبوع
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center text-gray-600">
+                      <div class="w-4 h-4 flex items-center justify-center ml-2">
+                        <i class="ri-group-line"></i>
+                      </div>
+                      0/30 طالب
+                    </div>
+                    <span class="font-bold text-primary">399 ر.س</span>
+                  </div>
+                </div>
+                <button class="w-full bg-gray-100 text-gray-400 mt-4 py-2 !rounded-button font-semibold cursor-not-allowed whitespace-nowrap">
+                  قريباً
+                </button>
+              </div>
+            </div>
+                  </div>
+        <!-- Courses Pagination Dots -->
+        <div class="carousel-dots mb-8" id="courses-dots">
+                  </div>
+        
+        <!-- View More Academic Courses Button -->
+        <div class="text-center">
+          <a href="#" 
+             class="bg-white text-primary border-2 border-primary px-8 py-3 rounded-xl font-semibold hover:bg-primary hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl focus:ring-custom" 
+             aria-label="عرض المزيد من الكورسات الأكاديمية">
+            <i class="ri-add-line ml-2"></i>
+            عرض المزيد من الكورسات الأكاديمية
+          </a>
+        </div>
+      </div>
+      
+      <!-- Academic Teachers Section -->
+      <div class="mb-20 mt-16">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-4">
+          <div>
+            <h3 class="text-3xl font-bold text-gray-900 mb-2">المعلمون الأكاديميون المتميزون</h3>
+            <p class="text-gray-600">نخبة من أفضل المعلمين المتخصصين في جميع المواد الأكاديمية</p>
+          </div>
+          <div class="flex gap-3">
+            <button class="academic-teacher-prev w-14 h-14 flex items-center justify-center bg-white rounded-xl shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all duration-300 focus:ring-custom border border-gray-100" aria-label="المعلم الأكاديمي السابق">
+              <i class="ri-arrow-right-s-line text-xl text-gray-700"></i>
+            </button>
+            <button class="academic-teacher-next w-14 h-14 flex items-center justify-center bg-white rounded-xl shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all duration-300 focus:ring-custom border border-gray-100" aria-label="المعلم الأكاديمي التالي">
+              <i class="ri-arrow-left-s-line text-xl text-gray-700"></i>
+            </button>
+          </div>
+        </div>
+        <div class="academic-teachers-slider overflow-hidden">
+          <div class="academic-teachers-track flex gap-6 transition-transform duration-300">
+                          <!-- Default teachers -->
+              <div class="bg-white rounded-xl shadow-lg p-6 min-w-[280px] card-hover">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xl font-bold">
+                    د.س
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-bold text-gray-900">د. سارة المنصور</h4>
+                    <p class="text-sm text-gray-600">دكتوراه في الرياضيات</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex text-yellow-400">
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                  </div>
+                  <span class="text-sm text-gray-600">5.0 (180 تقييم)</span>
+                </div>
+                <div class="space-y-2 mb-4">
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-book-open-line"></i>
+                    </div>
+                    الرياضيات المتقدمة
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-time-line"></i>
+                    </div>
+                    12 سنة خبرة
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-group-line"></i>
+                    </div>
+                    600+ طالب
+                  </div>
+                </div>
+                <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل المعلم">
+                  عرض التفاصيل
+                </button>
+              </div>
+              
+              <div class="bg-white rounded-xl shadow-lg p-6 min-w-[280px] card-hover">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xl font-bold">
+                    د.م
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-bold text-gray-900">د. محمد العمري</h4>
+                    <p class="text-sm text-gray-600">دكتوراه في الفيزياء</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex text-yellow-400">
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-half-fill"></i>
+                  </div>
+                  <span class="text-sm text-gray-600">4.8 (150 تقييم)</span>
+                </div>
+                <div class="space-y-2 mb-4">
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-book-open-line"></i>
+                    </div>
+                    الفيزياء
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-time-line"></i>
+                    </div>
+                    15 سنة خبرة
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-group-line"></i>
+                    </div>
+                    800+ طالب
+                  </div>
+                </div>
+                <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل المعلم">
+                  عرض التفاصيل
+                </button>
+              </div>
+              
+              <div class="bg-white rounded-xl shadow-lg p-6 min-w-[280px] card-hover">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xl font-bold">
+                    د.ف
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-bold text-gray-900">د. فاطمة الزهراني</h4>
+                    <p class="text-sm text-gray-600">دكتوراه في الكيمياء</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex text-yellow-400">
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                  </div>
+                  <span class="text-sm text-gray-600">4.9 (200 تقييم)</span>
+                </div>
+                <div class="space-y-2 mb-4">
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-book-open-line"></i>
+                    </div>
+                    الكيمياء
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-time-line"></i>
+                    </div>
+                    10 سنوات خبرة
+                  </div>
+                  <div class="flex items-center text-sm text-gray-600">
+                    <div class="w-5 h-5 flex items-center justify-center ml-2">
+                      <i class="ri-group-line"></i>
+                    </div>
+                    500+ طالب
+                  </div>
+                </div>
+                <button class="w-full bg-primary text-white py-2 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل المعلم">
+                  عرض التفاصيل
+                </button>
+              </div>
+                      </div>
+        </div>
+        <!-- Academic Teachers Pagination Dots -->
+        <div class="carousel-dots mb-8" id="academic-teachers-dots">
+                  </div>
+        
+        <!-- View More Academic Services Button -->
+        <div class="text-center">
+          <a href="#" 
+             class="bg-white text-primary border-2 border-primary px-8 py-3 rounded-xl font-semibold hover:bg-primary hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl focus:ring-custom" 
+             aria-label="اعرض المزيد من الخدمات الأكاديمية المتاحة">
+            <i class="ri-add-line ml-2"></i>
+            اعرض المزيد من الخدمات الأكاديمية
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>     
+  <!-- Recorded Courses Section -->
+      <!-- Recorded Courses Section -->
+<section id="courses" class="py-20 bg-gradient-to-b from-gray-50 to-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <div class="w-20 h-20 flex items-center justify-center bg-primary/10 rounded-full mx-auto mb-6">
+        <i class="ri-play-circle-line text-3xl text-primary"></i>
+      </div>
+      <h2 class="text-4xl font-bold text-gray-900 mb-4">الكورسات المسجلة</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        كورسات جاهزة ومسجلة بجودة عالية، تعلم في أي وقت وبالسرعة التي تناسبك
+      </p>
+    </div>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              <!-- Default courses -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+          <div class="h-48 relative overflow-hidden">
+            <img src="https://readdy.ai/api/search-image?query=Mathematics%20course%20thumbnail%20with%20equations%20and%20geometric%20shapes%2C%20educational%20content%20design%2C%20professional%20course%20cover%2C%20mathematical%20formulas%20and%20graphs%2C%20clean%20educational%20layout%2C%20academic%20subject%20illustration&width=400&height=300&seq=course001&orientation=landscape" alt="كورس الرياضيات" class="w-full h-full object-cover object-top">
+            <div class="absolute top-4 right-4 bg-primary text-white px-3 py-1 rounded-full text-sm font-semibold">
+              الصف الثالث الثانوي
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-2">الرياضيات المتقدمة</h3>
+            <p class="text-gray-600 mb-4">شرح شامل لمنهج الرياضيات مع حل التمارين والأمثلة التطبيقية</p>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-2xl font-bold text-primary">299 ر.س</span>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="ri-play-circle-line"></i>
+                <span>45 درس</span>
+              </div>
+            </div>
+            <button class="w-full bg-primary text-white py-3 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل الكورس المسجل">
+              عرض التفاصيل
+            </button>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+          <div class="h-48 relative overflow-hidden">
+            <img src="https://readdy.ai/api/search-image?query=Physics%20course%20thumbnail%20with%20scientific%20formulas%20and%20laboratory%20equipment%2C%20educational%20physics%20content%2C%20atoms%20and%20molecules%20illustration%2C%20scientific%20diagrams%20and%20experiments%2C%20professional%20educational%20design&width=400&height=300&seq=course002&orientation=landscape" alt="كورس الفيزياء" class="w-full h-full object-cover object-top">
+            <div class="absolute top-4 right-4 bg-primary text-white px-3 py-1 rounded-full text-sm font-semibold">
+              الصف الثاني الثانوي
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-2">الفيزياء التطبيقية</h3>
+            <p class="text-gray-600 mb-4">فهم قوانين الفيزياء من خلال التجارب العملية والأمثلة الواقعية</p>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-2xl font-bold text-primary">349 ر.س</span>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="ri-play-circle-line"></i>
+                <span>31 درس</span>
+              </div>
+            </div>
+            <button class="w-full bg-primary text-white py-3 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل الكورس المسجل">
+              عرض التفاصيل
+            </button>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+          <div class="h-48 relative overflow-hidden">
+            <img src="https://readdy.ai/api/search-image?query=Arabic%20language%20course%20thumbnail%20with%20beautiful%20Arabic%20calligraphy%20and%20literature%20books%2C%20educational%20Arabic%20content%20design%2C%20classical%20Arabic%20texts%20and%20poetry%2C%20linguistic%20studies%20illustration%2C%20professional%20educational%20layout&width=400&height=300&seq=course003&orientation=landscape" alt="كورس اللغة العربية" class="w-full h-full object-cover object-top">
+            <div class="absolute top-4 right-4 bg-primary text-white px-3 py-1 rounded-full text-sm font-semibold">
+              الصف الأول الثانوي
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-2">اللغة العربية والأدب</h3>
+            <p class="text-gray-600 mb-4">تعلم قواعد اللغة العربية وتذوق الأدب والشعر العربي الأصيل</p>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-2xl font-bold text-primary">249 ر.س</span>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="ri-play-circle-line"></i>
+                <span>20 درس</span>
+              </div>
+            </div>
+            <button class="w-full bg-primary text-white py-3 !rounded-button font-semibold hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:ring-custom" aria-label="عرض تفاصيل الكورس المسجل">
+              عرض التفاصيل
+            </button>
+          </div>
+        </div>
+          </div>
+    <div class="text-center mt-8">
+      <a href="#" 
+         class="bg-white border-2 border-primary text-primary px-8 py-3 !rounded-button font-semibold hover:bg-primary hover:text-white transition-colors duration-200 whitespace-nowrap focus:ring-custom" 
+         aria-label="اعرض المزيد من الكورسات المسجلة المتاحة">
+        اعرض المزيد من الكورسات المسجلة
+      </a>
+    </div>
+  </div>
+</section>     
+  <!-- Features Section -->
+  <!-- Features Section -->
+<section class="py-20 bg-primary text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 class="text-4xl font-bold mb-4">لماذا تختار أكاديمية إتقان؟</h2>
+      <p class="text-xl text-blue-100 max-w-3xl mx-auto">
+        نقدم تجربة تعليمية متميزة تجمع بين الأصالة والحداثة
+      </p>
+    </div>
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div class="text-center">
+        <div class="w-16 h-16 flex items-center justify-center bg-white/20 rounded-full mx-auto mb-4">
+          <i class="ri-shield-check-line text-2xl text-white"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-3">جودة معتمدة</h3>
+        <p class="text-blue-100">محتوى تعليمي معتمد ومراجع من قبل خبراء التعليم</p>
+      </div>
+      <div class="text-center">
+        <div class="w-16 h-16 flex items-center justify-center bg-white/20 rounded-full mx-auto mb-4">
+          <i class="ri-time-line text-2xl text-white"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-3">مرونة في التوقيت</h3>
+        <p class="text-blue-100">تعلم في الوقت الذي يناسبك مع مواعيد مرنة</p>
+      </div>
+      <div class="text-center">
+        <div class="w-16 h-16 flex items-center justify-center bg-white/20 rounded-full mx-auto mb-4">
+          <i class="ri-customer-service-2-line text-2xl text-white"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-3">دعم مستمر</h3>
+        <p class="text-blue-100">فريق دعم متاح على مدار الساعة لمساعدتك</p>
+      </div>
+      <div class="text-center">
+        <div class="w-16 h-16 flex items-center justify-center bg-white/20 rounded-full mx-auto mb-4">
+          <i class="ri-award-line text-2xl text-white"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-3">شهادات معتمدة</h3>
+        <p class="text-blue-100">احصل على شهادات معتمدة عند إتمام الكورسات</p>
+      </div>
+    </div>
+  </div>
+</section>   
+  <!-- Footer -->
+  <!-- Footer -->
+<footer class="bg-gray-900 text-white py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+      <div>
+        <div class="flex items-center mb-6">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <i class="ri-book-open-line text-2xl text-primary"></i>
+          </div>
+          <span class="mr-2 text-xl font-bold">أكاديمية إتقان</span>
+        </div>
+        <p class="text-gray-400 mb-6 leading-relaxed">
+          الأكاديمية الرئيسية لمنصة إتقان التعليمية
+        </p>
+        <div class="flex space-x-4 space-x-reverse">
+                      <a href="#" class="w-10 h-10 flex items-center justify-center bg-primary/20 rounded-full hover:bg-primary transition-colors duration-200">
+              <i class="ri-facebook-fill"></i>
+            </a>
+            <a href="#" class="w-10 h-10 flex items-center justify-center bg-primary/20 rounded-full hover:bg-primary transition-colors duration-200">
+              <i class="ri-twitter-fill"></i>
+            </a>
+            <a href="#" class="w-10 h-10 flex items-center justify-center bg-primary/20 rounded-full hover:bg-primary transition-colors duration-200">
+              <i class="ri-instagram-fill"></i>
+            </a>
+            <a href="#" class="w-10 h-10 flex items-center justify-center bg-primary/20 rounded-full hover:bg-primary transition-colors duration-200">
+              <i class="ri-youtube-fill"></i>
+            </a>
+                  </div>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold mb-6">الأقسام الرئيسية</h3>
+        <ul class="space-y-3">
+                      <li><a href="#quran" class="text-gray-400 hover:text-white transition-colors duration-200">قسم القرآن الكريم</a></li>
+                                <li><a href="#academic" class="text-gray-400 hover:text-white transition-colors duration-200">القسم الأكاديمي</a></li>
+                                <li><a href="#courses" class="text-gray-400 hover:text-white transition-colors duration-200">الكورسات المسجلة</a></li>
+                    <li><a href="#teachers" class="text-gray-400 hover:text-white transition-colors duration-200">المعلمون</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold mb-6">روابط مهمة</h3>
+        <ul class="space-y-3">
+          <li><a href="#about" class="text-gray-400 hover:text-white transition-colors duration-200">من نحن</a></li>
+          <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">سياسة الخصوصية</a></li>
+          <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">شروط الاستخدام</a></li>
+          <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">الأسئلة الشائعة</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold mb-6">تواصل معنا</h3>
+        <ul class="space-y-3">
+          <li class="flex items-center text-gray-400">
+            <div class="w-5 h-5 flex items-center justify-center ml-3">
+              <i class="ri-phone-line"></i>
+            </div>
+            +966506300799
+          </li>
+          <li class="flex items-center text-gray-400">
+            <div class="w-5 h-5 flex items-center justify-center ml-3">
+              <i class="ri-mail-line"></i>
+            </div>
+            info@itqan-academy.com
+          </li>
+          <li class="flex items-center text-gray-400">
+            <div class="w-5 h-5 flex items-center justify-center ml-3">
+              <i class="ri-map-pin-line"></i>
+            </div>
+            الرياض، المملكة العربية السعودية
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-gray-800 pt-8 text-center">
+      <p class="text-gray-400">
+        © 2025 أكاديمية إتقان. جميع الحقوق محفوظة.
+      </p>
+    </div>
+  </div>
+</footer> 
+  <!-- Scripts -->
+  <script id="navigation-mobile">
+  document.addEventListener("DOMContentLoaded", function () {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (mobileMenuButton && mobileMenu) {
+      mobileMenuButton.addEventListener("click", function () {
+        mobileMenu.classList.toggle("hidden");
+        const isExpanded = !mobileMenu.classList.contains("hidden");
+        mobileMenuButton.setAttribute("aria-expanded", isExpanded);
+      });
+    }
+  });
+</script>
+
+<script id="smooth-scrolling">
+  document.addEventListener("DOMContentLoaded", function () {
+    const links = document.querySelectorAll('a[href^="#"]');
+    links.forEach((link) => {
+      link.addEventListener("click", function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute("href");
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      });
+    });
+  });
+</script>
+
+<script id="enhanced-carousels">
+  // Enhanced Carousel Functionality - Global function
+  function initCarousel(config) {
+    const track = document.querySelector(config.trackSelector);
+    const items = document.querySelectorAll(config.itemsSelector);
+    const prevBtn = document.querySelector(config.prevSelector);
+    const nextBtn = document.querySelector(config.nextSelector);
+    const dots = document.querySelectorAll(`${config.dotsSelector} .carousel-dot`);
+    
+    if (!track || !items.length) return;
+    
+    let currentIndex = 0;
+    const itemsPerView = config.itemsPerView || 3;
+    const maxIndex = Math.max(0, items.length - itemsPerView);
+    
+    function updateCarousel() {
+      const translateX = -currentIndex * (config.itemWidth + config.itemGap);
+      track.style.transform = `translateX(${translateX}px)`;
+      
+      // Update dots
+      dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentIndex);
+      });
+      
+      // Update button states
+      if (prevBtn) prevBtn.disabled = currentIndex === 0;
+      if (nextBtn) nextBtn.disabled = currentIndex >= maxIndex;
+    }
+    
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        if (currentIndex < maxIndex) {
+          currentIndex++;
+          updateCarousel();
+        }
+      });
+    }
+    
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        if (currentIndex > 0) {
+          currentIndex--;
+          updateCarousel();
+        }
+      });
+    }
+    
+    // Dot navigation
+    dots.forEach((dot, index) => {
+      dot.addEventListener('click', () => {
+        currentIndex = Math.min(index, maxIndex);
+        updateCarousel();
+      });
+    });
+    
+    // Keyboard navigation
+    track.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        currentIndex--;
+        updateCarousel();
+      } else if (e.key === 'ArrowRight' && currentIndex < maxIndex) {
+        currentIndex++;
+        updateCarousel();
+      }
+    });
+    
+    updateCarousel();
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize all carousels
+    initCarousel({
+      trackSelector: '.circles-track',
+      itemsSelector: '.circles-track > div',
+      prevSelector: '.circle-prev',
+      nextSelector: '.circle-next',
+      dotsSelector: '#circles-dots',
+      itemWidth: 320,
+      itemGap: 32,
+      itemsPerView: 3
+    });
+    
+    initCarousel({
+      trackSelector: '.teachers-track',
+      itemsSelector: '.teachers-track > div',
+      prevSelector: '.teacher-prev',
+      nextSelector: '.teacher-next',
+      dotsSelector: '#teachers-dots',
+      itemWidth: 304,
+      itemGap: 24,
+      itemsPerView: 3
+    });
+    
+    initCarousel({
+      trackSelector: '.courses-track',
+      itemsSelector: '.courses-track > div',
+      prevSelector: '.course-prev',
+      nextSelector: '.course-next',
+      dotsSelector: '#courses-dots',
+      itemWidth: 320,
+      itemGap: 24,
+      itemsPerView: 3
+    });
+    
+    initCarousel({
+      trackSelector: '.academic-teachers-track',
+      itemsSelector: '.academic-teachers-track > div',
+      prevSelector: '.academic-teacher-prev',
+      nextSelector: '.academic-teacher-next',
+      dotsSelector: '#academic-teachers-dots',
+      itemWidth: 304,
+      itemGap: 24,
+      itemsPerView: 3
+    });
+  });
+</script>
+
+<script id="stats-animation">
+  document.addEventListener("DOMContentLoaded", function () {
+    const statsCounters = document.querySelectorAll(".stats-counter");
+    const observerOptions = {
+      threshold: 0.3,
+      rootMargin: "0px 0px -50px 0px",
+    };
+    
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !entry.target.classList.contains('animated')) {
+          const counter = entry.target;
+          const finalValue = parseInt(counter.dataset.target) || 0;
+          const duration = 2000; // 2 seconds
+          const increment = Math.ceil(finalValue / (duration / 50));
+          let currentValue = 0;
+          
+          // Mark as animated to prevent re-triggering
+          counter.classList.add('animated');
+          
+          // Determine suffix from data attribute or context
+          const suffix = counter.dataset.suffix || '';
+          const isPercentage = finalValue <= 100 && (counter.dataset.suffix === '%' || 
+                              counter.parentElement.textContent.includes('نسبة'));
+          
+          const timer = setInterval(() => {
+            currentValue += increment;
+            if (currentValue >= finalValue) {
+              currentValue = finalValue;
+              clearInterval(timer);
+            }
+            
+            // Format the number based on context
+            let displayValue;
+            if (isPercentage) {
+              displayValue = currentValue + '%';
+            } else if (finalValue >= 1000) {
+              displayValue = currentValue.toLocaleString('ar-EG') + '+';
+            } else {
+              displayValue = currentValue.toLocaleString('ar-EG');
+            }
+            
+            counter.textContent = displayValue;
+          }, 50);
+          
+          observer.unobserve(counter);
+        }
+      });
+    }, observerOptions);
+    
+    statsCounters.forEach((counter) => {
+      observer.observe(counter);
+    });
+  });
+</script> </body>
+
+</html>

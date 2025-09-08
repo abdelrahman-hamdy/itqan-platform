@@ -331,6 +331,9 @@
                                             @elseif($session->status === App\Enums\SessionStatus::CANCELLED)
                                                 <div class="w-4 h-4 bg-gray-400 rounded-full mb-1"></div>
                                                 <span class="text-xs text-gray-500 font-bold">ملغاة</span>
+                                            @elseif($session->status === App\Enums\SessionStatus::ABSENT)
+                                                <div class="w-4 h-4 bg-red-400 rounded-full mb-1"></div>
+                                                <span class="text-xs text-red-700 font-bold">غائب</span>
                                             @else
                                                 <div class="w-4 h-4 bg-gray-300 rounded-full mb-1"></div>
                                                 <span class="text-xs text-gray-500 font-bold">{{ $session->status->label() }}</span>

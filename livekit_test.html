@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LiveKit Test</title>
+    <script src="https://unpkg.com/livekit-client@latest/dist/livekit-client.umd.js"></script>
+</head>
+<body>
+    <h1>LiveKit Connection Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="videos"></div>
+    
+    <script>
+    const { Room, RoomEvent } = LiveKit;
+    const room = new Room();
+    
+    room.on(RoomEvent.Connected, () => {
+        document.getElementById("status").innerHTML = "✅ Connected to LiveKit!";
+        console.log("Connected to room:", room.name);
+    });
+    
+    room.on(RoomEvent.ConnectionStateChanged, (state) => {
+        console.log("Connection state:", state);
+        document.getElementById("status").innerHTML = "Connection state: " + state;
+    });
+    
+    room.on(RoomEvent.Disconnected, (reason) => {
+        console.log("Disconnected:", reason);
+        document.getElementById("status").innerHTML = "❌ Disconnected: " + reason;
+    });
+    
+    // Connect to room
+    const serverUrl = "wss://test-rn3dlic1.livekit.cloud";
+    const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxOF9haG1kLWFsYWhtZCIsImp0aSI6IjE4X2FobWQtYWxhaG1kIiwiZXhwIjoxNzU3MTI5NjA1LCJuYmYiOjE3NTcxMTg4MDUsImlhdCI6MTc1NzExODgwNSwiaXNzIjoiQVBJeGRMbmt2amVTM1BWIiwidmlkZW8iOnsicm9vbUpvaW4iOnRydWUsInJvb20iOiJxdXJhbl9zZXNzaW9uXzEyXzE3NTcxMTc1NzYiLCJjYW5QdWJsaXNoIjp0cnVlLCJjYW5TdWJzY3JpYmUiOnRydWV9fQ.s71hVEbI771wCFYQ0R2tbB6EiRRDJPk-prPGXbwvPVg";
+    
+    console.log("Connecting to:", serverUrl);
+    console.log("Token length:", token.length);
+    
+    room.connect(serverUrl, token)
+        .then(() => {
+            console.log("Connection successful!");
+        })
+        .catch((error) => {
+            console.error("Connection failed:", error);
+            document.getElementById("status").innerHTML = "❌ Connection failed: " + error.message;
+        });
+    </script>
+</body>
+</html>

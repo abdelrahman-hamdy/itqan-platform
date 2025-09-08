@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicIndividualLesson;
-use App\Models\AcademicSession;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,7 +27,7 @@ class AcademicIndividualLessonController extends Controller
 
         // Get teacher profile
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile) {
+        if (! $teacherProfile) {
             abort(404, 'ملف المعلم غير موجود');
         }
 
@@ -46,7 +44,7 @@ class AcademicIndividualLessonController extends Controller
     }
 
     /**
-     * Show individual lesson details
+     * Show individual lesson details (using AcademicSubscription)
      */
     public function show($subdomain, $lesson)
     {
@@ -58,10 +56,10 @@ class AcademicIndividualLessonController extends Controller
             abort(404);
         }
 
-        // Fetch lesson and validate tenant academy
-        $lessonModel = AcademicIndividualLesson::findOrFail($lesson);
+        // Fetch subscription (private lesson) and validate tenant academy
+        $subscription = \App\Models\AcademicSubscription::findOrFail($lesson);
 
-        if ((int) $lessonModel->academy_id !== (int) $tenantAcademy->id) {
+        if ((int) $subscription->academy_id !== (int) $tenantAcademy->id) {
             abort(404);
         }
 
@@ -70,44 +68,46 @@ class AcademicIndividualLessonController extends Controller
         $isTeacher = false;
         $isStudent = false;
 
-        if ($user->user_type === 'academic_teacher' && (int) $lessonModel->academic_teacher_id === (int) $user->academicTeacherProfile?->id) {
+        if ($user->user_type === 'academic_teacher' && (int) $subscription->teacher_id === (int) $user->academicTeacherProfile?->id) {
             $userRole = 'teacher';
             $isTeacher = true;
-        } elseif ($user->user_type === 'student' && (int) $lessonModel->student_id === (int) $user->id) {
+        } elseif ($user->user_type === 'student' && (int) $subscription->student_id === (int) $user->id) {
             $userRole = 'student';
             $isStudent = true;
         } else {
             abort(403, 'غير مسموح لك بالوصول لهذا الدرس');
         }
 
-        $lessonModel->load([
+        $subscription->load([
             'student',
-            'academicSubscription',
-            'academicTeacher',
-            'academicSubject',
-            'academicGradeLevel',
+            'teacher',
+            'subject',
+            'gradeLevel',
             'sessions' => function ($query) {
                 $query->orderBy('scheduled_at');
             },
         ]);
 
-        $upcomingSessions = $lessonModel->sessions()
+        // Get sessions for this subscription (matching Quran circle pattern)
+        $upcomingSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
             ->whereIn('status', ['scheduled', 'ongoing'])
             ->orderBy('scheduled_at')
+            ->with(['student', 'academicTeacher'])
             ->get();
 
-        $completedSessions = $lessonModel->sessions()
-            ->where('status', 'completed')
-            ->orderBy('ended_at', 'desc')
+        $pastSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
+            ->whereIn('status', ['completed', 'absent', 'cancelled', 'expired'])
+            ->orderBy('scheduled_at', 'desc')
+            ->with(['student', 'academicTeacher'])
             ->get();
 
         return view('teacher.academic-lessons.show', compact(
-            'lessonModel',
+            'subscription',
             'userRole',
             'isTeacher',
             'isStudent',
             'upcomingSessions',
-            'completedSessions'
+            'pastSessions'
         ));
     }
 
@@ -122,7 +122,7 @@ class AcademicIndividualLessonController extends Controller
         // Check permissions
         if ($user->isAcademicTeacher()) {
             $teacherProfile = $user->academicTeacherProfile;
-            if (!$teacherProfile || (int) $lessonModel->academic_teacher_id !== (int) $teacherProfile->id) {
+            if (! $teacherProfile || (int) $lessonModel->academic_teacher_id !== (int) $teacherProfile->id) {
                 abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
             }
         } else {
@@ -135,7 +135,7 @@ class AcademicIndividualLessonController extends Controller
             'academicGradeLevel',
             'sessions' => function ($query) {
                 $query->where('status', 'completed')->orderBy('ended_at', 'desc');
-            }
+            },
         ]);
 
         // Calculate progress statistics
@@ -162,12 +162,12 @@ class AcademicIndividualLessonController extends Controller
         $lessonModel = AcademicIndividualLesson::findOrFail($lesson);
 
         // Check permissions
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
         }
 
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || (int) $lessonModel->academic_teacher_id !== (int) $teacherProfile->id) {
+        if (! $teacherProfile || (int) $lessonModel->academic_teacher_id !== (int) $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بتعديل هذا الدرس'], 403);
         }
 
@@ -183,7 +183,7 @@ class AcademicIndividualLessonController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث إعدادات الدرس بنجاح',
-            'lesson' => $lessonModel->fresh()
+            'lesson' => $lessonModel->fresh(),
         ]);
     }
 }

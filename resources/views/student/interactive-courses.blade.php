@@ -103,7 +103,7 @@
               </span>
             </div>
             
-            <h3 class="font-semibold text-gray-900 mb-2">{{ $course->name }}</h3>
+            <h3 class="font-semibold text-gray-900 mb-2">{{ $course->title }}</h3>
             <p class="text-sm text-gray-600 mb-4">{{ $course->description }}</p>
             
             <div class="space-y-2">
@@ -185,12 +185,12 @@
                 <i class="ri-book-open-line text-purple-600 text-xl"></i>
               </div>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                {{ $course->status === 'available' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                {{ $course->status === 'available' ? 'متاح' : 'مكتمل' }}
+                {{ $course->status === 'published' && $course->is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                {{ $course->status === 'published' && $course->is_published ? 'متاح' : 'مكتمل' }}
               </span>
             </div>
             
-            <h3 class="font-semibold text-gray-900 mb-2">{{ $course->name }}</h3>
+            <h3 class="font-semibold text-gray-900 mb-2">{{ $course->title }}</h3>
             <p class="text-sm text-gray-600 mb-4">{{ $course->description }}</p>
             
             <div class="space-y-2">
@@ -212,27 +212,27 @@
               @endif
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-calendar-line ml-2"></i>
-                <span>{{ $course->lessons_count ?? 0 }} درس</span>
+                <span>{{ $course->total_sessions ?? 0 }} جلسة</span>
               </div>
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-time-line ml-2"></i>
-                <span>{{ $course->duration_hours ?? 0 }} ساعة</span>
+                <span>{{ $course->duration_weeks ?? 0 }} أسبوع</span>
               </div>
-              @if($course->price)
+              @if($course->student_price)
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-money-dollar-circle-line ml-2"></i>
-                <span>{{ $course->price }} ر.س</span>
+                <span>{{ $course->student_price }} ر.س</span>
               </div>
               @endif
             </div>
 
-            <!-- Course Features -->
-            @if($course->features)
+            <!-- Course Schedule -->
+            @if($course->schedule && is_array($course->schedule))
             <div class="mt-4">
               <div class="flex flex-wrap gap-1">
-                @foreach(explode(',', $course->features) as $feature)
+                @foreach($course->schedule as $day => $time)
                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {{ trim($feature) }}
+                  {{ $day }}: {{ $time }}
                 </span>
                 @endforeach
               </div>
@@ -240,16 +240,11 @@
             @endif
 
             <div class="mt-6">
-              @if($course->status === 'available')
-              <button class="w-full bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-                <i class="ri-add-line ml-1"></i>
-                التسجيل في الكورس
-              </button>
-              @else
-              <button class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed">
-                غير متاح
-              </button>
-              @endif
+              <a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $course->id]) }}" 
+                 class="block w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
+                <i class="ri-information-line ml-1"></i>
+                معرفة المزيد
+              </a>
             </div>
           </div>
           @endforeach

@@ -20,20 +20,20 @@
             <!-- Lesson Header -->
             <x-lesson.header :lesson="$subscription" lesson-type="academic" view-type="student" />
 
-            <!-- Enhanced Sessions List -->
+            <!-- Academic Sessions Section -->
             @php
-                // Note: $upcomingSessions already includes unscheduled sessions
+                // Use allSessions to include ongoing sessions in the display
                 // Order sessions from recent to later (ascending sequence)
-                $sessionsForDisplay = collect($upcomingSessions)->merge($pastSessions)->sortBy('session_sequence');
+                $sessionsForDisplay = $allSessions->sortBy('session_sequence');
             @endphp
             
-            <x-sessions.enhanced-sessions-list 
-                :sessions="$sessionsForDisplay" 
-                title="جلسات الدرس الخاص"
-                view-type="student"
-                :show-tabs="false"
-                :circle="$subscription"
-                empty-message="لا توجد جلسات مجدولة بعد" />
+                    <x-sessions.unified-sessions-section
+            :sessions="$sessionsForDisplay"
+            title="جلسات الدرس الخاص"
+            view-type="student"
+            :circle="$subscription"
+            :show-tabs="true"
+            empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 
         <!-- Sidebar -->

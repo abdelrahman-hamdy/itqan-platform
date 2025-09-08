@@ -2,16 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
-use App\Models\AcademicTeacherProfile;
-use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class AcademicSessionSchedulingService
 {
@@ -29,7 +25,7 @@ class AcademicSessionSchedulingService
         // Validate the scheduled time is in the future
         if ($scheduledAt->isPast()) {
             throw ValidationException::withMessages([
-                'scheduled_at' => ['Cannot schedule session in the past']
+                'scheduled_at' => ['Cannot schedule session in the past'],
             ]);
         }
 
@@ -41,12 +37,12 @@ class AcademicSessionSchedulingService
         // Check for teacher conflicts
         if ($this->hasTeacherConflict($subscription->teacher_id, $scheduledAt, $durationMinutes)) {
             throw ValidationException::withMessages([
-                'scheduled_at' => ['Teacher has a conflicting session at this time']
+                'scheduled_at' => ['Teacher has a conflicting session at this time'],
             ]);
         }
 
         // Auto-populate title if not provided
-        if (!$title) {
+        if (! $title) {
             $sessionCount = AcademicSession::where('academic_subscription_id', $subscription->id)->count() + 1;
             $title = "جلسة أكاديمية - {$subscription->student->name} - المادة: {$subscription->subject->name} (جلسة {$sessionCount})";
         }
@@ -69,7 +65,7 @@ class AcademicSessionSchedulingService
             'is_auto_generated' => false,
             'teacher_scheduled_at' => now(),
             'scheduled_by' => Auth::id(),
-            ...$additionalData ?? []
+            ...$additionalData ?? [],
         ]);
     }
 
@@ -87,11 +83,11 @@ class AcademicSessionSchedulingService
 
         // Check academic sessions
         $academicConflicts = AcademicSession::where('academic_teacher_id', $teacherId)
-            ->where('status', '!=', 'cancelled')
-            ->when($excludeSessionId, fn($query) => $query->where('id', '!=', $excludeSessionId))
+            ->where('status', '!=', SessionStatus::CANCELLED)
+            ->when($excludeSessionId, fn ($query) => $query->where('id', '!=', $excludeSessionId))
             ->where(function ($query) use ($sessionStart, $sessionEnd) {
                 $query->whereBetween('scheduled_at', [$sessionStart, $sessionEnd])
-                    ->orWhere(function ($q) use ($sessionStart, $sessionEnd) {
+                    ->orWhere(function ($q) use ($sessionStart) {
                         $q->where('scheduled_at', '<=', $sessionStart)
                             ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$sessionStart]);
                     });

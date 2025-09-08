@@ -1,12 +1,13 @@
 @props([
     'circle',
     'viewType' => 'student', // 'student', 'teacher', 'supervisor'
-    'context' => 'group' // 'group', 'individual'
+    'context' => 'group', // 'group', 'individual'
+    'type' => 'quran' // 'quran', 'academic'
 ])
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
     <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-bold text-gray-900">تفاصيل الحلقة</h3>
+        <h3 class="text-lg font-bold text-gray-900">{{ $type === 'academic' ? 'تفاصيل الدرس' : 'تفاصيل الحلقة' }}</h3>
         <div class="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
             <i class="ri-information-line text-primary-600"></i>
         </div>
@@ -15,19 +16,33 @@
     <div class="space-y-4">
         <!-- Teacher Card (Clickable) -->
         <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            @if($circle->quranTeacher)
-                <a href="{{ route('public.quran-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $circle->quranTeacher->id]) }}" 
+            @php
+                $teacher = $type === 'academic' ? ($circle->teacher ?? null) : ($circle->quranTeacher ?? null);
+                $teacherRoute = $type === 'academic' ? 'public.academic-teachers.show' : 'public.quran-teachers.show';
+            @endphp
+            @if($teacher)
+                <a href="{{ route($teacherRoute, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) }}" 
                    class="block p-4 hover:bg-gray-50 transition-colors">
                     <div class="flex items-center space-x-3 space-x-reverse">
                         <x-teacher-avatar 
-                            :teacher="$circle->quranTeacher" 
+                            :teacher="$teacher" 
                             size="sm" 
                             class="flex-shrink-0" />
                         <div class="flex-1">
                             <span class="text-xs font-medium text-blue-600 uppercase tracking-wide">المعلم</span>
-                            <p class="font-bold text-blue-900 text-sm">{{ $circle->quranTeacher->name ?? 'غير محدد' }}</p>
-                            @if($viewType === 'student' && $circle->quranTeacher->teaching_experience_years)
-                                <p class="text-xs text-blue-700 mt-1">{{ $circle->quranTeacher->teaching_experience_years }} سنوات خبرة</p>
+                            <p class="font-bold text-blue-900 text-sm">
+                                @if($type === 'academic')
+                                    {{ $teacher->first_name }} {{ $teacher->last_name }}
+                                @else
+                                    {{ $teacher->name ?? 'غير محدد' }}
+                                @endif
+                            </p>
+                            @if($viewType === 'student')
+                                @if($type === 'academic' && $teacher->experience_years)
+                                    <p class="text-xs text-blue-700 mt-1">{{ $teacher->experience_years }} سنوات خبرة</p>
+                                @elseif($type === 'quran' && $teacher->teaching_experience_years)
+                                    <p class="text-xs text-blue-700 mt-1">{{ $teacher->teaching_experience_years }} سنوات خبرة</p>
+                                @endif
                             @endif
                         </div>
                         <i class="ri-external-link-line text-blue-600 text-sm"></i>

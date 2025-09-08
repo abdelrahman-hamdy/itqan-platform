@@ -3,19 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
+use App\Models\QuranTeacherProfile;
+use App\Models\StudentProfile;
 use App\Models\User;
 use App\Models\UserSession;
-use App\Models\Academy;
-use App\Models\StudentProfile;
-use App\Models\QuranTeacherProfile;
-use App\Models\AcademicTeacherProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -27,15 +25,15 @@ class AuthController extends Controller
         // Get academy from subdomain
         $subdomain = $request->route('subdomain');
         $academy = null;
-        
+
         if ($subdomain) {
             $academy = Academy::where('subdomain', $subdomain)->first();
-            
-            if (!$academy || !$academy->is_active) {
+
+            if (! $academy || ! $academy->is_active) {
                 abort(404, 'Academy not found or inactive');
             }
         }
-        
+
         return view('auth.login', compact('academy'));
     }
 
@@ -62,18 +60,18 @@ class AuthController extends Controller
         // Get academy from subdomain
         $subdomain = $request->route('subdomain');
         $academy = null;
-        
+
         if ($subdomain) {
             $academy = Academy::where('subdomain', $subdomain)->first();
-            
-            if (!$academy || !$academy->is_active) {
+
+            if (! $academy || ! $academy->is_active) {
                 return back()->withErrors(['email' => 'Academy not found or inactive'])->withInput();
             }
         }
 
         // Attempt to authenticate
         $credentials = $request->only('email', 'password');
-        
+
         // Add academy_id to credentials if we're on a subdomain
         if ($academy) {
             $credentials['academy_id'] = $academy->id;
@@ -81,10 +79,11 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
-            
+
             // Check if user is active
-            if (!$user->isActive()) {
+            if (! $user->isActive()) {
                 Auth::logout();
+
                 return back()->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة'])->withInput();
             }
 
@@ -107,7 +106,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $user = Auth::user();
-        
+
         if ($user) {
             // Deactivate current session
             $sessionId = $request->session()->getId();
@@ -121,6 +120,7 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+
         return redirect()->route('login', ['subdomain' => $subdomain]);
     }
 
@@ -131,13 +131,13 @@ class AuthController extends Controller
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy || !$academy->is_active) {
+
+        if (! $academy || ! $academy->is_active) {
             abort(404, 'Academy not found or inactive');
         }
 
         // Get grade levels for the academy
-                    $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+        $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -152,8 +152,8 @@ class AuthController extends Controller
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy || !$academy->is_active) {
+
+        if (! $academy || ! $academy->is_active) {
             return back()->withErrors(['email' => 'Academy not found or inactive'])->withInput();
         }
 
@@ -190,7 +190,7 @@ class AuthController extends Controller
 
         // Create or get existing user
         $user = User::where('email', $request->email)->first();
-        
+
         if ($user) {
             // Update existing user if found
             $user->update([
@@ -220,11 +220,11 @@ class AuthController extends Controller
 
         // Create or update student profile
         $existingProfile = StudentProfile::withoutGlobalScopes()
-            ->where(function($query) use ($user, $request) {
+            ->where(function ($query) use ($user, $request) {
                 $query->where('user_id', $user->id)
-                      ->orWhere('email', $request->email);
+                    ->orWhere('email', $request->email);
             })->first();
-        
+
         if ($existingProfile) {
             // Update existing profile
             $existingProfile->update([
@@ -259,8 +259,9 @@ class AuthController extends Controller
         // Auto-login the user
         Auth::login($user);
 
-                    $subdomain = $user->academy->subdomain ?? 'itqan-academy';
-            return redirect()->route('student.profile', ['subdomain' => $subdomain])->with('success', 'تم التسجيل بنجاح! مرحباً بك في منصة إتقان');
+        $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+
+        return redirect()->route('student.profile', ['subdomain' => $subdomain])->with('success', 'تم التسجيل بنجاح! مرحباً بك في منصة إتقان');
     }
 
     /**
@@ -270,8 +271,8 @@ class AuthController extends Controller
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy || !$academy->is_active) {
+
+        if (! $academy || ! $academy->is_active) {
             abort(404, 'Academy not found or inactive');
         }
 
@@ -292,7 +293,7 @@ class AuthController extends Controller
         }
 
         $request->session()->put('teacher_type', $request->teacher_type);
-        
+
         return redirect()->route('teacher.register.step2', ['subdomain' => $request->route('subdomain')]);
     }
 
@@ -302,15 +303,15 @@ class AuthController extends Controller
     public function showTeacherRegistrationStep2(Request $request)
     {
         $teacherType = $request->session()->get('teacher_type');
-        
-        if (!$teacherType) {
+
+        if (! $teacherType) {
             return redirect()->route('teacher.register', ['subdomain' => $request->route('subdomain')]);
         }
 
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy || !$academy->is_active) {
+
+        if (! $academy || ! $academy->is_active) {
             abort(404, 'Academy not found or inactive');
         }
 
@@ -323,15 +324,15 @@ class AuthController extends Controller
     public function registerTeacherStep2(Request $request)
     {
         $teacherType = $request->session()->get('teacher_type');
-        
-        if (!$teacherType) {
+
+        if (! $teacherType) {
             return redirect()->route('teacher.register', ['subdomain' => $request->route('subdomain')]);
         }
 
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy || !$academy->is_active) {
+
+        if (! $academy || ! $academy->is_active) {
             return back()->withErrors(['email' => 'Academy not found or inactive'])->withInput();
         }
 
@@ -432,21 +433,21 @@ class AuthController extends Controller
             }
         } catch (\Illuminate\Database\QueryException $e) {
             // Log the error for debugging
-            Log::error('Teacher registration failed: ' . $e->getMessage(), [
+            Log::error('Teacher registration failed: '.$e->getMessage(), [
                 'user_id' => $user->id,
                 'academy_id' => $academy->id,
                 'email' => $request->email,
-                'teacher_type' => $teacherType
+                'teacher_type' => $teacherType,
             ]);
-            
+
             // Delete the user since profile creation failed
             $user->delete();
-            
+
             // Check if it's a duplicate teacher code error
             if (str_contains($e->getMessage(), 'teacher_code_unique') || $e->getCode() === '23000') {
                 return back()->withErrors(['error' => 'حدث خطأ في إنشاء رمز المعلم. يرجى المحاولة مرة أخرى.'])->withInput();
             }
-            
+
             // Generic error message for other database issues
             return back()->withErrors(['error' => 'حدث خطأ في التسجيل. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.'])->withInput();
         }
@@ -464,8 +465,8 @@ class AuthController extends Controller
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
-        
-        if (!$academy || !$academy->is_active) {
+
+        if (! $academy || ! $academy->is_active) {
             abort(404, 'Academy not found or inactive');
         }
 
@@ -479,7 +480,7 @@ class AuthController extends Controller
     {
         $sessionId = $request->session()->getId();
         $userAgent = $request->userAgent();
-        
+
         // Parse user agent for device info
         $deviceInfo = $this->parseUserAgent($userAgent);
 
@@ -555,10 +556,18 @@ class AuthController extends Controller
             return redirect('/panel');
         }
 
-        if ($user->isTeacher()) {
-            // Get the subdomain from the academy or user's academy
+        if ($user->isQuranTeacher()) {
+            // Quran teachers go to dashboard
             $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? 'itqan-academy');
+
             return redirect()->route('teacher.dashboard', ['subdomain' => $subdomain]);
+        }
+
+        if ($user->isAcademicTeacher()) {
+            // Academic teachers go to profile page
+            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? 'itqan-academy');
+
+            return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
         }
 
         if ($user->isSupervisor()) {
@@ -569,12 +578,14 @@ class AuthController extends Controller
         if ($user->isStudent()) {
             // Get the subdomain from the user's academy
             $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+
             return redirect()->route('student.profile', ['subdomain' => $subdomain]);
         }
 
         if ($user->isParent()) {
             // Get the subdomain from the user's academy
             $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+
             return redirect()->route('parent.profile', ['subdomain' => $subdomain]);
         }
 

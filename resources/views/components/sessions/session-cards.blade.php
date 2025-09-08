@@ -79,6 +79,9 @@
                                         @elseif($statusValue === 'unscheduled')
                                             <div class="w-4 h-4 bg-amber-400 rounded-full mb-1 animate-pulse"></div>
                                             <span class="text-xs text-amber-600 font-bold">غير مجدولة</span>
+                                        @elseif($statusValue === 'absent')
+                                            <div class="w-4 h-4 bg-red-400 rounded-full mb-1"></div>
+                                            <span class="text-xs text-red-700 font-bold">غائب</span>
                                         @else
                                             <div class="w-4 h-4 bg-gray-300 rounded-full mb-1"></div>
                                             <span class="text-xs text-gray-500 font-bold">{{ $statusValue }}</span>
@@ -92,13 +95,7 @@
                                                 {{ $session->title ?? ($circle && $circle->students ? 'جلسة جماعية - ' . $circle->name : 'جلسة فردية - ' . ($circle->subscription->package->name ?? 'حلقة قرآنية')) }}
                                             </h4>
                                             
-                                            <!-- Ready indicator -->
-                                            @if($getStatusValue($session) === 'ready')
-                                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                                                    <i class="ri-video-line"></i>
-                                                    جاهزة للانضمام
-                                                </span>
-                                            @endif
+                                            <!-- Ready indicator - removed as requested -->
                                         </div>
                                         
                                         <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-600">
@@ -108,7 +105,7 @@
                                             </span>
                                             <span class="flex items-center space-x-1 space-x-reverse">
                                                 <i class="ri-time-line"></i>
-                                                <span>{{ $session->scheduled_at ? $session->scheduled_at->format('H:i') : '--:--' }}</span>
+                                                <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                                             </span>
                                             @if($session->duration_minutes)
                                                 <span class="flex items-center space-x-1 space-x-reverse">
@@ -121,22 +118,10 @@
                                         <!-- Meeting timing info for active sessions -->
                                         @if($getStatusValue($session) === 'scheduled' && $session->scheduled_at)
                                             @php
-                                                $now = now();
-                                                $scheduledTime = $session->scheduled_at;
-                                                $diffInMinutes = $now->diffInMinutes($scheduledTime, false);
-                                                
-                                                if ($diffInMinutes > 0) {
-                                                    $days = floor($diffInMinutes / (24 * 60));
-                                                    $hours = floor(($diffInMinutes % (24 * 60)) / 60);
-                                                    $minutes = $diffInMinutes % 60;
-                                                    
-                                                    $timeText = '';
-                                                    if ($days > 0) $timeText .= $days . ' أيام و ';
-                                                    if ($hours > 0) $timeText .= $hours . ' ساعات و ';
-                                                    $timeText .= $minutes . ' دقائق';
-                                                }
+                                                $timeData = formatTimeRemaining($session->scheduled_at);
+                                                $timeText = $timeData['formatted'];
                                             @endphp
-                                            @if(isset($timeText))
+                                            @if(!$timeData['is_past'])
                                                 <div class="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block self-start">
                                                     <i class="ri-timer-line"></i>
                                                     سيتم تحضير الاجتماع خلال {{ $timeText }}
@@ -183,18 +168,12 @@
                                 <!-- Session Info -->
                                 <div class="flex items-center space-x-4 space-x-reverse">
                                     <!-- Session Status Indicator with Animated Circles -->
-                                    <div class="flex flex-col items-center">
-                                        @if($getStatusValue($session) === 'ongoing')
-                                            <div class="w-4 h-4 bg-orange-500 rounded-full mb-1 animate-pulse"></div>
-                                            <span class="text-xs text-orange-600 font-bold">جارية</span>
-                                        @elseif($getStatusValue($session) === 'ready')
-                                            <div class="w-4 h-4 bg-green-400 rounded-full mb-1 animate-bounce"></div>
-                                            <span class="text-xs text-green-600 font-bold">جاهزة</span>
-                                        @elseif($getStatusValue($session) === 'scheduled')
-                                            <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
-                                            <span class="text-xs text-blue-600 font-bold">مجدولة</span>
-                                        @endif
-                                    </div>
+                                    <x-sessions.status-display 
+                                        :session="$session" 
+                                        variant="indicator" 
+                                        size="sm" 
+                                        :show-icon="false" 
+                                        :show-label="true" />
                                     
                                     <!-- Session Details -->
                                     <div class="flex-1">
@@ -203,13 +182,7 @@
                                                 {{ $session->title ?? ($circle && $circle->students ? 'جلسة جماعية - ' . $circle->name : 'جلسة فردية - ' . ($circle->subscription->package->name ?? 'حلقة قرآنية')) }}
                                             </h4>
                                             
-                                            <!-- Ready indicator -->
-                                            @if($getStatusValue($session) === 'ready')
-                                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                                                    <i class="ri-video-line"></i>
-                                                    جاهزة للانضمام
-                                                </span>
-                                            @endif
+                                            <!-- Ready indicator - removed as requested -->
                                         </div>
                                         
                                         <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-600">
@@ -219,7 +192,7 @@
                                             </span>
                                             <span class="flex items-center space-x-1 space-x-reverse">
                                                 <i class="ri-time-line"></i>
-                                                <span>{{ $session->scheduled_at ? $session->scheduled_at->format('H:i') : '--:--' }}</span>
+                                                <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                                             </span>
                                             @if($session->duration_minutes)
                                                 <span class="flex items-center space-x-1 space-x-reverse">
@@ -232,22 +205,10 @@
                                         <!-- Meeting timing info for active sessions -->
                                         @if($getStatusValue($session) === 'scheduled' && $session->scheduled_at)
                                             @php
-                                                $now = now();
-                                                $scheduledTime = $session->scheduled_at;
-                                                $diffInMinutes = $now->diffInMinutes($scheduledTime, false);
-                                                
-                                                if ($diffInMinutes > 0) {
-                                                    $days = floor($diffInMinutes / (24 * 60));
-                                                    $hours = floor(($diffInMinutes % (24 * 60)) / 60);
-                                                    $minutes = $diffInMinutes % 60;
-                                                    
-                                                    $timeText = '';
-                                                    if ($days > 0) $timeText .= $days . ' أيام و ';
-                                                    if ($hours > 0) $timeText .= $hours . ' ساعات و ';
-                                                    $timeText .= $minutes . ' دقائق';
-                                                }
+                                                $timeData = formatTimeRemaining($session->scheduled_at);
+                                                $timeText = $timeData['formatted'];
                                             @endphp
-                                            @if(isset($timeText))
+                                            @if(!$timeData['is_past'])
                                                 <div class="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block self-start">
                                                     <i class="ri-timer-line"></i>
                                                     سيتم تحضير الاجتماع خلال {{ $timeText }}
@@ -319,7 +280,7 @@
                                             </span>
                                             <span class="flex items-center space-x-1 space-x-reverse">
                                                 <i class="ri-time-line"></i>
-                                                <span>{{ $session->scheduled_at ? $session->scheduled_at->format('H:i') : '--:--' }}</span>
+                                                <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                                             </span>
                                             @if($session->duration_minutes)
                                                 <span class="flex items-center space-x-1 space-x-reverse">

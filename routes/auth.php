@@ -67,7 +67,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/certificates', [App\Http\Controllers\StudentProfileController::class, 'certificates'])->name('student.certificates');
         Route::get('/quran', [App\Http\Controllers\StudentProfileController::class, 'quranProfile'])->name('student.quran');
 
-        Route::get('/interactive-courses', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
+        // Interactive courses routes moved to web.php for proper ordering
         // Academic teachers route moved to web.php for subdomain compatibility
 
         // Note: student.courses route is now handled in web.php
@@ -126,14 +126,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/', function () {
             $user = Auth::user();
             $subdomain = request()->route('subdomain') ?? 'itqan-academy';
-            
+
             // Smart redirect based on teacher type
             if ($user->isAcademicTeacher()) {
-                return redirect("/academic-teacher-panel");
+                return redirect('/academic-teacher-panel');
             } elseif ($user->isQuranTeacher()) {
-                return redirect("/teacher-panel");
+                return redirect('/teacher-panel');
             }
-            
+
             // Fallback to profile for other teacher types
             return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
         })->name('teacher.dashboard');
@@ -142,13 +142,13 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/panel-redirect', function () {
             $user = Auth::user();
             $subdomain = request()->route('subdomain') ?? 'itqan-academy';
-            
+
             if ($user->isAcademicTeacher()) {
-                return redirect("/academic-teacher-panel");
+                return redirect('/academic-teacher-panel');
             } elseif ($user->isQuranTeacher()) {
-                return redirect("/teacher-panel");
+                return redirect('/teacher-panel');
             }
-            
+
             return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
         })->name('teacher.panel.redirect');
 

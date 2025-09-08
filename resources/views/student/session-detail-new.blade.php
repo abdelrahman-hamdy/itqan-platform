@@ -33,17 +33,12 @@
                 <div class="flex justify-between">
                     <span class="text-gray-600">الحالة:</span>
                     <span class="font-medium text-gray-900">
-                        @if($session->status === 'scheduled')
-                            <span class="text-blue-600">مجدولة</span>
-                        @elseif($session->status === 'in_progress')
-                            <span class="text-green-600">جارية</span>
-                        @elseif($session->status === 'completed')
-                            <span class="text-gray-600">مكتملة</span>
-                        @elseif($session->status === 'cancelled')
-                            <span class="text-red-600">ملغية</span>
-                        @else
-                            {{ $session->status }}
-                        @endif
+                        <x-sessions.status-display 
+                            :session="$session" 
+                            variant="text" 
+                            size="md" 
+                            :show-icon="false" 
+                            :show-label="true" />
                     </span>
                 </div>
                 
@@ -259,7 +254,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show notification if session is starting soon
     @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 10 && $session->scheduled_at->diffInMinutes(now()) >= 0)
-        showNotification('الجلسة ستبدأ خلال {{ $session->scheduled_at->diffInMinutes(now()) }} دقيقة', 'info', 8000);
+        @php
+            $timeData = formatTimeRemaining($session->scheduled_at);
+        @endphp
+        showNotification('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', 'info', 8000);
     @endif
 });
 

@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Academy;
 use App\Models\QuranCircle;
 use App\Models\QuranTeacher;
-use App\Models\Academy;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use Illuminate\View\View;
 
 class QuranCircleController extends Controller
 {
@@ -28,7 +27,7 @@ class QuranCircleController extends Controller
     public function index(Request $request): View|JsonResponse
     {
         $academy = $this->getCurrentAcademy();
-        
+
         $query = QuranCircle::with(['quranTeacher.user', 'academy'])
             ->withCount('enrollments')
             ->where('academy_id', $academy->id);
@@ -58,8 +57,8 @@ class QuranCircleController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name_ar', 'like', "%{$search}%")
-                  ->orWhere('name_en', 'like', "%{$search}%")
-                  ->orWhere('circle_code', 'like', "%{$search}%");
+                    ->orWhere('name_en', 'like', "%{$search}%")
+                    ->orWhere('circle_code', 'like', "%{$search}%");
             });
         }
 
@@ -69,7 +68,7 @@ class QuranCircleController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $circles,
-                'message' => 'قائمة حلقات القرآن تم جلبها بنجاح'
+                'message' => 'قائمة حلقات القرآن تم جلبها بنجاح',
             ]);
         }
 
@@ -82,7 +81,7 @@ class QuranCircleController extends Controller
     public function create(): View
     {
         $academy = $this->getCurrentAcademy();
-        
+
         $teachers = QuranTeacher::with('user')
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
@@ -98,7 +97,7 @@ class QuranCircleController extends Controller
     public function store(Request $request): RedirectResponse|JsonResponse
     {
         $academy = $this->getCurrentAcademy();
-        
+
         $validated = $request->validate([
             'quran_teacher_id' => 'required|exists:users,id',
             'name_ar' => 'required|string|max:100',
@@ -106,7 +105,7 @@ class QuranCircleController extends Controller
             'description_ar' => 'nullable|string|max:500',
             'description_en' => 'nullable|string|max:500',
             'level' => 'required|in:beginner,elementary,intermediate,advanced,expert',
-            'target_age_group' => 'required|in:children,teenagers,adults,seniors,mixed',
+            'target_age_group' => 'required|in:children,youth,adults,all_ages',
             'min_age' => 'required|integer|min:5|max:80',
             'max_age' => 'required|integer|min:5|max:80|gte:min_age',
             'max_students' => 'required|integer|min:3|max:100',
@@ -147,11 +146,11 @@ class QuranCircleController extends Controller
                 ->where('status', 'active')
                 ->where(function ($q) use ($validated) {
                     $q->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
-                      ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']])
-                      ->orWhere(function ($q2) use ($validated) {
-                          $q2->where('start_time', '<=', $validated['start_time'])
-                             ->where('end_time', '>=', $validated['end_time']);
-                      });
+                        ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']])
+                        ->orWhere(function ($q2) use ($validated) {
+                            $q2->where('start_time', '<=', $validated['start_time'])
+                                ->where('end_time', '>=', $validated['end_time']);
+                        });
                 })->exists();
 
             if ($conflictingCircles) {
@@ -183,7 +182,7 @@ class QuranCircleController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => $circle->load('quranTeacher.user'),
-                    'message' => 'تم إنشاء دائرة القرآن بنجاح'
+                    'message' => 'تم إنشاء دائرة القرآن بنجاح',
                 ], 201);
             }
 
@@ -193,17 +192,17 @@ class QuranCircleController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'حدث خطأ أثناء إنشاء دائرة القرآن: ' . $e->getMessage()
+                    'message' => 'حدث خطأ أثناء إنشاء دائرة القرآن: '.$e->getMessage(),
                 ], 500);
             }
 
             return back()
                 ->withInput()
-                ->withErrors(['error' => 'حدث خطأ أثناء إنشاء دائرة القرآن: ' . $e->getMessage()]);
+                ->withErrors(['error' => 'حدث خطأ أثناء إنشاء دائرة القرآن: '.$e->getMessage()]);
         }
     }
 
@@ -213,7 +212,7 @@ class QuranCircleController extends Controller
     public function show(QuranCircle $circle): View|JsonResponse
     {
         $this->ensureCircleBelongsToAcademy($circle);
-        
+
         $circle->load([
             'quranTeacher.user',
             'academy',
@@ -226,7 +225,7 @@ class QuranCircleController extends Controller
             },
             'homework' => function ($q) {
                 $q->latest()->limit(5);
-            }
+            },
         ]);
 
         // Calculate circle statistics
@@ -247,7 +246,7 @@ class QuranCircleController extends Controller
                 'success' => true,
                 'data' => $circle,
                 'stats' => $stats,
-                'message' => 'تم جلب بيانات دائرة القرآن بنجاح'
+                'message' => 'تم جلب بيانات دائرة القرآن بنجاح',
             ]);
         }
 
@@ -260,9 +259,9 @@ class QuranCircleController extends Controller
     public function edit(QuranCircle $circle): View
     {
         $this->ensureCircleBelongsToAcademy($circle);
-        
+
         $academy = $this->getCurrentAcademy();
-        
+
         $teachers = QuranTeacher::with('user')
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
@@ -270,7 +269,7 @@ class QuranCircleController extends Controller
             ->get();
 
         $circle->load('quranTeacher.user');
-        
+
         return view('quran.circles.edit', compact('circle', 'teachers', 'academy'));
     }
 
@@ -280,14 +279,14 @@ class QuranCircleController extends Controller
     public function update(Request $request, QuranCircle $circle): RedirectResponse|JsonResponse
     {
         $this->ensureCircleBelongsToAcademy($circle);
-        
+
         $validated = $request->validate([
             'name_ar' => 'required|string|max:100',
             'name_en' => 'nullable|string|max:100',
             'description_ar' => 'nullable|string|max:500',
             'description_en' => 'nullable|string|max:500',
             'level' => 'required|in:beginner,elementary,intermediate,advanced,expert',
-            'target_age_group' => 'required|in:children,teenagers,adults,seniors,mixed',
+            'target_age_group' => 'required|in:children,youth,adults,all_ages',
             'min_age' => 'required|integer|min:5|max:80',
             'max_age' => 'required|integer|min:5|max:80|gte:min_age',
             'max_students' => 'required|integer|min:3|max:100',
@@ -313,14 +312,14 @@ class QuranCircleController extends Controller
 
         try {
             $validated['updated_by'] = Auth::id();
-            
+
             $circle->update($validated);
 
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
                     'data' => $circle->fresh(['quranTeacher.user']),
-                    'message' => 'تم تحديث دائرة القرآن بنجاح'
+                    'message' => 'تم تحديث دائرة القرآن بنجاح',
                 ]);
             }
 
@@ -332,7 +331,7 @@ class QuranCircleController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'حدث خطأ أثناء تحديث دائرة القرآن'
+                    'message' => 'حدث خطأ أثناء تحديث دائرة القرآن',
                 ], 500);
             }
 
@@ -348,7 +347,7 @@ class QuranCircleController extends Controller
     public function publish(QuranCircle $circle): JsonResponse|RedirectResponse
     {
         $this->ensureCircleBelongsToAcademy($circle);
-        
+
         try {
             if ($circle->status !== 'planning') {
                 throw new \Exception('لا يمكن تفعيل هذه الدائرة في حالتها الحالية');
@@ -363,7 +362,7 @@ class QuranCircleController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => $circle->fresh(),
-                    'message' => 'تم نشر دائرة القرآن للتسجيل'
+                    'message' => 'تم نشر دائرة القرآن للتسجيل',
                 ]);
             }
 
@@ -373,7 +372,7 @@ class QuranCircleController extends Controller
             if (request()->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
                 ], 422);
             }
 
@@ -387,9 +386,9 @@ class QuranCircleController extends Controller
     public function start(QuranCircle $circle): JsonResponse|RedirectResponse
     {
         $this->ensureCircleBelongsToAcademy($circle);
-        
+
         try {
-            if (!in_array($circle->status, ['pending', 'planning'])) {
+            if (! in_array($circle->status, ['pending', 'planning'])) {
                 throw new \Exception('لا يمكن بدء هذه الدائرة في حالتها الحالية');
             }
 
@@ -407,7 +406,7 @@ class QuranCircleController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => $circle->fresh(),
-                    'message' => 'تم بدء دائرة القرآن بنجاح'
+                    'message' => 'تم بدء دائرة القرآن بنجاح',
                 ]);
             }
 
@@ -417,7 +416,7 @@ class QuranCircleController extends Controller
             if (request()->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
                 ], 422);
             }
 
@@ -431,7 +430,7 @@ class QuranCircleController extends Controller
     public function complete(QuranCircle $circle): JsonResponse|RedirectResponse
     {
         $this->ensureCircleBelongsToAcademy($circle);
-        
+
         try {
             if ($circle->status !== 'active') {
                 throw new \Exception('لا يمكن إكمال هذه الدائرة في حالتها الحالية');
@@ -466,7 +465,7 @@ class QuranCircleController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => $circle->fresh(),
-                    'message' => 'تم إكمال دائرة القرآن وإصدار الشهادات'
+                    'message' => 'تم إكمال دائرة القرآن وإصدار الشهادات',
                 ]);
             }
 
@@ -474,11 +473,11 @@ class QuranCircleController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             if (request()->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
                 ], 422);
             }
 
@@ -492,9 +491,9 @@ class QuranCircleController extends Controller
     public function cancel(Request $request, QuranCircle $circle): JsonResponse|RedirectResponse
     {
         $this->ensureCircleBelongsToAcademy($circle);
-        
+
         $request->validate([
-            'cancellation_reason' => 'required|string|max:500'
+            'cancellation_reason' => 'required|string|max:500',
         ]);
 
         try {
@@ -528,7 +527,7 @@ class QuranCircleController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => $circle->fresh(),
-                    'message' => 'تم إلغاء دائرة القرآن'
+                    'message' => 'تم إلغاء دائرة القرآن',
                 ]);
             }
 
@@ -536,11 +535,11 @@ class QuranCircleController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
                 ], 422);
             }
 
@@ -554,9 +553,9 @@ class QuranCircleController extends Controller
     public function enroll(Request $request, QuranCircle $circle): JsonResponse|RedirectResponse
     {
         $this->ensureCircleBelongsToAcademy($circle);
-        
+
         $request->validate([
-            'student_id' => 'required|exists:users,id'
+            'student_id' => 'required|exists:users,id',
         ]);
 
         try {
@@ -569,7 +568,7 @@ class QuranCircleController extends Controller
             }
 
             $student = User::findOrFail($request->student_id);
-            
+
             // Check if student already enrolled
             if ($circle->enrollments()->where('student_id', $student->id)->exists()) {
                 throw new \Exception('الطالب مسجل بالفعل في هذه الدائرة');
@@ -593,7 +592,7 @@ class QuranCircleController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'تم تسجيل الطالب في الدائرة بنجاح'
+                    'message' => 'تم تسجيل الطالب في الدائرة بنجاح',
                 ]);
             }
 
@@ -601,11 +600,11 @@ class QuranCircleController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
                 ], 422);
             }
 
@@ -619,7 +618,7 @@ class QuranCircleController extends Controller
     public function available(Request $request): JsonResponse
     {
         $academy = $this->getCurrentAcademy();
-        
+
         $query = QuranCircle::with('quranTeacher.user')
             ->where('academy_id', $academy->id)
             ->where('status', 'pending')
@@ -643,7 +642,7 @@ class QuranCircleController extends Controller
         return response()->json([
             'success' => true,
             'data' => $circles,
-            'message' => 'تم جلب الحلقات المتاحة للتسجيل بنجاح'
+            'message' => 'تم جلب الحلقات المتاحة للتسجيل بنجاح',
         ]);
     }
 
@@ -656,7 +655,7 @@ class QuranCircleController extends Controller
     private function ensureCircleBelongsToAcademy(QuranCircle $circle): void
     {
         $academy = $this->getCurrentAcademy();
-        
+
         if ($circle->academy_id !== $academy->id) {
             abort(404, 'دائرة القرآن غير موجودة');
         }
@@ -665,7 +664,7 @@ class QuranCircleController extends Controller
     private function calculateAverageAttendance(QuranCircle $circle): float
     {
         $totalSessions = $circle->quranSessions()->completed()->count();
-        
+
         if ($totalSessions === 0) {
             return 0;
         }
@@ -684,4 +683,4 @@ class QuranCircleController extends Controller
 
         return round(($totalAttendance / ($totalSessions * $enrolledStudents)) * 100, 2);
     }
-} 
+}

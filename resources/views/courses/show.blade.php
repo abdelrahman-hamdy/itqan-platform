@@ -29,115 +29,124 @@
     </ol>
 </nav>
 
-<!-- Course Hero - Clean Design -->
-<div class="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
-  <!-- Featured Image/Video -->
-  @if($course->thumbnail_url)
-  <div class="aspect-video bg-gray-200 relative">
-    <img src="{{ $course->thumbnail_url }}" 
-         alt="{{ $course->title }}" 
-         class="w-full h-full object-cover">
-    <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-      <div class="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center cursor-pointer hover:bg-opacity-100 transition-all duration-200">
-        <i class="ri-play-fill text-3xl text-primary"></i>
-      </div>
-    </div>
-  </div>
-  @else
-  <div class="aspect-video bg-gradient-to-br from-primary/10 to-blue-100 flex items-center justify-center">
-    <div class="text-center">
-      <i class="ri-video-line text-6xl text-primary/50 mb-4"></i>
-      <p class="text-gray-600">صورة الدورة</p>
-    </div>
-  </div>
-  @endif
-  
-  <!-- Course Info -->
-  <div class="p-8">
-    <!-- Remove labels under featured image as requested -->
-    
-    <!-- Course Title with Rating -->
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-4xl font-bold text-gray-900 leading-tight">{{ $course->title }}</h1>
-      @if($course->average_rating && $course->average_rating > 0)
-      <div class="flex items-center gap-2">
-        <div class="flex text-yellow-400">
-          @for($i = 1; $i <= 5; $i++)
-            <i class="ri-star-{{ $i <= floor($course->average_rating) ? 'fill' : 'line' }} text-lg"></i>
-          @endfor
-        </div>
-        <span class="text-gray-600 font-medium">{{ number_format($course->average_rating, 1) }}</span>
-        <span class="text-gray-400 text-sm">({{ $course->reviews_count ?? 0 }} تقييم)</span>
-      </div>
-      @endif
-    </div>
-    
-    <!-- Course Description -->
-    @if($course->description)
-    <p class="text-gray-600 text-lg leading-relaxed mb-8">
-      {{ $course->description }}
-    </p>
-    @endif
-    
-    <!-- Action Button and Price -->
-    <div class="flex items-center justify-between">
-      <!-- Price floated to the left -->
-      <div class="flex items-center gap-2 text-left">
-        <span class="text-sm text-gray-600">السعر:</span>
-        @if($course->price && $course->price > 0)
-          @if($course->original_price && $course->original_price > $course->price)
-          <span class="text-sm text-gray-500 line-through">{{ number_format($course->original_price) }} ريال</span>
-          @endif
-          <span class="text-2xl font-bold text-green-600">{{ number_format($course->price) }} ريال</span>
-        @else
-          <span class="text-2xl font-bold text-green-600">مجاني</span>
-        @endif
-      </div>
-      
-      <!-- Action Buttons -->
-      <div class="flex items-center gap-4">
-        @if(auth()->check())
-          @if($isEnrolled)
-          <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
-             class="bg-gradient-to-r from-primary to-blue-600 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
-            <i class="ri-play-circle-fill text-2xl"></i>
-            متابعة الدراسة
-          </a>
-          @else
-          <button onclick="enrollInCourse()" 
-                  class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 flex items-center gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
-            <i class="ri-shopping-cart-2-fill text-2xl"></i>
-            {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
-          </button>
-          @endif
-        @else
-        <div class="flex items-center gap-4">
-          <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}" 
-             class="bg-primary text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl">
-            <i class="ri-login-circle-line text-2xl"></i>
-            تسجيل الدخول
-          </a>
-          <a href="{{ route('student.register', ['subdomain' => $academy->subdomain]) }}" 
-             class="bg-gray-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl">
-            <i class="ri-user-add-line text-2xl"></i>
-            إنشاء حساب
-          </a>
-        </div>
-        @endif
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Content Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   
   <!-- Main Content -->
   <div class="lg:col-span-2 space-y-6">
     
+    <!-- Course Hero - Moved to Main Column -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <!-- Featured Image/Video -->
+      @if($course->getFirstMediaUrl('thumbnails'))
+      <div class="aspect-video bg-gray-200 relative">
+        <img src="{{ $course->getFirstMediaUrl('thumbnails') }}" 
+             alt="{{ $course->title }}" 
+             class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+          <div class="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center cursor-pointer hover:bg-opacity-100 transition-all duration-200">
+            <i class="ri-play-fill text-3xl text-primary"></i>
+          </div>
+        </div>
+      </div>
+      @elseif($course->thumbnail_url)
+      <div class="aspect-video bg-gray-200 relative">
+        <img src="{{ $course->thumbnail_url }}" 
+             alt="{{ $course->title }}" 
+             class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+          <div class="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center cursor-pointer hover:bg-opacity-100 transition-all duration-200">
+            <i class="ri-play-fill text-3xl text-primary"></i>
+          </div>
+        </div>
+      </div>
+      @else
+      <div class="aspect-video bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+        <div class="text-center">
+          <i class="ri-play-circle-line text-6xl text-white opacity-70 mb-2"></i>
+          <span class="text-white text-sm opacity-60">{{ $course->subject?->name ?? 'كورس تعليمي' }}</span>
+        </div>
+      </div>
+      @endif
+      
+      <!-- Course Info -->
+      <div class="p-6">
+        <!-- Course Title with Rating -->
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-4xl font-bold text-gray-900 leading-tight">{{ $course->title }}</h1>
+          @if($course->average_rating && $course->average_rating > 0)
+          <div class="flex items-center gap-2">
+            <div class="flex text-yellow-400">
+              @for($i = 1; $i <= 5; $i++)
+                <i class="ri-star-{{ $i <= floor($course->average_rating) ? 'fill' : 'line' }} text-lg"></i>
+              @endfor
+            </div>
+            <span class="text-gray-600 font-medium">{{ number_format($course->average_rating, 1) }}</span>
+            <span class="text-gray-400 text-sm">({{ $course->reviews_count ?? 0 }} تقييم)</span>
+          </div>
+          @endif
+        </div>
+        
+        <!-- Course Description -->
+        @if($course->description)
+        <p class="text-gray-600 text-lg leading-relaxed mb-8">
+          {{ $course->description }}
+        </p>
+        @endif
+        
+        <!-- Action Button and Price -->
+        <div class="flex items-center justify-between">
+          <!-- Price floated to the left -->
+          <div class="flex items-center gap-2 text-left">
+            <span class="text-sm text-gray-600">السعر:</span>
+            @if($course->price && $course->price > 0)
+              @if($course->original_price && $course->original_price > $course->price)
+              <span class="text-sm text-gray-500 line-through">{{ number_format($course->original_price) }} ريال</span>
+              @endif
+              <span class="text-2xl font-bold text-green-600">{{ number_format($course->price) }} ريال</span>
+            @else
+              <span class="text-2xl font-bold text-green-600">مجاني</span>
+            @endif
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-4">
+            @if(auth()->check())
+              @if($isEnrolled)
+              <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
+                 class="bg-green-600 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                <i class="ri-play-circle-fill text-2xl"></i>
+                متابعة الدراسة
+              </a>
+              @else
+              <button onclick="enrollInCourse()" 
+                      class="bg-green-600 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                <i class="ri-shopping-cart-2-fill text-2xl"></i>
+                {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
+              </button>
+              @endif
+            @else
+            <div class="flex items-center gap-4">
+              <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}" 
+                 class="bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl">
+                <i class="ri-login-circle-line text-2xl"></i>
+                تسجيل الدخول
+              </a>
+              <a href="{{ route('student.register', ['subdomain' => $academy->subdomain]) }}" 
+                 class="bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl">
+                <i class="ri-user-add-line text-2xl"></i>
+                إنشاء حساب
+              </a>
+            </div>
+            @endif
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Curriculum -->
     @if($course->lessons && $course->lessons->count() > 0)
-      <div class="bg-white rounded-xl p-6 shadow-sm">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-bold text-gray-900 mb-4">دروس الدورة</h2>
         
         <div class="space-y-3">
@@ -203,7 +212,7 @@
         </div>
       </div>
     @else
-      <div class="bg-white rounded-xl p-6 shadow-sm">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div class="text-center py-8">
           <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="ri-video-line text-2xl text-gray-400"></i>
@@ -216,7 +225,7 @@
 
     <!-- Reviews -->
     @if($course->reviews && $course->reviews->count() > 0)
-      <div class="bg-white rounded-xl p-6 shadow-sm">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-bold text-gray-900 mb-4">تقييمات الطلاب</h2>
         
         @foreach($course->reviews->take(3) as $review)
@@ -247,9 +256,9 @@
   <div class="space-y-6">
     
     <!-- Course Stats & Info -->
-    <div class="bg-white rounded-xl shadow-sm p-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div class="flex items-center gap-3 mb-6">
-        <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
           <i class="ri-information-line text-primary text-xl"></i>
         </div>
         <h3 class="font-bold text-gray-900 text-lg">معلومات الدورة</h3>
@@ -257,11 +266,11 @@
       
       <!-- Key Stats -->
       <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+        <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
           <div class="text-2xl font-bold text-blue-600">{{ $course->total_lessons ?? 0 }}</div>
           <div class="text-sm text-gray-600">عدد الدروس</div>
         </div>
-        <div class="text-center p-4 bg-green-50 rounded-xl border border-green-100">
+        <div class="text-center p-4 bg-green-50 rounded-lg border border-green-100">
           <div class="text-2xl font-bold text-green-600">{{ $course->duration_hours ?? 0 }}</div>
           <div class="text-sm text-gray-600">ساعة</div>
         </div>
@@ -312,7 +321,7 @@
             <i class="ri-calendar-line text-orange-500 ml-2"></i>
             <span class="text-sm text-gray-600">تاريخ النشر</span>
           </div>
-          <span class="font-medium text-gray-900">{{ $course->published_at?->format('Y/m/d') ?? 'غير محدد' }}</span>
+          <span class="font-medium text-gray-900">{{ $course->published_at?->format('Y/m/d') ?? $course->created_at->format('Y/m/d') }}</span>
         </div>
         
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -326,9 +335,9 @@
     </div>
 
     <!-- Course Features -->
-    <div class="bg-white rounded-xl shadow-sm p-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div class="flex items-center gap-3 mb-6">
-        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
           <i class="ri-star-line text-green-600 text-xl"></i>
         </div>
         <h3 class="font-bold text-gray-900 text-lg">مميزات الدورة</h3>
@@ -361,9 +370,9 @@
     </div>
 
     <!-- Enrollment Status -->
-    <div class="bg-white rounded-xl shadow-sm p-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div class="flex items-center gap-3 mb-6">
-        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
           <i class="ri-user-settings-line text-blue-600 text-xl"></i>
         </div>
         <h3 class="font-bold text-gray-900 text-lg">حالة التسجيل</h3>
@@ -371,7 +380,7 @@
       
       @if($isEnrolled)
       <div class="space-y-4">
-        <div class="flex items-center p-4 bg-green-50 rounded-xl border border-green-200">
+        <div class="flex items-center p-4 bg-green-50 rounded-lg border border-green-200">
           <i class="ri-check-circle-line text-green-500 ml-3 text-2xl"></i>
           <div class="mr-3">
             <div class="font-semibold text-green-700">مسجل في الدورة ✓</div>
@@ -380,20 +389,20 @@
         </div>
         
         <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
-           class="w-full bg-gradient-to-r from-primary to-blue-600 text-white py-3 px-6 rounded-xl font-semibold text-center hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-2">
+           class="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold text-center hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-2">
           <i class="ri-play-circle-fill text-xl"></i>
           متابعة الدراسة
         </a>
       </div>
       @else
       <div class="space-y-4">
-        <div class="text-center p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200">
+        <div class="text-center p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
           <i class="ri-lock-line text-orange-500 text-3xl mb-2"></i>
           <div class="font-semibold text-orange-700 mb-1">غير مسجل في الدورة</div>
           <div class="text-sm text-orange-600">سجل الآن للوصول لجميع الدروس</div>
         </div>
         
-        <div class="text-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+        <div class="text-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
           @if($course->price && $course->price > 0)
             @if($course->original_price && $course->original_price > $course->price)
             <div class="text-sm text-gray-500 line-through mb-1">{{ number_format($course->original_price) }} ريال</div>
@@ -407,7 +416,7 @@
         </div>
         
                                 <button onclick="enrollInCourse()" 
-                                class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                                class="w-full bg-green-600 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                           <i class="ri-shopping-cart-2-fill text-xl"></i>
                           {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
                         </button>
@@ -417,29 +426,24 @@
       @endif
     </div>
 
-    <!-- Related Courses -->
-    @if($relatedCourses && $relatedCourses->count() > 0)
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h3 class="font-bold text-gray-900 mb-4">دورات ذات صلة</h3>
-        
-        @foreach($relatedCourses->take(3) as $relatedCourse)
-          <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $relatedCourse->id]) }}" 
-             class="block p-3 border border-gray-200 rounded-lg hover:border-primary transition-colors mb-3 last:mb-0">
-            <h4 class="font-medium text-gray-900 text-sm mb-1">{{ $relatedCourse->title }}</h4>
-            <div class="flex items-center justify-between text-xs text-gray-600">
-              <span>{{ $relatedCourse->total_lessons ?? 0 }} دروس</span>
-              @if($relatedCourse->is_free)
-                <span class="text-green-600 font-medium">مجاني</span>
-              @else
-                <span>{{ $relatedCourse->price }} {{ $relatedCourse->currency }}</span>
-              @endif
-            </div>
-          </a>
-        @endforeach
-      </div>
-    @endif
   </div>
 </div>
+
+<!-- Related Courses - Full Width Section -->
+@if($relatedCourses && $relatedCourses->count() > 0)
+<div class="mt-12">
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-900 mb-2">دورات ذات صلة</h2>
+    <p class="text-gray-600">اكتشف المزيد من الدورات التي قد تهمك</p>
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    @foreach($relatedCourses->take(3) as $relatedCourse)
+      <x-course-card :course="$relatedCourse" :academy="$academy" />
+    @endforeach
+  </div>
+</div>
+@endif
 
 <script>
 function openLesson(lessonId, courseId) {

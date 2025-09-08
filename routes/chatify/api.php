@@ -72,4 +72,7 @@ Route::post('/updateSettings', 'MessagesController@updateSettings')->name('api.a
  */
 Route::post('/setActiveStatus', 'MessagesController@setActiveStatus')->name('api.activeStatus.set');
 
-
+/**
+ * Get unread messages count
+ */
+Route::get('/unreadCount', 'MessagesController@getUnreadCount')->name('api.unread.count');

@@ -20,6 +20,7 @@
         "vite": "^7.0.4"
     },
     "dependencies": {
+        "@heroicons/react": "^2.2.0",
         "@livekit/components-react": "^2.9.14",
         "@livekit/components-styles": "^1.1.6",
         "aos": "^2.3.4",

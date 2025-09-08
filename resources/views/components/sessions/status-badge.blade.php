@@ -19,7 +19,7 @@
             'label' => 'مجدولة'
         ],
         'ongoing', \App\Enums\SessionStatus::ONGOING => [
-            'classes' => 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-300',
+            'classes' => 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300',
             'icon' => 'ri-live-line',
             'label' => 'جارية الآن'
         ],

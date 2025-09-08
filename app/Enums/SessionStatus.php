@@ -17,7 +17,7 @@ enum SessionStatus: string
      */
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::UNSCHEDULED => 'غير مجدولة',
             self::SCHEDULED => 'مجدولة',
             self::READY => 'جاهزة للبدء',
@@ -33,7 +33,7 @@ enum SessionStatus: string
      */
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::UNSCHEDULED => 'ri-draft-line',
             self::SCHEDULED => 'ri-calendar-line',
             self::READY => 'ri-video-line',
@@ -49,11 +49,11 @@ enum SessionStatus: string
      */
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::UNSCHEDULED => 'gray',
             self::SCHEDULED => 'blue',
             self::READY => 'green',
-            self::ONGOING => 'orange',
+            self::ONGOING => 'green',
             self::COMPLETED => 'green',
             self::CANCELLED => 'red',
             self::ABSENT => 'red',
@@ -97,7 +97,7 @@ enum SessionStatus: string
      */
     public function countsTowardsSubscription(): bool
     {
-        return match($this) {
+        return match ($this) {
             self::COMPLETED, self::ABSENT => true,
             default => false,
         };
@@ -149,7 +149,7 @@ enum SessionStatus: string
     {
         return array_combine(
             self::values(),
-            array_map(fn($status) => $status->label(), self::cases())
+            array_map(fn ($status) => $status->label(), self::cases())
         );
     }
 

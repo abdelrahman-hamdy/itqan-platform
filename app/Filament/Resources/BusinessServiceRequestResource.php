@@ -10,7 +10,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class BusinessServiceRequestResource extends Resource
 {
@@ -179,7 +178,7 @@ class BusinessServiceRequestResource extends Resource
 
                 Tables\Columns\TextColumn::make('project_budget')
                     ->label('الميزانية')
-                    ->formatStateUsing(fn (string $state): string => match($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         '500-1000' => '500 - 1000 ر.س',
                         '1000-3000' => '1000 - 3000 ر.س',
                         '3000-5000' => '3000 - 5000 ر.س',
@@ -190,7 +189,7 @@ class BusinessServiceRequestResource extends Resource
 
                 Tables\Columns\TextColumn::make('project_deadline')
                     ->label('الموعد')
-                    ->formatStateUsing(fn (string $state): string => match($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'urgent' => 'عاجل (أسبوع)',
                         'normal' => 'عادي (أسبوعين)',
                         'flexible' => 'مرن (شهر أو أكثر)',
@@ -206,7 +205,7 @@ class BusinessServiceRequestResource extends Resource
                         'danger' => 'rejected',
                         'gray' => 'completed',
                     ])
-                    ->formatStateUsing(fn (string $state): string => match($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'pending' => 'في الانتظار',
                         'reviewed' => 'تم المراجعة',
                         'approved' => 'مقبول',
@@ -262,6 +261,27 @@ class BusinessServiceRequestResource extends Resource
                     ->label('عرض'),
                 Tables\Actions\EditAction::make()
                     ->label('تعديل'),
+                Tables\Actions\DeleteAction::make()
+                    ->label('حذف')
+                    ->requiresConfirmation()
+                    ->modalHeading('تأكيد الحذف')
+                    ->modalDescription('هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')
+                    ->modalSubmitActionLabel('حذف')
+                    ->modalCancelActionLabel('إلغاء'),
+                Tables\Actions\Action::make('mark_reviewed')
+                    ->label('مراجعة')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->visible(fn (BusinessServiceRequest $record): bool => $record->status === 'pending')
+                    ->requiresConfirmation()
+                    ->modalHeading('تأكيد المراجعة')
+                    ->modalDescription('هل تريد وضع علامة مراجعة على هذا الطلب؟')
+                    ->modalSubmitActionLabel('مراجعة')
+                    ->modalCancelActionLabel('إلغاء')
+                    ->action(function (BusinessServiceRequest $record): void {
+                        $record->update(['status' => 'reviewed']);
+                    }),
+
                 Tables\Actions\Action::make('change_status')
                     ->label('تغيير الحالة')
                     ->icon('heroicon-o-arrow-path')
@@ -285,8 +305,45 @@ class BusinessServiceRequestResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('mark_reviewed')
+                        ->label('وضع علامة مراجعة')
+                        ->icon('heroicon-o-eye')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalHeading('تأكيد المراجعة الجماعية')
+                        ->modalDescription('هل تريد وضع علامة مراجعة على الطلبات المحددة؟')
+                        ->modalSubmitActionLabel('مراجعة')
+                        ->modalCancelActionLabel('إلغاء')
+                        ->action(function ($records): void {
+                            $records->each(function ($record) {
+                                if ($record->status === 'pending') {
+                                    $record->update(['status' => 'reviewed']);
+                                }
+                            });
+                        }),
+
+                    Tables\Actions\BulkAction::make('mark_approved')
+                        ->label('قبول المحدد')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('تأكيد القبول الجماعي')
+                        ->modalDescription('هل تريد قبول الطلبات المحددة؟')
+                        ->modalSubmitActionLabel('قبول')
+                        ->modalCancelActionLabel('إلغاء')
+                        ->action(function ($records): void {
+                            $records->each(function ($record) {
+                                $record->update(['status' => 'approved']);
+                            });
+                        }),
+
                     Tables\Actions\DeleteBulkAction::make()
-                        ->label('حذف المحدد'),
+                        ->label('حذف المحدد')
+                        ->requiresConfirmation()
+                        ->modalHeading('تأكيد الحذف الجماعي')
+                        ->modalDescription('هل أنت متأكد من حذف الطلبات المحددة؟ لا يمكن التراجع عن هذا الإجراء.')
+                        ->modalSubmitActionLabel('حذف المحدد')
+                        ->modalCancelActionLabel('إلغاء'),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
