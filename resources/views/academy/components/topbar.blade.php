@@ -19,6 +19,7 @@
       <!-- Centered Navigation Menu -->
       <div class="hidden md:flex items-center justify-center h-20">
         <div class="flex items-center space-x-1 space-x-reverse">
+          <a href="#testimonials" class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium" aria-label="انتقل إلى آراء الطلاب">آراء طلابنا</a>
           @if($academy->quran_enabled ?? true)
             <a href="#quran" class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium" aria-label="انتقل إلى قسم القرآن الكريم">القرآن الكريم</a>
           @endif
@@ -28,8 +29,6 @@
           @if($academy->recorded_courses_enabled ?? true)
             <a href="#courses" class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium" aria-label="انتقل إلى الكورسات المسجلة">الكورسات المسجلة</a>
           @endif
-          <a href="#about" class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium" aria-label="انتقل إلى قسم من نحن">من نحن</a>
-          <a href="#contact" class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium" aria-label="انتقل إلى قسم اتصل بنا">اتصل بنا</a>
         </div>
       </div>
 
@@ -91,6 +90,7 @@
     <!-- Mobile Navigation Menu -->
     <div class="md:hidden hidden" id="mobile-menu">
       <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+        <a href="#testimonials" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="انتقل إلى آراء الطلاب">آراء طلابنا</a>
         @if($academy->quran_enabled ?? true)
           <a href="#quran" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="انتقل إلى قسم القرآن الكريم">القرآن الكريم</a>
         @endif
@@ -100,8 +100,6 @@
         @if($academy->recorded_courses_enabled ?? true)
           <a href="#courses" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="انتقل إلى الكورسات المسجلة">الكورسات المسجلة</a>
         @endif
-        <a href="#about" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="انتقل إلى قسم من نحن">من نحن</a>
-        <a href="#contact" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="انتقل إلى قسم اتصل بنا">اتصل بنا</a>
         
         @auth
           <div class="border-t border-gray-200 pt-2 mt-2">
