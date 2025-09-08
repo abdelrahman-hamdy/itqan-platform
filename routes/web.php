@@ -1294,10 +1294,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     */
 
     // Public Interactive Courses Listing
-    Route::get('/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])->name('public.interactive-courses.index');
+    Route::get('/public/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])->name('public.interactive-courses.index');
 
     // Individual Interactive Course Details
-    Route::get('/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])->name('public.interactive-courses.show');
+    Route::get('/public/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])->name('public.interactive-courses.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -1306,10 +1306,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     */
 
     // Public Recorded Courses Listing
-    Route::get('/recorded-courses', [App\Http\Controllers\PublicRecordedCourseController::class, 'index'])->name('public.recorded-courses.index');
+    Route::get('/public/recorded-courses', [App\Http\Controllers\PublicRecordedCourseController::class, 'index'])->name('public.recorded-courses.index');
 
     // Individual Recorded Course Details
-    Route::get('/recorded-courses/{course}', [App\Http\Controllers\PublicRecordedCourseController::class, 'show'])->name('public.recorded-courses.show');
+    Route::get('/public/recorded-courses/{course}', [App\Http\Controllers\PublicRecordedCourseController::class, 'show'])->name('public.recorded-courses.show');
 
     /*
     |--------------------------------------------------------------------------
