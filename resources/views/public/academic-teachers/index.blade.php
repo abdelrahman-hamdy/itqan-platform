@@ -52,11 +52,12 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover">
               <!-- Teacher Avatar -->
               <div class="p-6 text-center">
-                <x-teacher-avatar :teacher="$teacher" size="lg" :show-badge="true" class="mx-auto mb-4" />
+                <div class="flex justify-center mb-4">
+                  <x-teacher-avatar :teacher="$teacher" size="lg" :show-badge="true" />
+                </div>
                 
                 <!-- Teacher Name -->
                 <h3 class="text-lg font-bold text-gray-900 mb-1">{{ $teacher->full_name }}</h3>
-                <p class="text-sm text-gray-600 mb-2">{{ $teacher->education_level_in_arabic ?? $teacher->education_level ?? 'معلم مؤهل' }}</p>
                 
                 <!-- Rating -->
                 @if($teacher->rating > 0)
@@ -110,7 +111,23 @@
                       <div class="mt-1 space-y-1">
                         @foreach($teacher->formatted_certifications as $cert)
                           <div class="text-xs">
-                            {{ $cert['name'] ?? '' }}
+                            @php
+                              // Convert certification names to Arabic
+                              $certNames = [
+                                'teaching_certificate' => 'شهادة تدريس',
+                                'education_degree' => 'درجة تعليمية',
+                                'subject_specialization' => 'تخصص في المادة',
+                                'pedagogical_training' => 'تدريب تربوي',
+                                'technology_integration' => 'تكامل التكنولوجيا',
+                                'classroom_management' => 'إدارة الفصل',
+                                'assessment_methods' => 'طرق التقييم',
+                                'special_needs' => 'الاحتياجات الخاصة',
+                                'language_proficiency' => 'الكفاءة اللغوية',
+                                'professional_development' => 'التطوير المهني'
+                              ];
+                              $certName = $certNames[$cert['name']] ?? $cert['name'];
+                            @endphp
+                            {{ $certName }}
                             @if($cert['issuer'])
                               - {{ $cert['issuer'] }}
                             @endif
