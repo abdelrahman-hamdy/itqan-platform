@@ -52,17 +52,11 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover">
               <!-- Teacher Avatar -->
               <div class="p-6 text-center">
-                <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl font-bold">
-                  @if($teacher->avatar)
-                    <img src="{{ asset('storage/' . $teacher->avatar) }}" alt="{{ $teacher->full_name }}" class="w-full h-full rounded-full object-cover">
-                  @else
-                    {{ substr($teacher->first_name, 0, 1) }}{{ substr($teacher->last_name, 0, 1) }}
-                  @endif
-                </div>
+                <x-teacher-avatar :teacher="$teacher" size="lg" :show-badge="true" class="mx-auto mb-4" />
                 
                 <!-- Teacher Name -->
                 <h3 class="text-lg font-bold text-gray-900 mb-1">{{ $teacher->full_name }}</h3>
-                <p class="text-sm text-gray-600 mb-2">{{ $teacher->teacher_code }}</p>
+                <p class="text-sm text-gray-600 mb-2">{{ $teacher->education_level_in_arabic ?? $teacher->education_level ?? 'معلم مؤهل' }}</p>
                 
                 <!-- Rating -->
                 @if($teacher->rating > 0)
@@ -103,7 +97,30 @@
                 @if($teacher->education_level)
                   <div class="flex items-center text-sm text-gray-600">
                     <i class="ri-graduation-cap-line ml-2 text-primary"></i>
-                    <span>{{ $teacher->education_level }}</span>
+                    <span>{{ $teacher->education_level_in_arabic ?? $teacher->education_level }}</span>
+                  </div>
+                @endif
+
+                <!-- Certifications -->
+                @if($teacher->formatted_certifications && count($teacher->formatted_certifications) > 0)
+                  <div class="flex items-start text-sm text-gray-600">
+                    <i class="ri-award-line ml-2 text-primary mt-0.5"></i>
+                    <div class="flex-1">
+                      <span class="font-medium">الشهادات:</span>
+                      <div class="mt-1 space-y-1">
+                        @foreach($teacher->formatted_certifications as $cert)
+                          <div class="text-xs">
+                            {{ $cert['name'] ?? '' }}
+                            @if($cert['issuer'])
+                              - {{ $cert['issuer'] }}
+                            @endif
+                            @if($cert['year'])
+                              ({{ $cert['year'] }})
+                            @endif
+                          </div>
+                        @endforeach
+                      </div>
+                    </div>
                   </div>
                 @endif
               </div>
