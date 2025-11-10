@@ -184,9 +184,9 @@
               <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <i class="ri-book-open-line text-purple-600 text-xl"></i>
               </div>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                {{ $course->status === 'published' && $course->is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                {{ $course->status === 'published' && $course->is_published ? 'متاح' : 'مكتمل' }}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                {{ $course->is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                {{ $course->is_published ? 'متاح' : 'غير متاح' }}
               </span>
             </div>
             

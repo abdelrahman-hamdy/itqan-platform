@@ -79,9 +79,9 @@
               مسجل في الكورس
             </span>
             @else
-            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium 
-              {{ $course->status === 'published' && $course->is_published ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
-              {{ $course->status === 'published' && $course->is_published ? 'متاح للتسجيل' : 'غير متاح' }}
+            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
+              {{ $course->is_published ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+              {{ $course->is_published ? 'متاح للتسجيل' : 'غير متاح' }}
             </span>
             @endif
           </div>
@@ -278,7 +278,7 @@
                 مسجل بالفعل
               </button>
               @else
-                @if($course->status === 'published' && $course->is_published && $course->enrollment_deadline >= now()->toDateString() && $enrollmentStats['available_spots'] > 0)
+                @if($course->is_published && $course->enrollment_deadline >= now()->toDateString() && $enrollmentStats['available_spots'] > 0)
                 <button class="w-full bg-primary text-white px-4 py-3 rounded-lg font-medium hover:bg-secondary transition-colors">
                   <i class="ri-add-line ml-1"></i>
                   التسجيل في الكورس
