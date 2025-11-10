@@ -22,9 +22,8 @@ class PublicInteractiveCourseController extends Controller
             abort(404, 'Academy not found');
         }
 
-        // Get active interactive courses for this academy
+        // Get published interactive courses for this academy
         $courses = InteractiveCourse::where('academy_id', $academy->id)
-            ->where('status', 'active')
             ->where('is_published', true)
             ->with(['academy'])
             ->paginate(12);
@@ -47,7 +46,6 @@ class PublicInteractiveCourseController extends Controller
         // Find the course by ID within the academy
         $course = InteractiveCourse::where('id', $courseId)
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
             ->where('is_published', true)
             ->with(['academy'])
             ->first();
@@ -80,7 +78,6 @@ class PublicInteractiveCourseController extends Controller
         // Find the course
         $course = InteractiveCourse::where('id', $courseId)
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
             ->where('is_published', true)
             ->with(['academy', 'assignedTeacher.user'])
             ->first();
@@ -138,7 +135,6 @@ class PublicInteractiveCourseController extends Controller
         // Find the course
         $course = InteractiveCourse::where('id', $courseId)
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
             ->where('is_published', true)
             ->first();
 
