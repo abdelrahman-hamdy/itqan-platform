@@ -141,13 +141,13 @@
             </div>
 
             <div class="mt-6 flex space-x-2 space-x-reverse">
-              <button class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+              <a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id]) }}" class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
                 <i class="ri-play-line ml-1"></i>
                 متابعة التعلم
-              </button>
-              <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              </a>
+              <a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id]) }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="ri-information-line"></i>
-              </button>
+              </a>
             </div>
           </div>
           @endforeach
@@ -239,19 +239,12 @@
             </div>
             @endif
 
-            <div class="mt-6">
-              @if($course->is_published && $course->enrollment_deadline >= now()->toDateString())
-                <a href="/interactive-courses/{{ $course->id }}/enroll"
-                   class="block w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
-                  <i class="ri-shopping-cart-line ml-1"></i>
-                  التسجيل في الكورس
-                </a>
-              @else
-                <button disabled class="block w-full bg-gray-300 text-gray-600 px-4 py-3 rounded-lg text-sm font-medium cursor-not-allowed text-center">
-                  <i class="ri-lock-line ml-1"></i>
-                  التسجيل مغلق
-                </button>
-              @endif
+            <div class="mt-6 flex flex-col space-y-2">
+              <a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id]) }}"
+                 class="block w-full border border-primary text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary hover:text-white transition-colors text-center">
+                <i class="ri-eye-line ml-1"></i>
+                عرض التفاصيل
+              </a>
             </div>
           </div>
           @endforeach

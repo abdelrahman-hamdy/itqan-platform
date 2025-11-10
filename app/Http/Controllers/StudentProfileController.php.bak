@@ -775,26 +775,24 @@ class StudentProfileController extends Controller
     {
         $user = Auth::user();
         $academy = $user->academy;
-        $studentId = $user->studentProfile->id ?? $user->id;
 
         // Get all available interactive courses for this academy
         $availableCourses = InteractiveCourse::where('academy_id', $academy->id)
             ->where('is_published', true)
             ->where('enrollment_deadline', '>=', now()->toDateString())
-            ->with(['assignedTeacher', 'subject', 'gradeLevel', 'enrollments' => function ($query) use ($studentId) {
-                $query->where('student_id', $studentId);
+            ->with(['assignedTeacher', 'subject', 'gradeLevel', 'enrollments' => function ($query) use ($user) {
+                $query->where('student_id', $user->id);
             }])
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
         // Get student's enrolled courses
         $enrolledCourses = InteractiveCourse::where('academy_id', $academy->id)
-            ->whereHas('enrollments', function ($query) use ($studentId) {
-                $query->where('student_id', $studentId)
-                      ->whereIn('enrollment_status', ['enrolled', 'completed']);
+            ->whereHas('enrollments', function ($query) use ($user) {
+                $query->where('student_id', $user->id);
             })
-            ->with(['assignedTeacher', 'subject', 'gradeLevel', 'enrollments' => function ($query) use ($studentId) {
-                $query->where('student_id', $studentId);
+            ->with(['assignedTeacher', 'subject', 'gradeLevel', 'enrollments' => function ($query) use ($user) {
+                $query->where('student_id', $user->id);
             }])
             ->get();
 
@@ -998,7 +996,7 @@ class StudentProfileController extends Controller
             abort(403, 'You must be enrolled in this course to view sessions');
         }
 
-        $student = $user->studentProfile;
+        $student = $user->student;
 
         // Get attendance record for this student
         $attendance = $session->attendances->where('student_id', $student->id)->first();
@@ -1044,7 +1042,7 @@ class StudentProfileController extends Controller
             return back()->with('error', 'Cannot submit feedback for incomplete session');
         }
 
-        $student = $user->studentProfile;
+        $student = $user->student;
 
         // Create or update feedback
         // Note: You may need to create an InteractiveSessionFeedback model
@@ -1084,7 +1082,7 @@ class StudentProfileController extends Controller
         ])->firstOrFail();
 
         $homework = \App\Models\InteractiveCourseHomework::findOrFail($validated['homework_id']);
-        $student = $user->studentProfile;
+        $student = $user->student;
 
         // Use existing HomeworkService if available
         if (class_exists(\App\Services\HomeworkService::class)) {

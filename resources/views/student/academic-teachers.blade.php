@@ -183,9 +183,11 @@
                 <i class="ri-video-line ml-1"></i>
                 الدرس القادم
               </button>
+              @if($teacher && $teacher->user)
               <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain, 'user' => $teacher->user->id]) }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="ri-message-3-line"></i>
               </a>
+              @endif
             </div>
           </div>
           @endforeach

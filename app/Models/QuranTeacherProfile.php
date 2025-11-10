@@ -33,9 +33,6 @@ class QuranTeacherProfile extends Model
         'languages',
         'bio_arabic',
         'bio_english',
-        'approval_status',
-        'approved_by',
-        'approved_at',
         'is_active',
         'offers_trial_sessions',
         'rating',
@@ -49,7 +46,6 @@ class QuranTeacherProfile extends Model
         'certifications' => 'array',
         'available_days' => 'array',
         'languages' => 'array',
-        'approved_at' => 'datetime',
         'is_active' => 'boolean',
         'offers_trial_sessions' => 'boolean',
         'rating' => 'decimal:2',
@@ -186,62 +182,54 @@ class QuranTeacherProfile extends Model
     }
 
     /**
-     * Status Methods
+     * Status Methods - Simplified
      */
     public function isPending(): bool
     {
-        return $this->approval_status === 'pending';
+        return false; // No more pending state - teachers are either active or inactive
     }
 
     public function isApproved(): bool
     {
-        return $this->approval_status === 'approved';
+        return true; // All teachers in the system are considered approved
     }
 
     public function isRejected(): bool
     {
-        return $this->approval_status === 'rejected';
+        return false; // No more rejected state
     }
 
     public function isActive(): bool
     {
-        return $this->is_active && $this->isApproved();
+        return $this->is_active;
     }
 
     /**
-     * Actions
+     * Actions - Simplified
      */
-    public function approve(int $approvedBy): void
+    public function activate(int $activatedBy): void
     {
         $this->update([
-            'approval_status' => 'approved',
-            'approved_by' => $approvedBy,
-            'approved_at' => Carbon::now(),
             'is_active' => true,
         ]);
 
         // Also activate the related User account
         if ($this->user) {
             $this->user->update([
-                'status' => 'active',
                 'active_status' => true,
             ]);
         }
     }
 
-    public function reject(int $rejectedBy, ?string $reason = null): void
+    public function deactivate(?string $reason = null): void
     {
         $this->update([
-            'approval_status' => 'rejected',
-            'approved_by' => $rejectedBy,
-            'approved_at' => Carbon::now(),
             'is_active' => false,
         ]);
 
         // Also deactivate the related User account
         if ($this->user) {
             $this->user->update([
-                'status' => 'inactive',
                 'active_status' => false,
             ]);
         }
@@ -249,25 +237,26 @@ class QuranTeacherProfile extends Model
 
     public function suspend(?string $reason = null): void
     {
-        $this->update([
-            'is_active' => false,
-        ]);
+        $this->deactivate($reason);
+    }
 
-        // Also suspend the related User account
-        if ($this->user) {
-            $this->user->update([
-                'status' => 'suspended',
-                'active_status' => false,
-            ]);
-        }
+    // Legacy methods for backward compatibility
+    public function approve(int $approvedBy): void
+    {
+        $this->activate($approvedBy);
+    }
+
+    public function reject(int $rejectedBy, ?string $reason = null): void
+    {
+        $this->deactivate($reason);
     }
 
     /**
-     * Scopes
+     * Scopes - Simplified
      */
     public function scopeApproved($query)
     {
-        return $query->where('approval_status', 'approved');
+        return $query; // All teachers in the system are considered approved
     }
 
     public function scopeActive($query)
@@ -277,7 +266,7 @@ class QuranTeacherProfile extends Model
 
     public function scopePending($query)
     {
-        return $query->where('approval_status', 'pending');
+        return $query->whereRaw('1=0'); // No more pending state - return empty query
     }
 
     public function scopeUnlinked($query)

@@ -59,17 +59,6 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     const ROLE_PARENT = 'parent';
 
     /**
-     * User status constants
-     */
-    const STATUS_ACTIVE = 'active';
-
-    const STATUS_INACTIVE = 'inactive';
-
-    const STATUS_PENDING = 'pending';
-
-    const STATUS_SUSPENDED = 'suspended';
-
-    /**
      * Get unique identifier for LiveKit and data channel communications
      */
     public function getIdentifier(): string
@@ -102,7 +91,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'phone',
         'password',
         'user_type',
-        'status',
+        // 'status', // ← REMOVED - using active_status only
         // 'role' field removed - using user_type instead
         'email_verified_at',
         'phone_verified_at',
@@ -451,11 +440,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     }
 
     /**
-     * Check if user is active
+     * Check if user is active - Simplified
      */
     public function isActive(): bool
     {
-        return $this->active_status && $this->status === self::STATUS_ACTIVE;
+        return $this->active_status;
     }
 
     /**
@@ -568,11 +557,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     }
 
     /**
-     * Scope to get active users
+     * Scope to get active users - Simplified
      */
     public function scopeActive($query): Builder
     {
-        return $query->where('status', self::STATUS_ACTIVE)->where('active_status', true);
+        return $query->where('active_status', true);
     }
 
     /**

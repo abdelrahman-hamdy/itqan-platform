@@ -105,7 +105,7 @@ class PublicInteractiveCourseController extends Controller
 
         if ($existingEnrollment) {
             // If enrolled, redirect to the enrolled view
-            return redirect("/my-courses/interactive/{$courseId}")
+            return redirect()->route('my.interactive-course.show', ['subdomain' => $subdomain, 'course' => $courseId])
                 ->with('info', 'أنت مسجل بالفعل في هذا الكورس');
         }
 
@@ -159,7 +159,7 @@ class PublicInteractiveCourseController extends Controller
             ->first();
 
         if ($existingEnrollment) {
-            return redirect("/my-courses/interactive/{$courseId}")
+            return redirect()->route('my.interactive-course.show', ['subdomain' => $subdomain, 'course' => $courseId])
                 ->with('info', 'أنت مسجل بالفعل في هذا الكورس');
         }
 

@@ -187,7 +187,8 @@ class ChatSystem {
     }
 
     try {
-      const channelName = `private-chat.${this.config.userId}`;
+      // IMPORTANT: Must match the channel name used in MessagesController.php (private-chatify.{userId})
+      const channelName = `private-chatify.${this.config.userId}`;
       console.log(`🔐 Subscribing to private channel: ${channelName} for user ${this.config.userId}`);
       
       // Use public channel for testing instead of private
@@ -1147,14 +1148,24 @@ class ChatSystem {
           from_id: this.config.userId,
           created_at: new Date().toISOString()
         });
-        
+
+        // Update sidebar with last message - CRITICAL FOR SIDEBAR UPDATE
+        console.log('📋 Updating sidebar after sending message');
+        this.updateContactLastMessage(this.currentContactId, messageText);
+
+        // Also refresh contacts to ensure sidebar is fully updated
+        setTimeout(() => {
+          console.log('🔄 Refreshing contacts list after send');
+          this.loadContacts();
+        }, 500);
+
         // Clear input
         const messageInput = document.querySelector('#message-input');
         if (messageInput) {
           messageInput.value = '';
           messageInput.style.height = 'auto';
         }
-        
+
         // Update send button state
         const sendButton = document.querySelector('#send-btn');
         if (sendButton) {
@@ -1285,7 +1296,7 @@ class ChatSystem {
         const file = e.target.files[0];
         if (file) {
           console.log('📎 File selected:', file.name);
-          // TODO: Implement file upload
+          this.handleFileUpload(file);
         }
       });
     }
@@ -1489,6 +1500,268 @@ class ChatSystem {
         icon: '/images/itqan-logo.svg'
       });
     }
+  }
+
+  /**
+   * Handle file upload with preview
+   */
+  handleFileUpload(file) {
+    console.log('📎 Processing file upload:', file.name, 'Type:', file.type, 'Size:', file.size);
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      this.showNotification('حجم الملف كبير جداً. الحد الأقصى هو 10 ميجابايت', 'error');
+      return;
+    }
+
+    // Show preview for images
+    if (file.type.startsWith('image/')) {
+      this.showImagePreview(file);
+    } else {
+      // For non-image files, send directly with confirmation
+      this.showFilePreview(file);
+    }
+  }
+
+  /**
+   * Show image preview before sending
+   */
+  showImagePreview(file) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const previewHtml = `
+        <div id="file-preview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div class="bg-white rounded-lg p-4 max-w-lg w-full mx-4">
+            <div class="mb-4">
+              <h3 class="text-lg font-semibold mb-2">معاينة الصورة</h3>
+              <img src="${e.target.result}" alt="${file.name}" class="max-w-full rounded">
+            </div>
+            <div class="mb-4">
+              <input type="text" id="preview-message" placeholder="أضف رسالة (اختياري)"
+                class="w-full p-2 border rounded focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="flex justify-end gap-2">
+              <button onclick="document.getElementById('file-preview').remove()"
+                class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">
+                إلغاء
+              </button>
+              <button id="send-file-btn"
+                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                إرسال
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add preview to body
+      document.body.insertAdjacentHTML('beforeend', previewHtml);
+
+      // Handle send button
+      document.getElementById('send-file-btn').addEventListener('click', () => {
+        const message = document.getElementById('preview-message').value.trim();
+        this.sendFileWithMessage(file, message);
+        document.getElementById('file-preview').remove();
+      });
+
+      // Close on backdrop click
+      document.getElementById('file-preview').addEventListener('click', (e) => {
+        if (e.target.id === 'file-preview') {
+          e.target.remove();
+        }
+      });
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * Show preview for non-image files
+   */
+  showFilePreview(file) {
+    const fileIcon = this.getFileIcon(file.type);
+    const fileSize = this.formatFileSize(file.size);
+
+    const previewHtml = `
+      <div id="file-preview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-4 max-w-md w-full mx-4">
+          <div class="mb-4">
+            <h3 class="text-lg font-semibold mb-2">إرسال ملف</h3>
+            <div class="flex items-center p-3 bg-gray-50 rounded">
+              <i class="ri-${fileIcon} text-3xl text-gray-600 mr-3"></i>
+              <div class="flex-1">
+                <p class="font-medium text-gray-900">${file.name}</p>
+                <p class="text-sm text-gray-500">${fileSize}</p>
+              </div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <input type="text" id="preview-message" placeholder="أضف رسالة (اختياري)"
+              class="w-full p-2 border rounded focus:outline-none focus:border-blue-500">
+          </div>
+          <div class="flex justify-end gap-2">
+            <button onclick="document.getElementById('file-preview').remove()"
+              class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">
+              إلغاء
+            </button>
+            <button id="send-file-btn"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              إرسال
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add preview to body
+    document.body.insertAdjacentHTML('beforeend', previewHtml);
+
+    // Handle send button
+    document.getElementById('send-file-btn').addEventListener('click', () => {
+      const message = document.getElementById('preview-message').value.trim();
+      this.sendFileWithMessage(file, message);
+      document.getElementById('file-preview').remove();
+    });
+
+    // Close on backdrop click
+    document.getElementById('file-preview').addEventListener('click', (e) => {
+      if (e.target.id === 'file-preview') {
+        e.target.remove();
+      }
+    });
+  }
+
+  /**
+   * Send file with optional message
+   */
+  async sendFileWithMessage(file, message = '') {
+    if (!this.currentContactId) {
+      this.showNotification('الرجاء اختيار محادثة أولاً', 'error');
+      return;
+    }
+
+    console.log('📤 Sending file:', file.name, 'with message:', message);
+
+    // Show uploading indicator
+    const uploadingId = Date.now();
+    const uploadingHtml = `
+      <div class="message-card mc-sender" data-uploading-id="${uploadingId}">
+        <div class="message-card-content">
+          <div class="flex items-center gap-2">
+            <i class="ri-loader-2-line animate-spin"></i>
+            <span>جارٍ رفع ${file.name}...</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const messagesList = document.querySelector('#messages-list');
+    if (messagesList) {
+      messagesList.insertAdjacentHTML('beforeend', uploadingHtml);
+      this.scrollToBottomSmooth();
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('id', this.currentContactId);
+      formData.append('file', file);
+      if (message) {
+        formData.append('message', message);
+      }
+
+      const response = await fetch(this.config.apiEndpoints.sendMessage, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': this.config.csrfToken,
+          'Accept': 'application/json'
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      // Remove uploading indicator
+      const uploadingElement = document.querySelector(`[data-uploading-id="${uploadingId}"]`);
+      if (uploadingElement) {
+        uploadingElement.remove();
+      }
+
+      if (data.status === 'success' || data.status === '200' || response.ok) {
+        console.log('✅ File sent successfully');
+
+        // Add message to UI with attachment
+        const messageContent = message || `📎 ${file.name}`;
+        this.addMessageToUI({
+          id: Date.now(),
+          body: messageContent,
+          from_id: this.config.userId,
+          created_at: new Date().toISOString(),
+          attachment: {
+            name: file.name,
+            size: file.size,
+            type: file.type
+          }
+        });
+
+        // Update sidebar
+        this.updateContactLastMessage(this.currentContactId, messageContent);
+
+        // Clear file input
+        const fileInput = document.querySelector('#file-input');
+        if (fileInput) {
+          fileInput.value = '';
+        }
+
+        // Refresh contacts list
+        setTimeout(() => {
+          this.loadContacts();
+        }, 500);
+
+      } else {
+        console.error('❌ File upload failed:', data);
+        this.showNotification('فشل رفع الملف', 'error');
+      }
+
+    } catch (error) {
+      console.error('❌ Error uploading file:', error);
+
+      // Remove uploading indicator on error
+      const uploadingElement = document.querySelector(`[data-uploading-id="${uploadingId}"]`);
+      if (uploadingElement) {
+        uploadingElement.remove();
+      }
+
+      this.showNotification('حدث خطأ في رفع الملف', 'error');
+    }
+  }
+
+  /**
+   * Get appropriate icon for file type
+   */
+  getFileIcon(mimeType) {
+    if (mimeType.startsWith('image/')) return 'image-line';
+    if (mimeType.startsWith('video/')) return 'video-line';
+    if (mimeType.startsWith('audio/')) return 'music-line';
+    if (mimeType.includes('pdf')) return 'file-pdf-line';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'file-word-line';
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'file-excel-line';
+    if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'file-ppt-line';
+    if (mimeType.includes('zip') || mimeType.includes('rar')) return 'file-zip-line';
+    if (mimeType.includes('text')) return 'file-text-line';
+    return 'file-line';
+  }
+
+  /**
+   * Format file size for display
+   */
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   }
 }
 

@@ -215,7 +215,14 @@ class QuranTeacherProfileResource extends BaseResource
                             ->label('يقدم جلسات تجريبية')
                             ->default(true)
                             ->helperText('عند تفعيل هذا الخيار، سيتمكن الطلاب من طلب جلسات تجريبية مع هذا المعلم'),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('ملاحظات إدارية')
+                            ->maxLength(1000)
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->helperText('ملاحظات إدارية حول المدرس'),
                     ])
+                    ->columns(2)
                     ->visible(fn () => Auth::check() && Auth::user()->isAdmin()),
             ]);
     }

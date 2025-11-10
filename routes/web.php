@@ -1329,6 +1329,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         ->middleware('auth')
         ->name('interactive-courses.store-enrollment');
 
+    // Enrolled students can view course details (no redirect middleware)
+    Route::get('/interactive-courses/{course}/details', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])
+        ->middleware(['auth', 'interactive.course'])
+        ->name('interactive-courses.details');
+
     /*
     |--------------------------------------------------------------------------
     | Public Recorded Courses Routes
@@ -1489,12 +1494,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     | Authenticated students accessing these routes will see their personalized views
     */
     Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/my-courses/interactive', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
+        Route::get('/my-interactive-courses', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
     });
 
     // Interactive course detail - accessible by enrolled students and teachers
     Route::middleware(['auth', 'interactive.course'])->group(function () {
-        Route::get('/my-courses/interactive/{course}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])->name('my.interactive-course.show');
+        Route::get('/my-interactive-courses/{course}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])->name('my.interactive-course.show');
     });
 
     // Interactive course session detail - for enrolled students

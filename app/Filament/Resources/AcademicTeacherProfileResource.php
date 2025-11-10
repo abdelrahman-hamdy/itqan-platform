@@ -16,6 +16,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
+use Filament\Notifications\Notification;
 
 class AcademicTeacherProfileResource extends BaseResource
 {
@@ -160,50 +161,80 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->columns(3),
                     ]),
 
-                Forms\Components\Section::make('التخصص التدريسي')
+                Forms\Components\Section::make('التخصص')
                     ->schema([
-                        Forms\Components\TagsInput::make('subjects_text')
-                            ->label('المواد التي يمكن تدريسها')
-                            ->placeholder('أضف مادة دراسية')
-                            ->helperText('اكتب المادة الدراسية واضغط Enter لإضافتها. مثال: الرياضيات، الفيزياء، الكيمياء')
-                            ->suggestions([
-                                'الرياضيات',
-                                'الفيزياء', 
-                                'الكيمياء',
-                                'الأحياء',
-                                'اللغة العربية',
-                                'اللغة الإنجليزية',
-                                'التاريخ',
-                                'الجغرافيا',
-                                'التربية الإسلامية',
-                                'العلوم',
-                                'الحاسوب',
-                                'الرياضة'
-                            ])
-                            ->required(),
-                        Forms\Components\TagsInput::make('grade_levels_text')
-                            ->label('المراحل الدراسية')
-                            ->placeholder('أضف مرحلة دراسية')
-                            ->helperText('اكتب المرحلة الدراسية واضغط Enter لإضافتها. مثال: الابتدائية، المتوسطة، الثانوية')
-                            ->suggestions([
-                                'الابتدائية',
-                                'المتوسطة',
-                                'الثانوية',
-                                'الجامعية',
-                                'الصف الأول الابتدائي',
-                                'الصف الثاني الابتدائي',
-                                'الصف الثالث الابتدائي',
-                                'الصف الرابع الابتدائي',
-                                'الصف الخامس الابتدائي',
-                                'الصف السادس الابتدائي',
-                                'الصف الأول المتوسط',
-                                'الصف الثاني المتوسط',
-                                'الصف الثالث المتوسط',
-                                'الصف الأول الثانوي',
-                                'الصف الثاني الثانوي',
-                                'الصف الثالث الثانوي'
-                            ])
-                            ->required(),
+                        Forms\Components\Select::make('subject_ids')
+                            ->label('المواد التي يقوم بتدريسها')
+                            ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
+                                // Get academy_id from the record being edited, or from the form data for new records
+                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
+                                
+                                if (!$academyId) {
+                                    return [];
+                                }
+                                
+                                return \App\Models\Subject::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
+                                // Get academy_id from the record being edited, or from the form data for new records
+                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
+                                
+                                if (!$academyId) {
+                                    return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
+                                }
+                                
+                                $count = \App\Models\Subject::where('academy_id', $academyId)->where('is_active', true)->count();
+                                if ($count === 0) {
+                                    return 'لا توجد مواد دراسية متاحة في هذه الأكاديمية. يرجى إضافة المواد الدراسية أولاً.';
+                                }
+                                
+                                return "يوجد {$count} مادة دراسية متاحة للاختيار";
+                            })
+                            ->columns(2),
+                        Forms\Components\Select::make('grade_level_ids')
+                            ->label('الصفوف الدراسية')
+                            ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
+                                // Get academy_id from the record being edited, or from the form data for new records
+                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
+                                
+                                if (!$academyId) {
+                                    return [];
+                                }
+                                
+                                return \App\Models\AcademicGradeLevel::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
+                                // Get academy_id from the record being edited, or from the form data for new records
+                                $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
+                                
+                                if (!$academyId) {
+                                    return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
+                                }
+                                
+                                $count = \App\Models\AcademicGradeLevel::where('academy_id', $academyId)->where('is_active', true)->count();
+                                if ($count === 0) {
+                                    return 'لا توجد صفوف دراسية متاحة في هذه الأكاديمية. يرجى إضافة الصفوف الدراسية أولاً.';
+                                }
+                                
+                                return "يوجد {$count} صف دراسي متاح للاختيار";
+                            })
+                            ->columns(2),
                         Forms\Components\CheckboxList::make('package_ids')
                             ->label('الباقات التي يمكن تدريسها')
                             ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
@@ -257,15 +288,7 @@ class AcademicTeacherProfileResource extends BaseResource
                             ]),
                         Forms\Components\CheckboxList::make('available_days')
                             ->label('الأيام المتاحة')
-                            ->options([
-                                'sunday' => 'الأحد',
-                                'monday' => 'الاثنين',
-                                'tuesday' => 'الثلاثاء',
-                                'wednesday' => 'الأربعاء',
-                                'thursday' => 'الخميس',
-                                'friday' => 'الجمعة',
-                                'saturday' => 'السبت',
-                            ])
+                            ->options(\App\Enums\WeekDays::options())
                             ->columns(3)
                             ->required(),
                         Forms\Components\Grid::make(3)
@@ -295,38 +318,20 @@ class AcademicTeacherProfileResource extends BaseResource
                             ]),
                     ]),
 
-                Forms\Components\Section::make('الحالة والموافقة')
+                Forms\Components\Section::make('الحالة')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Placeholder::make('approval_status_display')
-                                    ->label('حالة الموافقة')
-                                    ->content(function ($record) {
-                                        if (!$record) return 'في الانتظار';
-                                        return match($record->approval_status) {
-                                            'pending' => '⏳ في الانتظار',
-                                            'approved' => '✅ معتمد',
-                                            'rejected' => '❌ مرفوض',
-                                            default => $record->approval_status,
-                                        };
-                                    }),
-                                Forms\Components\Placeholder::make('is_active_display')
-                                    ->label('حالة النشاط')
-                                    ->content(function ($record) {
-                                        if (!$record) return 'نشط';
-                                        return $record->is_active ? '🟢 نشط' : '🔴 غير نشط';
-                                    }),
-                            ]),
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('حالة النشاط')
+                            ->helperText('تفعيل أو إلغاء تفعيل المدرس'),
+                        
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات إدارية')
                             ->maxLength(1000)
                             ->rows(3)
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->helperText('ملاحظات إدارية حول المدرس'),
                     ])
-                    ->visible(function () {
-                        $user = auth()->user();
-                        return $user && $user->isAdmin();
-                    }),
+                    ->columns(2),
             ]);
     }
 
@@ -357,21 +362,6 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                Tables\Columns\BadgeColumn::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'approved',
-                        'danger' => 'rejected',
-                    ])
-                    ->formatStateUsing(function (string $state): string {
-                        return match ($state) {
-                            'pending' => 'في الانتظار',
-                            'approved' => 'معتمد',
-                            'rejected' => 'مرفوض',
-                            default => $state,
-                        };
-                    }),
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('نشط')
                     ->boolean()
@@ -393,13 +383,13 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->options(Academy::where('is_active', true)->pluck('name', 'id'))
                     ->searchable(),
 
-                Tables\Filters\SelectFilter::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->options([
-                        'pending' => 'في الانتظار',
-                        'approved' => 'معتمد',
-                        'rejected' => 'مرفوض',
-                    ]),
+                // Tables\Filters\SelectFilter::make('approval_status')
+                //     ->label('حالة الموافقة')
+                //     ->options([
+                //         'pending' => 'في الانتظار',
+                //         'approved' => 'معتمد',
+                //         'rejected' => 'مرفوض',
+                //     ]),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('نشط'),
                 Tables\Filters\TernaryFilter::make('user_id')
@@ -409,62 +399,73 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->falseLabel('غير مربوط'),
             ])
             ->actions([
-                Tables\Actions\Action::make('approve')
-                    ->label('اعتماد')
+                Tables\Actions\Action::make('activate')
+                    ->label('تفعيل')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn ($record) => $record->approval_status === 'pending')
+                    ->visible(fn ($record) => !$record->is_active)
                     ->requiresConfirmation()
-                    ->modalHeading('اعتماد المدرس')
-                    ->modalDescription('هل أنت متأكد من اعتماد هذا المدرس؟ سيتم تفعيل حسابه تلقائياً.')
+                    ->modalHeading('تفعيل المدرس')
+                    ->modalDescription('هل أنت متأكد من تفعيل هذا المدرس؟ سيتم تفعيل حسابه.')
                     ->action(function ($record) {
-                        $record->approve(auth()->user()->id);
-                        $this->notify('success', 'تم اعتماد المدرس بنجاح');
+                        $record->activate(auth()->user()->id);
+                        Notification::make()
+                            ->title('تم تفعيل المدرس')
+                            ->success()
+                            ->send();
                     }),
                     
-                Tables\Actions\Action::make('reject')
-                    ->label('رفض')
+                Tables\Actions\Action::make('deactivate')
+                    ->label('إلغاء التفعيل')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn ($record) => $record->approval_status === 'pending')
+                    ->visible(fn ($record) => $record->is_active)
                     ->requiresConfirmation()
-                    ->modalHeading('رفض المدرس')
-                    ->modalDescription('هل أنت متأكد من رفض هذا المدرس؟ سيتم إلغاء تفعيل حسابه.')
+                    ->modalHeading('إلغاء تفعيل المدرس')
+                    ->modalDescription('هل أنت متأكد من إلغاء تفعيل هذا المدرس؟ سيتم إلغاء تفعيل حسابه.')
                     ->action(function ($record) {
-                        $record->reject(auth()->user()->id);
-                        $this->notify('success', 'تم رفض المدرس');
+                        $record->deactivate();
+                        Notification::make()
+                            ->title('تم إلغاء تفعيل المدرس')
+                            ->success()
+                            ->send();
                     }),
                     
                 Tables\Actions\Action::make('suspend')
                     ->label('إيقاف')
                     ->icon('heroicon-o-pause-circle')
                     ->color('warning')
-                    ->visible(fn ($record) => $record->approval_status === 'approved' && $record->is_active)
+                    ->visible(fn ($record) => $record->is_active)
                     ->requiresConfirmation()
                     ->modalHeading('إيقاف المدرس')
                     ->modalDescription('هل أنت متأكد من إيقاف هذا المدرس؟ سيتم إلغاء تفعيل حسابه مؤقتاً.')
                     ->action(function ($record) {
                         $record->suspend();
-                        $this->notify('success', 'تم إيقاف المدرس');
+                        Notification::make()
+                            ->title('تم إيقاف المدرس')
+                            ->success()
+                            ->send();
                     }),
                     
                 Tables\Actions\Action::make('reactivate')
                     ->label('إعادة تفعيل')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
-                    ->visible(fn ($record) => $record->approval_status === 'approved' && !$record->is_active)
+                    ->visible(fn ($record) => !$record->is_active)
                     ->requiresConfirmation()
                     ->modalHeading('إعادة تفعيل المدرس')
                     ->modalDescription('هل أنت متأكد من إعادة تفعيل هذا المدرس؟')
                     ->action(function ($record) {
-                        $record->update(['is_active' => true]);
+                        $record->activate(auth()->user()->id);
                         if ($record->user) {
                             $record->user->update([
-                                'status' => 'active',
                                 'active_status' => true,
                             ]);
                         }
-                        $this->notify('success', 'تم إعادة تفعيل المدرس');
+                        Notification::make()
+                            ->title('تم إعادة تفعيل المدرس')
+                            ->success()
+                            ->send();
                     }),
                     
                 Tables\Actions\EditAction::make(),

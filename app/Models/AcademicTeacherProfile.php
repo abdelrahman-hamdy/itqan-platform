@@ -31,37 +31,36 @@ class AcademicTeacherProfile extends Model
         'qualification_degree',
         'teaching_experience_years',
         'certifications',
-        'subject_ids',
-        'grade_level_ids',
-        'subjects_text',
-        'grade_levels_text',
+        'subject_ids',         // ← SINGLE SOURCE OF TRUTH
+        'grade_level_ids',     // ← SINGLE SOURCE OF TRUTH
+        // 'subjects_text',    // ← REMOVED DUPLICATE
+        // 'grade_levels_text', // ← REMOVED DUPLICATE
         'package_ids',
-        'available_days',
+        'available_days',      // ← SINGLE SOURCE OF TRUTH
         'available_time_start',
         'available_time_end',
         'session_price_individual',
         'languages',
-        'approval_status',
-        'is_active',
+        // 'approval_status',   // ← REMOVED - using is_active only
+        'is_active',          // ← PRIMARY ACTIVATION FIELD
         'notes',
     ];
 
     protected $casts = [
         'certifications' => 'array',
         'languages' => 'array',
-        'subject_ids' => 'array',
-        'grade_level_ids' => 'array',
-        'subjects_text' => 'array',
-        'grade_levels_text' => 'array',
+        'subject_ids' => 'array',        // ← SINGLE SOURCE OF TRUTH
+        'grade_level_ids' => 'array',    // ← SINGLE SOURCE OF TRUTH
+        // 'subjects_text' => 'array',   // ← REMOVED DUPLICATE
+        // 'grade_levels_text' => 'array', // ← REMOVED DUPLICATE
         'package_ids' => 'array',
-        'available_days' => 'array',
+        'available_days' => 'array',     // ← SINGLE SOURCE OF TRUTH
         'approved_at' => 'datetime',
         'is_active' => 'boolean',
         'rating' => 'decimal:2',
         'teaching_experience_years' => 'integer',
         'session_price_individual' => 'decimal:2',
         'total_students' => 'integer',
-        'total_sessions' => 'integer',
         'total_courses_created' => 'integer',
         'available_time_start' => 'datetime:H:i',
         'available_time_end' => 'datetime:H:i',
@@ -239,62 +238,54 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
-     * Status Methods
+     * Status Methods - Simplified
      */
     public function isPending(): bool
     {
-        return $this->approval_status === 'pending';
+        return false; // No more pending state - teachers are either active or inactive
     }
 
     public function isApproved(): bool
     {
-        return $this->approval_status === 'approved';
+        return true; // All teachers in the system are considered approved
     }
 
     public function isRejected(): bool
     {
-        return $this->approval_status === 'rejected';
+        return false; // No more rejected state
     }
 
     public function isActive(): bool
     {
-        return $this->is_active && $this->isApproved();
+        return $this->is_active;
     }
 
     /**
-     * Actions
+     * Actions - Simplified
      */
-    public function approve(int $approvedBy): void
+    public function activate(int $activatedBy): void
     {
         $this->update([
-            'approval_status' => 'approved',
-            'approved_by' => $approvedBy,
-            'approved_at' => now(),
             'is_active' => true,
         ]);
 
         // Also activate the related User account
         if ($this->user) {
             $this->user->update([
-                'status' => 'active',
                 'active_status' => true,
             ]);
         }
     }
 
-    public function reject(int $rejectedBy, ?string $reason = null): void
+    public function deactivate(?string $reason = null): void
     {
         $this->update([
-            'approval_status' => 'rejected',
-            'approved_by' => $rejectedBy,
-            'approved_at' => now(),
             'is_active' => false,
         ]);
 
         // Also deactivate the related User account
         if ($this->user) {
             $this->user->update([
-                'status' => 'inactive',
                 'active_status' => false,
             ]);
         }
@@ -302,17 +293,18 @@ class AcademicTeacherProfile extends Model
 
     public function suspend(?string $reason = null): void
     {
-        $this->update([
-            'is_active' => false,
-        ]);
+        $this->deactivate($reason);
+    }
 
-        // Also suspend the related User account
-        if ($this->user) {
-            $this->user->update([
-                'status' => 'suspended',
-                'active_status' => false,
-            ]);
-        }
+    // Legacy methods for backward compatibility
+    public function approve(int $approvedBy): void
+    {
+        $this->activate($approvedBy);
+    }
+
+    public function reject(int $rejectedBy, ?string $reason = null): void
+    {
+        $this->deactivate($reason);
     }
 
     /**
@@ -340,11 +332,11 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
-     * Scopes
+     * Scopes - Simplified
      */
     public function scopeApproved($query)
     {
-        return $query->where('approval_status', 'approved');
+        return $query; // All teachers in the system are considered approved
     }
 
     public function scopeActive($query)
@@ -354,7 +346,7 @@ class AcademicTeacherProfile extends Model
 
     public function scopePending($query)
     {
-        return $query->where('approval_status', 'pending');
+        return $query->whereRaw('1=0'); // No more pending state - return empty query
     }
 
     public function scopeUnlinked($query)

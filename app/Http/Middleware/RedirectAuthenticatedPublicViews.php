@@ -32,20 +32,27 @@ class RedirectAuthenticatedPublicViews
             if ($user->isStudent()) {
                 // If viewing a specific course
                 if ($courseId) {
-                    // Check if student is enrolled
+                    // Check if student has any enrollment (any status)
+                    $studentId = $user->studentProfile->id ?? $user->id;
                     $enrollment = \App\Models\InteractiveCourseEnrollment::where('course_id', $courseId)
-                        ->where('student_id', $user->student->id ?? $user->id)
-                        ->where('enrollment_status', 'enrolled')
+                        ->where('student_id', $studentId)
                         ->first();
 
                     if ($enrollment) {
-                        // Redirect enrolled student to their course view
-                        return redirect("/my-courses/interactive/{$courseId}");
+                        // Redirect based on enrollment status
+                        if (in_array($enrollment->enrollment_status, ['enrolled', 'completed'])) {
+                            // Active or completed enrollments: redirect to student course view
+                            return redirect()->route('my.interactive-course.show', ['subdomain' => $subdomain, 'course' => $courseId]);
+                        } elseif ($enrollment->enrollment_status === 'pending') {
+                            // Pending enrollment: redirect to enrollment/payment page
+                            return redirect()->route('interactive-courses.enroll', ['subdomain' => $subdomain, 'course' => $courseId])
+                                ->with('info', 'يرجى إتمام عملية التسجيل والدفع');
+                        }
+                        // For 'dropped' or 'expelled': allow access to public view to re-enroll
                     }
 
-                    // Not enrolled, redirect to student courses listing
-                    return redirect()->route('student.interactive-courses', ['subdomain' => $subdomain])
-                        ->with('info', 'يمكنك التسجيل في هذا الكورس من خلال صفحة الكورسات');
+                    // Not enrolled or enrollment dropped/expelled: allow access to public course details
+                    return $next($request);
                 }
 
                 // If viewing course listing, redirect to student courses
@@ -53,10 +60,23 @@ class RedirectAuthenticatedPublicViews
             }
 
             if ($user->isAcademicTeacher()) {
-                // Redirect teacher to their course management view
+                // Check if teacher is assigned to this course
                 if ($courseId) {
-                    return redirect("/my-courses/interactive/{$courseId}")
-                        ->with('info', 'عرض الكورس من لوحة التحكم');
+                    $course = \App\Models\InteractiveCourse::find($courseId);
+                    if ($course) {
+                        $teacherProfile = $user->academicTeacherProfile;
+                        $isAssignedTeacher = $teacherProfile && $course->assigned_teacher_id === $teacherProfile->id;
+                        $isCreatedByCourse = $course->created_by === $user->id;
+
+                        if ($isAssignedTeacher || $isCreatedByCourse) {
+                            // Redirect teacher to their course management view
+                            return redirect()->route('my.interactive-course.show', ['subdomain' => $subdomain, 'course' => $courseId])
+                                ->with('info', 'عرض الكورس من لوحة التحكم');
+                        }
+                    }
+
+                    // Not assigned to this course, allow access to public view
+                    return $next($request);
                 }
 
                 // For listing, redirect to teacher dashboard

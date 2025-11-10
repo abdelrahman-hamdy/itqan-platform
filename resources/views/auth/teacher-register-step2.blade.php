@@ -198,22 +198,24 @@
                                 المواد التي يمكنك تدريسها *
                             </label>
                             <div class="space-y-2">
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="subjects[]" value="1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array('1', old('subjects', [])) ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">الرياضيات</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="subjects[]" value="2" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array('2', old('subjects', [])) ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">العلوم</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="subjects[]" value="3" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array('3', old('subjects', [])) ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">اللغة العربية</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="subjects[]" value="4" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array('4', old('subjects', [])) ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">اللغة الإنجليزية</span>
-                                </label>
+                                @php
+                                    // Get available subjects for the academy
+                                    $subjects = \App\Models\Subject::where('academy_id', $academy->id)
+                                        ->where('is_active', true)
+                                        ->orderBy('name')
+                                        ->get();
+                                @endphp
+                                
+                                @foreach($subjects as $subject)
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="subjects[]" value="{{ $subject->id }}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array($subject->id, old('subjects', [])) ? 'checked' : '' }}>
+                                        <span class="mr-2 text-sm text-gray-700">{{ $subject->name }}</span>
+                                    </label>
+                                @endforeach
+                                
+                                @if($subjects->isEmpty())
+                                    <p class="text-sm text-gray-500">لا توجد مواد دراسية متاحة حالياً</p>
+                                @endif
                             </div>
                             @error('subjects')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -222,23 +224,59 @@
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                المستويات الدراسية *
+                                الصفوف الدراسية *
                             </label>
                             <div class="space-y-2">
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="grade_levels[]" value="1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array('1', old('grade_levels', [])) ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">المرحلة الابتدائية</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="grade_levels[]" value="2" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array('2', old('grade_levels', [])) ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">المرحلة المتوسطة</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="grade_levels[]" value="3" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array('3', old('grade_levels', [])) ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">المرحلة الثانوية</span>
-                                </label>
+                                @php
+                                    // Get available grade levels for the academy
+                                    $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+                                        ->where('is_active', true)
+                                        ->orderBy('name')
+                                        ->get();
+                                @endphp
+                                
+                                @foreach($gradeLevels as $gradeLevel)
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="grade_levels[]" value="{{ $gradeLevel->id }}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array($gradeLevel->id, old('grade_levels', [])) ? 'checked' : '' }}>
+                                        <span class="mr-2 text-sm text-gray-700">{{ $gradeLevel->name }}</span>
+                                    </label>
+                                @endforeach
+                                
+                                @if($gradeLevels->isEmpty())
+                                    <p class="text-sm text-gray-500">لا توجد صفوف دراسية متاحة حالياً</p>
+                                @endif
                             </div>
                             @error('grade_levels')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                الأيام المتاحة *
+                            </label>
+                            <div class="grid grid-cols-2 gap-2">
+                                @php
+                                    $days = [
+                                        'sunday' => 'الأحد',
+                                        'monday' => 'الاثنين', 
+                                        'tuesday' => 'الثلاثاء',
+                                        'wednesday' => 'الأربعاء',
+                                        'thursday' => 'الخميس',
+                                        'friday' => 'الجمعة',
+                                        'saturday' => 'السبت'
+                                    ];
+                                    $availableDays = old('available_days', []);
+                                @endphp
+                                
+                                @foreach($days as $key => $day)
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="available_days[]" value="{{ $key }}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array($key, $availableDays) ? 'checked' : '' }}>
+                                        <span class="mr-2 text-sm text-gray-700">{{ $day }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('available_days')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
