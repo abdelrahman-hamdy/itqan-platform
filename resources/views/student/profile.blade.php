@@ -178,7 +178,7 @@
                   'iconColor' => 'text-blue-600',
                   'progress' => $progress['completion_percentage'],
                   'status' => 'active',
-                  'link' => route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
+                  'link' => route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
                 ];
               }
             }

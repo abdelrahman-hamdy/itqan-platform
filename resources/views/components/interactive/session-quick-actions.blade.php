@@ -45,7 +45,7 @@
         @endif
 
         {{-- View Course Details --}}
-        <a href="{{ route('interactive-courses.show', $session->course) }}"
+        <a href="{{ route('my.interactive-course.show', $session->course) }}"
            class="btn btn-secondary w-full flex items-center justify-center hover:bg-purple-50 hover:text-purple-700 transition-all duration-200">
             <i class="ri-book-open-line mr-2"></i>
             View Course

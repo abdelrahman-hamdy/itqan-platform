@@ -1474,9 +1474,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/interactive-courses', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
     });
 
-    // Interactive course detail - accessible by both students and teachers
+    // Interactive course detail - accessible by enrolled students and teachers
     Route::middleware(['auth', 'interactive.course'])->group(function () {
-        Route::get('/interactive-courses/{course}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])->name('interactive-courses.show');
+        Route::get('/my-courses/interactive/{course}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])->name('my.interactive-course.show');
     });
 
     // Interactive course session detail - for enrolled students

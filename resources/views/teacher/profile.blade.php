@@ -292,7 +292,7 @@
                     'iconBgColor' => 'bg-blue-100',
                     'iconColor' => 'text-blue-600',
                     'status' => $course->is_approved ? 'active' : 'pending',
-                    'link' => route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
+                    'link' => route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
                   ];
                 }))
                 ->merge($assignedInteractiveCourses->take(2)->map(function($course) {
@@ -304,7 +304,7 @@
                     'iconBgColor' => 'bg-blue-100',
                     'iconColor' => 'text-blue-600',
                     'status' => $course->is_approved ? 'active' : 'pending',
-                    'link' => route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
+                    'link' => route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
                   ];
                 }))
                 ->toArray(),

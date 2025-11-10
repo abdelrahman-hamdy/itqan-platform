@@ -248,7 +248,7 @@
                 </div>
                 <div class="flex items-center space-x-2 space-x-reverse">
                   @if($session->status === 'scheduled' || $session->status === 'ongoing')
-                    <a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id]) }}#session-{{ $session->id }}" 
+                    <a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id]) }}#session-{{ $session->id }}"
                        class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg">
                       <i class="ri-play-line ml-1"></i>
                       بدء الجلسة

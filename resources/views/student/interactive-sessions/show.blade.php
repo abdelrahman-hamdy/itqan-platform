@@ -9,7 +9,7 @@
             </li>
             <li class="text-gray-400">/</li>
             <li>
-                <a href="{{ route('interactive-courses.show', $session->course) }}" class="hover:text-primary-600 transition">
+                <a href="{{ route('my.interactive-course.show', $session->course) }}" class="hover:text-primary-600 transition">
                     {{ $session->course->title }}
                 </a>
             </li>
