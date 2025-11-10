@@ -46,10 +46,10 @@
             
             <!-- Message Button -->
             <div>
-                <button class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $student->id]) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="ri-message-line ml-2"></i>
                     إرسال رسالة
-                </button>
+                </a>
             </div>
         </div>
     </div>

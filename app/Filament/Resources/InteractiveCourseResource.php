@@ -7,6 +7,9 @@ use App\Models\InteractiveCourse;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Subject;
 use App\Models\AcademicGradeLevel;
+use App\Enums\SessionDuration;
+use App\Enums\CourseLanguage;
+use App\Enums\DifficultyLevel;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
@@ -44,23 +47,31 @@ class InteractiveCourseResource extends BaseResource
                                     ->maxLength(255)
                                     ->placeholder('مثل: رياضيات متقدمة - الفصل الأول'),
 
-                                Forms\Components\Select::make('course_type')
-                                    ->label('نوع الدورة')
-                                    ->options([
-                                        'regular' => 'منتظم',
-                                        'intensive' => 'مكثف',
-                                        'exam_prep' => 'تحضير للامتحانات',
-                                    ])
-                                    ->default('regular')
-                                    ->required(),
+                                Forms\Components\TextInput::make('title_en')
+                                    ->label('عنوان الدورة (إنجليزي)')
+                                    ->maxLength(255)
+                                    ->placeholder('e.g., Advanced Mathematics - Semester 1'),
                             ]),
 
-                        Forms\Components\Textarea::make('description')
-                            ->label('وصف الدورة')
-                            ->required()
-                            ->maxLength(1000)
-                            ->rows(4)
-                            ->columnSpanFull(),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Textarea::make('description')
+                                    ->label('وصف الدورة')
+                                    ->required()
+                                    ->maxLength(1000)
+                                    ->rows(4),
+
+                                Forms\Components\Textarea::make('description_en')
+                                    ->label('وصف الدورة (إنجليزي)')
+                                    ->maxLength(1000)
+                                    ->rows(4),
+                            ]),
+
+                        Forms\Components\Select::make('language')
+                            ->label('لغة الدورة')
+                            ->options(CourseLanguage::options())
+                            ->default(CourseLanguage::ARABIC->value)
+                            ->required(),
                     ]),
 
                 Forms\Components\Section::make('التخصص والمستوى')
@@ -130,14 +141,11 @@ class InteractiveCourseResource extends BaseResource
                                     ->live()
                                     ->suffix('جلسة'),
 
-                                Forms\Components\TextInput::make('session_duration_minutes')
+                                Forms\Components\Select::make('session_duration_minutes')
                                     ->label('مدة الجلسة (دقيقة)')
-                                    ->numeric()
-                                    ->minValue(30)
-                                    ->maxValue(180)
-                                    ->default(60)
-                                    ->required()
-                                    ->suffix('دقيقة'),
+                                    ->options(SessionDuration::options())
+                                    ->default(SessionDuration::SIXTY_MINUTES->value)
+                                    ->required(),
 
                                 Forms\Components\TextInput::make('max_students')
                                     ->label('أقصى عدد طلاب')
@@ -149,16 +157,25 @@ class InteractiveCourseResource extends BaseResource
                                     ->suffix('طالب'),
                             ]),
 
-                        Forms\Components\TextInput::make('total_sessions')
-                            ->label('إجمالي الجلسات')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->placeholder(function (Forms\Get $get) {
-                                $weeks = $get('duration_weeks') ?? 0;
-                                $sessionsPerWeek = $get('sessions_per_week') ?? 0;
-                                return $weeks * $sessionsPerWeek . ' جلسة';
-                            }),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('difficulty_level')
+                                    ->label('مستوى الصعوبة')
+                                    ->options(DifficultyLevel::options())
+                                    ->default(DifficultyLevel::BEGINNER->value)
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('total_sessions')
+                                    ->label('إجمالي الجلسات')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->placeholder(function (Forms\Get $get) {
+                                        $weeks = $get('duration_weeks') ?? 0;
+                                        $sessionsPerWeek = $get('sessions_per_week') ?? 0;
+                                        return $weeks * $sessionsPerWeek . ' جلسة';
+                                    }),
+                            ]),
                     ]),
 
                 Forms\Components\Section::make('الإعدادات المالية')
@@ -230,27 +247,42 @@ class InteractiveCourseResource extends BaseResource
                             ->columnSpanFull(),
                     ]),
 
+                Forms\Components\Section::make('محتوى الدورة والأهداف')
+                    ->schema([
+                        Forms\Components\Repeater::make('learning_outcomes')
+                            ->label('مخرجات التعلم')
+                            ->schema([
+                                Forms\Components\TextInput::make('outcome')
+                                    ->label('المخرج')
+                                    ->required(),
+                            ])
+                            ->addActionLabel('إضافة مخرج')
+                            ->collapsible()
+                            ->columnSpanFull(),
+
+                        Forms\Components\Repeater::make('prerequisites')
+                            ->label('المتطلبات المسبقة')
+                            ->schema([
+                                Forms\Components\TextInput::make('prerequisite')
+                                    ->label('المتطلب')
+                                    ->required(),
+                            ])
+                            ->addActionLabel('إضافة متطلب')
+                            ->collapsible()
+                            ->columnSpanFull(),
+
+                        Forms\Components\Textarea::make('course_outline')
+                            ->label('مخطط الدورة')
+                            ->rows(5)
+                            ->columnSpanFull(),
+                    ]),
+
                 Forms\Components\Section::make('حالة الدورة')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Select::make('status')
-                                    ->label('الحالة')
-                                    ->options([
-                                        'draft' => 'مسودة',
-                                        'published' => 'منشور',
-                                        'active' => 'نشط',
-                                        'completed' => 'مكتمل',
-                                        'cancelled' => 'ملغي',
-                                    ])
-                                    ->default('draft')
-                                    ->required(),
-
-                                Forms\Components\Toggle::make('is_published')
-                                    ->label('مفعل للنشر')
-                                    ->default(false)
-                                    ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟'),
-                            ]),
+                        Forms\Components\Toggle::make('is_published')
+                            ->label('مفعل للنشر')
+                            ->default(false)
+                            ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟'),
                     ]),
             ]);
     }

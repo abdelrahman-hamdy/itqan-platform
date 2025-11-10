@@ -65,7 +65,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
         Route::get('/progress', [App\Http\Controllers\StudentProfileController::class, 'progress'])->name('student.progress');
         Route::get('/certificates', [App\Http\Controllers\StudentProfileController::class, 'certificates'])->name('student.certificates');
-        Route::get('/quran', [App\Http\Controllers\StudentProfileController::class, 'quranProfile'])->name('student.quran');
 
         // Interactive courses routes moved to web.php for proper ordering
         // Academic teachers route moved to web.php for subdomain compatibility

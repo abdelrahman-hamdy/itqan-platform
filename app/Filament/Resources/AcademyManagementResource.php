@@ -371,4 +371,21 @@ class AcademyManagementResource extends BaseResource
         // Only super admin can access academy management
         return AcademyContextService::isSuperAdmin();
     }
+
+    /**
+     * Override to prevent trying to load 'academy' relationship on Academy model
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return ''; // Academy model doesn't have a relationship to itself
+    }
+
+    /**
+     * Override to prevent issues with academy relationship
+     */
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        // Don't try to eager load academy relationship for Academy model
+        return parent::getEloquentQuery()->withoutGlobalScopes();
+    }
 }

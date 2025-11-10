@@ -8,10 +8,10 @@
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
             <li><a href="{{ route('student.profile', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">الملف الشخصي</a></li>
             <li>/</li>
-            <li><a href="{{ route('student.academic-private-lessons', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">دروسي الخاصة</a></li>
+            <li><a href="{{ route('student.academic-teachers', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">المعلمون الأكاديميون</a></li>
             <li>/</li>
             @if($session->academicSubscription)
-            <li><a href="{{ route('student.academic-private-lessons.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'subscription' => $session->academicSubscription->id]) }}" class="hover:text-primary">{{ $session->academicSubscription->subject_name ?? 'درس أكاديمي' }}</a></li>
+            <li><a href="{{ route('student.academic-subscriptions.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'subscriptionId' => $session->academicSubscription->id]) }}" class="hover:text-primary">{{ $session->academicSubscription->subject_name ?? 'درس أكاديمي' }}</a></li>
             <li>/</li>
             @endif
             <li class="text-gray-900">{{ $session->title ?? 'جلسة أكاديمية' }}</li>
@@ -166,67 +166,6 @@
 
 
 
-            <!-- Attendance Status -->
-            @php
-                $statusValue = is_object($session->status) ? $session->status->value : $session->status;
-            @endphp
-            @if(in_array($statusValue, ['ongoing', 'completed', 'absent']))
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-user-check-line text-primary ml-2"></i>
-                        حالة الحضور
-                    </h3>
-                    
-                    <div id="attendanceStatus" class="space-y-3">
-                        <!-- This will be populated by JavaScript for ongoing sessions -->
-                        @if($statusValue === 'completed' || $statusValue === 'absent')
-                            @php
-                                // Get student attendance report
-                                $studentReport = $session->sessionReports()->where('student_id', auth()->id())->first();
-                                $attendanceInfo = $studentReport ? [
-                                    'status' => $studentReport->attendance_status ?? 'absent',
-                                    'minutes' => $studentReport->actual_attendance_minutes ?? 0,
-                                    'percentage' => $studentReport->attendance_percentage ?? 0,
-                                ] : [
-                                    'status' => 'absent',
-                                    'minutes' => 0,
-                                    'percentage' => 0,
-                                ];
-                            @endphp
-                            
-                            <div class="text-center">
-                                <div class="text-3xl mb-2">
-                                    @if($attendanceInfo['status'] === 'present')
-                                        <span class="text-green-500">✓</span>
-                                    @elseif($attendanceInfo['status'] === 'partial')
-                                        <span class="text-yellow-500">⚠</span>
-                                    @else
-                                        <span class="text-red-500">✗</span>
-                                    @endif
-                                </div>
-                                <div class="font-medium text-gray-900">
-                                    @switch($attendanceInfo['status'])
-                                        @case('present')
-                                            حاضر
-                                            @break
-                                        @case('partial')
-                                            حضور جزئي
-                                            @break
-                                        @default
-                                            غائب
-                                    @endswitch
-                                </div>
-                                <div class="text-sm text-gray-600 mt-2">
-                                    المدة: {{ $attendanceInfo['minutes'] }} دقيقة
-                                    @if($attendanceInfo['percentage'] > 0)
-                                        ({{ number_format($attendanceInfo['percentage'], 1) }}%)
-                                    @endif
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
 
 
         </div>

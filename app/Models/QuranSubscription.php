@@ -363,41 +363,65 @@ class QuranSubscription extends Model
     // Methods
     public function useSession(): self
     {
-        if ($this->sessions_remaining <= 0) {
-            throw new \Exception('لا توجد جلسات متبقية في الاشتراك');
-        }
+        return \DB::transaction(function () {
+            // Lock the row for update to prevent race conditions
+            $subscription = self::lockForUpdate()->find($this->id);
 
-        $this->update([
-            'sessions_used' => $this->sessions_used + 1,
-            'sessions_remaining' => $this->sessions_remaining - 1,
-            'last_session_at' => now(),
-        ]);
+            if (!$subscription) {
+                throw new \Exception('الاشتراك غير موجود');
+            }
 
-        // Check if subscription should be marked as completed
-        if ($this->sessions_remaining <= 0) {
-            $this->markAsCompleted();
-        }
+            if ($subscription->sessions_remaining <= 0) {
+                throw new \Exception('لا توجد جلسات متبقية في الاشتراك');
+            }
 
-        return $this;
+            $subscription->update([
+                'sessions_used' => $subscription->sessions_used + 1,
+                'sessions_remaining' => $subscription->sessions_remaining - 1,
+                'last_session_at' => now(),
+            ]);
+
+            // Check if subscription should be marked as completed
+            if ($subscription->sessions_remaining <= 0) {
+                $subscription->markAsCompleted();
+            }
+
+            // Refresh the current instance
+            $this->refresh();
+
+            return $this;
+        });
     }
 
     public function useTrialSession(): self
     {
-        if (! $this->is_trial_active || $this->trial_used >= $this->trial_sessions) {
-            throw new \Exception('لا توجد جلسات تجريبية متبقية');
-        }
+        return \DB::transaction(function () {
+            // Lock the row for update to prevent race conditions
+            $subscription = self::lockForUpdate()->find($this->id);
 
-        $this->update([
-            'trial_used' => $this->trial_used + 1,
-            'last_session_at' => now(),
-        ]);
+            if (!$subscription) {
+                throw new \Exception('الاشتراك غير موجود');
+            }
 
-        // Check if trial should be deactivated
-        if ($this->trial_used >= $this->trial_sessions) {
-            $this->update(['is_trial_active' => false]);
-        }
+            if (!$subscription->is_trial_active || $subscription->trial_used >= $subscription->trial_sessions) {
+                throw new \Exception('لا توجد جلسات تجريبية متبقية');
+            }
 
-        return $this;
+            $subscription->update([
+                'trial_used' => $subscription->trial_used + 1,
+                'last_session_at' => now(),
+            ]);
+
+            // Check if trial should be deactivated
+            if ($subscription->trial_used >= $subscription->trial_sessions) {
+                $subscription->update(['is_trial_active' => false]);
+            }
+
+            // Refresh the current instance
+            $this->refresh();
+
+            return $this;
+        });
     }
 
     public function addSessions(int $sessionsCount, ?float $price = null): self

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -165,9 +166,44 @@ class AcademicSession extends Model implements MeetingCapable
         static::creating(function ($model) {
             if (empty($model->session_code)) {
                 $academyId = $model->academy_id ?? 2;
-                $count = static::where('academy_id', $academyId)->count() + 1;
-                $model->session_code = 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.str_pad($count, 6, '0', STR_PAD_LEFT);
+                $model->session_code = static::generateUniqueSessionCode($academyId);
             }
+        });
+    }
+
+    /**
+     * Generate unique session code with proper locking to prevent race conditions
+     */
+    private static function generateUniqueSessionCode(int $academyId): string
+    {
+        return \DB::transaction(function () use ($academyId) {
+            // Get the maximum sequence number for this academy (including soft deleted)
+            $prefix = 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
+
+            $maxNumber = static::withTrashed()
+                ->where('academy_id', $academyId)
+                ->where('session_code', 'LIKE', "{$prefix}%")
+                ->lockForUpdate()
+                ->get()
+                ->map(function ($session) {
+                    // Extract the sequence number from session_code format: AS-{academyId}-{sequence}
+                    $parts = explode('-', $session->session_code);
+                    return isset($parts[2]) ? (int) $parts[2] : 0;
+                })
+                ->max();
+
+            $nextNumber = ($maxNumber ?? 0) + 1;
+            $sessionCode = $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+
+            // Double-check uniqueness (should not be needed with proper locking, but adds safety)
+            $attempt = 0;
+            while (static::withTrashed()->where('session_code', $sessionCode)->exists() && $attempt < 100) {
+                $nextNumber++;
+                $sessionCode = $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                $attempt++;
+            }
+
+            return $sessionCode;
         });
     }
 
@@ -189,6 +225,14 @@ class AcademicSession extends Model implements MeetingCapable
         return $this->belongsTo(AcademicSubscription::class);
     }
 
+    /**
+     * Alias for academicSubscription relationship for easier access
+     */
+    public function subscription(): BelongsTo
+    {
+        return $this->academicSubscription();
+    }
+
     public function academicIndividualLesson(): BelongsTo
     {
         return $this->belongsTo(AcademicIndividualLesson::class);
@@ -202,6 +246,15 @@ class AcademicSession extends Model implements MeetingCapable
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
+    }
+
+    /**
+     * Get the unified meeting record for this session
+     * NEW: Polymorphic relationship to unified Meeting model
+     */
+    public function meeting(): MorphOne
+    {
+        return $this->morphOne(Meeting::class, 'meetable');
     }
 
     public function sessionReports(): HasMany

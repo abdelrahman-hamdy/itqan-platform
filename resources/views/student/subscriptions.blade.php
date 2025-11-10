@@ -305,11 +305,11 @@
             <h3 class="text-xl font-semibold text-gray-900 mb-2">لا توجد اشتراكات حالياً</h3>
             <p class="text-gray-600 mb-6">ابدأ رحلة التعلم معنا من خلال الاشتراك في أحد برامجنا التعليمية</p>
             <div class="flex flex-wrap justify-center gap-4">
-                <a href="{{ route('public.quran-teachers.index') }}" 
+                <a href="{{ route('public.quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}"
                    class="bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors">
                     معلمو القرآن
                 </a>
-                                    <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+                <a href="{{ route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
                    class="bg-green-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
                     حلقات القرآن
                 </a>

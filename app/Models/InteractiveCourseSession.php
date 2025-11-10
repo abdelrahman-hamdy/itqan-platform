@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Carbon\Carbon;
 
 class InteractiveCourseSession extends Model
@@ -25,15 +26,22 @@ class InteractiveCourseSession extends Model
         'attendance_count',
         'materials_uploaded',
         'homework_assigned',
+        'homework_description',
+        'homework_due_date',
+        'homework_max_score',
+        'allow_late_submissions',
     ];
 
     protected $casts = [
         'scheduled_date' => 'date',
         'scheduled_time' => 'datetime:H:i',
+        'homework_due_date' => 'datetime',
         'duration_minutes' => 'integer',
+        'homework_max_score' => 'integer',
         'attendance_count' => 'integer',
         'materials_uploaded' => 'boolean',
         'homework_assigned' => 'boolean',
+        'allow_late_submissions' => 'boolean',
     ];
 
     protected $attributes = [
@@ -57,6 +65,22 @@ class InteractiveCourseSession extends Model
     public function attendances(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id');
+    }
+
+    /**
+     * الواجبات المنزلية لهذه الجلسة
+     */
+    public function homework(): HasMany
+    {
+        return $this->hasMany(InteractiveCourseHomework::class, 'session_id');
+    }
+
+    /**
+     * Get the unified meeting record for this session
+     */
+    public function meeting(): MorphOne
+    {
+        return $this->morphOne(Meeting::class, 'meetable');
     }
 
     /**

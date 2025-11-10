@@ -242,7 +242,13 @@ class QuranCircle extends Model
     {
         return $query->where('enrollment_status', 'open')
             ->where('status', true)
-            ->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students');
+            ->where(function ($q) {
+                $q->whereColumn('max_students', '>', function ($subQuery) {
+                    $subQuery->selectRaw('COUNT(*)')
+                        ->from('quran_circle_students')
+                        ->whereColumn('quran_circle_students.circle_id', 'quran_circles.id');
+                });
+            });
     }
 
     public function scopeStartingSoon($query, $days = 7)
@@ -274,7 +280,13 @@ class QuranCircle extends Model
 
     public function scopeWithAvailableSpots($query)
     {
-        return $query->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students');
+        return $query->where(function ($q) {
+            $q->whereColumn('max_students', '>', function ($subQuery) {
+                $subQuery->selectRaw('COUNT(*)')
+                    ->from('quran_circle_students')
+                    ->whereColumn('quran_circle_students.circle_id', 'quran_circles.id');
+            });
+        });
     }
 
     public function scopeByTeacher($query, $teacherId)

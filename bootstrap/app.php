@@ -12,6 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+        then: function () {
+            // Chat API routes for mobile
+            Route::middleware('api')
+                ->prefix('api/chat')
+                ->group(base_path('routes/api-chat.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web([
@@ -19,9 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\ResolveTenantFromSubdomain::class,
         ]);
 
-        // Register route middleware aliases
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'tenant' => \App\Http\Middleware\TenantMiddleware::class,
+            'interactive.course' => \App\Http\Middleware\InteractiveCourseMiddleware::class,
             'control-participants' => \App\Http\Middleware\CanControlParticipants::class,
         ]);
     })

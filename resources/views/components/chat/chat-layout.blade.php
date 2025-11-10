@@ -159,7 +159,10 @@
                     contacts: '{{ url("/chat/api/getContacts") }}',
                     fetchMessages: '{{ url("/chat/api/fetchMessages") }}',
                     sendMessage: '{{ url("/chat/api/sendMessage") }}'
-                }
+                },
+                @if(isset($autoOpenUserId))
+                autoOpenUserId: {{ $autoOpenUserId }},
+                @endif
             };
             
             console.log('✅ Chat config created successfully:', window.chatConfig);

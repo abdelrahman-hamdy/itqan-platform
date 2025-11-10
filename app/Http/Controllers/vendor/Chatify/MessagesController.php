@@ -65,8 +65,9 @@ class MessagesController extends Controller
         
         // Student permissions
         if ($currentUser->hasRole(User::ROLE_STUDENT)) {
-            // Can message academy admin, supervisors
-            if ($targetUser->hasRole([User::ROLE_ACADEMY_ADMIN, User::ROLE_SUPERVISOR])) {
+            // Can message academy admin, supervisors (handle both 'admin' and 'academy_admin' user types)
+            if ($targetUser->hasRole([User::ROLE_ACADEMY_ADMIN, User::ROLE_SUPERVISOR]) || 
+                $targetUser->user_type === 'admin') {
                 return true;
             }
             
@@ -84,8 +85,9 @@ class MessagesController extends Controller
         
         // Teacher permissions (Quran or Academic)
         if ($currentUser->hasRole([User::ROLE_QURAN_TEACHER, User::ROLE_ACADEMIC_TEACHER])) {
-            // Can message academy admin, supervisors
-            if ($targetUser->hasRole([User::ROLE_ACADEMY_ADMIN, User::ROLE_SUPERVISOR])) {
+            // Can message academy admin, supervisors (handle both 'admin' and 'academy_admin' user types)
+            if ($targetUser->hasRole([User::ROLE_ACADEMY_ADMIN, User::ROLE_SUPERVISOR]) || 
+                $targetUser->user_type === 'admin') {
                 return true;
             }
             
@@ -97,8 +99,8 @@ class MessagesController extends Controller
         
         // Parent permissions
         if ($currentUser->hasRole(User::ROLE_PARENT)) {
-            // Can message academy admin
-            if ($targetUser->hasRole(User::ROLE_ACADEMY_ADMIN)) {
+            // Can message academy admin (handle both 'admin' and 'academy_admin' user types)
+            if ($targetUser->hasRole(User::ROLE_ACADEMY_ADMIN) || $targetUser->user_type === 'admin') {
                 return true;
             }
             
@@ -121,10 +123,12 @@ class MessagesController extends Controller
      */
     protected function isTeacherOfStudent(User $teacher, User $student)
     {
+        $academyId = $this->getAcademyId();
+        
         // Check Quran sessions - use correct column name
         $hasQuranSession = \App\Models\QuranSession::where('quran_teacher_id', $teacher->id)
             ->where('student_id', $student->id)
-            ->where('academy_id', $this->getAcademyId())
+            ->where('academy_id', $academyId)
             ->exists();
             
         if ($hasQuranSession) {
@@ -134,10 +138,46 @@ class MessagesController extends Controller
         // Check Academic sessions - use correct column name
         $hasAcademicSession = \App\Models\AcademicSession::where('academic_teacher_id', $teacher->id)
             ->where('student_id', $student->id)
-            ->where('academy_id', $this->getAcademyId())
+            ->where('academy_id', $academyId)
             ->exists();
             
-        return $hasAcademicSession;
+        if ($hasAcademicSession) {
+            return true;
+        }
+        
+        // Check for active academic subscriptions (even without sessions yet)
+        $hasActiveAcademicSubscription = \App\Models\AcademicSubscription::where('student_id', $student->id)
+            ->where('teacher_id', $teacher->id)
+            ->where('academy_id', $academyId)
+            ->where('status', 'active')
+            ->exists();
+            
+        if ($hasActiveAcademicSubscription) {
+            return true;
+        }
+        
+        // Check for active Quran subscriptions (individual circles)
+        $hasActiveQuranSubscription = \App\Models\QuranSubscription::where('student_id', $student->id)
+            ->where('quran_teacher_id', $teacher->id)
+            ->where('academy_id', $academyId)
+            ->where('subscription_status', 'active')
+            ->exists();
+            
+        if ($hasActiveQuranSubscription) {
+            return true;
+        }
+        
+        // Check for group Quran circle memberships
+        $hasGroupQuranMembership = \App\Models\QuranCircle::whereHas('students', function($query) use ($student) {
+                $query->where('student_id', $student->id)
+                      ->where('quran_circle_students.status', 'active');
+            })
+            ->where('quran_teacher_id', $teacher->id)
+            ->where('academy_id', $academyId)
+            ->where('quran_circles.status', 'active')
+            ->exists();
+            
+        return $hasGroupQuranMembership;
     }
 
     /**
@@ -621,6 +661,15 @@ class MessagesController extends Controller
         
         // Redirect to our new unified chat system
         $subdomain = $academy->subdomain ?? 'itqan-academy';
+        
+        // Check for user ID in query parameter first, then path parameter for backward compatibility
+        $userId = request()->query('user') ?? $id;
+        
+        // If a user ID is provided, include it as query parameter to auto-start the chat
+        if ($userId) {
+            return redirect()->route('chat', ['subdomain' => $subdomain, 'user' => $userId]);
+        }
+        
         return redirect()->route('chat', ['subdomain' => $subdomain]);
     }
 

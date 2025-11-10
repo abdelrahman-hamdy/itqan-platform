@@ -31,6 +31,76 @@ class ChatSystem {
     this.setupEventListeners();
     this.setupAutoResize();
     this.setupInfiniteScroll();
+    this.checkForAutoOpenChat();
+  }
+
+  /**
+   * Check if there's a user ID in the URL to automatically open a chat
+   */
+  checkForAutoOpenChat() {
+    // Check for user ID in query parameter first
+    const urlParams = new URLSearchParams(window.location.search);
+    let userId = urlParams.get('user');
+    
+    // If not in URL, check config for autoOpenUserId
+    if (!userId && this.config.autoOpenUserId) {
+      userId = this.config.autoOpenUserId;
+    }
+    
+    if (userId && !isNaN(userId)) {
+      console.log('🚀 Auto-opening chat with user ID:', userId);
+      setTimeout(() => {
+        this.openChatWithUser(userId);
+      }, 1000);
+    }
+  }
+
+  /**
+   * Open chat with a specific user by ID
+   */
+  async openChatWithUser(userId) {
+    try {
+      console.log('🔄 Opening chat with user ID:', userId);
+      
+      // First, try to find the user in existing contacts
+      const existingContact = this.contacts.find(c => c.id == userId);
+      if (existingContact) {
+        console.log('✅ Found user in contacts, opening chat:', existingContact.name);
+        this.openChat(existingContact);
+        return;
+      }
+      
+      // If not found in contacts, fetch user data directly
+      console.log('🔍 User not in contacts, fetching user data...');
+      const response = await fetch('/chat/idInfo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': this.config.csrfToken
+        },
+        body: JSON.stringify({
+          id: userId,
+          type: 'user'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (!data.error && data.user) {
+          console.log('✅ Fetched user data, opening chat:', data.user.name);
+          this.openChat(data.user);
+        } else {
+          console.error('❌ Cannot message this user:', data.message);
+          this.showNotification(data.message || 'غير مسموح لك بمراسلة هذا المستخدم', 'error');
+        }
+      } else {
+        console.error('❌ Failed to fetch user data:', response.status);
+        this.showNotification('فشل في العثور على المستخدم', 'error');
+      }
+    } catch (error) {
+      console.error('❌ Error opening chat with user:', error);
+      this.showNotification('حدث خطأ في فتح المحادثة', 'error');
+    }
   }
 
   /**
@@ -96,21 +166,21 @@ class ChatSystem {
       console.log('⚠️ No socket ID available, cannot subscribe to private channel');
       return;
     }
-    
+
     try {
-      const channelName = `private-chatify.${this.config.userId}`;
+      const channelName = `private-chat.${this.config.userId}`;
       console.log(`🔐 Subscribing to private channel: ${channelName} for user ${this.config.userId}`);
       
       // Use public channel for testing instead of private
       if (this.config.usePublicChannel) {
-        const publicChannelName = `public-chatify-test`;
+        const publicChannelName = `public-chat-test`;
         const subscribeMessage = JSON.stringify({
           event: 'pusher:subscribe',
           data: {
             channel: publicChannelName
           }
         });
-        
+
         this.ws.send(subscribeMessage);
         console.log(`✅ Subscribed to public test channel: ${publicChannelName}`);
         return;
@@ -193,14 +263,14 @@ class ChatSystem {
 
   fallbackToPublicChannel() {
     console.log('🔄 Using fallback public channel for messaging');
-    const publicChannelName = `public-chatify-test`;
+    const publicChannelName = `public-chat-test`;
     const subscribeMessage = JSON.stringify({
       event: 'pusher:subscribe',
       data: {
         channel: publicChannelName
       }
     });
-    
+
     this.ws.send(subscribeMessage);
     console.log(`✅ Subscribed to fallback public channel: ${publicChannelName}`);
   }
@@ -1315,6 +1385,42 @@ class ChatSystem {
     }
     
     return 'لا توجد رسائل';
+  }
+
+  showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+    
+    const colors = {
+      info: 'bg-blue-500 text-white',
+      success: 'bg-green-500 text-white', 
+      error: 'bg-red-500 text-white',
+      warning: 'bg-yellow-500 text-white'
+    };
+    
+    notification.className += ` ${colors[type] || colors.info}`;
+    
+    notification.innerHTML = `
+      <div class="flex items-center gap-3">
+        <span>${message}</span>
+        <button onclick="this.parentElement.parentElement.remove()" class="text-white opacity-70 hover:opacity-100">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+      notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      notification.classList.add('translate-x-full');
+      setTimeout(() => notification.remove(), 300);
+    }, 5000);
   }
 
   updateContactLastMessage(contactId, message) {

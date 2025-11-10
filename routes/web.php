@@ -1184,18 +1184,25 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/my-quran-circles', [App\Http\Controllers\StudentProfileController::class, 'quranCircles'])->name('student.quran-circles');
         Route::get('/my-academic-teachers', [App\Http\Controllers\StudentProfileController::class, 'academicTeachers'])->name('student.academic-teachers');
 
-        // Academic private lessons
-        Route::get('/academic-private-lessons', [App\Http\Controllers\StudentProfileController::class, 'academicPrivateLessons'])->name('student.academic-private-lessons');
-        Route::get('/academic-private-lessons/{subscription}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicPrivateLesson'])->name('student.academic-private-lessons.show');
-
         // Student session routes (moved from auth.php for subdomain compatibility)
         Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForStudent'])->name('student.sessions.show');
         Route::put('/sessions/{sessionId}/feedback', [App\Http\Controllers\QuranSessionController::class, 'addFeedback'])->name('student.sessions.feedback');
+
+        // Academic subscription routes for students
+        Route::get('/academic-subscriptions/{subscriptionId}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSubscription'])->name('student.academic-subscriptions.show');
 
         // Academic session routes for students
         Route::get('/academic-sessions/{sessionId}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSession'])->name('student.academic-sessions.show');
         Route::put('/academic-sessions/{sessionId}/feedback', [App\Http\Controllers\AcademicSessionController::class, 'addStudentFeedback'])->name('student.academic-sessions.feedback');
         Route::post('/academic-sessions/{sessionId}/homework', [App\Http\Controllers\AcademicSessionController::class, 'submitHomework'])->name('student.academic-sessions.homework.submit');
+
+        // Homework routes for students
+        Route::prefix('homework')->name('student.homework.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Student\HomeworkController::class, 'index'])->name('index');
+            Route::get('/{id}/submit', [App\Http\Controllers\Student\HomeworkController::class, 'submit'])->name('submit');
+            Route::post('/{id}/submit', [App\Http\Controllers\Student\HomeworkController::class, 'submitProcess'])->name('submit.process');
+            Route::get('/{id}/view', [App\Http\Controllers\Student\HomeworkController::class, 'view'])->name('view');
+        });
     });
 
     /*
@@ -1295,9 +1302,15 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Public Interactive Courses Listing
     Route::get('/public/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])->name('public.interactive-courses.index');
+    Route::get('/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])->name('interactive-courses.index');
 
     // Individual Interactive Course Details
     Route::get('/public/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])->name('public.interactive-courses.show');
+    Route::get('/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])->name('interactive-courses.show');
+
+    // Interactive Course Enrollment
+    Route::get('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'enroll'])->name('interactive-courses.enroll');
+    Route::post('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'storeEnrollment'])->name('interactive-courses.store-enrollment');
 
     /*
     |--------------------------------------------------------------------------
@@ -1331,6 +1344,15 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // New Calendar API routes
         Route::get('/teacher/api/circles', [App\Http\Controllers\Teacher\CalendarApiController::class, 'getCircles'])->name('teacher.api.circles');
         Route::post('/teacher/api/bulk-schedule', [App\Http\Controllers\Teacher\CalendarApiController::class, 'bulkSchedule'])->name('teacher.api.bulk-schedule');
+
+        // Homework grading routes for teachers
+        Route::prefix('teacher/homework')->name('teacher.homework.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'index'])->name('index');
+            Route::get('/{submissionId}/grade', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'grade'])->name('grade');
+            Route::post('/{submissionId}/grade', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'gradeProcess'])->name('grade.process');
+            Route::post('/{submissionId}/revision', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'requestRevision'])->name('request-revision');
+            Route::get('/statistics', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'statistics'])->name('statistics');
+        });
     });
 
     /*
@@ -1453,12 +1475,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     });
 
     // Interactive course detail - accessible by both students and teachers
-    Route::middleware(['auth', 'role:student,academic_teacher'])->group(function () {
+    Route::middleware(['auth', 'interactive.course'])->group(function () {
         Route::get('/interactive-courses/{course}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])->name('interactive-courses.show');
     });
 
     // Chat Route - Role-based views (within subdomain group)
-    Route::middleware(['auth'])->get('/chat', function () {
+    Route::middleware(['auth'])->get('/chat', function (Request $request) {
         $user = auth()->user();
         $userType = $user->user_type;
 
@@ -1476,7 +1498,13 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Get the appropriate view or default to student
         $view = $viewMap[$userType] ?? 'chat.student';
 
-        return view($view);
+        // Pass the user parameter to the view if it exists
+        $viewData = [];
+        if ($request->has('user')) {
+            $viewData['autoOpenUserId'] = $request->get('user');
+        }
+
+        return view($view, $viewData);
     })->name('chat');
 
     // Temporary debug route for testing message broadcast

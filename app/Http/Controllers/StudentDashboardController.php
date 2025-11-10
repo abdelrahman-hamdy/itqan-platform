@@ -6,6 +6,7 @@ use App\Models\Academy;
 use App\Models\CourseSubscription;
 use App\Models\RecordedCourse;
 use App\Models\StudentProgress;
+use App\Services\HomeworkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class StudentDashboardController extends Controller
     /**
      * Show student dashboard
      */
-    public function index(Request $request)
+    public function index(Request $request, HomeworkService $homeworkService)
     {
         $user = Auth::user();
         $academy = $this->getCurrentAcademy();
@@ -57,6 +58,14 @@ class StudentDashboardController extends Controller
         // Get recommended courses
         $recommendedCourses = $this->getRecommendedCourses($user, $academy);
 
+        // Get homework statistics
+        $homeworkStats = $homeworkService->getStudentHomeworkStatistics($user->id, $academy->id);
+
+        // Get pending homework (limited to 5 most recent)
+        $pendingHomework = collect($homeworkService->getStudentHomework($user->id, $academy->id))
+            ->filter(fn($hw) => !in_array($hw['status'], ['submitted', 'late', 'graded', 'returned']))
+            ->take(5);
+
         return view('student.dashboard', compact(
             'enrolledCourses',
             'activeCourses',
@@ -66,7 +75,9 @@ class StudentDashboardController extends Controller
             'stats',
             'achievements',
             'recommendedCourses',
-            'academy'
+            'academy',
+            'homeworkStats',
+            'pendingHomework'
         ));
     }
 

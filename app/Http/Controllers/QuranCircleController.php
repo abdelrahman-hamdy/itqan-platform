@@ -50,7 +50,7 @@ class QuranCircleController extends Controller
         }
 
         if ($request->filled('available_spots')) {
-            $query->whereRaw('max_students > enrolled_students');
+            $query->whereColumn('max_students', '>', 'enrolled_students');
         }
 
         if ($request->filled('search')) {
@@ -623,7 +623,7 @@ class QuranCircleController extends Controller
             ->where('academy_id', $academy->id)
             ->where('status', 'pending')
             ->where('enrollment_status', 'open')
-            ->whereRaw('enrolled_students < max_students');
+            ->whereColumn('enrolled_students', '<', 'max_students');
 
         if ($request->filled('level')) {
             $query->where('level', $request->level);

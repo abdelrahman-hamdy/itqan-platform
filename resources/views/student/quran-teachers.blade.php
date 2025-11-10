@@ -55,7 +55,7 @@
   @include('components.sidebar.student-sidebar')
 
   <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
+  <main class="transition-all duration-300 pt-20 min-h-screen" id="main-content" style="margin-right: 320px;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
       <!-- Header Section -->
@@ -223,8 +223,11 @@
                 <i class="ri-eye-line ml-2"></i>
                 عرض الملف الشخصي
               </a>
-              @if($teacher->user)
-              <a href="{{ route('user', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $teacher->user->id]) }}"
+              @php
+                $isRegisteredWithTeacher = $activeSubscriptions->where('quran_teacher_id', $teacher->id)->where('subscription_status', 'active')->count() > 0;
+              @endphp
+              @if($teacher->user && $isRegisteredWithTeacher)
+              <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $teacher->user->id]) }}"
                  class="px-3 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
                 <i class="ri-message-3-line"></i>
               </a>

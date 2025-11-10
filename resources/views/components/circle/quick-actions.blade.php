@@ -60,11 +60,13 @@
                 جميع الحلقات
             </a>
             
-            <a href="{{ route('student.quran', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
-               class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                <i class="ri-user-line ml-2"></i>
-                ملفي الشخصي
-            </a>
+            @if($circle->quranTeacher)
+                <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $circle->quranTeacher->id]) }}" 
+                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                    <i class="ri-message-3-line ml-2"></i>
+                    مراسلة المعلم
+                </a>
+            @endif
         </div>
     </div>
 @endif

@@ -26,12 +26,10 @@ class QuranTrialRequest extends Model
         'preferred_time',
         'notes',
         'status',
-        'teacher_response',
         'scheduled_at',
         'meeting_link',
         'meeting_password',
         'trial_session_id',
-        'responded_at',
         'completed_at',
         'rating',
         'feedback',
@@ -43,7 +41,6 @@ class QuranTrialRequest extends Model
         'learning_goals' => 'array',
         'student_age' => 'integer',
         'scheduled_at' => 'datetime',
-        'responded_at' => 'datetime',
         'completed_at' => 'datetime',
         'rating' => 'integer',
     ];
@@ -264,21 +261,17 @@ class QuranTrialRequest extends Model
     /**
      * Actions
      */
-    public function approve(?string $teacherResponse = null): bool
+    public function approve(): bool
     {
         return $this->update([
             'status' => self::STATUS_APPROVED,
-            'teacher_response' => $teacherResponse,
-            'responded_at' => now(),
         ]);
     }
 
-    public function reject(?string $teacherResponse = null): bool
+    public function reject(): bool
     {
         return $this->update([
             'status' => self::STATUS_REJECTED,
-            'teacher_response' => $teacherResponse,
-            'responded_at' => now(),
         ]);
     }
 

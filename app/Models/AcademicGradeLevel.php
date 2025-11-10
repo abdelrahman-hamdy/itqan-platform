@@ -109,7 +109,7 @@ class AcademicGradeLevel extends Model
      */
     public function scopeOrdered($query)
     {
-        return $query->orderBy('level_number')->orderBy('display_order');
+        return $query->orderBy('id')->orderBy('name');
     }
 
     /**

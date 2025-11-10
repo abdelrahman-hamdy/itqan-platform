@@ -55,7 +55,7 @@
   @include('components.sidebar.student-sidebar')
 
   <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
+  <main class="transition-all duration-300 pt-20 min-h-screen" id="main-content" style="margin-right: 320px;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
       <!-- Header Section -->
@@ -124,7 +124,7 @@
               </a>
               @endif
               @if($circle->teacher && $circle->teacher->user)
-              <a href="{{ route('user', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $circle->teacher->user->id]) }}"
+              <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $circle->teacher->user->id]) }}"
                  class="px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
                 <i class="ri-message-3-line ml-1"></i>
                 مراسلة المعلم
@@ -195,19 +195,12 @@
               @endif
             </div>
 
-            <div class="mt-6 flex space-x-2 space-x-reverse">
+            <div class="mt-6">
               <a href="{{ route('student.circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}"
-                 class="flex-1 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
+                 class="w-full bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
                 <i class="ri-information-line ml-1"></i>
                 عرض التفاصيل
               </a>
-              @if($circle->teacher && $circle->teacher->user)
-              <a href="{{ route('user', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $circle->teacher->user->id]) }}"
-                 class="px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
-                <i class="ri-message-3-line ml-1"></i>
-                مراسلة المعلم
-              </a>
-              @endif
             </div>
           </div>
           @endforeach

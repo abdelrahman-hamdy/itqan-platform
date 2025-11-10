@@ -70,7 +70,7 @@
   @include('components.sidebar.student-sidebar')
 
   <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
+  <main class="pt-20 min-h-screen transition-all duration-300" id="main-content" style="margin-right: 320px;">
     <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
       
       <!-- Welcome Section -->
@@ -223,7 +223,7 @@
                 'iconColor' => 'text-orange-600',
                 'progress' => $subscription->completion_rate ?? 0,
                 'status' => $subscription->status ?? 'active',
-                'link' => route('student.academic-private-lessons.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscription' => $subscription->id])
+                'link' => route('student.academic-subscriptions.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscriptionId' => $subscription->id])
               ];
             })->toArray() : [],
             'emptyTitle' => 'لا توجد دروس خاصة بعد',
@@ -231,9 +231,7 @@
             'emptyActionText' => 'تصفح المعلمين الأكاديميين',
             'footer' => [
               'text' => $academicPrivateSessions->count() > 0 ? 'عرض جميع الدروس' : 'تصفح المعلمين',
-              'link' => $academicPrivateSessions->count() > 0 ? 
-                route('student.academic-private-lessons', ['subdomain' => auth()->user()->academy->subdomain]) :
-                route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain])
+              'link' => route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain])
             ],
             'stats' => $academicPrivateSessions->count() > 0 ? [
               ['icon' => 'ri-user-3-line', 'value' => $academicPrivateSessions->count() . ' اشتراك نشط'],

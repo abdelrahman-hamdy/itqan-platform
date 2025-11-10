@@ -55,7 +55,7 @@
   @include('components.sidebar.student-sidebar')
 
   <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
+  <main class="transition-all duration-300 pt-20 min-h-screen" id="main-content" style="margin-right: 320px;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
       <!-- Header Section -->
@@ -127,7 +127,7 @@
 
             <!-- Single Action Button -->
             <div class="mt-6">
-              <a href="{{ route('student.academic-private-lessons.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscription' => $subscription->id]) }}" 
+              <a href="{{ route('student.academic-subscriptions.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscriptionId' => $subscription->id]) }}" 
                  class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
                 <i class="ri-book-open-line ml-2"></i>
                 عرض الدرس الخاص
@@ -183,9 +183,9 @@
                 <i class="ri-video-line ml-1"></i>
                 الدرس القادم
               </button>
-              <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain, 'user' => $teacher->user->id]) }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="ri-message-3-line"></i>
-              </button>
+              </a>
             </div>
           </div>
           @endforeach
@@ -294,12 +294,21 @@
             </div>
             @endif
 
-            <div class="mt-6">
+            <div class="mt-6 flex space-x-2 space-x-reverse">
               <a href="{{ route('public.academic-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) }}" 
-                 class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
+                 class="flex-1 bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center inline-block">
                 <i class="ri-eye-line ml-2"></i>
                 عرض الملف الشخصي
               </a>
+              @php
+                $isRegisteredWithTeacher = $mySubscriptions->where('teacher_id', $teacher->id)->where('status', 'active')->count() > 0;
+              @endphp
+              @if($isRegisteredWithTeacher)
+              <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $teacher->user_id]) }}" 
+                 class="px-3 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
+                <i class="ri-message-3-line"></i>
+              </a>
+              @endif
             </div>
           </div>
           @endforeach

@@ -19,11 +19,12 @@
         <div class="hidden md:flex items-center space-x-6 space-x-reverse">
           @php
             $currentRoute = request()->route()->getName();
-            $isQuranCirclesActive = in_array($currentRoute, ['student.quran-circles', 'student.circles.show', 'student.quran']);
+            $isQuranCirclesActive = in_array($currentRoute, ['student.quran-circles', 'student.circles.show']);
             $isQuranTeachersActive = in_array($currentRoute, ['student.quran-teachers', 'public.quran-teachers.index', 'public.quran-teachers.show', 'public.quran-teachers.trial', 'public.quran-teachers.subscribe']);
             $isInteractiveCoursesActive = in_array($currentRoute, ['student.interactive-courses']);
             $isAcademicTeachersActive = in_array($currentRoute, ['student.academic-teachers']);
             $isRecordedCoursesActive = in_array($currentRoute, ['courses.index', 'courses.show', 'courses.learn']);
+            $isHomeworkActive = in_array($currentRoute, ['student.homework.index', 'student.homework.submit', 'student.homework.view']);
           @endphp
           <a href="{{ route('student.quran-circles', ['subdomain' => $subdomain]) }}" 
              class="{{ $isQuranCirclesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
@@ -37,9 +38,12 @@
           <a href="{{ route('student.academic-teachers', ['subdomain' => $subdomain]) }}" 
              class="{{ $isAcademicTeachersActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
              aria-label="استعرض المعلمين الأكاديميين">المعلمون الأكاديميون</a>
-          <a href="{{ route('courses.index', ['subdomain' => $subdomain]) }}" 
-             class="{{ $isRecordedCoursesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom" 
+          <a href="{{ route('courses.index', ['subdomain' => $subdomain]) }}"
+             class="{{ $isRecordedCoursesActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom"
              aria-label="استعرض الكورسات المسجلة">الكورسات المسجلة</a>
+          <a href="{{ route('student.homework.index', ['subdomain' => $subdomain]) }}"
+             class="{{ $isHomeworkActive ? 'text-primary font-medium' : 'text-gray-700' }} hover:text-primary transition-colors duration-200 focus:ring-custom"
+             aria-label="استعرض واجباتي">الواجبات</a>
         </div>
       </div>
 
@@ -153,8 +157,10 @@
            class="block px-3 py-2 {{ $isInteractiveCoursesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات التفاعلية</a>
         <a href="{{ route('student.academic-teachers', ['subdomain' => $subdomain]) }}" 
            class="block px-3 py-2 {{ $isAcademicTeachersActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">المعلمون الأكاديميون</a>
-        <a href="{{ route('courses.index', ['subdomain' => $subdomain]) }}" 
+        <a href="{{ route('courses.index', ['subdomain' => $subdomain]) }}"
            class="block px-3 py-2 {{ $isRecordedCoursesActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الكورسات المسجلة</a>
+        <a href="{{ route('student.homework.index', ['subdomain' => $subdomain]) }}"
+           class="block px-3 py-2 {{ $isHomeworkActive ? 'text-primary font-medium bg-gray-50' : 'text-gray-700' }} hover:text-primary hover:bg-gray-50 rounded-md focus:ring-custom">الواجبات</a>
       </div>
     </div>
   </div>

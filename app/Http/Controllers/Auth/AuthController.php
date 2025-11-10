@@ -166,7 +166,7 @@ class AuthController extends Controller
             'parent_phone' => 'nullable|string|max:20',
             'birth_date' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
-            'grade_level' => 'required|exists:grade_levels,id',
+            'grade_level' => 'required|exists:academic_grade_levels,id',
         ], [
             'first_name.required' => 'الاسم الأول مطلوب',
             'last_name.required' => 'اسم العائلة مطلوب',

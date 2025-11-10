@@ -59,8 +59,7 @@ class AcademicCalendar extends Page
     protected function getActions(): array
     {
         return [
-            $this->schedulePrivateLessonAction(),
-            $this->scheduleInteractiveCourseAction(),
+            //
         ];
     }
 
@@ -177,129 +176,7 @@ class AcademicCalendar extends Page
         return Auth::check();
     }
 
-    /**
-     * Schedule Private Lesson Action
-     */
-    public function schedulePrivateLessonAction(): Action
-    {
-        return Action::make('schedulePrivateLesson')
-            ->label('جدولة جلسات')
-            ->icon('heroicon-o-calendar-days')
-            ->color('primary')
-            ->form([
-                Forms\Components\Select::make('lesson_id')
-                    ->label('الدرس الفردي')
-                    ->options($this->privateLessons->pluck('title', 'id'))
-                    ->required()
-                    ->live()
-                    ->afterStateUpdated(fn ($state) => $this->selectedLessonId = $state),
 
-                Forms\Components\CheckboxList::make('scheduleDays')
-                    ->label('أيام الأسبوع')
-                    ->options([
-                        '1' => 'الإثنين',
-                        '2' => 'الثلاثاء',
-                        '3' => 'الأربعاء',
-                        '4' => 'الخميس',
-                        '5' => 'الجمعة',
-                        '6' => 'السبت',
-                        '0' => 'الأحد',
-                    ])
-                    ->required()
-                    ->columnSpanFull(),
-
-                Forms\Components\TimePicker::make('scheduleTime')
-                    ->label('وقت الجلسة')
-                    ->required()
-                    ->default('10:00')
-                    ->seconds(false),
-
-                Forms\Components\DatePicker::make('scheduleStartDate')
-                    ->label('تاريخ البداية')
-                    ->required()
-                    ->default(now()->addDay())
-                    ->minDate(now()),
-
-                Forms\Components\TextInput::make('sessionCount')
-                    ->label('عدد الجلسات')
-                    ->numeric()
-                    ->required()
-                    ->default(4)
-                    ->minValue(1)
-                    ->maxValue(20),
-            ])
-            ->action(function (array $data) {
-                $this->scheduleDays = $data['scheduleDays'];
-                $this->scheduleTime = $data['scheduleTime'];
-                $this->scheduleStartDate = $data['scheduleStartDate'];
-                $this->sessionCount = $data['sessionCount'];
-                $this->selectedLessonId = $data['lesson_id'];
-
-                $this->createBulkSchedule();
-            });
-    }
-
-    /**
-     * Schedule Interactive Course Action
-     */
-    public function scheduleInteractiveCourseAction(): Action
-    {
-        return Action::make('scheduleInteractiveCourse')
-            ->label('جدولة جلسات')
-            ->icon('heroicon-o-calendar-days')
-            ->color('success')
-            ->form([
-                Forms\Components\Select::make('course_id')
-                    ->label('الدورة التفاعلية')
-                    ->options($this->interactiveCourses->pluck('title', 'id'))
-                    ->required()
-                    ->live()
-                    ->afterStateUpdated(fn ($state) => $this->selectedCourseId = $state),
-
-                Forms\Components\CheckboxList::make('scheduleDays')
-                    ->label('أيام الأسبوع')
-                    ->options([
-                        '1' => 'الإثنين',
-                        '2' => 'الثلاثاء',
-                        '3' => 'الأربعاء',
-                        '4' => 'الخميس',
-                        '5' => 'الجمعة',
-                        '6' => 'السبت',
-                        '0' => 'الأحد',
-                    ])
-                    ->required()
-                    ->columnSpanFull(),
-
-                Forms\Components\TimePicker::make('scheduleTime')
-                    ->label('وقت الجلسة')
-                    ->required()
-                    ->default('10:00')
-                    ->seconds(false),
-
-                Forms\Components\DatePicker::make('scheduleStartDate')
-                    ->label('تاريخ البداية')
-                    ->required()
-                    ->default(now()->addDay())
-                    ->minDate(now()),
-
-                Forms\Components\TextInput::make('sessionCount')
-                    ->label('عدد الجلسات')
-                    ->numeric()
-                    ->required()
-                    ->default(4)
-                    ->minValue(1)
-                    ->maxValue(20),
-            ])
-            ->action(function (array $data) {
-                $this->scheduleDays = $data['scheduleDays'];
-                $this->scheduleTime = $data['scheduleTime'];
-                $this->scheduleStartDate = $data['scheduleStartDate'];
-                $this->sessionCount = $data['sessionCount'];
-                $this->selectedCourseId = $data['course_id'];
-
-                $this->createBulkSchedule();
-            });
-    }
 
     /**
      * Get session statistics for the top 4 boxes

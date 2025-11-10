@@ -22,6 +22,43 @@ class AcademicFullCalendarWidget extends FullCalendarWidget
 
     protected static ?int $sort = 1;
 
+    protected bool $canCreate = false;
+
+    public function getCreateEventModalTitle(): string
+    {
+        return '';
+    }
+
+    public function getCreateEventForm(): array
+    {
+        return [];
+    }
+
+    public function onCreateEvent(array $data): void
+    {
+        // Disabled
+    }
+
+    public function onDateClick(array $data): void
+    {
+        // Disabled
+    }
+
+    public function onSelect(array $data): void
+    {
+        // Disabled
+    }
+
+    public function getHeaderActions(): array
+    {
+        return [];
+    }
+
+    public function canCreate(): bool
+    {
+        return false;
+    }
+
     public function getViewData(): array
     {
         $user = Auth::user();
@@ -162,12 +199,13 @@ class AcademicFullCalendarWidget extends FullCalendarWidget
             'eventTextColor' => '#ffffff',
             'weekends' => true,
             'allDaySlot' => false,
-            'selectMirror' => true,
-            'unselectAuto' => false,
-            'editable' => true,
-            'eventStartEditable' => true,
-            'eventDurationEditable' => true,
+            'selectMirror' => false,
+            'unselectAuto' => true,
+            'editable' => false,
+            'eventStartEditable' => false,
+            'eventDurationEditable' => false,
             'eventOverlap' => false,
+            'selectable' => false,
         ];
     }
 

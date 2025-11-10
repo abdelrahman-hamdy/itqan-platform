@@ -52,7 +52,7 @@
             </a>
 
             <!-- Contact Student -->
-            <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}?user={{ $student->id }}" 
+            <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $student->id]) }}" 
                class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group">
                 <div class="flex items-center">
                     <i class="ri-chat-1-line text-gray-600 ml-3"></i>
@@ -95,7 +95,7 @@
             </button>
 
             <!-- Contact Teacher -->
-            <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}?user={{ $subscription->teacher->user_id ?? $subscription->teacher_id }}" 
+            <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $subscription->teacher->user_id ?? $subscription->teacher_id]) }}" 
                class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group">
                 <div class="flex items-center">
                     <i class="ri-chat-1-line text-gray-600 ml-3"></i>

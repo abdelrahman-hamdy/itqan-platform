@@ -254,7 +254,7 @@ class StudentProfileController extends Controller
             'nationality' => 'nullable|string|max:100',
             'address' => 'nullable|string|max:500',
             'emergency_contact' => 'nullable|string|max:20',
-            'grade_level_id' => 'nullable|exists:grade_levels,id',
+            'grade_level_id' => 'nullable|exists:academic_grade_levels,id',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -442,60 +442,6 @@ class StudentProfileController extends Controller
 
             return null;
         }
-    }
-
-    public function quranProfile()
-    {
-        $user = Auth::user();
-        $academy = $user->academy;
-
-        // Get student's Quran circles
-        $quranCircles = QuranCircle::where('academy_id', $academy->id)
-            ->whereHas('students', function ($query) use ($user) {
-                $query->where('users.id', $user->id);
-            })
-            ->with(['students', 'sessions' => function ($query) {
-                $query->orderBy('scheduled_at', 'desc')->limit(5);
-            }])
-            ->get();
-
-        // Get student's Quran subscriptions
-        $quranSubscriptions = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->with(['quranTeacher', 'package', 'sessions' => function ($query) {
-                $query->orderBy('scheduled_at', 'desc')->limit(10);
-            }])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Get student's Quran trial requests
-        $quranTrialRequests = QuranTrialRequest::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->with(['teacher'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Calculate Quran-specific statistics
-        $quranStats = [
-            'totalCircles' => $quranCircles->count(),
-            'activeSubscriptions' => $quranSubscriptions->where('subscription_status', 'active')->count(),
-            'completedSessions' => $quranSubscriptions->sum(function ($subscription) {
-                return $subscription->sessions->where('status', 'completed')->count();
-            }),
-            'totalTrialRequests' => $quranTrialRequests->count(),
-            'averageProgress' => round($quranSubscriptions->avg('progress_percentage') ?? 0, 1),
-            'totalVersesMemorized' => $quranSubscriptions->sum('verses_memorized'),
-            'upcomingSessions' => $quranSubscriptions->sum(function ($subscription) {
-                return $subscription->sessions->where('scheduled_at', '>', now())->where('status', 'scheduled')->count();
-            }),
-        ];
-
-        return view('student.quran-profile', compact(
-            'quranCircles',
-            'quranSubscriptions',
-            'quranTrialRequests',
-            'quranStats'
-        ));
     }
 
     public function quranCircles()
@@ -892,11 +838,27 @@ class StudentProfileController extends Controller
         $isTeacher = $userType === 'academic_teacher';
         $isStudent = $userType === 'student';
 
-        // For teachers: Check if they are assigned to this course
+        // For teachers: Check if they have access to this course (either created or assigned)
         if ($isTeacher) {
             $teacherProfile = $user->academicTeacherProfile;
-            if (! $teacherProfile || $courseModel->assigned_teacher_id !== $teacherProfile->id) {
-                abort(403, 'Access denied - not assigned to this course');
+            $isAssignedTeacher = false;
+            $isCreatedByCourse = $courseModel->created_by === $user->id;
+
+            // Check if teacher is assigned to course
+            if ($teacherProfile) {
+                $isAssignedTeacher = $courseModel->assigned_teacher_id === $teacherProfile->id;
+            } else {
+                // If no teacher profile, check if assigned_teacher_id references a teacher with this user_id
+                if ($courseModel->assigned_teacher_id) {
+                    $assignedTeacher = \App\Models\AcademicTeacher::find($courseModel->assigned_teacher_id);
+                    if ($assignedTeacher && $assignedTeacher->user_id === $user->id) {
+                        $isAssignedTeacher = true;
+                    }
+                }
+            }
+
+            if (! $isAssignedTeacher && ! $isCreatedByCourse) {
+                abort(403, 'Access denied - not assigned to or creator of this course');
             }
         }
 
@@ -1001,75 +963,6 @@ class StudentProfileController extends Controller
     }
 
     /**
-     * Show all academic private lessons for the student
-     */
-    public function academicPrivateLessons()
-    {
-        $user = Auth::user();
-        $academy = $user->academy;
-
-        // Get student's academic subscriptions (all statuses)
-        $subscriptions = AcademicSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->with(['academicTeacher', 'academicPackage'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-
-        return view('student.academic-private-lessons.index', compact('subscriptions'));
-    }
-
-    /**
-     * Show individual academic private lesson details
-     */
-    public function showAcademicPrivateLesson(Request $request, $subdomain, $subscriptionId)
-    {
-        $user = Auth::user();
-        $academy = $user->academy;
-
-        // Find the academic subscription that belongs to this student
-        $subscription = AcademicSubscription::where('id', $subscriptionId)
-            ->where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->with(['academicTeacher', 'academicPackage'])
-            ->first();
-
-        if (! $subscription) {
-            abort(404, 'Academic subscription not found or you do not have access');
-        }
-
-        // Get sessions for this subscription (like Quran individual circles)
-        $upcomingSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', ['scheduled', 'ready', 'unscheduled', 'ongoing']) // Include ongoing sessions
-            ->where(function ($query) {
-                $query->where('scheduled_at', '>', now())
-                    ->orWhereNull('scheduled_at') // Include unscheduled sessions
-                    ->orWhere('status', 'ongoing'); // Include ongoing sessions regardless of time
-            })
-            ->orderByRaw('scheduled_at IS NULL') // Put unscheduled sessions first
-            ->orderBy('scheduled_at')
-            ->orderBy('session_sequence') // Secondary sort for consistent ordering
-            ->get();
-
-        $pastSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', ['completed', 'cancelled', 'absent'])
-            ->whereNotNull('scheduled_at')
-            ->orderBy('scheduled_at', 'desc')
-            ->get();
-
-        // Get all sessions for display (optional, for debugging)
-        $allSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->orderBy('session_sequence')
-            ->get();
-
-        return view('student.academic-private-lessons.show', compact(
-            'subscription',
-            'allSessions',
-            'upcomingSessions',
-            'pastSessions'
-        ));
-    }
-
-    /**
      * Download certificate for completed course
      */
     public function downloadCertificate(Request $request, $enrollmentId)
@@ -1120,5 +1013,52 @@ class StudentProfileController extends Controller
         }
 
         return view('student.academic-session-detail', compact('session'));
+    }
+
+    /**
+     * Show academic subscription details for student
+     */
+    public function showAcademicSubscription(Request $request, $subdomain, $subscriptionId)
+    {
+        $user = Auth::user();
+        $academy = $user->academy;
+
+        // Find the academic subscription
+        $subscription = AcademicSubscription::where('id', $subscriptionId)
+            ->where('academy_id', $academy->id)
+            ->where('student_id', $user->id)
+            ->with([
+                'academicTeacher.user',
+                'subject',
+                'gradeLevel',
+                'academicPackage',
+                'sessions' => function ($query) {
+                    $query->orderBy('scheduled_at');
+                },
+            ])
+            ->first();
+
+        if (! $subscription) {
+            abort(404, 'Academic subscription not found');
+        }
+
+        // Get sessions for this subscription
+        $upcomingSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
+            ->whereIn('status', ['scheduled', 'ongoing'])
+            ->orderBy('scheduled_at')
+            ->with(['student', 'academicTeacher'])
+            ->get();
+
+        $pastSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
+            ->whereIn('status', ['completed', 'cancelled'])
+            ->orderByDesc('scheduled_at')
+            ->with(['student', 'academicTeacher'])
+            ->get();
+
+        // Get progress summary using the AcademicProgressService
+        $progressService = app(\App\Services\AcademicProgressService::class);
+        $progressSummary = $progressService->getProgressSummary($subscription);
+
+        return view('student.academic-subscription-detail', compact('subscription', 'upcomingSessions', 'pastSessions', 'progressSummary'));
     }
 }

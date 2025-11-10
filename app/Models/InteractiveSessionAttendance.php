@@ -17,6 +17,16 @@ class InteractiveSessionAttendance extends Model
         'attendance_status',
         'join_time',
         'leave_time',
+        'auto_join_time',
+        'auto_leave_time',
+        'auto_duration_minutes',
+        'auto_tracked',
+        'manually_overridden',
+        'overridden_by',
+        'overridden_at',
+        'override_reason',
+        'meeting_events',
+        'connection_quality_score',
         'participation_score',
         'notes',
     ];
@@ -24,7 +34,15 @@ class InteractiveSessionAttendance extends Model
     protected $casts = [
         'join_time' => 'datetime',
         'leave_time' => 'datetime',
+        'auto_join_time' => 'datetime',
+        'auto_leave_time' => 'datetime',
+        'overridden_at' => 'datetime',
+        'auto_tracked' => 'boolean',
+        'manually_overridden' => 'boolean',
+        'meeting_events' => 'array',
         'participation_score' => 'decimal:1',
+        'connection_quality_score' => 'integer',
+        'auto_duration_minutes' => 'integer',
     ];
 
     protected $attributes = [
@@ -45,6 +63,14 @@ class InteractiveSessionAttendance extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(StudentProfile::class, 'student_id');
+    }
+
+    /**
+     * العلاقة مع المعلم الذي عدل الحضور يدوياً
+     */
+    public function overriddenBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'overridden_by');
     }
 
     /**
@@ -103,6 +129,30 @@ class InteractiveSessionAttendance extends Model
             $q->whereMonth('scheduled_date', now()->month)
               ->whereYear('scheduled_date', now()->year);
         });
+    }
+
+    /**
+     * نطاق الحضور المتتبع تلقائياً
+     */
+    public function scopeAutoTracked($query)
+    {
+        return $query->where('auto_tracked', true);
+    }
+
+    /**
+     * نطاق الحضور المعدل يدوياً
+     */
+    public function scopeManuallyOverridden($query)
+    {
+        return $query->where('manually_overridden', true);
+    }
+
+    /**
+     * نطاق الحضور غير المعدل يدوياً
+     */
+    public function scopeNotManuallyOverridden($query)
+    {
+        return $query->where('manually_overridden', false);
     }
 
     /**
@@ -253,6 +303,155 @@ class InteractiveSessionAttendance extends Model
             'attended_full_session' => $this->attended_full_session,
             'notes' => $this->notes,
         ];
+    }
+
+    /**
+     * Get auto-attendance duration in minutes
+     */
+    public function getAutoAttendanceDurationMinutesAttribute(): int
+    {
+        if (!$this->auto_join_time || !$this->auto_leave_time) {
+            return $this->auto_duration_minutes ?? 0;
+        }
+
+        return $this->auto_join_time->diffInMinutes($this->auto_leave_time);
+    }
+
+    /**
+     * Check if attendance was auto-tracked
+     */
+    public function getIsAutoTrackedAttribute(): bool
+    {
+        return $this->auto_tracked && !empty($this->meeting_events);
+    }
+
+    /**
+     * Get last meeting event
+     */
+    public function getLastMeetingEventAttribute(): ?array
+    {
+        if (!$this->meeting_events || empty($this->meeting_events)) {
+            return null;
+        }
+
+        return end($this->meeting_events);
+    }
+
+    /**
+     * Get connection quality text
+     */
+    public function getConnectionQualityAttribute(): string
+    {
+        if (!$this->connection_quality_score) {
+            return 'غير محدد';
+        }
+
+        return match(true) {
+            $this->connection_quality_score >= 8 => 'ممتاز',
+            $this->connection_quality_score >= 6 => 'جيد',
+            $this->connection_quality_score >= 4 => 'متوسط',
+            default => 'ضعيف'
+        };
+    }
+
+    /**
+     * Calculate attendance status from meeting events
+     */
+    public function calculateAttendanceFromMeetingEvents(): string
+    {
+        if (!$this->meeting_events || empty($this->meeting_events)) {
+            return 'absent';
+        }
+
+        $joinTime = $this->auto_join_time;
+        $leaveTime = $this->auto_leave_time;
+        $sessionStart = $this->session->scheduled_datetime;
+
+        if (!$joinTime) {
+            return 'absent';
+        }
+
+        // Late if joined more than 10 minutes after start
+        $minutesLate = $joinTime->diffInMinutes($sessionStart, false);
+        if ($minutesLate > 10) {
+            return 'late';
+        }
+
+        // Left early if left more than 10 minutes before expected end
+        $expectedEnd = $sessionStart->copy()->addMinutes($this->session->duration_minutes);
+        if ($leaveTime && $leaveTime->isBefore($expectedEnd->subMinutes(10))) {
+            return 'left_early';
+        }
+
+        return 'present';
+    }
+
+    /**
+     * Record meeting event (join/leave)
+     */
+    public function recordMeetingEvent(string $eventType, array $eventData = []): void
+    {
+        $events = $this->meeting_events ?? [];
+        $events[] = [
+            'type' => $eventType,
+            'timestamp' => now()->toISOString(),
+            'data' => $eventData,
+        ];
+
+        $this->meeting_events = $events;
+        $this->auto_tracked = true;
+
+        // Update auto join/leave times
+        if ($eventType === 'joined' && !$this->auto_join_time) {
+            $this->auto_join_time = now();
+        }
+
+        if ($eventType === 'left') {
+            $this->auto_leave_time = now();
+            $this->auto_duration_minutes = $this->auto_join_time
+                ? $this->auto_join_time->diffInMinutes(now())
+                : 0;
+        }
+
+        // Calculate attendance status if not manually overridden
+        if (!$this->manually_overridden) {
+            $this->attendance_status = $this->calculateAttendanceFromMeetingEvents();
+        }
+
+        $this->save();
+    }
+
+    /**
+     * Manually override attendance
+     */
+    public function manuallyOverride(array $overrideData, ?string $reason = null, $teacherId = null): self
+    {
+        $this->update($overrideData);
+        $this->manually_overridden = true;
+        $this->overridden_by = $teacherId ?? auth()->id();
+        $this->overridden_at = now();
+        $this->override_reason = $reason;
+        $this->save();
+
+        return $this;
+    }
+
+    /**
+     * Revert to auto-tracking
+     */
+    public function revertToAutoTracking(): self
+    {
+        if ($this->auto_tracked) {
+            $this->attendance_status = $this->calculateAttendanceFromMeetingEvents();
+        }
+
+        $this->manually_overridden = false;
+        $this->overridden_by = null;
+        $this->overridden_at = null;
+        $this->override_reason = null;
+        $this->save();
+
+        return $this;
     }
 
     /**

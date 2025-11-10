@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\QuranTrialRequestResource\Pages;
 use App\Models\QuranTrialRequest;
 use App\Models\QuranTeacherProfile;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
@@ -75,7 +76,13 @@ class QuranTrialRequestResource extends BaseResource
                             ->schema([
                                 Select::make('student_id')
                                     ->label('الطالب')
-                                    ->relationship('student', 'name')
+                                    ->options(function () {
+                                        $academyId = AcademyContextService::getCurrentAcademyId();
+                                        return User::where('user_type', 'student')
+                                            ->where('academy_id', $academyId)
+                                            ->get()
+                                            ->pluck('name', 'id');
+                                    })
                                     ->searchable()
                                     ->preload()
                                     ->required(),
@@ -116,37 +123,6 @@ class QuranTrialRequestResource extends BaseResource
                             ->rows(3),
                     ]),
 
-                Section::make('استجابة المعلم')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                DateTimePicker::make('scheduled_at')
-                                    ->label('موعد الجلسة المجدولة')
-                                    ->native(false),
-
-                                DateTimePicker::make('responded_at')
-                                    ->label('تاريخ الرد')
-                                    ->native(false)
-                                    ->disabled()
-                                    ->dehydrated(false),
-                            ]),
-
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('meeting_link')
-                                    ->label('رابط الاجتماع')
-                                    ->url()
-                                    ->maxLength(255),
-
-                                TextInput::make('meeting_password')
-                                    ->label('كلمة مرور الاجتماع')
-                                    ->maxLength(50),
-                            ]),
-
-                        Textarea::make('teacher_response')
-                            ->label('رد المعلم')
-                            ->rows(3),
-                    ]),
 
                 Section::make('تقييم الجلسة')
                     ->schema([
@@ -196,10 +172,6 @@ class QuranTrialRequestResource extends BaseResource
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
-
-                TextColumn::make('student_name')
-                    ->label('اسم الطالب')
-                    ->searchable(),
 
                 BadgeColumn::make('status')
                     ->label('الحالة')
@@ -284,14 +256,8 @@ class QuranTrialRequestResource extends BaseResource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->visible(fn (QuranTrialRequest $record) => $record->isPending())
-                        ->form([
-                            Textarea::make('teacher_response')
-                                ->label('رد المعلم')
-                                ->placeholder('رسالة للطالب...')
-                                ->rows(3),
-                        ])
-                        ->action(function (QuranTrialRequest $record, array $data) {
-                            $record->approve($data['teacher_response'] ?? null);
+                        ->action(function (QuranTrialRequest $record) {
+                            $record->approve();
                         })
                         ->successNotificationTitle('تم قبول الطلب بنجاح'),
 
@@ -300,15 +266,8 @@ class QuranTrialRequestResource extends BaseResource
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->visible(fn (QuranTrialRequest $record) => $record->isPending())
-                        ->form([
-                            Textarea::make('teacher_response')
-                                ->label('سبب الرفض')
-                                ->placeholder('سبب رفض الطلب...')
-                                ->required()
-                                ->rows(3),
-                        ])
-                        ->action(function (QuranTrialRequest $record, array $data) {
-                            $record->reject($data['teacher_response']);
+                        ->action(function (QuranTrialRequest $record) {
+                            $record->reject();
                         })
                         ->successNotificationTitle('تم رفض الطلب'),
 
@@ -378,10 +337,6 @@ class QuranTrialRequestResource extends BaseResource
 
                                 Infolists\Components\TextEntry::make('created_at')
                                     ->label('تاريخ الطلب')
-                                    ->dateTime(),
-
-                                Infolists\Components\TextEntry::make('responded_at')
-                                    ->label('تاريخ الرد')
                                     ->dateTime(),
                             ])
                     ]),
@@ -453,10 +408,6 @@ class QuranTrialRequestResource extends BaseResource
                                         return str_repeat('⭐', $state) . " ({$state}/5)";
                                     }),
                             ]),
-
-                        Infolists\Components\TextEntry::make('teacher_response')
-                            ->label('رد المعلم')
-                            ->columnSpanFull(),
 
                         Infolists\Components\TextEntry::make('feedback')
                             ->label('ملاحظات الجلسة')

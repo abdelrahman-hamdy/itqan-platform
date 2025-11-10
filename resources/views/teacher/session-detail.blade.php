@@ -410,9 +410,9 @@
     }
 
     function messageStudent(studentId) {
-        // Show notification for now - will be implemented with backend routes
-        showNotification('إرسال رسالة للطالب قيد التطوير', 'info');
-        console.log('Message student:', studentId);
+        const subdomain = '{{ request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy" }}';
+        const chatUrl = '{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}' + '?user=' + studentId;
+        window.location.href = chatUrl;
     }
 
     // Notification function

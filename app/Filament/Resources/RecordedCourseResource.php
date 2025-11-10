@@ -8,6 +8,7 @@ use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\Academy;
 use App\Models\RecordedCourse;
+use App\Enums\CourseLanguage;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
@@ -132,12 +133,8 @@ class RecordedCourseResource extends Resource
 
                                                 Forms\Components\Select::make('language')
                                                     ->label('لغة الدورة')
-                                                    ->options([
-                                                        'ar' => 'العربية',
-                                                        'en' => 'الإنجليزية',
-                                                        'both' => 'العربية والإنجليزية',
-                                                    ])
-                                                    ->default('ar')
+                                                    ->options(CourseLanguage::options())
+                                                    ->default(CourseLanguage::ARABIC->value)
                                                     ->required(),
 
                                                 Forms\Components\TextInput::make('price')

@@ -371,16 +371,16 @@
   "userName": "{{ auth()->user()->name }}",
   "userType": "{{ auth()->user()->user_type }}",
   "csrfToken": "{{ csrf_token() }}",
-  "pusherKey": "{{ config('chatify.pusher.key') }}",
-  "pusherHost": "{{ config('chatify.pusher.options.host') }}",
-  "pusherPort": "{{ config('chatify.pusher.options.port') }}",
-  "pusherScheme": "{{ config('chatify.pusher.options.scheme') }}",
-  "pusherUseTLS": {{ config('chatify.pusher.options.useTLS') ? 'true' : 'false' }},
+  "reverbKey": "{{ config('chat.reverb.key') }}",
+  "reverbHost": "{{ config('chat.reverb.options.host') }}",
+  "reverbPort": "{{ config('chat.reverb.options.port') }}",
+  "reverbScheme": "{{ config('chat.reverb.options.scheme') }}",
+  "reverbUseTLS": {{ config('chat.reverb.options.useTLS') ? 'true' : 'false' }},
   "apiEndpoints": {
     "sendMessage": "{{ route('send.message') }}",
     "fetchMessages": "{{ route('fetch.messages') }}",
     "getContacts": "{{ route('contacts.get') }}",
-    "pusherAuth": "{{ route('pusher.auth') }}"
+    "reverbAuth": "{{ route('pusher.auth') }}"
   }
 }
 </script>

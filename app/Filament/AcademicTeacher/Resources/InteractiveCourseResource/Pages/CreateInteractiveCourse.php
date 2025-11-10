@@ -24,6 +24,11 @@ class CreateInteractiveCourse extends CreateRecord
         $data['assigned_teacher_id'] = $teacherProfile->id;
         $data['created_by'] = $user->id;
 
+        // Calculate total sessions
+        if (isset($data['duration_weeks']) && isset($data['sessions_per_week'])) {
+            $data['total_sessions'] = $data['duration_weeks'] * $data['sessions_per_week'];
+        }
+
         return $data;
     }
 

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -191,6 +192,15 @@ class QuranSession extends Model implements MeetingCapable
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
+    }
+
+    /**
+     * Get the unified meeting record for this session
+     * NEW: Polymorphic relationship to unified Meeting model
+     */
+    public function meeting(): MorphOne
+    {
+        return $this->morphOne(Meeting::class, 'meetable');
     }
 
     public function trialRequest(): BelongsTo
@@ -395,30 +405,42 @@ class QuranSession extends Model implements MeetingCapable
      */
     public function markAsCompleted(array $additionalData = []): bool
     {
-        if (! $this->status->canComplete()) {
-            return false;
-        }
+        return \DB::transaction(function () use ($additionalData) {
+            // Lock the session row for update
+            $session = self::lockForUpdate()->find($this->id);
 
-        $updateData = array_merge([
-            'status' => SessionStatus::COMPLETED,
-            'ended_at' => now(),
-            'attendance_status' => 'attended',
-        ], $additionalData);
+            if (!$session) {
+                throw new \Exception("Session {$this->id} not found");
+            }
 
-        $this->update($updateData);
+            if (! $session->status->canComplete()) {
+                return false;
+            }
 
-        // Update circle progress if applicable
-        if ($this->individualCircle) {
-            $this->individualCircle->updateProgress();
-        }
+            $updateData = array_merge([
+                'status' => SessionStatus::COMPLETED,
+                'ended_at' => now(),
+                'attendance_status' => 'attended',
+            ], $additionalData);
 
-        // Record attendance for students
-        $this->recordSessionAttendance('present');
+            $session->update($updateData);
 
-        // Update subscription usage
-        $this->updateSubscriptionUsage();
+            // Update circle progress if applicable
+            if ($session->individualCircle) {
+                $session->individualCircle->updateProgress();
+            }
 
-        return true;
+            // Record attendance for students
+            $session->recordSessionAttendance('present');
+
+            // Update subscription usage (this also uses transactions internally)
+            $session->updateSubscriptionUsage();
+
+            // Refresh the current instance
+            $this->refresh();
+
+            return true;
+        });
     }
 
     /**
@@ -533,20 +555,34 @@ class QuranSession extends Model implements MeetingCapable
         if ($this->session_type === 'individual' && $this->individualCircle && $this->individualCircle->subscription) {
             $subscription = $this->individualCircle->subscription;
 
-            // Check if this session was already counted
-            $alreadyCounted = $this->isCountedInSubscription();
+            // Use database transaction to prevent race conditions
+            \DB::transaction(function () use ($subscription) {
+                // Lock the session row for update
+                $session = self::lockForUpdate()->find($this->id);
 
-            if (! $alreadyCounted) {
-                try {
-                    $subscription->useSession();
-
-                    // Mark this session as counted
-                    $this->update(['subscription_counted' => true]);
-
-                } catch (\Exception $e) {
-                    Log::warning("Failed to update subscription usage for session {$this->id}: ".$e->getMessage());
+                if (!$session) {
+                    throw new \Exception("Session {$this->id} not found");
                 }
-            }
+
+                // Check if this session was already counted
+                $alreadyCounted = $session->subscription_counted ?? false;
+
+                if (! $alreadyCounted) {
+                    try {
+                        $subscription->useSession();
+
+                        // Mark this session as counted
+                        $session->update(['subscription_counted' => true]);
+
+                        // Refresh the current instance
+                        $this->refresh();
+
+                    } catch (\Exception $e) {
+                        Log::warning("Failed to update subscription usage for session {$this->id}: ".$e->getMessage());
+                        throw $e; // Re-throw to rollback the transaction
+                    }
+                }
+            });
         }
         // For group sessions, we might handle differently in the future
         // For now, group sessions don't directly count against individual subscriptions
@@ -1307,18 +1343,33 @@ class QuranSession extends Model implements MeetingCapable
 
     private static function generateSessionCode(int $academyId): string
     {
-        $attempt = 0;
-        do {
-            $attempt++;
-            $count = self::where('academy_id', $academyId)->count() + $attempt;
-            $sessionCode = 'QSE-'.$academyId.'-'.str_pad($count, 6, '0', STR_PAD_LEFT);
-        } while (
-            self::where('academy_id', $academyId)
-                ->where('session_code', $sessionCode)
-                ->exists() && $attempt < 100
-        );
+        return \DB::transaction(function () use ($academyId) {
+            // Get the maximum sequence number for this academy (including soft deleted)
+            $maxNumber = static::withTrashed()
+                ->where('academy_id', $academyId)
+                ->where('session_code', 'LIKE', "QSE-{$academyId}-%")
+                ->lockForUpdate()
+                ->get()
+                ->map(function ($session) {
+                    // Extract the sequence number from session_code format: QSE-{academyId}-{sequence}
+                    $parts = explode('-', $session->session_code);
+                    return isset($parts[2]) ? (int) $parts[2] : 0;
+                })
+                ->max();
 
-        return $sessionCode;
+            $nextNumber = ($maxNumber ?? 0) + 1;
+            $sessionCode = 'QSE-'.$academyId.'-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+
+            // Double-check uniqueness (should not be needed with proper locking, but adds safety)
+            $attempt = 0;
+            while (static::withTrashed()->where('session_code', $sessionCode)->exists() && $attempt < 100) {
+                $nextNumber++;
+                $sessionCode = 'QSE-'.$academyId.'-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                $attempt++;
+            }
+
+            return $sessionCode;
+        });
     }
 
     // Boot method to handle model events

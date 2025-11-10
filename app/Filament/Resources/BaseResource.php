@@ -73,13 +73,16 @@ abstract class BaseResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        
+
         // When viewing all academies, eager load the academy relationship to prevent N+1 queries
         if (static::isViewingAllAcademies()) {
             $academyPath = static::getAcademyRelationshipPath();
-            $query->with($academyPath);
+            // Only eager load if academy path is not empty
+            if (!empty($academyPath)) {
+                $query->with($academyPath);
+            }
         }
-        
+
         return $query;
     }
     

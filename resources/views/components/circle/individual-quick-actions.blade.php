@@ -42,7 +42,7 @@
             @endif
 
             @if($student)
-                <a href="/chat/{{ $student->id }}?subdomain={{ request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy' }}" 
+                <a href="{{ route('chat', ['subdomain' => request()->route('subdomain'), 'user' => $student->id]) }}" 
                    class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                     <i class="ri-message-3-line ml-2"></i>
                     مراسلة الطالب
@@ -67,7 +67,7 @@
             @endif
 
             @if($teacher)
-                <a href="/chat/{{ $teacher->id }}?subdomain={{ request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy' }}" 
+                <a href="{{ route('chat', ['subdomain' => request()->route('subdomain'), 'user' => $teacher->id]) }}" 
                    class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                     <i class="ri-message-3-line ml-2"></i>
                     مراسلة المعلم

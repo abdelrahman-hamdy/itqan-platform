@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Helpers\AcademyHelper;
+use App\Models\AcademicSession;
+use App\Models\AcademicSessionAttendance;
+use App\Observers\AcademicSessionAttendanceObserver;
+use App\Observers\AcademicSessionObserver;
 use App\Observers\MediaObserver;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
@@ -41,6 +45,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Media Observer to handle UTF-8 filename sanitization
         Media::observe(MediaObserver::class);
+
+        // Register AcademicSession Observer for auto-progress tracking
+        AcademicSession::observe(AcademicSessionObserver::class);
+
+        // Register AcademicSessionAttendance Observer for attendance-based progress tracking
+        AcademicSessionAttendance::observe(AcademicSessionAttendanceObserver::class);
 
         // Render hooks can be added here if needed
     }

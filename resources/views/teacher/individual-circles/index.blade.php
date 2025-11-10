@@ -158,10 +158,11 @@
                                         </a>
                                         
                                         @if($circle->subscription && $circle->subscription->student)
-                                        <a href="{{ route('user', ['subdomain' => request()->route('subdomain'), 'id' => $circle->subscription->student->id]) }}"
-                                           class="inline-flex items-center px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                            <i class="ri-message-3-line ml-1"></i>
-                                            مراسلة الطالب
+                                        <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $circle->student->id]) }}" 
+                                           class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm group"
+                                           title="راسل الطالب">
+                                            <i class="ri-message-line ml-1"></i>
+                                            راسل الطالب
                                         </a>
                                         @endif
                                     @endif

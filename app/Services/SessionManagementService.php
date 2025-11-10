@@ -308,11 +308,16 @@ class SessionManagementService
 
         $conflict = QuranSession::where('quran_teacher_id', $teacherId)
             ->where(function ($query) use ($scheduledAt, $endTime) {
-                $query->whereBetween('scheduled_at', [$scheduledAt, $endTime])
-                    ->orWhereBetween(
-                        DB::raw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE)'),
-                        [$scheduledAt, $endTime]
-                    );
+                // Check if new session overlaps with existing sessions
+                $query->where(function ($q) use ($scheduledAt, $endTime) {
+                    // Existing session starts before new session and ends after new session starts
+                    $q->where('scheduled_at', '<=', $scheduledAt)
+                        ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$scheduledAt]);
+                })->orWhere(function ($q) use ($scheduledAt, $endTime) {
+                    // Existing session starts during new session
+                    $q->where('scheduled_at', '>=', $scheduledAt)
+                        ->where('scheduled_at', '<', $endTime);
+                });
             })
             ->whereIn('status', ['scheduled', 'in_progress'])
             ->exists();

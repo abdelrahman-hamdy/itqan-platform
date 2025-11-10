@@ -150,7 +150,7 @@
                     'friday' => 'الجمعة',
                     'saturday' => 'السبت'
                   ];
-                  $availableDays = old('available_days', $teacherProfile->available_days ?? []);
+                  $availableDays = old('available_days', is_array($teacherProfile->available_days) ? $teacherProfile->available_days : []);
                 @endphp
                 
                 @foreach($days as $key => $day)

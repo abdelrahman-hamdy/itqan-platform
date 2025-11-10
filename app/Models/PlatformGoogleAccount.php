@@ -82,7 +82,7 @@ class PlatformGoogleAccount extends Model
     public function scopeAvailable($query)
     {
         return $query->healthy()
-                    ->whereRaw('daily_usage < daily_limit');
+                    ->whereColumn('daily_usage', '<', 'daily_limit');
     }
 
     public function scopeForAcademy($query, $academyId)

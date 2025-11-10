@@ -11,20 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('quran_sessions', function (Blueprint $table) {
-            // Check if the column exists before trying to remove it
-            if (Schema::hasColumn('quran_sessions', 'counts_toward_subscription')) {
-                // Try to drop indexes that use the column first (if they exist)
-                try {
-                    $table->dropIndex('idx_ind_circle_counts');
-                } catch (\Exception $e) {
-                    // Index might not exist, continue anyway
-                }
-
-                // Remove the counts_toward_subscription column
+        // Check if the column exists before trying to remove it
+        if (Schema::hasColumn('quran_sessions', 'counts_toward_subscription')) {
+            // Just drop the column - indexes will be dropped automatically
+            Schema::table('quran_sessions', function (Blueprint $table) {
                 $table->dropColumn('counts_toward_subscription');
-            }
-        });
+            });
+        }
     }
 
     /**
