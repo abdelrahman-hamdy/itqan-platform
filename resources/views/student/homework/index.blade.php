@@ -69,7 +69,7 @@
 
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <form method="GET" action="{{ route('student.homework.index') }}" class="flex flex-wrap gap-4 items-end">
+            <form method="GET" action="{{ route('student.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="flex flex-wrap gap-4 items-end">
                 <div class="flex-1 min-w-[200px]">
                     <label for="status" class="block text-sm font-medium text-gray-700 mb-2">الحالة</label>
                     <select name="status" id="status" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
@@ -97,7 +97,7 @@
                         <i class="ri-search-line ml-1"></i>
                         بحث
                     </button>
-                    <a href="{{ route('student.homework.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg transition-colors">
+                    <a href="{{ route('student.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg transition-colors">
                         <i class="ri-refresh-line ml-1"></i>
                         إعادة تعيين
                     </a>
@@ -193,13 +193,13 @@
                         <!-- Actions -->
                         <div class="flex flex-col gap-2 mr-4">
                             @if(in_array($hw['status'], ['not_submitted', 'draft']))
-                            <a href="{{ route('student.homework.submit', ['id' => $hw['homework_id'], 'type' => $hw['type']]) }}"
+                            <a href="{{ route('student.homework.submit', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $hw['homework_id'], 'type' => $hw['type']]) }}"
                                class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                                 <i class="ri-upload-line ml-1"></i>
                                 تسليم الواجب
                             </a>
                             @else
-                            <a href="{{ route('student.homework.view', ['id' => $hw['id'], 'type' => $hw['type']]) }}"
+                            <a href="{{ route('student.homework.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $hw['id'], 'type' => $hw['type']]) }}"
                                class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
                                 <i class="ri-eye-line ml-1"></i>
                                 عرض التفاصيل

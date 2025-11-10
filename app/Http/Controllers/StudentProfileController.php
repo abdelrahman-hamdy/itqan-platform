@@ -1164,7 +1164,7 @@ class StudentProfileController extends Controller
         // Get student's academic progress to show which teachers they're learning with
         $academicProgress = AcademicProgress::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['teacher', 'course'])
+            ->with(['teacher', 'subject', 'subscription'])
             ->get();
 
         return view('student.academic-teachers', compact(

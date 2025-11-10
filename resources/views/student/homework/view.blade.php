@@ -2,7 +2,7 @@
     <div class="container mx-auto px-4 py-8 max-w-5xl">
         <!-- Back Button -->
         <div class="mb-6">
-            <a href="{{ route('student.homework.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
+            <a href="{{ route('student.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
                 <i class="ri-arrow-right-line ml-1"></i>
                 العودة إلى قائمة الواجبات
             </a>
@@ -221,7 +221,7 @@
                 <p class="text-red-700 mb-4">
                     عذراً، لم نتمكن من تحميل معلومات الواجب المطلوب.
                 </p>
-                <a href="{{ route('student.homework.index') }}" class="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                <a href="{{ route('student.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
                     <i class="ri-arrow-right-line ml-2"></i>
                     العودة إلى قائمة الواجبات
                 </a>

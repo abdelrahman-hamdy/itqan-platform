@@ -91,22 +91,22 @@ class PublicInteractiveCourseController extends Controller
 
         // Check if enrollment is open
         if (! $course->isEnrollmentOpen()) {
-            return redirect()->route('interactive-courses.show', [
-                'subdomain' => $subdomain,
-                'course' => $courseId,
-            ])->with('error', 'عذراً، التسجيل في هذا الكورس مغلق حالياً');
+            return redirect("/interactive-courses/{$courseId}")
+                ->with('error', 'عذراً، التسجيل في هذا الكورس مغلق حالياً');
         }
 
         // Check if already enrolled
+        $user = Auth::user();
+        $studentId = $user->student ? $user->student->id : $user->id;
+
         $existingEnrollment = InteractiveCourseEnrollment::where('course_id', $course->id)
-            ->where('student_id', Auth::id())
+            ->where('student_id', $studentId)
             ->first();
 
         if ($existingEnrollment) {
-            return redirect()->route('interactive-courses.show', [
-                'subdomain' => $subdomain,
-                'course' => $courseId,
-            ])->with('info', 'أنت مسجل بالفعل في هذا الكورس');
+            // If enrolled, redirect to the enrolled view
+            return redirect("/my-courses/interactive/{$courseId}")
+                ->with('info', 'أنت مسجل بالفعل في هذا الكورس');
         }
 
         return view('public.interactive-courses.enroll', compact('academy', 'course'));
@@ -151,21 +151,22 @@ class PublicInteractiveCourseController extends Controller
         }
 
         // Check if already enrolled
+        $user = Auth::user();
+        $studentId = $user->student ? $user->student->id : $user->id;
+
         $existingEnrollment = InteractiveCourseEnrollment::where('course_id', $course->id)
-            ->where('student_id', Auth::id())
+            ->where('student_id', $studentId)
             ->first();
 
         if ($existingEnrollment) {
-            return redirect()->route('interactive-courses.show', [
-                'subdomain' => $subdomain,
-                'course' => $courseId,
-            ])->with('info', 'أنت مسجل بالفعل في هذا الكورس');
+            return redirect("/my-courses/interactive/{$courseId}")
+                ->with('info', 'أنت مسجل بالفعل في هذا الكورس');
         }
 
         // Create enrollment (pending payment)
         $enrollment = InteractiveCourseEnrollment::create([
             'course_id' => $course->id,
-            'student_id' => Auth::id(),
+            'student_id' => $studentId,
             'academy_id' => $academy->id,
             'enrollment_status' => 'pending', // Will be 'enrolled' after payment
             'enrolled_at' => now(),
