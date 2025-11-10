@@ -1011,6 +1011,108 @@ class StudentProfileController extends Controller
         ));
     }
 
+    public function addInteractiveSessionFeedback(Request $request, $subdomain, $sessionId)
+    {
+        $validated = $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'feedback_text' => 'nullable|string|max:1000'
+        ]);
+
+        $user = Auth::user();
+        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+
+        // Verify enrollment and session completion
+        $enrollment = \App\Models\InteractiveCourseEnrollment::where([
+            'course_id' => $session->course_id,
+            'student_id' => $user->id,
+            'status' => 'active'
+        ])->firstOrFail();
+
+        if ($session->status !== 'completed') {
+            return back()->with('error', 'Cannot submit feedback for incomplete session');
+        }
+
+        $student = $user->student;
+
+        // Create or update feedback
+        // Note: You may need to create an InteractiveSessionFeedback model
+        // For now, we'll use a generic approach that can be adapted
+        \DB::table('interactive_session_feedback')->updateOrInsert(
+            [
+                'session_id' => $sessionId,
+                'student_id' => $student->id
+            ],
+            [
+                'rating' => $validated['rating'],
+                'feedback_text' => $validated['feedback_text'] ?? null,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
+        );
+
+        return back()->with('success', 'Feedback submitted successfully');
+    }
+
+    public function submitInteractiveCourseHomework(Request $request, $subdomain, $sessionId)
+    {
+        $validated = $request->validate([
+            'homework_id' => 'required|exists:interactive_course_homework,id',
+            'answer_text' => 'nullable|string',
+            'files.*' => 'nullable|file|max:10240' // 10MB max
+        ]);
+
+        $user = Auth::user();
+        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+
+        // Verify enrollment
+        $enrollment = \App\Models\InteractiveCourseEnrollment::where([
+            'course_id' => $session->course_id,
+            'student_id' => $user->id,
+            'status' => 'active'
+        ])->firstOrFail();
+
+        $homework = \App\Models\InteractiveCourseHomework::findOrFail($validated['homework_id']);
+        $student = $user->student;
+
+        // Use existing HomeworkService if available
+        if (class_exists(\App\Services\HomeworkService::class)) {
+            app(\App\Services\HomeworkService::class)->submitHomework(
+                $homework,
+                $student,
+                $validated
+            );
+        } else {
+            // Fallback: Direct submission creation
+            $submissionData = [
+                'homework_id' => $homework->id,
+                'student_id' => $student->id,
+                'answer_text' => $validated['answer_text'] ?? null,
+                'status' => 'pending',
+                'submitted_at' => now()
+            ];
+
+            // Handle file uploads if present
+            if ($request->hasFile('files')) {
+                $files = [];
+                foreach ($request->file('files') as $file) {
+                    $path = $file->store('homework-submissions', 'public');
+                    $files[] = $path;
+                }
+                $submissionData['files'] = json_encode($files);
+            }
+
+            \DB::table('interactive_course_homework_submissions')->updateOrInsert(
+                [
+                    'homework_id' => $homework->id,
+                    'student_id' => $student->id
+                ],
+                $submissionData
+            );
+        }
+
+        return back()->with('success', 'Homework submitted successfully');
+    }
+
     public function academicTeachers()
     {
         $user = Auth::user();

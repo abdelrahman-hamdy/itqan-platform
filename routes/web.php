@@ -1482,6 +1482,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // Interactive course session detail - for enrolled students
     Route::middleware(['auth', 'role:student'])->group(function () {
         Route::get('/interactive-sessions/{session}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourseSession'])->name('student.interactive-sessions.show');
+        Route::post('/interactive-sessions/{session}/feedback', [App\Http\Controllers\StudentProfileController::class, 'addInteractiveSessionFeedback'])->name('student.interactive-sessions.feedback');
+        Route::post('/interactive-sessions/{session}/homework', [App\Http\Controllers\StudentProfileController::class, 'submitInteractiveCourseHomework'])->name('student.interactive-sessions.homework');
     });
 
     // Chat Route - Role-based views (within subdomain group)
