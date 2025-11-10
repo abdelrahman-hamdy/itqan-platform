@@ -240,7 +240,7 @@
             @endif
 
             <div class="mt-6">
-              <a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id]) }}"
+              <a href="/interactive-courses/{{ $course->id }}"
                  class="block w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
                 <i class="ri-information-line ml-1"></i>
                 معرفة المزيد
