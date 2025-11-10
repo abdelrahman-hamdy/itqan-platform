@@ -72,7 +72,7 @@ class ChatSystem {
       
       // If not found in contacts, fetch user data directly
       console.log('🔍 User not in contacts, fetching user data...');
-      const response = await fetch('/chat/idInfo', {
+      const response = await fetch('/chat/api/idInfo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

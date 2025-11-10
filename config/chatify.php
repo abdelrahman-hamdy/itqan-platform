@@ -1,124 +1,38 @@
 <?php
 
+/**
+ * Bridge configuration file for Chatify package compatibility
+ *
+ * This file exists solely to maintain compatibility with the munafio/chatify package
+ * which expects config('chatify.*') calls to work.
+ *
+ * All actual configuration is in config/chat.php
+ */
+
 return [
-    /*
-    |-------------------------------------
-    | Messenger display name
-    |-------------------------------------
-    */
-    'name' => env('CHATIFY_NAME', 'Chatify Messenger'),
-
-    /*
-    |-------------------------------------
-    | The disk on which to store added
-    | files and derived images by default.
-    |-------------------------------------
-    */
-    'storage_disk_name' => env('CHATIFY_STORAGE_DISK', 'public'),
-
-    /*
-    |-------------------------------------
-    | Routes configurations
-    |-------------------------------------
-    */
+    // Route configuration
     'routes' => [
-        'custom' => env('CHATIFY_CUSTOM_ROUTES', false),
-        'prefix' => env('CHATIFY_ROUTES_PREFIX', 'chat'),
-        'middleware' => env('CHATIFY_ROUTES_MIDDLEWARE', ['web','auth']),
-        'namespace' => env('CHATIFY_ROUTES_NAMESPACE', 'App\Http\Controllers\vendor\Chatify'),
+        'custom' => true, // We use custom routes from routes/chatify/
+        'prefix' => config('chat.routes.prefix', 'chat'),
+        'middleware' => config('chat.routes.middleware', ['web','auth']),
+        'namespace' => config('chat.routes.namespace', 'App\Http\Controllers\vendor\Chatify'),
     ],
+
     'api_routes' => [
-        'prefix' => env('CHATIFY_API_ROUTES_PREFIX', 'chat/api'),
-        'middleware' => env('CHATIFY_API_ROUTES_MIDDLEWARE', ['web','auth']),
-        'namespace' => env('CHATIFY_API_ROUTES_NAMESPACE', 'App\Http\Controllers\vendor\Chatify'),
+        'prefix' => config('chat.api_routes.prefix', 'chat/api'),
+        'middleware' => config('chat.api_routes.middleware', ['web','auth']),
+        'namespace' => config('chat.api_routes.namespace', 'App\Http\Controllers\vendor\Chatify'),
     ],
 
-    /*
-    |-------------------------------------
-    | Laravel Reverb API credentials
-    |-------------------------------------
-    */
-    'pusher' => [
-        'debug' => env('APP_DEBUG', false),
-        'key' => env('REVERB_APP_KEY', env('PUSHER_APP_KEY', 'vil71wafgpp6do1miwn1')),
-        'secret' => env('REVERB_APP_SECRET', env('PUSHER_APP_SECRET', 'auto0ms5oev2876cfpvt')),
-        'app_id' => env('REVERB_APP_ID', env('PUSHER_APP_ID', 'itqan-platform')),
-        'options' => [
-            'cluster' => null,
-            'host' => env('REVERB_HOST', '127.0.0.1'),
-            'port' => env('REVERB_PORT', 8085),
-            'scheme' => env('REVERB_SCHEME', 'http'),
-            'encrypted' => false,
-            'useTLS' => false,
-        ],
-    ],
+    // All other settings from chat.php
+    'name' => config('chat.name', 'Itqan Chat'),
+    'storage_disk_name' => config('chat.storage_disk_name', 'public'),
+    'user_avatar' => config('chat.user_avatar'),
+    'gravatar' => config('chat.gravatar'),
+    'attachments' => config('chat.attachments'),
+    'colors' => config('chat.colors'),
+    'sounds' => config('chat.sounds'),
 
-    /*
-    |-------------------------------------
-    | User Avatar
-    |-------------------------------------
-    */
-    'user_avatar' => [
-        'folder' => 'users-avatar',
-        'default' => 'avatar.png',
-    ],
-
-    /*
-    |-------------------------------------
-    | Gravatar
-    |
-    | imageset property options:
-    | [ 404 | mp | identicon (default) | monsterid | wavatar ]
-    |-------------------------------------
-    */
-    'gravatar' => [
-        'enabled' => true,
-        'image_size' => 200,
-        'imageset' => 'identicon'
-    ],
-
-    /*
-    |-------------------------------------
-    | Attachments
-    |-------------------------------------
-    */
-    'attachments' => [
-        'folder' => 'attachments',
-        'download_route_name' => 'attachments.download',
-        'allowed_images' => (array) ['png','jpg','jpeg','gif'],
-        'allowed_files' => (array) ['zip','rar','txt'],
-        'max_upload_size' => env('CHATIFY_MAX_FILE_SIZE', 150), // MB
-    ],
-
-    /*
-    |-------------------------------------
-    | Messenger's colors
-    |-------------------------------------
-    */
-    'colors' => (array) [
-        '#2180f3',
-        '#2196F3',
-        '#00BCD4',
-        '#3F51B5',
-        '#673AB7',
-        '#4CAF50',
-        '#FFC107',
-        '#FF9800',
-        '#ff2522',
-        '#9C27B0',
-    ],
-    /*
-    |-------------------------------------
-    | Sounds
-    | You can enable/disable the sounds and
-    | change sound's name/path placed at
-    | `public/` directory of your app.
-    |
-    |-------------------------------------
-    */
-    'sounds' => [
-        'enabled' => true,
-        'public_path' => 'sounds/chatify',
-        'new_message' => 'new-message-sound.mp3',
-    ]
+    // Reverb settings (for backward compatibility with 'pusher' key)
+    'pusher' => config('chat.reverb'),
 ];

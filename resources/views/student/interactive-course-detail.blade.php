@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -169,6 +170,69 @@
                 <span class="text-blue-600 font-semibold">{{ $time }}</span>
               </div>
               @endforeach
+            </div>
+          </div>
+          @endif
+
+          {{-- Course Sessions Section --}}
+          @if($isEnrolled && ($upcomingSessions->count() > 0 || $pastSessions->count() > 0))
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+              <i class="ri-calendar-event-line text-primary ml-2"></i>
+              جلسات الكورس
+            </h2>
+
+            {{-- Alpine.js Tabs Component --}}
+            <div x-data="{ activeTab: 'upcoming' }" class="w-full">
+              {{-- Tab Buttons --}}
+              <div class="flex border-b border-gray-200 mb-6">
+                <button
+                  @click="activeTab = 'upcoming'"
+                  :class="activeTab === 'upcoming' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                  class="px-6 py-3 border-b-2 font-medium transition-colors">
+                  <i class="ri-calendar-check-line ml-1"></i>
+                  الجلسات القادمة ({{ $upcomingSessions->count() }})
+                </button>
+                <button
+                  @click="activeTab = 'past'"
+                  :class="activeTab === 'past' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                  class="px-6 py-3 border-b-2 font-medium transition-colors">
+                  <i class="ri-history-line ml-1"></i>
+                  الجلسات السابقة ({{ $pastSessions->count() }})
+                </button>
+              </div>
+
+              {{-- Upcoming Sessions Tab Content --}}
+              <div x-show="activeTab === 'upcoming'" class="space-y-4">
+                @forelse($upcomingSessions as $session)
+                  @php
+                    $attendance = $session->attendances->where('student_id', $student->id ?? null)->first();
+                  @endphp
+                  <x-interactive.session-card :session="$session" :attendance="$attendance" />
+                @empty
+                  <div class="text-center py-12 text-gray-500">
+                    <i class="ri-calendar-line text-5xl mb-4"></i>
+                    <p class="text-lg font-medium">لا توجد جلسات قادمة</p>
+                    <p class="text-sm mt-2">سيتم إضافة الجلسات القادمة قريباً</p>
+                  </div>
+                @endforelse
+              </div>
+
+              {{-- Past Sessions Tab Content --}}
+              <div x-show="activeTab === 'past'" class="space-y-4">
+                @forelse($pastSessions as $session)
+                  @php
+                    $attendance = $session->attendances->where('student_id', $student->id ?? null)->first();
+                  @endphp
+                  <x-interactive.session-card :session="$session" :attendance="$attendance" />
+                @empty
+                  <div class="text-center py-12 text-gray-500">
+                    <i class="ri-time-line text-5xl mb-4"></i>
+                    <p class="text-lg font-medium">لا توجد جلسات سابقة بعد</p>
+                    <p class="text-sm mt-2">ابدأ بحضور الجلسات القادمة</p>
+                  </div>
+                @endforelse
+              </div>
             </div>
           </div>
           @endif

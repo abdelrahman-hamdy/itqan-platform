@@ -822,21 +822,35 @@ class StudentProfileController extends Controller
             ->where('academy_id', $academy->id)
             ->firstOrFail();
 
-        // Load course relationships
-        $courseModel->load([
-            'assignedTeacher',
-            'subject',
-            'gradeLevel',
-            'enrollments.student.user',
-            'sessions' => function ($query) {
-                $query->orderBy('scheduled_date');
-            },
-        ]);
-
         // Determine user type and permissions
         $userType = $user->user_type;
         $isTeacher = $userType === 'academic_teacher';
         $isStudent = $userType === 'student';
+
+        $student = $isStudent ? $user->student : null;
+
+        // Load course relationships with student-specific session data
+        $courseModel->load([
+            'assignedTeacher.user',
+            'subject',
+            'gradeLevel',
+            'enrollments.student.user',
+            'sessions' => function ($query) use ($student) {
+                $query->with([
+                    'attendances' => function ($q) use ($student) {
+                        if ($student) {
+                            $q->where('student_id', $student->id);
+                        }
+                    },
+                    'homework.submissions' => function ($q) use ($student) {
+                        if ($student) {
+                            $q->where('student_id', $student->id);
+                        }
+                    },
+                    'meeting'
+                ])->orderBy('scheduled_date')->orderBy('scheduled_time');
+            },
+        ]);
 
         // For teachers: Check if they have access to this course (either created or assigned)
         if ($isTeacher) {
@@ -886,6 +900,31 @@ class StudentProfileController extends Controller
             ];
         }
 
+        // Separate sessions into upcoming and past
+        $now = now();
+        $upcomingSessions = $courseModel->sessions
+            ->filter(function ($session) use ($now) {
+                $scheduledDateTime = \Carbon\Carbon::parse(
+                    $session->scheduled_date->format('Y-m-d') . ' ' .
+                    $session->scheduled_time->format('H:i:s')
+                );
+                return $scheduledDateTime->gte($now) || $session->status === 'in-progress';
+            })
+            ->values();
+
+        $pastSessions = $courseModel->sessions
+            ->filter(function ($session) use ($now) {
+                $scheduledDateTime = \Carbon\Carbon::parse(
+                    $session->scheduled_date->format('Y-m-d') . ' ' .
+                    $session->scheduled_time->format('H:i:s')
+                );
+                return $scheduledDateTime->lt($now) && $session->status !== 'in-progress';
+            })
+            ->sortByDesc(function ($session) {
+                return $session->scheduled_date->format('Y-m-d') . ' ' . $session->scheduled_time->format('H:i:s');
+            })
+            ->values();
+
         // Choose view based on user type
         $viewName = $isTeacher ? 'teacher.interactive-course-detail' : 'student.interactive-course-detail';
 
@@ -897,7 +936,79 @@ class StudentProfileController extends Controller
             'userType' => $userType,
             'isTeacher' => $isTeacher,
             'isStudent' => $isStudent,
+            'upcomingSessions' => $upcomingSessions,
+            'pastSessions' => $pastSessions,
+            'student' => $student,
         ]);
+    }
+
+    public function showInteractiveCourseSession($subdomain, $sessionId)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            abort(401, 'User not authenticated');
+        }
+
+        // Get academy from subdomain parameter
+        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+
+        // Ensure user belongs to this academy (security check)
+        if ($user->academy_id !== $academy->id) {
+            abort(403, 'Access denied to this academy');
+        }
+
+        // Find the session with relationships
+        $session = \App\Models\InteractiveCourseSession::with([
+            'course.teacher.user',
+            'course.subject',
+            'course.gradeLevel',
+            'homework',
+            'attendances' => function ($q) use ($user) {
+                $q->where('student_id', $user->id);
+            },
+            'meeting'
+        ])->findOrFail($sessionId);
+
+        // Ensure session's course belongs to the academy
+        if ($session->course->academy_id !== $academy->id) {
+            abort(403, 'Access denied to this session');
+        }
+
+        // Verify enrollment in the course
+        $enrollment = \App\Models\InteractiveCourseEnrollment::where([
+            'course_id' => $session->course_id,
+            'student_id' => $user->id,
+            'status' => 'active'
+        ])->first();
+
+        if (!$enrollment) {
+            abort(403, 'You must be enrolled in this course to view sessions');
+        }
+
+        $student = $user->student;
+
+        // Get attendance record for this student
+        $attendance = $session->attendances->where('student_id', $student->id)->first();
+
+        // Get homework submission if homework exists
+        $homeworkSubmission = null;
+        if ($session->homework()->count() > 0) {
+            $homework = $session->homework()->first();
+            if ($homework) {
+                $homeworkSubmission = $homework->submissions()
+                    ->where('student_id', $student->id)
+                    ->first();
+            }
+        }
+
+        return view('student.interactive-sessions.show', compact(
+            'session',
+            'attendance',
+            'homeworkSubmission',
+            'student',
+            'enrollment'
+        ));
     }
 
     public function academicTeachers()
