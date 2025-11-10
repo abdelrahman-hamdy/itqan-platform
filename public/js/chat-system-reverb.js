@@ -66,13 +66,13 @@ class ChatSystem {
       const existingContact = this.contacts.find(c => c.id == userId);
       if (existingContact) {
         console.log('✅ Found user in contacts, opening chat:', existingContact.name);
-        this.openChat(existingContact);
+        this.selectContact(userId);
         return;
       }
       
       // If not found in contacts, fetch user data directly
       console.log('🔍 User not in contacts, fetching user data...');
-      const response = await fetch('/chat/api/idInfo', {
+      const response = await fetch('/chat/idInfo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,26 @@ class ChatSystem {
         const data = await response.json();
         if (!data.error && data.user) {
           console.log('✅ Fetched user data, opening chat:', data.user.name);
-          this.openChat(data.user);
+
+          // Add user to contacts if not already there
+          if (!this.contacts.find(c => c.id == data.user.id)) {
+            console.log('➕ Adding user to contacts list');
+            this.contacts.push({
+              id: data.user.id,
+              name: data.user.name,
+              email: data.user.email,
+              avatar: data.user.avatar,
+              activeStatus: data.user.activeStatus,
+              lastMessage: null,
+              lastMessageTime: null,
+              unreadCount: 0
+            });
+            // Re-render contacts to show the new user
+            this.renderContacts();
+          }
+
+          // Now select the contact
+          this.selectContact(data.user.id);
         } else {
           console.error('❌ Cannot message this user:', data.message);
           this.showNotification(data.message || 'غير مسموح لك بمراسلة هذا المستخدم', 'error');
@@ -655,8 +674,8 @@ class ChatSystem {
       
       const formData = new FormData();
       formData.append('id', contactId);
-      
-      const response = await fetch('/chat/api/makeSeen', {
+
+      const response = await fetch('/chat/makeSeen', {
         method: 'POST',
         headers: {
           'X-CSRF-TOKEN': this.config.csrfToken,

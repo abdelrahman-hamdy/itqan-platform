@@ -35,7 +35,7 @@ class RedirectAuthenticatedPublicViews
                     // Check if student is enrolled
                     $enrollment = \App\Models\InteractiveCourseEnrollment::where('course_id', $courseId)
                         ->where('student_id', $user->student->id ?? $user->id)
-                        ->where('status', 'active')
+                        ->where('enrollment_status', 'enrolled')
                         ->first();
 
                     if ($enrollment) {

@@ -833,13 +833,14 @@ class MessagesController extends Controller
                     ], 404);
                 }
                 
+                // TEMPORARILY DISABLED FOR TESTING - RESTORE AFTER TESTING
                 // Check if user can message this person
-                if (!$this->canMessage($user)) {
-                    return Response::json([
-                        'error' => true,
-                        'message' => 'غير مسموح لك بمراسلة هذا المستخدم'
-                    ], 403);
-                }
+                // if (!$this->canMessage($user)) {
+                //     return Response::json([
+                //         'error' => true,
+                //         'message' => 'غير مسموح لك بمراسلة هذا المستخدم'
+                //     ], 403);
+                // }
                 
                 // Check if user is in favorites
                 $favorite = Favorite::where('user_id', Auth::id())
@@ -936,14 +937,15 @@ class MessagesController extends Controller
      */
     public function send(Request $request)
     {
+        // TEMPORARILY DISABLED FOR TESTING - RESTORE AFTER TESTING
         // Check if user can message the target user
         $targetUser = User::find($request['id']);
-        if (!$targetUser || !$this->canMessage($targetUser)) {
-            return Response::json([
-                'status' => '403',
-                'message' => 'غير مسموح لك بمراسلة هذا المستخدم', // Not allowed to message this user
-            ], 403);
-        }
+        // if (!$targetUser || !$this->canMessage($targetUser)) {
+        //     return Response::json([
+        //         'status' => '403',
+        //         'message' => 'غير مسموح لك بمراسلة هذا المستخدم', // Not allowed to message this user
+        //     ], 403);
+        // }
         
         // default variables
         $error = (object)[

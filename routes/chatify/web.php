@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\Route;
 
 /*
 * This is the main app route [Chatify Messenger]
+* COMMENTED OUT - Using custom role-based route from routes/web.php instead
 */
-Route::get('/', 'MessagesController@index')->name(config('chatify.routes.prefix'));
+// Route::get('/', 'MessagesController@index')->name(config('chatify.routes.prefix'));
 
 /**
  *  Fetch info for specific id [user/group]

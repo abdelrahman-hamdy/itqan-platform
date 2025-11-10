@@ -25,12 +25,12 @@ return [
         'custom' => env('CHAT_CUSTOM_ROUTES', false),
         'prefix' => env('CHAT_ROUTES_PREFIX', 'chat'),
         'middleware' => env('CHAT_ROUTES_MIDDLEWARE', ['web','auth']),
-        'namespace' => env('CHAT_ROUTES_NAMESPACE', 'App\Http\Controllers\Chat'),
+        'namespace' => env('CHAT_ROUTES_NAMESPACE', 'App\Http\Controllers\vendor\Chatify'),
     ],
     'api_routes' => [
         'prefix' => env('CHAT_API_ROUTES_PREFIX', 'api/chat'),
-        'middleware' => env('CHAT_API_ROUTES_MIDDLEWARE', ['api','auth:sanctum']),
-        'namespace' => env('CHAT_API_ROUTES_NAMESPACE', 'App\Http\Controllers\Api\Chat'),
+        'middleware' => env('CHAT_API_ROUTES_MIDDLEWARE', ['web','auth']),
+        'namespace' => env('CHAT_API_ROUTES_NAMESPACE', 'App\Http\Controllers\vendor\Chatify'),
     ],
 
     /*

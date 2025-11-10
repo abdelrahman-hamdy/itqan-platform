@@ -156,9 +156,9 @@
                 usePublicChannel: {{ config('app.env') === 'local' && config('app.debug') ? 'true' : 'false' }}, // Public in debug mode, private in production
                 authEndpoint: '{{ url('/broadcasting/auth') }}',
                 apiEndpoints: {
-                    contacts: '{{ url("/chat/api/getContacts") }}',
-                    fetchMessages: '{{ url("/chat/api/fetchMessages") }}',
-                    sendMessage: '{{ url("/chat/api/sendMessage") }}'
+                    contacts: '{{ route("contacts.get") }}',
+                    fetchMessages: '{{ route("fetch.messages") }}',
+                    sendMessage: '{{ route("send.message") }}'
                 },
                 @if(isset($autoOpenUserId))
                 autoOpenUserId: {{ $autoOpenUserId }},

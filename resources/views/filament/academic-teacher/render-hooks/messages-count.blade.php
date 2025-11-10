@@ -60,7 +60,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Function to fetch and update unread count for Filament panel
     function updateFilamentUnreadCount() {
-        fetch('/chat/api/unreadCount', {
+        fetch('/api/chat/unreadCount', {
             method: 'GET',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',

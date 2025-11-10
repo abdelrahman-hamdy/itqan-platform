@@ -169,7 +169,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Function to fetch and update unread count
   function updateUnreadCount() {
-    fetch('/chat/api/unreadCount', {
+    fetch('/api/chat/unreadCount', {
       method: 'GET',
       headers: {
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
