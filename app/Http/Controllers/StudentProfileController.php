@@ -778,7 +778,6 @@ class StudentProfileController extends Controller
 
         // Get all available interactive courses for this academy
         $availableCourses = InteractiveCourse::where('academy_id', $academy->id)
-            ->where('status', 'published')
             ->where('is_published', true)
             ->where('enrollment_deadline', '>=', now()->toDateString())
             ->with(['assignedTeacher', 'subject', 'gradeLevel'])

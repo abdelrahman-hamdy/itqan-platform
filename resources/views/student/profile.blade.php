@@ -157,6 +157,33 @@
 
         <!-- Interactive Courses -->
         <div id="interactive-courses">
+          @php
+            $progressService = app(\App\Services\InteractiveCourseProgressService::class);
+            $interactiveCourseItems = [];
+            $totalSessions = 0;
+            $completedSessions = 0;
+
+            foreach($interactiveCourses as $course) {
+              $enrollment = $course->enrollments->first();
+              if ($enrollment && auth()->user()->student) {
+                $progress = $progressService->calculateCourseProgress($course->id, auth()->user()->student->id);
+                $totalSessions += $progress['total_sessions'];
+                $completedSessions += $progress['completed_sessions'];
+
+                $interactiveCourseItems[] = [
+                  'title' => $course->title,
+                  'description' => 'مع ' . ($course->assignedTeacher->user->name ?? 'المعلم') . ' - ' . $progress['completed_sessions'] . ' جلسة مكتملة من ' . $progress['total_sessions'],
+                  'icon' => 'ri-book-open-line',
+                  'iconBgColor' => 'bg-blue-100',
+                  'iconColor' => 'text-blue-600',
+                  'progress' => $progress['completion_percentage'],
+                  'status' => 'active',
+                  'link' => route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
+                ];
+              }
+            }
+          @endphp
+
           @include('components.cards.learning-section-card', [
             'title' => 'الكورسات التفاعلية',
             'subtitle' => 'دورات أكاديمية تفاعلية في مختلف المواد الدراسية',
@@ -164,42 +191,14 @@
             'iconBgColor' => 'bg-blue-500',
             'hideDots' => true,
             'progressFullWidth' => true,
-            'items' => [
-              [
-                'title' => 'الرياضيات للصف الثالث',
-                'description' => 'مع الأستاذة ليلى محمد - 15 درس مكتمل من 20',
-                'icon' => 'ri-book-open-line',
-                'iconBgColor' => 'bg-blue-100',
-                'iconColor' => 'text-blue-600',
-                'progress' => 75,
-                'status' => 'active'
-              ],
-              [
-                'title' => 'اللغة العربية - النحو',
-                'description' => 'مع الأستاذ خالد أحمد - 8 درس مكتمل من 12',
-                'icon' => 'ri-book-open-line',
-                'iconBgColor' => 'bg-blue-100',
-                'iconColor' => 'text-blue-600',
-                'progress' => 67,
-                'status' => 'active'
-              ],
-              [
-                'title' => 'العلوم - الفيزياء',
-                'description' => 'مع الأستاذة نورا سعيد - 5 درس مكتمل من 15',
-                'icon' => 'ri-book-open-line',
-                'iconBgColor' => 'bg-blue-100',
-                'iconColor' => 'text-blue-600',
-                'progress' => 33,
-                'status' => 'active'
-              ]
-            ],
+            'items' => $interactiveCourseItems,
             'footer' => [
               'text' => 'عرض جميع الكورسات',
-              'link' => '#'
+              'link' => route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain])
             ],
             'stats' => [
-              ['icon' => 'ri-book-line', 'value' => '3 كورسات نشطة'],
-              ['icon' => 'ri-check-line', 'value' => '28 درس مكتمل']
+              ['icon' => 'ri-book-line', 'value' => count($interactiveCourses) . ' كورس' . (count($interactiveCourses) != 1 ? 'ات' : '') . ' نشط' . (count($interactiveCourses) != 1 ? 'ة' : '')],
+              ['icon' => 'ri-check-line', 'value' => $completedSessions . ' جلسة مكتملة']
             ]
           ])
         </div>
