@@ -108,7 +108,7 @@
 
               <!-- Action Button -->
               <div class="px-6 pb-6">
-                <a href="{{ route('interactive-courses.show', ['course' => $course->id]) }}"
+                <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'course' => $course->id]) }}"
                    class="w-full bg-primary text-white py-3 px-4 rounded-lg text-center font-medium hover:bg-secondary transition-colors block">
                   عرض التفاصيل
                 </a>
@@ -132,7 +132,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-2">لا توجد كورسات تفاعلية متاحة حالياً</h3>
           <p class="text-gray-600 mb-6">نعمل على إضافة كورسات تفاعلية جديدة قريباً</p>
-          <a href="{{ route('academy.home') }}"
+          <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}"
              class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors">
             العودة للرئيسية
           </a>
