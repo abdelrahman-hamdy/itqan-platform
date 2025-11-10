@@ -1298,19 +1298,36 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     | Public Interactive Courses Routes
     |--------------------------------------------------------------------------
+    | These routes are for PUBLIC (unauthenticated) users only.
+    | Authenticated users are redirected to role-based views by middleware.
     */
 
-    // Public Interactive Courses Listing
-    Route::get('/public/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])->name('public.interactive-courses.index');
-    Route::get('/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])->name('interactive-courses.index');
+    // Public Interactive Courses Listing (with middleware to redirect authenticated users)
+    Route::get('/public/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])
+        ->middleware('redirect.authenticated.public:interactive-course')
+        ->name('public.interactive-courses.index');
 
-    // Individual Interactive Course Details
-    Route::get('/public/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])->name('public.interactive-courses.show');
-    Route::get('/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])->name('interactive-courses.show');
+    Route::get('/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])
+        ->middleware('redirect.authenticated.public:interactive-course')
+        ->name('interactive-courses.index');
 
-    // Interactive Course Enrollment
-    Route::get('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'enroll'])->name('interactive-courses.enroll');
-    Route::post('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'storeEnrollment'])->name('interactive-courses.store-enrollment');
+    // Individual Interactive Course Details (with middleware to redirect authenticated users)
+    Route::get('/public/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])
+        ->middleware('redirect.authenticated.public:interactive-course')
+        ->name('public.interactive-courses.show');
+
+    Route::get('/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])
+        ->middleware('redirect.authenticated.public:interactive-course')
+        ->name('interactive-courses.show');
+
+    // Interactive Course Enrollment (requires authentication)
+    Route::get('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'enroll'])
+        ->middleware('auth')
+        ->name('interactive-courses.enroll');
+
+    Route::post('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'storeEnrollment'])
+        ->middleware('auth')
+        ->name('interactive-courses.store-enrollment');
 
     /*
     |--------------------------------------------------------------------------
@@ -1469,9 +1486,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     | Student Interactive Courses Routes
     |--------------------------------------------------------------------------
+    | Authenticated students accessing these routes will see their personalized views
     */
     Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/interactive-courses', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
+        Route::get('/my-courses/interactive', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
     });
 
     // Interactive course detail - accessible by enrolled students and teachers

@@ -32,7 +32,8 @@ class PublicInteractiveCourseController extends Controller
     }
 
     /**
-     * Display the specified interactive course
+     * Display the specified interactive course (PUBLIC VIEW ONLY)
+     * Authenticated users will be redirected by middleware to appropriate views
      */
     public function show(Request $request, $subdomain, $courseId)
     {
@@ -47,13 +48,15 @@ class PublicInteractiveCourseController extends Controller
         $course = InteractiveCourse::where('id', $courseId)
             ->where('academy_id', $academy->id)
             ->where('is_published', true)
-            ->with(['academy'])
+            ->with(['academy', 'assignedTeacher.user', 'subject', 'gradeLevel'])
             ->first();
 
         if (! $course) {
             abort(404, 'Course not found');
         }
 
+        // This view is for PUBLIC (unauthenticated) users only
+        // Middleware handles authenticated users
         return view('public.interactive-courses.show', compact('academy', 'course'));
     }
 

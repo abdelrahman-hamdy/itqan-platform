@@ -240,11 +240,18 @@
             @endif
 
             <div class="mt-6">
-              <a href="/interactive-courses/{{ $course->id }}"
-                 class="block w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
-                <i class="ri-information-line ml-1"></i>
-                معرفة المزيد
-              </a>
+              @if($course->is_published && $course->enrollment_deadline >= now()->toDateString())
+                <a href="/interactive-courses/{{ $course->id }}/enroll"
+                   class="block w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center">
+                  <i class="ri-shopping-cart-line ml-1"></i>
+                  التسجيل في الكورس
+                </a>
+              @else
+                <button disabled class="block w-full bg-gray-300 text-gray-600 px-4 py-3 rounded-lg text-sm font-medium cursor-not-allowed text-center">
+                  <i class="ri-lock-line ml-1"></i>
+                  التسجيل مغلق
+                </button>
+              @endif
             </div>
           </div>
           @endforeach

@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => \App\Http\Middleware\TenantMiddleware::class,
             'interactive.course' => \App\Http\Middleware\InteractiveCourseMiddleware::class,
             'control-participants' => \App\Http\Middleware\CanControlParticipants::class,
+            'redirect.authenticated.public' => \App\Http\Middleware\RedirectAuthenticatedPublicViews::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {

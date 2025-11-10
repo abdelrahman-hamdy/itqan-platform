@@ -89,24 +89,31 @@
               </div>
             </div>
 
-            @auth
+            {{-- PUBLIC VIEW: Show login prompt for non-authenticated users --}}
+            {{-- Authenticated users are redirected by middleware to their dashboard --}}
+            @guest
               @if($course->isEnrollmentOpen())
-                <a href="/interactive-courses/{{ $course->id }}/enroll"
+                <a href="/login"
                    class="block w-full bg-primary text-white py-3 px-4 rounded-lg text-center font-semibold hover:bg-secondary transition-colors">
-                  <i class="ri-shopping-cart-line ml-2"></i>
-                  سجل الآن
+                  <i class="ri-login-box-line ml-2"></i>
+                  سجل دخول للتسجيل
                 </a>
+                <p class="text-xs text-center text-gray-600 mt-2">
+                  يجب تسجيل الدخول أولاً للتسجيل في الكورس
+                </p>
               @else
                 <button disabled class="block w-full bg-gray-300 text-gray-600 py-3 px-4 rounded-lg text-center font-semibold cursor-not-allowed">
                   التسجيل مغلق حالياً
                 </button>
               @endif
-            @else
-              <a href="/login"
-                 class="block w-full bg-primary text-white py-3 px-4 rounded-lg text-center font-semibold hover:bg-secondary transition-colors">
-                <i class="ri-login-box-line ml-2"></i>
-                سجل دخول للتسجيل
-              </a>
+            @endguest
+
+            {{-- If user somehow reaches here while authenticated, show info message --}}
+            @auth
+              <div class="text-center text-sm text-gray-600">
+                <i class="ri-information-line text-primary"></i>
+                <p>جاري التحويل إلى صفحة الكورسات...</p>
+              </div>
             @endauth
           </div>
         </div>
