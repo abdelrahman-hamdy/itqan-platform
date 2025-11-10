@@ -292,8 +292,16 @@
             </div>
           </div>
 
+          {{-- Progress Summary (only for enrolled students) --}}
+          @if($isEnrolled && $student)
+            <x-interactive.progress-summary
+              :courseId="$course->id"
+              :studentId="$student->id"
+            />
+          @endif
+
         </div>
-        
+
       </div>
 
     </div>
