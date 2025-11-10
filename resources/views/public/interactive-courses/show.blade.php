@@ -34,9 +34,9 @@
       <div class="max-w-4xl mx-auto">
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-2 text-sm mb-6 opacity-90">
-          <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="hover:underline">الرئيسية</a>
+          <a href="{{ route('academy.home') }}" class="hover:underline">الرئيسية</a>
           <i class="ri-arrow-left-s-line text-xs"></i>
-          <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain]) }}" class="hover:underline">الكورسات التفاعلية</a>
+          <a href="{{ route('interactive-courses.index') }}" class="hover:underline">الكورسات التفاعلية</a>
           <i class="ri-arrow-left-s-line text-xs"></i>
           <span>{{ $course->title }}</span>
         </nav>
@@ -91,7 +91,7 @@
 
             @auth
               @if($course->isEnrollmentOpen())
-                <a href="{{ route('interactive-courses.enroll', ['subdomain' => $academy->subdomain, 'course' => $course->id]) }}"
+                <a href="{{ route('interactive-courses.enroll', ['course' => $course->id]) }}"
                    class="block w-full bg-primary text-white py-3 px-4 rounded-lg text-center font-semibold hover:bg-secondary transition-colors">
                   <i class="ri-shopping-cart-line ml-2"></i>
                   سجل الآن
@@ -102,7 +102,7 @@
                 </button>
               @endif
             @else
-              <a href="{{ route('login', ['academy' => $academy->subdomain]) }}"
+              <a href="{{ route('login') }}"
                  class="block w-full bg-primary text-white py-3 px-4 rounded-lg text-center font-semibold hover:bg-secondary transition-colors">
                 <i class="ri-login-box-line ml-2"></i>
                 سجل دخول للتسجيل

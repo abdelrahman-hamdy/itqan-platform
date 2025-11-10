@@ -33,11 +33,11 @@
       <div class="max-w-4xl mx-auto">
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-2 text-sm mb-6 text-gray-600">
-          <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="hover:text-primary">الرئيسية</a>
+          <a href="{{ route('academy.home') }}" class="hover:text-primary">الرئيسية</a>
           <i class="ri-arrow-left-s-line text-xs"></i>
-          <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain]) }}" class="hover:text-primary">الكورسات التفاعلية</a>
+          <a href="{{ route('interactive-courses.index') }}" class="hover:text-primary">الكورسات التفاعلية</a>
           <i class="ri-arrow-left-s-line text-xs"></i>
-          <a href="{{ route('interactive-courses.show', ['subdomain' => $academy->subdomain, 'course' => $course->id]) }}" class="hover:text-primary">{{ $course->title }}</a>
+          <a href="{{ route('interactive-courses.show', ['course' => $course->id]) }}" class="hover:text-primary">{{ $course->title }}</a>
           <i class="ri-arrow-left-s-line text-xs"></i>
           <span class="text-gray-900">التسجيل</span>
         </nav>
@@ -71,7 +71,7 @@
               </div>
               @endif
 
-              <form action="{{ route('interactive-courses.store-enrollment', ['subdomain' => $academy->subdomain, 'course' => $course->id]) }}" method="POST">
+              <form action="{{ route('interactive-courses.store-enrollment', ['course' => $course->id]) }}" method="POST">
                 @csrf
 
                 <!-- Student Info (readonly - from auth) -->
