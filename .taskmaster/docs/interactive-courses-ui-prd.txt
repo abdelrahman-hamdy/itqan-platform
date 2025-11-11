@@ -1,0 +1,568 @@
+# Interactive Courses UI Completion - Product Requirements Document
+
+## Overview
+Complete all missing UI components for the Interactive Courses feature to achieve parity with other educational sections (Quran Circles and Academic Subscriptions). The backend infrastructure exists but the student-facing and teacher-facing UIs are incomplete.
+
+## Current State Analysis
+
+### ✅ What Exists:
+- Complete database models (InteractiveCourse, InteractiveCourseSession, InteractiveCourseEnrollment, etc.)
+- Filament admin resources for course and session management
+- Public course listing and detail pages
+- Enrollment flow with payment
+- Basic student course listing view
+- Teacher course management in Filament
+- Homework and attendance models
+- Progress tracking model
+
+### ❌ What's Missing:
+- **Individual session detail pages** (both student and teacher views)
+- Sessions list in student course detail view
+- Session action handlers (join meeting, submit feedback, submit homework)
+- Progress tracking UI display
+- Session quick actions component
+- Interactive course info sidebar
+- Proper component reuse from existing patterns
+- Teacher session view with student management
+
+## Implementation Requirements
+
+### Phase 1: Session Detail Page (Critical Priority)
+
+#### 1.1 Create Session Detail Route & Controller Method
+**Route:** `student.interactive-sessions.show`
+**Path:** `/interactive-sessions/{sessionId}`
+
+**Controller Method:** `StudentProfileController@showInteractiveCourseSession()`
+
+**Required Logic:**
+- Load session with relationships: course, teacher, teacher.user, homework, attendances
+- Verify student is enrolled in the course
+- Check session status and meeting availability
+- Calculate attendance status for current student
+- Load homework submissions for current student
+- Return session detail view
+
+**Security:**
+- Middleware: `auth`, `interactive.course.enrolled`
+- Verify student enrollment before showing session
+
+#### 1.2 Create Session Detail View
+**File:** `resources/views/student/interactive-sessions/show.blade.php`
+
+**Layout Structure:**
+```
+┌─────────────────────────────────────────┬──────────────────┐
+│ Breadcrumb Navigation                   │                  │
+├─────────────────────────────────────────┤   Info Sidebar   │
+│ Session Header Component                │   - Course info  │
+│ (Status, Time, Meeting Link)            │   - Session #    │
+├─────────────────────────────────────────┤   - Attendance   │
+│ LiveKit Meeting Interface               │   - Progress     │
+│ (if session is active)                  │   - Quick        │
+├─────────────────────────────────────────┤     Actions      │
+│ Session Content Section                 │                  │
+│ - Session Description                   │                  │
+│ - Learning Objectives                   │                  │
+│ - Materials/Resources                   │                  │
+├─────────────────────────────────────────┤                  │
+│ Homework Section                        │                  │
+│ (if homework assigned)                  │                  │
+├─────────────────────────────────────────┤                  │
+│ Student Feedback Form                   │                  │
+│ (after session completion)              │                  │
+└─────────────────────────────────────────┴──────────────────┘
+```
+
+**Required Components to Reuse:**
+1. `sessions.session-header` - Display session timing, status, meeting info
+2. `meetings.livekit-interface` - Video meeting UI (if session active)
+3. `sessions.homework-display` - Show homework details and submission form
+4. NEW: `interactive.session-info-sidebar` - Session and course info
+5. NEW: `interactive.session-quick-actions` - Join meeting, chat teacher, etc.
+
+**Component Details:**
+
+**Session Header:**
+- Session number and title
+- Status badge (scheduled, in-progress, completed, cancelled)
+- Date and time with timezone
+- Duration display
+- Teacher name with avatar
+- Meeting join button (if active)
+
+**Meeting Interface:**
+- Only show if session status is 'in-progress' OR within 10 minutes before start
+- Use existing LiveKit integration from academic sessions
+- Show participant list
+- Screen sharing controls
+- Chat sidebar
+
+**Homework Section:**
+- Show homework title, description, due date
+- File upload component for submissions
+- Text answer field with rich text editor
+- View previous submissions
+- Submission status badge
+- Teacher feedback display (after grading)
+
+**Feedback Form:**
+- Only show after session completion
+- Rating (1-5 stars) for session quality
+- Text feedback field
+- Submit button with loading state
+
+#### 1.3 Create Session Info Sidebar Component
+**File:** `resources/views/components/interactive/session-info-sidebar.blade.php`
+
+**Content:**
+- Course thumbnail and name
+- Session number in sequence (e.g., "Session 3 of 12")
+- Current session progress percentage
+- Attendance status for this session (Present/Absent/Late)
+- Overall course progress
+- Quick stats: sessions completed, homework submitted, attendance rate
+
+#### 1.4 Create Session Quick Actions Component
+**File:** `resources/views/components/interactive/session-quick-actions.blade.php`
+
+**Actions:**
+- Join Meeting (if session is active, primary button)
+- Chat with Teacher (Chatify integration)
+- View Course Details (link to course overview)
+- Submit Homework (if homework assigned)
+- Download Materials (if resources uploaded)
+- Mark as Complete (for self-paced courses)
+
+**State-Based Display:**
+- Before session: Show "Upcoming" with countdown timer
+- During session: Show "Join Meeting" button (prominent)
+- After session: Show "View Recording" (if available)
+
+### Phase 2: Sessions List in Course Detail
+
+#### 2.1 Update Course Detail View
+**File:** `resources/views/student/interactive-course-detail.blade.php`
+
+**Modifications:**
+1. Remove or update hardcoded session information
+2. Add sessions query in controller method
+3. Integrate `sessions.unified-sessions-section` component
+4. Add session navigation (upcoming/past tabs)
+
+**Controller Update:** `StudentProfileController@showInteractiveCourse()`
+```php
+// Load course with sessions
+$course = InteractiveCourse::with([
+    'teacher.user',
+    'sessions' => function($q) use ($studentId) {
+        $q->with(['attendances' => function($q2) use ($studentId) {
+            $q2->where('student_id', $studentId);
+        }, 'homework'])
+        ->orderBy('scheduled_at', 'asc');
+    },
+    'enrollments' => function($q) use ($studentId) {
+        $q->where('student_id', $studentId);
+    }
+])->findOrFail($courseId);
+
+// Separate upcoming and past sessions
+$upcomingSessions = $course->sessions
+    ->where('scheduled_at', '>=', now())
+    ->values();
+
+$pastSessions = $course->sessions
+    ->where('scheduled_at', '<', now())
+    ->sortByDesc('scheduled_at')
+    ->values();
+```
+
+#### 2.2 Create Session Cards for Listing
+**Component:** `components/interactive/session-card.blade.php`
+
+**Display Elements:**
+- Session number and title
+- Date and time
+- Duration
+- Status badge
+- Attendance indicator (if past)
+- Homework badge (if assigned)
+- Quick actions: View Details, Join Meeting
+- Progress indicator (if applicable)
+
+**Card States:**
+- Upcoming: Blue border, "Scheduled" badge
+- In Progress: Green border, pulsing "Live" badge, prominent Join button
+- Completed: Gray border, checkmark, attendance status
+- Cancelled: Red border, strike-through
+
+#### 2.3 Integrate Sessions Section
+Use existing `sessions.unified-sessions-section` component with modifications for interactive courses:
+
+**Tab 1: Upcoming Sessions**
+- Show future sessions in chronological order
+- Countdown timer for next session
+- Join button for active sessions
+
+**Tab 2: Past Sessions**
+- Show completed sessions
+- Display attendance status
+- Show homework grades (if graded)
+- Link to session details for review
+
+### Phase 3: Session Actions & API Endpoints
+
+#### 3.1 Student Feedback Submission
+**Route:** `POST /interactive-sessions/{sessionId}/feedback`
+**Controller:** `StudentProfileController@addInteractiveSessionFeedback()`
+
+**Required Fields:**
+- session_id
+- student_id
+- rating (1-5)
+- feedback_text (optional)
+- created_at
+
+**Logic:**
+- Validate session is completed
+- Validate student attended session
+- Create or update feedback record
+- Send notification to teacher
+- Return success response
+
+**View Integration:**
+- Show feedback form at bottom of session detail page
+- Only show after session completion
+- Display existing feedback if already submitted
+- Allow editing within 24 hours
+
+#### 3.2 Homework Submission
+**Route:** `POST /interactive-sessions/{sessionId}/homework`
+**Controller:** `StudentProfileController@submitInteractiveCourseHomework()`
+
+**Integration Points:**
+- Use existing `HomeworkService` class
+- Leverage existing homework models
+- Reuse homework components from other sections
+
+**Required Logic:**
+- Validate homework exists for session
+- Validate submission before deadline
+- Handle file uploads (images, PDFs)
+- Handle text answers
+- Update progress tracking
+- Send notification to teacher
+- Return submission confirmation
+
+#### 3.3 Session Join/Leave Tracking
+**Events:** Use existing LiveKit participant events
+
+**Logic:**
+- Automatically create attendance record on join
+- Update duration on leave
+- Calculate attendance percentage
+- Update in real-time via WebSockets
+
+### Phase 4: Progress Tracking UI
+
+#### 4.1 Create Progress Display Component
+**File:** `resources/views/components/interactive/progress-summary.blade.php`
+
+**Metrics to Display:**
+- Overall course completion percentage (circular progress)
+- Sessions attended / total sessions
+- Homework submitted / total homework
+- Average homework grade
+- Overall attendance rate
+- Estimated completion date
+
+**Visual Design:**
+- Use progress bars with percentages
+- Color coding: Green (>80%), Yellow (50-80%), Red (<50%)
+- Icons for each metric (Remix Icons)
+- Card-based layout
+
+#### 4.2 Add Progress to Course Detail
+**Location:** `student/interactive-course-detail.blade.php` sidebar
+
+**Position:** Above or below course info sidebar
+
+**Display:**
+- Compact progress summary
+- Link to detailed progress page (future)
+- Visual indicators for quick scanning
+
+#### 4.3 Progress Calculation Service
+**Create:** `app/Services/InteractiveCourseProgressService.php`
+
+**Methods:**
+- `calculateCourseProgress($courseId, $studentId)` - Overall progress
+- `updateProgressAfterSession($sessionId, $studentId)` - Auto-update
+- `updateProgressAfterHomework($homeworkId, $studentId)` - After submission
+- `getProgressStats($courseId, $studentId)` - Get all metrics
+
+**Integration:**
+- Call after session completion
+- Call after homework grading
+- Cache progress data (Redis)
+- Update InteractiveCourseProgress model
+
+### Phase 5: Teacher Session View
+
+#### 5.1 Teacher Session Detail Page
+**File:** `resources/views/teacher/interactive-sessions/show.blade.php`
+
+**Layout:**
+```
+┌─────────────────────────────────────────┬──────────────────┐
+│ Session Management Header               │   Session Info   │
+├─────────────────────────────────────────┤   - Course       │
+│ LiveKit Meeting Interface               │   - Date/Time    │
+│ (with host controls)                    │   - Students     │
+├─────────────────────────────────────────┤   - Status       │
+│ Enrolled Students List                  │                  │
+│ - Attendance marking                    │   Quick Actions  │
+│ - Student profiles                      │   - Start        │
+│ - Homework submission status            │   - End          │
+├─────────────────────────────────────────┤   - Reschedule   │
+│ Session Content Management              │   - Cancel       │
+│ - Edit session description              │   - Materials    │
+│ - Upload materials                      │                  │
+│ - Add homework                          │                  │
+├─────────────────────────────────────────┤                  │
+│ Homework Review Section                 │                  │
+│ (if homework assigned)                  │                  │
+│ - Submissions list                      │                  │
+│ - Grading interface                     │                  │
+└─────────────────────────────────────────┴──────────────────┘
+```
+
+**Features:**
+- Start/end session controls
+- Attendance marking (auto + manual override)
+- Student list with profile links
+- Homework management
+- Session evaluation/notes
+
+### Phase 6: Common Widgets & Components
+
+#### 6.1 Audit Existing Components for Reuse
+**Target:** Prevent code duplication
+
+**Components to Reuse:**
+1. `sessions/session-header.blade.php` - ✅ Use as-is
+2. `sessions/unified-sessions-section.blade.php` - ✅ Adapt for interactive courses
+3. `sessions/homework-display.blade.php` - ✅ Use with minor modifications
+4. `meetings/livekit-interface` - ✅ Use as-is
+5. `academic/subscription-quick-actions.blade.php` - ❌ Create new for interactive courses
+6. `academic/lesson-info-sidebar.blade.php` - ❌ Create new for interactive courses
+
+#### 6.2 Create Interactive Course Specific Components
+
+**New Components Needed:**
+1. `interactive/session-info-sidebar.blade.php` - Course and session metadata
+2. `interactive/session-quick-actions.blade.php` - Context-aware action buttons
+3. `interactive/session-card.blade.php` - Session list item
+4. `interactive/progress-summary.blade.php` - Progress visualization
+5. `interactive/course-header.blade.php` - Course overview header
+
+**Design Consistency:**
+- Follow existing Tailwind patterns from academic/quran sections
+- Use same icon set (Remix Icons)
+- Match color schemes and spacing
+- Maintain responsive design principles
+
+#### 6.3 Extract Common Session Logic
+**Service Class:** Extend existing `SessionManagementService.php`
+
+**New Methods:**
+- `getSessionsForCourse($courseId, $studentId)` - Get all sessions with attendance
+- `canJoinSession($sessionId, $studentId)` - Check join eligibility
+- `getUpcomingSessions($courseId, $limit = 5)` - Next sessions
+- `getPastSessions($courseId, $limit = 10)` - Completed sessions
+
+### Phase 7: Bug Fixes & Cleanup
+
+#### 7.1 Remove Hardcoded Data
+**Files to Clean:**
+- `student/interactive-courses.blade.php` - Remove hardcoded course cards
+- `student/interactive-course-detail.blade.php` - Remove hardcoded sessions
+
+**Replace With:**
+- Dynamic queries from database
+- Proper relationship loading
+- Pagination for large lists
+
+#### 7.2 Fix Session Creation Flow
+**Current Issue:** Sessions created from course page (incorrect)
+
+**Correct Flow:**
+1. Teacher creates course in Filament
+2. Teacher schedules sessions in Filament InteractiveCourseSession resource
+3. Students see scheduled sessions in course detail view
+4. Students join sessions at scheduled time
+
+**Changes Required:**
+- Remove session creation from public course pages (if exists)
+- Ensure sessions are read-only for students
+- Document proper session creation in Filament
+
+#### 7.3 Route Consolidation
+**Review Public vs Student Routes:**
+
+**Current Duplicate Routes:**
+- `/interactive-courses` (public)
+- `/interactive-courses` (student)
+
+**Proposed Structure:**
+```php
+// Public Routes (No auth required)
+Route::get('/courses/interactive', [PublicInteractiveCourseController::class, 'index'])
+    ->name('public.interactive-courses.index');
+Route::get('/courses/interactive/{course}', [PublicInteractiveCourseController::class, 'show'])
+    ->name('public.interactive-courses.show');
+
+// Student Routes (Auth required)
+Route::middleware(['auth'])->group(function() {
+    Route::get('/my-courses/interactive', [StudentProfileController::class, 'interactiveCourses'])
+        ->name('student.interactive-courses.index');
+    Route::get('/my-courses/interactive/{course}', [StudentProfileController::class, 'showInteractiveCourse'])
+        ->name('student.interactive-courses.show')
+        ->middleware('interactive.course.enrolled');
+    Route::get('/interactive-sessions/{session}', [StudentProfileController::class, 'showInteractiveCourseSession'])
+        ->name('student.interactive-sessions.show')
+        ->middleware('interactive.course.enrolled');
+});
+```
+
+#### 7.4 Navigation Updates
+**Files to Update:**
+- `components/navigation/student-nav.blade.php` - Update interactive courses link
+- `components/sidebar/student-sidebar.blade.php` - Add session links
+- Breadcrumb components - Add session breadcrumbs
+
+**Navigation Structure:**
+```
+Student Dashboard
+└── My Interactive Courses
+    └── [Course Name]
+        └── Session X
+```
+
+### Phase 8: Testing & Validation
+
+#### 8.1 Feature Testing Checklist
+
+**Student Flow:**
+- [ ] Browse public courses
+- [ ] Enroll in course (with payment)
+- [ ] View enrolled courses list
+- [ ] View course detail with sessions
+- [ ] View individual session detail
+- [ ] Join live session (meeting)
+- [ ] Submit homework
+- [ ] Provide session feedback
+- [ ] View progress tracking
+
+**Teacher Flow:**
+- [ ] Create course in Filament
+- [ ] Schedule sessions in Filament
+- [ ] View session detail
+- [ ] Start/end session
+- [ ] Mark attendance
+- [ ] Review homework submissions
+- [ ] Grade homework
+- [ ] View course analytics
+
+**Component Reuse Validation:**
+- [ ] Session header works for interactive courses
+- [ ] LiveKit interface functions correctly
+- [ ] Homework display shows interactive course homework
+- [ ] Unified sessions section displays interactive sessions
+
+#### 8.2 UI/UX Validation
+
+**Cross-Section Consistency:**
+- [ ] Interactive courses UI matches Quran circles pattern
+- [ ] Interactive courses UI matches Academic sessions pattern
+- [ ] Colors and styling are consistent
+- [ ] Icons are consistent
+- [ ] Responsive design works on mobile
+
+**Navigation Flow:**
+- [ ] Breadcrumbs are accurate
+- [ ] Back buttons work correctly
+- [ ] Quick actions are contextually appropriate
+- [ ] No broken links
+
+## Technical Requirements
+
+### Database Queries Optimization
+- Eager load relationships to prevent N+1 queries
+- Use pagination for session lists
+- Index foreign keys (student_id, course_id, session_id)
+- Cache progress calculations (Redis)
+
+### Security
+- Middleware: Verify student enrollment before showing course/session details
+- Authorization: Check user can perform actions
+- Input validation: Validate all form submissions
+- File uploads: Validate file types and sizes
+
+### Performance
+- Lazy load images
+- Minimize JavaScript bundle size
+- Use Livewire for real-time updates
+- Cache static data (course info, teacher info)
+
+### Real-Time Features
+- WebSocket integration for attendance tracking
+- LiveKit events for meeting join/leave
+- Notification system for homework grading
+
+## Success Criteria
+
+**Functional:**
+- ✅ Students can view all enrolled interactive courses
+- ✅ Students can view course detail with sessions list
+- ✅ Students can view individual session details
+- ✅ Students can join live sessions via LiveKit
+- ✅ Students can submit homework
+- ✅ Students can provide session feedback
+- ✅ Teachers can manage sessions in Filament
+- ✅ Teachers can view session details
+- ✅ Teachers can mark attendance
+- ✅ Progress tracking displays accurately
+
+**Non-Functional:**
+- ✅ Page load time < 2 seconds
+- ✅ Meeting join time < 5 seconds
+- ✅ No N+1 query issues
+- ✅ Mobile responsive
+- ✅ Component reuse >70%
+- ✅ Zero hardcoded data
+
+## Deliverables
+
+### Code Files
+1. Routes: `routes/web.php` updates
+2. Controllers: `StudentProfileController` methods
+3. Views:
+   - `student/interactive-sessions/show.blade.php`
+   - `teacher/interactive-sessions/show.blade.php`
+4. Components:
+   - `interactive/session-info-sidebar.blade.php`
+   - `interactive/session-quick-actions.blade.php`
+   - `interactive/session-card.blade.php`
+   - `interactive/progress-summary.blade.php`
+5. Services: `InteractiveCourseProgressService.php`
+
+### Documentation
+- Updated component usage guide
+- Interactive courses user flow diagram
+- Teacher session management guide
+
+### Testing
+- Feature tests for session views
+- Integration tests for homework submission
+- Component tests for UI elements

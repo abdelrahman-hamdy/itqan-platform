@@ -1,0 +1,446 @@
+---
+trigger: always_on
+description:
+globs:
+---
+
+# Laravel Best Practices & Standards
+
+## General Laravel Principles
+
+- **Follow Laravel Conventions**: Use Laravel's default directory structure and naming conventions
+- **Keep Controllers Thin**: Move business logic to Services, Actions, or specialized classes  
+- **Use Form Requests**: Always use custom Form Request classes for complex validation
+- **Embrace Eloquent**: Use Eloquent ORM properly with relationships and scopes
+- **Queue Heavy Tasks**: Use queues for time-consuming operations like email sending
+
+## Naming Conventions
+
+### Models & Relationships
+```php
+// ✅ DO: Singular model names, snake_case table names
+class User extends Model {}  // users table
+class BlogPost extends Model {}  // blog_posts table
+
+// ✅ DO: Clear relationship method names
+public function comments(): HasMany {}
+public function author(): BelongsTo {}
+
+// ❌ DON'T: Plural model names or unclear relationships
+class Users extends Model {}  // Wrong
+public function getComments() {}  // Wrong
+```
+
+### Controllers & Actions
+```php
+// ✅ DO: Resource controller naming
+class PostController extends Controller {
+    public function index() {}
+    public function show(Post $post) {}
+    public function store(StorePostRequest $request) {}
+}
+
+// ✅ DO: Single Action Controllers for complex operations
+class PublishPostController extends Controller {
+    public function __invoke(Post $post) {}
+}
+```
+
+### Routes & URLs
+```php
+// ✅ DO: RESTful routes with clear naming
+Route::resource('posts', PostController::class);
+Route::get('posts/{post}/publish', PublishPostController::class)->name('posts.publish');
+
+// ❌ DON'T: Unclear or non-RESTful routes
+Route::get('post-data/{id}', 'SomeController@getData');
+```
+
+## Database & Migration Best Practices
+
+### Migration Standards
+```php
+// ✅ DO: Descriptive migration names
+create_users_table.php
+add_avatar_to_users_table.php
+create_post_tag_pivot_table.php
+
+// ✅ DO: Use proper column types with constraints
+$table->string('email')->unique()->index();
+$table->text('content');
+$table->timestamps();
+$table->softDeletes();
+
+// ✅ DO: Add foreign key constraints
+$table->foreignId('user_id')->constrained()->onDelete('cascade');
+```
+
+### Eloquent Model Best Practices
+```php
+// ✅ DO: Define fillable/guarded properties
+protected $fillable = ['name', 'email', 'password'];
+
+// ✅ DO: Use appropriate casts
+protected $casts = [
+    'email_verified_at' => 'datetime',
+    'settings' => 'array',
+    'is_active' => 'boolean',
+];
+
+// ✅ DO: Define relationships clearly
+public function posts(): HasMany {
+    return $this->hasMany(Post::class);
+}
+
+// ✅ DO: Use query scopes for reusable queries
+public function scopeActive($query) {
+    return $query->where('is_active', true);
+}
+```
+
+## Performance & N+1 Prevention
+
+### Eager Loading
+```php
+// ✅ DO: Eager load relationships to prevent N+1
+$posts = Post::with(['author', 'comments.user'])->get();
+
+// ✅ DO: Use lazy eager loading when needed
+$posts->load('tags');
+
+// ❌ DON'T: Lazy load in loops
+foreach ($posts as $post) {
+    echo $post->author->name; // N+1 problem
+}
+```
+
+### Query Optimization
+```php
+// ✅ DO: Use select to limit columns
+User::select(['id', 'name', 'email'])->get();
+
+// ✅ DO: Use pagination for large datasets
+Post::paginate(15);
+
+// ✅ DO: Use database indexing
+Schema::table('posts', function (Blueprint $table) {
+    $table->index(['user_id', 'created_at']);
+});
+```
+
+## Validation & Form Requests
+
+### Custom Form Requests
+```php
+// ✅ DO: Create custom form requests
+class StorePostRequest extends FormRequest {
+    public function authorize() {
+        return $this->user()->can('create', Post::class);
+    }
+    
+    public function rules() {
+        return [
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'tags' => 'array|max:5',
+        ];
+    }
+    
+    // ✅ DO: Add custom messages in Arabic
+    public function messages() {
+        return [
+            'title.required' => 'العنوان مطلوب',
+            'content.required' => 'المحتوى مطلوب',
+        ];
+    }
+}
+```
+
+## Authorization with Policies
+
+### Policy Implementation
+```php
+// ✅ DO: Use policies for authorization logic
+class PostPolicy {
+    public function update(User $user, Post $post) {
+        return $user->id === $post->user_id;
+    }
+    
+    public function delete(User $user, Post $post) {
+        return $user->id === $post->user_id || $user->isAdmin();
+    }
+}
+
+// ✅ DO: Use policies in controllers
+public function update(UpdatePostRequest $request, Post $post) {
+    $this->authorize('update', $post);
+    // Update logic
+}
+```
+
+## Service Layer & Business Logic
+
+### Service Classes
+```php
+// ✅ DO: Create service classes for complex business logic
+class UserRegistrationService {
+    public function register(array $userData): User {
+        DB::transaction(function () use ($userData) {
+            $user = User::create($userData);
+            $this->sendWelcomeEmail($user);
+            $this->createDefaultSettings($user);
+            return $user;
+        });
+    }
+}
+```
+
+### Action Classes (Single Responsibility)
+```php
+// ✅ DO: Create action classes for specific operations
+class CreateUserAction {
+    public function execute(array $data): User {
+        return User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+        ]);
+    }
+}
+```
+
+## Queue & Job Management
+
+### Job Classes
+```php
+// ✅ DO: Create specific job classes
+class SendWelcomeEmailJob implements ShouldQueue {
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    
+    public function __construct(
+        private User $user
+    ) {}
+    
+    public function handle(): void {
+        Mail::to($this->user)->send(new WelcomeEmail($this->user));
+    }
+}
+
+// ✅ DO: Dispatch jobs after response for better UX
+dispatch(new SendWelcomeEmailJob($user))->afterResponse();
+```
+
+## Middleware Usage
+
+### Custom Middleware
+```php
+// ✅ DO: Create middleware for cross-cutting concerns
+class EnsureUserHasRole {
+    public function handle(Request $request, Closure $next, string $role) {
+        if (!$request->user()->hasRole($role)) {
+            abort(403);
+        }
+        return $next($request);
+    }
+}
+
+// ✅ DO: Apply middleware to route groups
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::resource('users', UserController::class);
+});
+```
+
+## Testing Best Practices
+
+### Feature Testing
+```php
+// ✅ DO: Write comprehensive feature tests
+class PostCreationTest extends TestCase {
+    use RefreshDatabase;
+    
+    public function test_authenticated_user_can_create_post() {
+        $user = User::factory()->create();
+        
+        $response = $this->actingAs($user)->post('/posts', [
+            'title' => 'Test Post',
+            'content' => 'Test content',
+        ]);
+        
+        $response->assertRedirect();
+        $this->assertDatabaseHas('posts', [
+            'title' => 'Test Post',
+            'user_id' => $user->id,
+        ]);
+    }
+}
+```
+
+## Configuration & Environment
+
+### Environment Variables
+```php
+// ✅ DO: Use environment variables for configuration
+// In .env
+MAIL_FROM_ADDRESS=noreply@itqan.com
+GOOGLE_CLIENT_ID=your_client_id
+
+// In config files
+'from' => [
+    'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+    'name' => env('MAIL_FROM_NAME', 'Example'),
+],
+```
+
+## Multi-tenancy Specific Rules
+
+### Tenant Scoping
+```php
+// ✅ DO: Always scope queries by tenant
+class Post extends Model {
+    protected static function booted() {
+        static::addGlobalScope(new TenantScope);
+    }
+}
+
+// ✅ DO: Include tenant_id in all relevant models
+protected $fillable = ['title', 'content', 'tenant_id'];
+```
+
+## API Best Practices
+
+### Resource Controllers for API
+```php
+// ✅ DO: Use API resources for consistent responses
+class PostResource extends JsonResource {
+    public function toArray($request) {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'content' => $this->content,
+            'author' => new UserResource($this->whenLoaded('author')),
+            'created_at' => $this->created_at->toISOString(),
+        ];
+    }
+}
+```
+
+### API Error Handling
+```php
+// ✅ DO: Return consistent error responses
+public function render($request, Throwable $exception) {
+    if ($request->expectsJson()) {
+        return response()->json([
+            'message' => 'خطأ في الخادم',
+            'errors' => $exception->getMessage(),
+        ], 500);
+    }
+    
+    return parent::render($request, $exception);
+}
+```
+
+## Arabic Content Handling
+
+### Localization
+```php
+// ✅ DO: Use proper localization
+// In resources/lang/ar/messages.php
+return [
+    'welcome' => 'مرحباً بك في منصة إتقان',
+    'login_required' => 'يجب تسجيل الدخول للمتابعة',
+];
+
+// ✅ DO: Use translation helpers
+{{ __('messages.welcome') }}
+return response()->json(['message' => __('auth.failed')]);
+```
+
+### RTL Support
+```php
+// ✅ DO: Handle RTL properly in views
+<html dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+
+// ✅ DO: Use appropriate CSS classes
+<div class="{{ app()->getLocale() === 'ar' ? 'text-right' : 'text-left' }}">
+```
+
+## Security Best Practices
+
+### Authentication & Authorization
+```php
+// ✅ DO: Always validate user permissions
+public function show(Post $post) {
+    $this->authorize('view', $post);
+    return view('posts.show', compact('post'));
+}
+
+// ✅ DO: Use HTTPS in production
+// In AppServiceProvider
+if (app()->environment('production')) {
+    URL::forceScheme('https');
+}
+```
+
+### Mass Assignment Protection
+```php
+// ✅ DO: Always use fillable or guarded
+protected $fillable = ['title', 'content', 'user_id'];
+
+// ❌ DON'T: Use unguarded models without careful consideration
+Model::unguard(); // Be very careful
+```
+
+## Code Organization
+
+### Directory Structure
+```
+app/
+├── Actions/           # Single-purpose action classes
+├── Http/
+│   ├── Controllers/   # Keep thin, delegate to services
+│   ├── Requests/      # Form validation classes
+│   └── Resources/     # API resources
+├── Models/            # Eloquent models
+├── Services/          # Business logic services
+├── Policies/          # Authorization policies
+└── Jobs/              # Queue jobs
+```
+
+## Performance Monitoring
+
+### Debugging & Optimization
+```php
+// ✅ DO: Use Laravel Telescope in development
+// ✅ DO: Monitor query count and execution time
+// ✅ DO: Use caching for expensive operations
+
+Cache::remember('posts.featured', 3600, function () {
+    return Post::where('featured', true)->with('author')->get();
+});
+```
+
+## Common Anti-Patterns to Avoid
+
+```php
+// ❌ DON'T: Fat controllers
+class PostController extends Controller {
+    public function store(Request $request) {
+        // 50+ lines of business logic
+    }
+}
+
+// ❌ DON'T: Direct DB queries in controllers
+public function index() {
+    $posts = DB::select('SELECT * FROM posts');
+}
+
+// ❌ DON'T: Ignore Laravel conventions
+class post extends Model {} // Wrong casing
+public function getUserPosts() {} // Should use relationship
+```
+
+These practices ensure maintainable, secure, and performant Laravel applications while following framework conventions and supporting Arabic content properly.
+description:
+globs:
+alwaysApply: false
+---

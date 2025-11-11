@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .test { margin: 10px 0; padding: 10px; border-left: 3px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Direct WebSocket Connection Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message.replace(/<[^>]*>/g, '')}`);
+        }
+        
+        // Test 1: Direct WebSocket connection to Laravel Echo Server
+        function testDirectWebSocket() {
+            addResult('🔄 Testing direct WebSocket connection to ws://127.0.0.1:6001...');
+            
+            try {
+                const ws = new WebSocket('ws://127.0.0.1:6001/app/local-app-key?protocol=7&client=js&version=test');
+                
+                ws.onopen = function() {
+                    addResult('✅ Direct WebSocket connection successful!', 'success');
+                    addResult('Connection URL: ws://127.0.0.1:6001', 'success');
+                    ws.close();
+                };
+                
+                ws.onerror = function(error) {
+                    addResult('❌ Direct WebSocket connection failed: ' + error, 'error');
+                };
+                
+                ws.onclose = function() {
+                    addResult('🔌 WebSocket connection closed');
+                };
+                
+            } catch (error) {
+                addResult('❌ WebSocket test failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Test 2: Try WSS connection 
+        function testDirectWebSocketSSL() {
+            addResult('🔄 Testing direct WSS connection to wss://127.0.0.1:6001...');
+            
+            try {
+                const ws = new WebSocket('wss://127.0.0.1:6001/app/local-app-key?protocol=7&client=js&version=test');
+                
+                ws.onopen = function() {
+                    addResult('✅ Direct WSS connection successful!', 'success');
+                    addResult('Connection URL: wss://127.0.0.1:6001', 'success');
+                    ws.close();
+                };
+                
+                ws.onerror = function(error) {
+                    addResult('❌ Direct WSS connection failed: ' + error, 'error');
+                };
+                
+                ws.onclose = function() {
+                    addResult('🔌 WSS connection closed');
+                };
+                
+            } catch (error) {
+                addResult('❌ WSS test failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Run tests
+        testDirectWebSocket();
+        setTimeout(() => testDirectWebSocketSSL(), 2000);
+    </script>
+</body>
+</html>

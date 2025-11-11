@@ -1,0 +1,251 @@
+<?php
+
+namespace App\Http\Controllers\Student;
+
+use App\Http\Controllers\Controller;
+use App\Services\HomeworkService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class HomeworkController extends Controller
+{
+    protected HomeworkService $homeworkService;
+
+    public function __construct(HomeworkService $homeworkService)
+    {
+        $this->middleware('auth');
+        $this->middleware('role:student');
+        $this->homeworkService = $homeworkService;
+    }
+
+    /**
+     * Display a listing of homework for the student
+     */
+    public function index(Request $request)
+    {
+        $student = Auth::user();
+        $academyId = $student->academy_id;
+
+        // Get filter parameters
+        $status = $request->get('status');
+        $type = $request->get('type');
+
+        // Get all homework for student
+        $homework = $this->homeworkService->getStudentHomework($student->id, $academyId, $status, $type);
+
+        // Get statistics
+        $statistics = $this->homeworkService->getStudentHomeworkStatistics($student->id, $academyId);
+
+        return view('student.homework.index', compact('homework', 'statistics'));
+    }
+
+    /**
+     * Show the form for submitting homework
+     */
+    public function submit(Request $request, $id, $type = 'academic')
+    {
+        $student = Auth::user();
+        $academyId = $student->academy_id;
+
+        // Get homework based on type
+        $homework = $this->getHomeworkByType($id, $type, $academyId);
+
+        if (!$homework) {
+            return redirect()->route('student.homework.index')
+                ->with('error', 'لم يتم العثور على الواجب المطلوب');
+        }
+
+        // Get existing submission if any
+        $submission = $this->getSubmissionForStudent($homework, $student->id, $type);
+
+        // Check if can submit
+        if ($submission && !$submission->can_submit) {
+            return redirect()->route('student.homework.view', ['id' => $id, 'type' => $type])
+                ->with('error', 'لا يمكن تقديم الواجب في حالته الحالية');
+        }
+
+        return view('student.homework.submit', compact('homework', 'submission', 'type'));
+    }
+
+    /**
+     * Process homework submission
+     */
+    public function submitProcess(Request $request, $id, $type = 'academic')
+    {
+        $student = Auth::user();
+        $academyId = $student->academy_id;
+
+        // Get homework based on type
+        $homework = $this->getHomeworkByType($id, $type, $academyId);
+
+        if (!$homework) {
+            return redirect()->route('student.homework.index')
+                ->with('error', 'لم يتم العثور على الواجب المطلوب');
+        }
+
+        // Validate submission
+        $validationRules = [];
+
+        // Check submission type requirements
+        if ($type === 'academic' && $homework->submission_type) {
+            if (in_array($homework->submission_type, ['text', 'both'])) {
+                $validationRules['text'] = 'required|string|min:10';
+            }
+            if (in_array($homework->submission_type, ['file', 'both'])) {
+                $validationRules['files'] = 'required|array|min:1';
+                $validationRules['files.*'] = 'file|max:' . ($homework->max_file_size_mb * 1024) ?? 10240;
+            }
+        } else {
+            // Default validation
+            $validationRules['text'] = 'required_without:files|string|min:10';
+            $validationRules['files'] = 'required_without:text|array';
+            $validationRules['files.*'] = 'file|max:10240';
+        }
+
+        $request->validate($validationRules, [
+            'text.required' => 'يجب إدخال نص الإجابة',
+            'text.min' => 'يجب أن يكون النص 10 أحرف على الأقل',
+            'files.required' => 'يجب إرفاق ملف واحد على الأقل',
+            'files.*.max' => 'حجم الملف يجب أن لا يتجاوز ' . ($homework->max_file_size_mb ?? 10) . ' ميجابايت',
+        ]);
+
+        try {
+            // Check if it's a draft save or actual submission
+            $isDraft = $request->input('action') === 'save_draft';
+
+            if ($isDraft) {
+                // Save as draft
+                $submission = $this->homeworkService->saveDraft($homework->id, $student->id, [
+                    'text' => $request->input('text'),
+                    'files' => $request->file('files'),
+                    'notes' => $request->input('notes'),
+                ]);
+
+                return redirect()->route('student.homework.submit', ['id' => $id, 'type' => $type])
+                    ->with('success', 'تم حفظ المسودة بنجاح');
+            } else {
+                // Submit homework
+                $submission = $this->homeworkService->submitAcademicHomework($homework->id, $student->id, [
+                    'text' => $request->input('text'),
+                    'files' => $request->file('files'),
+                    'notes' => $request->input('notes'),
+                    'time_spent' => $request->input('time_spent'),
+                    'difficulty_rating' => $request->input('difficulty_rating'),
+                ]);
+
+                return redirect()->route('student.homework.view', ['id' => $id, 'type' => $type])
+                    ->with('success', 'تم تسليم الواجب بنجاح');
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء تسليم الواجب: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display a specific homework with submission details
+     */
+    public function view(Request $request, $id, $type = 'academic')
+    {
+        $student = Auth::user();
+        $academyId = $student->academy_id;
+
+        // Get homework based on type
+        $homeworkObj = $this->getHomeworkByType($id, $type, $academyId);
+
+        if (!$homeworkObj) {
+            return view('student.homework.view', [
+                'homework' => null,
+                'submission' => null,
+            ]);
+        }
+
+        // Get submission
+        $submission = $this->getSubmissionForStudent($homeworkObj, $student->id, $type);
+
+        // Format homework data for view
+        $homework = $this->formatHomeworkForView($homeworkObj, $submission, $type);
+
+        return view('student.homework.view', compact('homework', 'submission'));
+    }
+
+    /**
+     * Get homework by type and ID
+     */
+    private function getHomeworkByType($id, $type, $academyId)
+    {
+        return match($type) {
+            'academic' => \App\Models\AcademicHomework::where('id', $id)
+                ->where('academy_id', $academyId)
+                ->first(),
+            'quran' => \App\Models\QuranHomework::where('id', $id)
+                ->where('academy_id', $academyId)
+                ->first(),
+            'interactive' => \App\Models\InteractiveCourseHomework::where('id', $id)
+                ->whereHas('session.interactiveCourse', function($q) use ($academyId) {
+                    $q->where('academy_id', $academyId);
+                })
+                ->first(),
+            default => null,
+        };
+    }
+
+    /**
+     * Get submission for student
+     */
+    private function getSubmissionForStudent($homework, $studentId, $type)
+    {
+        return match($type) {
+            'academic' => $homework->getSubmissionForStudent($studentId),
+            'quran' => $homework->student_id == $studentId ? $homework : null,
+            'interactive' => $homework->student_id == $studentId ? $homework : null,
+            default => null,
+        };
+    }
+
+    /**
+     * Format homework data for view
+     */
+    private function formatHomeworkForView($homework, $submission, $type)
+    {
+        if ($type === 'academic') {
+            return [
+                'type' => 'academic',
+                'id' => $homework->id,
+                'title' => $homework->title,
+                'description' => $homework->description,
+                'due_date' => $homework->due_date,
+                'status' => $submission?->submission_status ?? 'not_submitted',
+                'status_text' => $submission?->submission_status_text ?? 'لم يتم التسليم',
+                'is_late' => $submission?->is_late ?? false,
+                'score' => $submission?->score,
+                'max_score' => $homework->max_score,
+                'score_percentage' => $submission?->score_percentage,
+                'grade_performance' => $submission?->grade_performance,
+                'teacher_feedback' => $submission?->teacher_feedback,
+                'submitted_at' => $submission?->submitted_at,
+                'graded_at' => $submission?->graded_at,
+            ];
+        }
+
+        // For other types, return basic structure
+        return [
+            'type' => $type,
+            'id' => $homework->id,
+            'title' => $homework->title ?? 'واجب',
+            'description' => $homework->description ?? '',
+            'due_date' => $homework->due_date ?? null,
+            'status' => $submission?->status ?? 'not_submitted',
+            'status_text' => $submission?->status_text ?? 'لم يتم التسليم',
+            'is_late' => false,
+            'score' => null,
+            'max_score' => 100,
+            'score_percentage' => null,
+            'grade_performance' => null,
+            'teacher_feedback' => null,
+            'submitted_at' => null,
+            'graded_at' => null,
+        ];
+    }
+}

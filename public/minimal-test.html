@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head><title>Minimal Test</title></head>
+<body>
+<h1>Minimal Chat Test</h1>
+<div id="output"></div>
+
+<script>
+function log(msg) {
+    document.getElementById('output').innerHTML += '<div>' + msg + '</div>';
+    console.log(msg);
+}
+
+// Test without any external libraries first
+log('Testing basic Echo Server connection...');
+
+fetch('http://127.0.0.1:6001/', {
+    method: 'GET',
+    mode: 'cors'
+})
+.then(response => {
+    log('✅ Echo Server HTTP Status: ' + response.status);
+    return response.text();
+})
+.then(text => {
+    log('✅ Echo Server Response: ' + text);
+    
+    // Now test WebSocket
+    log('Testing WebSocket connection...');
+    const ws = new WebSocket('ws://127.0.0.1:6001/app/local-app-key?protocol=7&client=js&version=1.0');
+    
+    ws.onopen = function() {
+        log('✅ WebSocket connected successfully!');
+        ws.close();
+    };
+    
+    ws.onerror = function(error) {
+        log('❌ WebSocket error: ' + error);
+    };
+    
+    ws.onclose = function(event) {
+        log('WebSocket closed: ' + event.code + ' ' + event.reason);
+    };
+})
+.catch(error => {
+    log('❌ Echo Server connection failed: ' + error.message);
+});
+</script>
+</body>
+</html>

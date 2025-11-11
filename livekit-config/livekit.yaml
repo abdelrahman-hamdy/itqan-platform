@@ -1,0 +1,15 @@
+port: 7880
+
+key_file: /etc/livekit/keys.txt
+
+redis:
+  address: redis:6379
+
+rtc:
+  port_range_start: 50000
+  port_range_end: 50100
+
+logging:
+  level: info
+
+development: true

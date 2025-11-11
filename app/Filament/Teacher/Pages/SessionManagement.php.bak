@@ -1,0 +1,478 @@
+<?php
+
+namespace App\Filament\Teacher\Pages;
+
+use Filament\Pages\Page;
+use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Illuminate\Contracts\Support\Htmlable;
+use App\Models\QuranSubscription;
+use App\Models\QuranCircle;
+use App\Models\QuranSession;
+use App\Models\SessionSchedule;
+use App\Services\SessionSchedulingService;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+
+class SessionManagement extends Page implements HasTable, HasForms
+{
+    use InteractsWithTable, InteractsWithForms;
+
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    
+    protected static string $view = 'filament.teacher.pages.session-management';
+    
+    protected static ?string $navigationLabel = 'إدارة الجلسات';
+    
+    protected static ?string $title = 'إدارة الجلسات';
+    
+    protected static ?string $navigationGroup = 'ملفي الشخصي';
+    
+    protected static ?int $navigationSort = 2;
+
+    public ?string $activeTab = 'individual';
+
+    public function getTitle(): string | Htmlable
+    {
+        return 'إدارة الجلسات';
+    }
+
+    public function getHeading(): string | Htmlable
+    {
+        return 'إنشاء وإدارة جلسات القرآن';
+    }
+
+    public function mount(): void
+    {
+        // Check if user is a teacher
+        if (!Auth::user()->isQuranTeacher()) {
+            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
+        }
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('create_individual_session')
+                ->label('إنشاء جلسة فردية')
+                ->icon('heroicon-o-user-plus')
+                ->color('success')
+                ->form([
+                    Forms\Components\Select::make('subscription_id')
+                        ->label('اختر الاشتراك')
+                        ->options(function () {
+                            return $this->getTeacherSubscriptions();
+                        })
+                        ->required()
+                        ->searchable()
+                        ->preload(),
+                    
+                    Forms\Components\DateTimePicker::make('scheduled_at')
+                        ->label('موعد الجلسة')
+                        ->required()
+                        ->minDate(now())
+                        ->seconds(false),
+                    
+                    Forms\Components\TextInput::make('duration_minutes')
+                        ->label('مدة الجلسة (بالدقائق)')
+                        ->numeric()
+                        ->default(45)
+                        ->minValue(15)
+                        ->maxValue(120)
+                        ->required(),
+                    
+                    Forms\Components\Textarea::make('lesson_objectives')
+                        ->label('أهداف الجلسة')
+                        ->rows(3)
+                        ->placeholder('أهداف ومحتوى الجلسة المتوقع'),
+                    
+                    Forms\Components\Textarea::make('description')
+                        ->label('وصف الجلسة')
+                        ->rows(2)
+                        ->placeholder('وصف موجز للجلسة'),
+                ])
+                ->action(function (array $data) {
+                    $this->createIndividualSession($data);
+                }),
+
+            Action::make('create_recurring_schedule')
+                ->label('إنشاء جدولة متكررة')
+                ->icon('heroicon-o-calendar-days')
+                ->color('primary')
+                ->form([
+                    Forms\Components\Select::make('type')
+                        ->label('نوع الجدولة')
+                        ->options([
+                            'subscription' => 'اشتراك فردي',
+                            'circle' => 'حلقة قرآنية',
+                        ])
+                        ->required()
+                        ->reactive(),
+                    
+                    Forms\Components\Select::make('subscription_id')
+                        ->label('اختر الاشتراك')
+                        ->options(function () {
+                            return $this->getTeacherSubscriptions();
+                        })
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->visible(fn (Forms\Get $get) => $get('type') === 'subscription'),
+                    
+                    Forms\Components\Select::make('circle_id')
+                        ->label('اختر الحلقة')
+                        ->options(function () {
+                            return $this->getTeacherCircles();
+                        })
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->visible(fn (Forms\Get $get) => $get('type') === 'circle'),
+                    
+                    Forms\Components\CheckboxList::make('schedule_days')
+                        ->label('أيام الأسبوع')
+                        ->options([
+                            '1' => 'الاثنين',
+                            '2' => 'الثلاثاء',
+                            '3' => 'الأربعاء',
+                            '4' => 'الخميس',
+                            '5' => 'الجمعة',
+                            '6' => 'السبت',
+                            '0' => 'الأحد',
+                        ])
+                        ->required()
+                        ->columns(2),
+                    
+                    Forms\Components\TimePicker::make('start_time')
+                        ->label('وقت البداية')
+                        ->required()
+                        ->seconds(false),
+                    
+                    Forms\Components\TextInput::make('duration_minutes')
+                        ->label('مدة الجلسة (بالدقائق)')
+                        ->numeric()
+                        ->default(45)
+                        ->minValue(15)
+                        ->maxValue(120)
+                        ->required(),
+                    
+                    Forms\Components\DatePicker::make('start_date')
+                        ->label('تاريخ البداية')
+                        ->required()
+                        ->minDate(now()),
+                    
+                    Forms\Components\DatePicker::make('end_date')
+                        ->label('تاريخ النهاية (اختياري للحلقات)')
+                        ->minDate(now()->addWeek())
+                        ->visible(fn (Forms\Get $get) => $get('type') === 'subscription'),
+                ])
+                ->action(function (array $data) {
+                    $this->createRecurringSchedule($data);
+                }),
+        ];
+    }
+
+    public function table(Table $table): Table
+    {
+        return $table
+            ->query(
+                QuranSession::query()
+                    ->where('quran_teacher_id', Auth::id())
+                    ->where('scheduled_at', '>=', now()->subDays(7))
+                    ->orderBy('scheduled_at', 'desc')
+            )
+            ->columns([
+                Tables\Columns\TextColumn::make('session_code')
+                    ->label('رمز الجلسة')
+                    ->searchable()
+                    ->sortable(),
+                
+                Tables\Columns\TextColumn::make('title')
+                    ->label('عنوان الجلسة')
+                    ->searchable()
+                    ->limit(30),
+                
+                Tables\Columns\TextColumn::make('student.name')
+                    ->label('الطالب')
+                    ->searchable(),
+                
+                Tables\Columns\TextColumn::make('scheduled_at')
+                    ->label('موعد الجلسة')
+                    ->dateTime('Y-m-d H:i')
+                    ->sortable(),
+                
+                Tables\Columns\TextColumn::make('duration_minutes')
+                    ->label('المدة')
+                    ->suffix(' دقيقة'),
+                
+                Tables\Columns\TextColumn::make('status')
+                    ->label('الحالة')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'scheduled' => 'warning',
+                        'ongoing' => 'primary',
+                        'completed' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'scheduled' => 'مجدولة',
+                        'ongoing' => 'جارية',
+                        'completed' => 'مكتملة',
+                        'cancelled' => 'ملغية',
+                        default => $state,
+                    }),
+                
+                Tables\Columns\TextColumn::make('meeting_link')
+                    ->label('رابط الاجتماع')
+                    ->formatStateUsing(fn (?string $state): string => $state ? 'متوفر' : 'غير متوفر')
+                    ->color(fn (?string $state): string => $state ? 'success' : 'warning'),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('الحالة')
+                    ->options([
+                        'scheduled' => 'مجدولة',
+                        'ongoing' => 'جارية',
+                        'completed' => 'مكتملة',
+                        'cancelled' => 'ملغية',
+                    ]),
+                
+                Tables\Filters\Filter::make('today')
+                    ->label('جلسات اليوم')
+                    ->query(fn ($query) => $query->whereDate('scheduled_at', today())),
+                
+                Tables\Filters\Filter::make('this_week')
+                    ->label('هذا الأسبوع')
+                    ->query(fn ($query) => $query->whereBetween('scheduled_at', [
+                        now()->startOfWeek(),
+                        now()->endOfWeek()
+                    ])),
+            ])
+            ->actions([
+                Tables\Actions\Action::make('start_session')
+                    ->label('بدء الجلسة')
+                    ->icon('heroicon-o-play')
+                    ->color('success')
+                    ->visible(fn (QuranSession $record) => $record->status === 'scheduled')
+                    ->action(function (QuranSession $record) {
+                        $record->start();
+                        
+                        Notification::make()
+                            ->title('تم بدء الجلسة')
+                            ->success()
+                            ->send();
+                    }),
+                
+                Tables\Actions\Action::make('join_meeting')
+                    ->label('دخول الاجتماع')
+                    ->icon('heroicon-o-video-camera')
+                    ->color('primary')
+                    ->url(fn (QuranSession $record) => $record->meeting_link)
+                    ->openUrlInNewTab()
+                    ->visible(fn (QuranSession $record) => !empty($record->meeting_link)),
+                
+                Tables\Actions\Action::make('complete_session')
+                    ->label('إنهاء الجلسة')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (QuranSession $record) => $record->status === 'ongoing')
+                    ->form([
+                        Forms\Components\Textarea::make('session_notes')
+                            ->label('ملاحظات الجلسة')
+                            ->rows(3),
+                        
+                        Forms\Components\Textarea::make('homework_details')
+                            ->label('الواجب المنزلي')
+                            ->rows(2),
+                        
+                        Forms\Components\Select::make('overall_rating')
+                            ->label('تقييم الأداء')
+                            ->options([
+                                5 => 'ممتاز',
+                                4 => 'جيد جداً',
+                                3 => 'جيد',
+                                2 => 'مقبول',
+                                1 => 'يحتاج تحسين',
+                            ]),
+                    ])
+                    ->action(function (QuranSession $record, array $data) {
+                        $record->complete($data);
+                        
+                        Notification::make()
+                            ->title('تم إنهاء الجلسة بنجاح')
+                            ->success()
+                            ->send();
+                    }),
+                
+                Tables\Actions\Action::make('cancel_session')
+                    ->label('إلغاء الجلسة')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn (QuranSession $record) => in_array($record->status, ['scheduled', 'ongoing']))
+                    ->form([
+                        Forms\Components\Textarea::make('cancellation_reason')
+                            ->label('سبب الإلغاء')
+                            ->required()
+                            ->rows(2),
+                    ])
+                    ->action(function (QuranSession $record, array $data) {
+                        $record->cancel($data['cancellation_reason'], Auth::user());
+                        
+                        Notification::make()
+                            ->title('تم إلغاء الجلسة')
+                            ->warning()
+                            ->send();
+                    }),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    private function getTeacherSubscriptions(): array
+    {
+        return QuranSubscription::where('quran_teacher_id', Auth::id())
+            ->where('subscription_status', 'active')
+            ->with('student')
+            ->get()
+            ->mapWithKeys(function ($subscription) {
+                return [
+                    $subscription->id => $subscription->student->name . ' - ' . $subscription->subscription_code
+                ];
+            })
+            ->toArray();
+    }
+
+    private function getTeacherCircles(): array
+    {
+        return QuranCircle::where('quran_teacher_id', Auth::id())
+            ->where('status', 'active')
+            ->get()
+            ->mapWithKeys(function ($circle) {
+                return [
+                    $circle->id => $circle->circle_name . ' (' . $circle->current_students . ' طلاب)'
+                ];
+            })
+            ->toArray();
+    }
+
+    private function createIndividualSession(array $data): void
+    {
+        $subscription = QuranSubscription::findOrFail($data['subscription_id']);
+        
+        // Check if subscription has remaining sessions
+        if ($subscription->sessions_remaining <= 0) {
+            Notification::make()
+                ->title('خطأ في إنشاء الجلسة')
+                ->body('لا توجد جلسات متبقية في هذا الاشتراك')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        try {
+            $session = QuranSession::create([
+                'academy_id' => $subscription->academy_id,
+                'quran_teacher_id' => Auth::id(),
+                'quran_subscription_id' => $subscription->id,
+                'student_id' => $subscription->student_id,
+                'session_code' => 'QSE-' . uniqid(),
+                'session_type' => 'individual',
+                'status' => 'scheduled',
+                'title' => 'جلسة قرآن - ' . $subscription->student->name,
+                'description' => $data['description'] ?? null,
+                'lesson_objectives' => $data['lesson_objectives'] ?? null,
+                'scheduled_at' => $data['scheduled_at'],
+                'duration_minutes' => $data['duration_minutes'],
+                'created_by' => Auth::id(),
+            ]);
+
+            // Decrement remaining sessions
+            $subscription->decrement('sessions_remaining');
+
+            Notification::make()
+                ->title('تم إنشاء الجلسة بنجاح')
+                ->body('تم إنشاء جلسة جديدة للطالب ' . $subscription->student->name)
+                ->success()
+                ->send();
+
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('خطأ في إنشاء الجلسة')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    private function createRecurringSchedule(array $data): void
+    {
+        try {
+            $schedulingService = app(SessionSchedulingService::class);
+            
+            if ($data['type'] === 'subscription') {
+                $subscription = QuranSubscription::findOrFail($data['subscription_id']);
+                
+                $scheduleData = [
+                    'schedule_days' => $data['schedule_days'],
+                    'start_time' => $data['start_time'],
+                    'duration_minutes' => $data['duration_minutes'],
+                    'start_date' => $data['start_date'],
+                    'end_date' => $data['end_date'] ?? null,
+                ];
+                
+                $schedule = $schedulingService->createSubscriptionSchedule(
+                    $subscription,
+                    $scheduleData,
+                    Auth::user()
+                );
+                
+                Notification::make()
+                    ->title('تم إنشاء الجدولة بنجاح')
+                    ->body('تم إنشاء جدولة متكررة للاشتراك')
+                    ->success()
+                    ->send();
+                    
+            } elseif ($data['type'] === 'circle') {
+                $circle = QuranCircle::findOrFail($data['circle_id']);
+                
+                $scheduleData = [
+                    'schedule_days' => $data['schedule_days'],
+                    'start_time' => $data['start_time'],
+                    'duration_minutes' => $data['duration_minutes'],
+                    'start_date' => $data['start_date'],
+                    'end_date' => null, // Circles don't have end dates
+                ];
+                
+                $schedule = $schedulingService->createCircleSchedule(
+                    $circle,
+                    $scheduleData,
+                    Auth::user()
+                );
+                
+                Notification::make()
+                    ->title('تم إنشاء الجدولة بنجاح')
+                    ->body('تم إنشاء جدولة متكررة للحلقة')
+                    ->success()
+                    ->send();
+            }
+
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('خطأ في إنشاء الجدولة')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+}

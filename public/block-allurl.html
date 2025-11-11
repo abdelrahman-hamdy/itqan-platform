@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚫 Block allUrl.js - Upload Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f0f8ff; 
+        }
+        .warning { 
+            background: #ffe6e6; 
+            border: 2px solid #ff0000; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 20px 0; 
+        }
+        .success { 
+            background: #e6ffe6; 
+            border: 2px solid #00aa00; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin: 10px 0; 
+        }
+        .instructions { 
+            background: #fff3cd; 
+            border: 1px solid #ffeaa7; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 15px 0; 
+        }
+        pre { 
+            background: #f8f8f8; 
+            padding: 10px; 
+            border-radius: 5px; 
+            font-size: 12px; 
+            overflow-x: auto; 
+        }
+        .button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+    </style>
+    <script>
+        console.log('🚫 Blocking allUrl.js initialization...');
+        
+        // Block allUrl.js by overriding common injection methods
+        const originalAppendChild = Element.prototype.appendChild;
+        const originalInsertBefore = Element.prototype.insertBefore;
+        
+        Element.prototype.appendChild = function(element) {
+            if (element.tagName === 'SCRIPT' && element.src && element.src.includes('allUrl')) {
+                console.error('🚫 BLOCKED allUrl.js injection attempt:', element.src);
+                return element;
+            }
+            return originalAppendChild.call(this, element);
+        };
+        
+        Element.prototype.insertBefore = function(element, beforeElement) {
+            if (element.tagName === 'SCRIPT' && element.src && element.src.includes('allUrl')) {
+                console.error('🚫 BLOCKED allUrl.js injection attempt:', element.src);
+                return element;
+            }
+            return originalInsertBefore.call(this, element, beforeElement);
+        };
+
+        // Block dynamic script loading
+        const originalCreateElement = document.createElement;
+        document.createElement = function(tagName) {
+            const element = originalCreateElement.call(this, tagName);
+            if (tagName.toLowerCase() === 'script') {
+                const originalSrcSetter = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, 'src').set;
+                Object.defineProperty(element, 'src', {
+                    set: function(value) {
+                        if (value && value.includes('allUrl')) {
+                            console.error('🚫 BLOCKED allUrl.js dynamic loading:', value);
+                            return;
+                        }
+                        originalSrcSetter.call(this, value);
+                    },
+                    get: function() {
+                        return this.getAttribute('src');
+                    }
+                });
+            }
+            return element;
+        };
+
+        // Monitor fetch requests and block allUrl-related ones
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            const url = args[0];
+            if (url && (url.includes('allUrl') || (typeof url === 'string' && url.match(/allUrl/i)))) {
+                console.error('🚫 BLOCKED fetch request to allUrl:', url);
+                return Promise.reject(new Error('Blocked allUrl request'));
+            }
+            return originalFetch.apply(this, args);
+        };
+
+        // Block XMLHttpRequest to allUrl
+        const originalXHROpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+            if (url && (url.includes('allUrl') || url.match(/allUrl/i))) {
+                console.error('🚫 BLOCKED XHR request to allUrl:', url);
+                throw new Error('Blocked allUrl request');
+            }
+            return originalXHROpen.call(this, method, url, ...rest);
+        };
+
+        // Monitor and identify the injection source
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.tagName === 'SCRIPT') {
+                            if (node.src && node.src.includes('allUrl')) {
+                                console.error('🚫 Detected allUrl.js injection attempt via DOM mutation');
+                                console.error('Script element:', node);
+                                console.error('Parent element:', node.parentElement);
+                                node.remove();
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            observer.observe(document.body, { childList: true, subtree: true });
+            console.log('✅ allUrl.js blocking is active');
+            
+            // Test if blocking is working
+            setTimeout(() => {
+                console.log('🧪 Testing allUrl.js blocking...');
+                try {
+                    const testScript = document.createElement('script');
+                    testScript.src = 'https://example.com/allUrl.js';
+                    document.head.appendChild(testScript);
+                    console.log('❌ Block test failed - script was added');
+                } catch (e) {
+                    console.log('✅ Block test passed - script was blocked');
+                }
+            }, 1000);
+        });
+
+        // Global error handler to catch any remaining allUrl errors
+        window.addEventListener('error', function(e) {
+            if (e.filename && e.filename.includes('allUrl')) {
+                console.error('🚫 Caught allUrl.js error:', e);
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        console.log('🛡️ allUrl.js protection initialized');
+    </script>
+</head>
+<body>
+    <h1>🚫 allUrl.js Blocker - Video Upload Test</h1>
+    
+    <div class="warning">
+        <h2>⚠️ المشكلة</h2>
+        <p><strong>allUrl.js</strong> يتم حقنه من مصدر خارجي ويمنع رفع الفيديوهات عن طريق إجراء طلبات HEAD إلى blob URLs</p>
+    </div>
+    
+    <div class="success">
+        <h2>✅ الحل المؤقت</h2>
+        <p>هذه الصفحة تحجب allUrl.js ومحاولات حقنه في الصفحة</p>
+    </div>
+    
+    <div class="instructions">
+        <h2>📋 التعليمات:</h2>
+        <ol>
+            <li>افتح أدوات المطور (F12) وانتقل إلى Console</li>
+            <li>يجب أن تشاهد رسائل تبدأ بـ 🛡️ و ✅</li>
+            <li>انتقل الآن إلى صفحة رفع الدورة</li>
+            <li>جرب رفع فيديو</li>
+            <li>راقب Console للتأكد من حجب allUrl.js</li>
+        </ol>
+    </div>
+
+    <div class="instructions" style="background: #e8f5e9; border-color: #4caf50;">
+        <h2>🔍 مصادر محتملة لـ allUrl.js:</h2>
+        <ul>
+            <li><strong>مزود خدمة الإنترنت (ISP)</strong> - يحقن إعلانات أو تتبع</li>
+            <li><strong>خدمة CDN أو Analytics</strong> - Google Analytics, Facebook Pixel, إلخ</li>
+            <li><strong>Proxy أو Firewall</strong> - على مستوى الشبكة</li>
+            <li><strong>خدمة Hosting</strong> - بعض خدمات الاستضافة تحقن سكريبتات</li>
+            <li><strong>Router أو Network Equipment</strong> - معدات الشبكة</li>
+        </ul>
+    </div>
+
+    <button class="button" onclick="window.open('/admin/recorded-courses/create', '_blank')">
+        🎬 فتح صفحة رفع الدورة
+    </button>
+    
+    <button class="button" onclick="location.reload()">
+        🔄 إعادة تحميل الصفحة
+    </button>
+
+    <div style="margin-top: 30px;">
+        <h3>📊 معلومات الشبكة:</h3>
+        <pre id="network-info"></pre>
+    </div>
+
+    <script>
+        // Display network information
+        document.getElementById('network-info').textContent = JSON.stringify({
+            userAgent: navigator.userAgent,
+            domain: window.location.hostname,
+            protocol: window.location.protocol,
+            referrer: document.referrer,
+            cookies: document.cookie.substring(0, 200) + '...',
+            timestamp: new Date().toISOString()
+        }, null, 2);
+    </script>
+</body>
+</html>

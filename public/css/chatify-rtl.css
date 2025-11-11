@@ -1,0 +1,307 @@
+/* Chatify RTL Support for Arabic */
+
+/* Main layout adjustments for RTL */
+[dir="rtl"] .messenger {
+    direction: rtl;
+}
+
+/* Reverse flex directions */
+[dir="rtl"] .messenger-listView {
+    float: right;
+    border-left: 1px solid #e6e6e6;
+    border-right: none;
+}
+
+[dir="rtl"] .messenger-messagingView {
+    float: left;
+}
+
+[dir="rtl"] .messenger-infoView {
+    float: left;
+    border-right: 1px solid #e6e6e6;
+    border-left: none;
+}
+
+/* Header adjustments */
+[dir="rtl"] .m-header nav {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .m-header-right {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* Search input */
+[dir="rtl"] .messenger-search {
+    text-align: right;
+    padding-right: 15px;
+    padding-left: 40px;
+}
+
+/* Messages alignment */
+[dir="rtl"] .message-card {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .message-card.mc-sender {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+[dir="rtl"] .message-card:not(.mc-sender) {
+    margin-right: auto;
+    margin-left: 0;
+}
+
+[dir="rtl"] .message-card .avatar {
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+[dir="rtl"] .message-card.mc-sender .avatar {
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+/* Message bubble adjustments */
+[dir="rtl"] .message-card .message {
+    text-align: right;
+}
+
+[dir="rtl"] .message-card.mc-sender .message {
+    background: #4a90e2;
+    color: white;
+    border-radius: 18px 18px 4px 18px;
+}
+
+[dir="rtl"] .message-card:not(.mc-sender) .message {
+    background: #f1f1f1;
+    border-radius: 18px 18px 18px 4px;
+}
+
+/* Send form adjustments */
+[dir="rtl"] .messenger-sendCard {
+    display: flex !important;
+    margin: 10px !important;
+    margin-bottom: 1rem !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
+}
+
+[dir="rtl"] .messenger-sendCard form {
+    width: 100% !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    height: 48px !important;
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .messenger-sendCard .m-send {
+    text-align: right;
+    padding: 12px 16px !important;
+    border: 1px solid #e1e5e9 !important;
+    border-radius: 8px !important;
+    height: 48px !important;
+    width: 100% !important;
+    background: #f8f9fa !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+}
+
+[dir="rtl"] .messenger-sendCard label {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+    flex-shrink: 0 !important;
+    background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+[dir="rtl"] .messenger-sendCard label:hover {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[dir="rtl"] .messenger-sendCard label span {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 20px !important;
+}
+
+[dir="rtl"] #message-form > button.send-button {
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 0 16px !important;
+    border-radius: 8px !important;
+    min-width: fit-content !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+    flex-shrink: 0 !important;
+    border: none !important;
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    outline: none !important;
+}
+
+[dir="rtl"] #message-form > button.send-button:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[dir="rtl"] #message-form > button.send-button .send-label {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: var(--send-input-icons-color) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+[dir="rtl"] .messenger-sendCard svg {
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #666 !important;
+    cursor: pointer !important;
+    font-size: 18px !important;
+    transition: transform 0.15s !important;
+}
+
+/* Contact list items */
+[dir="rtl"] .listView-x {
+    right: auto;
+    left: 10px;
+}
+
+[dir="rtl"] .messenger-list-item {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+[dir="rtl"] .messenger-list-item .avatar {
+    margin-right: 0;
+    margin-left: 10px;
+}
+
+/* Info panel */
+[dir="rtl"] .messenger-infoView nav {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .messenger-infoView .avatar {
+    margin: 0 auto;
+}
+
+/* Favorite star icon */
+[dir="rtl"] .favorite-list-item .avatar {
+    margin-right: 0;
+    margin-left: 10px;
+}
+
+/* Modal adjustments */
+[dir="rtl"] .app-modal-header {
+    text-align: right;
+}
+
+[dir="rtl"] .app-modal-header .close {
+    left: 15px;
+    right: auto;
+}
+
+/* Typing indicator */
+[dir="rtl"] .typing-indicator {
+    text-align: left;
+}
+
+/* Scrollbar for RTL */
+[dir="rtl"] .app-scroll::-webkit-scrollbar {
+    left: 0;
+    right: auto;
+}
+
+/* Icons adjustments */
+[dir="rtl"] .fa-arrow-left:before {
+    content: "\f061"; /* Change to right arrow for RTL */
+}
+
+/* Additional adjustments for better Arabic text display */
+[dir="rtl"] {
+    font-family: 'Segoe UI', Tahoma, 'Tajawal', 'Noto Sans Arabic', sans-serif;
+}
+
+[dir="rtl"] .messenger-title {
+    text-align: right;
+    padding-right: 10px;
+    padding-left: 0;
+}
+
+[dir="rtl"] .message-hint {
+    text-align: center;
+    direction: rtl;
+}
+
+/* Status indicators */
+[dir="rtl"] .activeStatus {
+    left: auto;
+    right: 42px;
+}
+
+[dir="rtl"] .messenger-list-item .message-time {
+    left: 10px;
+    right: auto;
+}
+
+/* Focus Styles for RTL - Remove all focus effects */
+[dir="rtl"] input.messenger-search[type="text"]:focus,
+[dir="rtl"] input.messenger-search[type="text"]:focus-visible,
+[dir="rtl"] .messenger input[type="text"]:focus,
+[dir="rtl"] .messenger input[type="text"]:focus-visible,
+[dir="rtl"] textarea.m-send:focus,
+[dir="rtl"] textarea.m-send:focus-visible,
+[dir="rtl"] .messenger textarea:focus,
+[dir="rtl"] .messenger textarea:focus-visible {
+    outline: none !important;
+    border: 1px solid #e1e5e9 !important;
+    box-shadow: none !important;
+    transition: none !important;
+}
+
+/* Hover effects for RTL */
+[dir="rtl"] input.messenger-search[type="text"]:hover,
+[dir="rtl"] .messenger input[type="text"]:hover,
+[dir="rtl"] textarea.m-send:hover,
+[dir="rtl"] .messenger textarea:hover {
+    outline: none !important;
+    border: 1px solid #333 !important;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Search field base styling for RTL */
+[dir="rtl"] .messenger-search[type="text"] {
+    text-align: right;
+    border: 1px solid transparent !important;
+    padding: 8px 15px !important;
+    border-radius: 6px !important;
+    outline: none !important;
+}
+
+/* Responsive adjustments for mobile RTL */
+@media screen and (max-width: 768px) {
+    [dir="rtl"] .messenger-listView {
+        border-left: none;
+    }
+    
+    [dir="rtl"] .show-listView {
+        transform: rotate(180deg);
+    }
+}
