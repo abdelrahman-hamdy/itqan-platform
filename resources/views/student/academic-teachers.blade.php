@@ -184,9 +184,12 @@
                 الدرس القادم
               </button>
               @if($teacher && $teacher->user)
-              <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain, 'user' => $teacher->user->id]) }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              @php $conv = auth()->user()->getOrCreatePrivateConversation($teacher->user); @endphp
+              @if($conv)
+              <a href="{{ route('chat.show', ['subdomain' => auth()->user()->academy->subdomain, 'conversation' => $conv->id]) }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="ri-message-3-line"></i>
               </a>
+              @endif
               @endif
             </div>
           </div>
@@ -306,10 +309,13 @@
                 $isRegisteredWithTeacher = $mySubscriptions->where('teacher_id', $teacher->id)->where('status', 'active')->count() > 0;
               @endphp
               @if($isRegisteredWithTeacher)
-              <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $teacher->user_id]) }}" 
+              @php $teacherUser = $teacher->user ?? (isset($teacher->user_id) ? \App\Models\User::find($teacher->user_id) : null); $conv = $teacherUser ? auth()->user()->getOrCreatePrivateConversation($teacherUser) : null; @endphp
+              @if($conv)
+              <a href="{{ route('chat.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}" 
                  class="px-3 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
                 <i class="ri-message-3-line"></i>
               </a>
+              @endif
               @endif
             </div>
           </div>

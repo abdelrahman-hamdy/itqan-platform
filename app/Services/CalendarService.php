@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
 
 class CalendarService
 {
@@ -54,7 +55,17 @@ class CalendarService
 
             // Apply additional filters
             if (isset($filters['status'])) {
-                $events = $events->whereIn('status', (array) $filters['status']);
+                $statusFilters = (array) $filters['status'];
+                $events = $events->filter(function ($event) use ($statusFilters) {
+                    $eventStatus = $event['status'] ?? null;
+                    // Convert enum to string if needed
+                    if ($eventStatus instanceof \BackedEnum) {
+                        $eventStatus = $eventStatus->value;
+                    } elseif (is_object($eventStatus)) {
+                        $eventStatus = $eventStatus->name ?? null;
+                    }
+                    return in_array($eventStatus, $statusFilters);
+                });
             }
 
             if (isset($filters['search'])) {
@@ -184,7 +195,14 @@ class CalendarService
         $stats = [
             'total_events' => $events->count(),
             'by_type' => $events->countBy('type'),
-            'by_status' => $events->countBy('status'),
+            'by_status' => $events->countBy(function ($event) {
+                // Convert Enum to string if needed
+                $status = $event['status'] ?? 'unknown';
+                if ($status instanceof \BackedEnum) {
+                    return $status->value;
+                }
+                return is_object($status) ? $status->name ?? 'unknown' : $status;
+            }),
             'by_week' => [],
             'busiest_day' => null,
             'total_hours' => 0,
@@ -338,6 +356,14 @@ class CalendarService
         return $sessions->map(function ($session) use ($user) {
             $perspective = $user->isQuranTeacher() ? 'teacher' : 'student';
 
+            // Convert enum status to string value
+            $status = $session->status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            } elseif (is_object($status)) {
+                $status = $status->name ?? 'unknown';
+            }
+
             return [
                 'id' => 'quran_session_'.$session->id,
                 'type' => 'session',
@@ -347,7 +373,7 @@ class CalendarService
                 'start_time' => $session->scheduled_at,
                 'end_time' => $session->scheduled_at->copy()->addMinutes($session->duration_minutes),
                 'duration_minutes' => $session->duration_minutes,
-                'status' => $session->status,
+                'status' => $status,
                 'color' => $this->getSessionColor($session),
                 'url' => $this->getSessionUrl($session),
                 'meeting_url' => $session->google_meet_url ?? $session->meeting_link,
@@ -374,24 +400,46 @@ class CalendarService
         return $sessions->map(function ($session) use ($user) {
             $perspective = $user->isAcademicTeacher() ? 'teacher' : 'student';
 
+            $courseTitle = $session->course?->title ?? 'دورة تعليمية';
+            $sessionTitle = $session->title ?? 'جلسة';
+            $participantsCount = $session->course?->enrollments?->count() ?? 0;
+
+            // Convert enum status to string value
+            $status = $session->status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            } elseif (is_object($status)) {
+                $status = $status->name ?? 'unknown';
+            }
+
+            // Try to generate URL safely
+            $sessionUrl = '#';
+            try {
+                if (Route::has('courses.session')) {
+                    $sessionUrl = route('courses.session', $session->id);
+                }
+            } catch (\Exception $e) {
+                // Keep default '#' if route doesn't exist
+            }
+
             return [
                 'id' => 'course_session_'.$session->id,
                 'type' => 'course',
                 'source' => 'course_session',
-                'title' => $session->course->title.' - '.$session->title,
-                'description' => $session->description,
+                'title' => $courseTitle.' - '.$sessionTitle,
+                'description' => $session->description ?? '',
                 'start_time' => $session->scheduled_datetime,
                 'end_time' => $session->scheduled_datetime->copy()->addMinutes($session->duration_minutes),
                 'duration_minutes' => $session->duration_minutes,
-                'status' => $session->status,
+                'status' => $status,
                 'color' => '#3B82F6', // Blue for courses
-                'url' => route('courses.session', $session->id),
-                'meeting_url' => $session->google_meet_link,
-                'participants' => $session->course->enrollments->count(),
+                'url' => $sessionUrl,
+                'meeting_url' => $session->google_meet_link ?? null,
+                'participants' => $participantsCount,
                 'metadata' => [
                     'session_id' => $session->id,
                     'course_id' => $session->course_id,
-                    'teacher_id' => $session->course->assigned_teacher_id,
+                    'teacher_id' => $session->course?->assigned_teacher_id ?? null,
                 ],
             ];
         });
@@ -403,20 +451,42 @@ class CalendarService
     private function formatCircleSessions(Collection $sessions, User $user): Collection
     {
         return $sessions->map(function ($session) {
+            $circleName = $session->circle?->name_ar ?? 'حلقة جماعية';
+            $circleDescription = $session->circle?->description_ar ?? '';
+            $participantsCount = $session->circle?->students?->count() ?? 0;
+
+            // Convert enum status to string value
+            $status = $session->status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            } elseif (is_object($status)) {
+                $status = $status->name ?? 'unknown';
+            }
+
+            // Try to generate URL safely
+            $circleUrl = '#';
+            try {
+                if ($session->circle_id && Route::has('circles.show')) {
+                    $circleUrl = route('circles.show', $session->circle_id);
+                }
+            } catch (\Exception $e) {
+                // Keep default '#' if route doesn't exist or fails
+            }
+
             return [
                 'id' => 'circle_session_'.$session->id,
                 'type' => 'circle',
                 'source' => 'circle_session',
-                'title' => $session->circle->name_ar,
-                'description' => 'حلقة جماعية - '.$session->circle->description_ar,
+                'title' => $circleName,
+                'description' => 'حلقة جماعية - '.$circleDescription,
                 'start_time' => $session->scheduled_at,
                 'end_time' => $session->scheduled_at->copy()->addMinutes($session->duration_minutes),
                 'duration_minutes' => $session->duration_minutes,
-                'status' => $session->status,
+                'status' => $status,
                 'color' => '#10B981', // Green for circles
-                'url' => route('circles.show', $session->circle_id),
-                'meeting_url' => $session->google_meet_url ?? $session->meeting_link,
-                'participants' => $session->circle->students->count(),
+                'url' => $circleUrl,
+                'meeting_url' => $session->google_meet_url ?? $session->meeting_link ?? null,
+                'participants' => $participantsCount,
                 'metadata' => [
                     'session_id' => $session->id,
                     'circle_id' => $session->circle_id,
@@ -552,13 +622,13 @@ class CalendarService
     private function getSessionTitle($session, string $perspective): string
     {
         if ($session->session_type === 'circle') {
-            return $session->circle->name_ar;
+            return $session->circle?->name_ar ?? 'حلقة جماعية';
         }
 
         if ($perspective === 'teacher') {
-            return "جلسة مع {$session->student->name}";
+            return "جلسة مع " . ($session->student?->name ?? 'طالب غير محدد');
         } else {
-            return "جلسة مع الأستاذ {$session->quranTeacher->user->name}";
+            return "جلسة مع الأستاذ " . ($session->quranTeacher?->user?->name ?? 'معلم غير محدد');
         }
     }
 
@@ -568,12 +638,15 @@ class CalendarService
 
         if ($session->session_type === 'individual') {
             if ($perspective === 'teacher') {
-                $description = "جلسة فردية مع الطالب {$session->student->name}";
+                $studentName = $session->student?->name ?? 'طالب غير محدد';
+                $description = "جلسة فردية مع الطالب {$studentName}";
             } else {
-                $description = "جلسة فردية مع الأستاذ {$session->quranTeacher->user->name}";
+                $teacherName = $session->quranTeacher?->user?->name ?? 'معلم غير محدد';
+                $description = "جلسة فردية مع الأستاذ {$teacherName}";
             }
         } else {
-            $description = "حلقة جماعية - {$session->circle->name_ar}";
+            $circleName = $session->circle?->name_ar ?? 'حلقة جماعية';
+            $description = "حلقة جماعية - {$circleName}";
         }
 
         if ($session->current_surah) {
@@ -597,35 +670,46 @@ class CalendarService
 
     private function getSessionUrl($session): string
     {
-        return route('sessions.show', $session->id);
+        // Return URL based on session type
+        if ($session->session_type === 'circle' && $session->circle_id) {
+            try {
+                return route('circles.show', $session->circle_id);
+            } catch (\Exception $e) {
+                return '#';
+            }
+        }
+
+        // For individual sessions, return placeholder
+        // Frontend teacher calendar has been removed - use Filament dashboard instead
+        return '#';
     }
 
     private function getSessionParticipants($session): array
     {
         $participants = [];
 
-        if ($session->quranTeacher) {
+        if ($session->quranTeacher && $session->quranTeacher->user) {
             $participants[] = [
-                'name' => $session->quranTeacher->user->name,
+                'name' => $session->quranTeacher->user->name ?? 'معلم غير محدد',
                 'role' => 'teacher',
-                'email' => $session->quranTeacher->user->email,
+                'email' => $session->quranTeacher->user->email ?? '',
             ];
         }
 
         if ($session->student) {
             $participants[] = [
-                'name' => $session->student->name,
+                'name' => $session->student->name ?? 'طالب غير محدد',
                 'role' => 'student',
-                'email' => $session->student->email,
+                'email' => $session->student->email ?? '',
             ];
         }
 
-        if ($session->circle) {
+        if ($session->circle && $session->circle->students) {
             foreach ($session->circle->students as $student) {
                 $participants[] = [
-                    'name' => $student->name,
+                    'name' => $student->name ?? 'طالب غير محدد',
                     'role' => 'student',
-                    'email' => $student->email,
+                    'email' => $student->email ?? '',
                 ];
             }
         }

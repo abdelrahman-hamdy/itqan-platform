@@ -3,6 +3,7 @@
 namespace App\Services\Scheduling\Validators;
 
 use App\Models\QuranCircle;
+use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
 
@@ -82,11 +83,14 @@ class GroupCircleValidator implements ScheduleValidatorInterface
 
     public function validateDateRange(?Carbon $startDate, int $weeksAhead): ValidationResult
     {
-        $requestedStart = $startDate ?? now();
+        // Use academy timezone for accurate time comparison
+        $timezone = AcademyContextService::getTimezone();
+        $requestedStart = $startDate ?? Carbon::now($timezone);
 
         // Group circles are continuous, no end date restriction
-        // Just ensure starting from today or future
-        if ($requestedStart->isPast()) {
+        // Allow scheduling from today onwards (actual time validation happens during scheduling)
+        $now = Carbon::now($timezone)->startOfDay();
+        if ($requestedStart->startOfDay()->lessThan($now)) {
             return ValidationResult::error('لا يمكن جدولة جلسات في الماضي');
         }
 
@@ -140,7 +144,8 @@ class GroupCircleValidator implements ScheduleValidatorInterface
 
     public function getSchedulingStatus(): array
     {
-        $now = now();
+        $timezone = AcademyContextService::getTimezone();
+        $now = Carbon::now($timezone);
         $oneMonthAhead = $now->copy()->addMonth();
 
         $futureSessionsCount = $this->circle->sessions()

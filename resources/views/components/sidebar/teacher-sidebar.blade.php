@@ -79,7 +79,8 @@
               طلاب الدورات
             @endif
           </a>
-          <a href="{{ route('teacher.schedule.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
+          {{-- Frontend calendar removed - use Filament dashboard calendar instead --}}
+          <a href="{{ route('teacher.schedule.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}"
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('teacher.schedule.*') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-calendar-schedule-line ml-3"></i>
             @if(auth()->user()->isQuranTeacher())
@@ -87,11 +88,6 @@
             @else
               جدول المواعيد
             @endif
-          </a>
-          <a href="{{ route('teacher.calendar', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
-             class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('teacher.calendar') ? 'bg-gray-100 text-primary' : '' }}">
-            <i class="ri-calendar-event-line ml-3"></i>
-            التقويم والجلسات
           </a>
           @if(auth()->user()->isQuranTeacher())
             <a href="/teacher-panel/quran-trial-requests" target="_blank"
@@ -171,7 +167,7 @@
       <div class="mb-6">
         <h4 class="text-xs font-medium text-gray-400 mb-3">التواصل</h4>
         <div class="space-y-1">
-          <a href="{{ url('/chat') }}" 
+          <a href="/chat"
              class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->is('chat*') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-message-3-line ml-3"></i>
             الرسائل والمحادثات

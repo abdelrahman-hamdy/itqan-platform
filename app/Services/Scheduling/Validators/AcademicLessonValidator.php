@@ -3,6 +3,7 @@
 namespace App\Services\Scheduling\Validators;
 
 use App\Models\AcademicSubscription;
+use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
 
@@ -90,7 +91,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
     public function validateDateRange(?Carbon $startDate, int $weeksAhead): ValidationResult
     {
-        $requestedStart = $startDate ?? now();
+        $timezone = AcademyContextService::getTimezone();
+        $requestedStart = $startDate ?? Carbon::now($timezone);
         $limits = $this->getSubscriptionLimits();
 
         // Validate start date
@@ -103,7 +105,9 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
             );
         }
 
-        if ($requestedStart->isPast()) {
+        // Allow scheduling from today onwards (actual time validation happens during scheduling)
+        $now = Carbon::now($timezone)->startOfDay();
+        if ($requestedStart->startOfDay()->lessThan($now)) {
             return ValidationResult::error('لا يمكن جدولة جلسات في الماضي');
         }
 

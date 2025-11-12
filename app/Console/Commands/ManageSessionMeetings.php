@@ -53,17 +53,17 @@ class ManageSessionMeetings extends Command
         if (! $isForced && $this->isOffHours()) {
             $this->info('⏰ Off hours detected, running in maintenance mode only');
 
-            return $this->runMaintenanceMode($isDryRun);
+            return $this->runMaintenanceMode($isDryRun, $executionData);
         }
 
         // Run full processing
-        return $this->runFullProcessing($isDryRun);
+        return $this->runFullProcessing($isDryRun, $executionData);
     }
 
     /**
      * Run full processing during business hours
      */
-    private function runFullProcessing(bool $isDryRun): int
+    private function runFullProcessing(bool $isDryRun, array $executionData): int
     {
         try {
             $this->info('📊 Processing scheduled sessions...');
@@ -81,6 +81,9 @@ class ManageSessionMeetings extends Command
 
             $this->info('✅ Session meeting management completed successfully');
 
+            // Log completion
+            CronJobLogger::logCronEnd('sessions:manage-meetings', $executionData, $results, 'success');
+
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
@@ -90,6 +93,9 @@ class ManageSessionMeetings extends Command
                 'trace' => $e->getTraceAsString(),
             ]);
 
+            // Log error
+            CronJobLogger::logCronError('sessions:manage-meetings', $executionData, $e);
+
             return Command::FAILURE;
         }
     }
@@ -97,7 +103,7 @@ class ManageSessionMeetings extends Command
     /**
      * Run maintenance mode during off-hours
      */
-    private function runMaintenanceMode(bool $isDryRun): int
+    private function runMaintenanceMode(bool $isDryRun, array $executionData): int
     {
         try {
             $this->info('🔧 Running maintenance mode...');
@@ -123,10 +129,16 @@ class ManageSessionMeetings extends Command
 
             $this->info('✅ Maintenance mode completed');
 
+            // Log completion
+            CronJobLogger::logCronEnd('sessions:manage-meetings', $executionData, $results, 'success');
+
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
             $this->error('❌ Error during maintenance: '.$e->getMessage());
+
+            // Log error
+            CronJobLogger::logCronError('sessions:manage-meetings', $executionData, $e);
 
             return Command::FAILURE;
         }

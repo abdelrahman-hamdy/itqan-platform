@@ -7,5 +7,5 @@ return [
     App\Providers\Filament\AdminPanelProvider::class,
     App\Providers\Filament\SupervisorPanelProvider::class,
     App\Providers\Filament\TeacherPanelProvider::class,
-    App\Providers\ChatifySubdomainServiceProvider::class,
+    App\Providers\WirechatServiceProvider::class,
 ];

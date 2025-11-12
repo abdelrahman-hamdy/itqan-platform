@@ -13,6 +13,7 @@ use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
 use App\Services\AcademyContextService;
 use App\Traits\ScopedToAcademy;
+use App\Enums\SessionDuration;
 
 class AcademicPackageResource extends BaseResource
 {
@@ -79,11 +80,7 @@ class AcademicPackageResource extends BaseResource
 
                                 Forms\Components\Select::make('session_duration_minutes')
                                     ->label('مدة الحصة (دقيقة)')
-                                    ->options([
-                                        30 => '30 دقيقة',
-                                        45 => '45 دقيقة', 
-                                        60 => '60 دقيقة',
-                                    ])
+                                    ->options(SessionDuration::options())
                                     ->default(60)
                                     ->required(),
                             ]),

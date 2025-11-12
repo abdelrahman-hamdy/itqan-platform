@@ -447,10 +447,19 @@ class MeetingAttendance extends Model
             $userType = $user->user_type === 'quran_teacher' ? 'teacher' : 'student';
         }
 
+        // Map the polymorphic session type to the database enum values
+        // $sessionType comes in as 'quran' or 'academic' from the request
+        // But the database expects 'individual', 'group', or 'academic'
+        $dbSessionType = match ($sessionType) {
+            'academic' => 'academic',
+            'quran' => $session->session_type ?? 'group', // Use the actual session type from the session model
+            default => $session->session_type ?? 'group',
+        };
+
         return static::firstOrCreate([
             'session_id' => $session->id,
             'user_id' => $user->id,
-            'session_type' => $sessionType,
+            'session_type' => $dbSessionType,
         ], [
             'user_type' => $userType,
             'join_leave_cycles' => [],

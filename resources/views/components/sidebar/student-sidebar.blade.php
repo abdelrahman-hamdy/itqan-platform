@@ -140,7 +140,7 @@
       <div class="mb-6">
         <h4 id="communication-title" class="text-xs font-medium text-gray-400 mb-3 transition-all duration-300">التواصل</h4>
         <div class="space-y-1">
-          <a href="{{ url('/chat') }}" 
+          <a href="/chat"
              class="nav-item flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->is('chat*') ? 'bg-gray-100 text-primary' : '' }}"
              data-tooltip="الرسائل والمحادثات">
             <i class="ri-message-3-line ml-3"></i>

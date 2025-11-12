@@ -46,10 +46,13 @@
             
             <!-- Message Button -->
             <div>
-                <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $student->id]) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                @php $conv = auth()->user()->getOrCreatePrivateConversation($student); @endphp
+                @if($conv)
+                <a href="{{ route('chat.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="ri-message-line ml-2"></i>
                     إرسال رسالة
                 </a>
+                @endif
             </div>
         </div>
     </div>

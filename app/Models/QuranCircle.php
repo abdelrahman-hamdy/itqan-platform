@@ -31,8 +31,8 @@ class QuranCircle extends Model
         'max_students',
         'enrolled_students',
         'min_students_to_start',
-        'session_duration_minutes',
         'monthly_sessions_count',
+        'session_duration_minutes',
         'monthly_fee',
         // 'teacher_monthly_revenue', // Teacher's monthly salary from this circle - moved to user settings
         'sessions_completed',
@@ -64,7 +64,6 @@ class QuranCircle extends Model
         'max_students' => 'integer',
         'enrolled_students' => 'integer',
         'min_students_to_start' => 'integer',
-        'session_duration_minutes' => 'integer',
         'sessions_completed' => 'integer',
         'monthly_fee' => 'decimal:2',
         'avg_rating' => 'decimal:1',
@@ -723,9 +722,13 @@ class QuranCircle extends Model
             if (in_array($dayName, $this->schedule_days)) {
                 foreach ($this->schedule_times as $time) {
                     $sessionDateTime = $currentDate->copy()->setTimeFromTimeString($time);
+                    // Duration is determined by subscription/package, default to 60 for scheduling purposes
+                    // Actual duration will be set when sessions are created through SessionManagementService
+                    $duration = 60;
+
                     $schedule[] = [
                         'scheduled_at' => $sessionDateTime,
-                        'duration_minutes' => $this->session_duration_minutes,
+                        'duration_minutes' => $duration,
                         'status' => 'scheduled',
                     ];
                 }

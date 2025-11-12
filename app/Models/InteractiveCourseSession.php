@@ -452,4 +452,47 @@ class InteractiveCourseSession extends BaseSession
         // Remove duplicates and null values
         return $participants->filter()->unique('id');
     }
+
+    // ========================================
+    // OVERRIDE BASESESSION TIMING METHODS TO USE ACADEMY SETTINGS
+    // ========================================
+
+    /**
+     * Get preparation minutes before session from academy settings
+     * Overrides BaseSession hardcoded value
+     */
+    protected function getPreparationMinutes(): int
+    {
+        if ($this->academy && $this->academy->settings) {
+            return $this->academy->settings->default_preparation_minutes ?? 10;
+        }
+
+        return 10; // Fallback default
+    }
+
+    /**
+     * Get ending buffer minutes after session from academy settings
+     * Overrides BaseSession hardcoded value
+     */
+    protected function getEndingBufferMinutes(): int
+    {
+        if ($this->academy && $this->academy->settings) {
+            return $this->academy->settings->default_buffer_minutes ?? 5;
+        }
+
+        return 5; // Fallback default
+    }
+
+    /**
+     * Get grace period minutes for late joins from academy settings
+     * Overrides BaseSession hardcoded value
+     */
+    protected function getGracePeriodMinutes(): int
+    {
+        if ($this->academy && $this->academy->settings) {
+            return $this->academy->settings->default_late_tolerance_minutes ?? 15;
+        }
+
+        return 15; // Fallback default
+    }
 }

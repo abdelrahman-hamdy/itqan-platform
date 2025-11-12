@@ -128,10 +128,30 @@ if (! function_exists('getMeetingPreparationMessage')) {
     /**
      * Get meeting preparation message with friendly time format
      *
-     * @param  \Carbon\Carbon  $sessionTime
+     * @param  mixed  $session  Session model or Carbon time
+     * @param  int|null  $preparationMinutes  Optional preparation minutes (only used if $session is Carbon)
      */
-    function getMeetingPreparationMessage($sessionTime, int $preparationMinutes = 15): array
+    function getMeetingPreparationMessage($session, ?int $preparationMinutes = null): array
     {
+        // Handle Carbon time directly (backward compatibility)
+        if ($session instanceof \Carbon\Carbon) {
+            $sessionTime = $session;
+            $prepMinutes = $preparationMinutes ?? 10; // Use provided or default
+        }
+        // Handle session model
+        elseif (is_object($session) && method_exists($session, 'getStatusDisplayData')) {
+            $sessionTime = $session->scheduled_at;
+            // Get preparation minutes from session if available
+            $statusData = $session->getStatusDisplayData();
+            $prepMinutes = $statusData['preparation_minutes'] ?? 10;
+        }
+        else {
+            return [
+                'message' => '',
+                'type' => 'none',
+            ];
+        }
+
         if (! $sessionTime) {
             return [
                 'message' => '',
@@ -139,7 +159,7 @@ if (! function_exists('getMeetingPreparationMessage')) {
             ];
         }
 
-        $preparationTime = $sessionTime->copy()->subMinutes($preparationMinutes);
+        $preparationTime = $sessionTime->copy()->subMinutes($prepMinutes);
         $now = now();
 
         // If we're past the preparation time

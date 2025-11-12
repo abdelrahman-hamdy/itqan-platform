@@ -10,18 +10,6 @@ Artisan::command('inspire', function () {
 
 $isLocal = config('app.env') === 'local';
 
-// Schedule group circle sessions generation
-$groupSessionsCommand = Schedule::command('quran:generate-group-sessions')
-    ->name('generate-group-sessions')
-    ->withoutOverlapping()
-    ->runInBackground();
-
-if ($isLocal) {
-    $groupSessionsCommand->everyFiveMinutes(); // Every 5 minutes for development
-} else {
-    $groupSessionsCommand->hourly(); // Hourly for production
-}
-
 // LiveKit meeting management
 // Create meetings for upcoming sessions
 $createMeetingsCommand = Schedule::command('meetings:create-scheduled')

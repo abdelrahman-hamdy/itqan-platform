@@ -124,11 +124,14 @@
               </a>
               @endif
               @if($circle->teacher && $circle->teacher->user)
-              <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $circle->teacher->user->id]) }}"
+              @php $conv = auth()->user()->getOrCreatePrivateConversation($circle->teacher->user); @endphp
+              @if($conv)
+              <a href="{{ route('chat.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
                  class="px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 hover:bg-green-100 transition-colors">
                 <i class="ri-message-3-line ml-1"></i>
                 مراسلة المعلم
               </a>
+              @endif
               @endif
               <a href="{{ route('student.circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}"
                  class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">

@@ -1,9 +1,20 @@
 @props([
     'status',
+    'session' => null,
     'size' => 'md' // sm, md, lg
 ])
 
 @php
+    // Check if session is in preparation phase
+    $isInPreparation = false;
+    if ($session && $session->scheduled_at) {
+        $statusValue = is_object($status) ? $status->value : $status;
+        if ($statusValue === 'scheduled') {
+            $prepMessage = getMeetingPreparationMessage($session);
+            $isInPreparation = $prepMessage['type'] === 'preparing';
+        }
+    }
+
     // Define size classes
     $sizeClasses = match($size) {
         'sm' => 'px-2 py-1 text-xs',
@@ -11,16 +22,24 @@
         default => 'px-3 py-1.5 text-xs' // md
     };
 
-    // Define status configurations with gradient backgrounds, colors, icons, and Arabic labels
-    $statusConfig = match($status) {
-        'scheduled', \App\Enums\SessionStatus::SCHEDULED => [
-            'classes' => 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300',
-            'icon' => 'ri-calendar-line',
-            'label' => 'مجدولة'
-        ],
+    // If in preparation, override with amber styling
+    if ($isInPreparation) {
+        $statusConfig = [
+            'classes' => 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border border-amber-300',
+            'icon' => 'ri-settings-3-line animate-spin',
+            'label' => 'جاري التحضير'
+        ];
+    } else {
+        // Define status configurations with gradient backgrounds, colors, icons, and Arabic labels
+        $statusConfig = match($status) {
+            'scheduled', \App\Enums\SessionStatus::SCHEDULED => [
+                'classes' => 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300',
+                'icon' => 'ri-calendar-line',
+                'label' => 'مجدولة'
+            ],
         'ongoing', \App\Enums\SessionStatus::ONGOING => [
             'classes' => 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300',
-            'icon' => 'ri-live-line',
+            'icon' => 'ri-live-line animate-pulse',
             'label' => 'جارية الآن'
         ],
         'ready', \App\Enums\SessionStatus::READY => [
@@ -48,12 +67,13 @@
             'icon' => 'ri-user-unfollow-line',
             'label' => 'غائب'
         ],
-        default => [
-            'classes' => 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300',
-            'icon' => 'ri-question-line',
-            'label' => is_object($status) ? $status->label() : (string) $status
-        ]
-    };
+            default => [
+                'classes' => 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300',
+                'icon' => 'ri-question-line',
+                'label' => is_object($status) ? $status->label() : (string) $status
+            ]
+        };
+    }
 
     $finalClasses = "inline-flex items-center rounded-lg font-semibold shadow-sm {$sizeClasses} {$statusConfig['classes']}";
 @endphp

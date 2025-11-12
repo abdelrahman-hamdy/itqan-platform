@@ -42,6 +42,6 @@ Route::get('/server-time', function () {
     return response()->json([
         'timestamp' => now()->toISOString(),
         'unix_timestamp' => now()->getTimestamp(),
-        'timezone' => config('app.timezone'),
+        'timezone' => \App\Services\AcademyContextService::getTimezone(),
     ]);
 })->name('api.server-time');

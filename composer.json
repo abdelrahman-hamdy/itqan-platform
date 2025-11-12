@@ -20,6 +20,7 @@
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.0",
         "munafio/chatify": "^1.6",
+        "namu/wirechat": "^0.2.11",
         "nesbot/carbon": "^3.10",
         "predis/predis": "^3.2",
         "saade/filament-fullcalendar": "^3.0",

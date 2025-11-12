@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Namu\WireChat\Traits\Chatable;
 
 // Profile Models
 
@@ -23,7 +24,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, Chatable;
 
     /**
      * Boot method to add observers
@@ -662,9 +663,90 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     }
 
     /**
-     * Chatify Integration Methods
+     * WireChat Integration Methods - Required by Chatable trait
      */
-    
+
+    /**
+     * Get display name for WireChat
+     * Required by Chatable trait
+     */
+    public function displayName(): string
+    {
+        // Return display name based on user type and profile
+        if ($this->user_type === 'student' && $this->studentProfile) {
+            return trim($this->studentProfile->first_name.' '.$this->studentProfile->last_name) ?: $this->name;
+        } elseif ($this->user_type === 'quran_teacher' && $this->quranTeacherProfile) {
+            return trim($this->quranTeacherProfile->first_name.' '.$this->quranTeacherProfile->last_name) ?: $this->name;
+        } elseif ($this->user_type === 'academic_teacher' && $this->academicTeacherProfile) {
+            return trim($this->academicTeacherProfile->first_name.' '.$this->academicTeacherProfile->last_name) ?: $this->name;
+        }
+
+        return $this->name;
+    }
+
+    /**
+     * Get avatar/cover URL for WireChat
+     * Required by Chatable trait
+     */
+    public function getCoverUrlAttribute(): ?string
+    {
+        // Check for user's avatar
+        if ($this->avatar) {
+            return asset('storage/'.$this->avatar);
+        }
+
+        // Check profile avatar based on user type
+        $profile = $this->getProfile();
+        if ($profile && method_exists($profile, 'getAvatar') && $profile->getAvatar()) {
+            return asset('storage/'.$profile->getAvatar());
+        }
+
+        // Generate avatar URL using UI Avatars service
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=0ea5e9&color=fff';
+    }
+
+    /**
+     * Get profile URL for WireChat
+     * Required by Chatable trait
+     */
+    public function getProfileUrlAttribute(): ?string
+    {
+        // Generate profile URL based on user type
+        return match ($this->user_type) {
+            'student' => '/student/profile/' . $this->id,
+            'quran_teacher', 'academic_teacher' => '/teacher/profile/' . $this->id,
+            'parent' => '/parent/profile/' . $this->id,
+            'supervisor' => '/supervisor/profile/' . $this->id,
+            'academy_admin' => '/admin/profile/' . $this->id,
+            default => null,
+        };
+    }
+
+    /**
+     * Check if user can create groups
+     * Custom method for permission checking
+     */
+    public function canCreateGroups(): bool
+    {
+        // Allow teachers, admins, and supervisors to create groups
+        return in_array($this->user_type, ['quran_teacher', 'academic_teacher', 'supervisor', 'academy_admin', 'super_admin']);
+    }
+
+    /**
+     * Check if user can create chats
+     * Custom method for permission checking
+     */
+    public function canCreateChats(): bool
+    {
+        // Allow all active authenticated users to create chats
+        // Email/phone verification not required as platform doesn't enforce it
+        return (bool) $this->active_status;
+    }
+
+    /**
+     * Legacy Chatify Integration Methods (to be removed after migration)
+     */
+
     /**
      * Get the user's display name for Chatify
      */
@@ -774,9 +856,64 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     }
     
     /**
+     * Get or create a private conversation with another user
+     * Used for direct messaging between two users
+     */
+    public function getOrCreatePrivateConversation(User $otherUser)
+    {
+        // Use WireChat's conversation methods to find or create a private conversation
+        // The Chatable trait provides access to WireChat functionality
+        try {
+            // Try to find an existing private conversation between these two users
+            $conversation = \Namu\WireChat\Models\Conversation::where('type', 'private')
+                ->whereHas('participants', function ($query) {
+                    $query->where('participantable_id', $this->id)
+                          ->where('participantable_type', User::class);
+                })
+                ->whereHas('participants', function ($query) use ($otherUser) {
+                    $query->where('participantable_id', $otherUser->id)
+                          ->where('participantable_type', User::class);
+                })
+                ->first();
+
+            if ($conversation) {
+                return $conversation;
+            }
+
+            // If no conversation exists, create a new one
+            $newConversation = \Namu\WireChat\Models\Conversation::create(['type' => 'private']);
+
+            // Add both participants
+            \Namu\WireChat\Models\Participant::create([
+                'conversation_id' => $newConversation->id,
+                'participantable_id' => $this->id,
+                'participantable_type' => User::class,
+                'role' => 'member',
+            ]);
+
+            \Namu\WireChat\Models\Participant::create([
+                'conversation_id' => $newConversation->id,
+                'participantable_id' => $otherUser->id,
+                'participantable_type' => User::class,
+                'role' => 'member',
+            ]);
+
+            return $newConversation;
+        } catch (\Exception $e) {
+            // Fallback: just return null if conversation creation fails
+            \Log::error('Error creating private conversation', [
+                'user_id' => $this->id,
+                'other_user_id' => $otherUser->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Chat Groups Relationships
      */
-    
+
     /**
      * Get chat groups the user owns
      */
@@ -784,7 +921,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     {
         return $this->hasMany(ChatGroup::class, 'owner_id');
     }
-    
+
     /**
      * Get chat groups the user is a member of
      */
@@ -794,7 +931,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
                     ->withPivot(['role', 'can_send_messages', 'is_muted', 'joined_at', 'last_read_at', 'unread_count'])
                     ->withTimestamps();
     }
-    
+
     /**
      * Get chat group memberships
      */

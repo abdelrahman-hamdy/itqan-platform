@@ -245,13 +245,34 @@ class AcademyContextService
     }
 
     /**
+     * Get the timezone for the current academy
+     * Falls back to app config timezone if no academy or timezone not set
+     */
+    public static function getTimezone(): string
+    {
+        $academy = self::getCurrentAcademy();
+
+        if ($academy && $academy->timezone) {
+            // If timezone is a Timezone enum instance, get its value
+            if ($academy->timezone instanceof \App\Enums\Timezone) {
+                return $academy->timezone->value;
+            }
+            // If it's already a string, return it
+            return $academy->timezone;
+        }
+
+        // Fallback to app config timezone
+        return config('app.timezone', 'UTC');
+    }
+
+    /**
      * Get academy context info for debugging
      */
     public static function getContextInfo(): array
     {
         $user = auth()->user();
         $currentAcademy = self::getCurrentAcademy();
-        
+
         return [
             'user_id' => $user?->id,
             'user_type' => $user?->user_type,
@@ -261,6 +282,7 @@ class AcademyContextService
             'current_academy_id' => $currentAcademy?->id,
             'current_academy_name' => $currentAcademy?->name,
             'has_academy_selected' => self::hasAcademySelected(),
+            'timezone' => self::getTimezone(),
         ];
     }
 } 

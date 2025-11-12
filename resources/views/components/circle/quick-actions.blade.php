@@ -60,12 +60,17 @@
                 جميع الحلقات
             </a>
             
-            @if($circle->quranTeacher)
-                <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $circle->quranTeacher->id]) }}" 
-                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors">
-                    <i class="ri-message-3-line ml-2"></i>
-                    مراسلة المعلم
-                </a>
+            @if($circle->quranTeacher && $circle->quranTeacher->user)
+                @php
+                    $conversation = auth()->user()->getOrCreatePrivateConversation($circle->quranTeacher->user);
+                @endphp
+                @if($conversation)
+                    <a href="{{ route('chat.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conversation->id]) }}"
+                       class="w-full flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                        <i class="ri-message-3-line ml-2"></i>
+                        مراسلة المعلم
+                    </a>
+                @endif
             @endif
         </div>
     </div>

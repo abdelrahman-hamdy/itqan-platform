@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\SessionStatus;
+use App\Models\AcademySettings;
+use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -80,19 +82,20 @@ class SessionMeetingService
             ];
         }
 
-        $now = Carbon::now();
+        $timezone = AcademyContextService::getTimezone();
+        $now = Carbon::now($timezone);
         $sessionStart = $session->scheduled_at;
         $sessionEnd = $sessionStart->copy()->addMinutes($session->duration_minutes ?? 60);
 
-        // Get circle configuration for timing
-        $circle = $this->getCircleForSession($session);
-        $preparationMinutes = $circle?->preparation_minutes ?? 15;
-        $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
+        // Get academy settings for timing configuration
+        $academySettings = AcademySettings::where('academy_id', $session->academy_id)->first();
+        $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
+        $endingBufferMinutes = $academySettings?->default_buffer_minutes ?? 5;
 
-        // Allow joining based on circle configuration
+        // Allow joining based on academy settings
         $joinableStart = $sessionStart->copy()->subMinutes($preparationMinutes);
 
-        // Keep room available based on circle configuration
+        // Keep room available based on academy settings
         $roomExpiry = $sessionEnd->copy()->addMinutes($endingBufferMinutes);
 
         if ($now->lt($joinableStart)) {
@@ -172,13 +175,23 @@ class SessionMeetingService
             'errors' => 0,
         ];
 
-        // Get sessions that should be starting within the next 15 minutes
-        $upcomingSessions = QuranSession::where('scheduled_at', '>=', now())
-            ->where('scheduled_at', '<=', now()->addMinutes(15))
+        $timezone = AcademyContextService::getTimezone();
+        $now = Carbon::now($timezone);
+
+        // Get sessions that should be starting within the preparation window
+        // We need to get sessions grouped by academy to use their specific settings
+        $upcomingSessions = QuranSession::where('scheduled_at', '>=', $now)
+            ->where('scheduled_at', '<=', $now->copy()->addMinutes(30)) // Max window to check
             ->where('status', '!=', SessionStatus::COMPLETED)
             ->whereNull('meeting_room_name') // Sessions without meetings yet
             ->with(['academy'])
-            ->get();
+            ->get()
+            ->filter(function ($session) use ($now) {
+                // Check if session is within the academy's preparation window
+                $academySettings = AcademySettings::where('academy_id', $session->academy_id)->first();
+                $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
+                return $session->scheduled_at <= $now->copy()->addMinutes($preparationMinutes);
+            });
 
         foreach ($upcomingSessions as $session) {
             try {
@@ -201,8 +214,8 @@ class SessionMeetingService
         }
 
         // Update status of active sessions
-        $activeSessions = QuranSession::where('scheduled_at', '<=', now())
-            ->where('scheduled_at', '>', now()->subMinutes(60))
+        $activeSessions = QuranSession::where('scheduled_at', '<=', $now)
+            ->where('scheduled_at', '>', $now->copy()->subMinutes(60))
             ->where('status', SessionStatus::SCHEDULED)
             ->get();
 
@@ -221,7 +234,7 @@ class SessionMeetingService
         // Clean up expired sessions
         $expiredSessions = QuranSession::whereNotNull('meeting_room_name')
             ->whereNotNull('scheduled_at')
-            ->where('scheduled_at', '<', now()->subHours(2)) // Sessions that ended 2+ hours ago
+            ->where('scheduled_at', '<', $now->copy()->subHours(2)) // Sessions that ended 2+ hours ago
             ->where('status', '!=', SessionStatus::COMPLETED)
             ->get();
 
@@ -256,18 +269,21 @@ class SessionMeetingService
         $duration = $durationMinutes ?? $session->duration_minutes ?? 60;
         $expirationMinutes = $duration + 30; // Session duration + 30 minutes grace
 
+        $timezone = AcademyContextService::getTimezone();
+        $now = Carbon::now($timezone);
+
         Cache::put(
             $this->getSessionPersistenceKey($session),
             [
                 'session_id' => $session->id,
                 'room_name' => $session->meeting_room_name,
-                'created_at' => now(),
-                'expires_at' => now()->addMinutes($expirationMinutes),
+                'created_at' => $now,
+                'expires_at' => $now->copy()->addMinutes($expirationMinutes),
                 'scheduled_end' => $session->scheduled_at
                     ? $session->scheduled_at->addMinutes($duration)
-                    : now()->addMinutes($duration),
+                    : $now->copy()->addMinutes($duration),
             ],
-            now()->addMinutes($expirationMinutes)
+            $now->copy()->addMinutes($expirationMinutes)
         );
 
         Log::info('Marked session as persistent', [
@@ -288,9 +304,10 @@ class SessionMeetingService
             return false;
         }
 
+        $timezone = AcademyContextService::getTimezone();
         $expiresAt = Carbon::parse($persistenceData['expires_at']);
 
-        return now()->lt($expiresAt);
+        return Carbon::now($timezone)->lt($expiresAt);
     }
 
     /**
@@ -323,7 +340,8 @@ class SessionMeetingService
             $sessionEnd = $session->scheduled_at->copy()
                 ->addMinutes($session->duration_minutes ?? 60);
 
-            $minutesUntilEnd = now()->diffInMinutes($sessionEnd, false);
+            $timezone = AcademyContextService::getTimezone();
+            $minutesUntilEnd = Carbon::now($timezone)->diffInMinutes($sessionEnd, false);
 
             if ($minutesUntilEnd > 0) {
                 // Keep room alive for session duration + 30 minutes
@@ -374,9 +392,10 @@ class SessionMeetingService
             }
 
             // Update session status
+            $timezone = AcademyContextService::getTimezone();
             $session->update([
                 'status' => $sessionStatus,
-                'meeting_ended_at' => now(),
+                'meeting_ended_at' => Carbon::now($timezone),
             ]);
 
             // Remove persistence
@@ -562,12 +581,8 @@ class SessionMeetingService
         ];
 
         try {
-            // Create meetings for ready sessions
-            $createResults = $this->createMeetingsForReadySessions();
-            $results['meetings_created'] = $createResults['meetings_created'];
-            $results['errors'] = array_merge($results['errors'], $createResults['errors']);
-
-            // Process status transitions
+            // CRITICAL FIX: Process status transitions FIRST
+            // This ensures sessions transition to READY before we try to create meetings
             $transitionSessions = QuranSession::whereIn('status', [
                 SessionStatus::SCHEDULED,
                 SessionStatus::READY,
@@ -579,7 +594,18 @@ class SessionMeetingService
                 + $transitionResults['transitions_to_absent']
                 + $transitionResults['transitions_to_completed'];
 
-            // Terminate expired meetings
+            Log::info('Status transitions processed', [
+                'transitions_to_ready' => $transitionResults['transitions_to_ready'],
+                'transitions_to_absent' => $transitionResults['transitions_to_absent'],
+                'transitions_to_completed' => $transitionResults['transitions_to_completed'],
+            ]);
+
+            // THEN create meetings for ready sessions (including newly transitioned ones)
+            $createResults = $this->createMeetingsForReadySessions();
+            $results['meetings_created'] = $createResults['meetings_created'];
+            $results['errors'] = array_merge($results['errors'], $createResults['errors']);
+
+            // Finally, terminate expired meetings
             $terminateResults = $this->terminateExpiredMeetings();
             $results['meetings_terminated'] = $terminateResults['meetings_terminated'];
             $results['errors'] = array_merge($results['errors'], $terminateResults['errors']);

@@ -5,6 +5,7 @@ namespace App\Filament\AcademicTeacher\Widgets;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Forms;
@@ -157,11 +158,21 @@ class AcademicFullCalendarWidget extends FullCalendarWidget
                 $title = $session->title ?? 'جلسة أكاديمية';
                 $studentName = $session->student?->name ?? 'طالب';
 
+                // Convert to academy timezone for display
+                $timezone = AcademyContextService::getTimezone();
+                $scheduledAt = $session->scheduled_at instanceof \Carbon\Carbon
+                    ? $session->scheduled_at->copy()->timezone($timezone)
+                    : \Carbon\Carbon::parse($session->scheduled_at, $timezone);
+
+                // Format as ISO string WITHOUT timezone conversion (already in academy timezone)
+                $startString = $scheduledAt->format('Y-m-d\TH:i:s');
+                $endString = $scheduledAt->copy()->addMinutes($session->duration_minutes ?? 60)->format('Y-m-d\TH:i:s');
+
                 return EventData::make()
                     ->id($session->id)
                     ->title($title.' - '.$studentName)
-                    ->start($session->scheduled_at)
-                    ->end($session->scheduled_at->addMinutes($session->duration_minutes ?? 60))
+                    ->start($startString)
+                    ->end($endString)
                     ->backgroundColor('#3B82F6')
                     ->borderColor('#2563EB')
                     ->textColor('#FFFFFF')
@@ -264,7 +275,7 @@ class AcademicFullCalendarWidget extends FullCalendarWidget
                         ->maxDate(fn () => Carbon::now()->addMonths(6)->toDateString())
                         ->native(false)
                         ->displayFormat('Y-m-d H:i')
-                        ->timezone(config('app.timezone', 'UTC'))
+                        ->timezone(AcademyContextService::getTimezone())
                         ->helperText('اختر التاريخ والوقت الجديد للجلسة'),
 
                     Forms\Components\Textarea::make('description')

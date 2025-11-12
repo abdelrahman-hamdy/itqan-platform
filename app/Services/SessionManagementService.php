@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AcademySettings;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
@@ -78,9 +79,10 @@ class SessionManagementService
         ?string $description = null
     ): QuranSession {
 
-        // Get duration from circle settings if not provided
+        // Get duration - group circles use standard 60 minutes
+        // Duration should be defined when creating the session, not from academy settings
         if ($durationMinutes === null) {
-            $durationMinutes = $circle->session_duration_minutes ?? 60; // fallback
+            $durationMinutes = 60; // Standard group session duration
         }
 
         // Check for conflicts
@@ -134,7 +136,8 @@ class SessionManagementService
                     ?? $circle->subscription?->package?->session_duration_minutes
                     ?? 45; // fallback
             } else {
-                $durationMinutes = $circle->session_duration_minutes ?? 60; // fallback
+                // Group circles use standard duration (60 minutes)
+                $durationMinutes = 60;
             }
         }
 

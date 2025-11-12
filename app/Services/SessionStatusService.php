@@ -3,13 +3,18 @@
 namespace App\Services;
 
 use App\Enums\SessionStatus;
+use App\Models\AcademySettings;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class SessionStatusService
 {
+    // CRITICAL FIX: Don't inject services in constructor to avoid circular dependency
+    // MeetingAttendanceService depends on SessionStatusService, so we resolve them dynamically when needed
+
     /**
      * Transition session from SCHEDULED to READY
      * Called when preparation time begins (default: 15 minutes before session)
@@ -138,6 +143,7 @@ class SessionStatusService
      * Transition session from ONGOING to COMPLETED
      * Called when session naturally ends or teacher marks it complete
      * CRITICAL FIX: Also closes the LiveKit meeting room to prevent new joins
+     * CRITICAL FIX: Finalizes attendance and syncs to student reports
      */
     public function transitionToCompleted(QuranSession $session): bool
     {
@@ -156,11 +162,66 @@ class SessionStatusService
             'actual_duration_minutes' => $this->calculateActualDuration($session),
         ]);
 
+        // CRITICAL FIX: Finalize attendance for all participants
+        try {
+            Log::info('Finalizing attendance for completed session', [
+                'session_id' => $session->id,
+            ]);
+
+            // CRITICAL FIX: Resolve services dynamically to avoid circular dependency
+            $meetingAttendanceService = app(MeetingAttendanceService::class);
+
+            // Calculate final attendance for all participants
+            $attendanceResults = $meetingAttendanceService->calculateFinalAttendance($session);
+
+            Log::info('Attendance finalized', [
+                'session_id' => $session->id,
+                'calculated_count' => $attendanceResults['calculated_count'],
+                'errors' => $attendanceResults['errors'],
+            ]);
+
+            // CRITICAL FIX: Sync attendance to student session reports for group sessions
+            // For individual sessions, this is handled in handleIndividualSessionCompletion
+            if ($session->session_type === 'group') {
+                $meetingAttendances = $session->meetingAttendances()->calculated()->get();
+                foreach ($meetingAttendances as $attendance) {
+                    try {
+                        $user = User::find($attendance->user_id);
+                        if ($user && $user->user_type === 'student') {
+                            // CRITICAL FIX: Resolve service dynamically to avoid circular dependency
+                            $unifiedAttendanceService = app(UnifiedAttendanceService::class);
+
+                            // Force sync by calling calculateFinalAttendance which updates the report
+                            $unifiedAttendanceService->calculateFinalAttendance($session);
+
+                            Log::info('Synced attendance to report for group session', [
+                                'session_id' => $session->id,
+                                'student_id' => $user->id,
+                            ]);
+                            break; // Only need to call once for the whole session
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Failed to sync attendance to report', [
+                            'session_id' => $session->id,
+                            'user_id' => $attendance->user_id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to finalize attendance on session completion', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
         // CRITICAL FIX: Close the LiveKit meeting room to prevent new joins
         if ($session->meeting_room_name) {
             try {
-                $meetingService = app(\App\Services\SessionMeetingService::class);
-                $meetingService->closeMeeting($session);
+                $session->endMeeting();
 
                 Log::info('Meeting room closed on session completion', [
                     'session_id' => $session->id,
@@ -274,12 +335,9 @@ class SessionStatusService
             return false;
         }
 
-        $circle = $this->getCircleForSession($session);
-        if (! $circle) {
-            return false;
-        }
-
-        $preparationMinutes = $circle->preparation_minutes ?? 15;
+        // Get preparation minutes from academy settings
+        $academySettings = AcademySettings::where('academy_id', $session->academy_id)->first();
+        $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
         $preparationTime = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
 
         // NEW: Add safety check - don't process sessions too far in future
@@ -308,12 +366,9 @@ class SessionStatusService
             return false;
         }
 
-        $circle = $this->getCircleForSession($session);
-        if (! $circle) {
-            return false;
-        }
-
-        $graceMinutes = $circle->late_join_grace_period_minutes ?? 15;
+        // Get late tolerance from academy settings
+        $academySettings = AcademySettings::where('academy_id', $session->academy_id)->first();
+        $graceMinutes = $academySettings?->default_late_tolerance_minutes ?? 15;
         $graceDeadline = $session->scheduled_at->copy()->addMinutes($graceMinutes);
 
         // Check if no one has joined within grace period
@@ -333,12 +388,9 @@ class SessionStatusService
             return false;
         }
 
-        $circle = $this->getCircleForSession($session);
-        if (! $circle) {
-            return false;
-        }
-
-        $endingBufferMinutes = $circle->ending_buffer_minutes ?? 5;
+        // Get buffer minutes from academy settings
+        $academySettings = AcademySettings::where('academy_id', $session->academy_id)->first();
+        $endingBufferMinutes = $academySettings?->default_buffer_minutes ?? 5;
         $autoCompleteTime = $session->scheduled_at
             ->copy()
             ->addMinutes($session->duration_minutes)

@@ -17,6 +17,13 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
+// WireChat participant channels (format: participant.{encodedType}.{userId})
+// The encodedType is hex-encoded class name (e.g., 4170705c4d6f64656c735c55736572 = App\Models\User)
+Broadcast::channel('participant.{encodedType}.{userId}', function ($user, $encodedType, $userId) {
+    // Allow user to listen to their own participant channel
+    return (int) $user->id === (int) $userId;
+});
+
 // Chat private channels authorization
 Broadcast::channel('chat.{userId}', function ($user, $userId) {
     // Allow user to listen to their own private channel
@@ -29,44 +36,60 @@ Broadcast::channel('private-chat.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
 
-// Conversation private channel for typing indicators and real-time updates
+// WireChat conversation channel for MessageCreated and MessageDeleted events
 Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
-    // Check if user is part of this conversation
-    // This checks if the user has messages with the other participant
-    $hasMessages = \App\Models\ChMessage::where(function($query) use ($user, $conversationId) {
-        $query->where(['from_id' => $user->id, 'to_id' => $conversationId])
-              ->orWhere(['from_id' => $conversationId, 'to_id' => $user->id]);
-    })->exists();
+    // Check if user is a participant in this WireChat conversation
+    $isParticipant = \Namu\WireChat\Models\Participant::where('conversation_id', $conversationId)
+        ->where('participantable_type', \App\Models\User::class)
+        ->where('participantable_id', $user->id)
+        ->exists();
 
-    return $hasMessages ? true : false;
+    return $isParticipant;
 });
 
-// Presence channel for group chats to show online users
-Broadcast::channel('presence-group.{groupId}', function ($user, $groupId) {
-    // Check if user is a member of this group
-    $member = \App\Models\ChatGroupMember::where('group_id', $groupId)
-        ->where('user_id', $user->id)
-        ->first();
-
-    if ($member) {
+// Global presence channel for all authenticated users (for online status)
+Broadcast::channel('online', function ($user) {
+    if ($user) {
         return [
             'id' => $user->id,
             'name' => $user->name,
-            'avatar' => $user->avatar,
-            'role' => $member->role,
+            'avatar' => $user->avatar ?? null,
+            'user_type' => $user->user_type,
+        ];
+    }
+    return false;
+});
+
+// Presence channel for specific academy (multi-tenancy support)
+Broadcast::channel('online.academy.{academyId}', function ($user, $academyId) {
+    if ($user && (int) $user->academy_id === (int) $academyId) {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'avatar' => $user->avatar ?? null,
+            'user_type' => $user->user_type,
+        ];
+    }
+    return false;
+});
+
+// Presence channel for WireChat conversations
+Broadcast::channel('presence-conversation.{conversationId}', function ($user, $conversationId) {
+    // Check if user is a participant in this conversation
+    $isParticipant = \Namu\WireChat\Models\Participant::where('conversation_id', $conversationId)
+        ->where('participantable_type', \App\Models\User::class)
+        ->where('participantable_id', $user->id)
+        ->whereNull('exited_at')
+        ->exists();
+
+    if ($isParticipant) {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'avatar' => $user->avatar ?? null,
+            'user_type' => $user->user_type,
         ];
     }
 
     return false;
-});
-
-// Presence channel for tracking online status in conversations
-Broadcast::channel('presence-chat.{conversationId}', function ($user, $conversationId) {
-    // For now, allow if user is authenticated
-    // You can add more specific logic here
-    return [
-        'id' => $user->id,
-        'name' => $user->name,
-        'avatar' => $user->avatar,
-    ];
 });

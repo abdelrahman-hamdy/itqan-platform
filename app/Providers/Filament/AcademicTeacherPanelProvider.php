@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Models\Academy;
+use App\Services\AcademyContextService;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -94,7 +95,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 FilamentFullCalendarPlugin::make()
                     ->selectable(true)
                     ->editable(true)
-                    ->timezone(config('app.timezone'))
+                    ->timezone(AcademyContextService::getTimezone())
                     ->locale(config('app.locale'))
                     ->plugins(['interaction', 'dayGrid', 'timeGrid'], false)
                     ->config([

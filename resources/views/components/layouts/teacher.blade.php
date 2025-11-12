@@ -103,8 +103,9 @@
 
 
   </style>
-  
+
   {{ $head ?? '' }}
+  @stack('styles')
 </head>
 
 <body class="bg-gray-50 text-gray-900">
@@ -276,5 +277,6 @@
   </script>
   
   {{ $scripts ?? '' }}
+  @stack('scripts')
 </body>
 </html>

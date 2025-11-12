@@ -8,6 +8,16 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                // Add timestamp to force cache refresh
+                entryFileNames: 'assets/[name]-[hash]-' + Date.now() + '.js',
+                chunkFileNames: 'assets/[name]-[hash]-' + Date.now() + '.js',
+                assetFileNames: 'assets/[name]-[hash]-' + Date.now() + '.[ext]'
+            }
+        }
+    },
     server: {
         host: '127.0.0.1',
         port: 5173,

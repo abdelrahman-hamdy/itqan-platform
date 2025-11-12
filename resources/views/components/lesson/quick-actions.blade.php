@@ -57,11 +57,14 @@
             @endif
 
             @if($student)
-                <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $student->id]) }}" 
-                   class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                    <i class="ri-message-3-line ml-2"></i>
-                    مراسلة الطالب
-                </a>
+                @php $conv = auth()->user()->getOrCreatePrivateConversation($student->user ?? $student); @endphp
+                @if($conv)
+                    <a href="{{ route('chat.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}" 
+                       class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
+                        <i class="ri-message-3-line ml-2"></i>
+                        مراسلة الطالب
+                    </a>
+                @endif
             @endif
 
             <button type="button" onclick="updateLessonSettings()" 
@@ -84,11 +87,14 @@
             @endif
 
             @if($teacher)
-                <a href="{{ route('chat', ['subdomain' => request()->route('subdomain'), 'user' => $teacher->id]) }}" 
-                   class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                    <i class="ri-message-3-line ml-2"></i>
-                    مراسلة المعلم
-                </a>
+                @php $conv = auth()->user()->getOrCreatePrivateConversation($teacher->user ?? $teacher); @endphp
+                @if($conv)
+                    <a href="{{ route('chat.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}" 
+                       class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
+                        <i class="ri-message-3-line ml-2"></i>
+                        مراسلة المعلم
+                    </a>
+                @endif
             @endif
             
 

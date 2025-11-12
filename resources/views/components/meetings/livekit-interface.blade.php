@@ -139,9 +139,9 @@
             
         default:
             // Handle case where status might be a string or enum
-            $statusLabel = is_object($session->status) && method_exists($session->status, 'label') 
-                ? $session->status->label() 
-                : (string) $session->status;
+            $statusLabel = is_object($session->status) && method_exists($session->status, 'label')
+                ? $session->status->label()
+                : $session->status;
             $meetingMessage = 'حالة الجلسة: ' . $statusLabel;
             $buttonText = 'غير متاح';
             $buttonClass = 'bg-gray-400 cursor-not-allowed';
@@ -2173,7 +2173,7 @@
                 @endif
                 
                 <!-- Complete Session Button (for both types if session is ongoing) -->
-                @if((is_object($session->status) && method_exists($session->status, 'value') ? $session->status->value : (string) $session->status) === 'ongoing')
+                @if((is_object($session->status) && method_exists($session->status, 'value') ? $session->status->value : $session->status) === 'ongoing')
                 <button id="completeSessionBtn" 
                         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                         onclick="completeSession('{{ $session->id }}')">
@@ -2211,7 +2211,7 @@
                 <!-- Unknown status -->
                 <div class="text-gray-500 flex items-center gap-2">
                     <i class="ri-question-line text-lg"></i>
-                    <span class="font-medium">حالة غير معروفة: {{ is_object($session->status) && method_exists($session->status, 'label') ? $session->status->label() : (string) $session->status }}</span>
+                    <span class="font-medium">حالة غير معروفة: {{ is_object($session->status) && method_exists($session->status, 'label') ? $session->status->label() : $session->status }}</span>
                 </div>
         @endswitch
     </div>
@@ -2656,9 +2656,15 @@ function showNotification(message, type = 'info', duration = 5000) {
                 startBtn.addEventListener('click', async () => {
                     console.log('🎯 Start button clicked!');
 
-                    // Check if already initializing or initialized
+                    // CRITICAL FIX: Check if user is already in the meeting
                     if (window.meeting || startBtn.disabled) {
                         console.log('⚠️ Meeting already initialized or initializing, ignoring click');
+                        return;
+                    }
+
+                    // CRITICAL FIX: Check if already tracking attendance (user is in meeting)
+                    if (attendanceTracker && attendanceTracker.isTracking) {
+                        console.log('⚠️ User already in meeting and attendance is being tracked, ignoring click');
                         return;
                     }
 

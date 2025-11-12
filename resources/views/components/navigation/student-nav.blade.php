@@ -69,7 +69,7 @@
         </button>
 
         <!-- Messages -->
-        <a href="{{ route('chat', ['subdomain' => $subdomain]) }}" class="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-all duration-200" aria-label="فتح الرسائل">
+        <a href="/chat" class="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-all duration-200" aria-label="فتح الرسائل">
           <i class="ri-message-2-line text-xl"></i>
           <span id="unread-count-badge" class="absolute top-0 left-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full hidden">
             0
@@ -166,58 +166,19 @@
   </div>
 </nav>
 
-<!-- Alpine.js for dropdown functionality -->
-<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Mobile menu toggle
   const mobileMenuButton = document.getElementById('mobile-menu-button');
   const mobileMenu = document.getElementById('mobile-menu');
-  
+
   mobileMenuButton?.addEventListener('click', function() {
     const isExpanded = this.getAttribute('aria-expanded') === 'true';
     this.setAttribute('aria-expanded', !isExpanded);
     mobileMenu.classList.toggle('hidden');
   });
 
-  // Function to fetch and update unread count
-  function updateUnreadCount() {
-    fetch('/api/chat/unreadCount', {
-      method: 'GET',
-      headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-      const badge = document.getElementById('unread-count-badge');
-      if (badge && data.unread_count !== undefined) {
-        if (data.unread_count > 0) {
-          badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
-          badge.classList.remove('hidden');
-        } else {
-          badge.classList.add('hidden');
-        }
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching unread count:', error);
-    });
-  }
-
-  // Initial load
-  updateUnreadCount();
-
-  // Update every 5 seconds for faster real-time feel
-  setInterval(updateUnreadCount, 5000);
-
-  // Listen for messages marked as read
-  window.addEventListener('messages-marked-read', (e) => {
-    updateUnreadCount();
-  });
+  // WireChat will handle unread counts internally
+  // Remove old Chattify unread count logic
 });
 </script> 

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Enums\Country;
 use App\Enums\Currency;
 use App\Enums\Timezone;
@@ -29,6 +30,7 @@ class Academy extends Model
         'country',
         'timezone',
         'currency',
+        'academic_settings',
         'is_active',
         'allow_registration',
         'maintenance_mode',
@@ -52,6 +54,7 @@ class Academy extends Model
         'country' => Country::class,
         'currency' => Currency::class,
         'timezone' => Timezone::class,
+        'academic_settings' => 'array',
     ];
 
     protected $attributes = [
@@ -88,6 +91,25 @@ class Academy extends Model
     public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    /**
+     * Get the academy settings
+     */
+    public function settings(): HasOne
+    {
+        return $this->hasOne(AcademySettings::class);
+    }
+
+    /**
+     * Get or create academy settings
+     */
+    public function getOrCreateSettings(): AcademySettings
+    {
+        return AcademySettings::firstOrCreate(
+            ['academy_id' => $this->id],
+            []
+        );
     }
 
     /**

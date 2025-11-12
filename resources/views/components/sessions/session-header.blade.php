@@ -38,7 +38,7 @@
                 <h1 class="text-3xl font-bold text-gray-900">
                     {{ $session->title ?? $sessionTypeText }}
                 </h1>
-                <x-sessions.status-badge :status="$session->status" size="md" />
+                <x-sessions.status-badge :status="$session->status" :session="$session" size="md" />
             </div>
             
             <!-- Session Description -->

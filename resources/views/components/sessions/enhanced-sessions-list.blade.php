@@ -9,24 +9,25 @@
 
 @php
     $now = now();
-    
+
     // Helper function to get status value (handles both string and enum)
     $getStatusValue = function($session) {
         return is_object($session->status) ? $session->status->value : $session->status;
     };
-    
-    $ongoingSessions = $sessions->filter(fn($session) => $getStatusValue($session) === 'ongoing');
-    $upcomingSessions = $sessions->filter(fn($session) => 
-        $session->scheduled_at > $now && 
+
+    $ongoingSessions = $sessions->filter(fn($session) => $getStatusValue($session) === 'ongoing')
+        ->sortBy('scheduled_at');
+    $upcomingSessions = $sessions->filter(fn($session) =>
+        $session->scheduled_at > $now &&
         in_array($getStatusValue($session), ['scheduled', 'ready'])
-    );
-    $unscheduledSessions = $sessions->filter(fn($session) => 
+    )->sortBy('scheduled_at'); // Sort ASC - closest first
+    $unscheduledSessions = $sessions->filter(fn($session) =>
         $getStatusValue($session) === 'unscheduled'
     );
-    $pastSessions = $sessions->filter(fn($session) => 
-        $session->scheduled_at <= $now && 
+    $pastSessions = $sessions->filter(fn($session) =>
+        $session->scheduled_at <= $now &&
         in_array($getStatusValue($session), ['completed', 'absent'])
-    );
+    )->sortByDesc('scheduled_at'); // Sort DESC - most recent first
 @endphp
 
 <div class="sessions-list-container">
@@ -103,7 +104,23 @@
     @else
         <!-- Simple list without tabs -->
         @if($sessions->count() > 0)
-            <x-sessions.session-cards :sessions="$sessions" :view-type="$viewType" :circle="$circle" />
+            @php
+                // Sort sessions properly: upcoming (closest first), then past (most recent first)
+                $sortedSessions = $sessions->sortBy(function($session) use ($now) {
+                    $scheduledAt = $session->scheduled_at;
+                    if (!$scheduledAt) {
+                        return PHP_INT_MAX; // Put unscheduled at the end
+                    }
+                    // For upcoming sessions, use positive timestamp (ASC)
+                    if ($scheduledAt > $now) {
+                        return $scheduledAt->timestamp;
+                    }
+                    // For past sessions, use negative timestamp to reverse order within past sessions
+                    // Add a large offset to ensure past sessions come after upcoming ones
+                    return PHP_INT_MAX - $scheduledAt->timestamp;
+                });
+            @endphp
+            <x-sessions.session-cards :sessions="$sortedSessions" :view-type="$viewType" :circle="$circle" />
         @else
             <div class="text-center py-12">
                 <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

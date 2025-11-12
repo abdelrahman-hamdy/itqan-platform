@@ -196,7 +196,8 @@ class QuranCircleResource extends BaseResource
                                     ->label('مدة الجلسة (بالدقائق)')
                                     ->options(SessionDuration::options())
                                     ->default(60)
-                                    ->required(),
+                                    ->required()
+                                    ->helperText('مدة الجلسة الواحدة للحلقة الجماعية'),
 
                                 TextInput::make('monthly_fee')
                                     ->label('الرسوم الشهرية')

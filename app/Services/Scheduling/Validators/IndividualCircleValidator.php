@@ -3,6 +3,7 @@
 namespace App\Services\Scheduling\Validators;
 
 use App\Models\QuranIndividualCircle;
+use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use App\Services\SessionManagementService;
 use Carbon\Carbon;
@@ -95,7 +96,8 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         $validStart = $limits['valid_start_date'];
         $validEnd = $limits['valid_end_date'];
 
-        $requestedStart = $startDate ?? now();
+        $timezone = AcademyContextService::getTimezone();
+        $requestedStart = $startDate ?? Carbon::now($timezone);
         $requestedEnd = $requestedStart->copy()->addWeeks($weeksAhead);
 
         if ($requestedStart->isBefore($validStart)) {
@@ -198,9 +200,10 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             ];
         }
 
+        $timezone = AcademyContextService::getTimezone();
         $futureScheduled = $this->circle->sessions()
             ->where('status', 'scheduled')
-            ->where('scheduled_at', '>', now())
+            ->where('scheduled_at', '>', Carbon::now($timezone))
             ->count();
 
         if ($futureScheduled === 0) {
@@ -227,12 +230,14 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
     {
         $subscription = $this->circle->subscription;
 
+        $timezone = AcademyContextService::getTimezone();
+
         if (!$subscription) {
             return [
                 'remaining_sessions' => 0,
                 'recommended_per_week' => 0,
                 'max_per_week' => 0,
-                'valid_start_date' => now(),
+                'valid_start_date' => Carbon::now($timezone),
                 'valid_end_date' => null,
                 'weeks_remaining' => 0,
             ];
@@ -242,12 +247,26 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         $remainingSessions = $this->sessionService->getRemainingIndividualSessions($this->circle);
 
         // Calculate subscription period
-        $startDate = max($subscription->starts_at, now());
-        $endDate = $subscription->expires_at; // Can be null for unlimited subscriptions
+        $now = Carbon::now($timezone);
+        $startDate = max($subscription->starts_at, $now);
 
-        // Handle null expiry date (unlimited subscription)
+        // CRITICAL: Calculate end date based on billing cycle
+        // NOTE: expires_at field was removed from subscriptions table
+        // Subscriptions are now managed by billing_cycle + starts_at
+        $endDate = null;
+        if ($subscription->starts_at && $subscription->billing_cycle) {
+            $endDate = match ($subscription->billing_cycle) {
+                'weekly' => $subscription->starts_at->copy()->addWeek(),
+                'monthly' => $subscription->starts_at->copy()->addMonth(),
+                'quarterly' => $subscription->starts_at->copy()->addMonths(3),
+                'yearly' => $subscription->starts_at->copy()->addYear(),
+                default => null,
+            };
+        }
+
+        // Calculate weeks remaining until billing period end
         if ($endDate === null) {
-            // For unlimited subscriptions, assume a reasonable scheduling window (e.g., 1 year)
+            // For subscriptions without billing cycle, assume a reasonable scheduling window
             $weeksRemaining = 52; // 1 year
         } else {
             $daysRemaining = max(1, $startDate->diffInDays($endDate, false));
@@ -263,7 +282,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             'recommended_per_week' => round($recommendedPerWeek, 1),
             'max_per_week' => $maxPerWeek,
             'valid_start_date' => $startDate,
-            'valid_end_date' => $endDate, // Can be null
+            'valid_end_date' => $endDate, // Based on billing cycle
             'weeks_remaining' => $weeksRemaining,
         ];
     }

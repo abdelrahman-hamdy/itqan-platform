@@ -280,7 +280,7 @@ class MeetingAttendanceController extends Controller
         }
 
         // For Quran group sessions
-        if ($sessionClass === QuranSession::class && $session->session_type === 'group' && $session->circle && $session->circle->students()->where('student_profiles.user_id', $user->id)->exists()) {
+        if ($sessionClass === QuranSession::class && $session->session_type === 'group' && $session->circle && $session->circle->students()->where('users.id', $user->id)->exists()) {
             Log::info('Access granted: User is enrolled in the Quran group session circle');
 
             return true;

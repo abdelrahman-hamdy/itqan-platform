@@ -163,10 +163,17 @@ class MeetingAttendanceService
     public function handleUserLeavePolymorphic($session, User $user, string $sessionType): bool
     {
         try {
+            // Map the polymorphic session type to the database enum values
+            $dbSessionType = match ($sessionType) {
+                'academic' => 'academic',
+                'quran' => $session->session_type ?? 'group',
+                default => $session->session_type ?? 'group',
+            };
+
             // Find existing attendance record
             $attendance = MeetingAttendance::where('session_id', $session->id)
                 ->where('user_id', $user->id)
-                ->where('session_type', $sessionType)
+                ->where('session_type', $dbSessionType)
                 ->first();
 
             if (! $attendance) {
@@ -174,6 +181,7 @@ class MeetingAttendanceService
                     'session_id' => $session->id,
                     'user_id' => $user->id,
                     'session_type' => $sessionType,
+                    'db_session_type' => $dbSessionType,
                 ]);
 
                 return false;

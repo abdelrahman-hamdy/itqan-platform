@@ -34,7 +34,7 @@ http://itqan-academy.itqan-platform.test
 ### Login Information
 ```
 Email:    admin@itqan-academy.com
-Password: Admin@123456
+Password: password123
 Role:     Super Admin
 Status:   Active
 ```
@@ -84,7 +84,7 @@ http://itqan-academy.itqan-platform.test/admin
 
 Use the credentials provided above:
 - **Email:** admin@itqan-academy.com
-- **Password:** Admin@123456
+- **Password:** password123
 
 ### 3. First Steps After Login
 
@@ -371,7 +371,7 @@ Your **Itqan Academy** is now ready to use!
 ### Quick Access
 - **URL:** http://itqan-academy.itqan-platform.test/admin
 - **Email:** admin@itqan-academy.com
-- **Password:** Admin@123456
+- **Password:** password123
 
 **Important:** Please change the default password immediately after first login!
 

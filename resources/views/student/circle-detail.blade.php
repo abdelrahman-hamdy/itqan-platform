@@ -22,11 +22,14 @@
             @if($isEnrolled)
                 @php
                     // Combine all sessions for the unified display
-                    $allCircleSessions = collect($upcomingSessions)->merge($pastSessions)->sortByDesc('scheduled_at');
+                    // Upcoming sessions are already sorted ASC (closest first)
+                    // Past sessions are already sorted DESC (newest first)
+                    // Don't re-sort to maintain proper order
+                    $allCircleSessions = collect($upcomingSessions)->merge($pastSessions);
                 @endphp
-                
-                <x-sessions.enhanced-sessions-list 
-                    :sessions="$allCircleSessions" 
+
+                <x-sessions.enhanced-sessions-list
+                    :sessions="$allCircleSessions"
                     title="جلسات الحلقة"
                     view-type="student"
                     :show-tabs="false"

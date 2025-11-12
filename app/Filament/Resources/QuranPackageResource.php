@@ -13,6 +13,7 @@ use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
 use App\Services\AcademyContextService;
 use App\Traits\ScopedToAcademy;
+use App\Enums\SessionDuration;
 
 class QuranPackageResource extends BaseResource
 {
@@ -78,11 +79,8 @@ public static function form(Form $form): Form
 
                                 Forms\Components\Select::make('session_duration_minutes')
                                     ->label('مدة الحصة (دقيقة)')
-                                    ->options([
-                                        30 => '30 دقيقة',
-                                        60 => '60 دقيقة',
-                                    ])
-                                    ->default(30)
+                                    ->options(SessionDuration::options())
+                                    ->default(60)
                                     ->required(),
                             ]),
                     ]),

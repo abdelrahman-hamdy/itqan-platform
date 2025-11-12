@@ -4,6 +4,7 @@ namespace App\Filament\AcademicTeacher\Widgets;
 
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
+use App\Services\AcademyContextService;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -25,9 +26,12 @@ class AcademicCalendarWidget extends Widget
 
         $events = [];
 
+        $timezone = AcademyContextService::getTimezone();
+        $today = Carbon::now($timezone);
+
         // Get today's sessions
         $todaySessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
-            ->whereDate('scheduled_at', today())
+            ->whereDate('scheduled_at', $today->toDateString())
             ->with(['student', 'academicIndividualLesson.academicSubject'])
             ->get();
 
@@ -35,15 +39,17 @@ class AcademicCalendarWidget extends Widget
         $todayCourseSessions = InteractiveCourseSession::whereHas('course', function ($query) use ($teacherProfile) {
                 $query->where('assigned_teacher_id', $teacherProfile->id);
             })
-            ->whereDate('scheduled_date', today())
+            ->whereDate('scheduled_date', $today->toDateString())
             ->with(['course.subject'])
             ->get();
 
         // Format events for display
         foreach ($todaySessions as $session) {
+            // Convert scheduled_at to academy timezone for display
+            $scheduledAt = $session->scheduled_at->timezone($timezone);
             $events[] = [
                 'title' => $session->title . ' - درس فردي',
-                'time' => $session->scheduled_at->format('H:i'),
+                'time' => $scheduledAt->format('H:i'),
                 'type' => 'individual',
                 'color' => 'blue',
                 'student' => $session->student?->name ?? 'طالب',
@@ -52,9 +58,11 @@ class AcademicCalendarWidget extends Widget
         }
 
         foreach ($todayCourseSessions as $courseSession) {
+            // Convert scheduled_time to academy timezone for display
+            $scheduledTime = Carbon::parse($courseSession->scheduled_time)->timezone($timezone);
             $events[] = [
                 'title' => $courseSession->title . ' - دورة تفاعلية',
-                'time' => $courseSession->scheduled_time->format('H:i'),
+                'time' => $scheduledTime->format('H:i'),
                 'type' => 'interactive',
                 'color' => 'green',
                 'course' => $courseSession->course?->title ?? 'دورة',
@@ -64,8 +72,8 @@ class AcademicCalendarWidget extends Widget
 
         return [
             'events' => $events,
-            'today' => today()->format('Y-m-d'),
-            'dayName' => today()->locale('ar')->dayName
+            'today' => $today->format('Y-m-d'),
+            'dayName' => $today->locale('ar')->dayName
         ];
     }
 }

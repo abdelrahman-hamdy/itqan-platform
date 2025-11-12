@@ -9,6 +9,7 @@ use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
+use App\Services\AcademyContextService;
 use App\Services\SessionManagementService;
 use App\Services\Scheduling\Validators\GroupCircleValidator;
 use App\Services\Scheduling\Validators\IndividualCircleValidator;
@@ -206,6 +207,7 @@ class Calendar extends Page
                     'monthly_sessions' => $circle->monthly_sessions_count,
                     'students_count' => $circle->enrolled_students,
                     'max_students' => $circle->max_students,
+                    'session_duration_minutes' => $circle->session_duration_minutes ?? 60,
                 ];
             });
     }
@@ -251,6 +253,7 @@ class Calendar extends Page
                     'student_name' => $circle->student->name ?? 'غير محدد',
                     'monthly_sessions' => $subscription?->package?->monthly_sessions ?? 4,
                     'can_schedule' => $remainingSessions > 0,
+                    'session_duration_minutes' => $circle->default_duration_minutes ?? $subscription?->package?->session_duration_minutes ?? 60,
                 ];
             });
     }
@@ -491,13 +494,20 @@ class Calendar extends Page
                         $options = [];
                         for ($hour = 6; $hour <= 23; $hour++) {
                             $time = sprintf('%02d:00', $hour);
-                            $display = sprintf('%02d:00', $hour).' ('.($hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour)).' '.($hour >= 12 ? 'م' : 'ص').')';
+                            // Convert to 12-hour format
+                            $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
+                            $period = $hour >= 12 ? 'م' : 'ص';
+                            $display = sprintf('%02d:00', $hour).' ('.$hour12.' '.$period.')';
                             $options[$time] = $display;
                         }
 
                         return $options;
                     })
-                    ->helperText('الوقت الذي ستبدأ فيه الجلسات'),
+                    ->helperText(function () {
+                        $timezone = AcademyContextService::getTimezone();
+                        $currentTime = Carbon::now($timezone)->format('H:i');
+                        return "الوقت الذي ستبدأ فيه الجلسات (التوقيت المحلي - الوقت الحالي: {$currentTime})";
+                    }),
 
                 Forms\Components\TextInput::make('session_count')
                     ->label('عدد الجلسات المطلوب إنشاؤها')
@@ -557,6 +567,7 @@ class Calendar extends Page
 
                         $content = '<div class="space-y-2">';
                         $content .= '<div><strong>نوع الحلقة:</strong> '.($circle['type'] === 'group' ? 'جماعية' : 'فردية').'</div>';
+                        $content .= '<div><strong>مدة الجلسة:</strong> <span class="text-blue-600 font-semibold">'.($circle['session_duration_minutes'] ?? 60).' دقيقة</span></div>';
 
                         if ($circle['type'] === 'group') {
                             $content .= '<div><strong>عدد الطلاب:</strong> '.($circle['students_count'] ?? 0).'/'.($circle['max_students'] ?? 0).'</div>';
@@ -804,11 +815,6 @@ class Calendar extends Page
             throw new \Exception('الاشتراك غير نشط. يجب تفعيل الاشتراك لجدولة الجلسات');
         }
 
-        // Check subscription end date if it exists
-        if ($circle->subscription->expires_at && $circle->subscription->expires_at->isPast()) {
-            throw new \Exception('انتهى الاشتراك ولا يمكن جدولة جلسات جديدة');
-        }
-
         // Use SessionManagementService to get ACCURATE remaining sessions count
         $sessionService = app(\App\Services\SessionManagementService::class);
         $remainingSessions = $sessionService->getRemainingIndividualSessions($circle);
@@ -820,26 +826,46 @@ class Calendar extends Page
         // For individual circles, allow flexible scheduling
         // Calculate how many sessions to schedule per week cycle
         $selectedDaysCount = count($this->scheduleDays);
-        $weeksToSchedule = 8; // Schedule for next 8 weeks
+
+        // CRITICAL: Calculate weeks needed based on user's session count and selected days
+        // This ensures we only schedule the exact number of sessions requested
+        $weeksToSchedule = ceil($this->sessionCount / $selectedDaysCount);
 
         // Use custom start date if provided, otherwise start from now
-        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
+        // Ensure we're working in the academy's timezone
+        $appTimezone = AcademyContextService::getTimezone();
+        $startDate = $this->scheduleStartDate
+            ? Carbon::parse($this->scheduleStartDate, $appTimezone)
+            : Carbon::now($appTimezone);
 
-        // CRITICAL: Calculate maximum weeks based on subscription expiry date
-        $subscriptionExpiryDate = $circle->subscription->expires_at;
+        // CRITICAL: Calculate subscription end date based on billing cycle
+        // NOTE: expires_at field was removed from subscriptions table
+        // Subscriptions are now managed by billing_cycle + starts_at
+        $subscriptionExpiryDate = null;
+        if ($circle->subscription->starts_at && $circle->subscription->billing_cycle) {
+            $subscriptionExpiryDate = match ($circle->subscription->billing_cycle) {
+                'weekly' => $circle->subscription->starts_at->copy()->addWeek(),
+                'monthly' => $circle->subscription->starts_at->copy()->addMonth(),
+                'quarterly' => $circle->subscription->starts_at->copy()->addMonths(3),
+                'yearly' => $circle->subscription->starts_at->copy()->addYear(),
+                default => null,
+            };
+        }
+
+        // Calculate maximum weeks based on subscription billing period
         if ($subscriptionExpiryDate) {
             $daysUntilExpiry = max(1, $startDate->diffInDays($subscriptionExpiryDate, false));
             $weeksUntilExpiry = (int) ceil($daysUntilExpiry / 7);
 
-            // Don't schedule beyond subscription expiry
+            // Don't schedule beyond subscription billing period
             if ($weeksUntilExpiry < $weeksToSchedule) {
                 $weeksToSchedule = $weeksUntilExpiry;
 
                 if ($weeksToSchedule <= 0) {
                     throw new \Exception(
-                        'لا يمكن جدولة جلسات. الاشتراك ينتهي في ' .
+                        'لا يمكن جدولة جلسات. دورة الفوترة تنتهي في ' .
                         $subscriptionExpiryDate->format('Y/m/d') .
-                        '. يرجى تجديد الاشتراك أو اختيار تاريخ بداية قبل انتهاء الاشتراك.'
+                        '. يرجى تجديد الاشتراك أو اختيار تاريخ بداية قبل نهاية الدورة.'
                     );
                 }
             }
@@ -939,7 +965,7 @@ class Calendar extends Page
 
         $targetDay = $dayMapping[$day] ?? Carbon::MONDAY;
 
-        // If today is the target day and we haven't passed the time, use today
+        // If today is the target day, return today
         if ($startDate->dayOfWeek === $targetDay) {
             return $startDate->copy();
         }
@@ -1244,7 +1270,12 @@ class Calendar extends Page
             return 0;
         }
 
-        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
+        // Ensure we're working in the academy's timezone
+        $appTimezone = AcademyContextService::getTimezone();
+        $startDate = $this->scheduleStartDate
+            ? Carbon::parse($this->scheduleStartDate, $appTimezone)
+            : Carbon::now($appTimezone);
+
         $sessionsCreated = 0;
         $currentDate = $startDate->copy();
         $maxWeeks = 52; // Limit to 1 year to prevent infinite loops
@@ -1267,8 +1298,14 @@ class Calendar extends Page
                 $sessionDate = $this->getNextDateForDay($currentDate->copy(), $dayName);
                 $sessionDateTime = $sessionDate->setTimeFromTimeString($timeString);
 
-                // Skip if this datetime is in the past
-                if ($sessionDateTime->isPast()) {
+                // Ensure datetime is in app timezone for proper comparison
+                $sessionDateTime->timezone($appTimezone);
+
+                // Get current time in app timezone for accurate comparison
+                $now = Carbon::now($appTimezone);
+
+                // Skip if this datetime is in the past (comparing in same timezone)
+                if ($sessionDateTime->lessThanOrEqualTo($now)) {
                     continue;
                 }
 
@@ -1321,7 +1358,12 @@ class Calendar extends Page
             return 0;
         }
 
-        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
+        // Ensure we're working in the academy's timezone
+        $appTimezone = AcademyContextService::getTimezone();
+        $startDate = $this->scheduleStartDate
+            ? Carbon::parse($this->scheduleStartDate, $appTimezone)
+            : Carbon::now($appTimezone);
+
         $sessionsCreated = 0;
         $weekOffset = 0;
         $maxWeeks = 20; // Limit to prevent infinite loops

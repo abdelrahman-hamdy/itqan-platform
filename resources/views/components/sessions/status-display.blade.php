@@ -8,27 +8,38 @@
 
 @php
     // Use getStatusDisplayData method for consistent status handling (DRY principle)
-    $statusData = method_exists($session, 'getStatusDisplayData') 
-        ? $session->getStatusDisplayData() 
+    $statusData = method_exists($session, 'getStatusDisplayData')
+        ? $session->getStatusDisplayData()
         : [
             'status' => is_object($session->status) ? $session->status->value : $session->status,
             'label' => is_object($session->status) ? $session->status->label() : $session->status,
             'icon' => 'ri-calendar-line',
             'color' => 'blue'
         ];
-    
+
     $statusValue = $statusData['status'];
     $statusLabel = $statusData['label'];
     $statusIcon = $statusData['icon'];
     $statusColor = $statusData['color'];
-    
+
+    // Check if session is in preparation phase
+    $isInPreparation = false;
+    if($statusValue === 'scheduled' && $session && $session->scheduled_at) {
+        $prepMessage = getMeetingPreparationMessage($session);
+        $isInPreparation = $prepMessage['type'] === 'preparing';
+        if($isInPreparation) {
+            $statusLabel = 'جاري التحضير';
+            $statusColor = 'amber';
+        }
+    }
+
     // Size classes
     $sizeClasses = [
         'sm' => 'text-xs',
         'md' => 'text-sm',
         'lg' => 'text-base'
     ];
-    
+
     $iconSizeClasses = [
         'sm' => 'w-3 h-3',
         'md' => 'w-4 h-4',
@@ -51,9 +62,11 @@
         @if($statusValue === 'completed')
             <div class="{{ $iconSizeClasses[$size] }} bg-green-500 rounded-full mb-1 animate-pulse"></div>
         @elseif($statusValue === 'ongoing')
-            <div class="{{ $iconSizeClasses[$size] }} bg-green-500 rounded-full mb-1 animate-pulse"></div>
+            <div class="{{ $iconSizeClasses[$size] }} bg-green-600 rounded-full mb-1 animate-pulse"></div>
         @elseif($statusValue === 'ready')
             <div class="{{ $iconSizeClasses[$size] }} bg-green-400 rounded-full mb-1 animate-bounce"></div>
+        @elseif($statusValue === 'scheduled' && $isInPreparation)
+            <div class="{{ $iconSizeClasses[$size] }} bg-amber-500 rounded-full mb-1 animate-spin"></div>
         @elseif($statusValue === 'scheduled')
             <div class="{{ $iconSizeClasses[$size] }} bg-blue-500 rounded-full mb-1 animate-bounce"></div>
         @elseif($statusValue === 'cancelled')

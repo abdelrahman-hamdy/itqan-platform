@@ -693,7 +693,15 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getPreparationMinutes(): int
     {
-        return 15;
+        // Try to get academy settings
+        $academy = $this->academy ?? Academy::find($this->academy_id);
+
+        if ($academy && isset($academy->academic_settings['meeting_settings']['default_preparation_minutes'])) {
+            return (int) $academy->academic_settings['meeting_settings']['default_preparation_minutes'];
+        }
+
+        // Fallback to default
+        return 10;
     }
 
     /**
@@ -702,6 +710,14 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getEndingBufferMinutes(): int
     {
+        // Try to get academy settings
+        $academy = $this->academy ?? Academy::find($this->academy_id);
+
+        if ($academy && isset($academy->academic_settings['meeting_settings']['default_buffer_minutes'])) {
+            return (int) $academy->academic_settings['meeting_settings']['default_buffer_minutes'];
+        }
+
+        // Fallback to default
         return 5;
     }
 
@@ -711,6 +727,14 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getGracePeriodMinutes(): int
     {
+        // Try to get academy settings
+        $academy = $this->academy ?? Academy::find($this->academy_id);
+
+        if ($academy && isset($academy->academic_settings['meeting_settings']['default_late_tolerance_minutes'])) {
+            return (int) $academy->academic_settings['meeting_settings']['default_late_tolerance_minutes'];
+        }
+
+        // Fallback to default
         return 15;
     }
 }

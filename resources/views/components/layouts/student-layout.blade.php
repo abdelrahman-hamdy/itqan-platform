@@ -50,6 +50,7 @@
       background: rgba(255, 255, 255, 0.95);
     }
   </style>
+  @stack('styles')
 </head>
 
 <body class="bg-gray-50 text-gray-900">
@@ -62,7 +63,7 @@
   <!-- Main Content -->
   <main class="pt-20 min-h-screen transition-all duration-300" id="main-content" style="margin-right: 320px;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      @yield('content')
+      {{ $slot }}
     </div>
   </main>
 
@@ -70,6 +71,8 @@
   <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-3 rounded-full shadow-lg z-50">
     <i class="ri-menu-line text-xl"></i>
   </button>
+
+  @stack('scripts')
 </body>
 
 </html>

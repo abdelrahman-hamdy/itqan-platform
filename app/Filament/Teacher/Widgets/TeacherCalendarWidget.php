@@ -3,6 +3,7 @@
 namespace App\Filament\Teacher\Widgets;
 
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -99,7 +100,8 @@ class TeacherCalendarWidget extends FullCalendarWidget
             ->map(function (QuranSession $session) {
                 // Determine session type and details
                 $sessionType = $session->session_type;
-                $isPassed = $session->scheduled_at < now();
+                $timezone = AcademyContextService::getTimezone();
+                $isPassed = $session->scheduled_at < Carbon::now($timezone);
 
                 if ($sessionType === 'trial') {
                     // Get student name from trial request or student record
@@ -138,16 +140,21 @@ class TeacherCalendarWidget extends FullCalendarWidget
                     $classNames = 'event-passed';
                 }
 
-                // Ensure scheduled_at is a Carbon instance
+                // Ensure scheduled_at is a Carbon instance in academy timezone
+                $timezone = AcademyContextService::getTimezone();
                 $scheduledAt = $session->scheduled_at instanceof \Carbon\Carbon
-                    ? $session->scheduled_at
-                    : \Carbon\Carbon::parse($session->scheduled_at);
+                    ? $session->scheduled_at->copy()->timezone($timezone)
+                    : \Carbon\Carbon::parse($session->scheduled_at, $timezone);
+
+                // Format as ISO string WITHOUT timezone conversion (already in academy timezone)
+                $startString = $scheduledAt->format('Y-m-d\TH:i:s');
+                $endString = $scheduledAt->copy()->addMinutes($session->duration_minutes ?? 60)->format('Y-m-d\TH:i:s');
 
                 $eventData = EventData::make()
                     ->id($session->id)
                     ->title($title)
-                    ->start($scheduledAt)
-                    ->end($scheduledAt->copy()->addMinutes($session->duration_minutes ?? 60))
+                    ->start($startString)
+                    ->end($endString)
                     ->backgroundColor($color)
                     ->borderColor($color)
                     ->textColor('#ffffff')
@@ -209,7 +216,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 })
                 ->native(false)
                 ->displayFormat('Y-m-d H:i')
-                ->timezone(config('app.timezone', 'UTC'))
+                ->timezone(AcademyContextService::getTimezone())
                 ->rules([
                     function (?QuranSession $record) {
                         return function (string $attribute, $value, \Closure $fail) use ($record) {
@@ -271,7 +278,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 ->maxDate(fn () => Carbon::now()->addMonths(2)->toDateString())
                 ->native(false)
                 ->displayFormat('Y-m-d H:i')
-                ->timezone(config('app.timezone', 'UTC'))
+                ->timezone(AcademyContextService::getTimezone())
                 ->helperText('اختر التاريخ والوقت الجديد للجلسة التجريبية')
                 ->rules([
                     function (?QuranSession $record) {
@@ -351,7 +358,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                                 ->maxDate(fn () => Carbon::now()->addMonths(2)->toDateString())
                                 ->native(false)
                                 ->displayFormat('Y-m-d H:i')
-                                ->timezone(config('app.timezone', 'UTC'))
+                                ->timezone(AcademyContextService::getTimezone())
                                 ->helperText('اختر التاريخ والوقت الجديد للجلسة التجريبية')
                                 ->rules([
                                     function () use ($record) {
@@ -526,7 +533,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                         \Filament\Infolists\Components\TextEntry::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->dateTime()
-                            ->timezone(config('app.timezone', 'UTC')),
+                            ->timezone(AcademyContextService::getTimezone()),
 
                         \Filament\Infolists\Components\TextEntry::make('description')
                             ->label('ملاحظات إضافية')
@@ -545,7 +552,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                         \Filament\Infolists\Components\TextEntry::make('scheduled_at')
                             ->label('موعد الجلسة')
                             ->dateTime()
-                            ->timezone(config('app.timezone', 'UTC')),
+                            ->timezone(AcademyContextService::getTimezone()),
 
                         \Filament\Infolists\Components\TextEntry::make('duration_minutes')
                             ->label('مدة الجلسة')
@@ -623,7 +630,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
             return false;
         }
 
-        // CRITICAL: Validate subscription expiry for individual circles
+        // CRITICAL: Validate subscription for individual circles
         if ($record->session_type === 'individual' && $record->individual_circle_id) {
             $circle = \App\Models\QuranIndividualCircle::find($record->individual_circle_id);
 
@@ -642,7 +649,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                     return false;
                 }
 
-                // Check if new date is within subscription period
+                // Check if new date is before subscription start
                 if ($subscription->starts_at && $newStart->isBefore($subscription->starts_at)) {
                     Notification::make()
                         ->title('غير مسموح')
@@ -654,11 +661,37 @@ class TeacherCalendarWidget extends FullCalendarWidget
                     return false;
                 }
 
-                // CRITICAL: Check if new date is beyond subscription expiry
-                if ($subscription->expires_at && $newStart->isAfter($subscription->expires_at)) {
+                // CRITICAL: Calculate subscription end date based on billing cycle
+                // NOTE: expires_at field was removed from subscriptions table
+                // Subscriptions are now managed by billing_cycle + starts_at
+                $subscriptionEndDate = null;
+                if ($subscription->starts_at && $subscription->billing_cycle) {
+                    $subscriptionEndDate = match ($subscription->billing_cycle) {
+                        'weekly' => $subscription->starts_at->copy()->addWeek(),
+                        'monthly' => $subscription->starts_at->copy()->addMonth(),
+                        'quarterly' => $subscription->starts_at->copy()->addMonths(3),
+                        'yearly' => $subscription->starts_at->copy()->addYear(),
+                        default => null,
+                    };
+                }
+
+                // Check if new date is beyond subscription billing period
+                if ($subscriptionEndDate && $newStart->isAfter($subscriptionEndDate)) {
                     Notification::make()
                         ->title('غير مسموح')
-                        ->body('لا يمكن جدولة الجلسة بعد تاريخ انتهاء الاشتراك ('.$subscription->expires_at->format('Y/m/d').'). يرجى تجديد الاشتراك أولاً.')
+                        ->body('لا يمكن جدولة الجلسة بعد نهاية دورة الفوترة ('.$subscriptionEndDate->format('Y/m/d').'). يرجى تجديد الاشتراك أولاً.')
+                        ->danger()
+                        ->send();
+
+                    $this->dispatch('refresh');
+                    return false;
+                }
+
+                // Check if subscription has remaining sessions
+                if ($subscription->sessions_remaining <= 0) {
+                    Notification::make()
+                        ->title('غير مسموح')
+                        ->body('لا توجد جلسات متبقية في الاشتراك. يرجى تجديد الاشتراك أولاً.')
                         ->danger()
                         ->send();
 
@@ -878,12 +911,14 @@ class TeacherCalendarWidget extends FullCalendarWidget
             ->first();
 
         if ($conflicts) {
-            $conflictTime = $conflicts->scheduled_at->format('Y/m/d H:i');
+            $timezone = AcademyContextService::getTimezone();
+            $conflictTime = $conflicts->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
             throw new \Exception("يوجد تعارض مع جلسة أخرى في {$conflictTime}. المعلم لا يمكنه أن يكون في مكانين في نفس الوقت!");
         }
 
         // Check if trying to schedule in the past
-        if ($scheduledAt < now()) {
+        $timezone = AcademyContextService::getTimezone();
+        if ($scheduledAt < Carbon::now($timezone)) {
             throw new \Exception('لا يمكن جدولة جلسة في وقت ماضي');
         }
     }

@@ -318,16 +318,28 @@
     }
 
     function updateAutoAttendanceInfo(report) {
-        document.getElementById('autoEnterTime').textContent = 
-            report.meeting_enter_time ? new Date(report.meeting_enter_time).toLocaleTimeString('ar-SA') : '-';
-        document.getElementById('autoLeaveTime').textContent = 
-            report.meeting_leave_time ? new Date(report.meeting_leave_time).toLocaleTimeString('ar-SA') : '-';
-        document.getElementById('autoAttendanceMinutes').textContent = 
-            report.actual_attendance_minutes || '-';
-        document.getElementById('autoAttendancePercentage').textContent = 
-            report.attendance_percentage ? Math.round(report.attendance_percentage) : '-';
-        document.getElementById('autoConnectionQuality').textContent = 
-            report.connection_quality_score || '-';
+        // CRITICAL FIX: Check if elements exist before trying to update them
+        const autoEnterTime = document.getElementById('autoEnterTime');
+        const autoLeaveTime = document.getElementById('autoLeaveTime');
+        const autoAttendanceMinutes = document.getElementById('autoAttendanceMinutes');
+        const autoAttendancePercentage = document.getElementById('autoAttendancePercentage');
+        const autoConnectionQuality = document.getElementById('autoConnectionQuality');
+
+        if (autoEnterTime) {
+            autoEnterTime.textContent = report.meeting_enter_time ? new Date(report.meeting_enter_time).toLocaleTimeString('ar-SA') : '-';
+        }
+        if (autoLeaveTime) {
+            autoLeaveTime.textContent = report.meeting_leave_time ? new Date(report.meeting_leave_time).toLocaleTimeString('ar-SA') : '-';
+        }
+        if (autoAttendanceMinutes) {
+            autoAttendanceMinutes.textContent = report.actual_attendance_minutes || '-';
+        }
+        if (autoAttendancePercentage) {
+            autoAttendancePercentage.textContent = report.attendance_percentage ? Math.round(report.attendance_percentage) : '-';
+        }
+        if (autoConnectionQuality) {
+            autoConnectionQuality.textContent = report.connection_quality_score || '-';
+        }
     }
 
     function getAttendanceStatusArabic(status) {
@@ -411,7 +423,7 @@
 
     function messageStudent(studentId) {
         const subdomain = '{{ request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy" }}';
-        const chatUrl = '{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}' + '?user=' + studentId;
+        const chatUrl = '/chat?user=' + studentId;
         window.location.href = chatUrl;
     }
 

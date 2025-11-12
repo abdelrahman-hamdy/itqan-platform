@@ -672,8 +672,15 @@ class UnifiedAttendanceService
             $session->academy_id
         );
 
-        // Sync attendance data immediately (disabled for now due to bugs)
-        // $this->syncAttendanceToReport($session, $user);
+        // CRITICAL FIX: Re-enable sync for completed sessions
+        // For ongoing sessions, sync is done in real-time via getCurrentAttendanceStatus
+        $statusValue = is_object($session->status) && method_exists($session->status, 'value')
+            ? $session->status->value
+            : $session->status;
+
+        if ($statusValue === 'completed') {
+            $this->syncAttendanceToReport($session, $user);
+        }
     }
 
     /**

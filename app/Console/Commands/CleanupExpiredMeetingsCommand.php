@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\SessionStatus;
 use App\Services\AutoMeetingCreationService;
+use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
 
 class CleanupExpiredMeetingsCommand extends Command
@@ -32,14 +33,18 @@ class CleanupExpiredMeetingsCommand extends Command
      */
     public function handle(): int
     {
-        $startTime = microtime(true);
+        $isDryRun = $this->option('dry-run');
+        $isVerbose = $this->getOutput()->isVerbose();
+
+        // Start enhanced logging
+        $executionData = CronJobLogger::logCronStart('meetings:cleanup-expired', [
+            'dry_run' => $isDryRun,
+        ]);
+
         $this->info('🧹 Starting expired meetings cleanup process...');
         $this->info('📅 Current time: '.now()->format('Y-m-d H:i:s'));
 
         try {
-            $isDryRun = $this->option('dry-run');
-            $isVerbose = $this->getOutput()->isVerbose();
-
             if ($isDryRun) {
                 $this->warn('🧪 DRY RUN MODE: No meetings will actually be ended');
             }
@@ -62,17 +67,19 @@ class CleanupExpiredMeetingsCommand extends Command
                 $this->displayStatistics();
             }
 
-            $executionTime = round(microtime(true) - $startTime, 2);
-            $this->info("⚡ Cleanup completed in {$executionTime} seconds");
-
             // Determine exit code based on results
             if (isset($results['meetings_failed_to_end']) && $results['meetings_failed_to_end'] > 0) {
                 $this->warn('⚠️  Some meetings failed to end. Check logs for details.');
+
+                CronJobLogger::logCronEnd('meetings:cleanup-expired', $executionData, $results, 'partial');
 
                 return self::INVALID;
             }
 
             $this->info('✅ Meeting cleanup process completed successfully');
+
+            // Log completion
+            CronJobLogger::logCronEnd('meetings:cleanup-expired', $executionData, $results, 'success');
 
             return self::SUCCESS;
 
@@ -83,6 +90,9 @@ class CleanupExpiredMeetingsCommand extends Command
                 $this->error('Stack trace:');
                 $this->error($e->getTraceAsString());
             }
+
+            // Log error
+            CronJobLogger::logCronError('meetings:cleanup-expired', $executionData, $e);
 
             return self::FAILURE;
         }

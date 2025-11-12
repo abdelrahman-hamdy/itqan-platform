@@ -181,8 +181,9 @@
         }
     </script>
     
-    <!-- Load Pure Reverb Chat System -->
-    <script src="{{ asset('js/chat-system-reverb.js') }}?v={{ time() }}"></script>
+    <!-- WireChat Real-Time Bridge (Old custom chat system replaced with WireChat) -->
+    {{-- <script src="{{ asset('js/chat-system-reverb.js') }}?v={{ time() }}"></script> --}}
+    <script src="{{ asset('js/wirechat-realtime.js') }}?v={{ time() }}"></script>
 
   <!-- Mobile Sidebar Toggle -->
   <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-3 rounded-full shadow-lg z-50">

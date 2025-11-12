@@ -552,33 +552,45 @@ class QuranSession extends BaseSession
     }
 
     // getStatusDisplayData() is inherited from BaseSession
-    // Override protected helper methods to provide Quran-specific configuration
+    // Override protected helper methods to use academy settings instead of circle settings
 
+    /**
+     * Get preparation minutes before session from academy settings
+     * Overrides BaseSession hardcoded value
+     */
     protected function getPreparationMinutes(): int
     {
-        $circle = $this->session_type === 'individual'
-            ? $this->individualCircle
-            : $this->circle;
+        if ($this->academy && $this->academy->settings) {
+            return $this->academy->settings->default_preparation_minutes ?? 10;
+        }
 
-        return $circle?->preparation_minutes ?? 15;
+        return 10; // Fallback default
     }
 
+    /**
+     * Get ending buffer minutes after session from academy settings
+     * Overrides BaseSession hardcoded value
+     */
     protected function getEndingBufferMinutes(): int
     {
-        $circle = $this->session_type === 'individual'
-            ? $this->individualCircle
-            : $this->circle;
+        if ($this->academy && $this->academy->settings) {
+            return $this->academy->settings->default_buffer_minutes ?? 5;
+        }
 
-        return $circle?->ending_buffer_minutes ?? 5;
+        return 5; // Fallback default
     }
 
+    /**
+     * Get grace period minutes for late joins from academy settings
+     * Overrides BaseSession hardcoded value
+     */
     protected function getGracePeriodMinutes(): int
     {
-        $circle = $this->session_type === 'individual'
-            ? $this->individualCircle
-            : $this->circle;
+        if ($this->academy && $this->academy->settings) {
+            return $this->academy->settings->default_late_tolerance_minutes ?? 15;
+        }
 
-        return $circle?->late_join_grace_period_minutes ?? 15;
+        return 15; // Fallback default
     }
 
     public function scopeAttended($query)
@@ -1386,16 +1398,12 @@ class QuranSession extends BaseSession
      */
     protected function getExtendedMeetingConfiguration(): array
     {
-        $circle = $this->session_type === 'individual'
-            ? $this->individualCircle
-            : $this->circle;
-
         return [
             'session_code' => $this->session_code,
             'session_type_detail' => $this->session_type,
-            'preparation_minutes' => $circle?->preparation_minutes ?? 15,
-            'ending_buffer_minutes' => $circle?->ending_buffer_minutes ?? 5,
-            'grace_period_minutes' => $circle?->late_join_grace_period_minutes ?? 15,
+            'preparation_minutes' => $this->getPreparationMinutes(),
+            'ending_buffer_minutes' => $this->getEndingBufferMinutes(),
+            'grace_period_minutes' => $this->getGracePeriodMinutes(),
             'current_surah' => $this->current_surah,
             'current_verse' => $this->current_verse,
             'lesson_objectives' => $this->lesson_objectives,

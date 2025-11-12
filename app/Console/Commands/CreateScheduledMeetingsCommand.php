@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\SessionStatus;
 use App\Services\AutoMeetingCreationService;
+use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
 
 class CreateScheduledMeetingsCommand extends Command
@@ -33,16 +34,21 @@ class CreateScheduledMeetingsCommand extends Command
      */
     public function handle(): int
     {
-        $startTime = microtime(true);
+        // Check for specific academy
+        $academyId = $this->option('academy-id');
+        $isDryRun = $this->option('dry-run');
+        $isVerbose = $this->getOutput()->isVerbose();
+
+        // Start enhanced logging
+        $executionData = CronJobLogger::logCronStart('meetings:create-scheduled', [
+            'academy_id' => $academyId,
+            'dry_run' => $isDryRun,
+        ]);
+
         $this->info('🎥 Starting automatic meeting creation process...');
         $this->info('📅 Current time: '.now()->format('Y-m-d H:i:s'));
 
         try {
-            // Check for specific academy
-            $academyId = $this->option('academy-id');
-            $isDryRun = $this->option('dry-run');
-            $isVerbose = $this->getOutput()->isVerbose();
-
             if ($isDryRun) {
                 $this->warn('🧪 DRY RUN MODE: No meetings will actually be created');
             }
@@ -54,6 +60,8 @@ class CreateScheduledMeetingsCommand extends Command
                 $academy = \App\Models\Academy::find($academyId);
                 if (! $academy) {
                     $this->error("❌ Academy with ID {$academyId} not found");
+
+                    CronJobLogger::logCronEnd('meetings:create-scheduled', $executionData, ['error' => 'Academy not found'], 'error');
 
                     return self::FAILURE;
                 }
@@ -86,17 +94,19 @@ class CreateScheduledMeetingsCommand extends Command
                 $this->displayStatistics();
             }
 
-            $executionTime = round(microtime(true) - $startTime, 2);
-            $this->info("⚡ Process completed in {$executionTime} seconds");
-
             // Determine exit code based on results
             if (isset($results['meetings_failed']) && $results['meetings_failed'] > 0) {
                 $this->warn('⚠️  Some meetings failed to create. Check logs for details.');
+
+                CronJobLogger::logCronEnd('meetings:create-scheduled', $executionData, $results, 'partial');
 
                 return self::INVALID;
             }
 
             $this->info('✅ Meeting creation process completed successfully');
+
+            // Log completion
+            CronJobLogger::logCronEnd('meetings:create-scheduled', $executionData, $results, 'success');
 
             return self::SUCCESS;
 
@@ -107,6 +117,9 @@ class CreateScheduledMeetingsCommand extends Command
                 $this->error('Stack trace:');
                 $this->error($e->getTraceAsString());
             }
+
+            // Log error
+            CronJobLogger::logCronError('meetings:create-scheduled', $executionData, $e);
 
             return self::FAILURE;
         }

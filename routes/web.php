@@ -1330,26 +1330,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    /*
+    | Teacher Calendar Routes - REMOVED
     |--------------------------------------------------------------------------
-    | Teacher Calendar Routes
-    |--------------------------------------------------------------------------
+    | Frontend teacher calendar has been removed.
+    | Use Filament dashboard calendar instead at /teacher-panel or /academic-teacher-panel
     */
 
-    // Teacher calendar routes
+    // Homework grading routes for teachers
     Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->group(function () {
-        Route::get('/teacher/calendar', [App\Http\Controllers\TeacherCalendarController::class, 'index'])->name('teacher.calendar');
-        Route::get('/teacher/calendar/events', [App\Http\Controllers\TeacherCalendarController::class, 'getEvents'])->name('teacher.calendar.events');
-        Route::post('/teacher/calendar/sessions', [App\Http\Controllers\TeacherCalendarController::class, 'createSession'])->name('teacher.calendar.create-session');
-        Route::put('/teacher/calendar/sessions/{session}', [App\Http\Controllers\TeacherCalendarController::class, 'updateSession'])->name('teacher.calendar.update-session');
-        Route::delete('/teacher/calendar/sessions/{session}', [App\Http\Controllers\TeacherCalendarController::class, 'deleteSession'])->name('teacher.calendar.delete-session');
-        Route::post('/teacher/calendar/bulk-update', [App\Http\Controllers\TeacherCalendarController::class, 'bulkUpdate'])->name('teacher.calendar.bulk-update');
-
-        // New Calendar API routes
-        Route::get('/teacher/api/circles', [App\Http\Controllers\Teacher\CalendarApiController::class, 'getCircles'])->name('teacher.api.circles');
-        Route::post('/teacher/api/bulk-schedule', [App\Http\Controllers\Teacher\CalendarApiController::class, 'bulkSchedule'])->name('teacher.api.bulk-schedule');
-
-        // Homework grading routes for teachers
         Route::prefix('teacher/homework')->name('teacher.homework.')->group(function () {
             Route::get('/', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'index'])->name('index');
             Route::get('/{submissionId}/grade', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'grade'])->name('grade');
@@ -1478,27 +1466,26 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/interactive-sessions/{session}/homework', [App\Http\Controllers\StudentProfileController::class, 'submitInteractiveCourseHomework'])->name('student.interactive-sessions.homework');
     });
 
-    // Chatify Routes are loaded automatically by ChatifyServiceProvider
-    // Using 'custom' => true in config/chatify.php to load from routes/chatify/
+    // WireChat Routes - manually registered for subdomain support
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/chat', \Namu\WireChat\Livewire\Pages\Chats::class)->name('chats');
+        Route::get('/chat/{conversation}', \Namu\WireChat\Livewire\Pages\Chat::class)
+            ->middleware('belongsToConversation')
+            ->name('chat');
 
-    // Temporary debug route for testing message broadcast
-    Route::get('/test-broadcast/{userId}', function ($userId) {
-        try {
-            \Log::info('🧪 Testing broadcast to user: '.$userId);
-            $result = \Chatify\Facades\ChatifyMessenger::push('private-chatify.'.$userId, 'messaging', [
-                'from_id' => 999,
-                'to_id' => $userId,
-                'message' => '<div class="test-message">Test broadcast message</div>',
-            ]);
-            \Log::info('🧪 Broadcast result: '.($result ? 'success' : 'failed'));
+        // Legacy Chatify compatibility routes (for old JavaScript)
+        Route::post('/chat/setActiveStatus', function(\Illuminate\Http\Request $request) {
+            $activeStatus = $request['status'] > 0 ? 1 : 0;
+            $status = \App\Models\User::where('id', auth()->id())
+                ->update(['active_status' => $activeStatus]);
+            return response()->json(['status' => $status], 200);
+        })->name('chat.setActiveStatus');
+    });
 
-            return response()->json(['status' => 'broadcasted', 'result' => $result]);
-        } catch (\Exception $e) {
-            \Log::error('🧪 Broadcast failed: '.$e->getMessage());
-
-            return response()->json(['error' => $e->getMessage()]);
-        }
-    })->middleware('auth');
+    // OLD: Chatify test routes - DISABLED
+    // Route::get('/test-broadcast/{userId}', function ($userId) {
+    //     // Disabled - using WireChat now
+    // })->middleware('auth');
 
 });
 

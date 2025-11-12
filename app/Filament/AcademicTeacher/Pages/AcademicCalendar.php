@@ -6,6 +6,7 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
+use App\Services\AcademyContextService;
 use App\Services\Scheduling\Validators\AcademicLessonValidator;
 use App\Services\Scheduling\Validators\InteractiveCourseValidator;
 use Carbon\Carbon;
@@ -149,7 +150,8 @@ class AcademicCalendar extends Page
             return collect();
         }
 
-        $today = now()->toDateString();
+        $timezone = AcademyContextService::getTimezone();
+        $today = Carbon::now($timezone)->toDateString();
 
         // Get individual academic sessions for today
         $individualSessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
@@ -198,21 +200,24 @@ class AcademicCalendar extends Page
             ];
         }
 
+        $timezone = AcademyContextService::getTimezone();
+        $now = Carbon::now($timezone);
+
         // Get today's sessions
         $todaySessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
-            ->whereDate('scheduled_at', today())
+            ->whereDate('scheduled_at', $now->toDateString())
             ->count();
 
         // Get upcoming sessions (next 7 days)
         $upcomingSessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
-            ->where('scheduled_at', '>', now())
-            ->where('scheduled_at', '<=', now()->addDays(7))
+            ->where('scheduled_at', '>', $now)
+            ->where('scheduled_at', '<=', $now->copy()->addDays(7))
             ->count();
 
         // Get completed sessions this month
         $completedThisMonth = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
-            ->whereMonth('scheduled_at', now()->month)
-            ->whereYear('scheduled_at', now()->year)
+            ->whereMonth('scheduled_at', $now->month)
+            ->whereYear('scheduled_at', $now->year)
             ->where('status', 'completed')
             ->count();
 
@@ -479,7 +484,10 @@ class AcademicCalendar extends Page
                     ->label('تاريخ بداية الجدولة')
                     ->helperText('تاريخ البداية لجدولة الجلسات الجديدة (اتركه فارغاً للبدء من اليوم)')
                     ->default(null)
-                    ->minDate(now()->format('Y-m-d'))
+                    ->minDate(function () {
+                        $timezone = AcademyContextService::getTimezone();
+                        return Carbon::now($timezone)->format('Y-m-d');
+                    })
                     ->native(false)
                     ->displayFormat('Y/m/d')
                     ->closeOnDateSelection(),
@@ -671,7 +679,10 @@ class AcademicCalendar extends Page
         $maxSessionsToSchedule = min($selectedDaysCount * $weeksToSchedule, $unscheduledSessions->count());
 
         // Use custom start date if provided, otherwise start from now
-        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
+        $timezone = AcademyContextService::getTimezone();
+        $startDate = $this->scheduleStartDate
+            ? Carbon::parse($this->scheduleStartDate, $timezone)
+            : Carbon::now($timezone);
         $scheduledCount = 0;
         $weekCount = 0;
         $user = Auth::user();
@@ -707,7 +718,7 @@ class AcademicCalendar extends Page
                         'location_type' => 'online',
                         'meeting_source' => 'livekit',
                         'scheduled_by' => $user->id,
-                        'teacher_scheduled_at' => now(),
+                        'teacher_scheduled_at' => Carbon::now($timezone),
                     ]);
 
                     $scheduledCount++;
@@ -740,7 +751,10 @@ class AcademicCalendar extends Page
         $maxSessionsToSchedule = min($this->sessionCount, $remainingSessions);
 
         // Use custom start date if provided, otherwise start from now
-        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
+        $timezone = AcademyContextService::getTimezone();
+        $startDate = $this->scheduleStartDate
+            ? Carbon::parse($this->scheduleStartDate, $timezone)
+            : Carbon::now($timezone);
         $scheduledCount = 0;
         $weekCount = 0;
         $user = Auth::user();

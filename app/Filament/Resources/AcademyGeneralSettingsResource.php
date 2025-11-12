@@ -385,6 +385,7 @@ class AcademyGeneralSettingsResource extends BaseResource
     {
         return [
             'index' => Pages\ManageAcademyGeneralSettings::route('/'),
+            'edit' => Pages\EditGeneralSettings::route('/{record}/edit'),
         ];
     }
 

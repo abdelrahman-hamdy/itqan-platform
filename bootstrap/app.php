@@ -13,10 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
         then: function () {
-            // Chat API routes for mobile
-            Route::middleware('api')
-                ->prefix('api/chat')
-                ->group(base_path('routes/api-chat.php'));
+            // WireChat is now used for all chat functionality
+            // Old Chatify routes removed
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

@@ -60,16 +60,27 @@
                                 <div class="flex items-center space-x-4 space-x-reverse">
                                     <!-- Session Status Indicator with Animated Circles -->
                                     <div class="flex flex-col items-center">
-                                        @php $statusValue = $getStatusValue($session); @endphp
+                                        @php
+                                            $statusValue = $getStatusValue($session);
+                                            // Check if session is in preparation phase
+                                            $isInPreparation = false;
+                                            if($statusValue === 'scheduled' && $session->scheduled_at) {
+                                                $prepMessage = getMeetingPreparationMessage($session);
+                                                $isInPreparation = $prepMessage['type'] === 'preparing';
+                                            }
+                                        @endphp
                                         @if($statusValue === 'completed')
                                             <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
                                             <span class="text-xs text-green-600 font-bold">مكتملة</span>
                                         @elseif($statusValue === 'ongoing')
-                                            <div class="w-4 h-4 bg-orange-500 rounded-full mb-1 animate-pulse"></div>
-                                            <span class="text-xs text-orange-600 font-bold">جارية</span>
+                                            <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
+                                            <span class="text-xs text-green-600 font-bold">جارية</span>
                                         @elseif($statusValue === 'ready')
                                             <div class="w-4 h-4 bg-green-400 rounded-full mb-1 animate-bounce"></div>
                                             <span class="text-xs text-green-600 font-bold">جاهزة</span>
+                                        @elseif($statusValue === 'scheduled' && $isInPreparation)
+                                            <div class="w-4 h-4 bg-amber-500 rounded-full mb-1 animate-spin"></div>
+                                            <span class="text-xs text-amber-600 font-bold">جاري التحضير</span>
                                         @elseif($statusValue === 'scheduled')
                                             <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
                                             <span class="text-xs text-blue-600 font-bold">مجدولة</span>
@@ -118,13 +129,12 @@
                                         <!-- Meeting timing info for active sessions -->
                                         @if($getStatusValue($session) === 'scheduled' && $session->scheduled_at)
                                             @php
-                                                $timeData = formatTimeRemaining($session->scheduled_at);
-                                                $timeText = $timeData['formatted'];
+                                                $preparationMessage = getMeetingPreparationMessage($session);
                                             @endphp
-                                            @if(!$timeData['is_past'])
+                                            @if($preparationMessage['type'] !== 'none')
                                                 <div class="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block self-start">
-                                                    <i class="ri-timer-line"></i>
-                                                    سيتم تحضير الاجتماع خلال {{ $timeText }}
+                                                    <i class="{{ $preparationMessage['icon'] ?? 'ri-timer-line' }}"></i>
+                                                    {{ $preparationMessage['message'] }}
                                                 </div>
                                             @endif
                                         @elseif($getStatusValue($session) === 'ready')
@@ -140,7 +150,7 @@
                                 <div class="text-left">
                                     <div class="flex flex-col items-end space-y-2">
                                         <!-- Status Badge -->
-                                        <x-sessions.status-badge :status="$session->status" size="sm" />
+                                        <x-sessions.status-badge :status="$session->status" :session="$session" size="sm" />
                                     </div>
                                 </div>
                             </div>
@@ -205,13 +215,12 @@
                                         <!-- Meeting timing info for active sessions -->
                                         @if($getStatusValue($session) === 'scheduled' && $session->scheduled_at)
                                             @php
-                                                $timeData = formatTimeRemaining($session->scheduled_at);
-                                                $timeText = $timeData['formatted'];
+                                                $preparationMessage = getMeetingPreparationMessage($session);
                                             @endphp
-                                            @if(!$timeData['is_past'])
+                                            @if($preparationMessage['type'] !== 'none')
                                                 <div class="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block self-start">
-                                                    <i class="ri-timer-line"></i>
-                                                    سيتم تحضير الاجتماع خلال {{ $timeText }}
+                                                    <i class="{{ $preparationMessage['icon'] ?? 'ri-timer-line' }}"></i>
+                                                    {{ $preparationMessage['message'] }}
                                                 </div>
                                             @endif
                                         @elseif($getStatusValue($session) === 'ready')
@@ -227,7 +236,7 @@
                                 <div class="text-left">
                                     <div class="flex flex-col items-end space-y-2">
                                         <!-- Status Badge -->
-                                        <x-sessions.status-badge :status="$session->status" size="sm" />
+                                        <x-sessions.status-badge :status="$session->status" :session="$session" size="sm" />
                                     </div>
                                 </div>
                             </div>
@@ -296,7 +305,7 @@
                                 <div class="text-left">
                                     <div class="flex flex-col items-end space-y-2">
                                         <!-- Status Badge -->
-                                        <x-sessions.status-badge :status="$session->status" size="sm" />
+                                        <x-sessions.status-badge :status="$session->status" :session="$session" size="sm" />
                                     </div>
                                 </div>
                             </div>

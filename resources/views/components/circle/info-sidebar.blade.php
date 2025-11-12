@@ -212,7 +212,13 @@
                     <i class="ri-timer-line text-pink-600 text-sm"></i>
                     <span class="text-xs font-medium text-pink-600">مدة الجلسة</span>
                 </div>
-                <p class="text-sm font-bold text-pink-900 mt-1">{{ $circle->default_duration_minutes ?? '60' }} دقيقة</p>
+                <p class="text-sm font-bold text-pink-900 mt-1">
+                    @if($context === 'group')
+                        {{ $circle->session_duration_minutes ?? 60 }} دقيقة
+                    @else
+                        {{ $circle->default_duration_minutes ?? 60 }} دقيقة
+                    @endif
+                </p>
             </div>
         </div>
 
