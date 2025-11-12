@@ -226,19 +226,15 @@ function enrollInCircle(circleId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showConfirmModal({
-                title: 'تم بنجاح!',
-                message: data.message || 'تم تسجيلك في الحلقة بنجاح',
-                type: 'success',
-                confirmText: 'موافق',
-                onConfirm: () => {
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
-                    } else {
-                        location.reload();
-                    }
-                }
-            });
+            // Show success toast
+            if (typeof showToast !== 'undefined') {
+                showToast(data.message || 'تم تسجيلك في الحلقة بنجاح', 'success');
+            }
+
+            // Automatically refresh the current page to show updated enrollment status
+            setTimeout(() => {
+                location.reload();
+            }, 800);
         } else {
             showConfirmModal({
                 title: 'خطأ في التسجيل',
@@ -270,19 +266,15 @@ function leaveCircle(circleId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showConfirmModal({
-                title: 'تم بنجاح!',
-                message: data.message || 'تم إلغاء تسجيلك من الحلقة بنجاح',
-                type: 'success',
-                confirmText: 'موافق',
-                onConfirm: () => {
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
-                    } else {
-                        location.reload();
-                    }
-                }
-            });
+            // Show success toast
+            if (typeof showToast !== 'undefined') {
+                showToast(data.message || 'تم إلغاء تسجيلك من الحلقة بنجاح', 'success');
+            }
+
+            // Automatically refresh the current page to show updated enrollment status
+            setTimeout(() => {
+                location.reload();
+            }, 800);
         } else {
             showConfirmModal({
                 title: 'خطأ',

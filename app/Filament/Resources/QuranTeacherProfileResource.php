@@ -211,10 +211,24 @@ class QuranTeacherProfileResource extends BaseResource
                         Forms\Components\Toggle::make('is_active')
                             ->label('نشط')
                             ->default(true),
+                        Forms\Components\Select::make('approval_status')
+                            ->label('حالة الموافقة')
+                            ->options([
+                                'pending' => 'قيد الانتظار',
+                                'approved' => 'موافق عليه',
+                                'rejected' => 'مرفوض',
+                            ])
+                            ->default('pending')
+                            ->required()
+                            ->helperText('يجب أن يكون المعلم موافق عليه ونشط ليظهر للطلاب'),
                         Forms\Components\Toggle::make('offers_trial_sessions')
                             ->label('يقدم جلسات تجريبية')
                             ->default(true)
                             ->helperText('عند تفعيل هذا الخيار، سيتمكن الطلاب من طلب جلسات تجريبية مع هذا المعلم'),
+                        Forms\Components\DateTimePicker::make('approved_at')
+                            ->label('تاريخ الموافقة')
+                            ->disabled()
+                            ->visible(fn ($record) => $record && $record->approval_status === 'approved'),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات إدارية')
                             ->maxLength(1000)
@@ -269,6 +283,26 @@ class QuranTeacherProfileResource extends BaseResource
                         'success' => true,
                         'gray' => false,
                     ]),
+
+                Tables\Columns\BadgeColumn::make('approval_status')
+                    ->label('حالة الموافقة')
+                    ->formatStateUsing(fn (?string $state): string => match($state) {
+                        'approved' => 'موافق عليه',
+                        'pending' => 'قيد الانتظار',
+                        'rejected' => 'مرفوض',
+                        default => 'قيد الانتظار'
+                    })
+                    ->colors([
+                        'success' => 'approved',
+                        'warning' => 'pending',
+                        'danger' => 'rejected',
+                    ])
+                    ->icon(fn (?string $state): string => match($state) {
+                        'approved' => 'heroicon-o-check-circle',
+                        'pending' => 'heroicon-o-clock',
+                        'rejected' => 'heroicon-o-x-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    }),
 
                 Tables\Columns\BadgeColumn::make('offers_trial_sessions')
                     ->label('الجلسات التجريبية')
@@ -349,7 +383,13 @@ class QuranTeacherProfileResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-
+                Tables\Filters\SelectFilter::make('approval_status')
+                    ->label('حالة الموافقة')
+                    ->options([
+                        'pending' => 'قيد الانتظار',
+                        'approved' => 'موافق عليه',
+                        'rejected' => 'مرفوض',
+                    ]),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('نشط'),
                 Tables\Filters\TernaryFilter::make('offers_trial_sessions')
@@ -373,28 +413,50 @@ class QuranTeacherProfileResource extends BaseResource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                
+
+                Tables\Actions\Action::make('approve')
+                    ->label('موافقة')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->approval_status !== 'approved')
+                    ->requiresConfirmation()
+                    ->modalHeading('الموافقة على المعلم')
+                    ->modalDescription('هل أنت متأكد من الموافقة على هذا المعلم؟')
+                    ->action(function ($record) {
+                        $record->update([
+                            'approval_status' => 'approved',
+                            'approved_by' => auth()->user()->id,
+                            'approved_at' => now(),
+                        ]);
+                    })
+                    ->successNotificationTitle('تمت الموافقة على المعلم بنجاح'),
+
                 Tables\Actions\Action::make('activate')
                     ->label('تفعيل')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn ($record) => !$record->is_active)
+                    ->requiresConfirmation()
+                    ->modalHeading('تفعيل المعلم')
+                    ->modalDescription('هل أنت متأكد من تفعيل هذا المعلم؟ سيتم تفعيل حسابه والموافقة عليه.')
                     ->action(function ($record) {
-                        $record->update(['is_active' => true]);
+                        $record->activate(auth()->user()->id);
                     })
                     ->successNotificationTitle('تم تفعيل المعلم بنجاح'),
-                    
+
                 Tables\Actions\Action::make('deactivate')
                     ->label('إلغاء تفعيل')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(fn ($record) => $record->is_active)
                     ->requiresConfirmation()
+                    ->modalHeading('إلغاء تفعيل المعلم')
+                    ->modalDescription('هل أنت متأكد من إلغاء تفعيل هذا المعلم؟ سيتم إلغاء تفعيل حسابه.')
                     ->action(function ($record) {
-                        $record->update(['is_active' => false]);
+                        $record->deactivate();
                     })
                     ->successNotificationTitle('تم إلغاء تفعيل المعلم بنجاح'),
-                    
+
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

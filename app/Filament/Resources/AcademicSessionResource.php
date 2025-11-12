@@ -6,7 +6,7 @@ use App\Filament\Resources\AcademicSessionResource\Pages;
 use App\Filament\Resources\AcademicSessionResource\RelationManagers;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;

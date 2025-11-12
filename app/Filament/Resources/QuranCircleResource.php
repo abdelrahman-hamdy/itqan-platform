@@ -89,14 +89,18 @@ class QuranCircleResource extends BaseResource
                                             }
                                             
                                             return $teachers->mapWithKeys(function ($teacher) {
+                                                // IMPORTANT: Use user_id, not teacher profile id
+                                                // because quran_teacher_id should point to the User model
+                                                $userId = $teacher->user_id;
+
                                                 // Use display_name which already includes the code
                                                 if ($teacher->display_name) {
-                                                    return [$teacher->id => $teacher->display_name];
+                                                    return [$userId => $teacher->display_name];
                                                 }
-                                                
+
                                                 $fullName = $teacher->full_name ?? 'معلم غير محدد';
                                                 $teacherCode = $teacher->teacher_code ?? 'N/A';
-                                                return [$teacher->id => $fullName . ' (' . $teacherCode . ')'];
+                                                return [$userId => $fullName . ' (' . $teacherCode . ')'];
                                             })->toArray();
                                             
                                         } catch (\Exception $e) {
@@ -277,17 +281,15 @@ class QuranCircleResource extends BaseResource
                                         // If circle is full, prevent changing to open
                                         $maxStudents = $get('max_students') ?? 0;
                                         $currentStudents = $get('enrolled_students') ?? 0;
-                                        
+
                                         if ($currentStudents >= $maxStudents && $state === true) {
                                             $set('enrollment_status', false);
                                         }
                                     })
                                     ->dehydrateStateUsing(fn ($state) => $state ? 'open' : 'closed')
-                                    ->afterStateHydrated(function ($state, $record) {
-                                        if ($record && $record->enrollment_status === 'full') {
-                                            return true; // Show as enabled but disabled
-                                        }
-                                        return $state === 'open';
+                                    ->formatStateUsing(function ($state) {
+                                        // Convert database ENUM to boolean for the toggle
+                                        return $state === 'open' || $state === 'full';
                                     }),
 
                                 Textarea::make('admin_notes')

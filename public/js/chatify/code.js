@@ -27,23 +27,40 @@ const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
 
 /**
  *-------------------------------------------------------------
- * Pusher initialization
+ * Pusher initialization (matching working implementation)
  *-------------------------------------------------------------
  */
 Pusher.logToConsole = chatify.pusher.debug;
-const pusher = new Pusher(chatify.pusher.key, {
+
+// Use window.location.hostname as wsHost for .test domains to work correctly
+const wsHost = window.location.hostname.includes('.test') ||
+               window.location.hostname === 'localhost' ||
+               window.location.hostname === '127.0.0.1'
+               ? window.location.hostname
+               : chatify.pusher.options.host;
+
+console.log(`🔧 Pusher Config: hostname=${window.location.hostname}, wsHost=${wsHost}, forceTLS=${chatify.pusher.options.useTLS}, encrypted=${chatify.pusher.options.encrypted}`);
+
+const pusherConfig = {
     encrypted: chatify.pusher.options.encrypted,
-    wsHost: chatify.pusher.options.host,
+    wsHost: wsHost,
     wsPort: chatify.pusher.options.port,
     wssPort: chatify.pusher.options.port,
     forceTLS: chatify.pusher.options.useTLS,
     authEndpoint: chatify.pusherAuthEndpoint,
-  auth: {
-    headers: {
-      "X-CSRF-TOKEN": csrfToken,
+    auth: {
+        headers: {
+            "X-CSRF-TOKEN": csrfToken,
+        },
     },
-  },
-});
+};
+
+// Only add cluster if it's defined (not needed for Reverb)
+if (chatify.pusher.options.cluster) {
+    pusherConfig.cluster = chatify.pusher.options.cluster;
+}
+
+const pusher = new Pusher(chatify.pusher.key, pusherConfig);
 /**
  *-------------------------------------------------------------
  * Re-usable methods

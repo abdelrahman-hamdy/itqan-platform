@@ -138,11 +138,16 @@ class TeacherCalendarWidget extends FullCalendarWidget
                     $classNames = 'event-passed';
                 }
 
+                // Ensure scheduled_at is a Carbon instance
+                $scheduledAt = $session->scheduled_at instanceof \Carbon\Carbon
+                    ? $session->scheduled_at
+                    : \Carbon\Carbon::parse($session->scheduled_at);
+
                 $eventData = EventData::make()
                     ->id($session->id)
                     ->title($title)
-                    ->start($session->scheduled_at)
-                    ->end($session->scheduled_at->addMinutes($session->duration_minutes))
+                    ->start($scheduledAt)
+                    ->end($scheduledAt->copy()->addMinutes($session->duration_minutes ?? 60))
                     ->backgroundColor($color)
                     ->borderColor($color)
                     ->textColor('#ffffff')
@@ -616,6 +621,51 @@ class TeacherCalendarWidget extends FullCalendarWidget
             $this->dispatch('refresh');
 
             return false;
+        }
+
+        // CRITICAL: Validate subscription expiry for individual circles
+        if ($record->session_type === 'individual' && $record->individual_circle_id) {
+            $circle = \App\Models\QuranIndividualCircle::find($record->individual_circle_id);
+
+            if ($circle && $circle->subscription) {
+                $subscription = $circle->subscription;
+
+                // Check if subscription is active
+                if ($subscription->subscription_status !== 'active') {
+                    Notification::make()
+                        ->title('غير مسموح')
+                        ->body('الاشتراك غير نشط. لا يمكن تحريك الجلسة.')
+                        ->danger()
+                        ->send();
+
+                    $this->dispatch('refresh');
+                    return false;
+                }
+
+                // Check if new date is within subscription period
+                if ($subscription->starts_at && $newStart->isBefore($subscription->starts_at)) {
+                    Notification::make()
+                        ->title('غير مسموح')
+                        ->body('لا يمكن جدولة الجلسة قبل تاريخ بدء الاشتراك ('.$subscription->starts_at->format('Y/m/d').')')
+                        ->danger()
+                        ->send();
+
+                    $this->dispatch('refresh');
+                    return false;
+                }
+
+                // CRITICAL: Check if new date is beyond subscription expiry
+                if ($subscription->expires_at && $newStart->isAfter($subscription->expires_at)) {
+                    Notification::make()
+                        ->title('غير مسموح')
+                        ->body('لا يمكن جدولة الجلسة بعد تاريخ انتهاء الاشتراك ('.$subscription->expires_at->format('Y/m/d').'). يرجى تجديد الاشتراك أولاً.')
+                        ->danger()
+                        ->send();
+
+                    $this->dispatch('refresh');
+                    return false;
+                }
+            }
         }
 
         // Validate the new time doesn't conflict

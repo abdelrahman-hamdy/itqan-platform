@@ -10,6 +10,9 @@ use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use App\Services\SessionManagementService;
+use App\Services\Scheduling\Validators\GroupCircleValidator;
+use App\Services\Scheduling\Validators\IndividualCircleValidator;
+use App\Services\Scheduling\Validators\TrialSessionValidator;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -280,6 +283,37 @@ class Calendar extends Page
     }
 
     /**
+     * Get validator for the selected circle
+     */
+    private function getSelectedCircleValidator()
+    {
+        if (!$this->selectedCircleId || !$this->selectedCircleType) {
+            return null;
+        }
+
+        if ($this->selectedCircleType === 'group') {
+            $circle = QuranCircle::find($this->selectedCircleId);
+            return $circle ? new GroupCircleValidator($circle) : null;
+        } else {
+            $circle = QuranIndividualCircle::find($this->selectedCircleId);
+            return $circle ? new IndividualCircleValidator($circle) : null;
+        }
+    }
+
+    /**
+     * Get validator for the selected trial request
+     */
+    private function getSelectedTrialValidator()
+    {
+        if (!$this->selectedTrialRequestId) {
+            return null;
+        }
+
+        $trialRequest = QuranTrialRequest::find($this->selectedTrialRequestId);
+        return $trialRequest ? new TrialSessionValidator($trialRequest) : null;
+    }
+
+    /**
      * Change active tab
      */
     public function setActiveTab(string $tab): void
@@ -390,75 +424,32 @@ class Calendar extends Page
                     ])
                     ->columns(2)
                     ->helperText(function () {
-                        $circle = $this->getSelectedCircle();
-                        if (! $circle) {
+                        $validator = $this->getSelectedCircleValidator();
+                        if (!$validator) {
                             return '';
                         }
 
-                        if ($circle['type'] === 'individual') {
-                            // Calculate smart recommendation for individual circles
-                            $remainingSessions = $circle['sessions_remaining'] ?? 0;
-                            $monthlySessionsCount = $circle['monthly_sessions'] ?? 4;
-
-                            // Calculate recommended sessions per week
-                            $recommendedPerWeek = ceil($monthlySessionsCount / 4);
-
-                            if ($remainingSessions <= 0) {
-                                return '⚠️ لا توجد جلسات متبقية في الاشتراك';
-                            }
-
-                            return "💡 التوصية: {$recommendedPerWeek} أيام في الأسبوع (بناءً على {$monthlySessionsCount} جلسات شهرياً). يمكنك اختيار أكثر أو أقل حسب الحاجة. الجلسات المتبقية: {$remainingSessions}";
-                        } else {
-                            $monthlySessionsCount = $circle['monthly_sessions'] ?? 4;
-                            $recommendedDaysPerWeek = ceil($monthlySessionsCount / 4);
-
-                            return "💡 الموصى به: {$recommendedDaysPerWeek} أيام في الأسبوع للحلقات الجماعية (بناءً على {$monthlySessionsCount} جلسات شهرياً)";
-                        }
+                        $recommendations = $validator->getRecommendations();
+                        return "💡 {$recommendations['reason']}";
                     })
                     ->rules([
                         function () {
                             return function (string $attribute, $value, \Closure $fail) {
-                                $circle = $this->getSelectedCircle();
-                                if (! $circle || ! $value) {
+                                if (!$value) {
                                     return;
                                 }
 
-                                $selectedDaysCount = count($value);
-
-                                if ($circle['type'] === 'group') {
-                                    // For group circles: strict limit based on monthly sessions
-                                    $monthlySessionsCount = $circle['monthly_sessions'] ?? 4;
-                                    $maxDaysPerWeek = ceil($monthlySessionsCount / 4);
-
-                                    if ($selectedDaysCount > $maxDaysPerWeek) {
-                                        $fail("الحد الأقصى للأيام المسموح بها للحلقات الجماعية هو {$maxDaysPerWeek} أيام بناءً على عدد الجلسات الشهرية ({$monthlySessionsCount})");
-                                    }
-                                } else {
-                                    // For individual circles: flexible limits with smart warnings
-                                    if ($selectedDaysCount > 7) {
-                                        $fail('لا يمكن اختيار أكثر من 7 أيام في الأسبوع');
-                                    }
-
-                                    // Use SessionManagementService for accurate remaining sessions
-                                    $circleModel = \App\Models\QuranIndividualCircle::find($circle['id']);
-                                    if ($circleModel) {
-                                        $sessionService = app(\App\Services\SessionManagementService::class);
-                                        $remaining = $sessionService->getRemainingIndividualSessions($circleModel);
-
-                                        if ($remaining <= 0) {
-                                            $fail('لا توجد جلسات متبقية لجدولتها في هذه الحلقة');
-                                        }
-
-                                        // Smart warning for potentially excessive scheduling
-                                        $monthlySessionsCount = $circle['monthly_sessions'] ?? 4;
-                                        $recommendedPerWeek = ceil($monthlySessionsCount / 4);
-
-                                        if ($selectedDaysCount > $recommendedPerWeek + 2) {
-                                            // Just a warning, not a failure
-                                            $fail("تحذير: اخترت {$selectedDaysCount} أيام، وهو أكثر من المعتاد للحلقات الفردية ({$recommendedPerWeek} موصى به). تأكد من وجود جلسات كافية ({$remaining} متبقية)");
-                                        }
-                                    }
+                                $validator = $this->getSelectedCircleValidator();
+                                if (!$validator) {
+                                    return;
                                 }
+
+                                $result = $validator->validateDaySelection($value);
+
+                                if ($result->isError()) {
+                                    $fail($result->getMessage());
+                                }
+                                // Warnings don't fail validation, they're shown in helper text
                             };
                         },
                     ])
@@ -466,12 +457,31 @@ class Calendar extends Page
 
                 Forms\Components\DatePicker::make('schedule_start_date')
                     ->label('تاريخ بداية الجدولة')
-                    ->helperText('تاريخ البداية لجدولة الجلسات الجديدة (اتركه فارغاً للبدء من اليوم)')
+                    ->helperText(function () {
+                        $circle = $this->getSelectedCircle();
+                        if ($circle && $circle['type'] === 'individual') {
+                            if (isset($circle['subscription_end']) && $circle['subscription_end']) {
+                                $expiryDate = Carbon::parse($circle['subscription_end']);
+                                return 'تاريخ البداية لجدولة الجلسات (يجب أن يكون قبل انتهاء الاشتراك في '.$expiryDate->format('Y/m/d').')';
+                            }
+                        }
+                        return 'تاريخ البداية لجدولة الجلسات الجديدة (اتركه فارغاً للبدء من اليوم)';
+                    })
                     ->default(null)
                     ->minDate(now()->format('Y-m-d'))
+                    ->maxDate(function () {
+                        $circle = $this->getSelectedCircle();
+                        if ($circle && $circle['type'] === 'individual') {
+                            if (isset($circle['subscription_end']) && $circle['subscription_end']) {
+                                return Carbon::parse($circle['subscription_end'])->format('Y-m-d');
+                            }
+                        }
+                        return null;
+                    })
                     ->native(false)
                     ->displayFormat('Y/m/d')
-                    ->closeOnDateSelection(),
+                    ->closeOnDateSelection()
+                    ->reactive(),
 
                 Forms\Components\Select::make('schedule_time')
                     ->label('وقت الجلسة')
@@ -491,18 +501,51 @@ class Calendar extends Page
 
                 Forms\Components\TextInput::make('session_count')
                     ->label('عدد الجلسات المطلوب إنشاؤها')
-                    ->helperText('حدد عدد الجلسات التي تريد جدولتها (للحلقات الجماعية فقط)')
+                    ->helperText(function () {
+                        $circle = $this->getSelectedCircle();
+                        if (!$circle) {
+                            return 'حدد عدد الجلسات التي تريد جدولتها';
+                        }
+
+                        if ($circle['type'] === 'group') {
+                            return 'حدد عدد الجلسات التي تريد جدولتها (الحد الأقصى: 100 جلسة)';
+                        } else {
+                            $remaining = $circle['sessions_remaining'] ?? 0;
+                            return "حدد عدد الجلسات التي تريد جدولتها (المتبقية: {$remaining} جلسة)";
+                        }
+                    })
                     ->numeric()
                     ->required()
                     ->minValue(1)
-                    ->maxValue(100)
+                    ->maxValue(function () {
+                        $circle = $this->getSelectedCircle();
+                        if (!$circle) {
+                            return 100;
+                        }
+
+                        if ($circle['type'] === 'group') {
+                            return 100; // No hard limit for group circles
+                        } else {
+                            // For individual circles, max is remaining sessions
+                            return max(1, $circle['sessions_remaining'] ?? 1);
+                        }
+                    })
                     ->default(function () {
                         $circle = $this->getSelectedCircle();
+                        if (!$circle) {
+                            return 4;
+                        }
 
-                        return $circle['monthly_sessions'] ?? 4;
+                        if ($circle['type'] === 'group') {
+                            return $circle['monthly_sessions'] ?? 4;
+                        } else {
+                            // For individual circles, default to remaining sessions or 4, whichever is smaller
+                            $remaining = $circle['sessions_remaining'] ?? 4;
+                            return min($remaining, 8); // Default to 8 or remaining, whichever is smaller
+                        }
                     })
                     ->placeholder('أدخل العدد')
-                    ->visible(fn () => $this->getSelectedCircle()['type'] === 'group'),
+                    ->reactive(),
 
                 Forms\Components\Placeholder::make('circle_info')
                     ->label('معلومات الحلقة')
@@ -512,16 +555,45 @@ class Calendar extends Page
                             return 'لم يتم اختيار حلقة';
                         }
 
-                        $content = 'نوع الحلقة: '.($circle['type'] === 'group' ? 'جماعية' : 'فردية').'<br>';
+                        $content = '<div class="space-y-2">';
+                        $content .= '<div><strong>نوع الحلقة:</strong> '.($circle['type'] === 'group' ? 'جماعية' : 'فردية').'</div>';
 
                         if ($circle['type'] === 'group') {
-                            $content .= 'عدد الطلاب: '.($circle['students_count'] ?? 0).'/'.($circle['max_students'] ?? 0).'<br>';
-                            $content .= 'الجلسات الشهرية: '.($circle['monthly_sessions'] ?? 4);
+                            $content .= '<div><strong>عدد الطلاب:</strong> '.($circle['students_count'] ?? 0).'/'.($circle['max_students'] ?? 0).'</div>';
+                            $content .= '<div><strong>الجلسات الشهرية المستهدفة:</strong> '.($circle['monthly_sessions'] ?? 4).' جلسة</div>';
                         } else {
-                            $content .= 'الطالب: '.($circle['student_name'] ?? 'غير محدد').'<br>';
-                            $content .= 'إجمالي الجلسات: '.($circle['sessions_count'] ?? 0).'<br>';
-                            $content .= 'المجدولة: '.($circle['sessions_scheduled'] ?? 0).' | المتبقية: '.($circle['sessions_remaining'] ?? 0);
+                            // Individual circle - show subscription details
+                            $content .= '<div><strong>الطالب:</strong> '.($circle['student_name'] ?? 'غير محدد').'</div>';
+                            $content .= '<div><strong>إجمالي الجلسات:</strong> '.($circle['sessions_count'] ?? 0).'</div>';
+                            $content .= '<div><strong>المجدولة:</strong> <span class="text-blue-600 font-semibold">'.($circle['sessions_scheduled'] ?? 0).'</span></div>';
+                            $content .= '<div><strong>المتبقية:</strong> <span class="text-green-600 font-semibold">'.($circle['sessions_remaining'] ?? 0).'</span></div>';
+
+                            // Show subscription dates if available
+                            if (isset($circle['subscription_start']) && $circle['subscription_start']) {
+                                $content .= '<div class="mt-2 pt-2 border-t border-gray-200">';
+                                $content .= '<div><strong>بداية الاشتراك:</strong> '.Carbon::parse($circle['subscription_start'])->format('Y/m/d').'</div>';
+
+                                if (isset($circle['subscription_end']) && $circle['subscription_end']) {
+                                    $expiryDate = Carbon::parse($circle['subscription_end']);
+                                    $daysRemaining = now()->diffInDays($expiryDate, false);
+
+                                    $expiryColor = 'text-gray-600';
+                                    $expiryWarning = '';
+                                    if ($daysRemaining < 0) {
+                                        $expiryColor = 'text-red-600 font-bold';
+                                        $expiryWarning = ' ⚠️ منتهي';
+                                    } elseif ($daysRemaining <= 7) {
+                                        $expiryColor = 'text-orange-600 font-semibold';
+                                        $expiryWarning = ' ⚠️ ينتهي خلال '.$daysRemaining.' يوم';
+                                    }
+
+                                    $content .= '<div><strong>انتهاء الاشتراك:</strong> <span class="'.$expiryColor.'">'.$expiryDate->format('Y/m/d').$expiryWarning.'</span></div>';
+                                }
+                                $content .= '</div>';
+                            }
                         }
+
+                        $content .= '</div>';
 
                         return new \Illuminate\Support\HtmlString($content);
                     })
@@ -569,6 +641,40 @@ class Calendar extends Page
         }
 
         try {
+            // CRITICAL: Use validator to validate BEFORE creating any sessions
+            $validator = $this->getSelectedCircleValidator();
+            if ($validator) {
+                // Validate day selection
+                $dayResult = $validator->validateDaySelection($this->scheduleDays);
+                if ($dayResult->isError()) {
+                    throw new \Exception($dayResult->getMessage());
+                }
+
+                // Validate session count (for both group and individual circles)
+                $countResult = $validator->validateSessionCount($this->sessionCount);
+                if ($countResult->isError()) {
+                    throw new \Exception($countResult->getMessage());
+                }
+
+                // Validate date range
+                $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : null;
+
+                // Calculate weeks needed based on session count and selected days
+                // For both group and individual circles, use the user-specified session count
+                $weeksAhead = ceil($this->sessionCount / count($this->scheduleDays));
+
+                $dateResult = $validator->validateDateRange($startDate, $weeksAhead);
+                if ($dateResult->isError()) {
+                    throw new \Exception($dateResult->getMessage());
+                }
+
+                // Validate weekly pacing
+                $pacingResult = $validator->validateWeeklyPacing($this->scheduleDays, $weeksAhead);
+                if ($pacingResult->isError()) {
+                    throw new \Exception($pacingResult->getMessage());
+                }
+            }
+
             $sessionsCreated = 0;
 
             if ($selectedCircle['type'] === 'group') {
@@ -716,36 +822,59 @@ class Calendar extends Page
         $selectedDaysCount = count($this->scheduleDays);
         $weeksToSchedule = 8; // Schedule for next 8 weeks
 
+        // Use custom start date if provided, otherwise start from now
+        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
+
+        // CRITICAL: Calculate maximum weeks based on subscription expiry date
+        $subscriptionExpiryDate = $circle->subscription->expires_at;
+        if ($subscriptionExpiryDate) {
+            $daysUntilExpiry = max(1, $startDate->diffInDays($subscriptionExpiryDate, false));
+            $weeksUntilExpiry = (int) ceil($daysUntilExpiry / 7);
+
+            // Don't schedule beyond subscription expiry
+            if ($weeksUntilExpiry < $weeksToSchedule) {
+                $weeksToSchedule = $weeksUntilExpiry;
+
+                if ($weeksToSchedule <= 0) {
+                    throw new \Exception(
+                        'لا يمكن جدولة جلسات. الاشتراك ينتهي في ' .
+                        $subscriptionExpiryDate->format('Y/m/d') .
+                        '. يرجى تجديد الاشتراك أو اختيار تاريخ بداية قبل انتهاء الاشتراك.'
+                    );
+                }
+            }
+        }
+
         // CRITICAL: Never exceed subscription remaining sessions limit
         $maxSessionsToSchedule = min($selectedDaysCount * $weeksToSchedule, $remainingSessions);
 
-        // Use custom start date if provided, otherwise start from now
-        $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : Carbon::now();
         $scheduledCount = 0;
         $weekCount = 0;
+        $reachedSubscriptionExpiry = false;
 
         // Schedule sessions across multiple weeks in the selected days
-        while ($scheduledCount < $maxSessionsToSchedule && $weekCount < $weeksToSchedule) {
+        while ($scheduledCount < $maxSessionsToSchedule && $weekCount < $weeksToSchedule && !$reachedSubscriptionExpiry) {
             foreach ($this->scheduleDays as $day) {
                 // CRITICAL: Double-check we haven't exceeded the limit
                 if ($scheduledCount >= $maxSessionsToSchedule) {
-                    break;
+                    break 2; // Break out of both loops
                 }
 
                 // CRITICAL: Re-check remaining sessions in real-time to prevent race conditions
                 $currentRemaining = $sessionService->getRemainingIndividualSessions($circle);
                 if ($currentRemaining <= 0) {
-                    break;
+                    break 2; // Break out of both loops
                 }
 
                 // Find the next occurrence of this day
                 $sessionDate = $this->getNextDateForDay($startDate->copy()->addWeeks($weekCount), $day);
                 $sessionDateTime = $sessionDate->setTimeFromTimeString($this->scheduleTime);
 
-                // Check if session date is beyond subscription end date (if end date exists)
-                if ($circle->subscription->expires_at && $sessionDateTime->isAfter($circle->subscription->expires_at)) {
-                    // Skip this session as it's beyond the subscription period
-                    continue;
+                // CRITICAL: Check if session date is beyond subscription end date
+                if ($subscriptionExpiryDate && $sessionDateTime->isAfter($subscriptionExpiryDate)) {
+                    // Stop scheduling completely - don't create any more sessions
+                    $reachedSubscriptionExpiry = true;
+                    break 2; // Break out of both loops
                 }
 
                 // Check if session already exists for this date/time
@@ -875,7 +1004,15 @@ class Calendar extends Page
                     ->default(now()->addDay()->setTime(16, 0))
                     ->displayFormat('Y-m-d H:i')
                     ->timezone(config('app.timezone', 'UTC'))
-                    ->helperText('اختر التاريخ والوقت المناسب للطالب')
+                    ->helperText(function () {
+                        $validator = $this->getSelectedTrialValidator();
+                        if (!$validator) {
+                            return 'اختر التاريخ والوقت المناسب للطالب';
+                        }
+
+                        $recommendations = $validator->getRecommendations();
+                        return "💡 {$recommendations['reason']}";
+                    })
                     ->rules([
                         function () {
                             return function (string $attribute, $value, \Closure $fail) {
@@ -885,9 +1022,14 @@ class Calendar extends Page
 
                                 $scheduledAt = Carbon::parse($value);
 
-                                // Check if date is in the past
-                                if ($scheduledAt->isPast()) {
-                                    $fail('لا يمكن جدولة الجلسة في وقت ماضي');
+                                // Use validator for date range validation
+                                $validator = $this->getSelectedTrialValidator();
+                                if ($validator) {
+                                    $result = $validator->validateDateRange($scheduledAt, 1);
+                                    if ($result->isError()) {
+                                        $fail($result->getMessage());
+                                        return;
+                                    }
                                 }
 
                                 // Check for conflicts with other sessions

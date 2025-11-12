@@ -7,7 +7,7 @@ use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers;
 use App\Filament\Academy\Resources\RecordedCourseResource\RelationManagers\SectionsRelationManager;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use App\Models\RecordedCourse;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
@@ -88,7 +88,7 @@ class RecordedCourseResource extends Resource
                                                     ->options(function () {
                                                         $academyId = Auth::user()->academy_id;
 
-                                                        return AcademicTeacher::where('academy_id', $academyId)
+                                                        return AcademicTeacherProfile::where('academy_id', $academyId)
                                                             ->where('is_approved', true)
                                                             ->where('is_active', true)
                                                             ->pluck('full_name', 'id');
@@ -554,7 +554,7 @@ class RecordedCourseResource extends Resource
                     ->options(function () {
                         $academyId = Auth::user()->academy_id;
 
-                        return AcademicTeacher::with('user')
+                        return AcademicTeacherProfile::with('user')
                             ->where('academy_id', $academyId)
                             ->where('is_approved', true)
                             ->where('is_active', true)

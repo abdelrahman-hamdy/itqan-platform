@@ -87,12 +87,16 @@ class QuranPackage extends Model
 
     public function getDisplayName(): string
     {
-        return app()->getLocale() === 'ar' ? $this->name_ar : $this->name_en;
+        return app()->getLocale() === 'ar'
+            ? ($this->name_ar ?? '')
+            : ($this->name_en ?? '');
     }
 
     public function getDescription(): string
     {
-        return app()->getLocale() === 'ar' ? $this->description_ar : $this->description_en;
+        return app()->getLocale() === 'ar'
+            ? ($this->description_ar ?? '')
+            : ($this->description_en ?? '');
     }
 
     public function getFormattedCurrency(): string

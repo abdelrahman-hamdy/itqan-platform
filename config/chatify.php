@@ -12,7 +12,7 @@
 return [
     // Route configuration
     'routes' => [
-        'custom' => true, // We use custom routes from routes/chatify/
+        'custom' => true, // Use our custom routes from routes/chatify/
         'prefix' => config('chat.routes.prefix', 'chat'),
         'middleware' => config('chat.routes.middleware', ['web','auth']),
         'namespace' => config('chat.routes.namespace', 'App\Http\Controllers\vendor\Chatify'),

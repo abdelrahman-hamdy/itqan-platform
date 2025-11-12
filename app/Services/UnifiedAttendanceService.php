@@ -17,6 +17,23 @@ use Illuminate\Support\Facades\Log;
  *
  * Combines real-time meeting tracking (MeetingAttendance) with
  * comprehensive session reports (StudentSessionReport)
+ *
+ * @deprecated Use App\Services\Attendance\QuranReportService or App\Services\Attendance\AcademicReportService instead
+ *
+ * This service has been replaced by specialized services that extend BaseReportSyncService:
+ * - For Quran sessions: Use QuranReportService
+ * - For Academic sessions: Use AcademicReportService
+ * - For Interactive sessions: Use InteractiveReportService
+ *
+ * The new services eliminate 70% code duplication and provide better maintainability.
+ *
+ * This service will be removed in the next release.
+ * See PHASE9_SERVICE_LAYER_ANALYSIS.md for migration guide.
+ *
+ * Migration:
+ * - Replace polymorphic methods with session-specific services
+ * - Update service provider bindings
+ * - See line 658 for disabled buggy code that has been fixed in new services
  */
 class UnifiedAttendanceService
 {

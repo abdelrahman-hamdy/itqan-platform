@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicSubject;
 use App\Models\AcademicGradeLevel;
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;

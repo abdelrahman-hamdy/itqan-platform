@@ -377,10 +377,10 @@
   "reverbScheme": "{{ config('chat.reverb.options.scheme') }}",
   "reverbUseTLS": {{ config('chat.reverb.options.useTLS') ? 'true' : 'false' }},
   "apiEndpoints": {
-    "sendMessage": "{{ route('send.message') }}",
-    "fetchMessages": "{{ route('fetch.messages') }}",
-    "getContacts": "{{ route('contacts.get') }}",
-    "reverbAuth": "{{ route('pusher.auth') }}"
+    "sendMessage": "{{ route('send.message', ['subdomain' => request()->route('subdomain') ?? (auth()->user()->academy->subdomain ?? 'itqan-academy')]) }}",
+    "fetchMessages": "{{ route('fetch.messages', ['subdomain' => request()->route('subdomain') ?? (auth()->user()->academy->subdomain ?? 'itqan-academy')]) }}",
+    "getContacts": "{{ route('contacts.get', ['subdomain' => request()->route('subdomain') ?? (auth()->user()->academy->subdomain ?? 'itqan-academy')]) }}",
+    "reverbAuth": "{{ route('pusher.auth', ['subdomain' => request()->route('subdomain') ?? (auth()->user()->academy->subdomain ?? 'itqan-academy')]) }}"
   }
 }
 </script>

@@ -3,8 +3,11 @@
 namespace App\Filament\AcademicTeacher\Pages;
 
 use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
+use App\Services\Scheduling\Validators\AcademicLessonValidator;
+use App\Services\Scheduling\Validators\InteractiveCourseValidator;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -373,6 +376,26 @@ class AcademicCalendar extends Page
     }
 
     /**
+     * Get validator for the selected item (lesson or course)
+     */
+    private function getSelectedItemValidator()
+    {
+        if (!$this->selectedItemId || !$this->selectedItemType) {
+            return null;
+        }
+
+        if ($this->selectedItemType === 'private_lesson') {
+            $subscription = AcademicSubscription::find($this->selectedItemId);
+            return $subscription ? new AcademicLessonValidator($subscription) : null;
+        } elseif ($this->selectedItemType === 'interactive_course') {
+            $course = InteractiveCourse::find($this->selectedItemId);
+            return $course ? new InteractiveCourseValidator($course) : null;
+        }
+
+        return null;
+    }
+
+    /**
      * Change active tab
      */
     public function setActiveTab(string $tab): void
@@ -420,6 +443,36 @@ class AcademicCalendar extends Page
                         'friday' => 'الجمعة',
                     ])
                     ->columns(2)
+                    ->helperText(function () {
+                        $validator = $this->getSelectedItemValidator();
+                        if (!$validator) {
+                            return '';
+                        }
+
+                        $recommendations = $validator->getRecommendations();
+                        return "💡 {$recommendations['reason']}";
+                    })
+                    ->rules([
+                        function () {
+                            return function (string $attribute, $value, \Closure $fail) {
+                                if (!$value) {
+                                    return;
+                                }
+
+                                $validator = $this->getSelectedItemValidator();
+                                if (!$validator) {
+                                    return;
+                                }
+
+                                $result = $validator->validateDaySelection($value);
+
+                                if ($result->isError()) {
+                                    $fail($result->getMessage());
+                                }
+                                // Warnings don't fail validation, they're shown in helper text
+                            };
+                        },
+                    ])
                     ->reactive(),
 
                 Forms\Components\DatePicker::make('schedule_start_date')
@@ -449,7 +502,16 @@ class AcademicCalendar extends Page
 
                 Forms\Components\TextInput::make('session_count')
                     ->label('عدد الجلسات المطلوب إنشاؤها')
-                    ->helperText('حدد عدد الجلسات التي تريد جدولتها')
+                    ->helperText(function () {
+                        $validator = $this->getSelectedItemValidator();
+                        if (!$validator) {
+                            return 'حدد عدد الجلسات التي تريد جدولتها';
+                        }
+
+                        $item = $this->getSelectedItem();
+                        $remaining = $item['sessions_remaining'] ?? 0;
+                        return "الجلسات المتبقية: {$remaining}";
+                    })
                     ->numeric()
                     ->required()
                     ->minValue(1)
@@ -459,6 +521,26 @@ class AcademicCalendar extends Page
 
                         return $item['sessions_remaining'] ?? 4;
                     })
+                    ->rules([
+                        function () {
+                            return function (string $attribute, $value, \Closure $fail) {
+                                if (!$value) {
+                                    return;
+                                }
+
+                                $validator = $this->getSelectedItemValidator();
+                                if (!$validator) {
+                                    return;
+                                }
+
+                                $result = $validator->validateSessionCount((int) $value);
+
+                                if ($result->isError()) {
+                                    $fail($result->getMessage());
+                                }
+                            };
+                        },
+                    ])
                     ->placeholder('أدخل العدد'),
             ])
             ->action(function (array $data) {
@@ -502,6 +584,37 @@ class AcademicCalendar extends Page
         }
 
         try {
+            // CRITICAL: Use validator to validate BEFORE creating any sessions
+            $validator = $this->getSelectedItemValidator();
+            if ($validator) {
+                // Validate day selection
+                $dayResult = $validator->validateDaySelection($this->scheduleDays);
+                if ($dayResult->isError()) {
+                    throw new \Exception($dayResult->getMessage());
+                }
+
+                // Validate session count
+                $countResult = $validator->validateSessionCount($this->sessionCount);
+                if ($countResult->isError()) {
+                    throw new \Exception($countResult->getMessage());
+                }
+
+                // Validate date range
+                $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : null;
+                $weeksAhead = ceil($this->sessionCount / count($this->scheduleDays));
+
+                $dateResult = $validator->validateDateRange($startDate, $weeksAhead);
+                if ($dateResult->isError()) {
+                    throw new \Exception($dateResult->getMessage());
+                }
+
+                // Validate weekly pacing
+                $pacingResult = $validator->validateWeeklyPacing($this->scheduleDays, $weeksAhead);
+                if ($pacingResult->isError()) {
+                    throw new \Exception($pacingResult->getMessage());
+                }
+            }
+
             $sessionsCreated = 0;
 
             if ($selectedItem['type'] === 'private_lesson') {

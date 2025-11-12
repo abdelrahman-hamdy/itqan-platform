@@ -52,13 +52,14 @@ class QuranCircleResource extends BaseTeacherResource
     public static function canView(Model $record): bool
     {
         $user = Auth::user();
-        
+
         if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
             return false;
         }
 
         // Allow viewing if circle belongs to current teacher
-        return $record->quran_teacher_id === $user->quranTeacherProfile->user_id;
+        // quran_teacher_id now stores user_id directly after migration
+        return $record->quran_teacher_id === $user->id;
     }
 
     /**
@@ -68,13 +69,14 @@ class QuranCircleResource extends BaseTeacherResource
     public static function canEdit(Model $record): bool
     {
         $user = Auth::user();
-        
+
         if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
             return false;
         }
 
         // Allow editing if circle belongs to current teacher
-        return $record->quran_teacher_id === $user->quranTeacherProfile->user_id;
+        // quran_teacher_id now stores user_id directly after migration
+        return $record->quran_teacher_id === $user->id;
     }
 
     /**
@@ -85,12 +87,13 @@ class QuranCircleResource extends BaseTeacherResource
     {
         $query = parent::getEloquentQuery();
         $user = Auth::user();
-        
+
         if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
             return $query->whereRaw('1 = 0'); // Return no results
         }
 
-        return $query->where('quran_teacher_id', $user->quranTeacherProfile->user_id);
+        // quran_teacher_id now stores user_id directly after migration
+        return $query->where('quran_teacher_id', $user->id);
     }
 
     /**
@@ -112,7 +115,8 @@ class QuranCircleResource extends BaseTeacherResource
                     ->dehydrated()
                     ->default(function () {
                         $user = Auth::user();
-                        return $user && $user->quranTeacherProfile ? $user->quranTeacherProfile->user_id : null;
+                        // quran_teacher_id now stores user_id directly after migration
+                        return $user ? $user->id : null;
                     }),
 
                 Section::make('معلومات الحلقة الأساسية')
@@ -440,16 +444,17 @@ class QuranCircleResource extends BaseTeacherResource
                     Tables\Actions\EditAction::make()
                         ->label('تعديل'),
 
-                    Tables\Actions\Action::make('manage_students')
-                        ->label('إدارة الطلاب')
-                        ->icon('heroicon-o-users')
+                    Tables\Actions\Action::make('view_circle')
+                        ->label('عرض تفاصيل الحلقة')
+                        ->icon('heroicon-o-eye')
                         ->color('info')
-                        ->url(fn (QuranCircle $record): string => 
-                            route('teacher.quran-circle-students.index', [
+                        ->url(fn (QuranCircle $record): string =>
+                            route('teacher.group-circles.show', [
                                 'subdomain' => Auth::user()->academy->subdomain,
                                 'circle' => $record->id
                             ])
-                        ),
+                        )
+                        ->openUrlInNewTab(),
                 ]),
             ])
             ->bulkActions([

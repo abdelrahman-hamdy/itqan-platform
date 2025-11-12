@@ -103,26 +103,17 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'password_reset_token',
         'remember_token',
 
-        // Google OAuth and integration fields
-        'google_id',
-        'google_email',
-        'google_connected_at',
-        'google_disconnected_at',
-        'google_calendar_enabled',
-        'google_permissions',
+        // Meeting preferences (non-Google)
         'meeting_preferences',
         'auto_create_meetings',
         'meeting_prep_minutes',
-        'notify_on_google_disconnect',
-        'notify_admin_on_disconnect',
 
-        // Teacher Google preferences
+        // Teacher preferences
         'teacher_auto_record',
         'teacher_default_duration',
         'teacher_meeting_prep_minutes',
         'teacher_send_reminders',
         'teacher_reminder_times',
-        'sync_to_google_calendar',
         'allow_calendar_conflicts',
         'calendar_visibility',
         'notify_on_student_join',
@@ -157,24 +148,17 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             'password' => 'hashed',
             'active_status' => 'boolean',
 
-            // Google OAuth fields
-            'google_connected_at' => 'datetime',
-            'google_disconnected_at' => 'datetime',
-            'google_calendar_enabled' => 'boolean',
-            'google_permissions' => 'array',
+            // Meeting preferences (non-Google)
             'meeting_preferences' => 'array',
             'auto_create_meetings' => 'boolean',
             'meeting_prep_minutes' => 'integer',
-            'notify_on_google_disconnect' => 'boolean',
-            'notify_admin_on_disconnect' => 'boolean',
 
-            // Teacher Google preferences
+            // Teacher preferences
             'teacher_auto_record' => 'boolean',
             'teacher_default_duration' => 'integer',
             'teacher_meeting_prep_minutes' => 'integer',
             'teacher_send_reminders' => 'boolean',
             'teacher_reminder_times' => 'array',
-            'sync_to_google_calendar' => 'boolean',
             'allow_calendar_conflicts' => 'boolean',
             'notify_on_student_join' => 'boolean',
             'notify_on_session_end' => 'boolean',

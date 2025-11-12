@@ -18,72 +18,78 @@ class AcademicSessionReportResource extends Resource
     protected static ?string $model = AcademicSessionReport::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
-    
-    protected static ?string $navigationLabel = 'Academic Session Reports';
-    
-    protected static ?string $modelLabel = 'Academic Session Report';
-    
-    protected static ?string $pluralModelLabel = 'Academic Session Reports';
-    
-    protected static ?string $navigationGroup = 'Academic Sessions';
+
+    protected static ?string $navigationLabel = 'تقارير الجلسات الأكاديمية';
+
+    protected static ?string $modelLabel = 'تقرير جلسة أكاديمية';
+
+    protected static ?string $pluralModelLabel = 'تقارير الجلسات الأكاديمية';
+
+    protected static ?string $navigationGroup = 'التقارير والحضور';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Session Information')
+                Forms\Components\Section::make('معلومات الجلسة')
                     ->schema([
-                        Forms\Components\Select::make('academic_session_id')
-                            ->relationship('academicSession', 'title')
+                        Forms\Components\Select::make('session_id')
+                            ->relationship('session', 'title')
+                            ->label('الجلسة')
                             ->required()
                             ->searchable()
                             ->preload(),
                         Forms\Components\Select::make('student_id')
                             ->relationship('student', 'name')
+                            ->label('الطالب')
                             ->required()
                             ->searchable()
                             ->preload(),
                         Forms\Components\Select::make('teacher_id')
                             ->relationship('teacher', 'name')
+                            ->label('المعلم')
                             ->required()
                             ->searchable()
                             ->preload(),
                         Forms\Components\Select::make('academy_id')
                             ->relationship('academy', 'name')
+                            ->label('الأكاديمية')
                             ->required()
                             ->searchable()
                             ->preload(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Academic Performance')
+                Forms\Components\Section::make('الأداء الأكاديمي')
                     ->schema([
                         Forms\Components\TextInput::make('academic_performance_score')
-                            ->label('Academic Performance (0-10)')
+                            ->label('الأداء الأكاديمي (0-10)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(10)
                             ->step(0.1),
                         Forms\Components\TextInput::make('engagement_score')
-                            ->label('Engagement Score (0-10)')
+                            ->label('درجة التفاعل (0-10)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(10)
                             ->step(0.1),
                         Forms\Components\TagsInput::make('learning_objectives_achieved')
-                            ->label('Learning Objectives Achieved')
-                            ->placeholder('Add learning objectives')
+                            ->label('الأهداف التعليمية المحققة')
+                            ->placeholder('أضف الأهداف التعليمية')
                             ->columnSpanFull(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Homework Management')
+                Forms\Components\Section::make('إدارة الواجبات')
                     ->schema([
                         Forms\Components\Textarea::make('homework_description')
-                            ->label('Homework Assignment')
-                            ->placeholder('Describe the homework assignment...')
+                            ->label('وصف الواجب')
+                            ->placeholder('اكتب وصف الواجب المنزلي...')
                             ->rows(4)
                             ->columnSpanFull(),
                         Forms\Components\FileUpload::make('homework_file_path')
-                            ->label('Homework File')
+                            ->label('ملف الواجب')
                             ->directory('academic-homework')
                             ->acceptedFileTypes(['pdf', 'doc', 'docx', 'txt', 'jpg', 'png'])
                             ->maxSize(5120) // 5MB
@@ -92,48 +98,48 @@ class AcademicSessionReportResource extends Resource
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('Notes & Feedback')
+                Forms\Components\Section::make('الملاحظات والتغذية الراجعة')
                     ->schema([
                         Forms\Components\Textarea::make('teacher_notes')
-                            ->label('Teacher Notes')
-                            ->placeholder('Teacher observations and notes...')
+                            ->label('ملاحظات المعلم')
+                            ->placeholder('ملاحظات ومشاهدات المعلم...')
                             ->rows(3),
                         Forms\Components\Textarea::make('student_notes')
-                            ->label('Student Notes')
-                            ->placeholder('Student self-reflection notes...')
+                            ->label('ملاحظات الطالب')
+                            ->placeholder('ملاحظات الطالب والتأملات الذاتية...')
                             ->rows(3),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Attendance Details')
+                Forms\Components\Section::make('تفاصيل الحضور')
                     ->schema([
                         Forms\Components\DateTimePicker::make('meeting_enter_time')
-                            ->label('Meeting Join Time'),
+                            ->label('وقت الدخول للجلسة'),
                         Forms\Components\DateTimePicker::make('meeting_leave_time')
-                            ->label('Meeting Leave Time'),
+                            ->label('وقت الخروج من الجلسة'),
                         Forms\Components\TextInput::make('actual_attendance_minutes')
-                            ->label('Attendance Minutes')
+                            ->label('دقائق الحضور الفعلي')
                             ->numeric()
                             ->default(0)
-                            ->suffix('minutes'),
+                            ->suffix('دقيقة'),
                         Forms\Components\Toggle::make('is_late')
-                            ->label('Student Was Late'),
+                            ->label('الطالب متأخر'),
                         Forms\Components\TextInput::make('late_minutes')
-                            ->label('Late Minutes')
+                            ->label('دقائق التأخير')
                             ->numeric()
                             ->default(0)
-                            ->suffix('minutes')
+                            ->suffix('دقيقة')
                             ->visible(fn (Forms\Get $get) => $get('is_late')),
                         Forms\Components\Select::make('attendance_status')
-                            ->label('Attendance Status')
+                            ->label('حالة الحضور')
                             ->options([
-                                'present' => 'Present',
-                                'late' => 'Late',
-                                'partial' => 'Partial',
-                                'absent' => 'Absent',
+                                'present' => 'حاضر',
+                                'late' => 'متأخر',
+                                'partial' => 'حضور جزئي',
+                                'absent' => 'غائب',
                             ])
                             ->required(),
                         Forms\Components\TextInput::make('attendance_percentage')
-                            ->label('Attendance Percentage')
+                            ->label('نسبة الحضور')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(100)
@@ -141,17 +147,17 @@ class AcademicSessionReportResource extends Resource
                             ->default(0),
                     ])->columns(3),
 
-                Forms\Components\Section::make('System Information')
+                Forms\Components\Section::make('معلومات النظام')
                     ->schema([
                         Forms\Components\DateTimePicker::make('evaluated_at')
-                            ->label('Evaluated At'),
+                            ->label('تاريخ التقييم'),
                         Forms\Components\Toggle::make('is_auto_calculated')
-                            ->label('Auto Calculated')
+                            ->label('محسوب تلقائياً')
                             ->default(true),
                         Forms\Components\Toggle::make('manually_overridden')
-                            ->label('Manually Overridden'),
+                            ->label('معدل يدوياً'),
                         Forms\Components\Textarea::make('override_reason')
-                            ->label('Override Reason')
+                            ->label('سبب التعديل اليدوي')
                             ->visible(fn (Forms\Get $get) => $get('manually_overridden'))
                             ->columnSpanFull(),
                     ])->columns(3),

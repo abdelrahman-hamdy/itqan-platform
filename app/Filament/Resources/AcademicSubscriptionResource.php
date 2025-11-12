@@ -6,7 +6,7 @@ use App\Filament\Resources\AcademicSubscriptionResource\Pages;
 use App\Filament\Resources\AcademicSubscriptionResource\RelationManagers;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicPackage;
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use App\Models\Subject;
 use App\Models\AcademicGradeLevel;
 use Filament\Forms;

@@ -68,10 +68,10 @@
       <div>
         <h3 class="text-lg font-bold mb-6">روابط مهمة</h3>
         <ul class="space-y-3">
-          <li><a href="#about" class="text-gray-400 hover:text-white transition-colors duration-200">من نحن</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">سياسة الخصوصية</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">شروط الاستخدام</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">الأسئلة الشائعة</a></li>
+          <li><a href="{{ route('academy.about-us', ['subdomain' => $academy->subdomain]) }}" class="text-gray-400 hover:text-white transition-colors duration-200">من نحن</a></li>
+          <li><a href="{{ route('academy.privacy-policy', ['subdomain' => $academy->subdomain]) }}" class="text-gray-400 hover:text-white transition-colors duration-200">سياسة الخصوصية</a></li>
+          <li><a href="{{ route('academy.terms', ['subdomain' => $academy->subdomain]) }}" class="text-gray-400 hover:text-white transition-colors duration-200">الشروط والأحكام</a></li>
+          <li><a href="{{ route('academy.refund-policy', ['subdomain' => $academy->subdomain]) }}" class="text-gray-400 hover:text-white transition-colors duration-200">سياسة الاسترجاع</a></li>
         </ul>
       </div>
       <div>

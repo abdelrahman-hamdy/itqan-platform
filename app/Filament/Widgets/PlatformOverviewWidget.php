@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Academy;
 use App\Models\User;
 use App\Models\RecordedCourse;
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use App\Services\AcademyContextService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;

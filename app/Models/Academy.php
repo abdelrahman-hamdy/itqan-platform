@@ -195,6 +195,14 @@ class Academy extends Model
     }
 
     /**
+     * Get Quran circles in this academy
+     */
+    public function quranCircles(): HasMany
+    {
+        return $this->hasMany(QuranCircle::class);
+    }
+
+    /**
      * Get the full domain URL
      */
     public function getFullDomainAttribute(): string

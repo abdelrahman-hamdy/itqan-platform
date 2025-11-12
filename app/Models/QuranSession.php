@@ -2,53 +2,77 @@
 
 namespace App\Models;
 
-use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
-use App\Traits\HasMeetings;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class QuranSession extends Model implements MeetingCapable
+class QuranSession extends BaseSession
 {
-    use HasFactory, HasMeetings, SoftDeletes;
 
+    // Quran-specific fillable fields
+    // NOTE: Must explicitly include parent fields as Laravel doesn't auto-merge
     protected $fillable = [
+        // Core session fields from BaseSession
         'academy_id',
+        'session_code',
+        'status',
+        'title',
+        'description',
+        'scheduled_at',
+        'started_at',
+        'ended_at',
+        'duration_minutes',
+        'actual_duration_minutes',
+        'meeting_link',
+        'meeting_id',
+        'meeting_password',
+        'meeting_source',
+        'meeting_platform',
+        'meeting_data',
+        'meeting_room_name',
+        'meeting_auto_generated',
+        'meeting_expires_at',
+        'attendance_status',
+        'participants_count',
+        'attendance_notes',
+        'session_notes',
+        'teacher_feedback',
+        'student_feedback',
+        'parent_feedback',
+        'overall_rating',
+        'cancellation_reason',
+        'cancelled_by',
+        'cancelled_at',
+        'reschedule_reason',
+        'rescheduled_from',
+        'rescheduled_to',
+        'created_by',
+        'updated_by',
+        'scheduled_by',
+
+        // Teacher and subscription (Quran-specific)
         'quran_teacher_id',
         'quran_subscription_id',
         'circle_id',
         'individual_circle_id',
         'student_id',
         'trial_request_id',
-        'session_code',
+
+        // Session configuration
         'session_type',
-        'status',
-        'title',
-        'description',
-        'lesson_objectives',
-        'scheduled_at',
-        'started_at',
-        'ended_at',
-        'duration_minutes',
-        'actual_duration_minutes',
         'location_type',
         'location_details',
-        'meeting_link',
-        'meeting_id',
-        'meeting_password',
+        'lesson_objectives',
+
+        // Recording
         'recording_url',
         'recording_enabled',
-        'attendance_status',
-        'participants_count',
-        'attendance_notes',
+
+        // Quran progress tracking
         'current_surah',
         'current_verse',
         'current_page',
@@ -70,55 +94,41 @@ class QuranSession extends Model implements MeetingCapable
         'homework_assigned',
         'homework_details',
         'next_session_plan',
-        'session_notes',
-        'teacher_feedback',
-        'student_feedback',
-        'parent_feedback',
-        'overall_rating',
         'technical_issues',
         'makeup_session_for',
         'is_makeup_session',
-        'cancellation_reason',
-        'cancelled_by',
-        'cancelled_at',
-        'reschedule_reason',
-        'rescheduled_from',
-        'rescheduled_to',
         'materials_used',
         'learning_outcomes',
         'assessment_results',
         'follow_up_required',
         'follow_up_notes',
-        'created_by',
-        'updated_by',
-        // New fields for individual circles and templates
-        'individual_circle_id',
-
         'teacher_scheduled_at',
-        'scheduled_by',
-        // New meeting platform fields
-        'meeting_source',
-        'meeting_platform',
-        'meeting_data',
-        'meeting_room_name',
-        'meeting_auto_generated',
-        'meeting_expires_at',
         'subscription_counted',
     ];
 
+    // Quran-specific casts
+    // NOTE: Must explicitly include parent casts as Laravel doesn't auto-merge
     protected $casts = [
-        'status' => SessionStatus::class,
+        // Core datetime casts from BaseSession
+        'status' => \App\Enums\SessionStatus::class,
         'scheduled_at' => 'datetime',
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'rescheduled_from' => 'datetime',
         'rescheduled_to' => 'datetime',
-        'teacher_scheduled_at' => 'datetime',
         'meeting_expires_at' => 'datetime',
         'duration_minutes' => 'integer',
         'actual_duration_minutes' => 'integer',
         'participants_count' => 'integer',
+        'overall_rating' => 'integer',
+        'meeting_data' => 'array',
+        'meeting_auto_generated' => 'boolean',
+
+        // Quran-specific casts
+        'teacher_scheduled_at' => 'datetime',
+
+        // Quran progress
         'current_surah' => 'integer',
         'current_verse' => 'integer',
         'current_page' => 'integer',
@@ -136,12 +146,9 @@ class QuranSession extends Model implements MeetingCapable
         'recitation_quality' => 'decimal:1',
         'tajweed_accuracy' => 'decimal:1',
         'mistakes_count' => 'integer',
-        'overall_rating' => 'integer',
         'recording_enabled' => 'boolean',
         'is_makeup_session' => 'boolean',
         'follow_up_required' => 'boolean',
-
-        'meeting_auto_generated' => 'boolean',
         'lesson_objectives' => 'array',
         'common_mistakes' => 'array',
         'areas_for_improvement' => 'array',
@@ -149,15 +156,12 @@ class QuranSession extends Model implements MeetingCapable
         'materials_used' => 'array',
         'learning_outcomes' => 'array',
         'assessment_results' => 'array',
-        'meeting_data' => 'array',
         'subscription_counted' => 'boolean',
     ];
 
-    // Relationships
-    public function academy(): BelongsTo
-    {
-        return $this->belongsTo(Academy::class);
-    }
+    // Quran-specific relationships
+    // Common relationships (academy, meeting, meetingAttendances, cancelledBy,
+    // createdBy, updatedBy, scheduledBy) are inherited from BaseSession
 
     public function quranTeacher(): BelongsTo
     {
@@ -184,33 +188,15 @@ class QuranSession extends Model implements MeetingCapable
         return $this->belongsTo(QuranCircleSchedule::class, 'generated_from_schedule_id');
     }
 
-    public function scheduledBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'scheduled_by');
-    }
-
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
     }
 
-    /**
-     * Get the unified meeting record for this session
-     * NEW: Polymorphic relationship to unified Meeting model
-     */
-    public function meeting(): MorphOne
-    {
-        return $this->morphOne(Meeting::class, 'meetable');
-    }
 
     public function trialRequest(): BelongsTo
     {
         return $this->belongsTo(QuranTrialRequest::class, 'trial_request_id');
-    }
-
-    public function cancelledBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'cancelled_by');
     }
 
     public function makeupFor(): BelongsTo
@@ -246,13 +232,6 @@ class QuranSession extends Model implements MeetingCapable
         return $this->hasMany(StudentSessionReport::class, 'session_id');
     }
 
-    /**
-     * Enhanced meeting attendance tracking
-     */
-    public function meetingAttendances(): HasMany
-    {
-        return $this->hasMany(MeetingAttendance::class, 'session_id');
-    }
 
     /**
      * New homework system relationships
@@ -267,51 +246,26 @@ class QuranSession extends Model implements MeetingCapable
         return $this->hasMany(QuranHomeworkAssignment::class, 'session_id');
     }
 
+    /**
+     * Unified homework submission system (polymorphic)
+     */
+    public function homeworkSubmissions()
+    {
+        return $this->morphMany(HomeworkSubmission::class, 'submitable');
+    }
+
     public function autoTrackedAttendances(): HasMany
     {
         return $this->hasMany(QuranSessionAttendance::class, 'session_id')->where('auto_tracked', true);
     }
 
-    // Scopes
-    public function scopeScheduled($query)
-    {
-        return $query->where('status', 'scheduled');
-    }
-
-    public function scopeCompleted($query)
-    {
-        return $query->where('status', 'completed');
-    }
-
-    public function scopeCancelled($query)
-    {
-        return $query->where('status', 'cancelled');
-    }
+    // Quran-specific scopes
+    // Common scopes (scheduled, completed, cancelled, ongoing, today, upcoming, past)
+    // are inherited from BaseSession
 
     public function scopeMissed($query)
     {
         return $query->where('status', 'missed');
-    }
-
-    public function scopeOngoing($query)
-    {
-        return $query->where('status', 'ongoing');
-    }
-
-    public function scopeToday($query)
-    {
-        return $query->whereDate('scheduled_at', today());
-    }
-
-    public function scopeUpcoming($query)
-    {
-        return $query->where('scheduled_at', '>', now())
-            ->where('status', 'scheduled');
-    }
-
-    public function scopePast($query)
-    {
-        return $query->where('scheduled_at', '<', now());
     }
 
     public function scopeThisWeek($query)
@@ -597,43 +551,34 @@ class QuranSession extends Model implements MeetingCapable
         return $this->subscription_counted ?? false;
     }
 
-    /**
-     * Get session status display data
-     */
-    public function getStatusDisplayData(): array
+    // getStatusDisplayData() is inherited from BaseSession
+    // Override protected helper methods to provide Quran-specific configuration
+
+    protected function getPreparationMinutes(): int
     {
-        // Get circle configuration if available
         $circle = $this->session_type === 'individual'
             ? $this->individualCircle
             : $this->circle;
 
-        return [
-            'status' => $this->status->value,
-            'label' => $this->status->label(),
-            'icon' => $this->status->icon(),
-            'color' => $this->status->color(),
-            'can_join' => in_array($this->status, [
-                SessionStatus::READY,
-                SessionStatus::ONGOING,
-            ]),
-            'can_complete' => in_array($this->status, [
-                SessionStatus::READY,
-                SessionStatus::ONGOING,
-            ]),
-            'can_cancel' => in_array($this->status, [
-                SessionStatus::SCHEDULED,
-                SessionStatus::READY,
-            ]),
-            'can_reschedule' => in_array($this->status, [
-                SessionStatus::SCHEDULED,
-                SessionStatus::READY,
-            ]),
-            'is_upcoming' => $this->status === SessionStatus::SCHEDULED && $this->scheduled_at && $this->scheduled_at->isFuture(),
-            'is_active' => in_array($this->status, [SessionStatus::READY, SessionStatus::ONGOING]),
-            'preparation_minutes' => $circle?->preparation_minutes ?? 15,
-            'ending_buffer_minutes' => $circle?->ending_buffer_minutes ?? 5,
-            'grace_period_minutes' => $circle?->late_join_grace_period_minutes ?? 15,
-        ];
+        return $circle?->preparation_minutes ?? 15;
+    }
+
+    protected function getEndingBufferMinutes(): int
+    {
+        $circle = $this->session_type === 'individual'
+            ? $this->individualCircle
+            : $this->circle;
+
+        return $circle?->ending_buffer_minutes ?? 5;
+    }
+
+    protected function getGracePeriodMinutes(): int
+    {
+        $circle = $this->session_type === 'individual'
+            ? $this->individualCircle
+            : $this->circle;
+
+        return $circle?->late_join_grace_period_minutes ?? 15;
     }
 
     public function scopeAttended($query)
@@ -1025,115 +970,19 @@ class QuranSession extends Model implements MeetingCapable
         ]));
     }
 
-    public function generateMeetingLink(array $options = []): string
+    // Common meeting methods (generateMeetingLink, getMeetingInfo, isMeetingValid,
+    // getMeetingJoinUrl, generateParticipantToken, getRoomInfo, endMeeting,
+    // isUserInMeeting) are inherited from BaseSession
+
+    // Override to provide Quran-specific recording settings
+    protected function getDefaultRecordingEnabled(): bool
     {
-        // If meeting already exists and is valid, return existing link
-        if ($this->meeting_room_name && $this->isMeetingValid()) {
-            return $this->meeting_link;
-        }
-
-        $livekitService = app(\App\Services\LiveKitService::class);
-
-        // Set default options
-        $defaultOptions = [
-            'recording_enabled' => $this->recording_enabled ?? false,
-            'max_participants' => $options['max_participants'] ?? 50,
-            'max_duration' => $this->duration_minutes ?? 120, // Use session duration
-            'session_type' => $this->session_type,
-        ];
-
-        $mergedOptions = array_merge($defaultOptions, $options);
-
-        // Generate meeting using LiveKit service only if none exists
-        $meetingInfo = $livekitService->createMeeting(
-            $this->academy,
-            $this->session_type ?? 'quran',
-            $this->id,
-            $this->scheduled_at ?? now(),
-            $mergedOptions
-        );
-
-        // Update session with meeting info
-        $this->update([
-            'meeting_link' => $meetingInfo['meeting_url'],
-            'meeting_id' => $meetingInfo['meeting_id'],
-            'meeting_platform' => $meetingInfo['platform'],
-            'meeting_source' => $meetingInfo['platform'],
-            'meeting_data' => $meetingInfo,
-            'meeting_room_name' => $meetingInfo['room_name'],
-            'meeting_auto_generated' => true,
-            'meeting_expires_at' => $meetingInfo['expires_at'],
-            'meeting_created_at' => now(),
-        ]);
-
-        return $meetingInfo['meeting_url'];
+        return $this->recording_enabled ?? true; // Quran sessions often need recording
     }
 
-    /**
-     * Get meeting join information
-     */
-    public function getMeetingInfo(): ?array
+    protected function getDefaultMaxParticipants(): int
     {
-        if (! $this->meeting_data) {
-            return null;
-        }
-
-        return $this->meeting_data;
-    }
-
-    /**
-     * Check if meeting is still valid
-     */
-    public function isMeetingValid(): bool
-    {
-        if (! $this->meeting_link) {
-            return false;
-        }
-
-        if ($this->meeting_expires_at && $this->meeting_expires_at->isPast()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Get meeting join URL for display
-     */
-    public function getMeetingJoinUrl(): ?string
-    {
-        if (! $this->isMeetingValid()) {
-            return null;
-        }
-
-        return $this->meeting_link;
-    }
-
-    /**
-     * Generate participant access token for LiveKit room
-     */
-    public function generateParticipantToken(User $user, array $permissions = []): string
-    {
-        if (! $this->meeting_room_name) {
-            throw new \Exception('Meeting room not created yet');
-        }
-
-        $livekitService = app(\App\Services\LiveKitService::class);
-
-        // Set permissions based on user role
-        $defaultPermissions = [
-            'can_publish' => true,
-            'can_subscribe' => true,
-            'can_update_metadata' => in_array($user->user_type, ['quran_teacher', 'academic_teacher']),
-        ];
-
-        $mergedPermissions = array_merge($defaultPermissions, $permissions);
-
-        return $livekitService->generateParticipantToken(
-            $this->meeting_room_name,
-            $user,
-            $mergedPermissions
-        );
+        return $this->session_type === 'circle' ? 50 : 2;
     }
 
     /**
@@ -1193,42 +1042,6 @@ class QuranSession extends Model implements MeetingCapable
         return $result;
     }
 
-    /**
-     * Get current room information and participants
-     */
-    public function getRoomInfo(): ?array
-    {
-        if (! $this->meeting_room_name) {
-            return null;
-        }
-
-        $livekitService = app(\App\Services\LiveKitService::class);
-
-        return $livekitService->getRoomInfo($this->meeting_room_name);
-    }
-
-    /**
-     * End the meeting and clean up room
-     */
-    public function endMeeting(): bool
-    {
-        if (! $this->meeting_room_name) {
-            return false;
-        }
-
-        $livekitService = app(\App\Services\LiveKitService::class);
-
-        $success = $livekitService->endMeeting($this->meeting_room_name);
-
-        if ($success) {
-            $this->update([
-                'ended_at' => now(),
-                'status' => 'completed',
-            ]);
-        }
-
-        return $success;
-    }
 
     /**
      * Set meeting duration limit
@@ -1250,46 +1063,6 @@ class QuranSession extends Model implements MeetingCapable
         return $success;
     }
 
-    /**
-     * Check if user is currently in the meeting room
-     */
-    public function isUserInMeeting(User $user): bool
-    {
-        $roomInfo = $this->getRoomInfo();
-
-        if (! $roomInfo || ! isset($roomInfo['participants'])) {
-            return false;
-        }
-
-        $userIdentity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
-
-        foreach ($roomInfo['participants'] as $participant) {
-            if ($participant['id'] === $userIdentity) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Get meeting statistics
-     */
-    public function getMeetingStats(): array
-    {
-        $roomInfo = $this->getRoomInfo();
-        $meetingData = $this->meeting_data ?? [];
-
-        return [
-            'is_active' => $roomInfo ? $roomInfo['is_active'] : false,
-            'participant_count' => $roomInfo ? $roomInfo['participant_count'] : 0,
-            'participants' => $roomInfo ? $roomInfo['participants'] : [],
-            'duration_so_far' => $this->started_at ? now()->diffInMinutes($this->started_at) : 0,
-            'scheduled_duration' => $this->duration_minutes,
-            'recording_active' => isset($meetingData['recording']) && $meetingData['recording']['status'] === 'recording',
-            'room_created_at' => $roomInfo ? $roomInfo['created_at'] : null,
-        ];
-    }
 
     public function addFeedback(string $feedbackType, string $feedback, ?User $feedbackBy = null): self
     {
@@ -1568,56 +1341,8 @@ class QuranSession extends Model implements MeetingCapable
         return null;
     }
 
-    // ========================================
-    // MeetingCapable Interface Implementation
-    // ========================================
-
     /**
-     * Check if a user can join this meeting
-     */
-    public function canUserJoinMeeting(User $user): bool
-    {
-        // Check basic permissions first
-        if (! $this->canUserManageMeeting($user) && ! $this->isUserParticipant($user)) {
-            return false;
-        }
-
-        // Check timing constraints
-        return $this->canJoinBasedOnTiming($user);
-    }
-
-    /**
-     * Check if user can join based on timing constraints
-     */
-    private function canJoinBasedOnTiming(User $user): bool
-    {
-        // If no scheduled time, allow join (for manual sessions)
-        if (! $this->scheduled_at) {
-            return true;
-        }
-
-        $now = now();
-        $sessionStart = $this->scheduled_at;
-        $sessionEnd = $sessionStart->copy()->addMinutes($this->duration_minutes ?? 60);
-
-        // Teachers and admins can join anytime within a wider window
-        if ($this->canUserManageMeeting($user)) {
-            // Allow teachers to join 30 minutes before and up to 2 hours after session end
-            $teacherStartWindow = $sessionStart->copy()->subMinutes(30);
-            $teacherEndWindow = $sessionEnd->copy()->addHours(2);
-
-            return $now->between($teacherStartWindow, $teacherEndWindow);
-        }
-
-        // Students can join 15 minutes before session and up to 30 minutes after session end
-        $studentStartWindow = $sessionStart->copy()->subMinutes(15);
-        $studentEndWindow = $sessionEnd->copy()->addMinutes(30);
-
-        return $now->between($studentStartWindow, $studentEndWindow);
-    }
-
-    /**
-     * Check if a user can manage this meeting (create, end, control participants)
+     * Check if a user can manage this meeting (abstract method implementation)
      */
     public function canUserManageMeeting(User $user): bool
     {
@@ -1635,57 +1360,7 @@ class QuranSession extends Model implements MeetingCapable
     }
 
     /**
-     * Get the meeting type identifier (MeetingCapable interface)
-     */
-    public function getMeetingType(): string
-    {
-        return 'quran';
-    }
-
-    /**
-     * Get the session type identifier for meeting purposes
-     *
-     * @deprecated Use getMeetingType() instead
-     */
-    public function getMeetingSessionType(): string
-    {
-        return $this->getMeetingType();
-    }
-
-    /**
-     * Get the academy this session belongs to
-     */
-    public function getAcademy(): ?Academy
-    {
-        return $this->academy;
-    }
-
-    /**
-     * Get the scheduled start time for the meeting
-     */
-    public function getMeetingStartTime(): ?Carbon
-    {
-        return $this->scheduled_at;
-    }
-
-    /**
-     * Get the expected duration of the meeting in minutes
-     */
-    public function getMeetingDurationMinutes(): int
-    {
-        return $this->duration_minutes ?? 60;
-    }
-
-    /**
-     * Check if the meeting is currently active
-     */
-    public function isMeetingActive(): bool
-    {
-        return in_array($this->status, [SessionStatus::READY, SessionStatus::ONGOING]);
-    }
-
-    /**
-     * Get all participants who should have access to this meeting
+     * Get all participants who should have access to this meeting (abstract method implementation)
      */
     public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection
     {
@@ -1755,23 +1430,19 @@ class QuranSession extends Model implements MeetingCapable
     }
 
     // ========================================
-    // Additional MeetingCapable Interface Methods
+    // ABSTRACT METHOD IMPLEMENTATIONS (Required by BaseSession)
     // ========================================
 
     /**
-     * Get the meeting end time
+     * Get the meeting type identifier (abstract method implementation)
      */
-    public function getMeetingEndTime(): ?Carbon
+    public function getMeetingType(): string
     {
-        if ($this->scheduled_at && $this->duration_minutes) {
-            return $this->scheduled_at->addMinutes($this->duration_minutes);
-        }
-
-        return $this->ended_at;
+        return 'quran';
     }
 
     /**
-     * Get all participants for this session (MeetingCapable interface)
+     * Get all participants for this session (abstract method implementation)
      */
     public function getParticipants(): array
     {

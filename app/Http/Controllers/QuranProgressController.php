@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\QuranProgress;
 use App\Models\QuranSubscription;
 use App\Models\QuranCircle;
-use App\Models\QuranTeacher;
+use App\Models\QuranTeacherProfile;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Http\Request;

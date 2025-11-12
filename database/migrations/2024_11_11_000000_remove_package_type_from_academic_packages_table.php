@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('academic_packages', function (Blueprint $table) {
-            $table->dropColumn('package_type');
-        });
+        // Only attempt to drop column if table exists and column exists
+        if (Schema::hasTable('academic_packages') && Schema::hasColumn('academic_packages', 'package_type')) {
+            Schema::table('academic_packages', function (Blueprint $table) {
+                $table->dropColumn('package_type');
+            });
+        }
     }
 
     /**
@@ -21,8 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('academic_packages', function (Blueprint $table) {
-            $table->enum('package_type', ['individual', 'group'])->default('individual')->after('description_en');
-        });
+        // Only attempt to add column back if table exists and column doesn't exist
+        if (Schema::hasTable('academic_packages') && !Schema::hasColumn('academic_packages', 'package_type')) {
+            Schema::table('academic_packages', function (Blueprint $table) {
+                $table->enum('package_type', ['individual', 'group'])->default('individual')->after('description_en');
+            });
+        }
     }
 };

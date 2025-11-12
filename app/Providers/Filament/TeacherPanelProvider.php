@@ -80,6 +80,15 @@ class TeacherPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->login()
             ->profile()
+            ->userMenuItems([
+                'profile-page' => \Filament\Navigation\MenuItem::make()
+                    ->label('الملف الشخصي العام')
+                    ->url(fn (): string => route('teacher.profile', [
+                        'subdomain' => auth()->user()->academy->subdomain ?? 'default'
+                    ]))
+                    ->icon('heroicon-o-user-circle')
+                    ->openUrlInNewTab(),
+            ])
             ->plugins([
                 FilamentFullCalendarPlugin::make()
                     ->selectable(true)

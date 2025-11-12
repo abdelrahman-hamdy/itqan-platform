@@ -9,6 +9,20 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @deprecated Use App\Services\Attendance\QuranReportService instead
+ *
+ * This service has been replaced by QuranReportService which extends BaseReportSyncService.
+ * The new service eliminates 90% code duplication and provides better maintainability.
+ *
+ * This service will be removed in the next release.
+ * See PHASE9_SERVICE_LAYER_ANALYSIS.md for migration guide.
+ *
+ * Migration:
+ * - Replace: QuranAttendanceService -> QuranReportService
+ * - All method signatures remain compatible
+ * - Update service provider bindings if needed
+ */
 class QuranAttendanceService
 {
     protected StudentReportService $studentReportService;

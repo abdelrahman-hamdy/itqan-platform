@@ -664,13 +664,17 @@ class MessagesController extends Controller
         
         // Check for user ID in query parameter first, then path parameter for backward compatibility
         $userId = request()->query('user') ?? $id;
-        
-        // If a user ID is provided, include it as query parameter to auto-start the chat
-        if ($userId) {
-            return redirect()->route('chat', ['subdomain' => $subdomain, 'user' => $userId]);
+        // Sanitize: accept only numeric IDs to avoid injecting invalid JS identifiers
+        if (!is_null($userId) && !ctype_digit((string) $userId)) {
+            $userId = null;
         }
         
-        return redirect()->route('chat', ['subdomain' => $subdomain]);
+        return view('components.chat.chat-layout', [
+            'userRole' => $user->user_type,
+            'pageTitle' => 'الرسائل والمحادثات',
+            'pageDescription' => 'نظام التواصل المتطور',
+            'autoOpenUserId' => $userId,
+        ]);
     }
 
     /**
@@ -1576,6 +1580,254 @@ class MessagesController extends Controller
         $status = User::where('id', Auth::user()->id)->update(['active_status' => $activeStatus]);
         return Response::json([
             'status' => $status,
+        ], 200);
+    }
+
+    /**
+     * Handle typing indicator
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function typing(Request $request)
+    {
+        $request->validate([
+            'conversation_id' => 'nullable|integer',
+            'group_id' => 'nullable|integer',
+            'is_typing' => 'required|boolean',
+        ]);
+
+        $user = Auth::user();
+
+        // Broadcast typing event
+        broadcast(new \App\Events\UserTypingEvent(
+            $user->id,
+            $user->name,
+            $request->conversation_id,
+            $request->group_id,
+            $request->is_typing
+        ))->toOthers();
+
+        return Response::json([
+            'status' => 'success',
+        ], 200);
+    }
+
+    /**
+     * Mark message as delivered
+     *
+     * @param Request $request
+     * @param int $messageId
+     * @return JsonResponse
+     */
+    public function markDelivered(Request $request, $messageId)
+    {
+        $message = Message::findOrFail($messageId);
+        $user = Auth::user();
+
+        // Only the recipient can mark a message as delivered
+        if ($message->to_id != $user->id) {
+            return Response::json([
+                'status' => 'error',
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        // Update delivered status
+        if (!$message->delivered_at) {
+            $message->delivered_at = now();
+            $message->save();
+
+            // Broadcast delivery event
+            broadcast(new \App\Events\MessageDeliveredEvent(
+                $message->id,
+                $message->from_id,
+                $message->to_id,
+                $message->delivered_at
+            ))->toOthers();
+        }
+
+        return Response::json([
+            'status' => 'success',
+            'delivered_at' => $message->delivered_at,
+        ], 200);
+    }
+
+    /**
+     * Mark message as read
+     *
+     * @param Request $request
+     * @param int $messageId
+     * @return JsonResponse
+     */
+    public function markRead(Request $request, $messageId)
+    {
+        $message = Message::findOrFail($messageId);
+        $user = Auth::user();
+
+        // Only the recipient can mark a message as read
+        if ($message->to_id != $user->id && !$message->group_id) {
+            return Response::json([
+                'status' => 'error',
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        // For group messages, check if user is a member
+        if ($message->group_id) {
+            $isMember = ChatGroupMember::where('group_id', $message->group_id)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if (!$isMember) {
+                return Response::json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized',
+                ], 403);
+            }
+        }
+
+        // Update read status
+        if (!$message->seen) {
+            $message->seen = 1;
+            $message->read_at = now();
+            $message->save();
+
+            // Broadcast read event
+            broadcast(new MessageReadEvent(
+                $message->id,
+                $message->from_id,
+                $message->to_id,
+                $message->read_at
+            ))->toOthers();
+        }
+
+        return Response::json([
+            'status' => 'success',
+            'read_at' => $message->read_at,
+        ], 200);
+    }
+
+    /**
+     * Get online users for a conversation or group
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getOnlineUsers(Request $request)
+    {
+        $request->validate([
+            'conversation_id' => 'nullable|integer',
+            'group_id' => 'nullable|integer',
+        ]);
+
+        $onlineUsers = [];
+
+        if ($request->group_id) {
+            // Get online users in group
+            $members = ChatGroupMember::where('group_id', $request->group_id)
+                ->with('user:id,name,avatar,active_status')
+                ->get();
+
+            foreach ($members as $member) {
+                if ($member->user && $member->user->active_status == 1) {
+                    $onlineUsers[] = [
+                        'id' => $member->user->id,
+                        'name' => $member->user->name,
+                        'avatar' => $member->user->avatar,
+                    ];
+                }
+            }
+        } elseif ($request->conversation_id) {
+            // Get online status for conversation participant
+            $user = User::find($request->conversation_id);
+            if ($user && $user->active_status == 1) {
+                $onlineUsers[] = [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => $user->avatar,
+                ];
+            }
+        }
+
+        return Response::json([
+            'status' => 'success',
+            'online_users' => $onlineUsers,
+        ], 200);
+    }
+
+    /**
+     * Send push notification settings
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function updateNotificationSettings(Request $request)
+    {
+        $request->validate([
+            'push_notifications' => 'boolean',
+            'sound_enabled' => 'boolean',
+            'desktop_notifications' => 'boolean',
+        ]);
+
+        $user = Auth::user();
+
+        // Store notification preferences (you might want to add these columns to users table)
+        $settings = [
+            'push_notifications' => $request->push_notifications ?? true,
+            'sound_enabled' => $request->sound_enabled ?? true,
+            'desktop_notifications' => $request->desktop_notifications ?? true,
+        ];
+
+        // You can store these in user's meta or preferences
+        $user->chat_settings = json_encode($settings);
+        $user->save();
+
+        return Response::json([
+            'status' => 'success',
+            'settings' => $settings,
+        ], 200);
+    }
+
+    /**
+     * Get message statistics
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getMessageStats(Request $request)
+    {
+        $user = Auth::user();
+        $academyId = $this->getAcademyId();
+
+        // Total messages sent
+        $sentMessages = Message::where('from_id', $user->id)->count();
+
+        // Total messages received
+        $receivedMessages = Message::where('to_id', $user->id)->count();
+
+        // Unread messages
+        $unreadMessages = Message::where('to_id', $user->id)
+            ->where('seen', 0)
+            ->count();
+
+        // Active conversations (last 30 days)
+        $activeConversations = Message::where(function($query) use ($user) {
+                $query->where('from_id', $user->id)
+                    ->orWhere('to_id', $user->id);
+            })
+            ->where('created_at', '>=', now()->subDays(30))
+            ->distinct()
+            ->count(DB::raw('CASE WHEN from_id = ' . $user->id . ' THEN to_id ELSE from_id END'));
+
+        return Response::json([
+            'status' => 'success',
+            'stats' => [
+                'sent_messages' => $sentMessages,
+                'received_messages' => $receivedMessages,
+                'unread_messages' => $unreadMessages,
+                'active_conversations' => $activeConversations,
+            ],
         ], 200);
     }
 }

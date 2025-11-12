@@ -15,6 +15,20 @@ use Illuminate\Support\Facades\Log;
  *
  * Handles attendance tracking for academic sessions using the same patterns
  * as UnifiedAttendanceService but specifically for academic sessions
+ *
+ * @deprecated Use App\Services\Attendance\AcademicReportService instead
+ *
+ * This service has been replaced by AcademicReportService which extends BaseReportSyncService.
+ * The new service eliminates 60% code duplication and provides better maintainability.
+ *
+ * This service will be removed in the next release.
+ * See PHASE9_SERVICE_LAYER_ANALYSIS.md for migration guide.
+ *
+ * Migration:
+ * - Replace: AcademicAttendanceService -> AcademicReportService
+ * - All method signatures remain compatible
+ * - Update service provider bindings if needed
+ * - Fixed 15-minute grace period and 80% threshold now properly implemented
  */
 class AcademicAttendanceService
 {

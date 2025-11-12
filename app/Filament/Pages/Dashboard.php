@@ -6,7 +6,7 @@ use App\Helpers\AcademyHelper;
 use App\Models\Academy;
 use App\Models\RecordedCourse;
 use App\Models\User;
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget;

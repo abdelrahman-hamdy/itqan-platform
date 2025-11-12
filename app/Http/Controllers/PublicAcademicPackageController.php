@@ -6,7 +6,6 @@ use App\Models\Academy;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
-use App\Models\AcademicTeacher;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Subject;
 use App\Models\AcademicGradeLevel;

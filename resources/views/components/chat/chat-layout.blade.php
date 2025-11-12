@@ -83,9 +83,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  
-  <!-- CSRF Token -->
+
+  <!-- CSRF Token and User ID for Chat -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="user-id" content="{{ auth()->id() }}">
+
+  <!-- Chat System Styles -->
+  <link rel="stylesheet" href="{{ asset('css/chat-enhanced.css') }}?v={{ time() }}">
+
+  <!-- Pusher and Laravel Echo for Real-time -->
+  <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
   
   <script>
     tailwind.config = {
@@ -156,12 +164,12 @@
                 usePublicChannel: {{ config('app.env') === 'local' && config('app.debug') ? 'true' : 'false' }}, // Public in debug mode, private in production
                 authEndpoint: '{{ url('/broadcasting/auth') }}',
                 apiEndpoints: {
-                    contacts: '{{ route("contacts.get") }}',
-                    fetchMessages: '{{ route("fetch.messages") }}',
-                    sendMessage: '{{ route("send.message") }}'
+                    contacts: '{{ route("contacts.get", ["subdomain" => request()->route("subdomain") ?? (auth()->user()->academy->subdomain ?? "itqan-academy")]) }}',
+                    fetchMessages: '{{ route("fetch.messages", ["subdomain" => request()->route("subdomain") ?? (auth()->user()->academy->subdomain ?? "itqan-academy")]) }}',
+                    sendMessage: '{{ route("send.message", ["subdomain" => request()->route("subdomain") ?? (auth()->user()->academy->subdomain ?? "itqan-academy")]) }}'
                 },
                 @if(isset($autoOpenUserId))
-                autoOpenUserId: {{ $autoOpenUserId }},
+                autoOpenUserId: {!! json_encode($autoOpenUserId) !!},
                 @endif
             };
             

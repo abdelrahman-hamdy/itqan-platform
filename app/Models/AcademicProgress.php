@@ -184,7 +184,7 @@ class AcademicProgress extends Model
      */
     public function teacher(): BelongsTo
     {
-        return $this->belongsTo(AcademicTeacher::class, 'teacher_id');
+        return $this->belongsTo(AcademicTeacherProfile::class, 'teacher_id');
     }
 
     /**

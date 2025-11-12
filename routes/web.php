@@ -16,30 +16,6 @@ require __DIR__.'/auth.php';
 
 // Broadcasting authentication for private channels
 Broadcast::routes(['middleware' => ['web', 'auth']]);
-
-/*
-|--------------------------------------------------------------------------
-| Google OAuth Routes (Local Development)
-|--------------------------------------------------------------------------
-| These routes handle Google OAuth for local development (localhost:8000)
-| For production, the subdomain-based routes below are used instead.
-*/
-
-if (config('app.env') === 'local') {
-    // Google OAuth for teachers (local development only)
-
-    // Routes that require authentication
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/google/auth', [App\Http\Controllers\GoogleAuthController::class, 'redirect'])->name('google.auth.local');
-        Route::post('/google/disconnect', [App\Http\Controllers\GoogleAuthController::class, 'disconnect'])->name('google.disconnect.local');
-        Route::get('/google/status', [App\Http\Controllers\GoogleAuthController::class, 'status'])->name('google.status.local');
-        Route::get('/google/test', [App\Http\Controllers\GoogleAuthController::class, 'test'])->name('google.test.local');
-    });
-
-    // Callback route should NOT require authentication (Google redirects here)
-    Route::get('/google/callback', [App\Http\Controllers\GoogleAuthController::class, 'callback'])->name('google.callback.local');
-}
-
 // LiveKit routes for teacher controls (tenant-aware)
 Route::prefix('livekit')->middleware(['auth'])->group(function () {
     // Basic participant endpoints available to authenticated users
@@ -1054,6 +1030,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // Academy Home Page
     Route::get('/', [AcademyHomepageController::class, 'show'])->name('academy.home');
 
+    // Static Pages
+    Route::get('/terms', [App\Http\Controllers\StaticPageController::class, 'terms'])->name('academy.terms');
+    Route::get('/refund-policy', [App\Http\Controllers\StaticPageController::class, 'refundPolicy'])->name('academy.refund-policy');
+    Route::get('/privacy-policy', [App\Http\Controllers\StaticPageController::class, 'privacyPolicy'])->name('academy.privacy-policy');
+    Route::get('/about-us', [App\Http\Controllers\StaticPageController::class, 'aboutUs'])->name('academy.about-us');
+
     /*
     |--------------------------------------------------------------------------
     | Course Management Routes
@@ -1463,19 +1445,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Google OAuth Routes
-    |--------------------------------------------------------------------------
-    */
-
-    // Google OAuth for teachers
-    Route::middleware(['auth', 'role:quran_teacher,academic_teacher'])->group(function () {
-        Route::get('/google/auth', [App\Http\Controllers\GoogleAuthController::class, 'redirect'])->name('google.auth');
-        Route::get('/google/callback', [App\Http\Controllers\GoogleAuthController::class, 'callback'])->name('google.callback');
-        Route::post('/google/disconnect', [App\Http\Controllers\GoogleAuthController::class, 'disconnect'])->name('google.disconnect');
-    });
-
-    /*
-    |--------------------------------------------------------------------------
     | Session API Routes (for subdomain AJAX requests)
     |--------------------------------------------------------------------------
     */
@@ -1509,33 +1478,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/interactive-sessions/{session}/homework', [App\Http\Controllers\StudentProfileController::class, 'submitInteractiveCourseHomework'])->name('student.interactive-sessions.homework');
     });
 
-    // Chat Route - Role-based views (within subdomain group)
-    Route::middleware(['auth'])->get('/chat', function (Request $request) {
-        $user = auth()->user();
-        $userType = $user->user_type;
-
-        // Map user types to view names
-        $viewMap = [
-            'student' => 'chat.student',
-            'quran_teacher' => 'chat.teacher',
-            'academic_teacher' => 'chat.academic-teacher',
-            'parent' => 'chat.parent',
-            'supervisor' => 'chat.supervisor',
-            'academy_admin' => 'chat.academy-admin',
-            'admin' => 'chat.academy-admin', // Super admin uses academy admin view
-        ];
-
-        // Get the appropriate view or default to student
-        $view = $viewMap[$userType] ?? 'chat.student';
-
-        // Pass the user parameter to the view if it exists
-        $viewData = [];
-        if ($request->has('user')) {
-            $viewData['autoOpenUserId'] = $request->get('user');
-        }
-
-        return view($view, $viewData);
-    })->name('chat');
+    // Chatify Routes are loaded automatically by ChatifyServiceProvider
+    // Using 'custom' => true in config/chatify.php to load from routes/chatify/
 
     // Temporary debug route for testing message broadcast
     Route::get('/test-broadcast/{userId}', function ($userId) {

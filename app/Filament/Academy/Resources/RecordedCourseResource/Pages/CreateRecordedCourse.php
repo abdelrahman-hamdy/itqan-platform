@@ -5,7 +5,7 @@ namespace App\Filament\Academy\Resources\RecordedCourseResource\Pages;
 use App\Filament\Academy\Resources\RecordedCourseResource;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\KeyValue;
@@ -73,7 +73,7 @@ class CreateRecordedCourse extends CreateRecord
                                                     ->options(function () {
                                                         $academyId = Auth::user()->academy_id;
 
-                                                        return AcademicTeacher::where('academy_id', $academyId)
+                                                        return AcademicTeacherProfile::where('academy_id', $academyId)
                                                             ->where('is_approved', true)
                                                             ->where('is_active', true)
                                                             ->pluck('full_name', 'id');

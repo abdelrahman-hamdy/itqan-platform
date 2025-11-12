@@ -12,9 +12,8 @@ use Illuminate\Support\Facades\Route;
 
 /*
 * This is the main app route [Chatify Messenger]
-* COMMENTED OUT - Using custom role-based route from routes/web.php instead
 */
-// Route::get('/', 'MessagesController@index')->name(config('chatify.routes.prefix'));
+Route::get('/', 'MessagesController@index')->name(config('chatify.routes.prefix'));
 
 /**
  *  Fetch info for specific id [user/group]
@@ -101,6 +100,16 @@ Route::post('/updateSettings', 'MessagesController@updateSettings')->name('avata
  * Set active status
  */
 Route::post('/setActiveStatus', 'MessagesController@setActiveStatus')->name('activeStatus.set');
+
+/**
+ * Enhanced Chat Features
+ */
+Route::post('/typing', 'MessagesController@typing')->name('typing');
+Route::post('/messages/{messageId}/delivered', 'MessagesController@markDelivered')->name('message.delivered');
+Route::post('/messages/{messageId}/read', 'MessagesController@markRead')->name('message.read');
+Route::get('/online-users', 'MessagesController@getOnlineUsers')->name('users.online');
+Route::post('/notification-settings', 'MessagesController@updateNotificationSettings')->name('notifications.settings');
+Route::get('/message-stats', 'MessagesController@getMessageStats')->name('messages.stats');
 
 /**
  * Group Chat Routes

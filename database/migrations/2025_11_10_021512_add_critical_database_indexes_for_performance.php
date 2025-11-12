@@ -29,11 +29,11 @@ return new class extends Migration
                 $table->index(['quran_subscription_id', 'status'], 'quran_sessions_subscription_status_idx');
             }
 
-            if (!$this->indexExists('quran_sessions', 'quran_sessions_code_academy_idx')) {
+            if (Schema::hasColumn('quran_sessions', 'session_code') && !$this->indexExists('quran_sessions', 'quran_sessions_code_academy_idx')) {
                 $table->index(['session_code', 'academy_id'], 'quran_sessions_code_academy_idx');
             }
 
-            if (!$this->indexExists('quran_sessions', 'quran_sessions_subscription_counted_idx')) {
+            if (Schema::hasColumn('quran_sessions', 'subscription_counted') && !$this->indexExists('quran_sessions', 'quran_sessions_subscription_counted_idx')) {
                 $table->index(['subscription_counted', 'status'], 'quran_sessions_subscription_counted_idx');
             }
         });
@@ -52,11 +52,12 @@ return new class extends Migration
                 $table->index(['quran_teacher_id', 'subscription_status'], 'quran_subscriptions_teacher_status_idx');
             }
 
-            if (!$this->indexExists('quran_subscriptions', 'quran_subscriptions_expires_at_idx')) {
+            // Only add expires_at index if column exists (removed in earlier migration)
+            if (Schema::hasColumn('quran_subscriptions', 'expires_at') && !$this->indexExists('quran_subscriptions', 'quran_subscriptions_expires_at_idx')) {
                 $table->index(['expires_at', 'subscription_status'], 'quran_subscriptions_expires_at_idx');
             }
 
-            if (!$this->indexExists('quran_subscriptions', 'quran_subscriptions_code_academy_idx')) {
+            if (Schema::hasColumn('quran_subscriptions', 'subscription_code') && !$this->indexExists('quran_subscriptions', 'quran_subscriptions_code_academy_idx')) {
                 $table->index(['subscription_code', 'academy_id'], 'quran_subscriptions_code_academy_idx');
             }
         });
@@ -71,11 +72,11 @@ return new class extends Migration
                 $table->index(['quran_teacher_id', 'status'], 'quran_circles_teacher_status_idx');
             }
 
-            if (!$this->indexExists('quran_circles', 'quran_circles_enrollment_status_idx')) {
+            if (Schema::hasColumn('quran_circles', 'enrollment_status') && !$this->indexExists('quran_circles', 'quran_circles_enrollment_status_idx')) {
                 $table->index(['enrollment_status', 'status'], 'quran_circles_enrollment_status_idx');
             }
 
-            if (!$this->indexExists('quran_circles', 'quran_circles_code_academy_idx')) {
+            if (Schema::hasColumn('quran_circles', 'circle_code') && !$this->indexExists('quran_circles', 'quran_circles_code_academy_idx')) {
                 $table->index(['circle_code', 'academy_id'], 'quran_circles_code_academy_idx');
             }
         });
@@ -129,7 +130,7 @@ return new class extends Migration
                     $table->index(['student_id', 'scheduled_at'], 'academic_sessions_student_scheduled_idx');
                 }
 
-                if (!$this->indexExists('academic_sessions', 'academic_sessions_code_academy_idx')) {
+                if (Schema::hasColumn('academic_sessions', 'session_code') && !$this->indexExists('academic_sessions', 'academic_sessions_code_academy_idx')) {
                     $table->index(['session_code', 'academy_id'], 'academic_sessions_code_academy_idx');
                 }
             });
@@ -155,15 +156,15 @@ return new class extends Migration
         // Payments indexes (if table exists)
         if (Schema::hasTable('payments')) {
             Schema::table('payments', function (Blueprint $table) {
-                if (!$this->indexExists('payments', 'payments_academy_status_idx')) {
+                if (Schema::hasColumn('payments', 'academy_id') && Schema::hasColumn('payments', 'status') && !$this->indexExists('payments', 'payments_academy_status_idx')) {
                     $table->index(['academy_id', 'status'], 'payments_academy_status_idx');
                 }
 
-                if (!$this->indexExists('payments', 'payments_user_created_idx')) {
+                if (Schema::hasColumn('payments', 'user_id') && !$this->indexExists('payments', 'payments_user_created_idx')) {
                     $table->index(['user_id', 'created_at'], 'payments_user_created_idx');
                 }
 
-                if (!$this->indexExists('payments', 'payments_subscription_idx')) {
+                if (Schema::hasColumn('payments', 'subscription_id') && Schema::hasColumn('payments', 'subscription_type') && !$this->indexExists('payments', 'payments_subscription_idx')) {
                     $table->index(['subscription_id', 'subscription_type'], 'payments_subscription_idx');
                 }
             });
@@ -240,13 +241,18 @@ return new class extends Migration
     }
 
     /**
-     * Check if an index exists
+     * Check if an index exists (Laravel 11 compatible)
      */
     private function indexExists(string $table, string $index): bool
     {
-        $schema = Schema::getConnection()->getDoctrineSchemaManager();
-        $indexes = $schema->listTableIndexes($table);
+        $indexes = Schema::getIndexes($table);
 
-        return array_key_exists($index, $indexes);
+        foreach ($indexes as $existingIndex) {
+            if ($existingIndex['name'] === $index) {
+                return true;
+            }
+        }
+
+        return false;
     }
 };

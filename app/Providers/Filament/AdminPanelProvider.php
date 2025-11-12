@@ -74,6 +74,9 @@ class AdminPanelProvider extends PanelProvider
                 'النظام الأكاديمي',
                 'إدارة التعليم الأكاديمي',
                 'إدارة الدورات المسجلة',
+                'المالية',
+                'التقارير والحضور',
+                'متابعة التقدم',
                 'الإعدادات',
                 'الإعدادات العامة',
             ])
@@ -117,6 +120,21 @@ class AdminPanelProvider extends PanelProvider
             \App\Filament\Resources\SubjectResource::class,
             \App\Filament\Resources\RecordedCourseResource::class,
             \App\Filament\Resources\AcademicPackageResource::class,
+
+            // المالية - Financial Management
+            \App\Filament\Resources\PaymentResource::class,
+
+            // التقارير والحضور - Reports & Attendance
+            \App\Filament\Resources\StudentSessionReportResource::class,
+            \App\Filament\Resources\AcademicSessionReportResource::class,
+            \App\Filament\Resources\InteractiveSessionReportResource::class,
+            \App\Filament\Resources\MeetingAttendanceResource::class,
+            \App\Filament\Resources\HomeworkSubmissionResource::class,
+
+            // متابعة التقدم - Progress Tracking
+            \App\Filament\Resources\StudentProgressResource::class,
+            \App\Filament\Resources\QuranProgressResource::class,
+            \App\Filament\Resources\InteractiveCourseProgressResource::class,
 
             // الإعدادات
             // Business Services - Access controlled by resource authorization

@@ -11,31 +11,34 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('academy_settings', function (Blueprint $table) {
-            $table->id();
+        // Only create table if it doesn't exist (might exist from schema dump or earlier migration)
+        if (!Schema::hasTable('academy_settings')) {
+            Schema::create('academy_settings', function (Blueprint $table) {
+                $table->id();
 
-            // Academy relationship (one-to-one)
-            $table->foreignId('academy_id')->unique()->constrained()->onDelete('cascade');
+                // Academy relationship (one-to-one)
+                $table->foreignId('academy_id')->unique()->constrained()->onDelete('cascade');
 
-            // General settings
-            $table->string('timezone', 50)->default('Asia/Riyadh');
-            $table->integer('default_session_duration')->default(60); // in minutes
+                // General settings
+                $table->string('timezone', 50)->default('Asia/Riyadh');
+                $table->integer('default_session_duration')->default(60); // in minutes
 
-            // Attendance settings
-            $table->integer('default_preparation_minutes')->default(15);
-            $table->integer('default_buffer_minutes')->default(5);
-            $table->integer('default_late_tolerance_minutes')->default(10);
-            $table->decimal('default_attendance_threshold_percentage', 5, 2)->default(80.00);
+                // Attendance settings
+                $table->integer('default_preparation_minutes')->default(15);
+                $table->integer('default_buffer_minutes')->default(5);
+                $table->integer('default_late_tolerance_minutes')->default(10);
+                $table->decimal('default_attendance_threshold_percentage', 5, 2)->default(80.00);
 
-            // Trial session settings
-            $table->integer('trial_session_duration')->default(30);
-            $table->integer('trial_expiration_days')->default(7);
+                // Trial session settings
+                $table->integer('trial_session_duration')->default(30);
+                $table->integer('trial_expiration_days')->default(7);
 
-            // Additional flexible settings (JSON)
-            $table->json('settings')->nullable();
+                // Additional flexible settings (JSON)
+                $table->json('settings')->nullable();
 
-            $table->timestamps();
-        });
+                $table->timestamps();
+            });
+        }
     }
 
     /**

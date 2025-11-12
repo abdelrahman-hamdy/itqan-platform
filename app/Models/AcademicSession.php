@@ -2,55 +2,32 @@
 
 namespace App\Models;
 
-use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
-use App\Traits\HasMeetings;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-class AcademicSession extends Model implements MeetingCapable
+class AcademicSession extends BaseSession
 {
-    use HasFactory, HasMeetings, SoftDeletes;
 
+    // Academic-specific fillable fields
+    // NOTE: Must explicitly include parent fields as Laravel doesn't auto-merge
     protected $fillable = [
+        // Core session fields from BaseSession
         'academy_id',
-        'academic_teacher_id',
-        'academic_subscription_id',
-        'academic_individual_lesson_id',
-        'interactive_course_session_id',
-        'student_id',
         'session_code',
-        'session_sequence',
-        'session_type',
-        'is_template',
-        'is_generated',
         'status',
-        'is_scheduled',
-        'teacher_scheduled_at',
         'title',
         'description',
-        'lesson_objectives',
         'scheduled_at',
         'started_at',
         'ended_at',
         'duration_minutes',
         'actual_duration_minutes',
-        'location_type',
-        'location_details',
         'meeting_link',
         'meeting_id',
         'meeting_password',
-        'google_event_id',
-        'google_calendar_id',
-        'google_meet_url',
-        'google_meet_id',
-        'google_attendees',
         'meeting_source',
         'meeting_platform',
         'meeting_data',
@@ -60,6 +37,41 @@ class AcademicSession extends Model implements MeetingCapable
         'attendance_status',
         'participants_count',
         'attendance_notes',
+        'session_notes',
+        'teacher_feedback',
+        'student_feedback',
+        'parent_feedback',
+        'overall_rating',
+        'cancellation_reason',
+        'cancelled_by',
+        'cancelled_at',
+        'reschedule_reason',
+        'rescheduled_from',
+        'rescheduled_to',
+        'created_by',
+        'updated_by',
+        'scheduled_by',
+
+        // Academic-specific fields
+        'academic_teacher_id',
+        'academic_subscription_id',
+        'academic_individual_lesson_id',
+        'interactive_course_session_id',
+        'student_id',
+        'session_sequence',
+        'session_type',
+        'is_template',
+        'is_generated',
+        'is_scheduled',
+        'teacher_scheduled_at',
+        'lesson_objectives',
+        'location_type',
+        'location_details',
+        'google_event_id',
+        'google_calendar_id',
+        'google_meet_url',
+        'google_meet_id',
+        'google_attendees',
         'attendance_log',
         'attendance_marked_at',
         'attendance_marked_by',
@@ -69,22 +81,11 @@ class AcademicSession extends Model implements MeetingCapable
         'homework_description',
         'homework_file',
         'session_grade',
-        'session_notes',
-        'teacher_feedback',
-        'student_feedback',
-        'parent_feedback',
-        'overall_rating',
         'technical_issues',
         'makeup_session_for',
         'is_makeup_session',
         'is_auto_generated',
-        'cancellation_reason',
         'cancellation_type',
-        'cancelled_by',
-        'cancelled_at',
-        'reschedule_reason',
-        'rescheduled_from',
-        'rescheduled_to',
         'rescheduling_note',
         'materials_used',
         'assessment_results',
@@ -95,22 +96,31 @@ class AcademicSession extends Model implements MeetingCapable
         'meeting_creation_error',
         'last_error_at',
         'retry_count',
-        'created_by',
-        'updated_by',
-        'scheduled_by',
     ];
 
+    // Academic-specific casts
+    // NOTE: Must explicitly include parent casts as Laravel doesn't auto-merge
     protected $casts = [
-        'status' => SessionStatus::class,
-        'lesson_objectives' => 'array',
+        // Core datetime casts from BaseSession
+        'status' => \App\Enums\SessionStatus::class,
         'scheduled_at' => 'datetime',
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
-        'teacher_scheduled_at' => 'datetime',
-        'google_attendees' => 'array',
+        'cancelled_at' => 'datetime',
+        'rescheduled_from' => 'datetime',
+        'rescheduled_to' => 'datetime',
+        'meeting_expires_at' => 'datetime',
+        'duration_minutes' => 'integer',
+        'actual_duration_minutes' => 'integer',
+        'participants_count' => 'integer',
+        'overall_rating' => 'integer',
         'meeting_data' => 'array',
         'meeting_auto_generated' => 'boolean',
-        'meeting_expires_at' => 'datetime',
+
+        // Academic-specific casts
+        'lesson_objectives' => 'array',
+        'teacher_scheduled_at' => 'datetime',
+        'google_attendees' => 'array',
         'attendance_log' => 'array',
         'attendance_marked_at' => 'datetime',
         'learning_outcomes' => 'array',
@@ -120,19 +130,12 @@ class AcademicSession extends Model implements MeetingCapable
         'is_template' => 'boolean',
         'is_generated' => 'boolean',
         'is_scheduled' => 'boolean',
-        'cancelled_at' => 'datetime',
-        'rescheduled_from' => 'datetime',
-        'rescheduled_to' => 'datetime',
         'materials_used' => 'array',
         'assessment_results' => 'array',
         'follow_up_required' => 'boolean',
         'notification_log' => 'array',
         'reminder_sent_at' => 'datetime',
         'last_error_at' => 'datetime',
-        'duration_minutes' => 'integer',
-        'actual_duration_minutes' => 'integer',
-        'participants_count' => 'integer',
-        'overall_rating' => 'integer',
         'retry_count' => 'integer',
         'session_sequence' => 'integer',
     ];
@@ -208,13 +211,10 @@ class AcademicSession extends Model implements MeetingCapable
     }
 
     /**
-     * Relationships
+     * Academic-specific relationships
+     * Common relationships (academy, meeting, meetingAttendances, cancelledBy,
+     * createdBy, updatedBy, scheduledBy) are inherited from BaseSession
      */
-    public function academy(): BelongsTo
-    {
-        return $this->belongsTo(Academy::class);
-    }
-
     public function academicTeacher(): BelongsTo
     {
         return $this->belongsTo(AcademicTeacherProfile::class, 'academic_teacher_id');
@@ -248,23 +248,9 @@ class AcademicSession extends Model implements MeetingCapable
         return $this->belongsTo(User::class, 'student_id');
     }
 
-    /**
-     * Get the unified meeting record for this session
-     * NEW: Polymorphic relationship to unified Meeting model
-     */
-    public function meeting(): MorphOne
-    {
-        return $this->morphOne(Meeting::class, 'meetable');
-    }
-
     public function sessionReports(): HasMany
     {
         return $this->hasMany(AcademicSessionReport::class, 'session_id');
-    }
-
-    public function meetingAttendances(): HasMany
-    {
-        return $this->hasMany(MeetingAttendance::class, 'session_id');
     }
 
     public function studentReports(): HasMany
@@ -282,39 +268,19 @@ class AcademicSession extends Model implements MeetingCapable
         return $this->belongsTo(AcademicSession::class, 'makeup_session_for');
     }
 
-    public function cancelledBy(): BelongsTo
+    /**
+     * Unified homework submission system (polymorphic)
+     */
+    public function homeworkSubmissions()
     {
-        return $this->belongsTo(User::class, 'cancelled_by');
-    }
-
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updatedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function scheduledBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'scheduled_by');
+        return $this->morphMany(HomeworkSubmission::class, 'submitable');
     }
 
     /**
-     * Scopes
+     * Academic-specific scopes
+     * Common scopes (scheduled, completed, cancelled, ongoing, today, upcoming, past)
+     * are inherited from BaseSession
      */
-    public function scopeScheduled($query)
-    {
-        return $query->where('status', 'scheduled');
-    }
-
-    public function scopeCompleted($query)
-    {
-        return $query->where('status', 'completed');
-    }
-
     public function scopeForTeacher($query, $teacherId)
     {
         return $query->where('academic_teacher_id', $teacherId);
@@ -335,232 +301,23 @@ class AcademicSession extends Model implements MeetingCapable
         return $query->where('session_type', 'interactive_course');
     }
 
-    public function scopeToday($query)
+    // Common meeting methods (generateMeetingLink, getMeetingInfo, isMeetingValid,
+    // getMeetingJoinUrl, generateParticipantToken, getRoomInfo, endMeeting,
+    // isUserInMeeting, getMeetingStats) are inherited from BaseSession
+
+    // Override to provide Academic-specific defaults
+    protected function getDefaultRecordingEnabled(): bool
     {
-        return $query->whereDate('scheduled_at', today());
+        return false; // Academic sessions typically don't need recording
     }
 
-    public function scopeUpcoming($query)
+    protected function getDefaultMaxParticipants(): int
     {
-        return $query->where('scheduled_at', '>', now());
+        return $this->session_type === 'interactive_course' ? 25 : 2;
     }
 
-    /**
-     * Meeting management methods
-     */
-    public function generateMeetingLink(array $options = []): string
-    {
-        // If meeting already exists and is valid, return existing link
-        if ($this->meeting_room_name && $this->isMeetingValid()) {
-            return $this->meeting_link;
-        }
-
-        $livekitService = app(\App\Services\LiveKitService::class);
-
-        // Set default options for academic sessions
-        $defaultOptions = [
-            'recording_enabled' => false, // Academic sessions typically don't need recording
-            'max_participants' => $options['max_participants'] ?? 2, // Usually 1-on-1
-            'max_duration' => $this->duration_minutes ?? 60,
-            'session_type' => 'academic',
-        ];
-
-        $mergedOptions = array_merge($defaultOptions, $options);
-
-        // Generate meeting using LiveKit service
-        $meetingInfo = $livekitService->createMeeting(
-            $this->academy,
-            'academic',
-            $this->id,
-            $this->scheduled_at ?? now(),
-            $mergedOptions
-        );
-
-        // Update session with meeting info
-        $this->update([
-            'meeting_link' => $meetingInfo['meeting_url'],
-            'meeting_id' => $meetingInfo['meeting_id'],
-            'meeting_platform' => $meetingInfo['platform'],
-            'meeting_source' => $meetingInfo['platform'],
-            'meeting_data' => $meetingInfo,
-            'meeting_room_name' => $meetingInfo['room_name'],
-            'meeting_auto_generated' => true,
-            'meeting_expires_at' => $meetingInfo['expires_at'],
-        ]);
-
-        return $meetingInfo['meeting_url'];
-    }
-
-    /**
-     * Get meeting join information
-     */
-    public function getMeetingInfo(): ?array
-    {
-        if (! $this->meeting_data) {
-            return null;
-        }
-
-        return $this->meeting_data;
-    }
-
-    /**
-     * Check if meeting is still valid
-     */
-    public function isMeetingValid(): bool
-    {
-        if (! $this->meeting_room_name) {
-            return false;
-        }
-
-        if ($this->meeting_expires_at && $this->meeting_expires_at->isPast()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Get meeting join URL for display
-     */
-    public function getMeetingJoinUrl(): ?string
-    {
-        if (! $this->isMeetingValid()) {
-            return null;
-        }
-
-        return $this->meeting_link;
-    }
-
-    /**
-     * Generate participant access token for LiveKit room
-     */
-    public function generateParticipantToken(User $user, array $permissions = []): string
-    {
-        if (! $this->meeting_room_name) {
-            throw new \Exception('Meeting room not created yet');
-        }
-
-        $livekitService = app(\App\Services\LiveKitService::class);
-
-        // Set permissions based on user role
-        $defaultPermissions = [
-            'can_publish' => true,
-            'can_subscribe' => true,
-            'can_update_metadata' => in_array($user->user_type, ['academic_teacher']),
-        ];
-
-        $mergedPermissions = array_merge($defaultPermissions, $permissions);
-
-        return $livekitService->generateParticipantToken(
-            $this->meeting_room_name,
-            $user,
-            $mergedPermissions
-        );
-    }
-
-    /**
-     * Get room info from LiveKit server
-     */
-    public function getRoomInfo(): ?array
-    {
-        if (! $this->meeting_room_name) {
-            return null;
-        }
-
-        $livekitService = app(\App\Services\LiveKitService::class);
-
-        return $livekitService->getRoomInfo($this->meeting_room_name);
-    }
-
-    /**
-     * End the meeting and clean up room
-     */
-    public function endMeeting(): bool
-    {
-        if (! $this->meeting_room_name) {
-            return false;
-        }
-
-        $livekitService = app(\App\Services\LiveKitService::class);
-
-        $success = $livekitService->endMeeting($this->meeting_room_name);
-
-        if ($success) {
-            $this->update([
-                'ended_at' => now(),
-                'status' => 'completed',
-            ]);
-        }
-
-        return $success;
-    }
-
-    /**
-     * Check if user is currently in the meeting room
-     */
-    public function isUserInMeeting(User $user): bool
-    {
-        $roomInfo = $this->getRoomInfo();
-
-        if (! $roomInfo || ! isset($roomInfo['participants'])) {
-            return false;
-        }
-
-        $userIdentity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
-
-        foreach ($roomInfo['participants'] as $participant) {
-            if ($participant['id'] === $userIdentity) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Get meeting statistics
-     */
-    public function getMeetingStats(): array
-    {
-        $roomInfo = $this->getRoomInfo();
-
-        if (! $roomInfo) {
-            return [
-                'participant_count' => 0,
-                'is_active' => false,
-                'duration_minutes' => 0,
-            ];
-        }
-
-        return [
-            'participant_count' => count($roomInfo['participants'] ?? []),
-            'is_active' => $roomInfo['is_active'] ?? false,
-            'duration_minutes' => $roomInfo['duration_minutes'] ?? 0,
-        ];
-    }
-
-    /**
-     * Helper methods
-     */
-    public function isScheduled(): bool
-    {
-        return $this->status === 'scheduled';
-    }
-
-    public function isCompleted(): bool
-    {
-        return $this->status === 'completed';
-    }
-
-    public function isCancelled(): bool
-    {
-        return $this->status === 'cancelled';
-    }
-
-    public function isOngoing(): bool
-    {
-        return $this->status === 'ongoing';
-    }
+    // Common status helper methods (isScheduled, isCompleted, isCancelled,
+    // isOngoing) are inherited from BaseSession
 
     public function isIndividual(): bool
     {
@@ -606,92 +363,22 @@ class AcademicSession extends Model implements MeetingCapable
         };
     }
 
-    /**
-     * Get session status display data (DRY principle - copied from QuranSession)
-     */
-    public function getStatusDisplayData(): array
-    {
-        // Convert string status to enum if needed
-        $status = is_string($this->status) ? \App\Enums\SessionStatus::from($this->status) : $this->status;
-
-        return [
-            'status' => $status->value,
-            'label' => $status->label(),
-            'icon' => $status->icon(),
-            'color' => $status->color(),
-            'can_join' => in_array($status, [
-                \App\Enums\SessionStatus::READY,
-                \App\Enums\SessionStatus::ONGOING,
-            ]),
-            'can_complete' => in_array($status, [
-                \App\Enums\SessionStatus::READY,
-                \App\Enums\SessionStatus::ONGOING,
-            ]),
-            'can_cancel' => in_array($status, [
-                \App\Enums\SessionStatus::SCHEDULED,
-                \App\Enums\SessionStatus::READY,
-            ]),
-            'can_reschedule' => in_array($status, [
-                \App\Enums\SessionStatus::SCHEDULED,
-                \App\Enums\SessionStatus::READY,
-            ]),
-            'is_upcoming' => $status === \App\Enums\SessionStatus::SCHEDULED && $this->scheduled_at && $this->scheduled_at->isFuture(),
-            'is_active' => in_array($status, [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]),
-            'preparation_minutes' => 15, // Default for academic sessions
-            'ending_buffer_minutes' => 5, // Default for academic sessions
-            'grace_period_minutes' => 15, // Default for academic sessions
-        ];
-    }
+    // getStatusDisplayData() is inherited from BaseSession
 
     // ========================================
-    // MeetingCapable Interface Implementation
+    // ABSTRACT METHOD IMPLEMENTATIONS (Required by BaseSession)
     // ========================================
 
     /**
-     * Check if a user can join the meeting
+     * Get the meeting type identifier (abstract method implementation)
      */
-    public function canUserJoinMeeting(User $user): bool
+    public function getMeetingType(): string
     {
-        // Super admin can join any meeting
-        if ($user->user_type === 'super_admin') {
-            return true;
-        }
-
-        // Academy admin can join any meeting in their academy
-        if ($user->user_type === 'academy_admin' && $user->academy_id === $this->academy_id) {
-            return true;
-        }
-
-        // Academic teacher can join if they are the teacher for this session
-        if ($user->user_type === 'academic_teacher' && $user->id === $this->academic_teacher_id) {
-            return true;
-        }
-
-        // Student can join if they are the student for this session
-        if ($user->user_type === 'student' && $user->id === $this->student_id) {
-            return true;
-        }
-
-        // For interactive courses, check if user is enrolled
-        if ($this->session_type === 'interactive_course' && $this->interactiveCourseSession) {
-            $course = $this->interactiveCourseSession->interactiveCourse;
-            if ($course) {
-                // Check if student is enrolled in the course
-                if ($user->user_type === 'student') {
-                    return $course->enrollments()->where('student_id', $user->id)->exists();
-                }
-                // Check if user is the course teacher
-                if ($user->user_type === 'academic_teacher') {
-                    return $course->academic_teacher_id === $user->id;
-                }
-            }
-        }
-
-        return false;
+        return 'academic';
     }
 
     /**
-     * Check if a user can manage the meeting (create, end, etc.)
+     * Check if a user can manage the meeting (abstract method implementation)
      */
     public function canUserManageMeeting(User $user): bool
     {
@@ -714,43 +401,7 @@ class AcademicSession extends Model implements MeetingCapable
     }
 
     /**
-     * Get the meeting type identifier
-     */
-    public function getMeetingType(): string
-    {
-        return 'academic';
-    }
-
-    /**
-     * Get the academy for this session
-     */
-    public function getAcademy(): Academy
-    {
-        return $this->academy;
-    }
-
-    /**
-     * Get the meeting start time
-     */
-    public function getMeetingStartTime(): ?Carbon
-    {
-        return $this->scheduled_at;
-    }
-
-    /**
-     * Get the meeting end time
-     */
-    public function getMeetingEndTime(): ?Carbon
-    {
-        if ($this->scheduled_at && $this->duration_minutes) {
-            return $this->scheduled_at->addMinutes($this->duration_minutes);
-        }
-
-        return $this->ended_at;
-    }
-
-    /**
-     * Get all participants for this session
+     * Get all participants for this session (abstract method implementation)
      */
     public function getParticipants(): array
     {
@@ -841,23 +492,7 @@ class AcademicSession extends Model implements MeetingCapable
     }
 
     /**
-     * Get the session type identifier for meeting purposes (MeetingCapable interface)
-     */
-    public function getMeetingSessionType(): string
-    {
-        return 'academic';
-    }
-
-    /**
-     * Get the expected duration of the meeting in minutes (MeetingCapable interface)
-     */
-    public function getMeetingDurationMinutes(): int
-    {
-        return $this->duration_minutes ?? 60;
-    }
-
-    /**
-     * Get all participants who should have access to this meeting (MeetingCapable interface)
+     * Get all participants who should have access to this meeting (abstract method implementation)
      */
     public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection
     {
@@ -884,5 +519,31 @@ class AcademicSession extends Model implements MeetingCapable
 
         // Remove duplicates and null values
         return $participants->filter()->unique('id');
+    }
+
+    /**
+     * Check if user is a participant in this session (abstract method implementation)
+     */
+    public function isUserParticipant(User $user): bool
+    {
+        // Teacher is always a participant in their sessions
+        if ($user->user_type === 'academic_teacher' && $this->academic_teacher_id === $user->id) {
+            return true;
+        }
+
+        // Student is a participant if they're enrolled
+        if ($this->student_id === $user->id) {
+            return true;
+        }
+
+        // For interactive courses, check enrollment
+        if ($this->session_type === 'interactive_course' && $this->interactiveCourseSession) {
+            $course = $this->interactiveCourseSession->interactiveCourse;
+            if ($course && $user->user_type === 'student') {
+                return $course->enrollments()->where('student_id', $user->id)->exists();
+            }
+        }
+
+        return false;
     }
 }

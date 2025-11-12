@@ -2,24 +2,28 @@
 
 namespace App\Models;
 
-use App\Traits\ScopedToAcademy;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class AcademicSessionReport extends Model
+/**
+ * Academic Session Report Model
+ *
+ * Extends BaseSessionReport with Academic-specific fields:
+ * - student_performance_grade: Simple grade from 1-10 for overall performance
+ * - homework_text: Homework assignment text/description
+ * - homework_feedback: Teacher feedback on submitted homework
+ */
+class AcademicSessionReport extends BaseSessionReport
 {
-    use HasFactory, ScopedToAcademy;
-
+    /**
+     * Academic-specific fillable fields (includes base fields + Academic-specific)
+     */
     protected $fillable = [
+        // Base fields from BaseSessionReport
         'session_id',
         'student_id',
         'teacher_id',
         'academy_id',
-        'student_performance_grade', // Simple grade from 1-10
         'notes',
-        'homework_text',
-        'homework_feedback',
         'meeting_enter_time',
         'meeting_leave_time',
         'actual_attendance_minutes',
@@ -33,10 +37,18 @@ class AcademicSessionReport extends Model
         'is_auto_calculated',
         'manually_overridden',
         'override_reason',
+
+        // Academic-specific fields
+        'student_performance_grade',
+        'homework_text',
+        'homework_feedback',
     ];
 
+    /**
+     * Academic-specific casts (includes base casts + Academic-specific)
+     */
     protected $casts = [
-        'student_performance_grade' => 'integer', // 1-10 grade
+        // Base casts inherited
         'meeting_enter_time' => 'datetime',
         'meeting_leave_time' => 'datetime',
         'actual_attendance_minutes' => 'integer',
@@ -48,10 +60,17 @@ class AcademicSessionReport extends Model
         'evaluated_at' => 'datetime',
         'is_auto_calculated' => 'boolean',
         'manually_overridden' => 'boolean',
+
+        // Academic-specific casts
+        'student_performance_grade' => 'integer', // 1-10 grade
     ];
 
+    // ========================================
+    // Implementation of Abstract Methods
+    // ========================================
+
     /**
-     * Relationship with AcademicSession
+     * Get the academic session this report belongs to
      */
     public function session(): BelongsTo
     {
@@ -59,165 +78,24 @@ class AcademicSessionReport extends Model
     }
 
     /**
-     * Relationship with Student (User)
+     * Get Academic-specific performance data (student performance grade)
      */
-    public function student(): BelongsTo
+    protected function getSessionSpecificPerformanceData(): ?float
     {
-        return $this->belongsTo(User::class, 'student_id');
+        return $this->student_performance_grade ? (float) $this->student_performance_grade : null;
     }
 
     /**
-     * Relationship with Teacher (User)
+     * Academic sessions use 15 minutes grace period (default)
      */
-    public function teacher(): BelongsTo
+    protected function getGracePeriodMinutes(): int
     {
-        return $this->belongsTo(User::class, 'teacher_id');
+        return 15; // Default 15 minutes grace period for academic sessions
     }
 
-    /**
-     * Relationship with Academy
-     */
-    public function academy(): BelongsTo
-    {
-        return $this->belongsTo(Academy::class);
-    }
-
-    /**
-     * Create or update report for academic session
-     */
-    public static function createOrUpdateReport(
-        int $sessionId,
-        int $studentId,
-        int $teacherId,
-        int $academyId
-    ): self {
-        return static::updateOrCreate([
-            'session_id' => $sessionId,
-            'student_id' => $studentId,
-        ], [
-            'teacher_id' => $teacherId,
-            'academy_id' => $academyId,
-            'is_auto_calculated' => true,
-            'evaluated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Sync attendance data from MeetingAttendance record
-     */
-    public function syncFromMeetingAttendance(): void
-    {
-        $meetingAttendance = MeetingAttendance::where('session_id', $this->session_id)
-            ->where('user_id', $this->student_id)
-            ->first();
-
-        if ($meetingAttendance) {
-            // Use current session duration for active users
-            $actualMinutes = $meetingAttendance->isCurrentlyInMeeting()
-                ? $meetingAttendance->getCurrentSessionDuration()  // Includes current active time
-                : $meetingAttendance->total_duration_minutes;      // Completed cycles only
-
-            $this->update([
-                'meeting_enter_time' => $meetingAttendance->first_join_time,
-                'meeting_leave_time' => $meetingAttendance->last_leave_time,
-                'actual_attendance_minutes' => $actualMinutes,
-                'attendance_status' => $this->calculateRealtimeAttendanceStatus($meetingAttendance),
-                'attendance_percentage' => $this->calculateAttendancePercentage($actualMinutes),
-                'meeting_events' => $meetingAttendance->join_leave_cycles ?? [],
-                'is_auto_calculated' => $meetingAttendance->is_calculated,
-            ]);
-
-            // Recalculate lateness based on session timing
-            $this->calculateLateness();
-        }
-    }
-
-    /**
-     * Calculate lateness based on meeting enter time
-     */
-    private function calculateLateness(): void
-    {
-        if (! $this->meeting_enter_time || ! $this->session) {
-            return;
-        }
-
-        $session = $this->session;
-        $subscription = $session->academicSubscription;
-        $lateThreshold = 15; // Default 15 minutes grace period for academic sessions
-
-        $sessionStartTime = $session->scheduled_at;
-        $lateThresholdTime = $sessionStartTime->copy()->addMinutes($lateThreshold);
-
-        $this->is_late = $this->meeting_enter_time->isAfter($lateThresholdTime);
-        $this->late_minutes = $this->is_late
-            ? $this->meeting_enter_time->diffInMinutes($sessionStartTime)
-            : 0;
-    }
-
-    /**
-     * Calculate real-time attendance status for academic sessions
-     */
-    private function calculateRealtimeAttendanceStatus(MeetingAttendance $meetingAttendance): string
-    {
-        if (! $meetingAttendance->first_join_time || ! $this->session) {
-            return 'absent';
-        }
-
-        $session = $this->session;
-        $graceMinutes = 15; // Default grace period for academic sessions
-        $sessionDuration = $session->duration_minutes ?? 60;
-
-        // Check if first join was within grace period
-        $sessionStartTime = $session->scheduled_at;
-        $graceThresholdTime = $sessionStartTime->copy()->addMinutes($graceMinutes);
-        $joinedWithinGrace = $meetingAttendance->first_join_time->lte($graceThresholdTime);
-
-        // Calculate current attendance percentage
-        $currentDuration = $meetingAttendance->isCurrentlyInMeeting()
-            ? $meetingAttendance->getCurrentSessionDuration()
-            : $meetingAttendance->total_duration_minutes;
-
-        $attendancePercentage = $sessionDuration > 0 ? ($currentDuration / $sessionDuration) * 100 : 0;
-
-        // 100% attendance override - if student attended 100%+, always mark as present
-        if ($attendancePercentage >= 100) {
-            return 'present';
-        }
-
-        // If first join was after grace time
-        if (! $joinedWithinGrace) {
-            if ($attendancePercentage >= 95) {
-                return 'late'; // Late arrival but excellent attendance
-            } elseif ($attendancePercentage >= 80) {
-                return 'partial'; // Late and decent attendance
-            } else {
-                return 'absent'; // Late and poor attendance
-            }
-        }
-
-        // Joined on time - standard percentage rules
-        if ($attendancePercentage >= 80) {
-            return 'present';
-        } elseif ($attendancePercentage >= 30) {
-            return 'partial';
-        } else {
-            return 'absent';
-        }
-    }
-
-    /**
-     * Calculate attendance percentage based on current minutes
-     */
-    private function calculateAttendancePercentage(int $actualMinutes): float
-    {
-        if (! $this->session) {
-            return 0.0;
-        }
-
-        $sessionDuration = $this->session->duration_minutes ?? 60;
-
-        return $sessionDuration > 0 ? min(100, ($actualMinutes / $sessionDuration) * 100) : 0.0;
-    }
+    // ========================================
+    // Academic-Specific Methods
+    // ========================================
 
     /**
      * Check if homework has been submitted
@@ -228,75 +106,42 @@ class AcademicSessionReport extends Model
     }
 
     /**
-     * Get overall session performance score (1-10)
+     * Record homework assignment
      */
-    public function getOverallPerformanceAttribute(): ?int
+    public function recordHomeworkAssignment(string $homeworkText): void
     {
-        return $this->student_performance_grade;
+        $this->update(['homework_text' => $homeworkText]);
     }
 
     /**
-     * Get performance level in Arabic
+     * Record homework feedback
      */
-    public function getPerformanceLevelAttribute(): string
+    public function recordHomeworkFeedback(string $feedback): void
     {
-        $grade = $this->student_performance_grade;
+        $this->update(['homework_feedback' => $feedback]);
+    }
 
-        if ($grade === null) {
-            return 'غير مقيم';
+    /**
+     * Record academic performance grade
+     */
+    public function recordPerformanceGrade(int $grade): void
+    {
+        if ($grade < 1 || $grade > 10) {
+            throw new \InvalidArgumentException('Performance grade must be between 1 and 10');
         }
 
-        return match (true) {
-            $grade >= 9 => 'ممتاز',
-            $grade >= 8 => 'جيد جداً',
-            $grade >= 7 => 'جيد',
-            $grade >= 6 => 'مقبول',
-            default => 'يحتاج تحسين'
-        };
+        $this->update([
+            'student_performance_grade' => $grade,
+            'evaluated_at' => now(),
+        ]);
     }
 
-    /**
-     * Get attendance status in Arabic
-     */
-    public function getAttendanceStatusInArabicAttribute(): string
-    {
-        return match ($this->attendance_status) {
-            'present' => 'حاضر',
-            'late' => 'متأخر',
-            'partial' => 'حضور جزئي',
-            'absent' => 'غائب',
-            default => $this->attendance_status,
-        };
-    }
-
-    /**
-     * Scopes
-     */
-    public function scopeForSession($query, int $sessionId)
-    {
-        return $query->where('session_id', $sessionId);
-    }
-
-    public function scopeForStudent($query, int $studentId)
-    {
-        return $query->where('student_id', $studentId);
-    }
-
-    public function scopeForTeacher($query, int $teacherId)
-    {
-        return $query->where('teacher_id', $teacherId);
-    }
-
-    public function scopeEvaluated($query)
-    {
-        return $query->whereNotNull('evaluated_at');
-    }
+    // ========================================
+    // Additional Scopes
+    // ========================================
 
     public function scopeWithHomework($query)
     {
-        return $query->where(function ($q) {
-            $q->whereNotNull('homework_file')
-                ->orWhereNotNull('homework_description');
-        });
+        return $query->whereNotNull('homework_text');
     }
 }

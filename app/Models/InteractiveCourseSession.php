@@ -2,27 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Carbon\Carbon;
 
-class InteractiveCourseSession extends Model
+class InteractiveCourseSession extends BaseSession
 {
-    use HasFactory;
 
+    // Interactive-specific fillable fields
+    // Common fields are inherited from BaseSession
+    // Note: Uses scheduled_date + scheduled_time instead of scheduled_at
     protected $fillable = [
         'course_id',
         'session_number',
-        'title',
-        'description',
         'scheduled_date',
         'scheduled_time',
-        'duration_minutes',
-        'google_meet_link',
-        'status',
+        'google_meet_link', // Maps to meeting_link via accessor
         'attendance_count',
         'materials_uploaded',
         'homework_assigned',
@@ -32,11 +27,12 @@ class InteractiveCourseSession extends Model
         'allow_late_submissions',
     ];
 
+    // Interactive-specific casts
+    // Common casts are inherited from BaseSession
     protected $casts = [
         'scheduled_date' => 'date',
         'scheduled_time' => 'datetime:H:i',
         'homework_due_date' => 'datetime',
-        'duration_minutes' => 'integer',
         'homework_max_score' => 'integer',
         'attendance_count' => 'integer',
         'materials_uploaded' => 'boolean',
@@ -50,6 +46,36 @@ class InteractiveCourseSession extends Model
         'materials_uploaded' => false,
         'homework_assigned' => false,
     ];
+
+    // Accessors/Mutators for BaseSession compatibility
+    // scheduled_at is computed from scheduled_date + scheduled_time
+    public function getScheduledAtAttribute(): ?Carbon
+    {
+        if ($this->scheduled_date && $this->scheduled_time) {
+            return Carbon::parse($this->scheduled_date . ' ' . $this->scheduled_time);
+        }
+        return null;
+    }
+
+    public function setScheduledAtAttribute($value): void
+    {
+        if ($value) {
+            $date = Carbon::parse($value);
+            $this->attributes['scheduled_date'] = $date->toDateString();
+            $this->attributes['scheduled_time'] = $date->format('H:i');
+        }
+    }
+
+    // meeting_link maps to google_meet_link
+    public function getMeetingLinkAttribute(): ?string
+    {
+        return $this->attributes['google_meet_link'] ?? null;
+    }
+
+    public function setMeetingLinkAttribute($value): void
+    {
+        $this->attributes['google_meet_link'] = $value;
+    }
 
     /**
      * العلاقة مع الدورة التفاعلية
@@ -76,11 +102,11 @@ class InteractiveCourseSession extends Model
     }
 
     /**
-     * Get the unified meeting record for this session
+     * Unified homework submission system (polymorphic)
      */
-    public function meeting(): MorphOne
+    public function homeworkSubmissions()
     {
-        return $this->morphOne(Meeting::class, 'meetable');
+        return $this->morphMany(HomeworkSubmission::class, 'submitable');
     }
 
     /**
@@ -110,62 +136,8 @@ class InteractiveCourseSession extends Model
                     ->where('attendance_status', 'late');
     }
 
-    /**
-     * نطاق الجلسات المجدولة
-     */
-    public function scopeScheduled($query)
-    {
-        return $query->where('status', 'scheduled');
-    }
-
-    /**
-     * نطاق الجلسات الجارية
-     */
-    public function scopeOngoing($query)
-    {
-        return $query->where('status', 'ongoing');
-    }
-
-    /**
-     * نطاق الجلسات المكتملة
-     */
-    public function scopeCompleted($query)
-    {
-        return $query->where('status', 'completed');
-    }
-
-    /**
-     * نطاق الجلسات الملغاة
-     */
-    public function scopeCancelled($query)
-    {
-        return $query->where('status', 'cancelled');
-    }
-
-    /**
-     * نطاق الجلسات القادمة
-     */
-    public function scopeUpcoming($query)
-    {
-        return $query->where('scheduled_date', '>=', now()->toDateString())
-                    ->where('status', 'scheduled');
-    }
-
-    /**
-     * نطاق الجلسات الماضية
-     */
-    public function scopePast($query)
-    {
-        return $query->where('scheduled_date', '<', now()->toDateString());
-    }
-
-    /**
-     * نطاق الجلسات لهذا اليوم
-     */
-    public function scopeToday($query)
-    {
-        return $query->where('scheduled_date', now()->toDateString());
-    }
+    // Common scopes (scheduled, completed, cancelled, ongoing, today, upcoming, past)
+    // are inherited from BaseSession
 
     /**
      * نطاق الجلسات لهذا الأسبوع
@@ -342,5 +314,142 @@ class InteractiveCourseSession extends Model
             'can_start' => $this->canStart(),
             'can_cancel' => $this->canCancel(),
         ];
+    }
+
+    // ========================================
+    // ABSTRACT METHOD IMPLEMENTATIONS (Required by BaseSession)
+    // ========================================
+
+    /**
+     * Get the meeting type identifier (abstract method implementation)
+     */
+    public function getMeetingType(): string
+    {
+        return 'interactive';
+    }
+
+    /**
+     * Get all participants for this session (abstract method implementation)
+     */
+    public function getParticipants(): array
+    {
+        $participants = [];
+
+        // Add the course teacher
+        if ($this->course && $this->course->academicTeacher && $this->course->academicTeacher->user) {
+            $participants[] = [
+                'id' => $this->course->academicTeacher->user->id,
+                'name' => trim($this->course->academicTeacher->user->first_name . ' ' . $this->course->academicTeacher->user->last_name),
+                'email' => $this->course->academicTeacher->user->email,
+                'role' => 'academic_teacher',
+                'is_teacher' => true,
+                'user' => $this->course->academicTeacher->user,
+            ];
+        }
+
+        // Add all enrolled students
+        if ($this->course) {
+            $enrolledStudents = $this->course->enrollments()->with('student')->get();
+            foreach ($enrolledStudents as $enrollment) {
+                if ($enrollment->student) {
+                    $participants[] = [
+                        'id' => $enrollment->student->id,
+                        'name' => trim($enrollment->student->first_name . ' ' . $enrollment->student->last_name),
+                        'email' => $enrollment->student->email,
+                        'role' => 'student',
+                        'is_teacher' => false,
+                        'user' => $enrollment->student,
+                    ];
+                }
+            }
+        }
+
+        return $participants;
+    }
+
+    /**
+     * Get meeting-specific configuration (abstract method implementation)
+     */
+    public function getMeetingConfiguration(): array
+    {
+        return [
+            'session_type' => 'interactive',
+            'session_id' => $this->id,
+            'session_number' => $this->session_number,
+            'course_id' => $this->course_id,
+            'duration_minutes' => $this->duration_minutes ?? 90,
+            'max_participants' => 30,
+            'recording_enabled' => true,
+            'chat_enabled' => true,
+            'screen_sharing_enabled' => true,
+            'whiteboard_enabled' => true,
+            'breakout_rooms_enabled' => true,
+            'waiting_room_enabled' => true,
+            'mute_on_join' => true,
+            'camera_on_join' => true,
+        ];
+    }
+
+    /**
+     * Check if a user can manage the meeting (abstract method implementation)
+     */
+    public function canUserManageMeeting(User $user): bool
+    {
+        // Super admin can manage any meeting
+        if ($user->user_type === 'super_admin') {
+            return true;
+        }
+
+        // Academy admin can manage meetings in their academy
+        if ($user->user_type === 'academy_admin' && $this->course && $user->academy_id === $this->course->academy_id) {
+            return true;
+        }
+
+        // Course teacher can manage their sessions
+        if ($user->user_type === 'academic_teacher' && $this->course && $this->course->academic_teacher_id === $user->id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user is a participant in this session (abstract method implementation)
+     */
+    public function isUserParticipant(User $user): bool
+    {
+        // Teacher is a participant
+        if ($this->course && $this->course->academic_teacher_id === $user->id) {
+            return true;
+        }
+
+        // Enrolled students are participants
+        if ($this->course && $user->user_type === 'student') {
+            return $this->course->enrollments()->where('student_id', $user->id)->exists();
+        }
+
+        return false;
+    }
+
+    /**
+     * Get all participants who should have access to this meeting (abstract method implementation)
+     */
+    public function getMeetingParticipants(): \Illuminate\Database\Eloquent\Collection
+    {
+        $participants = collect();
+
+        // Add course teacher
+        if ($this->course && $this->course->academicTeacher && $this->course->academicTeacher->user) {
+            $participants->push($this->course->academicTeacher->user);
+        }
+
+        // Add all enrolled students
+        if ($this->course) {
+            $enrolledStudents = $this->course->enrollments()->with('student')->get()->pluck('student');
+            $participants = $participants->merge($enrolledStudents);
+        }
+
+        // Remove duplicates and null values
+        return $participants->filter()->unique('id');
     }
 }

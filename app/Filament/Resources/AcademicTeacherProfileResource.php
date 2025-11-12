@@ -420,7 +420,7 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->success()
                             ->send();
                     }),
-                    
+
                 Tables\Actions\Action::make('deactivate')
                     ->label('إلغاء التفعيل')
                     ->icon('heroicon-o-x-circle')
@@ -436,44 +436,7 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->success()
                             ->send();
                     }),
-                    
-                Tables\Actions\Action::make('suspend')
-                    ->label('إيقاف')
-                    ->icon('heroicon-o-pause-circle')
-                    ->color('warning')
-                    ->visible(fn ($record) => $record->is_active)
-                    ->requiresConfirmation()
-                    ->modalHeading('إيقاف المدرس')
-                    ->modalDescription('هل أنت متأكد من إيقاف هذا المدرس؟ سيتم إلغاء تفعيل حسابه مؤقتاً.')
-                    ->action(function ($record) {
-                        $record->suspend();
-                        Notification::make()
-                            ->title('تم إيقاف المدرس')
-                            ->success()
-                            ->send();
-                    }),
-                    
-                Tables\Actions\Action::make('reactivate')
-                    ->label('إعادة تفعيل')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('info')
-                    ->visible(fn ($record) => !$record->is_active)
-                    ->requiresConfirmation()
-                    ->modalHeading('إعادة تفعيل المدرس')
-                    ->modalDescription('هل أنت متأكد من إعادة تفعيل هذا المدرس؟')
-                    ->action(function ($record) {
-                        $record->activate(auth()->user()->id);
-                        if ($record->user) {
-                            $record->user->update([
-                                'active_status' => true,
-                            ]);
-                        }
-                        Notification::make()
-                            ->title('تم إعادة تفعيل المدرس')
-                            ->success()
-                            ->send();
-                    }),
-                    
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

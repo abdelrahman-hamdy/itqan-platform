@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\QuranSubscription;
-use App\Models\QuranTeacher;
+use App\Models\QuranTeacherProfile;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -82,7 +82,7 @@ class QuranSubscriptionController extends Controller
     {
         $academy = $this->getCurrentAcademy();
         
-        $teachers = QuranTeacher::with('user')
+        $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
             ->where('approval_status', 'approved')
@@ -134,7 +134,7 @@ class QuranSubscriptionController extends Controller
             DB::beginTransaction();
 
             // Verify teacher belongs to academy
-            $teacher = QuranTeacher::where('id', $validated['quran_teacher_id'])
+            $teacher = QuranTeacherProfile::where('id', $validated['quran_teacher_id'])
                 ->where('academy_id', $academy->id)
                 ->firstOrFail();
 
@@ -266,7 +266,7 @@ class QuranSubscriptionController extends Controller
         
         $academy = $this->getCurrentAcademy();
         
-        $teachers = QuranTeacher::with('user')
+        $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
             ->where('approval_status', 'approved')

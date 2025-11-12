@@ -722,10 +722,11 @@ class StudentProfileController extends Controller
             ->toArray();
 
         // Get all active and approved Quran teachers for this academy, excluding already subscribed
+        // Fix: use user_id instead of id since quran_teacher_id points to User model
         $quranTeachers = QuranTeacherProfile::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
-            ->whereNotIn('id', $subscribedTeacherIds)
+            ->whereNotIn('user_id', $subscribedTeacherIds)
             ->with(['user', 'quranCircles', 'quranSessions'])
             ->withCount(['quranSessions as total_sessions'])
             ->orderBy('rating', 'desc')
@@ -735,7 +736,8 @@ class StudentProfileController extends Controller
         // Calculate additional stats for each teacher
         $quranTeachers->getCollection()->transform(function ($teacher) {
             // Count active students from subscriptions
-            $activeStudents = QuranSubscription::where('quran_teacher_id', $teacher->id)
+            // Fix: use user_id instead of id since quran_teacher_id points to User model
+            $activeStudents = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
                 ->where('subscription_status', 'active')
                 ->distinct('student_id')
                 ->count();
@@ -743,7 +745,8 @@ class StudentProfileController extends Controller
             $teacher->active_students_count = $activeStudents;
 
             // Get average rating from subscriptions reviews
-            $averageRating = QuranSubscription::where('quran_teacher_id', $teacher->id)
+            // Fix: use user_id instead of id since quran_teacher_id points to User model
+            $averageRating = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
                 ->whereNotNull('rating')
                 ->avg('rating');
 

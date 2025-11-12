@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use App\Models\AcademicSubject;
 use App\Models\AcademicGradeLevel;
 use App\Models\User;
@@ -22,7 +22,7 @@ class AcademicTeacherController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = AcademicTeacher::with([
+            $query = AcademicTeacherProfile::with([
                 'user:id,name,email,phone',
                 'academy:id,name',
                 'subjects:id,name,name_en',
@@ -102,7 +102,7 @@ class AcademicTeacherController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $teacher = AcademicTeacher::with([
+            $teacher = AcademicTeacherProfile::with([
                 'user:id,name,email,phone,avatar',
                 'academy:id,name,logo',
                 'subjects:id,name,name_en,category,field',
@@ -193,7 +193,7 @@ class AcademicTeacherController extends Controller
             DB::beginTransaction();
 
             // إنشاء المعلم
-            $teacher = AcademicTeacher::create($request->except(['subjects', 'grade_levels']));
+            $teacher = AcademicTeacherProfile::create($request->except(['subjects', 'grade_levels']));
 
             // ربط المواد
             if ($request->has('subjects')) {
@@ -244,7 +244,7 @@ class AcademicTeacherController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         try {
-            $teacher = AcademicTeacher::findOrFail($id);
+            $teacher = AcademicTeacherProfile::findOrFail($id);
 
             $validator = Validator::make($request->all(), [
                 'teacher_code' => 'nullable|string|max:50|unique:academic_teachers,teacher_code,' . $id,
@@ -331,7 +331,7 @@ class AcademicTeacherController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $teacher = AcademicTeacher::findOrFail($id);
+            $teacher = AcademicTeacherProfile::findOrFail($id);
 
             // التحقق من عدم وجود جلسات نشطة
             $activeSessions = $teacher->privateSessions()
@@ -391,7 +391,7 @@ class AcademicTeacherController extends Controller
     public function approve(int $id): JsonResponse
     {
         try {
-            $teacher = AcademicTeacher::findOrFail($id);
+            $teacher = AcademicTeacherProfile::findOrFail($id);
 
             if ($teacher->is_approved) {
                 return response()->json([
@@ -440,7 +440,7 @@ class AcademicTeacherController extends Controller
                 ], 422);
             }
 
-            $teacher = AcademicTeacher::findOrFail($id);
+            $teacher = AcademicTeacherProfile::findOrFail($id);
 
             $teacher->update([
                 'is_approved' => false,
@@ -482,7 +482,7 @@ class AcademicTeacherController extends Controller
                 ], 422);
             }
 
-            $teacher = AcademicTeacher::findOrFail($id);
+            $teacher = AcademicTeacherProfile::findOrFail($id);
 
             $teacher->update([
                 'status' => 'suspended',
@@ -511,7 +511,7 @@ class AcademicTeacherController extends Controller
     public function reactivate(int $id): JsonResponse
     {
         try {
-            $teacher = AcademicTeacher::findOrFail($id);
+            $teacher = AcademicTeacherProfile::findOrFail($id);
 
             $teacher->update([
                 'status' => 'approved',
@@ -539,7 +539,7 @@ class AcademicTeacherController extends Controller
     public function statistics(int $id): JsonResponse
     {
         try {
-            $teacher = AcademicTeacher::findOrFail($id);
+            $teacher = AcademicTeacherProfile::findOrFail($id);
 
             $stats = [
                 'total_sessions' => $teacher->privateSessions()->count(),
@@ -598,7 +598,7 @@ class AcademicTeacherController extends Controller
                 ], 422);
             }
 
-            $query = AcademicTeacher::with(['user:id,name,email,avatar', 'subjects:id,name'])
+            $query = AcademicTeacherProfile::with(['user:id,name,email,avatar', 'subjects:id,name'])
                 ->where('is_approved', true)
                 ->where('is_active', true)
                 ->where('status', 'approved');

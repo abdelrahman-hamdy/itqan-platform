@@ -1,0 +1,179 @@
+<?php
+
+namespace App\Services\Scheduling\Validators;
+
+use App\Models\QuranCircle;
+use App\Services\Scheduling\ValidationResult;
+use Carbon\Carbon;
+
+/**
+ * Validator for Group Quran Circles (Continuous, no fixed end)
+ */
+class GroupCircleValidator implements ScheduleValidatorInterface
+{
+    public function __construct(
+        private QuranCircle $circle
+    ) {}
+
+    public function validateDaySelection(array $days): ValidationResult
+    {
+        $dayCount = count($days);
+
+        if ($dayCount === 0) {
+            return ValidationResult::error('يجب اختيار يوم واحد على الأقل');
+        }
+
+        if ($dayCount > 7) {
+            return ValidationResult::error('لا يمكن اختيار أكثر من 7 أيام في الأسبوع');
+        }
+
+        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        $recommendedDaysPerWeek = ceil($monthlyTarget / 4); // 4 weeks in a month
+        $maxDaysPerWeek = $recommendedDaysPerWeek + 2; // Allow flexibility
+
+        if ($dayCount > $maxDaysPerWeek) {
+            return ValidationResult::warning(
+                "⚠️ اخترت {$dayCount} أيام أسبوعياً، وهو أكثر من الموصى به ({$recommendedDaysPerWeek} أيام) بناءً على الهدف الشهري ({$monthlyTarget} جلسة/شهر). سيتم إنشاء جلسات أكثر من المعتاد.",
+                [
+                    'selected' => $dayCount,
+                    'recommended' => $recommendedDaysPerWeek,
+                    'max' => $maxDaysPerWeek,
+                    'monthly_target' => $monthlyTarget
+                ]
+            );
+        }
+
+        return ValidationResult::success(
+            "✓ عدد الأيام مناسب ({$dayCount} أيام أسبوعياً)",
+            ['selected' => $dayCount, 'recommended' => $recommendedDaysPerWeek]
+        );
+    }
+
+    public function validateSessionCount(int $count): ValidationResult
+    {
+        if ($count <= 0) {
+            return ValidationResult::error('يجب أن يكون عدد الجلسات أكبر من صفر');
+        }
+
+        if ($count > 100) {
+            return ValidationResult::error('لا يمكن جدولة أكثر من 100 جلسة دفعة واحدة لتجنب الأخطاء');
+        }
+
+        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        $recommendedCount = $monthlyTarget; // Default to one month
+
+        if ($count < $monthlyTarget / 2) {
+            return ValidationResult::warning(
+                "⚠️ عدد الجلسات ({$count}) أقل من نصف الهدف الشهري ({$monthlyTarget}). قد تحتاج لجدولة المزيد قريباً."
+            );
+        }
+
+        if ($count > $monthlyTarget * 3) {
+            return ValidationResult::warning(
+                "⚠️ عدد الجلسات ({$count}) كبير جداً (أكثر من 3 أشهر). قد ترغب في جدولة فترة أقصر."
+            );
+        }
+
+        return ValidationResult::success(
+            "✓ عدد الجلسات مناسب ({$count} جلسة)",
+            ['count' => $count, 'monthly_target' => $monthlyTarget]
+        );
+    }
+
+    public function validateDateRange(?Carbon $startDate, int $weeksAhead): ValidationResult
+    {
+        $requestedStart = $startDate ?? now();
+
+        // Group circles are continuous, no end date restriction
+        // Just ensure starting from today or future
+        if ($requestedStart->isPast()) {
+            return ValidationResult::error('لا يمكن جدولة جلسات في الماضي');
+        }
+
+        if ($weeksAhead > 52) {
+            return ValidationResult::warning(
+                "⚠️ تجاوزت سنة من الجدولة ({$weeksAhead} أسبوع). قد ترغب في جدولة فترة أقصر."
+            );
+        }
+
+        return ValidationResult::success(
+            "✓ نطاق التاريخ صحيح (ابتداءً من {$requestedStart->format('Y/m/d')})"
+        );
+    }
+
+    public function validateWeeklyPacing(array $days, int $weeksAhead): ValidationResult
+    {
+        $daysPerWeek = count($days);
+        $totalSessions = $daysPerWeek * $weeksAhead;
+
+        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        $expectedMonths = ceil($weeksAhead / 4);
+        $expectedTotal = $monthlyTarget * $expectedMonths;
+
+        if ($totalSessions < $expectedTotal * 0.7) {
+            return ValidationResult::warning(
+                "⚠️ عدد الجلسات المجدولة ({$totalSessions}) أقل من المتوقع ({$expectedTotal}) لمدة {$expectedMonths} شهر."
+            );
+        }
+
+        if ($totalSessions > $expectedTotal * 1.3) {
+            return ValidationResult::warning(
+                "⚠️ عدد الجلسات المجدولة ({$totalSessions}) أكثر من المتوقع ({$expectedTotal}) لمدة {$expectedMonths} شهر."
+            );
+        }
+
+        return ValidationResult::success("✓ الجدول الزمني مناسب ({$totalSessions} جلسة)");
+    }
+
+    public function getRecommendations(): array
+    {
+        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        $recommendedDaysPerWeek = ceil($monthlyTarget / 4);
+
+        return [
+            'recommended_days' => $recommendedDaysPerWeek,
+            'max_days' => $recommendedDaysPerWeek + 2,
+            'monthly_target' => $monthlyTarget,
+            'reason' => "موصى به {$recommendedDaysPerWeek} أيام أسبوعياً لتحقيق {$monthlyTarget} جلسة شهرياً",
+        ];
+    }
+
+    public function getSchedulingStatus(): array
+    {
+        $now = now();
+        $oneMonthAhead = $now->copy()->addMonth();
+
+        $futureSessionsCount = $this->circle->sessions()
+            ->where('scheduled_at', '>', $now)
+            ->where('scheduled_at', '<=', $oneMonthAhead)
+            ->count();
+
+        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+
+        if ($futureSessionsCount === 0) {
+            return [
+                'status' => 'not_scheduled',
+                'message' => 'لا توجد جلسات مجدولة في الشهر القادم',
+                'color' => 'red',
+                'can_schedule' => true,
+                'urgent' => true,
+            ];
+        } elseif ($futureSessionsCount < $monthlyTarget * 0.5) {
+            return [
+                'status' => 'needs_scheduling',
+                'message' => "جلسات قليلة ({$futureSessionsCount} فقط في الشهر القادم)",
+                'color' => 'yellow',
+                'can_schedule' => true,
+                'urgent' => true,
+            ];
+        } else {
+            return [
+                'status' => 'actively_scheduled',
+                'message' => "{$futureSessionsCount} جلسة مجدولة في الشهر القادم",
+                'color' => 'green',
+                'can_schedule' => true,
+                'urgent' => false,
+            ];
+        }
+    }
+}

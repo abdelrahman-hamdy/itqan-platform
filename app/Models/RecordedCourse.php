@@ -43,7 +43,6 @@ class RecordedCourse extends Model implements HasMedia
         'difficulty_level',
         'category',
         'tags',
-        'meta_keywords',
         'meta_description',
         'published_at',
         'created_by',

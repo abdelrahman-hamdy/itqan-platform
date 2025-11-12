@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\QuranTeacher;
+use App\Models\QuranTeacherProfile;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ class QuranTeacherController extends Controller
     {
         $academy = $this->getCurrentAcademy();
         
-        $query = QuranTeacher::with(['user', 'academy'])
+        $query = QuranTeacherProfile::with(['user', 'academy'])
             ->where('academy_id', $academy->id);
 
         // Apply filters
@@ -128,7 +128,7 @@ class QuranTeacherController extends Controller
             $validated['academy_id'] = $academy->id;
             $validated['created_by'] = Auth::id();
             
-            $teacher = QuranTeacher::create($validated);
+            $teacher = QuranTeacherProfile::create($validated);
 
             // Update user role to include Quran teacher
             $user = User::find($validated['user_id']);
@@ -313,7 +313,7 @@ class QuranTeacherController extends Controller
 
             // Remove teacher role from user if no other teacher records exist
             $user = $teacher->user;
-            if (!QuranTeacher::where('user_id', $user->id)->exists()) {
+            if (!QuranTeacherProfile::where('user_id', $user->id)->exists()) {
                 $user->removeRole('quran_teacher');
             }
 
@@ -507,7 +507,7 @@ class QuranTeacherController extends Controller
     {
         $academy = $this->getCurrentAcademy();
         
-        $teachers = QuranTeacher::with('user')
+        $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
             ->where('approval_status', 'approved');

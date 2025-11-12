@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AcademicTeacher;
+use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
@@ -48,7 +48,7 @@ class AcademyHomepageController extends Controller
             ->get();
 
         // Get academic teachers for this academy
-        $academicTeachers = AcademicTeacher::where('academy_id', $academy->id)
+        $academicTeachers = AcademicTeacherProfile::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->take(4)
             ->get();

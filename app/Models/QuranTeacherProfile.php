@@ -33,6 +33,9 @@ class QuranTeacherProfile extends Model
         'languages',
         'bio_arabic',
         'bio_english',
+        'approval_status', // Added to allow admin to manage approval
+        'approved_by',
+        'approved_at',
         'is_active',
         'offers_trial_sessions',
         'rating',
@@ -56,6 +59,7 @@ class QuranTeacherProfile extends Model
         'teaching_experience_years' => 'integer',
         'available_time_start' => 'datetime:H:i',
         'available_time_end' => 'datetime:H:i',
+        'approved_at' => 'datetime',
     ];
 
         /**
@@ -252,6 +256,9 @@ class QuranTeacherProfile extends Model
     {
         $this->update([
             'is_active' => true,
+            'approval_status' => 'approved',  // Also approve when activating
+            'approved_by' => $activatedBy,
+            'approved_at' => now(),
         ]);
 
         // Also activate the related User account
