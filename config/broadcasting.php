@@ -36,10 +36,23 @@ return [
             'secret' => env('REVERB_APP_SECRET'),
             'app_id' => env('REVERB_APP_ID'),
             'options' => [
-                'host' => env('REVERB_HOST', '127.0.0.1'),
+                // Use localhost for server-to-server communication
+                // Browsers will use domain via VITE_REVERB_* variables
+                'host' => '127.0.0.1',
                 'port' => env('REVERB_PORT', 8085),
-                'scheme' => env('REVERB_SCHEME', 'http'),
-                'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+                'scheme' => 'https',
+                'useTLS' => true,
+            ],
+            'client_options' => [
+                // Disable SSL verification for self-signed Valet certificates
+                'verify' => false,
+                // Comprehensive cURL options for self-signed certificates
+                'curl' => [
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
+                ],
             ],
         ],
 

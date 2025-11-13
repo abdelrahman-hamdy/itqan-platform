@@ -1466,21 +1466,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/interactive-sessions/{session}/homework', [App\Http\Controllers\StudentProfileController::class, 'submitInteractiveCourseHomework'])->name('student.interactive-sessions.homework');
     });
 
-    // WireChat Routes - manually registered for subdomain support
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/chat', \Namu\WireChat\Livewire\Pages\Chats::class)->name('chats');
-        Route::get('/chat/{conversation}', \Namu\WireChat\Livewire\Pages\Chat::class)
-            ->middleware('belongsToConversation')
-            ->name('chat');
-
-        // Legacy Chatify compatibility routes (for old JavaScript)
-        Route::post('/chat/setActiveStatus', function(\Illuminate\Http\Request $request) {
-            $activeStatus = $request['status'] > 0 ? 1 : 0;
-            $status = \App\Models\User::where('id', auth()->id())
-                ->update(['active_status' => $activeStatus]);
-            return response()->json(['status' => $status], 200);
-        })->name('chat.setActiveStatus');
-    });
+    // Chat routes removed - WireChat uninstalled
 
     // OLD: Chatify test routes - DISABLED
     // Route::get('/test-broadcast/{userId}', function ($userId) {

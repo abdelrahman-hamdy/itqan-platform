@@ -1,0 +1,96 @@
+╔══════════════════════════════════════════════════════════════════╗
+║           WireChat Debug - Quick Reference Card                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+🚀 START/STOP SERVICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ./restart-chat.sh      # Restart all chat services
+  ./stop-chat.sh         # Stop all services
+  ./chat-status.sh       # Check service status
+
+📊 MONITORING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ./monitor-chat.sh      # Real-time colored log monitoring
+  
+  # Manual log monitoring:
+  tail -f /tmp/wirechat-logs/reverb.log
+  tail -f /tmp/wirechat-logs/queue-messages.log
+  tail -f storage/logs/laravel.log
+
+🌐 BROWSER DEBUGGING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Visit: https://itqan-platform.test/chats
+  2. Press F12 (or Cmd+Option+I on Mac)
+  3. Go to Console tab
+  
+  Debug Commands (in browser console):
+    wirechatDebug.help()           # Show all commands
+    wirechatDebug.echoStatus()     # Connection status
+    wirechatDebug.listChannels()   # Active channels
+    wirechatDebug.testBroadcast(1) # Test conversation ID 1
+
+✅ EXPECTED BEHAVIOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Browser Console Shows:
+    ✅ WebSocket Connected!
+    ✅ Socket ID: xxxxx
+    📨 Event Received: MessageCreated
+    
+  Terminal Monitor Shows:
+    [QUEUE] 📨 MessageCreated broadcast sent
+    [REVERB] Message sent to conversation.X
+
+❌ TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Problem: WebSocket not connecting
+  → Check: ./chat-status.sh
+  → Fix: ./restart-chat.sh
+  
+  Problem: Messages not appearing  
+  → Check: ./monitor-chat.sh (should show activity)
+  → Check: redis-cli ping (should return "PONG")
+  → Fix: ./restart-chat.sh
+  
+  Problem: 403 Auth errors
+  → Check: User logged in?
+  → Check: User belongs to conversation?
+  → Check: routes/channels.php authorization
+  
+  Problem: No debug output in browser
+  → Check: APP_DEBUG=true in .env
+  → Clear browser cache (Cmd+Shift+R)
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Full guide:      DEBUG_CHAT.md
+  Setup guide:     WIRECHAT_SETUP.md
+  WireChat docs:   https://wirechat.namuio.com
+
+🔧 USEFUL COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  php artisan queue:failed       # Show failed jobs
+  php artisan queue:flush        # Clear failed jobs
+  redis-cli ping                 # Test Redis connection
+  lsof -i :8085                  # Check port 8085 usage
+  ps aux | grep reverb           # Check Reverb process
+  ps aux | grep queue            # Check queue workers
+
+🎯 TEST WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Start services:       ./restart-chat.sh
+  2. Start monitoring:     ./monitor-chat.sh
+  3. Open browser:         https://itqan-platform.test/chats
+  4. Open console:         F12 → Console tab
+  5. Send test message:    Type "Test 123" and send
+  6. Watch both:           Terminal & Browser console
+  7. Should see:           Message broadcast in both places
+
+💡 PRO TIP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Use 2 browser windows (or 1 regular + 1 incognito) with different
+  users to test real-time messaging between users!
+
+╔══════════════════════════════════════════════════════════════════╗
+║  Services Running? Check with: ./chat-status.sh                 ║
+║  Need Help? Read: DEBUG_CHAT.md                                  ║
+╚══════════════════════════════════════════════════════════════════╝

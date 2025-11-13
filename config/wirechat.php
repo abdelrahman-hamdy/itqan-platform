@@ -27,7 +27,7 @@ return [
     | Useful if you're sharing a database with other apps or packages.
     |
     */
-    'table_prefix' => 'wirechat_',
+    'table_prefix' => 'wire_',
 
     /*
     |--------------------------------------------------------------------------
@@ -88,7 +88,7 @@ return [
     |
     */
     'routes' => [
-        'prefix' => 'chat',
+        'prefix' => 'chats',
         'middleware' => ['web', 'auth:web'],
         'guards' => ['web'],
     ],
@@ -103,7 +103,7 @@ return [
     | the dynamic chat content.
     |
     */
-    'layout' => 'chat.unified',
+    'layout' => 'wirechat::layouts.app',
 
     /*
     |--------------------------------------------------------------------------
@@ -129,7 +129,7 @@ return [
     |
     */
     'notifications' => [
-        'enabled' => false, // Disabled temporarily to clear cache
+        'enabled' => true,
         'main_sw_script' => 'sw.js', // Relative to public path
     ],
 
