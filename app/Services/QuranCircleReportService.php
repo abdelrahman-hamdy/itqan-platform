@@ -64,9 +64,6 @@ class QuranCircleReportService
             // Progress Analytics
             'progress' => $this->calculateProgressStats($circle, $completedSessions, $sessionReports),
 
-            // Homework Analytics
-            'homework' => $this->calculateHomeworkStats($sessions),
-
             // Performance Trends (for charts)
             'trends' => $this->generateTrendData($completedSessions, $sessionReports),
 
@@ -199,9 +196,6 @@ class QuranCircleReportService
 
             // Progress Analytics
             'progress' => $this->calculateProgressStatsForStudent($student, $completedSessions, $sessionReports),
-
-            // Homework Analytics
-            'homework' => $this->calculateHomeworkStatsForStudent($student, $allSessions),
 
             // Performance Trends
             'trends' => $this->generateTrendData($completedSessions, $sessionReports),

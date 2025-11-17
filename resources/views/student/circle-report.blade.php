@@ -98,10 +98,16 @@
     <script>
         document.getElementById('period').addEventListener('change', function() {
             const customDateRange = document.getElementById('customDateRange');
+            const startDateInput = document.getElementById('start_date');
+            const endDateInput = document.getElementById('end_date');
+
             if (this.value === 'custom') {
                 customDateRange.style.display = 'flex';
             } else {
                 customDateRange.style.display = 'none';
+                // Clear date inputs when not using custom
+                startDateInput.value = '';
+                endDateInput.value = '';
             }
         });
     </script>
@@ -169,7 +175,7 @@
     </div>
 
     <!-- Attendance and Performance Cards Side by Side -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Attendance Card -->
         <x-reports.attendance-card
             :attendance="$attendance"
@@ -180,36 +186,6 @@
             :performance="$progress"
             title="أدائي الأكاديمي" />
     </div>
-
-    <!-- Homework Section -->
-    @if(isset($homework) && $homework['total_assigned'] > 0)
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-            <i class="ri-task-line text-yellow-600 ml-2"></i>
-            واجباتي
-        </h2>
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <p class="text-sm text-gray-600">إجمالي الواجبات</p>
-                <p class="text-2xl font-bold text-gray-900">{{ $homework['total_assigned'] }}</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">واجبات مكتملة</p>
-                <p class="text-2xl font-bold text-green-600">{{ $homework['completed'] }}</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">نسبة الإنجاز</p>
-                <p class="text-2xl font-bold text-blue-600">{{ $homework['completion_rate'] }}%</p>
-            </div>
-            @if($homework['average_score'] > 0)
-            <div>
-                <p class="text-sm text-gray-600">متوسط درجاتي</p>
-                <p class="text-2xl font-bold text-purple-600">{{ $homework['average_score'] }}/10</p>
-            </div>
-            @endif
-        </div>
-    </div>
-    @endif
 </div>
 
 <!-- Chart.js -->
