@@ -1,6 +1,6 @@
 @props([
     'performance', // Performance statistics array
-    'title' => 'الأداء الأكاديمي'
+    'title' => 'التقييم العام'
 ])
 
 @php
@@ -16,28 +16,71 @@
         return 'text-red-600';
     };
 
-    $getBgColorClass = function($degree) {
-        if ($degree >= 8) return 'bg-green-50 border-green-200';
-        if ($degree >= 6) return 'bg-blue-50 border-blue-200';
-        if ($degree >= 4) return 'bg-yellow-50 border-yellow-200';
-        return 'bg-red-50 border-red-200';
+    $getStrokeColor = function($degree) {
+        if ($degree >= 8) return '#10b981';
+        if ($degree >= 6) return '#3b82f6';
+        if ($degree >= 4) return '#f59e0b';
+        return '#ef4444';
     };
+
+    $getRatingLabel = function($degree) {
+        if ($degree >= 8) return 'ممتاز';
+        if ($degree >= 6) return 'جيد';
+        if ($degree >= 4) return 'مقبول';
+        return 'ضعيف';
+    };
+
+    // Calculate percentage for circular progress (0-100%)
+    $progressPercentage = ($averageOverall / 10) * 100;
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $title }}</h2>
 
-    <!-- Overall Performance -->
-    <div class="mb-6 text-center">
-        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full {{ $getBgColorClass($averageOverall) }} border-4 mb-3">
-            <div class="text-center">
-                <div class="text-3xl font-bold {{ $getColorClass($averageOverall) }}">
+    <!-- Overall Performance with SVG Circle -->
+    <div class="flex items-center justify-center mb-6">
+        <div class="relative inline-flex items-center justify-center">
+            <!-- SVG Circle Progress -->
+            <svg class="w-32 h-32" viewBox="0 0 120 120">
+                <!-- Background circle -->
+                <circle
+                    cx="60"
+                    cy="60"
+                    r="54"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    stroke-width="8"
+                ></circle>
+                <!-- Progress circle -->
+                <circle
+                    cx="60"
+                    cy="60"
+                    r="54"
+                    fill="none"
+                    stroke="{{ $getStrokeColor($averageOverall) }}"
+                    stroke-width="8"
+                    stroke-dasharray="{{ 2 * 3.14159 * 54 }}"
+                    stroke-dashoffset="{{ 2 * 3.14159 * 54 * (1 - $progressPercentage / 100) }}"
+                    stroke-linecap="round"
+                    transform="rotate(-90 60 60)"
+                    class="transition-all duration-500"
+                ></circle>
+            </svg>
+            <!-- Center text -->
+            <div class="absolute inset-0 flex items-center justify-center flex-col">
+                <span class="text-3xl font-bold {{ $getColorClass($averageOverall) }}">
                     {{ number_format($averageOverall, 1) }}
-                </div>
-                <div class="text-xs text-gray-600">من 10</div>
+                </span>
+                <span class="text-xs text-gray-600 mt-1">من 10</span>
             </div>
         </div>
-        <div class="text-sm font-medium text-gray-700">متوسط الأداء العام</div>
+    </div>
+
+    <!-- Rating Label -->
+    <div class="text-center mb-6">
+        <span class="text-sm font-bold {{ $getColorClass($averageOverall) }}">
+            {{ $getRatingLabel($averageOverall) }}
+        </span>
     </div>
 
     <!-- Performance Breakdown -->
@@ -77,29 +120,6 @@
                     class="h-2 rounded-full transition-all duration-500 {{ $averageReservation >= 8 ? 'bg-green-500' : ($averageReservation >= 6 ? 'bg-blue-500' : ($averageReservation >= 4 ? 'bg-yellow-500' : 'bg-red-500')) }}"
                     style="width: {{ ($averageReservation / 10) * 100 }}%">
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Performance Rating Legend -->
-    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-        <h4 class="text-xs font-bold text-gray-700 mb-3">تقييم الأداء</h4>
-        <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span class="text-gray-700">ممتاز (8-10)</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span class="text-gray-700">جيد (6-7.9)</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span class="text-gray-700">مقبول (4-5.9)</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span class="text-gray-700">ضعيف (أقل من 4)</span>
             </div>
         </div>
     </div>

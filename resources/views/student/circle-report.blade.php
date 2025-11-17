@@ -67,8 +67,8 @@
         <form method="GET" class="flex flex-wrap items-end gap-4">
             <div class="flex-1 min-w-[200px]">
                 <label for="period" class="block text-sm font-medium text-gray-700 mb-2">الفترة الزمنية</label>
-                <select id="period" name="period" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all" {{ ($filterPeriod ?? 'all') === 'all' ? 'selected' : '' }}>كل الفترة</option>
+                <select id="period" name="period" class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all" {{ ($filterPeriod ?? 'all') === 'all' ? 'selected' : '' }}>كل الوقت</option>
                     <option value="this_month" {{ ($filterPeriod ?? '') === 'this_month' ? 'selected' : '' }}>هذا الشهر</option>
                     <option value="last_3_months" {{ ($filterPeriod ?? '') === 'last_3_months' ? 'selected' : '' }}>آخر 3 شهور</option>
                     <option value="custom" {{ ($filterPeriod ?? '') === 'custom' ? 'selected' : '' }}>فترة مخصصة</option>
