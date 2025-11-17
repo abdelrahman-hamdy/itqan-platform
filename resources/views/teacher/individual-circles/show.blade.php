@@ -38,8 +38,8 @@
             <!-- Quick Actions -->
             <x-circle.individual-quick-actions :circle="$circle" view-type="teacher" />
             
-            <!-- Progress Overview -->
-            <x-circle.individual-progress-overview :circle="$circle" view-type="teacher" />
+            <!-- Subscription Details -->
+            <x-circle.subscription-details :subscription="$circle->subscription" view-type="teacher" />
         </div>
     </div>
 </div>

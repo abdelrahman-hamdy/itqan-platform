@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranProgress;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -13,9 +14,17 @@ use Illuminate\Support\Facades\DB;
  *
  * Aggregates comprehensive report data for Quran circles (individual and group)
  * including attendance, progress, homework, and performance metrics.
+ *
+ * IMPORTANT: All progress tracking is pages-only (NOT verses)
  */
 class QuranCircleReportService
 {
+    protected QuranProgressService $progressService;
+
+    public function __construct(QuranProgressService $progressService)
+    {
+        $this->progressService = $progressService;
+    }
     /**
      * Generate comprehensive report for individual circle
      *
@@ -229,9 +238,19 @@ class QuranCircleReportService
 
     /**
      * Calculate progress statistics for individual circle
+     * Uses QuranProgress model for cumulative tracking (pages-only)
      */
     protected function calculateProgressStats(QuranIndividualCircle $circle, Collection $completedSessions, Collection $sessionReports): array
     {
+        $student = $circle->student;
+
+        // Get cumulative progress from QuranProgress
+        $quranProgressData = QuranProgress::where('student_id', $student->id)
+            ->where('circle_id', $circle->id)
+            ->orderBy('progress_date', 'desc')
+            ->first();
+
+        // Calculate performance averages from session reports
         $totalMemorization = $sessionReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?? 0;
         $totalReservation = $sessionReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?? 0;
 
@@ -248,23 +267,47 @@ class QuranCircleReportService
         }
         $averageOverallPerformance = $count > 0 ? round($overallPerformance / $count, 1) : 0;
 
+        // Pages memorized (from QuranProgress or circle model)
+        $pagesMemorized = $quranProgressData ? $quranProgressData->total_pages_memorized :
+                         ($circle->papers_memorized_precise ? $circle->papers_memorized_precise / 2 : 0);
+
+        $papersMemorized = $circle->papers_memorized_precise ?? $circle->papers_memorized ?? 0;
+
+        // Lifetime statistics (if available)
+        $lifetimePagesMemorized = $circle->lifetime_pages_memorized ?? null;
+        $lifetimeSessionsCompleted = $circle->lifetime_sessions_completed ?? null;
+
+        // Calculate average pages per session
+        $sessionsWithMemorization = $sessionReports->whereNotNull('new_memorization_degree')
+            ->where('new_memorization_degree', '>', 0)
+            ->count();
+        $averagePagesPerSession = $sessionsWithMemorization > 0 ?
+            round($pagesMemorized / $sessionsWithMemorization, 2) : 0;
+
         return [
             'current_position' => $this->formatCurrentPosition($circle),
-            'papers_memorized' => $circle->papers_memorized_precise ?? $circle->papers_memorized ?? 0,
-            'verses_memorized' => $circle->verses_memorized ?? 0,
+            'pages_memorized' => round($pagesMemorized, 1),
+            'papers_memorized' => $papersMemorized,
             'progress_percentage' => $circle->progress_percentage ?? 0,
             'average_memorization_degree' => round($totalMemorization, 1),
             'average_reservation_degree' => round($totalReservation, 1),
             'average_overall_performance' => $averageOverallPerformance,
             'sessions_evaluated' => $sessionReports->whereNotNull('new_memorization_degree')->count(),
+            'average_pages_per_session' => $averagePagesPerSession,
+
+            // Lifetime stats (if available)
+            'lifetime_pages_memorized' => $lifetimePagesMemorized,
+            'lifetime_sessions_completed' => $lifetimeSessionsCompleted,
         ];
     }
 
     /**
      * Calculate progress statistics for student in group circle
+     * Uses QuranProgress model for cumulative tracking (pages-only)
      */
     protected function calculateProgressStatsForStudent(User $student, Collection $completedSessions, Collection $sessionReports): array
     {
+        // Calculate performance averages from session reports
         $totalMemorization = $sessionReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?? 0;
         $totalReservation = $sessionReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?? 0;
 
@@ -281,11 +324,24 @@ class QuranCircleReportService
         }
         $averageOverallPerformance = $count > 0 ? round($overallPerformance / $count, 1) : 0;
 
+        // Get pages memorized from QuranProgress (for this student in all circles)
+        $totalPagesMemorized = QuranProgress::where('student_id', $student->id)
+            ->sum('pages_memorized_today') ?? 0;
+
+        // Calculate average pages per session
+        $sessionsWithMemorization = $sessionReports->whereNotNull('new_memorization_degree')
+            ->where('new_memorization_degree', '>', 0)
+            ->count();
+        $averagePagesPerSession = $sessionsWithMemorization > 0 ?
+            round($totalPagesMemorized / $sessionsWithMemorization, 2) : 0;
+
         return [
+            'pages_memorized' => round($totalPagesMemorized, 1),
             'average_memorization_degree' => round($totalMemorization, 1),
             'average_reservation_degree' => round($totalReservation, 1),
             'average_overall_performance' => $averageOverallPerformance,
             'sessions_evaluated' => $sessionReports->whereNotNull('new_memorization_degree')->count(),
+            'average_pages_per_session' => $averagePagesPerSession,
         ];
     }
 

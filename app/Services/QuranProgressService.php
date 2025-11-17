@@ -4,219 +4,373 @@ namespace App\Services;
 
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\QuranProgress;
+use App\Models\StudentSessionReport;
+use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Quran Progress Service
+ *
+ * Manages QuranProgress model integration with the rest of the system.
+ * Creates and updates progress records based on session reports.
+ * All measurements are in PAGES (not verses).
+ *
+ * CRITICAL: Never modifies attendance data - reads only from StudentSessionReport
+ */
 class QuranProgressService
 {
     /**
-     * Calculate comprehensive progress statistics for a Quran circle
-     * Works with both QuranCircle (group) and QuranIndividualCircle (individual)
+     * Create or update QuranProgress record based on StudentSessionReport
+     * Called after StudentSessionReport is updated by auto-attendance system
+     *
+     * @param StudentSessionReport $report
+     * @return QuranProgress|null
      */
-    public function calculateProgressStats(Model $circle): array
+    public function createOrUpdateSessionProgress(StudentSessionReport $report): ?QuranProgress
     {
-        // Validate circle type
-        if (!$circle instanceof QuranCircle && !$circle instanceof QuranIndividualCircle) {
-            throw new \InvalidArgumentException('Circle must be an instance of QuranCircle or QuranIndividualCircle');
+        // Only create progress for sessions where student attended
+        if ($report->attendance_status !== 'present') {
+            return null;
         }
 
-        // Get sessions collection
-        $sessions = $circle->sessions;
-        $completedSessions = $sessions->where('status', 'completed');
-        $scheduledSessions = $sessions->where('status', 'scheduled');
+        $session = $report->session;
+        if (!$session) {
+            return null;
+        }
 
-        // Calculate attendance statistics
-        $attendanceStats = $this->calculateAttendanceStats($completedSessions);
+        // Determine circle (individual or group)
+        $circle = $session->individual_circle_id
+            ? $session->individualCircle
+            : $session->circle;
 
-        // Calculate performance metrics
-        $performanceMetrics = $this->calculatePerformanceMetrics($completedSessions);
+        if (!$circle) {
+            return null;
+        }
 
-        // Calculate papers memorized
-        $totalPapers = $circle->papers_memorized_precise ??
-            ($circle->verses_memorized ? $this->convertVersesToPapers($circle->verses_memorized) : 0);
+        // Calculate pages memorized today (from degrees)
+        $pagesMemorizedToday = $this->calculatePagesFromDegrees(
+            $report->new_memorization_degree,
+            $report->reservation_degree
+        );
 
-        // Calculate learning analytics
-        $papersPerSession = $completedSessions->count() > 0 && $totalPapers > 0
-            ? $totalPapers / $completedSessions->count()
-            : 0;
+        // Get or create progress record for this session
+        $progress = QuranProgress::updateOrCreate(
+            [
+                'session_id' => $session->id,
+                'student_id' => $report->student_id,
+            ],
+            [
+                'academy_id' => $session->academy_id,
+                'quran_teacher_id' => $session->teacher_id,
+                'quran_subscription_id' => $session->quran_subscription_id,
+                'circle_id' => $circle->id,
+                'progress_date' => $session->scheduled_at ?? now(),
+                'progress_type' => 'session',
+
+                // Current position (from circle)
+                'current_surah' => $circle->current_surah,
+                'current_verse' => $circle->current_verse ?? 0,
+                'current_page' => $circle->current_page,
+                'current_face' => $circle->current_face,
+
+                // Today's progress (pages only - NO VERSES)
+                'total_pages_memorized' => $pagesMemorizedToday,
+
+                // Performance metrics (from report)
+                'recitation_quality' => $report->new_memorization_degree,
+                'tajweed_accuracy' => $report->reservation_degree,
+
+                // Calculate overall performance
+                'overall_rating' => $this->calculateOverallRating($report),
+
+                // Status
+                'progress_status' => 'recorded',
+                'assessment_date' => now(),
+            ]
+        );
+
+        // Update cumulative totals for this student
+        $this->updateCumulativeTotals($report->student_id);
+
+        return $progress;
+    }
+
+    /**
+     * Calculate cumulative lifetime progress for a student
+     *
+     * @param User $student
+     * @return array
+     */
+    public function calculateLifetimeProgress(User $student): array
+    {
+        $allProgress = QuranProgress::where('student_id', $student->id)
+            ->orderBy('progress_date', 'asc')
+            ->get();
 
         return [
-            // Basic session counts
-            'total_sessions' => $sessions->count(),
-            'completed_sessions' => $completedSessions->count(),
-            'scheduled_sessions' => $scheduledSessions->count(),
-            'remaining_sessions' => max(0, ($circle->total_sessions ?? 0) - $completedSessions->count()),
-            'progress_percentage' => $circle->progress_percentage ?? 0,
-
-            // Attendance metrics (merged from calculateAttendanceStats)
-            ...$attendanceStats,
-
-            // Performance metrics (merged from calculatePerformanceMetrics)
-            ...$performanceMetrics,
-
-            // Progress metrics
-            'total_papers_memorized' => $totalPapers,
-
-            // Learning analytics
-            'papers_per_session' => round($papersPerSession, 2),
-            'consistency_score' => $this->calculateConsistencyScore($circle),
+            'total_pages_memorized' => $allProgress->sum('total_pages_memorized'),
+            'total_sessions' => $allProgress->count(),
+            'average_recitation_quality' => $allProgress->avg('recitation_quality'),
+            'average_tajweed_accuracy' => $allProgress->avg('tajweed_accuracy'),
+            'consistency_score' => $this->calculateConsistencyScore($allProgress),
+            'first_session_date' => $allProgress->first()?->progress_date,
+            'last_session_date' => $allProgress->last()?->progress_date,
         ];
     }
 
     /**
-     * Calculate attendance statistics from completed sessions
+     * Update circle progress fields after session completion
+     * Updates both current subscription and lifetime totals
+     *
+     * @param QuranIndividualCircle|QuranCircle $circle
+     * @return void
      */
-    protected function calculateAttendanceStats(Collection $completedSessions): array
+    public function updateCircleProgress($circle): void
     {
-        $attendedSessions = $completedSessions->where('attendance_status', 'attended')->count();
-        $lateSessions = $completedSessions->where('attendance_status', 'late')->count();
-        $absentSessions = $completedSessions->where('attendance_status', 'absent')->count();
-        $leftEarlySessions = $completedSessions->whereIn('attendance_status', ['leaved', 'left_early'])->count();
+        if ($circle instanceof QuranIndividualCircle) {
+            $this->updateIndividualCircleProgress($circle);
+        } elseif ($circle instanceof QuranCircle) {
+            $this->updateGroupCircleProgress($circle);
+        }
+    }
 
-        // For sessions without explicit attendance_status, assume attended if completed
-        $completedWithoutStatus = $completedSessions->whereNull('attendance_status')->count();
-        $totalAttended = $attendedSessions + $lateSessions + $leftEarlySessions + $completedWithoutStatus;
+    /**
+     * Update individual circle progress
+     *
+     * @param QuranIndividualCircle $circle
+     * @return void
+     */
+    protected function updateIndividualCircleProgress(QuranIndividualCircle $circle): void
+    {
+        // Get all progress records for this circle
+        $progressRecords = QuranProgress::where('circle_id', $circle->id)
+            ->where('student_id', $circle->student_id)
+            ->get();
 
-        $attendanceRate = $completedSessions->count() > 0
-            ? ($totalAttended / $completedSessions->count()) * 100
-            : 0;
+        // Calculate totals
+        $totalPagesMemorized = $progressRecords->sum('total_pages_memorized');
+        $totalSessions = $progressRecords->count();
+
+        // Get lifetime totals (all circles for this student)
+        $lifetimeProgress = $this->calculateLifetimeProgress($circle->student);
+
+        // Update circle
+        $circle->update([
+            // Current subscription progress
+            'papers_memorized' => (int) floor($totalPagesMemorized * 2), // 1 page = 2 faces
+            'papers_memorized_precise' => $totalPagesMemorized * 2,
+            'sessions_completed' => $totalSessions,
+            'progress_percentage' => $circle->total_sessions > 0
+                ? min(100, ($totalSessions / $circle->total_sessions) * 100)
+                : 0,
+
+            // Lifetime totals
+            'lifetime_sessions_completed' => $lifetimeProgress['total_sessions'],
+            'lifetime_pages_memorized' => $lifetimeProgress['total_pages_memorized'],
+
+            // Latest session date
+            'last_session_at' => $progressRecords->last()?->progress_date,
+        ]);
+    }
+
+    /**
+     * Update group circle progress (aggregate for all students)
+     *
+     * @param QuranCircle $circle
+     * @return void
+     */
+    protected function updateGroupCircleProgress(QuranCircle $circle): void
+    {
+        // For group circles, we update per-student in pivot table
+        // This is handled by the observer updating pivot counters
+        // Here we just update circle-level stats
+
+        $completedSessions = $circle->sessions()
+            ->whereIn('status', ['completed', 'absent'])
+            ->count();
+
+        $circle->update([
+            'sessions_completed' => $completedSessions,
+        ]);
+    }
+
+    /**
+     * Track goal progress for a student (weekly/monthly)
+     *
+     * @param User $student
+     * @return array
+     */
+    public function trackGoalProgress(User $student): array
+    {
+        // Get latest progress record with goals
+        $latestProgress = QuranProgress::where('student_id', $student->id)
+            ->whereNotNull('weekly_goal')
+            ->latest('progress_date')
+            ->first();
+
+        if (!$latestProgress) {
+            return [
+                'has_goals' => false,
+                'weekly_goal' => null,
+                'monthly_goal' => null,
+                'weekly_progress' => 0,
+                'monthly_progress' => 0,
+            ];
+        }
+
+        // Calculate progress this week
+        $weeklyPages = QuranProgress::where('student_id', $student->id)
+            ->where('progress_date', '>=', now()->startOfWeek())
+            ->sum('total_pages_memorized');
+
+        // Calculate progress this month
+        $monthlyPages = QuranProgress::where('student_id', $student->id)
+            ->where('progress_date', '>=', now()->startOfMonth())
+            ->sum('total_pages_memorized');
 
         return [
-            'attendance_rate' => round($attendanceRate, 2),
-            'attended_sessions' => $attendedSessions,
-            'late_sessions' => $lateSessions,
-            'absent_sessions' => $absentSessions,
-            'left_early_sessions' => $leftEarlySessions,
-            'total_attended' => $totalAttended,
+            'has_goals' => true,
+            'weekly_goal' => $latestProgress->weekly_goal,
+            'monthly_goal' => $latestProgress->monthly_goal,
+            'weekly_progress' => $weeklyPages,
+            'monthly_progress' => $monthlyPages,
+            'weekly_percentage' => $latestProgress->weekly_goal > 0
+                ? min(100, ($weeklyPages / $latestProgress->weekly_goal) * 100)
+                : 0,
+            'monthly_percentage' => $latestProgress->monthly_goal > 0
+                ? min(100, ($monthlyPages / $latestProgress->monthly_goal) * 100)
+                : 0,
         ];
     }
 
     /**
-     * Calculate performance metrics from completed sessions
+     * Calculate pages from performance degrees
+     * Rough estimation: 10/10 degree ≈ 0.5 pages (1 face)
+     *
+     * @param float|null $memorizationDegree
+     * @param float|null $reservationDegree
+     * @return float
      */
-    protected function calculatePerformanceMetrics(Collection $completedSessions): array
+    protected function calculatePagesFromDegrees(?float $memorizationDegree, ?float $reservationDegree): float
     {
-        return [
-            'avg_recitation_quality' => round($completedSessions->avg('recitation_quality') ?? 0, 2),
-            'avg_tajweed_accuracy' => round($completedSessions->avg('tajweed_accuracy') ?? 0, 2),
-            'avg_session_duration' => round($completedSessions->avg('actual_duration_minutes') ?? 0, 2),
-        ];
+        $total = 0;
+
+        // New memorization: full weight
+        if ($memorizationDegree) {
+            $total += ($memorizationDegree / 10) * 0.5; // Max 0.5 pages
+        }
+
+        // Reservation (review): half weight
+        if ($reservationDegree) {
+            $total += ($reservationDegree / 10) * 0.25; // Max 0.25 pages
+        }
+
+        return round($total, 2);
     }
 
     /**
-     * Convert verses to approximate paper count (وجه)
-     * Based on standard Quran structure
+     * Calculate overall rating from report
      *
-     * @param int $verses Number of verses
-     * @return float Number of papers (وجه)
+     * @param StudentSessionReport $report
+     * @return int
      */
-    public function convertVersesToPapers(int $verses): float
+    protected function calculateOverallRating(StudentSessionReport $report): int
     {
-        // Average verses per paper (وجه) in standard Mushaf
-        // This varies by Surah, but 17.5 is a reasonable average
-        $averageVersesPerPaper = 17.5;
+        $scores = array_filter([
+            $report->new_memorization_degree,
+            $report->reservation_degree,
+        ]);
 
-        return round($verses / $averageVersesPerPaper, 2);
-    }
-
-    /**
-     * Convert papers to verses
-     *
-     * @param float $papers Number of papers (وجه)
-     * @return int Number of verses
-     */
-    public function convertPapersToVerses(float $papers): int
-    {
-        $averageVersesPerPaper = 17.5;
-
-        return (int) round($papers * $averageVersesPerPaper);
-    }
-
-    /**
-     * Calculate consistency score based on attendance pattern
-     * Returns a score from 0-10 where 10 is most consistent
-     *
-     * @param Model $circle QuranCircle or QuranIndividualCircle
-     * @return float Consistency score (0-10)
-     */
-    public function calculateConsistencyScore(Model $circle): float
-    {
-        $sessions = $circle->sessions()->where('status', 'completed')->orderBy('scheduled_at')->get();
-
-        if ($sessions->count() < 2) {
+        if (empty($scores)) {
             return 0;
         }
 
-        $attendancePattern = $sessions->map(function ($session) {
-            // Score: attended = 1, late = 0.7, leaved/left_early = 0.5, absent = 0
-            return match ($session->attendance_status) {
-                'attended' => 1.0,
-                'late' => 0.7,
-                'leaved', 'left_early' => 0.5,
-                'absent' => 0.0,
-                default => 1.0 // Default to attended if status not set
-            };
-        });
-
-        // Calculate consistency based on variance in attendance
-        $mean = $attendancePattern->avg();
-        $variance = $attendancePattern->map(fn ($score) => pow($score - $mean, 2))->avg();
-
-        // Convert to consistency score (0-10, where 10 is most consistent)
-        $consistencyScore = max(0, 10 - ($variance * 20));
-
-        return round($consistencyScore, 1);
+        return (int) round(array_sum($scores) / count($scores));
     }
 
     /**
-     * Get students for a circle (handles both group and individual circles)
+     * Calculate consistency score based on session regularity
      *
-     * @param Model $circle QuranCircle or QuranIndividualCircle
-     * @return Collection Collection of User models
+     * @param Collection $progressRecords
+     * @return float
      */
-    public function getCircleStudents(Model $circle): Collection
+    protected function calculateConsistencyScore($progressRecords): float
     {
-        if ($circle instanceof QuranCircle) {
-            // Group circle - many students
-            return $circle->students()->get();
-        } elseif ($circle instanceof QuranIndividualCircle) {
-            // Individual circle - single student
-            return collect([$circle->student])->filter();
+        if ($progressRecords->count() < 2) {
+            return 100; // Perfect score for new students
         }
 
-        return collect();
+        // Calculate average gap between sessions (in days)
+        $dates = $progressRecords->pluck('progress_date')->map(fn($date) => $date->timestamp)->sort()->values();
+
+        $gaps = [];
+        for ($i = 1; $i < $dates->count(); $i++) {
+            $gapDays = ($dates[$i] - $dates[$i - 1]) / (60 * 60 * 24);
+            $gaps[] = $gapDays;
+        }
+
+        $avgGap = array_sum($gaps) / count($gaps);
+
+        // Score: 100 for weekly sessions, decrease for irregular
+        // Expected gap: 7 days
+        $score = max(0, 100 - (abs($avgGap - 7) * 5));
+
+        return round($score, 1);
     }
 
     /**
-     * Calculate student-specific progress within a circle
+     * Update cumulative totals for a student (all-time stats)
      *
-     * @param Model $circle QuranCircle or QuranIndividualCircle
-     * @param int $studentId Student user ID
-     * @return array Student progress statistics
+     * @param int $studentId
+     * @return void
      */
-    public function calculateStudentProgress(Model $circle, int $studentId): array
+    protected function updateCumulativeTotals(int $studentId): void
     {
-        $sessions = $circle->sessions()
-            ->where('status', 'completed')
-            ->get();
+        $lifetimePages = QuranProgress::where('student_id', $studentId)
+            ->sum('total_pages_memorized');
 
-        // Get student reports for these sessions
-        $studentReports = \App\Models\StudentSessionReport::where('student_id', $studentId)
-            ->whereIn('session_id', $sessions->pluck('id'))
-            ->get();
+        $totalSurahs = QuranProgress::where('student_id', $studentId)
+            ->distinct('current_surah')
+            ->count('current_surah');
 
-        $attendedReports = $studentReports->whereIn('attendance_status', ['attended', 'late', 'leaved']);
+        // Update the latest progress record with cumulative data
+        QuranProgress::where('student_id', $studentId)
+            ->latest('progress_date')
+            ->first()
+            ?->update([
+                'total_pages_memorized' => $lifetimePages,
+                'total_surahs_completed' => $totalSurahs,
+            ]);
+    }
+
+    /**
+     * Get progress summary for reports
+     *
+     * @param User $student
+     * @param QuranIndividualCircle|QuranCircle|null $circle
+     * @return array
+     */
+    public function getProgressSummary(User $student, $circle = null): array
+    {
+        $query = QuranProgress::where('student_id', $student->id);
+
+        if ($circle) {
+            $query->where('circle_id', $circle->id);
+        }
+
+        $records = $query->orderBy('progress_date', 'desc')->get();
 
         return [
-            'total_sessions' => $studentReports->count(),
-            'attended_sessions' => $attendedReports->count(),
-            'missed_sessions' => $studentReports->where('attendance_status', 'absent')->count(),
-            'attendance_rate' => $studentReports->count() > 0
-                ? ($attendedReports->count() / $studentReports->count()) * 100
-                : 0,
-            'avg_memorization_degree' => $studentReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0,
-            'avg_reservation_degree' => $studentReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?: 0,
-            'avg_attendance_percentage' => $studentReports->avg('attendance_percentage') ?: 0,
+            'total_sessions' => $records->count(),
+            'total_pages_memorized' => $records->sum('total_pages_memorized'),
+            'average_recitation_quality' => round($records->avg('recitation_quality'), 1),
+            'average_tajweed_accuracy' => round($records->avg('tajweed_accuracy'), 1),
+            'current_page' => $records->first()?->current_page,
+            'current_face' => $records->first()?->current_face,
+            'last_session_date' => $records->first()?->progress_date,
+            'consistency_score' => $this->calculateConsistencyScore($records),
         ];
     }
 }

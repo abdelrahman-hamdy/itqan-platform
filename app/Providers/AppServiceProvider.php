@@ -6,10 +6,12 @@ use App\Helpers\AcademyHelper;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionAttendance;
 use App\Models\QuranSession;
+use App\Models\StudentSessionReport;
 use App\Observers\AcademicSessionAttendanceObserver;
 use App\Observers\AcademicSessionObserver;
 use App\Observers\MediaObserver;
 use App\Observers\QuranSessionObserver;
+use App\Observers\StudentSessionReportObserver;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -57,6 +59,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Register QuranSession Observer for trial request status synchronization
         QuranSession::observe(QuranSessionObserver::class);
+
+        // Register StudentSessionReport Observer for QuranProgress integration
+        StudentSessionReport::observe(StudentSessionReportObserver::class);
 
         // Override WireChat Info component with custom implementation
         Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);

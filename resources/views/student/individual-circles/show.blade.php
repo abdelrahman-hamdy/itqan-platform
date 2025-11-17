@@ -40,8 +40,8 @@
             <!-- Quick Actions -->
             <x-circle.quick-actions :circle="$individualCircle" type="individual" view-type="student" context="quran" />
             
-            <!-- Progress Overview -->
-            <x-circle.individual-progress-overview :circle="$individualCircle" view-type="student" />
+            <!-- Subscription Details -->
+            <x-circle.subscription-details :subscription="$individualCircle->subscription" view-type="student" />
         </div>
     </div>
 </div>
