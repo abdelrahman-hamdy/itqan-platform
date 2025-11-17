@@ -52,7 +52,6 @@ class QuranSessionController extends Controller
                 'individualCircle.subscription.package',
                 'circle.students',
                 'sessionHomework',
-                'homework',
                 'progress',
                 'trialRequest', // For trial sessions
             ])
