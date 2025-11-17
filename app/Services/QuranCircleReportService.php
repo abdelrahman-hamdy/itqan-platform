@@ -555,43 +555,40 @@ class QuranCircleReportService
      */
     protected function generateTrendData(Collection $completedSessions, Collection $sessionReports): array
     {
-        // Get last 10 completed sessions (chronological order)
-        $recentSessions = $completedSessions->sortBy('scheduled_at')->take(10);
+        // Get all completed sessions in chronological order
+        $recentSessions = $completedSessions->sortBy('scheduled_at');
 
-        $attendanceTrend = [];
-        $performanceTrend = [];
+        $labels = [];
+        $attendanceData = [];
+        $memorizationData = [];
+        $reservationData = [];
 
         foreach ($recentSessions as $session) {
             $report = $sessionReports->where('session_id', $session->id)->first();
 
-            $attendanceTrend[] = [
-                'date' => $session->scheduled_at ? $session->scheduled_at->format('Y-m-d') : null,
-                'status' => $report ? $report->attendance_status : 'unknown',
-                'duration' => $report ? $report->actual_attendance_minutes : 0,
-            ];
+            // Format date label
+            $dateLabel = $session->scheduled_at ? $session->scheduled_at->format('m/d') : '';
+            $labels[] = $dateLabel;
 
-            if ($report) {
-                $performanceScore = null;
-                if ($report->new_memorization_degree && $report->reservation_degree) {
-                    $performanceScore = ($report->new_memorization_degree + $report->reservation_degree) / 2;
-                } elseif ($report->new_memorization_degree) {
-                    $performanceScore = $report->new_memorization_degree;
-                } elseif ($report->reservation_degree) {
-                    $performanceScore = $report->reservation_degree;
-                }
-
-                if ($performanceScore) {
-                    $performanceTrend[] = [
-                        'date' => $session->scheduled_at ? $session->scheduled_at->format('Y-m-d') : null,
-                        'score' => round($performanceScore, 1),
-                    ];
-                }
+            // Calculate attendance points (attended=1, late=0.5, absent=0) * 10 to scale to 0-10
+            $attendancePoints = 0;
+            if ($report && $report->attendance_status === 'present') {
+                $attendancePoints = $report->is_late ? 5 : 10;
             }
+            $attendanceData[] = $attendancePoints;
+
+            // Memorization grade (0-10 scale)
+            $memorizationData[] = $report && $report->new_memorization_degree > 0 ? $report->new_memorization_degree : null;
+
+            // Reservation grade (0-10 scale)
+            $reservationData[] = $report && $report->reservation_degree > 0 ? $report->reservation_degree : null;
         }
 
         return [
-            'attendance' => $attendanceTrend,
-            'performance' => $performanceTrend,
+            'labels' => $labels,
+            'attendance' => $attendanceData,
+            'memorization' => $memorizationData,
+            'reservation' => $reservationData,
         ];
     }
 

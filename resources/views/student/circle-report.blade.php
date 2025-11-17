@@ -18,10 +18,10 @@
         </ol>
     </nav>
 
-    <!-- Header -->
+    <!-- Header with Subscription Info -->
     <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-8 mb-6 text-white">
         <div class="flex items-center justify-between">
-            <div>
+            <div class="flex-1">
                 <h1 class="text-3xl font-bold">تقريري في الحلقة</h1>
                 <p class="mt-2 text-blue-100">
                     @if($circleType === 'individual')
@@ -30,6 +30,31 @@
                         الحلقة: {{ $circle->name }}
                     @endif
                 </p>
+
+                <!-- Subscription Info -->
+                @if($circleType === 'individual' && isset($overall))
+                <div class="mt-4 flex gap-6 text-sm text-blue-100">
+                    <div class="flex items-center gap-2">
+                        <i class="ri-calendar-line"></i>
+                        <span>تاريخ البداية: {{ $overall['started_at'] ? $overall['started_at']->format('Y-m-d') : 'لم تبدأ' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="ri-file-list-line"></i>
+                        <span>الجلسات المخططة: {{ $overall['total_sessions_planned'] ?? 0 }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="ri-time-line"></i>
+                        <span>الجلسات المتبقية: {{ $overall['sessions_remaining'] ?? 0 }}</span>
+                    </div>
+                </div>
+                @elseif(isset($enrollment))
+                <div class="mt-4 flex gap-6 text-sm text-blue-100">
+                    <div class="flex items-center gap-2">
+                        <i class="ri-calendar-line"></i>
+                        <span>تاريخ الانضمام: {{ $enrollment['enrolled_at'] ? $enrollment['enrolled_at']->format('Y-m-d') : '-' }}</span>
+                    </div>
+                </div>
+                @endif
             </div>
             <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
                 <i class="ri-trophy-line text-5xl"></i>
@@ -80,6 +105,17 @@
             }
         });
     </script>
+
+    <!-- Performance Graph -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <i class="ri-line-chart-line text-blue-600 ml-2"></i>
+            تطور الأداء
+        </h2>
+        <div class="h-80">
+            <canvas id="performanceChart"></canvas>
+        </div>
+    </div>
 
     <!-- Overall Stats -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -132,100 +168,138 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Attendance Card -->
-            <x-reports.attendance-card
-                :attendance="$attendance"
-                title="إحصائيات حضوري" />
+    <!-- Attendance and Performance Cards Side by Side -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Attendance Card -->
+        <x-reports.attendance-card
+            :attendance="$attendance"
+            title="إحصائيات حضوري" />
 
-            <!-- Performance Card -->
-            <x-reports.performance-card
-                :performance="$progress"
-                title="أدائي الأكاديمي" />
+        <!-- Performance Card -->
+        <x-reports.performance-card
+            :performance="$progress"
+            title="أدائي الأكاديمي" />
+    </div>
 
-            <!-- Homework Section -->
-            @if(isset($homework) && $homework['total_assigned'] > 0)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <i class="ri-task-line text-yellow-600 ml-2"></i>
-                    واجباتي
-                </h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-600">إجمالي الواجبات</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ $homework['total_assigned'] }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">واجبات مكتملة</p>
-                        <p class="text-2xl font-bold text-green-600">{{ $homework['completed'] }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">نسبة الإنجاز</p>
-                        <p class="text-2xl font-bold text-blue-600">{{ $homework['completion_rate'] }}%</p>
-                    </div>
-                    @if($homework['average_score'] > 0)
-                    <div>
-                        <p class="text-sm text-gray-600">متوسط درجاتي</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ $homework['average_score'] }}/10</p>
-                    </div>
-                    @endif
-                </div>
+    <!-- Homework Section -->
+    @if(isset($homework) && $homework['total_assigned'] > 0)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <i class="ri-task-line text-yellow-600 ml-2"></i>
+            واجباتي
+        </h2>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm text-gray-600">إجمالي الواجبات</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $homework['total_assigned'] }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">واجبات مكتملة</p>
+                <p class="text-2xl font-bold text-green-600">{{ $homework['completed'] }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">نسبة الإنجاز</p>
+                <p class="text-2xl font-bold text-blue-600">{{ $homework['completion_rate'] }}%</p>
+            </div>
+            @if($homework['average_score'] > 0)
+            <div>
+                <p class="text-sm text-gray-600">متوسط درجاتي</p>
+                <p class="text-2xl font-bold text-purple-600">{{ $homework['average_score'] }}/10</p>
             </div>
             @endif
-        </div>
-
-        <!-- Sidebar -->
-        <div class="lg:col-span-1 space-y-6">
-            @if($circleType === 'individual' && isset($overall))
-            <!-- Circle Info -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="font-bold text-gray-900 mb-4">معلومات الحلقة</h3>
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">تاريخ البداية:</span>
-                        <span class="font-medium text-gray-900">{{ $overall['started_at'] ? $overall['started_at']->format('Y-m-d') : 'لم تبدأ' }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">الجلسات المخططة:</span>
-                        <span class="font-medium text-gray-900">{{ $overall['total_sessions_planned'] ?? 0 }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">الجلسات المتبقية:</span>
-                        <span class="font-medium text-gray-900">{{ $overall['sessions_remaining'] ?? 0 }}</span>
-                    </div>
-                </div>
-            </div>
-            @elseif(isset($enrollment))
-            <!-- Enrollment Info -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="font-bold text-gray-900 mb-4">معلومات انضمامي</h3>
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">تاريخ الانضمام:</span>
-                        <span class="font-medium text-gray-900">{{ $enrollment['enrolled_at'] ? $enrollment['enrolled_at']->format('Y-m-d') : '-' }}</span>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            <!-- Motivational Card -->
-            <div class="bg-gradient-to-br from-green-500 to-teal-600 rounded-xl shadow-lg p-6 text-white">
-                <div class="text-center">
-                    <i class="ri-trophy-line text-5xl mb-3"></i>
-                    <h3 class="font-bold text-lg mb-2">بارك الله فيك!</h3>
-                    @if($attendance['attendance_rate'] >= 80)
-                        <p class="text-sm text-green-100">حضورك ممتاز، استمر في التقدم!</p>
-                    @elseif($attendance['attendance_rate'] >= 60)
-                        <p class="text-sm text-green-100">حضورك جيد، يمكنك التحسين!</p>
-                    @else
-                        <p class="text-sm text-green-100">احرص على الحضور بانتظام!</p>
-                    @endif
-                </div>
-            </div>
         </div>
     </div>
+    @endif
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+
+        const chartData = {
+            labels: @json($trends['labels'] ?? []),
+            datasets: [
+                {
+                    label: 'الحضور',
+                    data: @json($trends['attendance'] ?? []),
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'درجات الحفظ',
+                    data: @json($trends['memorization'] ?? []),
+                    borderColor: 'rgb(168, 85, 247)',
+                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    spanGaps: true
+                },
+                {
+                    label: 'درجات المراجعة',
+                    data: @json($trends['reservation'] ?? []),
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    spanGaps: true
+                }
+            ]
+        };
+
+        const config = {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        rtl: true,
+                        labels: {
+                            font: {
+                                family: 'Tajawal, sans-serif',
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        rtl: true,
+                        titleFont: {
+                            family: 'Tajawal, sans-serif'
+                        },
+                        bodyFont: {
+                            family: 'Tajawal, sans-serif'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: {
+                            font: {
+                                family: 'Tajawal, sans-serif'
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                family: 'Tajawal, sans-serif'
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        new Chart(ctx, config);
+    });
+</script>
 
 </x-layouts.student>
