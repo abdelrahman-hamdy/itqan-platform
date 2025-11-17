@@ -129,12 +129,13 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         if ($totalSessionsToSchedule > $remaining) {
             $maxWeeks = floor($remaining / $daysPerWeek);
-            return ValidationResult::error(
-                "لا يمكن جدولة {$daysPerWeek} أيام لمدة {$weeksAhead} أسابيع ({$totalSessionsToSchedule} جلسة). الجلسات المتبقية: {$remaining}. الحد الأقصى: {$maxWeeks} أسبوع",
+            return ValidationResult::warning(
+                "⚠️ اخترت {$daysPerWeek} أيام لمدة {$weeksAhead} أسابيع ({$totalSessionsToSchedule} جلسة)، لكن لديك {$remaining} جلسة متبقية فقط. سيتم جدولة {$remaining} جلسة وتوزيعها على الأيام المختارة.",
                 [
                     'total_requested' => $totalSessionsToSchedule,
                     'remaining' => $remaining,
-                    'max_weeks' => $maxWeeks
+                    'max_weeks' => $maxWeeks,
+                    'will_schedule' => $remaining
                 ]
             );
         }

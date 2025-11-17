@@ -20,19 +20,15 @@
             <!-- Circle Header -->
             <x-circle.group-header :circle="$circle" view-type="teacher" />
 
-            <!-- Enhanced Sessions List -->
+            <!-- Sessions List -->
             @php
                 // Get all sessions for the circle
                 $allSessions = $circle->sessions()->orderBy('scheduled_at', 'desc')->get();
             @endphp
-            
-            <x-sessions.enhanced-sessions-list 
-                :sessions="$allSessions" 
-                title="إدارة جلسات الحلقة الجماعية"
-                view-type="teacher"
-                :show-tabs="false"
-                :circle="$circle"
-                empty-message="لا توجد جلسات مجدولة بعد" />
+
+            <x-sessions.sessions-list
+                :sessions="$allSessions"
+                :show-tabs="false" />
         </div>
 
         <!-- Sidebar -->

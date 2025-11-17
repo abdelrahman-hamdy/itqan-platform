@@ -21,13 +21,13 @@
             <x-circle.individual-header :circle="$circle" view-type="teacher" />
 
             <!-- Quran Sessions Section -->
-                    <x-sessions.unified-sessions-section
-            :sessions="$circle->sessions"
-            title="إدارة جلسات الحلقة الفردية"
-            view-type="teacher"
-            :circle="$circle"
-            :show-tabs="false"
-            empty-message="لا توجد جلسات مجدولة بعد" />
+            <x-sessions.sessions-list
+                :sessions="$circle->sessions"
+                title="إدارة جلسات الحلقة الفردية"
+                view-type="teacher"
+                :circle="$circle"
+                :show-tabs="false"
+                empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 
         <!-- Sidebar -->

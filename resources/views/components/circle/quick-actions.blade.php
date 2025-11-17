@@ -54,10 +54,10 @@
 
             {{-- Progress Reports Link --}}
             @if($isGroup)
-                <a href="{{ route('teacher.group-circles.progress', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
-                   class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                    <i class="ri-line-chart-line ml-2"></i>
-                    عرض التقارير التفصيلية
+                <a href="{{ route('teacher.group-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <i class="ri-file-chart-line ml-2"></i>
+                    عرض التقرير الكامل
                 </a>
             @elseif($isIndividual)
                 @if($isAcademic)
@@ -67,10 +67,10 @@
                         عرض التقرير التفصيلي
                     </a>
                 @else
-                    <a href="{{ route('teacher.individual-circles.progress', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
-                       class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                        <i class="ri-line-chart-line ml-2"></i>
-                        عرض التقرير التفصيلي
+                    <a href="{{ route('teacher.individual-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
+                       class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                        <i class="ri-file-chart-line ml-2"></i>
+                        عرض التقرير الكامل
                     </a>
                 @endif
             @endif
@@ -156,10 +156,16 @@
             @endif
 
             {{-- View Full Report (Enrolled/Subscribed students only) --}}
-            @if(($isGroup && $isEnrolled) || ($isIndividual && !$isAcademic))
-                <a href="#" onclick="alert('سيتم تفعيل صفحة التقرير الكامل قريباً'); return false;"
+            @if($isGroup && $isEnrolled)
+                <a href="{{ route('student.group-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                    <i class="ri-file-text-line ml-2"></i>
+                    <i class="ri-file-chart-line ml-2"></i>
+                    عرض التقرير الكامل
+                </a>
+            @elseif($isIndividual && !$isAcademic)
+                <a href="{{ route('student.individual-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <i class="ri-file-chart-line ml-2"></i>
                     عرض التقرير الكامل
                 </a>
             @endif

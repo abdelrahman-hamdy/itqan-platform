@@ -1187,6 +1187,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             Route::post('/{id}/submit', [App\Http\Controllers\Student\HomeworkController::class, 'submitProcess'])->name('submit.process');
             Route::get('/{id}/view', [App\Http\Controllers\Student\HomeworkController::class, 'view'])->name('view');
         });
+
+        // Circle Report routes for students
+        Route::get('/individual-circles/{circle}/report', [App\Http\Controllers\Student\CircleReportController::class, 'showIndividual'])->name('student.individual-circles.report');
+        Route::get('/group-circles/{circle}/report', [App\Http\Controllers\Student\CircleReportController::class, 'showGroup'])->name('student.group-circles.report');
     });
 
     /*
@@ -1373,6 +1377,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Individual Circles Management
         Route::get('/individual-circles', [App\Http\Controllers\QuranIndividualCircleController::class, 'index'])->name('individual-circles.index');
         Route::get('/individual-circles/{circle}/progress', [App\Http\Controllers\QuranIndividualCircleController::class, 'progressReport'])->name('individual-circles.progress');
+        Route::get('/individual-circles/{circle}/report', [App\Http\Controllers\Teacher\IndividualCircleReportController::class, 'show'])->name('individual-circles.report');
 
         // AJAX routes for individual circles
         Route::get('/individual-circles/{circle}/template-sessions', [App\Http\Controllers\QuranIndividualCircleController::class, 'getTemplateSessions'])->name('individual-circles.template-sessions');
@@ -1410,6 +1415,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/group-circles/{circle}', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'show'])->name('group-circles.show');
         Route::get('/group-circles/{circle}/progress', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'progressReport'])->name('group-circles.progress');
         Route::get('/group-circles/{circle}/students/{student}/progress', [App\Http\Controllers\QuranGroupCircleScheduleController::class, 'studentProgressReport'])->name('group-circles.student-progress');
+
+        // Group Circle Reports
+        Route::get('/group-circles/{circle}/report', [App\Http\Controllers\Teacher\GroupCircleReportController::class, 'show'])->name('group-circles.report');
+        Route::get('/group-circles/{circle}/students/{student}/report', [App\Http\Controllers\Teacher\GroupCircleReportController::class, 'studentReport'])->name('group-circles.student-report');
 
         // Session management routes
         Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForTeacher'])->name('sessions.show');

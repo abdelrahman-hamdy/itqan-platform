@@ -25,14 +25,12 @@
                 $allSessions = collect($upcomingSessions)->merge($pastSessions)->sortByDesc('scheduled_at');
             @endphp
             
-            <x-sessions.unified-sessions-section 
-                :sessions="$allSessions" 
+            <x-sessions.sessions-list
+                :sessions="$allSessions"
                 title="جلسات الدرس الخاص"
                 view-type="student"
                 :circle="$subscription"
-                :show-tabs="true"
-                :upcoming-sessions="$upcomingSessions"
-                :past-sessions="$pastSessions"
+                :show-tabs="false"
                 empty-message="لا توجد جلسات مجدولة بعد" />
         </div>
 
