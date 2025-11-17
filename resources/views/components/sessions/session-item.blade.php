@@ -1,118 +1,69 @@
-@props(['session', 'viewType' => 'student'])
+@props([
+    'session',
+    'circle' => null,
+    'viewType' => 'student'
+])
 
 @php
-    use App\Enums\SessionStatus;
-    
-    // Detect session type - check if it's an AcademicSession or QuranSession
-    $isAcademicSession = $session instanceof \App\Models\AcademicSession;
-    $sessionType = $isAcademicSession ? 'academic' : 'quran';
-    
-    // Get enhanced status data
-    $statusData = $session->getStatusDisplayData ? $session->getStatusDisplayData() : [
-        'color' => 'blue',
-        'icon' => 'ri-calendar-line',
-        'label' => $session->status
-    ];
-    
-    // Determine if session is clickable
-    $isClickable = true; // All sessions should be viewable
-    
-    // Get status-specific styling and info
-    $statusColor = $statusData['color'] ?? 'blue';
-    $statusIcon = $statusData['icon'] ?? 'ri-calendar-line';
-    $statusLabel = $statusData['label'] ?? $session->status;
-    
-    // Get appropriate route based on session type and view type
-    if ($viewType === 'teacher') {
-        $sessionRoute = $isAcademicSession 
-            ? 'teacher.academic.sessions.show' 
-            : 'teacher.sessions.show';
-    } else {
-        $sessionRoute = $isAcademicSession 
-            ? 'student.academic-sessions.show' 
-            : 'student.sessions.show';
+    // Helper function to get status value (handles both string and enum)
+    $getStatusValue = function($session) {
+        return is_object($session->status) ? $session->status->value : $session->status;
+    };
+
+    $statusValue = $getStatusValue($session);
+
+    // Check if session is in preparation phase
+    $isInPreparation = false;
+    if($statusValue === 'scheduled' && $session->scheduled_at) {
+        $prepMessage = getMeetingPreparationMessage($session);
+        $isInPreparation = $prepMessage['type'] === 'preparing';
     }
 @endphp
 
-<div class="attendance-indicator rounded-xl p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out {{ $isClickable ? 'cursor-pointer' : 'cursor-default' }}"
-     @if($isClickable) onclick="openSessionDetail({{ $session->id }})" @endif>
+<div class="attendance-indicator rounded-xl p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer" onclick="openSessionDetail({{ $session->id }})">
     <div class="flex items-center justify-between">
         <!-- Session Info -->
         <div class="flex items-center space-x-4 space-x-reverse">
             <!-- Session Status Indicator with Animated Circles -->
-            @php
-                // Get status data for use throughout the component
-                $statusData = method_exists($session, 'getStatusDisplayData') 
-                    ? $session->getStatusDisplayData() 
-                    : [
-                        'status' => is_object($session->status) ? $session->status->value : $session->status,
-                        'label' => $statusLabel ?? 'غير محدد',
-                        'color' => 'gray'
-                    ];
-                $statusValue = $statusData['status'];
-            @endphp
-            
-            <x-sessions.status-display 
-                :session="$session" 
-                variant="indicator" 
-                size="sm" 
-                :show-icon="false" 
-                :show-label="true" />
-            
+            <div class="flex flex-col items-center">
+                @if($statusValue === 'completed')
+                    <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
+                    <span class="text-xs text-green-600 font-bold">مكتملة</span>
+                @elseif($statusValue === 'ongoing')
+                    <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
+                    <span class="text-xs text-green-600 font-bold">جارية</span>
+                @elseif($statusValue === 'ready')
+                    <div class="w-4 h-4 bg-green-400 rounded-full mb-1 animate-bounce"></div>
+                    <span class="text-xs text-green-600 font-bold">جاهزة</span>
+                @elseif($statusValue === 'scheduled' && $isInPreparation)
+                    <div class="w-4 h-4 bg-amber-500 rounded-full mb-1 animate-spin"></div>
+                    <span class="text-xs text-amber-600 font-bold">جاري التحضير</span>
+                @elseif($statusValue === 'scheduled')
+                    <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
+                    <span class="text-xs text-blue-600 font-bold">مجدولة</span>
+                @elseif($statusValue === 'cancelled')
+                    <div class="w-4 h-4 bg-gray-400 rounded-full mb-1"></div>
+                    <span class="text-xs text-gray-500 font-bold">ملغاة</span>
+                @elseif($statusValue === 'unscheduled')
+                    <div class="w-4 h-4 bg-amber-400 rounded-full mb-1 animate-pulse"></div>
+                    <span class="text-xs text-amber-600 font-bold">غير مجدولة</span>
+                @elseif($statusValue === 'absent')
+                    <div class="w-4 h-4 bg-red-400 rounded-full mb-1"></div>
+                    <span class="text-xs text-red-700 font-bold">غائب</span>
+                @else
+                    <div class="w-4 h-4 bg-gray-300 rounded-full mb-1"></div>
+                    <span class="text-xs text-gray-500 font-bold">{{ $statusValue }}</span>
+                @endif
+            </div>
+
             <!-- Session Details -->
             <div class="flex-1">
                 <div class="flex items-center space-x-3 space-x-reverse mb-2">
                     <h4 class="font-bold text-gray-900 text-lg">
-                        {{ $session->title ?? ($isAcademicSession ? 'جلسة أكاديمية' : 'جلسة قرآنية') }}
+                        {{ $session->title ?? ($circle && $circle->students ? 'جلسة جماعية - ' . $circle->name : 'جلسة فردية - ' . ($circle->subscription->package->name ?? 'حلقة قرآنية')) }}
                     </h4>
-                    
-                    <!-- Session Type Badge -->
-                    <span class="text-xs px-2 py-1 rounded-full font-medium {{ $isAcademicSession ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800' }}">
-                        {{ $isAcademicSession ? 'أكاديمية' : 'قرآنية' }}
-                    </span>
-                    
-                    <!-- Progress badge for completed sessions -->
-                    @if($session->status === SessionStatus::COMPLETED)
-                        @if($isAcademicSession)
-                            <!-- Academic session progress -->
-                            @if(isset($session->academic_performance_score) || isset($session->engagement_score))
-                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
-                                    @if(isset($session->academic_performance_score))
-                                        أداء: {{ $session->academic_performance_score }}/10
-                                    @endif
-                                </span>
-                            @endif
-                        @else
-                            <!-- Quran session progress -->
-                            @if($session->papers_memorized_today || $session->verses_memorized_today)
-                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
-                                    @if($session->papers_memorized_today)
-                                        +{{ $session->papers_memorized_today }} وجه
-                                    @elseif($session->verses_memorized_today)
-                                        +{{ $session->verses_memorized_today }} آية
-                                    @endif
-                                </span>
-                            @endif
-                        @endif
-                    @endif
-                    
-                    <!-- Live indicator for ongoing sessions -->
-                    @if($statusValue === 'ongoing')
-                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium animate-pulse flex items-center gap-1">
-                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                            مباشرة الآن
-                        </span>
-                    @endif
-                    
-                    <!-- Ready indicator -->
-                    @if($statusValue === 'ready')
-                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                            <i class="ri-video-line"></i>
-                            جاهزة للانضمام
-                        </span>
-                    @endif
                 </div>
-                
+
                 <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-600">
                     <span class="flex items-center space-x-1 space-x-reverse">
                         <i class="ri-calendar-line"></i>
@@ -122,168 +73,39 @@
                         <i class="ri-time-line"></i>
                         <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                     </span>
-                    @if($session->actual_duration_minutes)
-                        <span class="flex items-center space-x-1 space-x-reverse">
-                            <i class="ri-timer-line"></i>
-                            <span>{{ $session->actual_duration_minutes }} دقيقة</span>
-                        </span>
-                    @elseif($session->duration_minutes)
+                    @if($session->duration_minutes)
                         <span class="flex items-center space-x-1 space-x-reverse">
                             <i class="ri-timer-2-line"></i>
                             <span>{{ $session->duration_minutes }} دقيقة</span>
                         </span>
                     @endif
                 </div>
-                
-                <!-- Progress in Session -->
-                @if($session->status === SessionStatus::COMPLETED)
-                    @if($isAcademicSession)
-                        <!-- Academic session content -->
-                        @if(isset($session->homework_description) && $session->homework_description)
-                            <div class="mt-2 text-sm text-gray-700">
-                                <span class="bg-purple-50 text-purple-700 px-2 py-1 rounded font-medium">
-                                    <i class="ri-book-line"></i>
-                                    واجب منزلي مُعطى
-                                </span>
-                            </div>
-                        @endif
-                    @else
-                        <!-- Quran session content -->
-                        @if($session->current_page || $session->current_surah)
-                            <div class="mt-2 text-sm text-gray-700">
-                                <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded font-medium">
-                                    @if($session->current_page)
-                                        الصفحة {{ $session->current_page }} - {{ $session->current_face == 1 ? 'الوجه الأول' : 'الوجه الثاني' }}
-                                    @elseif($session->current_surah)
-                                        سورة رقم {{ $session->current_surah }}
-                                        @if($session->current_verse) - آية {{ $session->current_verse }} @endif
-                                    @endif
-                                </span>
-                            </div>
-                        @endif
-                    @endif
-                @endif
 
                 <!-- Meeting timing info for active sessions -->
-                @if(in_array($statusValue, ['scheduled', 'ready', 'ongoing']))
+                @if($statusValue === 'scheduled' && $session->scheduled_at)
                     @php
-                        // Handle both session types for meeting preparation
-                        if ($isAcademicSession) {
-                            $preparationMinutes = 15; // Default for academic sessions
-                        } else {
-                            $circle = $session->session_type === 'individual' ? $session->individualCircle : $session->circle;
-                            $preparationMinutes = $circle?->preparation_minutes ?? 15;
-                        }
-                        
-                        // Check if the meeting preparation function exists
-                        $meetingInfo = function_exists('getMeetingPreparationMessage') 
-                            ? getMeetingPreparationMessage($session->scheduled_at, $preparationMinutes)
-                            : ['message' => null, 'type' => 'default'];
+                        $preparationMessage = getMeetingPreparationMessage($session);
                     @endphp
-                    
-                    @if($meetingInfo['message'])
-                        @php
-                            $bgColor = match($meetingInfo['type']) {
-                                'waiting' => 'text-amber-600 bg-amber-50',
-                                'preparing' => 'text-blue-600 bg-blue-50',
-                                'ready' => 'text-green-600 bg-green-50',
-                                default => 'text-gray-600 bg-gray-50'
-                            };
-                        @endphp
-                        <div class="mt-2 text-xs {{ $bgColor }} px-2 py-1 rounded">
-                            <i class="{{ $meetingInfo['icon'] ?? 'ri-timer-line' }}"></i>
-                            {{ $meetingInfo['message'] }}
+                    @if($preparationMessage['type'] !== 'none')
+                        <div class="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block self-start">
+                            <i class="{{ $preparationMessage['icon'] ?? 'ri-timer-line' }}"></i>
+                            {{ $preparationMessage['message'] }}
                         </div>
                     @endif
+                @elseif($statusValue === 'ready')
+                    <div class="mt-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded inline-block self-start">
+                        <i class="ri-video-line"></i>
+                        الاجتماع متاح الآن
+                    </div>
                 @endif
             </div>
         </div>
-        
+
         <!-- Session Status and Actions -->
         <div class="text-left">
             <div class="flex flex-col items-end space-y-2">
                 <!-- Status Badge -->
-                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm
-                    bg-gradient-to-r from-{{ $statusColor }}-100 to-{{ $statusColor }}-200 text-{{ $statusColor }}-800 border border-{{ $statusColor }}-300">
-                    <i class="{{ $statusIcon }} ml-1"></i>
-                    {{ $statusLabel }}
-                </span>
-                
-                <!-- Action Button for active sessions - removed join button for ready status -->
-                @if($statusValue === 'ongoing' && $viewType === 'student')
-                    <a href="{{ route($sessionRoute, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]) }}" 
-                       onclick="event.stopPropagation()"
-                       class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-lg">
-                        <i class="ri-video-line ml-1"></i>
-                        انضمام الآن
-                    </a>
-                @endif
-                
-                <!-- Performance Indicators for completed sessions -->
-                @if($statusValue === 'completed')
-                    @if($isAcademicSession)
-                        <!-- Academic session performance -->
-                        @if(isset($session->academic_performance_score) || isset($session->engagement_score))
-                            <div class="flex items-center space-x-1 space-x-reverse text-xs">
-                                @if(isset($session->academic_performance_score))
-                                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                        أداء: {{ $session->academic_performance_score }}/10
-                                    </span>
-                                @endif
-                                @if(isset($session->engagement_score))
-                                    <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                                        تفاعل: {{ $session->engagement_score }}/10
-                                    </span>
-                                @endif
-                            </div>
-                        @endif
-                    @else
-                        <!-- Quran session performance -->
-                        @if($session->recitation_quality || $session->tajweed_accuracy)
-                            <div class="flex items-center space-x-1 space-x-reverse text-xs">
-                                @if($session->recitation_quality)
-                                    <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                                        تلاوة: {{ $session->recitation_quality }}/10
-                                    </span>
-                                @endif
-                                @if($session->tajweed_accuracy)
-                                    <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
-                                        تجويد: {{ $session->tajweed_accuracy }}/10
-                                    </span>
-                                @endif
-                            </div>
-                        @endif
-                    @endif
-                @endif
-
-                <!-- Attendance info for completed individual sessions -->
-                @if($session->status === SessionStatus::COMPLETED && $session->session_type === 'individual' && $session->attendance_status)
-                    <div class="text-xs text-gray-600">
-                        الحضور: 
-                        @switch($session->attendance_status)
-                            @case('attended')
-                                <span class="text-green-600 font-medium">حضر</span>
-                                @break
-                            @case('late')
-                                <span class="text-yellow-600 font-medium">متأخر</span>
-                                @break
-                            @case('left_early')
-                                <span class="text-orange-600 font-medium">غادر مبكراً</span>
-                                @break
-                            @case('absent')
-                                <span class="text-red-600 font-medium">غائب</span>
-                                @break
-                        @endswitch
-                    </div>
-                @endif
-
-                <!-- Absent status info -->
-                @if($session->status === SessionStatus::ABSENT)
-                    <div class="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
-                        <i class="ri-information-line"></i>
-                        تم احتساب الجلسة من الاشتراك
-                    </div>
-                @endif
+                <x-sessions.status-badge :status="$session->status" :session="$session" size="sm" />
             </div>
         </div>
     </div>
