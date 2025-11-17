@@ -347,68 +347,120 @@ class QuranCircleReportService
 
     /**
      * Calculate homework statistics
+     *
+     * Simplified: Homework is assigned in quran_session_homeworks and graded
+     * orally during the session in student_session_reports.
      */
     protected function calculateHomeworkStats(Collection $sessions): array
     {
-        $homeworkData = [];
-        $totalAssigned = 0;
-        $totalCompleted = 0;
-        $totalInProgress = 0;
-        $totalScores = [];
+        // Get all session reports for these sessions
+        $sessionReports = DB::table('student_session_reports')
+            ->whereIn('session_id', $sessions->pluck('id'))
+            ->get();
 
-        foreach ($sessions as $session) {
+        // Count sessions with homework assigned
+        $sessionsWithHomework = $sessions->filter(function ($session) {
             $homework = $session->sessionHomework;
-            if ($homework) {
-                $assignments = $homework->assignments ?? collect();
-                $totalAssigned += $assignments->count();
+            return $homework && (
+                $homework->has_new_memorization ||
+                $homework->has_review ||
+                $homework->has_comprehensive_review
+            );
+        })->count();
 
-                foreach ($assignments as $assignment) {
-                    if ($assignment->completion_status === 'completed') {
-                        $totalCompleted++;
-                        if ($assignment->overall_score) {
-                            $totalScores[] = $assignment->overall_score;
-                        }
-                    } elseif ($assignment->completion_status === 'in_progress') {
-                        $totalInProgress++;
+        // Count how many students completed homework (have grades > 0)
+        $totalScores = [];
+        $completedCount = 0;
+
+        foreach ($sessionReports as $report) {
+            $session = $sessions->firstWhere('id', $report->session_id);
+            if (!$session || !$session->sessionHomework) {
+                continue;
+            }
+
+            $homework = $session->sessionHomework;
+            $hasHomework = $homework->has_new_memorization || $homework->has_review || $homework->has_comprehensive_review;
+
+            if ($hasHomework) {
+                // Check if student did homework (has grades > 0)
+                $hasGrades = ($report->new_memorization_degree > 0) || ($report->reservation_degree > 0);
+
+                if ($hasGrades) {
+                    $completedCount++;
+
+                    // Calculate average score from degrees
+                    $scores = [];
+                    if ($homework->has_new_memorization && $report->new_memorization_degree > 0) {
+                        $scores[] = $report->new_memorization_degree;
+                    }
+                    if (($homework->has_review || $homework->has_comprehensive_review) && $report->reservation_degree > 0) {
+                        $scores[] = $report->reservation_degree;
+                    }
+
+                    if (count($scores) > 0) {
+                        $totalScores[] = array_sum($scores) / count($scores);
                     }
                 }
             }
         }
 
+        $totalAssigned = $sessionsWithHomework * ($sessionReports->unique('student_id')->count() ?: 1);
+
         return [
             'total_assigned' => $totalAssigned,
-            'completed' => $totalCompleted,
-            'in_progress' => $totalInProgress,
-            'not_started' => $totalAssigned - $totalCompleted - $totalInProgress,
-            'completion_rate' => $totalAssigned > 0 ? round(($totalCompleted / $totalAssigned) * 100, 1) : 0,
+            'completed' => $completedCount,
+            'in_progress' => 0, // Not tracked in simplified system
+            'not_started' => max(0, $totalAssigned - $completedCount),
+            'completion_rate' => $totalAssigned > 0 ? round(($completedCount / $totalAssigned) * 100, 1) : 0,
             'average_score' => count($totalScores) > 0 ? round(array_sum($totalScores) / count($totalScores), 1) : 0,
         ];
     }
 
     /**
      * Calculate homework statistics for specific student
+     *
+     * Simplified: Check if homework was assigned and if student has grades for it.
      */
     protected function calculateHomeworkStatsForStudent(User $student, Collection $sessions): array
     {
         $totalAssigned = 0;
         $totalCompleted = 0;
-        $totalInProgress = 0;
         $totalScores = [];
+
+        // Get student's session reports
+        $sessionReports = DB::table('student_session_reports')
+            ->whereIn('session_id', $sessions->pluck('id'))
+            ->where('student_id', $student->id)
+            ->get()
+            ->keyBy('session_id');
 
         foreach ($sessions as $session) {
             $homework = $session->sessionHomework;
-            if ($homework) {
-                $assignment = $homework->assignments()->where('student_id', $student->id)->first();
-                if ($assignment) {
-                    $totalAssigned++;
 
-                    if ($assignment->completion_status === 'completed') {
+            // Check if homework was assigned for this session
+            if ($homework && ($homework->has_new_memorization || $homework->has_review || $homework->has_comprehensive_review)) {
+                $totalAssigned++;
+
+                // Check if student has grades for this homework
+                $report = $sessionReports->get($session->id);
+                if ($report) {
+                    $hasGrades = ($report->new_memorization_degree > 0) || ($report->reservation_degree > 0);
+
+                    if ($hasGrades) {
                         $totalCompleted++;
-                        if ($assignment->overall_score) {
-                            $totalScores[] = $assignment->overall_score;
+
+                        // Calculate average score from degrees
+                        $scores = [];
+                        if ($homework->has_new_memorization && $report->new_memorization_degree > 0) {
+                            $scores[] = $report->new_memorization_degree;
                         }
-                    } elseif ($assignment->completion_status === 'in_progress') {
-                        $totalInProgress++;
+                        if (($homework->has_review || $homework->has_comprehensive_review) && $report->reservation_degree > 0) {
+                            $scores[] = $report->reservation_degree;
+                        }
+
+                        if (count($scores) > 0) {
+                            $totalScores[] = array_sum($scores) / count($scores);
+                        }
                     }
                 }
             }
@@ -417,8 +469,8 @@ class QuranCircleReportService
         return [
             'total_assigned' => $totalAssigned,
             'completed' => $totalCompleted,
-            'in_progress' => $totalInProgress,
-            'not_started' => $totalAssigned - $totalCompleted - $totalInProgress,
+            'in_progress' => 0, // Not tracked in simplified system
+            'not_started' => max(0, $totalAssigned - $totalCompleted),
             'completion_rate' => $totalAssigned > 0 ? round(($totalCompleted / $totalAssigned) * 100, 1) : 0,
             'average_score' => count($totalScores) > 0 ? round(array_sum($totalScores) / count($totalScores), 1) : 0,
         ];

@@ -156,11 +156,6 @@ class SessionHomeworkController extends Controller
                     ['session_id' => $sessionId],
                     $homeworkData
                 );
-
-                // Create assignments for all students in the session
-                if ($homework->exists && $homework->id) {
-                    $homework->createAssignmentsForAllStudents();
-                }
             });
 
             return response()->json([

@@ -201,11 +201,6 @@ class QuranSession extends BaseSession
         return $this->hasMany(QuranSession::class, 'makeup_session_for');
     }
 
-    public function homework(): HasMany
-    {
-        return $this->hasMany(QuranHomework::class, 'session_id');
-    }
-
     public function progress(): HasMany
     {
         return $this->hasMany(QuranProgress::class, 'session_id');
@@ -226,16 +221,13 @@ class QuranSession extends BaseSession
 
 
     /**
-     * New homework system relationships
+     * New homework system relationship
+     * Homework is assigned at session level and graded orally
+     * via student_session_reports (new_memorization_degree, reservation_degree)
      */
     public function sessionHomework(): HasOne
     {
         return $this->hasOne(QuranSessionHomework::class, 'session_id');
-    }
-
-    public function homeworkAssignments(): HasMany
-    {
-        return $this->hasMany(QuranHomeworkAssignment::class, 'session_id');
     }
 
     /**
@@ -960,20 +952,6 @@ class QuranSession extends BaseSession
         ]);
     }
 
-    public function assignHomework(array $homeworkData): QuranHomework
-    {
-        return QuranHomework::create(array_merge($homeworkData, [
-            'academy_id' => $this->academy_id,
-            'quran_teacher_id' => $this->quran_teacher_id,
-            'student_id' => $this->student_id,
-            'session_id' => $this->id,
-            'subscription_id' => $this->quran_subscription_id,
-            'circle_id' => $this->circle_id,
-            'assigned_at' => now(),
-            'status' => 'assigned',
-        ]));
-    }
-
     // Common meeting methods (generateMeetingLink, getMeetingInfo, isMeetingValid,
     // getMeetingJoinUrl, generateParticipantToken, getRoomInfo, endMeeting,
     // isUserInMeeting) are inherited from BaseSession
@@ -1236,26 +1214,6 @@ class QuranSession extends BaseSession
     }
 
     /**
-     * Create homework assignments for all students in the session
-     */
-    public function createHomeworkAssignmentsForStudents(): void
-    {
-        if (! $this->sessionHomework) {
-            return;
-        }
-
-        $students = $this->getStudentsForSession();
-
-        foreach ($students as $student) {
-            QuranHomeworkAssignment::firstOrCreate([
-                'session_homework_id' => $this->sessionHomework->id,
-                'student_id' => $student->id,
-                'session_id' => $this->id,
-            ]);
-        }
-    }
-
-    /**
      * Get students for this session based on session type
      */
     public function getStudentsForSession()
@@ -1279,6 +1237,7 @@ class QuranSession extends BaseSession
 
     /**
      * Get homework statistics for this session
+     * Homework completion is tracked via student_session_reports grading
      */
     public function getHomeworkStatsAttribute(): array
     {
@@ -1287,21 +1246,21 @@ class QuranSession extends BaseSession
             return ['has_homework' => false];
         }
 
-        $assignments = $homework->assignments()->with('student')->get();
+        // Get session reports to check who completed homework
+        $reports = $this->studentReports;
+        $studentsWithGrades = $reports->filter(function($report) {
+            return ($report->new_memorization_degree > 0) || ($report->reservation_degree > 0);
+        });
 
         return [
             'has_homework' => true,
             'total_pages' => $homework->total_pages,
             'new_memorization_pages' => $homework->new_memorization_pages,
             'review_pages' => $homework->review_pages,
-            'total_students' => $assignments->count(),
-            'completed_count' => $assignments->where('completion_status', 'completed')->count(),
-            'in_progress_count' => $assignments->where('completion_status', 'in_progress')->count(),
-            'partially_completed_count' => $assignments->where('completion_status', 'partially_completed')->count(),
-            'not_started_count' => $assignments->where('completion_status', 'not_started')->count(),
-            'average_completion' => $assignments->avg('completion_percentage') ?? 0,
-            'average_score' => $assignments->whereNotNull('overall_score')->avg('overall_score') ?? 0,
-            'assignments' => $assignments,
+            'total_students' => $reports->count(),
+            'completed_count' => $studentsWithGrades->count(),
+            'average_memorization_degree' => $reports->avg('new_memorization_degree') ?? 0,
+            'average_reservation_degree' => $reports->avg('reservation_degree') ?? 0,
         ];
     }
 
