@@ -28,10 +28,9 @@ class QuranIndividualCircle extends Model
         'sessions_completed',
         'sessions_remaining',
         'current_surah',
-        'current_verse',
+        // Removed: 'current_verse', 'verses_memorized' (system now uses pages-only)
         'current_page',
         'current_face',
-        'verses_memorized',
         'papers_memorized',
         'papers_memorized_precise',
         'progress_percentage',
@@ -56,10 +55,9 @@ class QuranIndividualCircle extends Model
         'sessions_completed' => 'integer',
         'sessions_remaining' => 'integer',
         'current_surah' => 'integer',
-        'current_verse' => 'integer',
+        // Removed: 'current_verse' => 'integer', 'verses_memorized' => 'integer' (pages-only)
         'current_page' => 'integer',
         'current_face' => 'integer',
-        'verses_memorized' => 'integer',
         'papers_memorized' => 'integer',
         'papers_memorized_precise' => 'decimal:2',
         'progress_percentage' => 'decimal:2',
@@ -238,24 +236,6 @@ class QuranIndividualCircle extends Model
     // Paper-based helper methods
 
     /**
-     * Convert verses to papers (وجه)
-     * Each paper (وجه) = approximately 15 verses
-     */
-    public function convertVersesToPapers(int $verses): float
-    {
-        return round($verses / 15, 2);
-    }
-
-    /**
-     * Convert papers to verses
-     * Each paper (وجه) = approximately 15 verses
-     */
-    public function convertPapersToVerses(float $papers): int
-    {
-        return (int) round($papers * 15);
-    }
-
-    /**
      * Get current position in paper format
      */
     public function getCurrentPaperPosition(): array
@@ -276,7 +256,6 @@ class QuranIndividualCircle extends Model
         $this->update([
             'papers_memorized' => (int) floor($papersMemorized),
             'papers_memorized_precise' => $papersMemorized,
-            'verses_memorized' => $this->convertPapersToVerses($papersMemorized),
         ]);
     }
 
@@ -316,14 +295,6 @@ class QuranIndividualCircle extends Model
         static::updating(function ($circle) {
             if ($circle->isDirty(['sessions_completed', 'total_sessions'])) {
                 $circle->sessions_remaining = $circle->total_sessions - $circle->sessions_completed;
-            }
-
-            // Auto-sync paper and verse fields when one changes
-            if ($circle->isDirty('papers_memorized_precise') && ! $circle->isDirty('verses_memorized')) {
-                $circle->verses_memorized = $circle->convertPapersToVerses($circle->papers_memorized_precise);
-            } elseif ($circle->isDirty('verses_memorized') && ! $circle->isDirty('papers_memorized_precise')) {
-                $circle->papers_memorized_precise = $circle->convertVersesToPapers($circle->verses_memorized);
-                $circle->papers_memorized = (int) floor($circle->papers_memorized_precise);
             }
         });
     }

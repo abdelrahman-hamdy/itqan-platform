@@ -239,9 +239,11 @@ public static function form(Form $form): Form
                                     ->numeric()
                                     ->disabled(),
 
-                                TextInput::make('verses_memorized')
-                                    ->label('الآيات المحفوظة')
+                                TextInput::make('pages_memorized')
+                                    ->label('الصفحات المحفوظة')
                                     ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(604)
                                     ->default(0),
 
                                 TextInput::make('progress_percentage')
@@ -270,10 +272,11 @@ public static function form(Form $form): Form
                                     ->minValue(1)
                                     ->maxValue(114),
 
-                                TextInput::make('current_verse')
-                                    ->label('الآية الحالية')
+                                TextInput::make('current_page')
+                                    ->label('الصفحة الحالية')
                                     ->numeric()
-                                    ->minValue(1),
+                                    ->minValue(1)
+                                    ->maxValue(604),
                             ]),
                     ])
                     ->visibleOn('edit'),
@@ -562,8 +565,8 @@ public static function form(Form $form): Form
                     ->schema([
                         Infolists\Components\Grid::make(3)
                             ->schema([
-                                Infolists\Components\TextEntry::make('verses_memorized')
-                                    ->label('الآيات المحفوظة'),
+                                Infolists\Components\TextEntry::make('pages_memorized')
+                                    ->label('الصفحات المحفوظة'),
                                 Infolists\Components\TextEntry::make('progress_percentage')
                                     ->label('نسبة التقدم')
                                     ->suffix('%'),

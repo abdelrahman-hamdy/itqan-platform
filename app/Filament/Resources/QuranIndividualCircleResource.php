@@ -62,9 +62,11 @@ class QuranIndividualCircleResource extends Resource
                     ->default(0),
                 Forms\Components\TextInput::make('current_surah')
                     ->numeric(),
-                Forms\Components\TextInput::make('current_verse')
-                    ->numeric(),
-                Forms\Components\TextInput::make('verses_memorized')
+                Forms\Components\TextInput::make('current_page')
+                    ->numeric()
+                    ->minValue(1)
+                    ->maxValue(604),
+                Forms\Components\TextInput::make('papers_memorized')
                     ->required()
                     ->numeric()
                     ->default(0),
@@ -142,10 +144,10 @@ class QuranIndividualCircleResource extends Resource
                 Tables\Columns\TextColumn::make('current_surah')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('current_verse')
+                Tables\Columns\TextColumn::make('current_page')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('verses_memorized')
+                Tables\Columns\TextColumn::make('papers_memorized')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('progress_percentage')

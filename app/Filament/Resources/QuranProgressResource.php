@@ -56,56 +56,38 @@ class QuranProgressResource extends Resource
                     ->required(),
                 Forms\Components\TextInput::make('current_surah')
                     ->numeric(),
-                Forms\Components\TextInput::make('current_verse')
-                    ->numeric(),
                 Forms\Components\TextInput::make('current_page')
-                    ->numeric(),
+                    ->numeric()
+                    ->minValue(1)
+                    ->maxValue(604),
                 Forms\Components\TextInput::make('current_face')
-                    ->numeric(),
+                    ->numeric()
+                    ->minValue(1)
+                    ->maxValue(2),
                 Forms\Components\TextInput::make('target_surah')
-                    ->numeric(),
-                Forms\Components\TextInput::make('target_verse')
                     ->numeric(),
                 Forms\Components\TextInput::make('target_page')
                     ->numeric(),
                 Forms\Components\TextInput::make('target_face')
-                    ->numeric(),
-                Forms\Components\TextInput::make('verses_memorized')
-                    ->required()
                     ->numeric()
-                    ->default(0),
+                    ->minValue(1)
+                    ->maxValue(2),
                 Forms\Components\TextInput::make('papers_memorized')
                     ->required()
                     ->numeric()
                     ->default(0.00),
-                Forms\Components\TextInput::make('verses_reviewed')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
                 Forms\Components\TextInput::make('papers_reviewed')
                     ->required()
                     ->numeric()
                     ->default(0.00),
-                Forms\Components\TextInput::make('verses_perfect')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
                 Forms\Components\TextInput::make('papers_perfect')
                     ->required()
                     ->numeric()
                     ->default(0.00),
-                Forms\Components\TextInput::make('verses_need_work')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
                 Forms\Components\TextInput::make('papers_need_work')
                     ->required()
                     ->numeric()
                     ->default(0.00),
-                Forms\Components\TextInput::make('total_verses_memorized')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
                 Forms\Components\TextInput::make('total_papers_memorized')
                     ->required()
                     ->numeric()
@@ -235,9 +217,6 @@ class QuranProgressResource extends Resource
                 Tables\Columns\TextColumn::make('current_surah')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('current_verse')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('current_page')
                     ->numeric()
                     ->sortable(),
@@ -247,40 +226,22 @@ class QuranProgressResource extends Resource
                 Tables\Columns\TextColumn::make('target_surah')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('target_verse')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('target_page')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('target_face')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('verses_memorized')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('papers_memorized')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('verses_reviewed')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('papers_reviewed')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('verses_perfect')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('papers_perfect')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('verses_need_work')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('papers_need_work')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('total_verses_memorized')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_papers_memorized')

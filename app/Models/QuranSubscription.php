@@ -32,8 +32,7 @@ class QuranSubscription extends Model
         'trial_used',
         'is_trial_active',
         'current_surah',
-        'current_verse',
-        'verses_memorized',
+        // Removed: 'current_verse', 'verses_memorized' (system now uses pages-only)
         'memorization_level',
         'progress_percentage',
         'last_session_at',
@@ -59,7 +58,7 @@ class QuranSubscription extends Model
         'sessions_used' => 'integer',
         'sessions_remaining' => 'integer',
         'trial_used' => 'integer',
-        'verses_memorized' => 'integer',
+        // Removed: 'verses_memorized' => 'integer' (system now uses pages-only)
         'progress_percentage' => 'decimal:2',
         'total_price' => 'decimal:2',
         'discount_amount' => 'decimal:2',

@@ -72,12 +72,13 @@ class QuranIndividualCircleResource extends Resource
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(114),
-                        Forms\Components\TextInput::make('current_verse')
-                            ->label('الآية الحالية')
+                        Forms\Components\TextInput::make('current_page')
+                            ->label('الصفحة الحالية')
                             ->numeric()
-                            ->minValue(1),
-                        Forms\Components\TextInput::make('verses_memorized')
-                            ->label('عدد الآيات المحفوظة')
+                            ->minValue(1)
+                            ->maxValue(604),
+                        Forms\Components\TextInput::make('papers_memorized')
+                            ->label('عدد الصفحات المحفوظة')
                             ->numeric()
                             ->minValue(0)
                             ->default(0),

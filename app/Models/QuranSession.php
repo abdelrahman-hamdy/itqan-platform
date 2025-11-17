@@ -72,18 +72,14 @@ class QuranSession extends BaseSession
         'recording_url',
         'recording_enabled',
 
-        // Quran progress tracking
+        // Quran progress tracking (pages-only system)
         'current_surah',
-        'current_verse',
         'current_page',
         'current_face',
-        'verses_covered_start',
-        'verses_covered_end',
         'page_covered_start',
         'face_covered_start',
         'page_covered_end',
         'face_covered_end',
-        'verses_memorized_today',
         'papers_memorized_today',
         'papers_covered_today',
         'recitation_quality',
@@ -128,18 +124,14 @@ class QuranSession extends BaseSession
         // Quran-specific casts
         'teacher_scheduled_at' => 'datetime',
 
-        // Quran progress
+        // Quran progress (pages-only system)
         'current_surah' => 'integer',
-        'current_verse' => 'integer',
         'current_page' => 'integer',
         'current_face' => 'integer',
-        'verses_covered_start' => 'integer',
-        'verses_covered_end' => 'integer',
         'page_covered_start' => 'integer',
         'face_covered_start' => 'integer',
         'page_covered_end' => 'integer',
         'face_covered_end' => 'integer',
-        'verses_memorized_today' => 'integer',
         'papers_memorized_today' => 'decimal:2',
         'papers_covered_today' => 'decimal:2',
 
