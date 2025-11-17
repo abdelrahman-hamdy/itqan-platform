@@ -143,38 +143,38 @@
                     view-type="student" />
             @endif
 
-            <!-- Students Section -->
-            @if($session->session_type === 'group' && $session->students && $session->students->count() > 0)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    {{ $viewType === 'teacher' ? 'طلاب الجلسة' : 'الطلاب المشاركون' }} ({{ $session->students->count() }})
-                </h3>
+            <!-- Students Section (Teacher Only) -->
+            @if($viewType === 'teacher')
+                @if($session->session_type === 'group' && $session->students && $session->students->count() > 0)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        طلاب الجلسة ({{ $session->students->count() }})
+                    </h3>
 
-                <div class="space-y-4">
-                    @foreach($session->students as $student)
-                        <x-sessions.student-item
-                            :student="$student"
-                            :session="$session"
-                            :show-chat="$viewType === 'teacher'"
-                            size="sm"
-                        />
-                    @endforeach
+                    <div class="space-y-4">
+                        @foreach($session->students as $student)
+                            <x-sessions.student-item
+                                :student="$student"
+                                :session="$session"
+                                :show-chat="true"
+                                size="sm"
+                            />
+                        @endforeach
+                    </div>
                 </div>
-            </div>
-            @elseif($session->session_type === 'individual' && $session->student)
-            <!-- Individual Student Info -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    {{ $viewType === 'teacher' ? 'الطالب' : 'معلومات الجلسة' }}
-                </h3>
+                @elseif($session->session_type === 'individual' && $session->student)
+                <!-- Individual Student Info -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">الطالب</h3>
 
-                <x-sessions.student-item
-                    :student="$session->student"
-                    :session="$session"
-                    :show-chat="$viewType === 'teacher'"
-                    size="md"
-                />
-            </div>
+                    <x-sessions.student-item
+                        :student="$session->student"
+                        :session="$session"
+                        :show-chat="true"
+                        size="md"
+                    />
+                </div>
+                @endif
             @endif
 
             <!-- Session Instructions (Student Only, for Scheduled Sessions) -->
