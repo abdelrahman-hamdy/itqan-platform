@@ -326,7 +326,7 @@ class QuranCircleReportService
 
         // Get pages memorized from QuranProgress (for this student in all circles)
         $totalPagesMemorized = QuranProgress::where('student_id', $student->id)
-            ->sum('pages_memorized_today') ?? 0;
+            ->sum('total_pages_memorized') ?? 0;
 
         // Calculate average pages per session
         $sessionsWithMemorization = $sessionReports->whereNotNull('new_memorization_degree')
