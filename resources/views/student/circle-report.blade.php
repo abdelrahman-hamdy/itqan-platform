@@ -67,8 +67,8 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-600">الأوجه المحفوظة</p>
-                    <p class="text-3xl font-bold text-purple-600 mt-1">{{ $progress['papers_memorized'] ?? 0 }}</p>
+                    <p class="text-sm text-gray-600">الصفحات المحفوظة</p>
+                    <p class="text-3xl font-bold text-purple-600 mt-1">{{ number_format($progress['pages_memorized'] ?? 0, 1) }}</p>
                 </div>
                 <div class="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center">
                     <i class="ri-book-open-line text-purple-600 text-2xl"></i>
@@ -117,63 +117,20 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Attendance Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <i class="ri-calendar-check-line text-blue-600 ml-2"></i>
-                    إحصائيات حضوري
-                </h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div class="text-center p-4 bg-green-50 rounded-lg">
-                        <p class="text-sm text-green-600 mb-1">حضرت</p>
-                        <p class="text-2xl font-bold text-green-700">{{ $attendance['attended'] }}</p>
-                    </div>
-                    <div class="text-center p-4 bg-red-50 rounded-lg">
-                        <p class="text-sm text-red-600 mb-1">غبت</p>
-                        <p class="text-2xl font-bold text-red-700">{{ $attendance['absent'] }}</p>
-                    </div>
-                    <div class="text-center p-4 bg-yellow-50 rounded-lg">
-                        <p class="text-sm text-yellow-600 mb-1">تأخرت</p>
-                        <p class="text-2xl font-bold text-yellow-700">{{ $attendance['late'] }}</p>
-                    </div>
-                </div>
-            </div>
+            <!-- Attendance Card -->
+            <x-reports.attendance-card
+                :attendance="$attendance"
+                title="إحصائيات حضوري" />
 
-            <!-- Progress Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <i class="ri-bar-chart-line text-purple-600 ml-2"></i>
-                    تقدمي في الحفظ
-                </h2>
-                @if($circleType === 'individual')
-                <div class="space-y-4">
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <p class="text-sm text-purple-600 mb-1">موضعي الحالي</p>
-                        <p class="text-lg font-bold text-purple-900">{{ $progress['current_position'] ?? 'لم يتم تحديده بعد' }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm text-gray-600">الآيات المحفوظة</p>
-                            <p class="text-2xl font-bold text-gray-900">{{ $progress['verses_memorized'] ?? 0 }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">الأوجه المحفوظة</p>
-                            <p class="text-2xl font-bold text-gray-900">{{ $progress['papers_memorized'] ?? 0 }}</p>
-                        </div>
-                    </div>
-                </div>
-                @endif
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <p class="text-sm text-gray-600">متوسط الحفظ الجديد</p>
-                        <p class="text-2xl font-bold text-green-600">{{ $progress['average_memorization_degree'] ?? 0 }}/10</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">متوسط المراجعة</p>
-                        <p class="text-2xl font-bold text-blue-600">{{ $progress['average_reservation_degree'] ?? 0 }}/10</p>
-                    </div>
-                </div>
-            </div>
+            <!-- Progress Card -->
+            <x-reports.progress-card
+                :progress="$progress"
+                title="تقدمي في الحفظ" />
+
+            <!-- Performance Card -->
+            <x-reports.performance-card
+                :performance="$progress"
+                title="أدائي الأكاديمي" />
 
             <!-- Homework Section -->
             @if(isset($homework) && $homework['total_assigned'] > 0)
