@@ -78,7 +78,7 @@
 
     <!-- Rating Label -->
     <div class="text-center mb-6">
-        <span class="text-sm font-bold {{ $getColorClass($averageOverall) }}">
+        <span class="text-base font-bold {{ $getColorClass($averageOverall) }}">
             {{ $getRatingLabel($averageOverall) }}
         </span>
     </div>
