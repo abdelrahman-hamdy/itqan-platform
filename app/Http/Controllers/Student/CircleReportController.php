@@ -27,11 +27,17 @@ class CircleReportController extends Controller
             abort(403, 'غير مصرح لك بعرض هذا التقرير');
         }
 
-        // Generate report data
-        $reportData = $this->reportService->getIndividualCircleReport($circle);
+        // Get date range filter
+        $dateRange = $this->getDateRangeFromRequest($request);
+
+        // Generate report data with date filter
+        $reportData = $this->reportService->getIndividualCircleReport($circle, $dateRange);
 
         return view('student.circle-report', array_merge($reportData, [
             'circleType' => 'individual',
+            'filterPeriod' => $request->get('period', 'all'),
+            'customStartDate' => $request->get('start_date'),
+            'customEndDate' => $request->get('end_date'),
         ]));
     }
 
@@ -45,11 +51,55 @@ class CircleReportController extends Controller
             abort(403, 'غير مصرح لك بعرض هذا التقرير');
         }
 
-        // Generate student-specific report
-        $reportData = $this->reportService->getStudentReportInGroupCircle($circle, auth()->user());
+        // Get date range filter
+        $dateRange = $this->getDateRangeFromRequest($request);
+
+        // Generate student-specific report with date filter
+        $reportData = $this->reportService->getStudentReportInGroupCircle($circle, auth()->user(), $dateRange);
         $reportData['circle'] = $circle;
         $reportData['circleType'] = 'group';
+        $reportData['filterPeriod'] = $request->get('period', 'all');
+        $reportData['customStartDate'] = $request->get('start_date');
+        $reportData['customEndDate'] = $request->get('end_date');
 
         return view('student.circle-report', $reportData);
+    }
+
+    /**
+     * Get date range from request parameters
+     */
+    protected function getDateRangeFromRequest(Request $request): ?array
+    {
+        $period = $request->get('period', 'all');
+
+        switch ($period) {
+            case 'this_month':
+                return [
+                    'start' => now()->startOfMonth(),
+                    'end' => now()->endOfMonth(),
+                ];
+
+            case 'last_3_months':
+                return [
+                    'start' => now()->subMonths(3)->startOfMonth(),
+                    'end' => now()->endOfMonth(),
+                ];
+
+            case 'custom':
+                $startDate = $request->get('start_date');
+                $endDate = $request->get('end_date');
+
+                if ($startDate && $endDate) {
+                    return [
+                        'start' => \Carbon\Carbon::parse($startDate)->startOfDay(),
+                        'end' => \Carbon\Carbon::parse($endDate)->endOfDay(),
+                    ];
+                }
+                return null;
+
+            case 'all':
+            default:
+                return null; // No filtering
+        }
     }
 }

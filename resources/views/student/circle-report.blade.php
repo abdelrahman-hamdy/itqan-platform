@@ -37,20 +37,52 @@
         </div>
     </div>
 
-    <!-- Overall Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600">إجمالي الجلسات</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ $attendance['total_sessions'] }}</p>
+    <!-- Time Filter -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <form method="GET" class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <label for="period" class="block text-sm font-medium text-gray-700 mb-2">الفترة الزمنية</label>
+                <select id="period" name="period" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all" {{ ($filterPeriod ?? 'all') === 'all' ? 'selected' : '' }}>كل الفترة</option>
+                    <option value="this_month" {{ ($filterPeriod ?? '') === 'this_month' ? 'selected' : '' }}>هذا الشهر</option>
+                    <option value="last_3_months" {{ ($filterPeriod ?? '') === 'last_3_months' ? 'selected' : '' }}>آخر 3 شهور</option>
+                    <option value="custom" {{ ($filterPeriod ?? '') === 'custom' ? 'selected' : '' }}>فترة مخصصة</option>
+                </select>
+            </div>
+
+            <div id="customDateRange" class="flex gap-4 flex-1" style="display: {{ ($filterPeriod ?? '') === 'custom' ? 'flex' : 'none' }}">
+                <div class="flex-1 min-w-[150px]">
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">من تاريخ</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ $customStartDate ?? '' }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
-                <div class="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-calendar-check-line text-blue-600 text-2xl"></i>
+                <div class="flex-1 min-w-[150px]">
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">إلى تاريخ</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ $customEndDate ?? '' }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
-        </div>
 
+            <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2">
+                <i class="ri-filter-3-line"></i>
+                تطبيق الفلتر
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('period').addEventListener('change', function() {
+            const customDateRange = document.getElementById('customDateRange');
+            if (this.value === 'custom') {
+                customDateRange.style.display = 'flex';
+            } else {
+                customDateRange.style.display = 'none';
+            }
+        });
+    </script>
+
+    <!-- Overall Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -63,7 +95,6 @@
             </div>
         </div>
 
-        @if($circleType === 'individual')
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -79,23 +110,11 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-600">نسبة التقدم</p>
-                    <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $progress['progress_percentage'] ?? 0 }}%</p>
+                    <p class="text-sm text-gray-600">الصفحات المُراجعة</p>
+                    <p class="text-3xl font-bold text-blue-600 mt-1">{{ $progress['pages_reviewed'] ?? 0 }}</p>
                 </div>
-                <div class="w-14 h-14 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-pie-chart-line text-yellow-600 text-2xl"></i>
-                </div>
-            </div>
-        </div>
-        @else
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600">متوسط الأداء</p>
-                    <p class="text-3xl font-bold text-purple-600 mt-1">{{ $progress['average_overall_performance'] ?? 0 }}/10</p>
-                </div>
-                <div class="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-star-line text-purple-600 text-2xl"></i>
+                <div class="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i class="ri-refresh-line text-blue-600 text-2xl"></i>
                 </div>
             </div>
         </div>
@@ -103,15 +122,14 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-600">إنجاز الواجبات</p>
-                    <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $homework['completion_rate'] ?? 0 }}%</p>
+                    <p class="text-sm text-gray-600">التقييم العام</p>
+                    <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $progress['overall_assessment'] ?? 0 }}/10</p>
                 </div>
                 <div class="w-14 h-14 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-task-line text-yellow-600 text-2xl"></i>
+                    <i class="ri-star-line text-yellow-600 text-2xl"></i>
                 </div>
             </div>
         </div>
-        @endif
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -121,11 +139,6 @@
             <x-reports.attendance-card
                 :attendance="$attendance"
                 title="إحصائيات حضوري" />
-
-            <!-- Progress Card -->
-            <x-reports.progress-card
-                :progress="$progress"
-                title="تقدمي في الحفظ" />
 
             <!-- Performance Card -->
             <x-reports.performance-card

@@ -29,12 +29,21 @@ class QuranCircleReportService
      * Generate comprehensive report for individual circle
      *
      * @param QuranIndividualCircle $circle
+     * @param array|null $dateRange Optional date range filter ['start' => Carbon, 'end' => Carbon]
      * @return array
      */
-    public function getIndividualCircleReport(QuranIndividualCircle $circle): array
+    public function getIndividualCircleReport(QuranIndividualCircle $circle, ?array $dateRange = null): array
     {
         $student = $circle->student;
-        $sessions = $circle->sessions()->orderBy('scheduled_at', 'desc')->get();
+
+        // Build sessions query with optional date filter
+        $sessionsQuery = $circle->sessions()->orderBy('scheduled_at', 'desc');
+
+        if ($dateRange) {
+            $sessionsQuery->whereBetween('scheduled_at', [$dateRange['start'], $dateRange['end']]);
+        }
+
+        $sessions = $sessionsQuery->get();
         $completedSessions = $sessions->whereIn('status', ['completed', 'absent']);
 
         // Get student session reports
@@ -144,9 +153,10 @@ class QuranCircleReportService
      *
      * @param QuranCircle $circle
      * @param User $student
+     * @param array|null $dateRange Optional date range filter ['start' => Carbon, 'end' => Carbon]
      * @return array
      */
-    public function getStudentReportInGroupCircle(QuranCircle $circle, User $student): array
+    public function getStudentReportInGroupCircle(QuranCircle $circle, User $student, ?array $dateRange = null): array
     {
         // Get student's enrollment date from pivot table
         $enrollment = DB::table('quran_circle_students')
@@ -156,10 +166,13 @@ class QuranCircleReportService
 
         $enrolledAt = $enrollment ? \Carbon\Carbon::parse($enrollment->enrolled_at) : null;
 
-        // Get sessions since student enrollment
+        // Get sessions since student enrollment with optional date filter
         $allSessions = $circle->sessions()
             ->when($enrolledAt, function ($query) use ($enrolledAt) {
                 return $query->where('scheduled_at', '>=', $enrolledAt);
+            })
+            ->when($dateRange, function ($query) use ($dateRange) {
+                return $query->whereBetween('scheduled_at', [$dateRange['start'], $dateRange['end']]);
             })
             ->orderBy('scheduled_at', 'desc')
             ->get();
@@ -201,6 +214,11 @@ class QuranCircleReportService
 
     /**
      * Calculate attendance statistics
+     *
+     * Uses status-based points:
+     * - Attended (present) = 1 point
+     * - Late = 0.5 points
+     * - Absent = 0 points
      */
     protected function calculateAttendanceStats(Collection $completedSessions, Collection $sessionReports): array
     {
@@ -225,12 +243,24 @@ class QuranCircleReportService
         $avgDuration = $sessionReports->where('attendance_status', 'present')
             ->avg('actual_attendance_minutes') ?? 0;
 
+        // Calculate attendance using points system
+        // Attended = 1 point, Late = 0.5 points, Absent = 0 points
+        $totalPoints = 0;
+        foreach ($sessionReports as $report) {
+            if ($report->attendance_status === 'present') {
+                $totalPoints += $report->is_late ? 0.5 : 1.0;
+            }
+            // Absent = 0 points (no addition)
+        }
+
+        $attendanceRate = $totalSessions > 0 ? round(($totalPoints / $totalSessions) * 100, 1) : 0;
+
         return [
             'total_sessions' => $totalSessions,
             'attended' => $attended,
             'absent' => $absent,
             'late' => $late,
-            'attendance_rate' => $totalSessions > 0 ? round(($attended / $totalSessions) * 100, 1) : 0,
+            'attendance_rate' => $attendanceRate,
             'average_duration_minutes' => round($avgDuration, 0),
             'punctuality_rate' => $attended > 0 ? round((($attended - $late) / $attended) * 100, 1) : 100,
         ];
@@ -284,14 +314,38 @@ class QuranCircleReportService
         $averagePagesPerSession = $sessionsWithMemorization > 0 ?
             round($pagesMemorized / $sessionsWithMemorization, 2) : 0;
 
+        // Calculate pages reviewed (estimated from reservation/review degrees)
+        // Using same estimation as memorization: degree represents quality, pages estimated from session count
+        $sessionsWithReview = $sessionReports->whereNotNull('reservation_degree')
+            ->where('reservation_degree', '>', 0)
+            ->count();
+
+        // Estimate: each review session covers approximately 2-5 pages depending on degree
+        // We'll use a conservative average of 3 pages per review session
+        $estimatedPagesReviewed = $sessionsWithReview * 3;
+
+        // Calculate overall assessment (average of memorization and review grades)
+        $totalGrades = [];
+        foreach ($sessionReports as $report) {
+            if ($report->new_memorization_degree > 0) {
+                $totalGrades[] = $report->new_memorization_degree;
+            }
+            if ($report->reservation_degree > 0) {
+                $totalGrades[] = $report->reservation_degree;
+            }
+        }
+        $overallAssessment = count($totalGrades) > 0 ? round(array_sum($totalGrades) / count($totalGrades), 1) : 0;
+
         return [
             'current_position' => $this->formatCurrentPosition($circle),
             'pages_memorized' => round($pagesMemorized, 1),
             'papers_memorized' => $papersMemorized,
+            'pages_reviewed' => $estimatedPagesReviewed,
             'progress_percentage' => $circle->progress_percentage ?? 0,
             'average_memorization_degree' => round($totalMemorization, 1),
             'average_reservation_degree' => round($totalReservation, 1),
             'average_overall_performance' => $averageOverallPerformance,
+            'overall_assessment' => $overallAssessment,
             'sessions_evaluated' => $sessionReports->whereNotNull('new_memorization_degree')->count(),
             'average_pages_per_session' => $averagePagesPerSession,
 
@@ -335,11 +389,31 @@ class QuranCircleReportService
         $averagePagesPerSession = $sessionsWithMemorization > 0 ?
             round($totalPagesMemorized / $sessionsWithMemorization, 2) : 0;
 
+        // Calculate pages reviewed (estimated from reservation/review degrees)
+        $sessionsWithReview = $sessionReports->whereNotNull('reservation_degree')
+            ->where('reservation_degree', '>', 0)
+            ->count();
+        $estimatedPagesReviewed = $sessionsWithReview * 3; // Average 3 pages per review session
+
+        // Calculate overall assessment (average of all grades)
+        $totalGrades = [];
+        foreach ($sessionReports as $report) {
+            if ($report->new_memorization_degree > 0) {
+                $totalGrades[] = $report->new_memorization_degree;
+            }
+            if ($report->reservation_degree > 0) {
+                $totalGrades[] = $report->reservation_degree;
+            }
+        }
+        $overallAssessment = count($totalGrades) > 0 ? round(array_sum($totalGrades) / count($totalGrades), 1) : 0;
+
         return [
             'pages_memorized' => round($totalPagesMemorized, 1),
+            'pages_reviewed' => $estimatedPagesReviewed,
             'average_memorization_degree' => round($totalMemorization, 1),
             'average_reservation_degree' => round($totalReservation, 1),
             'average_overall_performance' => $averageOverallPerformance,
+            'overall_assessment' => $overallAssessment,
             'sessions_evaluated' => $sessionReports->whereNotNull('new_memorization_degree')->count(),
             'average_pages_per_session' => $averagePagesPerSession,
         ];
