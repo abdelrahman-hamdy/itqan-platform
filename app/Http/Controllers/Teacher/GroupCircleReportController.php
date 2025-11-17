@@ -48,10 +48,55 @@ class GroupCircleReportController extends Controller
             abort(404, 'الطالب غير مسجل في هذه الحلقة');
         }
 
-        // Generate student-specific report
-        $reportData = $this->reportService->getStudentReportInGroupCircle($circle, $student);
-        $reportData['circle'] = $circle;
+        // Get date range filter
+        $dateRange = $this->getDateRangeFromRequest($request);
 
-        return view('teacher.group-circles.student-report', $reportData);
+        // Generate student-specific report with date filter
+        $reportData = $this->reportService->getStudentReportInGroupCircle($circle, $student, $dateRange);
+        $reportData['circle'] = $circle;
+        $reportData['circleType'] = 'group';
+        $reportData['filterPeriod'] = $request->get('period', 'all');
+        $reportData['customStartDate'] = $request->get('start_date');
+        $reportData['customEndDate'] = $request->get('end_date');
+
+        return view('teacher.circle-report', $reportData);
+    }
+
+    /**
+     * Get date range from request parameters
+     */
+    protected function getDateRangeFromRequest(Request $request): ?array
+    {
+        $period = $request->get('period', 'all');
+
+        switch ($period) {
+            case 'this_month':
+                return [
+                    'start' => now()->startOfMonth(),
+                    'end' => now()->endOfMonth(),
+                ];
+
+            case 'last_3_months':
+                return [
+                    'start' => now()->subMonths(3)->startOfMonth(),
+                    'end' => now()->endOfMonth(),
+                ];
+
+            case 'custom':
+                $startDate = $request->get('start_date');
+                $endDate = $request->get('end_date');
+
+                if ($startDate && $endDate) {
+                    return [
+                        'start' => \Carbon\Carbon::parse($startDate)->startOfDay(),
+                        'end' => \Carbon\Carbon::parse($endDate)->endOfDay(),
+                    ];
+                }
+                return null;
+
+            case 'all':
+            default:
+                return null; // No filtering
+        }
     }
 }

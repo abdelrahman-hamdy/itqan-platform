@@ -95,7 +95,6 @@
                         <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">تاريخ الانضمام</th>
                         <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">نسبة الحضور</th>
                         <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">الأداء</th>
-                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">الواجبات</th>
                         <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">الإجراءات</th>
                     </tr>
                 </thead>
@@ -132,13 +131,6 @@
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $report['progress']['average_overall_performance'] >= 7 ? 'bg-green-100 text-green-800' : ($report['progress']['average_overall_performance'] >= 5 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                         {{ $report['progress']['average_overall_performance'] }}/10
                                     </span>
-                                @else
-                                    <span class="text-gray-400">-</span>
-                                @endif
-                            </td>
-                            <td class="text-center py-3 px-4">
-                                @if($report && $report['homework']['total_assigned'] > 0)
-                                    <span class="text-sm text-gray-900">{{ $report['homework']['completion_rate'] }}%</span>
                                 @else
                                     <span class="text-gray-400">-</span>
                                 @endif

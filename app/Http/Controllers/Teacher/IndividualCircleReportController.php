@@ -26,9 +26,55 @@ class IndividualCircleReportController extends Controller
             abort(403, 'غير مصرح لك بعرض هذا التقرير');
         }
 
-        // Generate report data
-        $reportData = $this->reportService->getIndividualCircleReport($circle);
+        // Get date range filter
+        $dateRange = $this->getDateRangeFromRequest($request);
 
-        return view('teacher.individual-circles.report', $reportData);
+        // Generate report data with date filter
+        $reportData = $this->reportService->getIndividualCircleReport($circle, $dateRange);
+
+        return view('teacher.circle-report', array_merge($reportData, [
+            'circleType' => 'individual',
+            'filterPeriod' => $request->get('period', 'all'),
+            'customStartDate' => $request->get('start_date'),
+            'customEndDate' => $request->get('end_date'),
+        ]));
+    }
+
+    /**
+     * Get date range from request parameters
+     */
+    protected function getDateRangeFromRequest(Request $request): ?array
+    {
+        $period = $request->get('period', 'all');
+
+        switch ($period) {
+            case 'this_month':
+                return [
+                    'start' => now()->startOfMonth(),
+                    'end' => now()->endOfMonth(),
+                ];
+
+            case 'last_3_months':
+                return [
+                    'start' => now()->subMonths(3)->startOfMonth(),
+                    'end' => now()->endOfMonth(),
+                ];
+
+            case 'custom':
+                $startDate = $request->get('start_date');
+                $endDate = $request->get('end_date');
+
+                if ($startDate && $endDate) {
+                    return [
+                        'start' => \Carbon\Carbon::parse($startDate)->startOfDay(),
+                        'end' => \Carbon\Carbon::parse($endDate)->endOfDay(),
+                    ];
+                }
+                return null;
+
+            case 'all':
+            default:
+                return null; // No filtering
+        }
     }
 }
