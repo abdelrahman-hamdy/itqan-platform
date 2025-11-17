@@ -139,15 +139,6 @@
             <div class="flex items-center space-x-2 space-x-reverse">
                 @if($viewType === 'teacher')
                     <!-- Teacher Actions -->
-                    @if($subscription->individualCircle && $subscription->individualCircle->canScheduleSession())
-                        <button type="button" 
-                                onclick="event.preventDefault(); event.stopPropagation(); scheduleSession({{ $subscription->individualCircle->id }})"
-                                class="inline-flex items-center px-2 py-1 bg-primary-600 text-white text-xs font-medium rounded hover:bg-primary-700 transition-colors">
-                            <i class="ri-calendar-add-line ml-1"></i>
-                            جدولة جلسة
-                        </button>
-                    @endif
-                    
                     <button type="button" 
                             onclick="event.preventDefault(); event.stopPropagation(); openProgress({{ $subscription->individualCircle->id ?? 0 }})"
                             class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded hover:bg-gray-200 transition-colors">
@@ -184,11 +175,6 @@
 
 @if($viewType === 'teacher')
 <script>
-    function scheduleSession(circleId) {
-        // This will be implemented when we create the scheduling functionality
-        alert('سيتم تنفيذ جدولة الجلسة قريباً');
-    }
-    
     function openProgress(circleId) {
         if (circleId > 0) {
             window.open(`/teacher/individual-circles/${circleId}/progress`, '_blank');

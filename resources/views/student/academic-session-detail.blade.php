@@ -304,11 +304,13 @@ document.addEventListener('DOMContentLoaded', function() {
     @endif
     
     // Show notification if session is starting soon
-    @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 10 && $session->scheduled_at->diffInMinutes(now()) >= 0)
+    @if($session->scheduled_at && $session->scheduled_at->isFuture() && $session->scheduled_at->diffInMinutes(now()) <= 10)
         @php
             $timeData = formatTimeRemaining($session->scheduled_at);
         @endphp
-        showNotification('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', 'info', 8000);
+        @if(!$timeData['is_past'])
+            showNotification('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', 'info', 8000);
+        @endif
     @endif
 });
 

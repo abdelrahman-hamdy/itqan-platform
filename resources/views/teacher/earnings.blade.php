@@ -1,70 +1,14 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<x-layouts.teacher title="{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - أرباح المعلم">
+  <x-slot name="description">أرباح المعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</x-slot>
+  <x-slot name="head">
+    <style>
+      .earnings-chart {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+    </style>
+  </x-slot>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - أرباح المعلم</title>
-  <meta name="description" content="أرباح المعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ auth()->user()->academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ auth()->user()->academy->secondary_color ?? '#6495ED' }}",
-          },
-          borderRadius: {
-            none: "0px",
-            sm: "4px",
-            DEFAULT: "8px",
-            md: "12px",
-            lg: "16px",
-            xl: "20px",
-            "2xl": "24px",
-            "3xl": "32px",
-            full: "9999px",
-            button: "8px",
-          },
-        },
-      },
-    };
-  </script>
-  <style>
-    :where([class^="ri-"])::before {
-      content: "\f3c2";
-    }
-
-    .card-hover {
-      transition: all 0.3s ease;
-    }
-
-    .card-hover:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
-    }
-
-    .earnings-chart {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-  </style>
-</head>
-
-<body class="bg-gray-50 text-gray-900">
-  <!-- Navigation -->
-  @include('components.navigation.teacher-nav')
-  
-  <!-- Sidebar -->
-  @include('components.sidebar.teacher-sidebar')
-
-  <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-7xl mx-auto">
       
       <!-- Header -->
       <div class="mb-8">
@@ -289,7 +233,5 @@
         </div>
 
       </div>
-    </div>
-  </main>
-</body>
-</html>
+  </div>
+</x-layouts.teacher>

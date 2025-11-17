@@ -683,7 +683,11 @@ class LiveKitMeetingFixed {
                 console.log(`🎮 Control state changed - ${control}: ${enabled}`);
             },
             onNotification: (message, type) => this.showNotification(message, type),
-            onLeaveRequest: () => this.handleLeaveRequest()
+            onLeaveRequest: () => this.handleLeaveRequest(),
+            onParticipantsListOpened: () => {
+                console.log('👥 Participants list opened, updating list...');
+                this.participants.updateParticipantsList();
+            }
         });
 
         window.livekitControls = this.controls;
@@ -718,7 +722,6 @@ class LiveKitMeetingFixed {
     }
 
     handleActiveSpeakersChanged(speakers) {
-        console.log(`🗣️ Active speakers changed:`, speakers.map(s => s.identity));
         const speakerIds = speakers.map(speaker => speaker.identity);
         this.participants.highlightActiveSpeakers(speakerIds);
     }

@@ -188,8 +188,15 @@ class UnifiedMeetingController extends Controller
             $permissions = $request->input('permissions', []);
             $token = $session->generateParticipantToken($user, $permissions);
 
-            // Record user join attempt
-            $this->attendanceService->handleUserJoinPolymorphic($session, $user, $sessionType);
+            // 🔥 FIX: Only update session status, NOT attendance
+            // Attendance will be recorded by LiveKit webhooks (source of truth)
+            if ($session->status->value === 'ready' || $session->status->value === 'scheduled') {
+                $session->update(['status' => 'live']);
+                Log::info('Session status updated to live on participant join', [
+                    'session_id' => $session->id,
+                    'session_type' => $sessionType,
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -423,8 +430,13 @@ class UnifiedMeetingController extends Controller
                 ], 404);
             }
 
-            // Record user leave
-            $this->attendanceService->handleUserLeavePolymorphic($session, $user, $sessionType);
+            // 🔥 FIX: Don't record leave from UI
+            // Attendance will be recorded by LiveKit webhooks (source of truth)
+            Log::info('User left meeting (attendance will be recorded by webhook)', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'session_type' => $sessionType,
+            ]);
 
             return response()->json([
                 'success' => true,

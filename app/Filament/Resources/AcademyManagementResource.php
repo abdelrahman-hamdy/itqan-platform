@@ -9,14 +9,17 @@ use App\Models\QuranCircle;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use App\Services\AcademyContextService;
+use App\Enums\TailwindColor;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
@@ -117,66 +120,52 @@ class AcademyManagementResource extends BaseResource
 
                 Section::make('الهوية البصرية')
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                FileUpload::make('logo')
-                                    ->label('شعار الأكاديمية')
-                                    ->image()
-                                    ->directory('academy-logos')
-                                    ->visibility('public'),
+                        FileUpload::make('logo')
+                            ->label('شعار الأكاديمية')
+                            ->image()
+                            ->directory('academy-logos')
+                            ->visibility('public')
+                            ->columnSpanFull(),
 
-                                ColorPicker::make('brand_color')
-                                    ->label('اللون الأساسي')
-                                    ->default('#0ea5e9')
-                                    ->helperText('لون الواجهة الأساسي للأكاديمية')
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (?string $state, \Filament\Forms\Set $set) {
-                                        // Handle empty values by setting default
-                                        if ($state === null || $state === '') {
-                                            $set('brand_color', '#0ea5e9');
-
-                                            return;
-                                        }
-
-                                        // Ensure the color format is correct
-                                        if (! str_starts_with($state, '#')) {
-                                            $set('brand_color', '#'.ltrim($state, '#'));
-                                        }
-                                    }),
+                        Radio::make('brand_color')
+                            ->label('اللون الأساسي')
+                            ->options(static::getColorOptions())
+                            ->descriptions(static::getColorDescriptions())
+                            ->default(TailwindColor::SKY->value)
+                            ->helperText('اختر لون الواجهة الأساسي للأكاديمية')
+                            ->required()
+                            ->enum(TailwindColor::class)
+                            ->inline()
+                            ->inlineLabel(false)
+                            ->columnSpanFull()
+                            ->extraAttributes([
+                                'class' => 'color-radio-group',
                             ]),
 
-                        Grid::make(2)
-                            ->schema([
-                                ColorPicker::make('secondary_color')
-                                    ->label('اللون الثانوي')
-                                    ->default('#10B981')
-                                    ->helperText('لون الواجهة الثانوي للأكاديمية')
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (?string $state, \Filament\Forms\Set $set) {
-                                        // Handle empty values by setting default
-                                        if ($state === null || $state === '') {
-                                            $set('secondary_color', '#10B981');
-
-                                            return;
-                                        }
-
-                                        // Ensure the color format is correct
-                                        if (! str_starts_with($state, '#')) {
-                                            $set('secondary_color', '#'.ltrim($state, '#'));
-                                        }
-                                    }),
-
-                                Select::make('theme')
-                                    ->label('المظهر')
-                                    ->options([
-                                        'light' => 'فاتح',
-                                        'dark' => 'داكن',
-                                        'auto' => 'تلقائي',
-                                    ])
-                                    ->default('light'),
+                        Radio::make('secondary_color')
+                            ->label('اللون الثانوي')
+                            ->options(static::getColorOptions())
+                            ->descriptions(static::getColorDescriptions())
+                            ->default(TailwindColor::EMERALD->value)
+                            ->helperText('اختر لون الواجهة الثانوي للأكاديمية')
+                            ->required()
+                            ->enum(TailwindColor::class)
+                            ->inline()
+                            ->inlineLabel(false)
+                            ->columnSpanFull()
+                            ->extraAttributes([
+                                'class' => 'color-radio-group',
                             ]),
+
+                        Select::make('theme')
+                            ->label('المظهر')
+                            ->options([
+                                'light' => 'فاتح',
+                                'dark' => 'داكن',
+                                'auto' => 'تلقائي',
+                            ])
+                            ->default('light')
+                            ->columnSpanFull(),
 
                     ])
                     ->collapsible(),
@@ -221,8 +210,19 @@ class AcademyManagementResource extends BaseResource
                                 Toggle::make('maintenance_mode')
                                     ->label('وضع الصيانة')
                                     ->default(false)
-                                    ->helperText('إيقاف الوصول مؤقتاً للصيانة'),
+                                    ->helperText('إيقاف الوصول مؤقتاً للصيانة')
+                                    ->reactive()
+                                    ->afterStateUpdated(fn ($state, $set) =>
+                                        $state ?: $set('academic_settings.maintenance_message', null)),
                             ]),
+
+                        Textarea::make('academic_settings.maintenance_message')
+                            ->label('رسالة الصيانة')
+                            ->placeholder('رسالة مخصصة تظهر للمستخدمين أثناء الصيانة (اختياري)')
+                            ->rows(3)
+                            ->helperText('اترك هذا الحقل فارغاً لاستخدام الرسالة الافتراضية')
+                            ->visible(fn ($get) => $get('maintenance_mode'))
+                            ->columnSpanFull(),
                     ])
                     ->collapsible(),
             ]);
@@ -387,5 +387,34 @@ class AcademyManagementResource extends BaseResource
     {
         // Don't try to eager load academy relationship for Academy model
         return parent::getEloquentQuery()->withoutGlobalScopes();
+    }
+
+    /**
+     * Get color options with labels for Radio field
+     */
+    protected static function getColorOptions(): array
+    {
+        return TailwindColor::toArray();
+    }
+
+    /**
+     * Get descriptions for color options showing color swatches
+     */
+    protected static function getColorDescriptions(): array
+    {
+        $descriptions = [];
+
+        foreach (TailwindColor::cases() as $color) {
+            $hex = $color->getHexValue(500);
+            // Create HTML with color swatch
+            $descriptions[$color->value] = new \Illuminate\Support\HtmlString(
+                '<div class="flex items-center gap-2 mt-1">
+                    <div class="w-6 h-6 rounded-md border-2 border-gray-200 shadow-sm" style="background-color: ' . $hex . '"></div>
+                    <span class="text-xs text-gray-600">' . $hex . '</span>
+                </div>'
+            );
+        }
+
+        return $descriptions;
     }
 }

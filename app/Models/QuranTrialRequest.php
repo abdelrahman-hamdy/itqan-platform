@@ -26,9 +26,8 @@ class QuranTrialRequest extends Model
         'preferred_time',
         'notes',
         'status',
-        'scheduled_at',
-        'meeting_link',
-        'meeting_password',
+        // Removed: scheduled_at, meeting_link, meeting_password
+        // These are now managed via QuranSession and BaseSessionMeeting
         'trial_session_id',
         'completed_at',
         'rating',
@@ -40,7 +39,7 @@ class QuranTrialRequest extends Model
     protected $casts = [
         'learning_goals' => 'array',
         'student_age' => 'integer',
-        'scheduled_at' => 'datetime',
+        // Removed: scheduled_at - now in QuranSession
         'completed_at' => 'datetime',
         'rating' => 'integer',
     ];
@@ -73,7 +72,7 @@ class QuranTrialRequest extends Model
     // Learning level constants
     const LEVEL_BEGINNER = 'beginner';
 
-    const LEVEL_BASIC = 'basic';
+    const LEVEL_ELEMENTARY = 'elementary';
 
     const LEVEL_INTERMEDIATE = 'intermediate';
 
@@ -81,12 +80,15 @@ class QuranTrialRequest extends Model
 
     const LEVEL_EXPERT = 'expert';
 
+    const LEVEL_HAFIZ = 'hafiz';
+
     const LEVELS = [
         self::LEVEL_BEGINNER => 'مبتدئ (لا أعرف القراءة)',
-        self::LEVEL_BASIC => 'أساسي (أقرأ ببطء)',
+        self::LEVEL_ELEMENTARY => 'أساسي (أقرأ ببطء)',
         self::LEVEL_INTERMEDIATE => 'متوسط (أقرأ بطلاقة)',
         self::LEVEL_ADVANCED => 'متقدم (أحفظ أجزاء من القرآن)',
         self::LEVEL_EXPERT => 'متمكن (أحفظ أكثر من 10 أجزاء)',
+        self::LEVEL_HAFIZ => 'حافظ (أحفظ القرآن كاملاً)',
     ];
 
     // Preferred time constants
@@ -166,6 +168,15 @@ class QuranTrialRequest extends Model
     public function trialSession(): BelongsTo
     {
         return $this->belongsTo(QuranSession::class, 'trial_session_id');
+    }
+
+    /**
+     * Get all trial sessions created from this request
+     * Note: Usually only one, but relationship handles edge cases
+     */
+    public function trialSessions()
+    {
+        return $this->hasMany(QuranSession::class, 'trial_request_id');
     }
 
     public function createdBy(): BelongsTo
@@ -275,13 +286,14 @@ class QuranTrialRequest extends Model
         ]);
     }
 
-    public function schedule(\DateTime $scheduledAt, ?string $meetingLink = null, ?string $meetingPassword = null): bool
+    /**
+     * Mark trial request as scheduled
+     * Note: Scheduling details are now stored in QuranSession, not here
+     */
+    public function schedule(): bool
     {
         return $this->update([
             'status' => self::STATUS_SCHEDULED,
-            'scheduled_at' => $scheduledAt,
-            'meeting_link' => $meetingLink,
-            'meeting_password' => $meetingPassword,
         ]);
     }
 

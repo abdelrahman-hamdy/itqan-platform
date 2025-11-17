@@ -44,7 +44,7 @@
             @if($student)
                 @php $conv = auth()->user()->getOrCreatePrivateConversation($student); @endphp
                 @if($conv)
-                    <a href="{{ route('chat.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}" 
+                    <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                         <i class="ri-message-3-line ml-2"></i>
                         مراسلة الطالب

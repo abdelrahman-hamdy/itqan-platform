@@ -1,77 +1,7 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<x-layouts.teacher title="{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - لوحة المعلم">
+  <x-slot name="description">لوحة المعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</x-slot>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - لوحة المعلم</title>
-  <meta name="description" content="لوحة المعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ auth()->user()->academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ auth()->user()->academy->secondary_color ?? '#6495ED' }}",
-          },
-          borderRadius: {
-            none: "0px",
-            sm: "4px",
-            DEFAULT: "8px",
-            md: "12px",
-            lg: "16px",
-            xl: "20px",
-            "2xl": "24px",
-            "3xl": "32px",
-            full: "9999px",
-            button: "8px",
-          },
-        },
-      },
-    };
-  </script>
-  <style>
-    :where([class^="ri-"])::before {
-      content: "\f3c2";
-    }
-
-    .card-hover {
-      transition: all 0.3s ease;
-    }
-
-    .card-hover:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
-    }
-
-    .stats-counter {
-      font-family: 'Tajawal', sans-serif;
-      font-weight: bold;
-    }
-    
-    /* Focus indicators */
-    .focus\:ring-custom:focus {
-      outline: 2px solid {{ auth()->user()->academy->primary_color ?? '#4169E1' }};
-      outline-offset: 2px;
-    }
-  </style>
-</head>
-
-<body class="bg-gray-50 text-gray-900">
-  <!-- Navigation -->
-  @include('components.navigation.teacher-nav')
-  
-  <!-- Sidebar -->
-  @include('components.sidebar.teacher-sidebar')
-
-  <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
-    <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
+  <div class="w-full">
       
       <!-- Welcome Section -->
       <div class="mb-8">
@@ -175,16 +105,28 @@
               'icon' => 'ri-user-add-line',
               'iconBgColor' => 'bg-orange-500',
               'hideDots' => true,
-              'items' => $pendingTrialRequests->take(3)->map(function($request) {
+              'items' => $pendingTrialRequests->take(3)->map(function($request) use ($academy) {
+                // Determine status and appropriate link
+                $statusText = match($request->status) {
+                  'scheduled' => 'مجدولة',
+                  'approved' => 'معتمدة',
+                  'pending' => 'معلقة',
+                  default => $request->status
+                };
+
+                // If session is scheduled, link to session page. Otherwise, link to calendar
+                $link = $request->status === 'scheduled' && $request->trialSession
+                  ? route('teacher.sessions.show', ['subdomain' => $academy->subdomain, 'sessionId' => $request->trialSession->id])
+                  : route('teacher.schedule.dashboard', ['subdomain' => $academy->subdomain ?? 'itqan-academy']);
+
                 return [
-                  'title' => $request->student->name ?? 'طالب جديد',
-                  'description' => 'المستوى المطلوب: ' . $request->current_level . 
-                                   ' - ' . $request->created_at->diffForHumans(),
-                  'icon' => 'ri-user-add-line',
-                  'iconBgColor' => 'bg-orange-100',
-                  'iconColor' => 'text-orange-600',
-                  'status' => $request->status === 'pending' ? 'pending' : 'active',
-                  'link' => route('teacher.schedule.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
+                  'title' => $request->student_name ?? ($request->student->name ?? 'طالب جديد'),
+                  'description' => 'المستوى: ' . $request->current_level . ' - ' . $statusText,
+                  'icon' => $request->status === 'scheduled' ? 'ri-video-line' : 'ri-user-add-line',
+                  'iconBgColor' => $request->status === 'scheduled' ? 'bg-green-100' : 'bg-orange-100',
+                  'iconColor' => $request->status === 'scheduled' ? 'text-green-600' : 'text-orange-600',
+                  'status' => $request->status === 'scheduled' ? 'active' : 'pending',
+                  'link' => $link
                 ];
               })->toArray(),
               'footer' => [
@@ -192,8 +134,8 @@
                 'link' => route('teacher.schedule.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
               ],
               'stats' => [
-                ['icon' => 'ri-user-add-line', 'value' => $pendingTrialRequests->count() . ' طلب معلق'],
-                ['icon' => 'ri-check-line', 'value' => $pendingTrialRequests->where('status', 'approved')->count() . ' طلب معتمد']
+                ['icon' => 'ri-user-add-line', 'value' => $pendingTrialRequests->where('status', 'pending')->count() . ' طلب معلق'],
+                ['icon' => 'ri-check-line', 'value' => $pendingTrialRequests->where('status', 'scheduled')->count() . ' طلب مجدول']
               ],
               'emptyTitle' => 'لا توجد طلبات جلسات تجريبية',
               'emptyDescription' => 'ستظهر الطلبات الجديدة هنا عند تقديمها',
@@ -328,9 +270,7 @@
 
 
       </div>
-    </div>
-  </main>
-</body>
-</html>
+  </div>
+</x-layouts.teacher>
 
 

@@ -1,4 +1,4 @@
-<x-layouts.teacher-layout title="إدارة الواجبات">
+<x-layouts.teacher title="إدارة الواجبات">
     <div class="container mx-auto px-4 py-8">
         <!-- Page Header -->
         <div class="mb-8">
@@ -253,4 +253,4 @@
         </div>
         @endif
     </div>
-</x-layouts.teacher-layout>
+</x-layouts.teacher>

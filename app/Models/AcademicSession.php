@@ -589,4 +589,24 @@ class AcademicSession extends BaseSession
 
         return 15; // Fallback default
     }
+
+    /**
+     * Initialize student reports when meeting room is created
+     * Creates empty report that will be filled with attendance data after session ends
+     */
+    protected function initializeStudentReports(): void
+    {
+        if ($this->student) {
+            \App\Models\AcademicSessionReport::firstOrCreate([
+                'session_id' => $this->id,
+                'student_id' => $this->student_id,
+                'teacher_id' => $this->teacher_id,
+                'academy_id' => $this->academy_id,
+            ], [
+                'attendance_status' => 'absent', // Default to absent until meeting data is available
+                'is_auto_calculated' => true,
+                'evaluated_at' => now(),
+            ]);
+        }
+    }
 }

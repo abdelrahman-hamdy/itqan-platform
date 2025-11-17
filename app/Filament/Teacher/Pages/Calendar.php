@@ -163,7 +163,7 @@ class Calendar extends Page
                 // Enhanced scheduling status logic
                 $upcomingSessions = $circle->sessions()
                     ->where('scheduled_at', '>', now())
-                    ->whereIn('status', ['scheduled', 'in_progress'])
+                    ->whereIn('status', ['scheduled', 'ready', 'ongoing'])
                     ->count();
 
                 $currentMonthSessions = $circle->sessions()
@@ -226,7 +226,7 @@ class Calendar extends Page
             ->get()
             ->map(function ($circle) {
                 $subscription = $circle->subscription;
-                $scheduledSessions = $circle->sessions()->whereIn('status', ['scheduled', 'in_progress', 'completed'])->count();
+                $scheduledSessions = $circle->sessions()->whereIn('status', ['scheduled', 'ready', 'ongoing', 'completed'])->count();
                 $totalSessions = $circle->total_sessions;
                 $remainingSessions = max(0, $totalSessions - $scheduledSessions);
 
@@ -338,7 +338,7 @@ class Calendar extends Page
         }
 
         return QuranTrialRequest::where('teacher_id', $teacherProfileId)
-            ->whereIn('status', ['pending', 'approved', 'scheduled', 'completed'])
+            ->whereIn('status', ['pending', 'approved', 'scheduled'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($trialRequest) {
@@ -492,7 +492,7 @@ class Calendar extends Page
                     ->placeholder('اختر الساعة')
                     ->options(function () {
                         $options = [];
-                        for ($hour = 6; $hour <= 23; $hour++) {
+                        for ($hour = 0; $hour <= 23; $hour++) {
                             $time = sprintf('%02d:00', $hour);
                             // Convert to 12-hour format
                             $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
@@ -749,16 +749,18 @@ class Calendar extends Page
             $sortedNew = collect($weeklySchedule)->sortBy('day')->values()->toArray();
 
             if ($sortedExisting === $sortedNew) {
-                throw new \Exception('هذه الحلقة مجدولة بالفعل بنفس الأيام والأوقات المحددة');
+                // CRITICAL FIX: Schedule already exists with same configuration - reuse it
+                // This allows re-scheduling sessions after deleting them
+                $schedule = $existingSchedule;
+            } else {
+                // If different, update the existing schedule
+                $existingSchedule->update([
+                    'weekly_schedule' => $weeklySchedule,
+                    'updated_by' => Auth::id(),
+                ]);
+
+                $schedule = $existingSchedule;
             }
-
-            // If different, update the existing schedule
-            $existingSchedule->update([
-                'weekly_schedule' => $weeklySchedule,
-                'updated_by' => Auth::id(),
-            ]);
-
-            $schedule = $existingSchedule;
         } else {
             // Create new schedule
             $schedule = QuranCircleSchedule::create([
@@ -767,7 +769,7 @@ class Calendar extends Page
                 'quran_teacher_id' => $teacherId,
                 'weekly_schedule' => $weeklySchedule,
                 'timezone' => config('app.timezone', 'UTC'),
-                'default_duration_minutes' => 60,
+                'default_duration_minutes' => $circle->session_duration_minutes ?? 60,
                 'is_active' => true,
                 'schedule_starts_at' => $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate)->startOfDay() : Carbon::now()->startOfDay(),
                 'generate_ahead_days' => 30, // Generate 1 month ahead
@@ -923,7 +925,7 @@ class Calendar extends Page
                         'is_scheduled' => true,
                         'title' => "جلسة فردية - {$circle->student->name}",
                         'scheduled_at' => $sessionDateTime,
-                        'duration_minutes' => $circle->session_duration_minutes ?? 60,
+                        'duration_minutes' => $circle->default_duration_minutes ?? 60,
                         'location_type' => 'online',
                         'created_by' => Auth::id(),
                         'scheduled_by' => Auth::id(),
@@ -1117,34 +1119,42 @@ class Calendar extends Page
                     $scheduledAt = Carbon::parse($data['scheduled_at']);
                     $teacherResponse = $data['teacher_response'] ?? 'تم جدولة الجلسة التجريبية';
 
-                    // Update trial request with scheduled date
-                    $trialRequest->update([
-                        'scheduled_at' => $scheduledAt,
-                        'status' => QuranTrialRequest::STATUS_SCHEDULED,
-                        'teacher_response' => $teacherResponse,
-                        'responded_at' => now(),
-                    ]);
+                    // Get the current teacher's Quran teacher profile
+                    $user = Auth::user();
+                    $teacherProfile = $user->quranTeacherProfile;
+
+                    if (!$teacherProfile) {
+                        throw new \Exception('لم يتم العثور على ملف المعلم');
+                    }
 
                     // Create a session record for the trial
                     $sessionCode = $this->generateTrialSessionCode($trialRequest, $scheduledAt);
-                    $teacherId = Auth::id();
+
+                    \Log::info('Creating trial session', [
+                        'trial_request_id' => $trialRequest->id,
+                        'teacher_user_id' => $user->id,
+                        'teacher_profile_id' => $teacherProfile->id,
+                        'student_id' => $trialRequest->student_id,
+                        'scheduled_at' => $scheduledAt,
+                        'session_code' => $sessionCode,
+                    ]);
 
                     $session = QuranSession::create([
                         'academy_id' => $trialRequest->academy_id,
                         'session_code' => $sessionCode,
                         'session_type' => 'trial',
-                        'quran_teacher_id' => $teacherId,
+                        'quran_teacher_id' => $user->id, // This is the user ID, not profile ID
                         'student_id' => $trialRequest->student_id,
                         'trial_request_id' => $trialRequest->id,
                         'scheduled_at' => $scheduledAt,
                         'duration_minutes' => 30,
-                        'status' => 'scheduled',
+                        'status' => \App\Enums\SessionStatus::SCHEDULED, // Use enum
                         'title' => "جلسة تجريبية - {$trialRequest->student_name}",
                         'description' => $teacherResponse,
                         'notes' => 'جلسة تجريبية مجدولة',
                         'location_type' => 'online',
-                        'created_by' => Auth::id(),
-                        'scheduled_by' => Auth::id(),
+                        'created_by' => $user->id,
+                        'scheduled_by' => $user->id,
                         'teacher_scheduled_at' => now(),
                         'session_data' => json_encode([
                             'is_trial' => true,
@@ -1156,8 +1166,21 @@ class Calendar extends Page
                         ]),
                     ]);
 
-                    // Link trial session to the request
-                    $trialRequest->update(['trial_session_id' => $session->id]);
+                    \Log::info('Trial session created successfully', [
+                        'session_id' => $session->id,
+                        'session_code' => $session->session_code,
+                    ]);
+
+                    // Generate LiveKit meeting room (same as other session types)
+                    $session->generateMeetingLink();
+
+                    \Log::info('LiveKit meeting generated', [
+                        'session_id' => $session->id,
+                        'meeting_id' => $session->meeting?->id,
+                    ]);
+
+                    // Status sync happens automatically via QuranSessionObserver
+                    // Observer will link session to trial request and update status
 
                     Notification::make()
                         ->title('تم جدولة الجلسة التجريبية')
@@ -1174,10 +1197,17 @@ class Calendar extends Page
                     $this->js('setTimeout(() => window.location.reload(), 2000)');
 
                 } catch (\Exception $e) {
+                    \Log::error('Trial session creation failed', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'trial_request_id' => $this->selectedTrialRequestId,
+                    ]);
+
                     Notification::make()
                         ->title('خطأ في جدولة الجلسة التجريبية')
                         ->body($e->getMessage())
                         ->danger()
+                        ->duration(8000)
                         ->send();
                 }
             })
@@ -1321,7 +1351,7 @@ class Calendar extends Page
                     $sessionService->createGroupSession(
                         $circle,
                         $sessionDateTime,
-                        60, // duration
+                        $circle->session_duration_minutes ?? 60, // CRITICAL FIX: Use circle duration, not hardcoded 60
                         "جلسة جماعية - {$circle->name_ar}",
                         'جلسة تحفيظ قرآن جماعية مجدولة'
                     );

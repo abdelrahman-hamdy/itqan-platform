@@ -20,15 +20,11 @@ class EditAcademyManagement extends EditRecord
 
     protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
     {
-        // Ensure color fields are properly formatted
-        if (isset($data['brand_color']) && !str_starts_with($data['brand_color'], '#')) {
-            $data['brand_color'] = '#' . ltrim($data['brand_color'], '#');
-        }
-        
-        // Secondary color field removed
-        
+        // Colors are now stored as enum values (e.g., 'sky', 'emerald'), not hex values
+        // No need to add '#' prefix anymore
+
         $record->update($data);
-        
+
         return $record;
     }
 } 

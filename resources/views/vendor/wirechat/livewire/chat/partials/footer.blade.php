@@ -319,41 +319,12 @@
                             </x-slot>
 
                             {{-- content --}}
-                            <div class="grid gap-2 w-full ">
-
-                                {{-- Upload Files --}}
-                                @if (config('wirechat.allow_file_attachments', true))
-                                    <label wire:loading.class="cursor-progress" x-data="attachments('files')"
-                                        class="cursor-pointer">
-                                        <input wire:loading.attr="disabled" wire:target="sendMessage"
-                                            dusk="file-upload-input"
-                                            @change="handleFileSelect(event, {{ count($files) }})" type="file"
-                                            multiple accept="{{ Helper::formattedFileMimesForAcceptAttribute() }}"
-                                            class="sr-only" style="display: none">
-
-                                        <div
-                                            class="w-full  flex items-center gap-3 px-1.5 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200">
-
-                                            <span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    fill="currentColor" class="bi bi-folder-fill w-6 h-6 text-primary-500" viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3m-8.322.12q.322-.119.684-.12h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981z" />
-                                                </svg>
-                                            </span>
-
-                                            <span class=" dark:text-white">
-                                               @lang('wirechat::chat.actions.upload_file.label')
-                                            </span>
-                                        </div>
-                                    </label>
-                                @endif
-
+                            <div class="grid gap-1 w-full p-1">
 
                                 {{-- Upload Media --}}
                                 @if (config('wirechat.allow_media_attachments', true))
                                     <label wire:loading.class="cursor-progress" x-data="attachments('media')"
-                                        class="cursor-pointer">
+                                        class="cursor-pointer group">
 
                                         {{-- Trigger image upload --}}
                                         <input dusk="media-upload-input" wire:loading.attr="disabled"
@@ -363,24 +334,67 @@
                                             class="sr-only" style="display: none">
 
                                         <div
-                                            class="w-full flex items-center gap-3 px-1.5 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200">
+                                            class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 cursor-pointer transition-all duration-200 border border-transparent hover:border-blue-200 dark:hover:border-blue-800">
 
-                                            <span class="">
+                                            <div class="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl group-hover:scale-110 transition-transform duration-200 shadow-md">
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                                    fill="currentColor" class="w-6 h-6 text-primary-500">
+                                                    fill="currentColor" class="w-5 h-5 text-white">
                                                     <path fill-rule="evenodd"
                                                         d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0 0 21 18v-1.94l-2.69-2.689a1.5 1.5 0 0 0-2.12 0l-.88.879.97.97a.75.75 0 1 1-1.06 1.06l-5.16-5.159a1.5 1.5 0 0 0-2.12 0L3 16.061Zm10.125-7.81a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Z"
                                                         clip-rule="evenodd" />
                                                 </svg>
-                                            </span>
+                                            </div>
 
-                                            <span class=" dark:text-white">
-                                               @lang('wirechat::chat.actions.upload_media.label')
-                                            </span>
+                                            <div class="flex-1">
+                                                <p class="font-semibold text-gray-900 dark:text-white text-sm">
+                                                    @lang('wirechat::chat.actions.upload_media.label')
+                                                </p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                    {{ __('wirechat::chat.actions.upload_media.description') }}
+                                                </p>
+                                            </div>
+
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                                            </svg>
                                         </div>
                                     </label>
                                 @endif
 
+                                {{-- Upload Files --}}
+                                @if (config('wirechat.allow_file_attachments', true))
+                                    <label wire:loading.class="cursor-progress" x-data="attachments('files')"
+                                        class="cursor-pointer group">
+                                        <input wire:loading.attr="disabled" wire:target="sendMessage"
+                                            dusk="file-upload-input"
+                                            @change="handleFileSelect(event, {{ count($files) }})" type="file"
+                                            multiple accept="{{ Helper::formattedFileMimesForAcceptAttribute() }}"
+                                            class="sr-only" style="display: none">
+
+                                        <div
+                                            class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-teal-50 dark:hover:from-green-900/20 dark:hover:to-teal-900/20 cursor-pointer transition-all duration-200 border border-transparent hover:border-green-200 dark:hover:border-green-800">
+
+                                            <div class="p-2.5 bg-gradient-to-br from-green-500 to-teal-600 rounded-xl group-hover:scale-110 transition-transform duration-200 shadow-md">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-white">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                                </svg>
+                                            </div>
+
+                                            <div class="flex-1">
+                                                <p class="font-semibold text-gray-900 dark:text-white text-sm">
+                                                    @lang('wirechat::chat.actions.upload_file.label')
+                                                </p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                    {{ __('wirechat::chat.actions.upload_file.description') }}
+                                                </p>
+                                            </div>
+
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                                            </svg>
+                                        </div>
+                                    </label>
+                                @endif
 
                             </div>
                         </x-wirechat::popover>

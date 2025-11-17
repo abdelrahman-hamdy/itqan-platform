@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\MeetingAttendanceResource\Pages;
 use App\Filament\Resources\MeetingAttendanceResource\RelationManagers;
 use App\Models\MeetingAttendance;
+use App\Enums\AttendanceStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -35,12 +36,11 @@ class MeetingAttendanceResource extends Resource
             ->schema([
                 Forms\Components\Section::make('معلومات الحضور')
                     ->schema([
-                        Forms\Components\Select::make('session_id')
-                            ->relationship('session', 'title')
-                            ->label('الجلسة')
+                        Forms\Components\TextInput::make('session_id')
+                            ->label('معرف الجلسة')
+                            ->numeric()
                             ->required()
-                            ->searchable()
-                            ->preload(),
+                            ->disabled(),
                         Forms\Components\Select::make('user_id')
                             ->relationship('user', 'name')
                             ->label('المستخدم')
@@ -54,17 +54,14 @@ class MeetingAttendanceResource extends Resource
                                 'teacher' => 'معلم',
                             ])
                             ->required(),
-                        Forms\Components\TextInput::make('session_type')
+                        Forms\Components\Select::make('session_type')
                             ->label('نوع الجلسة')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('attendable_type')
-                            ->label('نوع السجل')
-                            ->maxLength(255)
-                            ->disabled(),
-                        Forms\Components\TextInput::make('attendable_id')
-                            ->label('معرف السجل')
-                            ->numeric()
-                            ->disabled(),
+                            ->options([
+                                'individual' => 'فردي',
+                                'group' => 'مجموعة',
+                                'academic' => 'أكاديمي',
+                            ])
+                            ->required(),
                     ])->columns(2),
 
                 Forms\Components\Section::make('تفاصيل الحضور والوقت')
@@ -96,16 +93,11 @@ class MeetingAttendanceResource extends Resource
                             ->suffix('دقيقة'),
                     ])->columns(3),
 
-                Forms\Components\Section::make('حالة الحضور والتقييم')
+                Forms\Components\Section::make('حالة الحضور والحساب')
                     ->schema([
                         Forms\Components\Select::make('attendance_status')
                             ->label('حالة الحضور')
-                            ->options([
-                                'present' => 'حاضر',
-                                'late' => 'متأخر',
-                                'partial' => 'حضور جزئي',
-                                'absent' => 'غائب',
-                            ])
+                            ->options(AttendanceStatus::options())
                             ->required(),
                         Forms\Components\TextInput::make('attendance_percentage')
                             ->label('نسبة الحضور')
@@ -114,46 +106,21 @@ class MeetingAttendanceResource extends Resource
                             ->maxValue(100)
                             ->suffix('%')
                             ->default(0),
-                        Forms\Components\TextInput::make('participation_score')
-                            ->label('درجة المشاركة')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100),
                         Forms\Components\DateTimePicker::make('attendance_calculated_at')
                             ->label('تاريخ الحساب'),
                         Forms\Components\Toggle::make('is_calculated')
                             ->label('محسوب تلقائياً')
                             ->default(true),
-                    ])->columns(3),
+                    ])->columns(2),
 
-                Forms\Components\Section::make('التعديل اليدوي')
+                Forms\Components\Section::make('دورات الدخول والخروج')
                     ->schema([
-                        Forms\Components\Toggle::make('manually_overridden')
-                            ->label('معدل يدوياً')
-                            ->default(false)
-                            ->reactive(),
-                        Forms\Components\Select::make('overridden_by')
-                            ->relationship('overriddenBy', 'name')
-                            ->label('المعدّل')
-                            ->searchable()
-                            ->preload()
-                            ->visible(fn (Forms\Get $get) => $get('manually_overridden')),
-                        Forms\Components\DateTimePicker::make('overridden_at')
-                            ->label('تاريخ التعديل')
-                            ->visible(fn (Forms\Get $get) => $get('manually_overridden')),
-                        Forms\Components\Textarea::make('override_reason')
-                            ->label('سبب التعديل')
-                            ->rows(3)
-                            ->visible(fn (Forms\Get $get) => $get('manually_overridden'))
-                            ->columnSpanFull(),
-                    ])->columns(3),
-
-                Forms\Components\Section::make('ملاحظات إضافية')
-                    ->schema([
-                        Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات')
-                            ->rows(3)
-                            ->columnSpanFull(),
+                        Forms\Components\Textarea::make('join_leave_cycles')
+                            ->label('سجل دورات الدخول والخروج (JSON)')
+                            ->rows(5)
+                            ->columnSpanFull()
+                            ->disabled()
+                            ->helperText('عرض فقط - يتم تحديث هذا الحقل تلقائياً من الأحداث'),
                     ]),
             ]);
     }
@@ -195,19 +162,20 @@ class MeetingAttendanceResource extends Resource
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'present' => 'success',
+                    ->color(fn (?string $state): string => match ($state) {
+                        'attended' => 'success',
                         'late' => 'warning',
-                        'partial' => 'info',
+                        'leaved' => 'info',
                         'absent' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'present' => 'حاضر',
-                        'late' => 'متأخر',
-                        'partial' => 'جزئي',
-                        'absent' => 'غائب',
-                        default => $state,
+                    ->formatStateUsing(function (?string $state): string {
+                        if (!$state) return '-';
+                        try {
+                            return AttendanceStatus::from($state)->label();
+                        } catch (\ValueError $e) {
+                            return $state;
+                        }
                     }),
                 Tables\Columns\TextColumn::make('attendance_percentage')
                     ->label('نسبة الحضور')
@@ -241,31 +209,10 @@ class MeetingAttendanceResource extends Resource
                     ->sortable()
                     ->badge()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('participation_score')
-                    ->label('درجة المشاركة')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->color(fn (?string $state): string => match (true) {
-                        $state === null => 'gray',
-                        (float) $state >= 80 => 'success',
-                        (float) $state >= 60 => 'warning',
-                        default => 'danger',
-                    })
-                    ->toggleable(),
                 Tables\Columns\IconColumn::make('is_calculated')
                     ->label('محسوب تلقائياً')
                     ->boolean()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\IconColumn::make('manually_overridden')
-                    ->label('معدل يدوياً')
-                    ->boolean()
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('overriddenBy.name')
-                    ->label('المعدّل')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('attendance_calculated_at')
                     ->label('تاريخ الحساب')
                     ->dateTime()
@@ -280,12 +227,7 @@ class MeetingAttendanceResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
-                    ->options([
-                        'present' => 'حاضر',
-                        'late' => 'متأخر',
-                        'partial' => 'حضور جزئي',
-                        'absent' => 'غائب',
-                    ]),
+                    ->options(AttendanceStatus::options()),
                 Tables\Filters\SelectFilter::make('user_type')
                     ->label('نوع المستخدم')
                     ->options([
@@ -295,12 +237,12 @@ class MeetingAttendanceResource extends Resource
                 Tables\Filters\SelectFilter::make('session_type')
                     ->label('نوع الجلسة')
                     ->options([
-                        'quran' => 'قرآن',
+                        'individual' => 'فردي',
+                        'group' => 'مجموعة',
                         'academic' => 'أكاديمي',
-                        'interactive' => 'تفاعلي',
                     ]),
-                Tables\Filters\TernaryFilter::make('manually_overridden')
-                    ->label('معدل يدوياً'),
+                Tables\Filters\TernaryFilter::make('is_calculated')
+                    ->label('محسوب تلقائياً'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

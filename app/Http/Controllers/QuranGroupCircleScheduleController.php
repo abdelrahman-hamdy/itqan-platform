@@ -640,7 +640,6 @@ class QuranGroupCircleScheduleController extends Controller
             'avg_memorization_degree' => $studentReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0,
             'avg_reservation_degree' => $studentReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?: 0,
             'avg_attendance_percentage' => $studentReports->avg('attendance_percentage') ?: 0,
-            'avg_connection_quality' => $studentReports->avg('connection_quality_score') ?: 0,
             'latest_report' => $studentReports->sortByDesc('created_at')->first(),
             'improvement_trend' => $this->calculateImprovementTrend($studentReports),
         ];

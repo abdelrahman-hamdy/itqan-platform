@@ -2,112 +2,73 @@
 <html lang="ar" dir="rtl">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ $title ?? auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</title>
-  <meta name="description" content="{{ $description ?? 'منصة التعلم الإلكتروني - ' . (auth()->user()->academy->name ?? 'أكاديمية إتقان') }}">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  
-
-  
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ auth()->user()->academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ auth()->user()->academy->secondary_color ?? '#6495ED' }}",
-          },
-          borderRadius: {
-            none: "0px",
-            sm: "4px",
-            DEFAULT: "8px",
-            md: "12px",
-            lg: "16px",
-            xl: "20px",
-            "2xl": "24px",
-            "3xl": "32px",
-            full: "9999px",
-            button: "8px",
-          },
-        },
-      },
-    };
-  </script>
-  
-  <style>
-    :where([class^="ri-"])::before {
-      content: "\f3c2";
-    }
-
-    .card-hover {
-      transition: all 0.3s ease;
-    }
-
-    .card-hover:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
-    }
-
-    .stats-counter {
-      font-family: 'Tajawal', sans-serif;
-      font-weight: bold;
-    }
-    
-    /* Focus indicators */
-    .focus\:ring-custom:focus {
-      outline: 2px solid {{ auth()->user()->academy->primary_color ?? '#4169E1' }};
-      outline-offset: 2px;
-    }
-
-    /* Modal Styles */
-    .modal-backdrop {
-      backdrop-filter: blur(4px);
-    }
-    
-    .modal-content {
-      animation: modalSlideIn 0.3s ease-out;
-    }
-    
-    @keyframes modalSlideIn {
-      from {
-        opacity: 0;
-        transform: scale(0.9) translateY(-20px);
+  <x-app-head :title="$title ?? auth()->user()->academy->name ?? 'أكاديمية إتقان'" :description="$description ?? 'منصة التعلم الإلكتروني - ' . (auth()->user()->academy->name ?? 'أكاديمية إتقان')">
+    <style>
+      /* Card Hover Effects */
+      .card-hover {
+        transition: all 0.3s ease;
       }
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
+
+      .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
       }
-    }
-    
-    .modal-exit {
-      animation: modalSlideOut 0.2s ease-in;
-    }
-    
-    @keyframes modalSlideOut {
-      from {
-        opacity: 1;
-        transform: scale(1) translateY(0);
+
+      /* Stats Counter - Uses Tajawal font */
+      .stats-counter {
+        font-family: 'Tajawal', sans-serif;
+        font-weight: bold;
       }
-      to {
-        opacity: 0;
-        transform: scale(0.9) translateY(-20px);
+
+      /* Focus indicators */
+      .focus\:ring-custom:focus {
+        outline: 2px solid var(--color-primary-500);
+        outline-offset: 2px;
       }
-    }
-  </style>
-  
-  {{ $head ?? '' }}
+
+      /* Modal Styles */
+      .modal-backdrop {
+        backdrop-filter: blur(4px);
+      }
+
+      .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9) translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .modal-exit {
+        animation: modalSlideOut 0.2s ease-in;
+      }
+
+      @keyframes modalSlideOut {
+        from {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: scale(0.9) translateY(-20px);
+        }
+      }
+    </style>
+
+    {{ $head ?? '' }}
+  </x-app-head>
 </head>
 
 <body class="bg-gray-50 text-gray-900">
   <!-- Navigation -->
-  @include('components.navigation.student-nav')
+  <x-navigation.app-navigation role="student" />
   
   <!-- Sidebar -->
   @include('components.sidebar.student-sidebar')
@@ -275,7 +236,9 @@
       }, 3000);
     };
   </script>
-  
+
   {{ $scripts ?? '' }}
+
+  @stack('scripts')
 </body>
 </html>

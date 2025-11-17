@@ -1,4 +1,4 @@
-<x-layouts.teacher-layout title="تقييم الواجب">
+<x-layouts.teacher title="تقييم الواجب">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <!-- Back Button -->
         <div class="mb-6">
@@ -192,4 +192,4 @@
             </div>
         @endif
     </div>
-</x-layouts.teacher-layout>
+</x-layouts.teacher>

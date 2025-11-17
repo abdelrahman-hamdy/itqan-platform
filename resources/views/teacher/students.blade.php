@@ -1,40 +1,7 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<x-layouts.teacher title="{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - طلابي">
+  <x-slot name="description">طلاب المعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</x-slot>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - طلابي</title>
-  <meta name="description" content="طلاب المعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ auth()->user()->academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ auth()->user()->academy->secondary_color ?? '#6495ED' }}",
-          },
-        },
-      },
-    };
-  </script>
-</head>
-
-<body class="bg-gray-50 text-gray-900">
-  <!-- Navigation -->
-  @include('components.navigation.teacher-nav')
-  
-  <!-- Sidebar -->
-  @include('components.sidebar.teacher-sidebar')
-
-  <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-7xl mx-auto">
       
       <!-- Header -->
       <div class="mb-8">
@@ -364,7 +331,5 @@
         </div>
       </div>
 
-    </div>
-  </main>
-</body>
-</html>
+  </div>
+</x-layouts.teacher>

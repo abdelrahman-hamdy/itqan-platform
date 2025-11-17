@@ -7,6 +7,7 @@ use App\Models\AcademySettings;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\User;
+use App\Services\Attendance\QuranReportService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -37,6 +38,9 @@ class SessionStatusService
 
         // Create meeting room when session becomes ready
         $this->createMeetingForSession($session);
+
+        // Send notifications to participants
+        $this->sendSessionReadyNotifications($session);
 
         Log::info('Session transitioned to READY', [
             'session_id' => $session->id,
@@ -131,6 +135,9 @@ class SessionStatusService
             'started_at' => now(),
         ]);
 
+        // Send notifications when session starts
+        $this->sendSessionStartedNotifications($session);
+
         Log::info('Session transitioned to ONGOING', [
             'session_id' => $session->id,
             'started_at' => now(),
@@ -180,34 +187,18 @@ class SessionStatusService
                 'errors' => $attendanceResults['errors'],
             ]);
 
-            // CRITICAL FIX: Sync attendance to student session reports for group sessions
-            // For individual sessions, this is handled in handleIndividualSessionCompletion
+            // CRITICAL FIX: Sync attendance to student session reports for Quran GROUP sessions
+            // Use event-log-based aggregation via QuranReportService (server-authoritative from LiveKit webhooks)
             if ($session->session_type === 'group') {
-                $meetingAttendances = $session->meetingAttendances()->calculated()->get();
-                foreach ($meetingAttendances as $attendance) {
-                    try {
-                        $user = User::find($attendance->user_id);
-                        if ($user && $user->user_type === 'student') {
-                            // CRITICAL FIX: Resolve service dynamically to avoid circular dependency
-                            $unifiedAttendanceService = app(UnifiedAttendanceService::class);
+                /** @var QuranReportService $quranReportService */
+                $quranReportService = app(QuranReportService::class);
 
-                            // Force sync by calling calculateFinalAttendance which updates the report
-                            $unifiedAttendanceService->calculateFinalAttendance($session);
+                $reports = $quranReportService->generateSessionReportsFromEventLog($session);
 
-                            Log::info('Synced attendance to report for group session', [
-                                'session_id' => $session->id,
-                                'student_id' => $user->id,
-                            ]);
-                            break; // Only need to call once for the whole session
-                        }
-                    } catch (\Exception $e) {
-                        Log::error('Failed to sync attendance to report', [
-                            'session_id' => $session->id,
-                            'user_id' => $attendance->user_id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                }
+                Log::info('Synced Quran group attendance reports from event log', [
+                    'session_id' => $session->id,
+                    'reports_count' => $reports->count(),
+                ]);
             }
 
         } catch (\Exception $e) {
@@ -240,6 +231,9 @@ class SessionStatusService
         if ($session->session_type === 'individual') {
             $this->handleIndividualSessionCompletion($session);
         }
+
+        // Send notifications when session completes
+        $this->sendSessionCompletedNotifications($session);
 
         Log::info('Session transitioned to COMPLETED', [
             'session_id' => $session->id,
@@ -556,6 +550,124 @@ class SessionStatusService
                     'attendance_calculated_at' => now(),
                 ]);
             }
+        }
+    }
+
+    /**
+     * Send notifications when session becomes ready
+     */
+    private function sendSessionReadyNotifications(QuranSession $session): void
+    {
+        try {
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            // Send reminder notification to students (30 min before)
+            if ($session->session_type === 'individual' && $session->student) {
+                $notificationService->sendSessionReminderNotification($session, $session->student);
+            } elseif ($session->session_type === 'group' && $session->circle) {
+                foreach ($session->circle->students as $student) {
+                    if ($student->user) {
+                        $notificationService->sendSessionReminderNotification($session, $student->user);
+                    }
+                }
+            }
+
+            // Notify teacher that meeting room is ready
+            if ($session->teacher) {
+                $notificationService->send(
+                    $session->teacher,
+                    \App\Enums\NotificationType::MEETING_ROOM_READY,
+                    [
+                        'session_title' => $session->title ?? 'جلسة قرآنية',
+                    ],
+                    '/teacher/session-detail/' . $session->id
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send session ready notifications', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Send notifications when session starts
+     */
+    private function sendSessionStartedNotifications(QuranSession $session): void
+    {
+        try {
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            // Notify students that session has started
+            if ($session->session_type === 'individual' && $session->student) {
+                $notificationService->send(
+                    $session->student,
+                    \App\Enums\NotificationType::SESSION_STARTED,
+                    [
+                        'session_title' => $session->title ?? 'جلسة قرآنية',
+                    ],
+                    '/student/session-detail/' . $session->id
+                );
+            } elseif ($session->session_type === 'group' && $session->circle) {
+                foreach ($session->circle->students as $student) {
+                    if ($student->user) {
+                        $notificationService->send(
+                            $student->user,
+                            \App\Enums\NotificationType::SESSION_STARTED,
+                            [
+                                'session_title' => $session->title ?? 'جلسة قرآنية',
+                            ],
+                            '/student/session-detail/' . $session->id
+                        );
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send session started notifications', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Send notifications when session completes
+     */
+    private function sendSessionCompletedNotifications(QuranSession $session): void
+    {
+        try {
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            // Notify students that session has completed
+            if ($session->session_type === 'individual' && $session->student) {
+                $notificationService->send(
+                    $session->student,
+                    \App\Enums\NotificationType::SESSION_COMPLETED,
+                    [
+                        'session_title' => $session->title ?? 'جلسة قرآنية',
+                    ],
+                    '/student/session-detail/' . $session->id
+                );
+            } elseif ($session->session_type === 'group' && $session->circle) {
+                foreach ($session->circle->students as $student) {
+                    if ($student->user) {
+                        $notificationService->send(
+                            $student->user,
+                            \App\Enums\NotificationType::SESSION_COMPLETED,
+                            [
+                                'session_title' => $session->title ?? 'جلسة قرآنية',
+                            ],
+                            '/student/session-detail/' . $session->id
+                        );
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send session completed notifications', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

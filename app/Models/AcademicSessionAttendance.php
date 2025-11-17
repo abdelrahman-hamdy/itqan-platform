@@ -35,7 +35,6 @@ class AcademicSessionAttendance extends BaseSessionAttendance
         'overridden_at',
         'override_reason',
         'meeting_events',
-        'connection_quality_score',
         'participation_score',
         'notes',
 
@@ -61,7 +60,6 @@ class AcademicSessionAttendance extends BaseSessionAttendance
         'manually_overridden' => 'boolean',
         'meeting_events' => 'array',
         'participation_score' => 'decimal:1',
-        'connection_quality_score' => 'integer',
         'auto_duration_minutes' => 'integer',
 
         // Academic-specific casts

@@ -30,11 +30,10 @@ class StudentSessionReport extends BaseSessionReport
         'late_minutes',
         'attendance_status',
         'attendance_percentage',
-        'connection_quality_score',
         'meeting_events',
         'evaluated_at',
-        'is_auto_calculated',
-        'manually_overridden',
+        'is_calculated',
+        'manually_evaluated',
         'override_reason',
 
         // Quran-specific fields
@@ -53,11 +52,10 @@ class StudentSessionReport extends BaseSessionReport
         'is_late' => 'boolean',
         'late_minutes' => 'integer',
         'attendance_percentage' => 'decimal:2',
-        'connection_quality_score' => 'integer',
         'meeting_events' => 'array',
         'evaluated_at' => 'datetime',
-        'is_auto_calculated' => 'boolean',
-        'manually_overridden' => 'boolean',
+        'is_calculated' => 'boolean',
+        'manually_evaluated' => 'boolean',
 
         // Quran-specific casts
         'new_memorization_degree' => 'decimal:1',
@@ -128,7 +126,7 @@ class StudentSessionReport extends BaseSessionReport
             'reservation_degree' => $reservationDegree,
             'notes' => $notes,
             'evaluated_at' => now(),
-            'manually_overridden' => true,
+            'manually_evaluated' => true,
         ]);
     }
 

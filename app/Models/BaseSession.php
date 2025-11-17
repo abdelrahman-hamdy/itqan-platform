@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\MeetingCapable;
 use App\Enums\SessionStatus;
+use App\Models\AcademySettings;
 use App\Traits\HasMeetings;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -675,7 +676,11 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getDefaultRecordingEnabled(): bool
     {
-        return false;
+        // Get from academy settings
+        $academySettings = AcademySettings::where('academy_id', $this->academy_id)->first();
+        $settingsJson = $academySettings?->settings ?? [];
+
+        return $settingsJson['meeting_recording_enabled'] ?? false;
     }
 
     /**
@@ -684,7 +689,11 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getDefaultMaxParticipants(): int
     {
-        return 10;
+        // Get from academy settings
+        $academySettings = AcademySettings::where('academy_id', $this->academy_id)->first();
+        $settingsJson = $academySettings?->settings ?? [];
+
+        return $settingsJson['meeting_max_participants'] ?? 10;
     }
 
     /**

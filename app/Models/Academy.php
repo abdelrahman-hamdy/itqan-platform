@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Enums\Country;
 use App\Enums\Currency;
 use App\Enums\Timezone;
+use App\Enums\TailwindColor;
 
 class Academy extends Model
 {
@@ -54,12 +55,14 @@ class Academy extends Model
         'country' => Country::class,
         'currency' => Currency::class,
         'timezone' => Timezone::class,
+        'brand_color' => TailwindColor::class,
+        'secondary_color' => TailwindColor::class,
         'academic_settings' => 'array',
     ];
 
     protected $attributes = [
-        'brand_color' => '#0ea5e9',
-        'secondary_color' => '#10B981',
+        'brand_color' => TailwindColor::SKY->value,
+        'secondary_color' => TailwindColor::EMERALD->value,
         'theme' => 'light',
         'country' => Country::SAUDI_ARABIA->value,
         'timezone' => Timezone::RIYADH->value,

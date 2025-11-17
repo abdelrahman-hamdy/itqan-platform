@@ -33,15 +33,15 @@ class QuranSessionController extends Controller
             abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
         }
 
-        // Query for sessions - handle both individual and group sessions
+        // Query for sessions - handle individual, trial, and group sessions
         $session = QuranSession::where('id', $sessionId)
             ->where('academy_id', $academy->id)
             ->where(function ($query) use ($user) {
-                // Individual sessions: direct student_id match
+                // Individual/trial sessions: direct student_id match
                 $query->where('student_id', $user->id)
-                    // OR group sessions: student enrolled in the circle (use correct session_type)
+                    // OR group sessions: student enrolled in the circle
                     ->orWhere(function ($subQuery) use ($user) {
-                        $subQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
+                        $subQuery->whereIn('session_type', ['circle', 'group'])
                             ->whereHas('circle.students', function ($circleQuery) use ($user) {
                                 $circleQuery->where('student_id', $user->id);
                             });
@@ -54,6 +54,7 @@ class QuranSessionController extends Controller
                 'sessionHomework',
                 'homework',
                 'progress',
+                'trialRequest', // For trial sessions
             ])
             ->first();
 

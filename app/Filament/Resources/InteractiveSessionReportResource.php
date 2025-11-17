@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\InteractiveSessionReportResource\Pages;
 use App\Filament\Resources\InteractiveSessionReportResource\RelationManagers;
 use App\Models\InteractiveSessionReport;
+use App\Enums\AttendanceStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -112,12 +113,7 @@ class InteractiveSessionReportResource extends Resource
                             ->visible(fn (Forms\Get $get) => $get('is_late')),
                         Forms\Components\Select::make('attendance_status')
                             ->label('حالة الحضور')
-                            ->options([
-                                'present' => 'حاضر',
-                                'late' => 'متأخر',
-                                'partial' => 'حضور جزئي',
-                                'absent' => 'غائب',
-                            ])
+                            ->options(AttendanceStatus::options())
                             ->default('absent')
                             ->required(),
                         Forms\Components\TextInput::make('attendance_percentage')
@@ -127,11 +123,6 @@ class InteractiveSessionReportResource extends Resource
                             ->maxValue(100)
                             ->suffix('%')
                             ->default(0),
-                        Forms\Components\TextInput::make('connection_quality_score')
-                            ->label('جودة الاتصال (0-100)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100),
                     ])->columns(3),
 
                 Forms\Components\Section::make('الملاحظات')
@@ -147,15 +138,15 @@ class InteractiveSessionReportResource extends Resource
                     ->schema([
                         Forms\Components\DateTimePicker::make('evaluated_at')
                             ->label('تاريخ التقييم'),
-                        Forms\Components\Toggle::make('is_auto_calculated')
+                        Forms\Components\Toggle::make('is_calculated')
                             ->label('محسوب تلقائياً')
                             ->default(true),
-                        Forms\Components\Toggle::make('manually_overridden')
+                        Forms\Components\Toggle::make('manually_evaluated')
                             ->label('معدل يدوياً')
                             ->default(false),
                         Forms\Components\Textarea::make('override_reason')
                             ->label('سبب التعديل اليدوي')
-                            ->visible(fn (Forms\Get $get) => $get('manually_overridden'))
+                            ->visible(fn (Forms\Get $get) => $get('manually_evaluated'))
                             ->columnSpanFull(),
                     ])->columns(3),
             ]);
@@ -226,19 +217,20 @@ class InteractiveSessionReportResource extends Resource
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'present' => 'success',
+                    ->color(fn (?string $state): string => match ($state) {
+                        'attended' => 'success',
                         'late' => 'warning',
-                        'partial' => 'info',
+                        'leaved' => 'info',
                         'absent' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'present' => 'حاضر',
-                        'late' => 'متأخر',
-                        'partial' => 'جزئي',
-                        'absent' => 'غائب',
-                        default => $state,
+                    ->formatStateUsing(function (?string $state): string {
+                        if (!$state) return '-';
+                        try {
+                            return AttendanceStatus::from($state)->label();
+                        } catch (\ValueError $e) {
+                            return $state;
+                        }
                     }),
                 Tables\Columns\TextColumn::make('attendance_percentage')
                     ->label('نسبة الحضور')
@@ -255,12 +247,7 @@ class InteractiveSessionReportResource extends Resource
                     ->label('متأخر')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('connection_quality_score')
-                    ->label('جودة الاتصال')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\IconColumn::make('manually_overridden')
+                Tables\Columns\IconColumn::make('manually_evaluated')
                     ->label('معدل يدوياً')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -278,12 +265,7 @@ class InteractiveSessionReportResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
-                    ->options([
-                        'present' => 'حاضر',
-                        'late' => 'متأخر',
-                        'partial' => 'حضور جزئي',
-                        'absent' => 'غائب',
-                    ]),
+                    ->options(AttendanceStatus::options()),
                 Tables\Filters\SelectFilter::make('academy_id')
                     ->label('الأكاديمية')
                     ->relationship('academy', 'name')

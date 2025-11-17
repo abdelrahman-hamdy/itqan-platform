@@ -29,10 +29,61 @@
                 <!-- Session Header -->
                 <x-sessions.session-header :session="$session" view-type="student" />
 
+                <!-- Trial Session Information (only for trial sessions) -->
+                @if($session->session_type === 'trial' && $session->trialRequest)
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-gift text-white text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-green-900 mb-2">
+                                <i class="fas fa-star text-yellow-500 ml-1"></i>
+                                جلسة تجريبية مجانية
+                            </h3>
+                            <p class="text-green-800 mb-3">
+                                هذه جلسة تجريبية مجانية مدتها 30 دقيقة للتعرف على المعلم وتقييم مستواك في القرآن الكريم.
+                            </p>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="font-medium text-green-900">المستوى المُدخل:</span>
+                                    <span class="text-green-700">{{ $session->trialRequest->level_label }}</span>
+                                </div>
+                                @if($session->trialRequest->learning_goals && count($session->trialRequest->learning_goals) > 0)
+                                <div>
+                                    <span class="font-medium text-green-900">الأهداف:</span>
+                                    <span class="text-green-700">
+                                        @php
+                                            $goals = [
+                                                'reading' => 'القراءة',
+                                                'tajweed' => 'التجويد',
+                                                'memorization' => 'الحفظ',
+                                                'improvement' => 'التحسين'
+                                            ];
+                                            $goalLabels = collect($session->trialRequest->learning_goals)->map(fn($g) => $goals[$g] ?? $g);
+                                        @endphp
+                                        {{ $goalLabels->join('، ') }}
+                                    </span>
+                                </div>
+                                @endif
+                            </div>
+                            @if($session->trialRequest->notes)
+                            <div class="mt-3 p-3 bg-white/50 rounded-lg">
+                                <span class="font-medium text-green-900 block mb-1">ملاحظاتك:</span>
+                                <p class="text-green-700 text-sm">{{ $session->trialRequest->notes }}</p>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Enhanced LiveKit Meeting Interface -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <x-meetings.livekit-interface 
-                        :session="$session" 
+                    <x-meetings.livekit-interface
+                        :session="$session"
                         user-type="student"
                     />
                 </div>
@@ -89,11 +140,13 @@ document.addEventListener('DOMContentLoaded', function() {
     @endif
     
     // Show notification if session is starting soon
-    @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 10 && $session->scheduled_at->diffInMinutes(now()) >= 0)
+    @if($session->scheduled_at && $session->scheduled_at->isFuture() && $session->scheduled_at->diffInMinutes(now()) <= 10)
         @php
             $timeData = formatTimeRemaining($session->scheduled_at);
         @endphp
-        showNotification('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', 'info', 8000);
+        @if(!$timeData['is_past'])
+            showNotification('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', 'info', 8000);
+        @endif
     @endif
 });
 

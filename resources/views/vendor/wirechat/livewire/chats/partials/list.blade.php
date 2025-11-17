@@ -61,9 +61,8 @@
                     :src="$group ? $group?->cover_url : $receiver?->cover_url ?? null" class="w-12 h-12" />
             </div>
 
-            <aside class="grid  grid-cols-12 w-full">
-                <div
-                    class="col-span-10 border-b pb-2 border-gray-200 dark:border-gray-700 relative overflow-hidden truncate leading-5 w-full flex-nowrap p-1">
+            <aside class="flex justify-between w-full">
+                <div class="relative overflow-hidden truncate leading-5 w-full flex-nowrap p-1">
 
                     {{-- name --}}
                     <div class="flex gap-1 mb-1 w-full items-center">
@@ -84,16 +83,29 @@
 
                 </div>
 
-                {{-- Read status --}}
-                {{-- Only show if AUTH is NOT onwer of message --}}
-                @if ($lastMessage != null && !$lastMessage?->ownedBy($this->auth) && !$isReadByAuth)
-                    <div x-show="showUnreadStatus" dusk="unreadMessagesDot" class=" col-span-2 flex flex-col text-center my-auto">
-                        {{-- Dots icon --}}
-                        <span dusk="unreadDotItem" class="sr-only">unread dot</span>
-                        <div class="w-3 h-3 bg-primary-500 rounded-full mx-auto animate-pulse"></div>
+                <div class="flex flex-col items-end p-1">
+                    {{-- Time label --}}
+                    @if ($lastMessage != null)
+                        <span class="font-medium text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            @if ($lastMessage->created_at->diffInMinutes(now()) < 1)
+                                @lang('wirechat::chats.labels.now')
+                            @else
+                                {{ $lastMessage->created_at->shortAbsoluteDiffForHumans() }}
+                            @endif
+                        </span>
+                    @endif
 
-                    </div>
-                @endif
+                    {{-- Read status --}}
+                    {{-- Only show if AUTH is NOT onwer of message --}}
+                    @if ($lastMessage != null && !$lastMessage?->ownedBy($this->auth) && !$isReadByAuth)
+                        <div x-show="showUnreadStatus" dusk="unreadMessagesDot" class="flex flex-col text-center my-auto">
+                            {{-- Dots icon --}}
+                            <span dusk="unreadDotItem" class="sr-only">unread dot</span>
+                            <div class="w-3 h-3 bg-primary-500 rounded-full mx-auto animate-pulse"></div>
+
+                        </div>
+                    @endif
+                </div>
 
 
             </aside>

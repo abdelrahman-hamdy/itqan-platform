@@ -43,7 +43,7 @@
 
 @section('content')
   <!-- Navigation -->
-  @include('components.navigation.student-nav')
+  <x-navigation.app-navigation role="student" />
 
   <!-- Main Content -->
   <div class="pt-20 min-h-screen">

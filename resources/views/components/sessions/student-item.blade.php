@@ -6,9 +6,50 @@
 ])
 
 @php
+    use App\Enums\AttendanceStatus;
+
+    // 🔥 FIX: Use new webhook-based attendance system with enum
     $report = $session->studentReports->where('student_id', $student->id)->first();
-    $attendance = $session->attendances->where('student_id', $student->id)->first();
-    $attendanceStatus = $report ? $report->attendance_status : ($attendance ? $attendance->attendance_status : 'unknown');
+    $meetingAttendance = $session->meetingAttendances->where('user_id', $student->id)->first();
+
+    // Determine attendance status:
+    // 1. If session ended and report is calculated, use report status (most accurate)
+    // 2. If session ongoing, show live status from MeetingAttendance
+    // 3. Otherwise, show "not calculated yet"
+    if ($report && $report->is_calculated) {
+        // Session ended, use calculated report data
+        $attendanceStatus = $report->attendance_status; // String value from enum
+        $attendancePercentage = $report->attendance_percentage;
+        $actualMinutes = $report->actual_attendance_minutes;
+        $isCalculated = true;
+    } elseif ($meetingAttendance && $meetingAttendance->first_join_time) {
+        // Session ongoing or just ended, show live data
+        if ($meetingAttendance->last_leave_time) {
+            $attendanceStatus = 'in_meeting_left'; // Temporary status for live view
+        } else {
+            $attendanceStatus = 'in_meeting'; // Temporary status for live view
+        }
+        $attendancePercentage = null;
+        $actualMinutes = $meetingAttendance->total_duration_minutes ?? 0;
+        $isCalculated = false;
+    } else {
+        // No attendance data yet
+        $attendanceStatus = $report ? AttendanceStatus::ABSENT->value : 'unknown';
+        $attendancePercentage = null;
+        $actualMinutes = null;
+        $isCalculated = false;
+    }
+
+    // Get enum instance for display
+    $statusEnum = null;
+    if ($isCalculated && $attendanceStatus && $attendanceStatus !== 'unknown') {
+        try {
+            $statusEnum = AttendanceStatus::from($attendanceStatus);
+        } catch (\ValueError $e) {
+            $statusEnum = null;
+        }
+    }
+
     $homework = $session->homework ? $session->homework->first() : null;
     
     // Collect all info items
@@ -23,8 +64,8 @@
         ];
     }
     
-    // Only show reservation if homework has reservation enabled
-    if($report && $report->reservation_degree !== null && $homework && ($homework->has_review || $homework->has_comprehensive_review)) {
+    // Show reservation degree
+    if($report && $report->reservation_degree !== null) {
         $infoItems[] = [
             'icon' => 'ri-refresh-line text-blue-600',
             'label' => 'درجة المراجعة',
@@ -32,22 +73,24 @@
             'badge_class' => 'bg-blue-100 text-blue-800'
         ];
     }
-    
-    if($report && $report->actual_attendance_minutes !== null) {
+
+    // 🔥 FIX: Show attendance minutes from calculated report or live data
+    if($actualMinutes !== null) {
         $infoItems[] = [
             'icon' => 'ri-time-line text-purple-600',
-            'label' => 'مدة الحضور',
-            'value' => $report->actual_attendance_minutes . ' دقيقة',
-            'badge_class' => 'bg-purple-100 text-purple-800'
+            'label' => $isCalculated ? 'مدة الحضور' : 'مدة الحضور (مباشر)',
+            'value' => $actualMinutes . ' دقيقة',
+            'badge_class' => $isCalculated ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
         ];
     }
-    
-    if($report && $report->connection_quality_score !== null) {
+
+    // Show attendance percentage only if calculated
+    if($isCalculated && $attendancePercentage !== null) {
         $infoItems[] = [
-            'icon' => 'ri-wifi-line text-orange-600',
-            'label' => 'جودة الاتصال',
-            'value' => $report->connection_quality_grade,
-            'badge_class' => 'bg-orange-100 text-orange-800'
+            'icon' => 'ri-percent-line text-indigo-600',
+            'label' => 'نسبة الحضور',
+            'value' => number_format($attendancePercentage, 0) . '%',
+            'badge_class' => 'bg-indigo-100 text-indigo-800'
         ];
     }
     
@@ -77,38 +120,52 @@
         
         <!-- Attendance Status (floated to absolute left/right in RTL) -->
         <div class="flex items-center">
-            @if($attendanceStatus === 'present')
+            @if($statusEnum)
+                {{-- Calculated status using enum --}}
+                <span class="inline-flex items-center px-3 py-1.5 {{ $statusEnum->badgeClass() }} rounded-full text-sm font-semibold">
+                    <i class="{{ $statusEnum->icon() }} ml-1"></i>
+                    {{ $statusEnum->label() }}
+                    @if($attendancePercentage) ({{ number_format($attendancePercentage, 0) }}%)@endif
+                </span>
+            @elseif($attendanceStatus === 'in_meeting')
+                {{-- Live status: Currently in meeting --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                    <i class="ri-check-line ml-1"></i>
-                    حاضر @if($report && $report->attendance_percentage)({{ number_format($report->attendance_percentage, 0) }}%)@endif
+                    <i class="ri-check-line ml-1 animate-pulse"></i>
+                    في الجلسة الآن
                 </span>
-            @elseif($attendanceStatus === 'late')
-                <span class="inline-flex items-center px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
-                    <i class="ri-time-line ml-1"></i>
-                    متأخر @if($report && $report->late_minutes)({{ $report->late_minutes }}د)@endif
-                </span>
-            @elseif($attendanceStatus === 'partial')
+            @elseif($attendanceStatus === 'in_meeting_left')
+                {{-- Live status: Left the meeting --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold">
-                    <i class="ri-pie-chart-line ml-1"></i>
-                    جزئي @if($report && $report->attendance_percentage)({{ number_format($report->attendance_percentage, 0) }}%)@endif
+                    <i class="ri-logout-box-line ml-1"></i>
+                    غادر الجلسة
                 </span>
-            @elseif($attendanceStatus === 'absent')
-                <span class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
-                    <i class="ri-close-line ml-1"></i>
-                    غائب
+            @elseif($session->status->value === 'completed' && !$isCalculated)
+                {{-- Session completed but not calculated yet --}}
+                <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
+                    <i class="ri-loader-4-line animate-spin ml-1"></i>
+                    يتم الحساب...
                 </span>
             @else
+                {{-- Unknown/not joined --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
                     <i class="ri-question-line ml-1"></i>
-                    غير محدد
+                    لم ينضم
                 </span>
-            @endif       
+            @endif
         </div>
     </div>
     
     <!-- Student Report Data -->
     @if($report && !empty($infoItems))
         <div class="bg-white border border-gray-300 rounded-lg mb-3 p-3">
+            <!-- Live Data Indicator -->
+            @if(!$isCalculated && $meetingAttendance)
+                <div class="mb-3 pb-2 border-b border-blue-200 flex items-center gap-2 text-blue-700 text-xs">
+                    <i class="ri-live-line animate-pulse"></i>
+                    <span class="font-medium">بيانات مباشرة - سيتم الحساب النهائي بعد انتهاء الجلسة</span>
+                </div>
+            @endif
+
             <div class="grid grid-cols-2 gap-4">
                 <!-- Left Column -->
                 <div class="space-y-3">
@@ -153,18 +210,65 @@
                 </div>
             @endif
         </div>
-    @elseif($report)
+    @elseif(!empty($infoItems))
+        <!-- Live data without report -->
+        <div class="bg-white border border-blue-200 rounded-lg mb-3 p-3">
+            <div class="mb-3 pb-2 border-b border-blue-200 flex items-center gap-2 text-blue-700 text-xs">
+                <i class="ri-live-line animate-pulse"></i>
+                <span class="font-medium">بيانات مباشرة - سيتم إنشاء التقرير بعد انتهاء الجلسة</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Left Column -->
+                <div class="space-y-3">
+                    @foreach($leftColumn as $item)
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="{{ $item['icon'] }} ml-2"></i>
+                                <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
+                                {{ $item['value'] }}
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-3">
+                    @foreach($rightColumn as $item)
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="{{ $item['icon'] }} ml-2"></i>
+                                <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
+                                {{ $item['value'] }}
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @elseif($report && $report->is_calculated)
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
             <div class="flex items-center text-gray-600 text-sm">
                 <i class="ri-information-line ml-2"></i>
-                <span>تم إنشاء التقرير بدون بيانات إضافية</span>
+                <span>تم حساب الحضور - لم يتم إضافة تقييم للطالب بعد</span>
+            </div>
+        </div>
+    @elseif($session->status->value === 'completed')
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+            <div class="flex items-center text-blue-700 text-sm">
+                <i class="ri-loader-4-line animate-spin ml-2"></i>
+                <span>جاري حساب الحضور...</span>
             </div>
         </div>
     @else
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
-            <div class="flex items-center text-amber-800 text-sm">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+            <div class="flex items-center text-gray-600 text-sm">
                 <i class="ri-information-line ml-2"></i>
-                <span>لم يتم تقييم الطالب بعد</span>
+                <span>في انتظار بدء الجلسة</span>
             </div>
         </div>
     @endif

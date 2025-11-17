@@ -1,48 +1,34 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ $title ?? 'الرسائل - ' . config('app.name', 'منصة إتقان') }}</title>
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/itqan-logo.svg') }}">
-    <link rel="icon" type="image/png" href="{{ asset('favicon.ico') }}">
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-
-    <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
-    @wirechatStyles
+    <x-app-head :title="$title ?? 'الرسائل - ' . config('app.name', 'منصة إتقان')" description="نظام الرسائل والمحادثات">
+        @livewireStyles
+        @wirechatStyles
+    </x-app-head>
 </head>
 
-<body class="font-arabic antialiased bg-gray-50" x-data x-cloak>
+<body class="antialiased bg-gray-50" x-data x-cloak>
     <!-- Include appropriate navigation based on user role -->
     @if(auth()->user()->hasRole('student'))
-        <x-navigation.student-nav />
+        <x-navigation.app-navigation role="student" />
     @elseif(auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher())
-        <x-navigation.teacher-nav />
+        <x-navigation.app-navigation role="teacher" />
     @endif
 
-    <!-- Main Chat Container with Top Padding for Fixed Navigation -->
-    <main class="pt-20 h-screen overflow-hidden bg-gray-50">
-        <div class="h-[calc(100vh-5rem)] w-full">
-            {{ $slot }}
+    <!-- Main Chat Container - Takes Full Viewport Height Minus Navigation -->
+    <main class="fixed inset-0 pt-20 bg-gray-50">
+        <div class="h-full w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="h-full">
+                {{ $slot }}
+            </div>
         </div>
     </main>
 
     @livewireScripts
     @wirechatAssets
+
+    {{-- Custom Confirmation Modal --}}
+    <x-wirechat::confirmation-modal />
 
     {{-- WireChat Debug Script (Local/Development Only) --}}
     @if(config('app.debug'))

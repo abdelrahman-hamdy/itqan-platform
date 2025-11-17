@@ -19,7 +19,7 @@
                     <li>/</li>
                     <li><a href="{{ route('individual-circles.show', ['subdomain' => request()->route('subdomain'), 'circle' => $session->individualCircle->id]) }}" class="hover:text-primary">{{ $session->individualCircle->subscription->package->name ?? 'الحلقة الفردية' }}</a></li>
                 @else
-                    <li><a href="{{ route('teacher.sessions.index', ['subdomain' => request()->route('subdomain')]) }}" class="hover:text-primary">جلساتي</a></li>
+                    <li><a href="{{ route('teacher.schedule.dashboard', ['subdomain' => request()->route('subdomain')]) }}" class="hover:text-primary">{{ $session->session_type === 'trial' ? 'الجلسات التجريبية' : 'جدول الجلسات' }}</a></li>
                 @endif
                 <li>/</li>
                 <li class="text-gray-900">{{ $session->title ?? 'تفاصيل الجلسة' }}</li>
@@ -138,14 +138,13 @@
                     <label for="attendanceStatus" class="block text-sm font-medium text-gray-700 mb-2">
                         حالة الحضور (يدوي)
                     </label>
-                    <select id="attendanceStatus" 
-                            name="attendance_status" 
+                    <select id="attendanceStatus"
+                            name="attendance_status"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="">إبقاء الحالة المحسوبة تلقائياً</option>
-                        <option value="present">حاضر</option>
-                        <option value="late">متأخر</option>
-                        <option value="partial">حضور جزئي</option>
-                        <option value="absent">غائب</option>
+                        @foreach(\App\Enums\AttendanceStatus::cases() as $status)
+                            <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                        @endforeach
                     </select>
                     <p class="text-xs text-gray-500 mt-1">اتركها فارغة للاحتفاظ بالحالة المحسوبة تلقائياً</p>
                 </div>
@@ -217,23 +216,29 @@
             .then(data => {
                 if (data.success) {
                     const report = data.report;
-                    
+
+                    // Store report data globally for attendance status listener
+                    window.currentReportData = report;
+
                     // Fill form fields
                     document.getElementById('newMemorizationDegree').value = report.new_memorization_degree || '';
                     document.getElementById('reservationDegree').value = report.reservation_degree || '';
                     document.getElementById('evaluationNotes').value = report.notes || '';
-                    
+
                     // Set attendance status if manually set
                     if (report.manually_evaluated) {
                         document.getElementById('attendanceStatus').value = report.attendance_status || '';
+                    } else {
+                        // Reset to empty (auto-calculated)
+                        document.getElementById('attendanceStatus').value = '';
                     }
-                    
+
                     // Update student info display
                     updateStudentInfoDisplay(report.student, report);
-                    
+
                     // Update auto-calculated attendance info
                     updateAutoAttendanceInfo(report);
-                    
+
                     // Load homework fields for existing report
                     loadHomeworkFields();
                 }
@@ -323,7 +328,6 @@
         const autoLeaveTime = document.getElementById('autoLeaveTime');
         const autoAttendanceMinutes = document.getElementById('autoAttendanceMinutes');
         const autoAttendancePercentage = document.getElementById('autoAttendancePercentage');
-        const autoConnectionQuality = document.getElementById('autoConnectionQuality');
 
         if (autoEnterTime) {
             autoEnterTime.textContent = report.meeting_enter_time ? new Date(report.meeting_enter_time).toLocaleTimeString('ar-SA') : '-';
@@ -337,16 +341,13 @@
         if (autoAttendancePercentage) {
             autoAttendancePercentage.textContent = report.attendance_percentage ? Math.round(report.attendance_percentage) : '-';
         }
-        if (autoConnectionQuality) {
-            autoConnectionQuality.textContent = report.connection_quality_score || '-';
-        }
     }
 
     function getAttendanceStatusArabic(status) {
         const statusMap = {
-            'present': 'حاضر',
+            'attended': 'حاضر',
             'late': 'متأخر',
-            'partial': 'جزئي',
+            'leaved': 'غادر مبكراً',
             'absent': 'غائب'
         };
         return statusMap[status] || 'غير محدد';
@@ -375,13 +376,38 @@
             }
         });
         
+        // Attendance status change listener - update header display
+        const attendanceStatusSelect = document.getElementById('attendanceStatus');
+        attendanceStatusSelect?.addEventListener('change', function(e) {
+            const selectedStatus = e.target.value;
+            const attendanceInfoDisplay = document.getElementById('attendanceInfoDisplay');
+
+            if (attendanceInfoDisplay) {
+                if (selectedStatus) {
+                    // Show manually selected status
+                    attendanceInfoDisplay.textContent = `الحضور: ${getAttendanceStatusArabic(selectedStatus)} (يدوي)`;
+                } else {
+                    // Show auto-calculated status (if available from loaded report)
+                    const currentStudentId = document.getElementById('studentId')?.value;
+                    if (window.currentReportData && window.currentReportData.attendance_status) {
+                        attendanceInfoDisplay.textContent = `الحضور: ${getAttendanceStatusArabic(window.currentReportData.attendance_status)}`;
+                        if (window.currentReportData.attendance_percentage) {
+                            attendanceInfoDisplay.textContent += ` (${Math.round(window.currentReportData.attendance_percentage)}%)`;
+                        }
+                    } else {
+                        attendanceInfoDisplay.textContent = 'الحضور: بدون معلومات حضور';
+                    }
+                }
+            }
+        });
+
         // Form submission
         form?.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            
+
             try {
                 const response = await fetch(`{{ url('/') }}/teacher/student-reports/update`, {
                     method: 'POST',
@@ -394,13 +420,13 @@
                         session_id: {{ $session->id }}
                     })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
                     showNotification('تم حفظ التقييم بنجاح', 'success');
                     modal.classList.add('hidden');
-                    
+
                     // Reload page to show updated data
                     setTimeout(() => {
                         window.location.reload();

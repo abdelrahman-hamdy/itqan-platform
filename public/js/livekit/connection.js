@@ -159,7 +159,6 @@ class LiveKitConnection {
 
         // Active speakers changed
         this.room.on(window.LiveKit.RoomEvent.ActiveSpeakersChanged, (speakers) => {
-            console.log('🗣️ Active speakers changed:', speakers.map(s => s.identity));
             if (this.config.onActiveSpeakersChanged) {
                 this.config.onActiveSpeakersChanged(speakers);
             }

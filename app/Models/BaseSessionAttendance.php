@@ -38,7 +38,6 @@ abstract class BaseSessionAttendance extends Model
         'overridden_at',
         'override_reason',
         'meeting_events',
-        'connection_quality_score',
         'participation_score',
         'notes',
     ];
@@ -56,7 +55,6 @@ abstract class BaseSessionAttendance extends Model
         'manually_overridden' => 'boolean',
         'meeting_events' => 'array',
         'participation_score' => 'decimal:1',
-        'connection_quality_score' => 'integer',
         'auto_duration_minutes' => 'integer',
     ];
 
@@ -248,23 +246,6 @@ abstract class BaseSessionAttendance extends Model
         }
 
         return end($this->meeting_events);
-    }
-
-    /**
-     * Get connection quality text
-     */
-    public function getConnectionQualityAttribute(): string
-    {
-        if (! $this->connection_quality_score) {
-            return 'غير محدد';
-        }
-
-        return match (true) {
-            $this->connection_quality_score >= 8 => 'ممتاز',
-            $this->connection_quality_score >= 6 => 'جيد',
-            $this->connection_quality_score >= 4 => 'متوسط',
-            default => 'ضعيف'
-        };
     }
 
     /**

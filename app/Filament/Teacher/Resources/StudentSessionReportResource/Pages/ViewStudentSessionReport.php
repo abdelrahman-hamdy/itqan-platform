@@ -69,18 +69,18 @@ class ViewStudentSessionReport extends ViewRecord
                                     ->label('حالة الحضور')
                                     ->formatStateUsing(function (string $state): string {
                                         return match ($state) {
-                                            'present' => 'حاضر',
+                                            'attended' => 'حاضر',
                                             'late' => 'متأخر',
-                                            'partial' => 'جزئي',
+                                            'leaved' => 'غادر مبكراً',
                                             'absent' => 'غائب',
                                             default => $state,
                                         };
                                     })
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {
-                                        'present' => 'success',
+                                        'attended' => 'success',
                                         'late' => 'warning',
-                                        'partial' => 'info',
+                                        'leaved' => 'info',
                                         'absent' => 'danger',
                                         default => 'gray',
                                     }),
@@ -104,7 +104,7 @@ class ViewStudentSessionReport extends ViewRecord
                                     ->suffix(' دقيقة'),
                             ]),
 
-                        Infolists\Components\Grid::make(3)
+                        Infolists\Components\Grid::make(2)
                             ->schema([
                                 Infolists\Components\TextEntry::make('late_minutes')
                                     ->label('دقائق التأخير')
@@ -113,9 +113,6 @@ class ViewStudentSessionReport extends ViewRecord
                                     ->label('نسبة الحضور')
                                     ->suffix('%')
                                     ->numeric(2),
-                                Infolists\Components\TextEntry::make('connection_quality_score')
-                                    ->label('جودة الاتصال')
-                                    ->suffix('/100'),
                             ]),
                     ]),
 

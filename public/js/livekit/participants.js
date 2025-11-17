@@ -145,13 +145,13 @@ class LiveKitParticipants {
             <div class="flex items-center justify-between bg-black bg-opacity-60 rounded-lg px-4 py-1.5 text-white text-sm max-w-48 shadow-lg border border-gray-600">
                 <div class="flex items-center flex-1 min-w-0">
                     <span class="font-semibold truncate" id="overlay-name-${participantId}">${this.getParticipantDisplayName(participant)}</span>
-                    ${this.isParticipantTeacher(participant, isLocal) ? 
-                        '<span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap flex-shrink-0 shadow-sm mr-1">معلم</span>' : 
+                    ${this.isParticipantTeacher(participant, isLocal) ?
+                        '<span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap flex-shrink-0 shadow-sm mr-1">معلم</span>' :
                         ''
                     }
                 </div>
-                <div class="flex items-center mr-1 flex-shrink-0">
-                    <i id="overlay-mic-${participantId}" class="fas fa-microphone text-sm ${isLocal ? 'text-green-500' : 'text-red-500'}"></i>
+                <div class="flex items-center gap-2 mr-1 flex-shrink-0">
+                    <i id="overlay-mic-${participantId}" class="${isLocal ? 'ri-mic-line' : 'ri-mic-off-line'} text-sm ${isLocal ? 'text-green-500' : 'text-red-500'}"></i>
                 </div>
             </div>
         `;
@@ -193,6 +193,8 @@ class LiveKitParticipants {
         // Add a small delay to ensure the DOM element is fully rendered
         setTimeout(() => {
             this.ensureParticipantPlaceholderVisible(participantId);
+            // Immediately sync icons to actual track state
+            this.syncParticipantIcons(participant);
         }, 100);
 
         console.log(`✅ DOM element created for ${participantId}`);
@@ -233,15 +235,14 @@ class LiveKitParticipants {
         placeholder.setAttribute('data-participant-id', participantId);
         placeholder.setAttribute('data-camera-off', 'true');
 
-        // Determine initial states - assume enabled for local participant, disabled for remote
-        const shouldShowCameraOn = isLocal;
-        const shouldShowMicOn = isLocal;
+        // Initialize all icons as OFF (red) - they will be updated by track events to actual state
+        // This ensures consistent behavior and avoids wrong assumptions
+        const cameraStatusClass = 'text-red-500';
+        const cameraStatusIcon = 'ri-video-off-line';
+        const micStatusClass = 'text-red-500';
+        const micStatusIcon = 'ri-mic-off-line';
 
-        const cameraStatusClass = shouldShowCameraOn ? 'text-green-500' : 'text-red-500';
-        const cameraStatusIcon = shouldShowCameraOn ? 'ri-vidicon-line' : 'ri-vidicon-off-line';
-
-        const micStatusClass = shouldShowMicOn ? 'text-green-500' : 'text-red-500';
-        const micStatusIcon = shouldShowMicOn ? 'ri-mic-line' : 'ri-mic-off-line';
+        console.log(`🎭 Initializing ${participantId} with all icons OFF - will sync to actual state via track events`);
 
         placeholder.innerHTML = `
             <div class="flex flex-col items-center text-center">
@@ -250,8 +251,8 @@ class LiveKitParticipants {
                     ${teacherBadge}
                 </div>
                 <p class="text-white text-sm sm:text-base font-medium px-2 text-center">${displayName}</p>
-                <p class="text-gray-300 text-xs mt-1">${isLocal ? '(أنت)' : isTeacher ? 'معلم' : 'مشارك'}</p>
-                
+                <p class="text-gray-300 text-xs mt-1">${isLocal ? '(أنت)' : isTeacher ? 'معلم' : 'طالب'}</p>
+
                 <!-- Camera and Mic status indicators -->
                 <div class="mt-2 flex items-center justify-center gap-3">
                     <div id="camera-status-${participantId}" class="${cameraStatusClass}">
@@ -335,9 +336,9 @@ class LiveKitParticipants {
         
         // If we end up with an empty string, return a default
         if (!cleanName) {
-            return 'مشارك';
+            return 'طالب';
         }
-        
+
         return cleanName;
     }
 
@@ -449,15 +450,7 @@ class LiveKitParticipants {
         // Clear existing list
         participantsList.innerHTML = '';
 
-        // Add header
-        const header = document.createElement('div');
-        header.className = 'px-4 py-3 border-b border-gray-600';
-        header.innerHTML = `
-            <h3 class="text-lg font-semibold text-white">المشاركون (${this.getParticipantCount()})</h3>
-        `;
-        participantsList.appendChild(header);
-
-        // Add participants
+        // Add participants directly without header
         const participantsContainer = document.createElement('div');
         participantsContainer.className = 'flex-1 overflow-y-auto';
 
@@ -483,7 +476,7 @@ class LiveKitParticipants {
         const displayName = this.getParticipantDisplayName(participant);
 
         const listItem = document.createElement('div');
-        listItem.className = 'flex items-center justify-between px-4 py-3 hover:bg-gray-700 transition-colors';
+        listItem.className = 'flex items-center justify-between px-2 py-2 hover:bg-gray-700 transition-colors';
 
         // Participant info
         const participantInfo = document.createElement('div');
@@ -505,7 +498,7 @@ class LiveKitParticipants {
         const nameContainer = document.createElement('div');
         nameContainer.innerHTML = `
             <p class="text-white font-medium text-sm">${displayName}</p>
-            <p class="text-gray-400 text-xs">${isLocal ? '(أنت)' : isTeacher ? 'معلم' : 'مشارك'}</p>
+            <p class="text-gray-400 text-xs">${isLocal ? '(أنت)' : isTeacher ? 'معلم' : 'طالب'}</p>
         `;
 
         participantInfo.appendChild(avatar);
@@ -604,8 +597,6 @@ class LiveKitParticipants {
      * @param {string[]} activeSpeakerIds - Array of active speaker participant IDs
      */
     highlightActiveSpeakers(activeSpeakerIds) {
-        console.log('🗣️ Highlighting active speakers:', activeSpeakerIds);
-
         // Remove existing highlights
         for (const element of this.participantElements.values()) {
             element.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-75');
@@ -836,6 +827,70 @@ class LiveKitParticipants {
         } else {
             this.hideHandRaise(participantId);
         }
+    }
+
+    /**
+     * Sync participant icons to actual track state immediately
+     * @param {LiveKit.Participant} participant - Participant to sync
+     */
+    syncParticipantIcons(participant) {
+        const participantId = participant.identity;
+
+        console.log(`🔄 Syncing icons for ${participantId} to actual track state...`);
+
+        // Check actual track publications
+        const videoPublication = participant.getTrackPublication?.(window.LiveKit.Track.Source.Camera);
+        const audioPublication = participant.getTrackPublication?.(window.LiveKit.Track.Source.Microphone);
+
+        const hasActiveVideo = videoPublication && !videoPublication.isMuted && videoPublication.track;
+        const hasActiveAudio = audioPublication && !audioPublication.isMuted && audioPublication.track;
+
+        console.log(`📊 Actual state for ${participantId}:`, {
+            camera: hasActiveVideo ? 'ON' : 'OFF',
+            mic: hasActiveAudio ? 'ON' : 'OFF',
+            hasVideoPublication: !!videoPublication,
+            hasAudioPublication: !!audioPublication,
+            videoMuted: videoPublication?.isMuted,
+            audioMuted: audioPublication?.isMuted
+        });
+
+        // Update camera status icon
+        const cameraStatus = document.getElementById(`camera-status-${participantId}`);
+        if (cameraStatus) {
+            const icon = cameraStatus.querySelector('i');
+            if (hasActiveVideo) {
+                cameraStatus.className = 'text-green-500';
+                if (icon) icon.className = 'ri-video-line text-sm';
+            } else {
+                cameraStatus.className = 'text-red-500';
+                if (icon) icon.className = 'ri-video-off-line text-sm';
+            }
+        }
+
+        // Update mic status icon
+        const micStatus = document.getElementById(`mic-status-${participantId}`);
+        if (micStatus) {
+            const icon = micStatus.querySelector('i');
+            if (hasActiveAudio) {
+                micStatus.className = 'text-green-500';
+                if (icon) icon.className = 'ri-mic-line text-sm';
+            } else {
+                micStatus.className = 'text-red-500';
+                if (icon) icon.className = 'ri-mic-off-line text-sm';
+            }
+        }
+
+        // Update overlay mic status
+        const overlayMicIcon = document.getElementById(`overlay-mic-${participantId}`);
+        if (overlayMicIcon) {
+            if (hasActiveAudio) {
+                overlayMicIcon.className = 'ri-mic-line text-sm text-green-500';
+            } else {
+                overlayMicIcon.className = 'ri-mic-off-line text-sm text-red-500';
+            }
+        }
+
+        console.log(`✅ Icons synced for ${participantId}`);
     }
 
     /**

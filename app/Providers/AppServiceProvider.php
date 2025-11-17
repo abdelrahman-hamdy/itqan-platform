@@ -5,12 +5,15 @@ namespace App\Providers;
 use App\Helpers\AcademyHelper;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionAttendance;
+use App\Models\QuranSession;
 use App\Observers\AcademicSessionAttendanceObserver;
 use App\Observers\AcademicSessionObserver;
 use App\Observers\MediaObserver;
+use App\Observers\QuranSessionObserver;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class AppServiceProvider extends ServiceProvider
@@ -51,6 +54,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Register AcademicSessionAttendance Observer for attendance-based progress tracking
         AcademicSessionAttendance::observe(AcademicSessionAttendanceObserver::class);
+
+        // Register QuranSession Observer for trial request status synchronization
+        QuranSession::observe(QuranSessionObserver::class);
+
+        // Override WireChat Info component with custom implementation
+        Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);
 
         // Render hooks can be added here if needed
     }

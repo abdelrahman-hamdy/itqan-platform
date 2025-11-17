@@ -36,11 +36,10 @@ abstract class BaseSessionReport extends Model
         'late_minutes',
         'attendance_status',
         'attendance_percentage',
-        'connection_quality_score',
         'meeting_events',
         'evaluated_at',
-        'is_auto_calculated',
-        'manually_overridden',
+        'is_calculated',
+        'manually_evaluated',
         'override_reason',
     ];
 
@@ -54,11 +53,10 @@ abstract class BaseSessionReport extends Model
         'is_late' => 'boolean',
         'late_minutes' => 'integer',
         'attendance_percentage' => 'decimal:2',
-        'connection_quality_score' => 'integer',
         'meeting_events' => 'array',
         'evaluated_at' => 'datetime',
-        'is_auto_calculated' => 'boolean',
-        'manually_overridden' => 'boolean',
+        'is_calculated' => 'boolean',
+        'manually_evaluated' => 'boolean',
     ];
 
     // ========================================
@@ -197,13 +195,15 @@ abstract class BaseSessionReport extends Model
      */
     public function getAttendanceStatusInArabicAttribute(): string
     {
-        return match ($this->attendance_status) {
-            'present' => 'حاضر',
-            'late' => 'متأخر',
-            'partial' => 'حضور جزئي',
-            'absent' => 'غائب',
-            default => 'غير محدد'
-        };
+        if (!$this->attendance_status) {
+            return 'غير محدد';
+        }
+
+        try {
+            return \App\Enums\AttendanceStatus::from($this->attendance_status)->label();
+        } catch (\ValueError $e) {
+            return 'غير محدد';
+        }
     }
 
     /**
@@ -241,29 +241,6 @@ abstract class BaseSessionReport extends Model
             $performance >= 6 => 'مقبول',
             default => 'يحتاج تحسين'
         };
-    }
-
-    /**
-     * Get the connection quality grade in Arabic
-     */
-    public function getConnectionQualityGradeAttribute(): string
-    {
-        $score = $this->connection_quality_score ?? 0;
-
-        if ($score >= 90) {
-            return 'ممتاز';
-        }
-        if ($score >= 80) {
-            return 'جيد جداً';
-        }
-        if ($score >= 70) {
-            return 'جيد';
-        }
-        if ($score >= 60) {
-            return 'مقبول';
-        }
-
-        return 'ضعيف';
     }
 
     /**
@@ -333,9 +310,21 @@ abstract class BaseSessionReport extends Model
     /**
      * Calculate real-time attendance status based on grace time rules
      * CRITICAL: Handle edge cases for students who join early/stay long
+     * FIXED: Use pre-calculated status from MeetingAttendance when available
      */
     protected function calculateRealtimeAttendanceStatus(MeetingAttendance $meetingAttendance): string
     {
+        // CRITICAL FIX: If attendance is already calculated, use that status (most accurate)
+        if ($meetingAttendance->is_calculated && $meetingAttendance->attendance_status) {
+            \Log::info('Using pre-calculated attendance status from MeetingAttendance', [
+                'session_id' => $this->session_id,
+                'student_id' => $this->student_id,
+                'status' => $meetingAttendance->attendance_status,
+            ]);
+            return $meetingAttendance->attendance_status;
+        }
+
+        // Fallback to real-time calculation if not yet finalized
         if (! $meetingAttendance->first_join_time || ! $this->session) {
             return 'absent';
         }

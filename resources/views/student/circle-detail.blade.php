@@ -16,7 +16,7 @@
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Circle Header -->
-            <x-circle.group-header :circle="$circle" view-type="student" />
+            <x-circle.circle-header :circle="$circle" type="group" view-type="student" />
 
             <!-- Enhanced Sessions List -->
             @if($isEnrolled)
@@ -28,7 +28,7 @@
                     $allCircleSessions = collect($upcomingSessions)->merge($pastSessions);
                 @endphp
 
-                <x-sessions.enhanced-sessions-list
+                <x-sessions.sessions-list
                     :sessions="$allCircleSessions"
                     title="جلسات الحلقة"
                     view-type="student"
@@ -135,7 +135,7 @@
             </div>
 
             <!-- Quick Actions -->
-            <x-circle.quick-actions :circle="$circle" view-type="student" :isEnrolled="$isEnrolled" :canEnroll="$canEnroll" />
+            <x-circle.quick-actions :circle="$circle" type="group" view-type="student" :isEnrolled="$isEnrolled" :canEnroll="$canEnroll" />
 
             <!-- Circle Features -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

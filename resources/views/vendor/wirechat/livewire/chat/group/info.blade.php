@@ -51,7 +51,14 @@
                         @else
                             <button type="button" wire:target="photo" wire:loading.attr="disabled"
                                 class="disabled:cursor-not-allowed bottom-0 inset-x-0 bg-gray-500/40 hover:bg-gray-500/80 m-0 p-0 border-0  dark:bg-white/40  dark:hover:bg-gray-700 transition-colors  text-red-800 flex items-center justify-center  absolute "
-                                wire:confirm="Are you sure you want to delete photo ?" wire:click="deletePhoto">
+                                @click="$dispatch('open-confirmation', {
+                                    title: 'حذف صورة المجموعة',
+                                    message: 'هل أنت متأكد من حذف صورة المجموعة؟',
+                                    confirmText: 'حذف',
+                                    cancelText: 'إلغاء',
+                                    isDangerous: true,
+                                    onConfirm: () => $wire.call('deletePhoto')
+                                })">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                     stroke-width="1.5" stroke="currentColor" class="size-6 w-5 h-5">
                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -244,7 +251,15 @@
         @if ($authIsOwner)
 
             {{-- Delete group --}}
-            <button wire:confirm="{{ __('wirechat::chat.group.info.actions.delete_group.confirmation_message') }}" wire:click="deleteGroup"
+            <button
+                @click="$dispatch('open-confirmation', {
+                    title: 'حذف المجموعة',
+                    message: '{{ __('wirechat::chat.group.info.actions.delete_group.confirmation_message') }}',
+                    confirmText: 'حذف',
+                    cancelText: 'إلغاء',
+                    isDangerous: true,
+                    onConfirm: () => $wire.call('deleteGroup')
+                })"
                 class="cursor-pointer w-full py-5 px-8 hover:bg-[var(--wc-light-secondary)] dark:hover:bg-[var(--wc-dark-secondary)] transition text-start space-y-2   gap-3   text-red-500">
                 <div class="flex gap-3 items-center ">
 
@@ -279,7 +294,15 @@
             </div>
         @else
         {{-- Exit Group --}}
-            <button wire:confirm="{{ __('wirechat::chat.group.info.actions.exit_group.confirmation_message') }}" wire:click="exitConversation"
+            <button
+                @click="$dispatch('open-confirmation', {
+                    title: 'مغادرة المجموعة',
+                    message: '{{ __('wirechat::chat.group.info.actions.exit_group.confirmation_message') }}',
+                    confirmText: 'مغادرة',
+                    cancelText: 'إلغاء',
+                    isDangerous: true,
+                    onConfirm: () => $wire.call('exitConversation')
+                })"
                 class="cursor-pointer w-full py-5 px-8 hover:bg-[var(--wc-light-secondary)] dark:hover:bg-[var(--wc-dark-secondary)] transition flex gap-3 items-center text-red-500">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                     class="bi bi-box-arrow-right w-5 h-5" viewBox="0 0 16 16">

@@ -56,7 +56,7 @@
   <!-- Navigation -->
   @auth
     @if(auth()->user()->user_type === 'student')
-      @include('components.navigation.student-nav')
+      <x-navigation.app-navigation role="student" />
       @include('components.sidebar.student-sidebar')
     @else
       @include('components.navigation.public-nav')

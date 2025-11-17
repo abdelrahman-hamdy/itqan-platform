@@ -233,6 +233,10 @@ class MeetingDataChannelHandler {
             this.handleClearAllHandRaises(data);
         });
 
+        this.messageHandlers.set('lower_hand', (data) => {
+            this.handleLowerHand(data);
+        });
+
         this.messageHandlers.set('grant_microphone_permission', (data) => {
             this.handleGrantMicrophonePermission(data);
         });
@@ -329,6 +333,33 @@ class MeetingDataChannelHandler {
         }
 
         this.showNotification(data.data.message || 'تم مسح جميع الأيدي المرفوعة', 'info');
+    }
+
+    handleLowerHand(data) {
+        console.log('✋ Received lower hand command from teacher:', data);
+
+        // Check if this message is for me
+        const myParticipantId = window.room?.localParticipant?.identity;
+        const myParticipantSid = window.room?.localParticipant?.sid;
+
+        if (data.targetParticipantId === myParticipantId || data.targetParticipantSid === myParticipantSid) {
+            console.log('✋ This lower hand command is for me, lowering my hand');
+
+            if (window.meeting?.controls) {
+                // Lower the hand
+                window.meeting.controls.isHandRaised = false;
+
+                // Hide hand raise indicator
+                window.meeting.controls.createHandRaiseIndicatorDirect(myParticipantId, false);
+
+                // Update control buttons
+                window.meeting.controls.updateControlButtons();
+
+                console.log('✅ Hand lowered successfully');
+            }
+
+            this.showNotification('قام المعلم بإخفاء يدك المرفوعة', 'info');
+        }
     }
 
     handleGrantMicrophonePermission(data) {

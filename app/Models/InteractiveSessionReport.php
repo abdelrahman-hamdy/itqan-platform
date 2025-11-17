@@ -32,11 +32,10 @@ class InteractiveSessionReport extends BaseSessionReport
         'late_minutes',
         'attendance_status',
         'attendance_percentage',
-        'connection_quality_score',
         'meeting_events',
         'evaluated_at',
-        'is_auto_calculated',
-        'manually_overridden',
+        'is_calculated',
+        'manually_evaluated',
         'override_reason',
 
         // Interactive-specific fields
@@ -57,11 +56,10 @@ class InteractiveSessionReport extends BaseSessionReport
         'is_late' => 'boolean',
         'late_minutes' => 'integer',
         'attendance_percentage' => 'decimal:2',
-        'connection_quality_score' => 'integer',
         'meeting_events' => 'array',
         'evaluated_at' => 'datetime',
-        'is_auto_calculated' => 'boolean',
-        'manually_overridden' => 'boolean',
+        'is_calculated' => 'boolean',
+        'manually_evaluated' => 'boolean',
 
         // Interactive-specific casts
         'quiz_score' => 'decimal:2',

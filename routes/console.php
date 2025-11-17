@@ -108,3 +108,21 @@ Schedule::command('academic-sessions:manage-meetings --force')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Academic session management maintenance during off-hours');
+
+// 🔥 NEW: Reconcile orphaned attendance events (missed webhooks)
+Schedule::job(new \App\Jobs\ReconcileOrphanedAttendanceEvents)
+    ->hourly()
+    ->withoutOverlapping()
+    ->description('Close attendance events orphaned by missed webhooks');
+
+// 🎯 NEW: Calculate attendance for completed sessions (post-meeting)
+$calculateAttendanceJob = Schedule::job(new \App\Jobs\CalculateSessionAttendance)
+    ->withoutOverlapping()
+    ->description('Calculate final attendance from webhook events after sessions end');
+
+// Run every 10 seconds in local for fast testing, every 5 minutes in production
+if ($isLocal) {
+    $calculateAttendanceJob->everyTenSeconds(); // Every 10 seconds for development testing
+} else {
+    $calculateAttendanceJob->everyFiveMinutes(); // Every 5 minutes for production
+}

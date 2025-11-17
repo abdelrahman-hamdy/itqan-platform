@@ -83,7 +83,7 @@
 
 <div x-data="{
     initializing: true,
-    conversationId:@js($conversation->id),
+    conversationId: @js($conversation->id),
     conversationElement: document.getElementById('conversation'),
     loadEmojiPicker() {
         if (!document.head.querySelector('script[src=\'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js\']')) {
@@ -131,4 +131,46 @@
     </div>
 
     <livewire:wirechat.chat.drawer />
+
+    {{-- Lightbox Modal --}}
+    <div x-data="{
+        show: false,
+        url: '',
+        type: '',
+        init() {
+            this.$watch('show', value => {
+                if (value) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+    }"
+        @open-lightbox.window="show = true; url = $event.detail.url; type = $event.detail.type"
+        @keydown.escape.window="show = false"
+        x-show="show"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-90"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @click="show = false">
+
+        {{-- Close Button --}}
+        <button @click="show = false" class="absolute top-4 right-4 z-10 p-2 bg-white dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-gray-700 dark:text-gray-300">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        {{-- Content --}}
+        <div class="relative max-w-7xl max-h-full" @click.stop>
+            <img x-show="type && type.startsWith('image/')" :src="url" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="عرض الصورة">
+            <video x-show="type && type.startsWith('video/')" :src="url" controls class="max-w-full max-h-[90vh] rounded-lg shadow-2xl"></video>
+        </div>
+    </div>
 </div>

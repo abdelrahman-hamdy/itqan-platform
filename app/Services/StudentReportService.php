@@ -29,7 +29,7 @@ class StudentReportService
             ], array_merge($reportData, [
                 'teacher_id' => $session->quran_teacher_id,
                 'academy_id' => $session->academy_id,
-                'is_auto_calculated' => true,
+                'is_calculated' => true,
                 'evaluated_at' => now(),
             ]));
         });
@@ -49,7 +49,6 @@ class StudentReportService
                 'is_late' => false,
                 'late_minutes' => 0,
                 'attendance_percentage' => 0,
-                'connection_quality_score' => 0,
                 'meeting_events' => [],
             ];
         }
@@ -95,7 +94,6 @@ class StudentReportService
             'is_late' => $isLate,
             'late_minutes' => $lateMinutes,
             'attendance_percentage' => round($attendancePercentage, 2),
-            'connection_quality_score' => $this->calculateConnectionQuality($meetingAttendance),
             'meeting_events' => $meetingAttendance->join_leave_cycles ?? [],
         ];
     }
@@ -126,18 +124,18 @@ class StudentReportService
             return 'absent';
         }
 
-        // If attended 30-70%, mark as partial
-        if ($attendancePercentage < 70) {
-            return 'partial';
+        // If attended 30-50%, mark as left early (leaved)
+        if ($attendancePercentage < 50) {
+            return 'leaved';
         }
 
         // If late but attended well, mark as late
-        if ($isLate && $attendancePercentage >= 70) {
+        if ($isLate && $attendancePercentage >= 50) {
             return 'late';
         }
 
-        // If attended 70%+ and not late, mark as present
-        return 'present';
+        // If attended 50%+ and not late, mark as attended
+        return 'attended';
     }
 
     /**
@@ -155,36 +153,6 @@ class StudentReportService
         }
 
         return 10; // Default 10 minutes
-    }
-
-    /**
-     * Calculate connection quality score based on join/leave cycles
-     */
-    protected function calculateConnectionQuality(MeetingAttendance $attendance): int
-    {
-        $cycles = $attendance->join_leave_cycles ?? [];
-
-        if (empty($cycles)) {
-            return 100; // Perfect if no disconnections
-        }
-
-        // Base score
-        $score = 100;
-
-        // Reduce score for each disconnection
-        $disconnections = count($cycles) - 1; // First join doesn't count as disconnection
-        $score -= ($disconnections * 10); // -10 points per disconnection
-
-        // Reduce score for frequent short connections
-        $totalDuration = $attendance->total_duration_minutes ?? 0;
-        if ($totalDuration > 0) {
-            $avgConnectionDuration = $totalDuration / count($cycles);
-            if ($avgConnectionDuration < 5) { // Less than 5 minutes average
-                $score -= 20;
-            }
-        }
-
-        return max(0, min(100, $score));
     }
 
     /**
@@ -246,16 +214,15 @@ class StudentReportService
 
         return [
             'total_students' => $reports->count(),
-            'present_count' => $reports->where('attendance_status', 'present')->count(),
+            'attended_count' => $reports->where('attendance_status', 'attended')->count(),
             'late_count' => $reports->where('attendance_status', 'late')->count(),
             'absent_count' => $reports->where('attendance_status', 'absent')->count(),
-            'partial_count' => $reports->where('attendance_status', 'partial')->count(),
-            'auto_calculated_count' => $reports->where('is_auto_calculated', true)->count(),
+            'leaved_count' => $reports->where('attendance_status', 'leaved')->count(),
+            'auto_calculated_count' => $reports->where('is_calculated', true)->count(),
             'manually_evaluated_count' => $reports->where('manually_evaluated', true)->count(),
             'avg_attendance_percentage' => $reports->avg('attendance_percentage') ?: 0,
             'avg_memorization_degree' => $reports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0,
             'avg_reservation_degree' => $reports->whereNotNull('reservation_degree')->avg('reservation_degree') ?: 0,
-            'avg_connection_quality' => $reports->avg('connection_quality_score') ?: 0,
             'reports' => $reports,
         ];
     }
@@ -269,7 +236,7 @@ class StudentReportService
             ->whereIn('session_id', $sessionIds)
             ->get();
 
-        $attendedReports = $reports->whereIn('attendance_status', ['present', 'late', 'partial']);
+        $attendedReports = $reports->whereIn('attendance_status', ['attended', 'late', 'leaved']);
 
         return [
             'total_sessions' => $reports->count(),
@@ -280,7 +247,6 @@ class StudentReportService
             'avg_memorization_degree' => $reports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0,
             'avg_reservation_degree' => $reports->whereNotNull('reservation_degree')->avg('reservation_degree') ?: 0,
             'avg_attendance_percentage' => $reports->avg('attendance_percentage') ?: 0,
-            'avg_connection_quality' => $reports->avg('connection_quality_score') ?: 0,
             'latest_report' => $reports->sortByDesc('created_at')->first(),
             'improvement_trend' => $this->calculateImprovementTrend($reports),
         ];

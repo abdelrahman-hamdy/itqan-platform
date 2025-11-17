@@ -46,6 +46,25 @@ class MeetingAttendanceService
                 'join_count' => $attendance->join_count,
             ]);
 
+            // ENHANCEMENT: Broadcast attendance update via WebSocket
+            broadcast(new \App\Events\AttendanceUpdated(
+                $session->id,
+                $user->id,
+                [
+                    'is_currently_in_meeting' => true,
+                    'duration_minutes' => $attendance->getCurrentSessionDuration(),
+                    'join_count' => $attendance->join_count,
+                    'status' => 'joined',
+                    'attendance_percentage' => $attendance->attendance_percentage ?? 0,
+                ]
+            ))->toOthers();
+
+            Log::debug('Attendance update broadcasted', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'event' => 'joined',
+            ]);
+
             return true;
 
         } catch (\Exception $e) {
@@ -91,6 +110,26 @@ class MeetingAttendanceService
                 'user_id' => $user->id,
                 'leave_count' => $attendance->leave_count,
                 'total_duration' => $attendance->total_duration_minutes,
+            ]);
+
+            // ENHANCEMENT: Broadcast attendance update via WebSocket
+            broadcast(new \App\Events\AttendanceUpdated(
+                $session->id,
+                $user->id,
+                [
+                    'is_currently_in_meeting' => false,
+                    'duration_minutes' => $attendance->total_duration_minutes,
+                    'join_count' => $attendance->join_count,
+                    'leave_count' => $attendance->leave_count,
+                    'status' => 'left',
+                    'attendance_percentage' => $attendance->attendance_percentage ?? 0,
+                ]
+            ))->toOthers();
+
+            Log::debug('Attendance update broadcasted', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'event' => 'left',
             ]);
 
             return true;

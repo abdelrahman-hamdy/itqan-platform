@@ -667,13 +667,10 @@ class QuranSubscription extends Model
             'memorization_level' => $this->memorization_level ?? 'beginner',
             'total_sessions' => $this->total_sessions,
             'sessions_remaining' => $this->total_sessions,
-            'default_duration_minutes' => $this->package->session_duration ?? 45,
+            'default_duration_minutes' => $this->package->session_duration_minutes ?? 45,
             'status' => $this->subscription_status === 'active' ? 'active' : 'pending',
             'created_by' => $this->created_by,
         ]);
-
-        // Create template sessions immediately
-        $circle->createTemplateSessions();
 
         return $circle;
     }

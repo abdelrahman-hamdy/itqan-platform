@@ -241,42 +241,39 @@
                                     class="border-2 border-gray-200 hover:ring-2 hover:ring-yellow-300 hover:shadow-md transition-all duration-200"
                                 >
                                     <div class="space-y-3">
-                                        <div class="flex items-start justify-between">
-                                            <div class="flex-1">
-                                                <h3 class="text-lg font-semibold text-gray-900">
-                                                    {{ $trialRequest['student_name'] }}
-                                                </h3>
-                                                <p class="text-sm text-gray-600">
-                                                    المستوى: {{ $trialRequest['level_label'] }}
-                                                </p>
-                                            </div>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                {{ $trialRequest['status'] === 'scheduled' ? 'bg-yellow-100 text-yellow-800' : 
-                                                   ($trialRequest['status'] === 'completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800') }}">
+                                        <div class="flex items-center justify-between">
+                                            <h4 class="text-lg font-medium text-gray-900">{{ $trialRequest['student_name'] }}</h4>
+                                            <x-filament::badge
+                                                :color="$trialRequest['status'] === 'scheduled' ? 'warning' : ($trialRequest['status'] === 'completed' ? 'success' : 'info')"
+                                            >
                                                 {{ $trialRequest['status_label'] }}
-                                            </span>
+                                            </x-filament::badge>
                                         </div>
-                                        
+
                                         <div class="space-y-2 text-sm text-gray-600">
-                                            <div class="flex items-center">
-                                                <x-heroicon-o-clock class="w-4 h-4 ml-2 text-gray-400"/>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-academic-cap class="w-4 h-4" />
+                                                <span>المستوى: {{ $trialRequest['level_label'] }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-clock class="w-4 h-4" />
                                                 <span>الوقت المفضل: {{ $trialRequest['preferred_time_label'] }}</span>
                                             </div>
                                             @if($trialRequest['scheduled_at'])
-                                                <div class="flex items-center">
-                                                    <x-heroicon-o-calendar class="w-4 h-4 ml-2 text-gray-400"/>
+                                                <div class="flex items-center gap-2">
+                                                    <x-heroicon-m-calendar-days class="w-4 h-4" />
                                                     <span>موعد الجلسة: {{ $trialRequest['scheduled_at_formatted'] }}</span>
                                                 </div>
                                             @endif
                                         </div>
-                                        
+
                                         @if($trialRequest['notes'])
-                                            <div class="text-sm text-gray-600 bg-gray-50 p-2 rounded mt-3">
-                                                <div class="flex items-start">
-                                                    <x-heroicon-o-chat-bubble-left-ellipsis class="w-4 h-4 ml-2 mt-0.5 text-gray-400 flex-shrink-0"/>
-                                                    <div>
-                                                        <strong>ملاحظات الطالب:</strong>
-                                                        <p class="mt-1">{{ Str::limit($trialRequest['notes'], 150) }}</p>
+                                            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                                <div class="flex items-start gap-2">
+                                                    <x-heroicon-s-chat-bubble-left-ellipsis class="w-5 h-5 text-green-600 flex-shrink-0"/>
+                                                    <div class="flex-1">
+                                                        <p class="text-sm font-semibold text-green-900 mb-1">ملاحظات الطالب:</p>
+                                                        <p class="text-sm text-green-800 leading-relaxed">{{ Str::limit($trialRequest['notes'], 150) }}</p>
                                                     </div>
                                                 </div>
                                             </div>

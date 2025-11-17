@@ -1,0 +1,62 @@
+@props(['title' => null, 'description' => null])
+
+@php
+    $appName = config('app.name', 'منصة إتقان');
+    $pageTitle = $title ?? $appName;
+    $pageDescription = $description ?? 'منصة التعلم الإلكتروني';
+
+    // Font configuration - matches tailwind.config.js
+    $primaryFont = 'Tajawal';
+    $fallbackFonts = ['Cairo', 'Amiri'];
+    $fontWeights = '200;300;400;500;600;700;800;900';
+
+    // Get current academy and colors
+    $academy = auth()->user()?->academy ?? \App\Models\Academy::first();
+    $primaryColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $secondaryColor = $academy?->secondary_color ?? \App\Enums\TailwindColor::EMERALD;
+
+    // Generate CSS variables for all shades
+    $primaryVars = $primaryColor->generateCssVariables('primary');
+    $secondaryVars = $secondaryColor->generateCssVariables('secondary');
+@endphp
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<!-- Page Title -->
+<title>{{ $pageTitle }}</title>
+<meta name="description" content="{{ $pageDescription }}">
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="{{ asset('images/itqan-logo.svg') }}">
+<link rel="icon" type="image/png" href="{{ asset('favicon.ico') }}">
+
+<!-- Fonts - Primary: Tajawal, Fallbacks: Cairo, Amiri -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@{{ $fontWeights }}&family=Cairo:wght@{{ $fontWeights }}&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+
+<!-- Alpine.js for interactive components -->
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<!-- Styles -->
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+
+<!-- Academy Colors CSS Variables -->
+<style>
+    :root {
+        @foreach($primaryVars as $varName => $varValue)
+        {{ $varName }}: {{ $varValue }};
+        @endforeach
+        @foreach($secondaryVars as $varName => $varValue)
+        {{ $varName }}: {{ $varValue }};
+        @endforeach
+    }
+</style>
+
+<!-- Additional Head Content -->
+{{ $slot }}

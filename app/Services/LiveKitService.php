@@ -544,4 +544,89 @@ class LiveKitService
         // Process completed recordings, save to database, notify users, etc.
         // You can implement custom logic here
     }
+
+    /**
+     * 🔥 SIMPLE SOLUTION: Check if user is currently in LiveKit room by querying the API directly
+     * This is the SOURCE OF TRUTH - no webhooks or database needed!
+     *
+     * @param string $roomName The room name (e.g., "session-96")
+     * @param string $userIdentity The participant identity (e.g., "5_ameer_maher")
+     * @return bool True if user is currently in the room, false otherwise
+     */
+    public function isUserInRoom(string $roomName, string $userIdentity): bool
+    {
+        try {
+            if (!$this->isConfigured()) {
+                Log::warning('LiveKit not configured - cannot check user presence', [
+                    'room_name' => $roomName,
+                    'user_identity' => $userIdentity,
+                ]);
+                return false;
+            }
+
+            Log::info('🔍 Checking LiveKit room for user', [
+                'room_name' => $roomName,
+                'user_identity' => $userIdentity,
+            ]);
+
+            // Query LiveKit API directly for participants in this room
+            $participantsResponse = $this->roomService->listParticipants($roomName);
+
+            if (!$participantsResponse) {
+                Log::info('❌ No participants response from LiveKit', [
+                    'room_name' => $roomName,
+                ]);
+                return false;
+            }
+
+            // Check if our user is in the participants list
+            if (method_exists($participantsResponse, 'getParticipants')) {
+                $participants = $participantsResponse->getParticipants();
+
+                Log::info('📊 LiveKit participants in room', [
+                    'room_name' => $roomName,
+                    'total_participants' => count($participants),
+                ]);
+
+                foreach ($participants as $participant) {
+                    $participantIdentity = $participant->getIdentity();
+
+                    Log::debug('Checking participant', [
+                        'participant_identity' => $participantIdentity,
+                        'looking_for' => $userIdentity,
+                        'match' => $participantIdentity === $userIdentity,
+                    ]);
+
+                    if ($participantIdentity === $userIdentity) {
+                        Log::info('✅ USER FOUND IN LIVEKIT ROOM!', [
+                            'room_name' => $roomName,
+                            'user_identity' => $userIdentity,
+                            'participant_name' => $participant->getName(),
+                            'joined_at' => $participant->getJoinedAt(),
+                        ]);
+                        return true;
+                    }
+                }
+
+                Log::info('❌ User NOT in LiveKit room', [
+                    'room_name' => $roomName,
+                    'user_identity' => $userIdentity,
+                    'participants_checked' => count($participants),
+                ]);
+            }
+
+            return false;
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error checking LiveKit room', [
+                'room_name' => $roomName,
+                'user_identity' => $userIdentity,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // On error, assume user is NOT in room (fail-safe)
+            return false;
+        }
+    }
 }

@@ -318,25 +318,78 @@ class QuranTrialRequestResource extends BaseResource
                                 ->label('موعد الجلسة')
                                 ->required()
                                 ->native(false)
-                                ->minDate(now()),
-                            
-                            TextInput::make('meeting_link')
-                                ->label('رابط الاجتماع')
-                                ->url()
-                                ->placeholder('https://meet.google.com/xxx-xxx-xxx'),
-                            
-                            TextInput::make('meeting_password')
-                                ->label('كلمة مرور الاجتماع (اختياري)')
-                                ->placeholder('كلمة المرور'),
+                                ->minDate(now())
+                                ->helperText('سيتم إنشاء غرفة اجتماع LiveKit تلقائياً'),
+
+                            Textarea::make('teacher_response')
+                                ->label('رسالة للطالب (اختياري)')
+                                ->rows(3)
+                                ->placeholder('اكتب رسالة ترحيبية أو تعليمات للطالب...'),
                         ])
                         ->action(function (QuranTrialRequest $record, array $data) {
-                            $record->schedule(
-                                $data['scheduled_at'],
-                                $data['meeting_link'] ?? null,
-                                $data['meeting_password'] ?? null
-                            );
+                            try {
+                                $scheduledAt = \Carbon\Carbon::parse($data['scheduled_at']);
+                                $teacherResponse = $data['teacher_response'] ?? 'تم جدولة الجلسة التجريبية';
+
+                                // Generate unique session code
+                                $sessionCode = 'TR-' . str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT) . '-' . $scheduledAt->format('Ymd-Hi');
+
+                                \Log::info('Creating trial session from Filament', [
+                                    'trial_request_id' => $record->id,
+                                    'teacher_id' => $record->teacher->user_id,
+                                    'student_id' => $record->student_id,
+                                    'session_code' => $sessionCode,
+                                ]);
+
+                                // Create QuranSession with LiveKit integration
+                                $session = \App\Models\QuranSession::create([
+                                    'academy_id' => $record->academy_id,
+                                    'session_code' => $sessionCode,
+                                    'session_type' => 'trial',
+                                    'quran_teacher_id' => $record->teacher->user_id,
+                                    'student_id' => $record->student_id,
+                                    'trial_request_id' => $record->id,
+                                    'scheduled_at' => $scheduledAt,
+                                    'duration_minutes' => 30,
+                                    'status' => \App\Enums\SessionStatus::SCHEDULED, // Use enum
+                                    'title' => "جلسة تجريبية - {$record->student_name}",
+                                    'description' => $teacherResponse,
+                                    'location_type' => 'online',
+                                    'created_by' => auth()->id(),
+                                    'scheduled_by' => auth()->id(),
+                                ]);
+
+                                \Log::info('Trial session created from Filament', [
+                                    'session_id' => $session->id,
+                                    'session_code' => $session->session_code,
+                                ]);
+
+                                // Generate LiveKit meeting room
+                                $session->generateMeetingLink();
+
+                                \Log::info('LiveKit meeting generated from Filament', [
+                                    'session_id' => $session->id,
+                                    'meeting_id' => $session->meeting?->id,
+                                ]);
+
+                                // Status sync happens automatically via QuranSessionObserver
+                            } catch (\Exception $e) {
+                                \Log::error('Trial session creation failed in Filament', [
+                                    'error' => $e->getMessage(),
+                                    'trace' => $e->getTraceAsString(),
+                                    'trial_request_id' => $record->id,
+                                ]);
+
+                                throw $e;
+                            }
                         })
-                        ->successNotificationTitle('تم جدولة الجلسة بنجاح'),
+                        ->successNotificationTitle('تم جدولة الجلسة بنجاح')
+                        ->successNotification(fn ($record) =>
+                            \Filament\Notifications\Notification::make()
+                                ->success()
+                                ->title('تم جدولة الجلسة التجريبية')
+                                ->body("تم إنشاء غرفة اجتماع LiveKit للطالب {$record->student_name}")
+                        ),
 
                     Tables\Actions\DeleteAction::make(),
                 ])
@@ -426,17 +479,21 @@ class QuranTrialRequestResource extends BaseResource
                     ->schema([
                         Infolists\Components\Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('scheduled_at')
+                                Infolists\Components\TextEntry::make('trialSession.scheduled_at')
                                     ->label('موعد الجلسة')
-                                    ->dateTime(),
+                                    ->dateTime()
+                                    ->placeholder('لم يتم تحديد موعد'),
 
-                                Infolists\Components\TextEntry::make('meeting_link')
-                                    ->label('رابط الاجتماع')
-                                    ->url(fn ($record) => $record->meeting_link)
-                                    ->openUrlInNewTab(),
+                                Infolists\Components\TextEntry::make('trialSession.meeting.room_name')
+                                    ->label('غرفة الاجتماع')
+                                    ->placeholder('لم يتم إنشاء غرفة')
+                                    ->formatStateUsing(fn ($state) => $state ? "LiveKit: {$state}" : '-'),
 
-                                Infolists\Components\TextEntry::make('meeting_password')
-                                    ->label('كلمة مرور الاجتماع'),
+                                Infolists\Components\TextEntry::make('trialSession.status')
+                                    ->label('حالة الجلسة')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state) => $state?->label() ?? '-')
+                                    ->color(fn ($state) => $state?->color() ?? 'gray'),
 
                                 Infolists\Components\TextEntry::make('rating')
                                     ->label('التقييم')

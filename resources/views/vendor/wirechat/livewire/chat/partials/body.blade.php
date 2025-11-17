@@ -2,6 +2,15 @@
 <main x-data="{
     height: 0,
     previousHeight: 0,
+    lastScrollTop: 0,
+    showDateLabel: false,
+    scrollTimeout: null,
+    scrollToBottom() {
+        $el.scrollTo({
+            top: $el.scrollHeight,
+            behavior: 'smooth'
+        });
+    },
     updateScrollPosition: function() {
         // Calculate the difference in height
 
@@ -36,11 +45,28 @@
 
         "
     @scroll ="
-        scrollTop= $el.scrollTop;
+        scrollTop = $el.scrollTop;
+        scrollHeight = $el.scrollHeight;
+        clientHeight = $el.clientHeight;
+
+        // Detect scroll direction and show/hide date label
+        if (scrollTop < lastScrollTop) {
+            // Scrolling up
+            showDateLabel = true;
+            // Clear existing timeout
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+            // Hide after 2 seconds of no scrolling
+            scrollTimeout = setTimeout(() => { showDateLabel = false; }, 2000);
+        } else if (scrollTop > lastScrollTop) {
+            // Scrolling down
+            showDateLabel = false;
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+        }
+
+        lastScrollTop = scrollTop;
+
         if((scrollTop<=0) && $wire.canLoadMore){
-
             $wire.loadMore();
-
         }
      "
     @update-height.window="
@@ -68,7 +94,7 @@
 
 
     x-cloak
-     class='flex flex-col h-full  relative gap-2 gap-y-4 p-4 md:p-5 lg:p-8  grow  overscroll-contain overflow-x-hidden w-full my-auto'
+     class='flex flex-col h-full  relative gap-2 gap-y-4 p-4 md:p-5 lg:p-8  grow  overscroll-contain overflow-x-hidden w-full my-auto bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950 dark:to-blue-950'
     style="contain: content" >
 
 
@@ -87,8 +113,15 @@
         {{-- @dd($loadedMessages) --}}
         @foreach ($loadedMessages as $date => $messageGroup)
 
-            {{-- Date  --}}
-            <div  class="sticky top-0 uppercase p-2 shadow-sm px-2.5 z-50 rounded-xl border border-gray-200 dark:border-gray-700 text-sm flex text-center justify-center  bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300  w-28 mx-auto ">
+            {{-- Date with scroll animation --}}
+            <div x-show="showDateLabel"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 -translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-4"
+                class="sticky top-0 uppercase p-2 shadow-md px-3 z-50 rounded-xl border border-gray-300 dark:border-gray-600 text-sm flex text-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 w-32 mx-auto font-medium">
                 {{ $date }}
             </div>
 
@@ -129,10 +162,10 @@
                         </div>
                     @endif
 
-                    {{-- we use w-[95%] to leave space for the image --}}
-                    <div class="w-[95%] mx-auto">
+                    {{-- Full width for messages thread --}}
+                    <div class="w-full">
                         <div @class([
-                            'max-w-[85%] md:max-w-[78%]  flex flex-col gap-y-2  ',
+                            'flex flex-col gap-y-2',
                             'ml-auto' => $belongsToAuth])>
 
 
@@ -225,9 +258,17 @@
                                         <x-slot name="content">
 
                                             @if ($message->ownedBy($this->auth)|| ($authParticipant->isAdmin() && $isGroup))
-                                                <button dusk="delete_message_for_everyone" wire:click="deleteForEveryone('{{ encrypt($message->id) }}')"
-                                                    wire:confirm="{{ __('wirechat::chat.actions.delete_for_everyone.confirmation_message') }}" class="w-full text-start">
-                                                    <x-wirechat::dropdown-link>
+                                                <button dusk="delete_message_for_everyone"
+                                                    @click="$dispatch('open-confirmation', {
+                                                        title: 'حذف للجميع',
+                                                        message: '{{ __('wirechat::chat.actions.delete_for_everyone.confirmation_message') }}',
+                                                        confirmText: 'حذف',
+                                                        cancelText: 'إلغاء',
+                                                        isDangerous: true,
+                                                        onConfirm: () => $wire.call('deleteForEveryone', '{{ encrypt($message->id) }}')
+                                                    })"
+                                                    class="w-full text-start">
+                                                    <x-wirechat::dropdown-link class="text-red-500">
                                                         @lang('wirechat::chat.actions.delete_for_everyone.label')
                                                     </x-wirechat::dropdown-link>
                                                 </button>
@@ -236,8 +277,16 @@
 
                                             {{-- Dont show delete for me if is group --}}
                                             @if (!$isGroup)
-                                            <button dusk="delete_message_for_me" wire:click="deleteForMe('{{ encrypt($message->id) }}')"
-                                                wire:confirm="{{ __('wirechat::chat.actions.delete_for_me.confirmation_message') }}" class="w-full text-start">
+                                            <button dusk="delete_message_for_me"
+                                                @click="$dispatch('open-confirmation', {
+                                                    title: 'حذف من عندي',
+                                                    message: '{{ __('wirechat::chat.actions.delete_for_me.confirmation_message') }}',
+                                                    confirmText: 'حذف',
+                                                    cancelText: 'إلغاء',
+                                                    isDangerous: true,
+                                                    onConfirm: () => $wire.call('deleteForMe', '{{ encrypt($message->id) }}')
+                                                })"
+                                                class="w-full text-start">
                                                 <x-wirechat::dropdown-link>
                                                     @lang('wirechat::chat.actions.delete_for_me.label')
                                                 </x-wirechat::dropdown-link>

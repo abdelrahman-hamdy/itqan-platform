@@ -1503,33 +1503,43 @@ class QuranSession extends BaseSession
      */
     public function getMeetingConfiguration(): array
     {
+        // Get academy settings for meeting configuration
+        $academySettings = \App\Models\AcademySettings::where('academy_id', $this->academy_id)->first();
+        $settingsJson = $academySettings?->settings ?? [];
+
+        // Extract meeting settings from JSON settings or use defaults
+        $defaultRecordingEnabled = $settingsJson['meeting_recording_enabled'] ?? true;
+        $defaultMaxParticipants = $settingsJson['meeting_max_participants'] ?? 10;
+
         $config = [
             'session_type' => $this->session_type,
             'session_id' => $this->id,
             'session_code' => $this->session_code,
             'academy_id' => $this->academy_id,
             'duration_minutes' => $this->duration_minutes ?? 60,
-            'max_participants' => $this->session_type === 'circle' ? 10 : 2,
-            'recording_enabled' => true, // Quran sessions may need recording for review
-            'chat_enabled' => true,
-            'screen_sharing_enabled' => true,
-            'whiteboard_enabled' => false, // Not typically needed for Quran sessions
-            'breakout_rooms_enabled' => false,
-            'waiting_room_enabled' => false,
-            'mute_on_join' => false,
-            'camera_on_join' => true,
+            'max_participants' => $defaultMaxParticipants,
+            'recording_enabled' => $defaultRecordingEnabled,
+            'chat_enabled' => $settingsJson['meeting_chat_enabled'] ?? true,
+            'screen_sharing_enabled' => $settingsJson['meeting_screen_sharing_enabled'] ?? true,
+            'whiteboard_enabled' => $settingsJson['meeting_whiteboard_enabled'] ?? false,
+            'breakout_rooms_enabled' => $settingsJson['meeting_breakout_rooms_enabled'] ?? false,
+            'waiting_room_enabled' => $settingsJson['meeting_waiting_room_enabled'] ?? false,
+            'mute_on_join' => $settingsJson['meeting_mute_on_join'] ?? false,
+            'camera_on_join' => $settingsJson['meeting_camera_on_join'] ?? true,
         ];
 
-        // Add session-specific settings based on type
-        if ($this->session_type === 'individual') {
+        // Override with session-specific settings based on type
+        if ($this->session_type === 'individual' || $this->session_type === 'trial') {
+            // Individual and trial sessions: 1 teacher + 1 student
             $config['max_participants'] = 2;
-            $config['recording_enabled'] = true;
             $config['waiting_room_enabled'] = false;
+            $config['recording_enabled'] = $settingsJson['individual_recording_enabled'] ?? $defaultRecordingEnabled;
         } elseif ($this->session_type === 'circle') {
-            $config['max_participants'] = 10;
-            $config['recording_enabled'] = true;
-            $config['waiting_room_enabled'] = true;
-            $config['mute_on_join'] = true; // Start muted in group sessions
+            // Group sessions: 1 teacher + multiple students
+            $config['max_participants'] = $settingsJson['circle_max_participants'] ?? 10;
+            $config['recording_enabled'] = $settingsJson['circle_recording_enabled'] ?? $defaultRecordingEnabled;
+            $config['waiting_room_enabled'] = $settingsJson['circle_waiting_room_enabled'] ?? true;
+            $config['mute_on_join'] = true; // Always start muted in group sessions
         }
 
         return $config;

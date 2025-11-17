@@ -19,14 +19,14 @@ class StudentSessionReportFactory extends Factory
         $student = User::factory()->state(['user_type' => 'student']);
         $session = QuranSession::factory();
 
-        $attendanceStatuses = ['present', 'late', 'partial', 'absent'];
+        $attendanceStatuses = ['attended', 'late', 'leaved', 'absent'];
         $attendanceStatus = $this->faker->randomElement($attendanceStatuses);
 
         // Calculate realistic attendance percentage based on status
         $attendancePercentage = match ($attendanceStatus) {
-            'present' => $this->faker->numberBetween(80, 100),
+            'attended' => $this->faker->numberBetween(80, 100),
             'late' => $this->faker->numberBetween(70, 95),
-            'partial' => $this->faker->numberBetween(30, 69),
+            'leaved' => $this->faker->numberBetween(30, 49),
             'absent' => 0,
         };
 
@@ -58,7 +58,6 @@ class StudentSessionReportFactory extends Factory
             'is_late' => $attendanceStatus === 'late',
             'late_minutes' => $lateMinutes,
             'attendance_percentage' => $attendancePercentage,
-            'connection_quality_score' => $this->faker->numberBetween(0, 100),
 
             // Meeting events (as JSON)
             'meeting_events' => $attendanceStatus === 'absent' ? [] : [
@@ -71,26 +70,25 @@ class StudentSessionReportFactory extends Factory
 
             // Evaluation metadata
             'evaluated_at' => now(),
-            'is_auto_calculated' => $this->faker->boolean(80), // 80% auto-calculated
+            'is_calculated' => $this->faker->boolean(80), // 80% auto-calculated
             'manually_evaluated' => $this->faker->boolean(30), // 30% manually evaluated
         ];
     }
 
     /**
-     * Create a report for a present student
+     * Create a report for an attended student
      */
-    public function present(): static
+    public function attended(): static
     {
         return $this->state(function (array $attributes) {
             return [
-                'attendance_status' => 'present',
+                'attendance_status' => 'attended',
                 'attendance_percentage' => $this->faker->numberBetween(80, 100),
                 'actual_attendance_minutes' => $this->faker->numberBetween(48, 60), // 80-100% of 60 minutes
                 'is_late' => false,
                 'late_minutes' => 0,
                 'meeting_enter_time' => now()->subMinutes(60),
                 'meeting_leave_time' => now(),
-                'connection_quality_score' => $this->faker->numberBetween(70, 100),
             ];
         });
     }
@@ -112,28 +110,26 @@ class StudentSessionReportFactory extends Factory
                 'late_minutes' => $lateMinutes,
                 'meeting_enter_time' => now()->subMinutes(60)->addMinutes($lateMinutes),
                 'meeting_leave_time' => now(),
-                'connection_quality_score' => $this->faker->numberBetween(60, 90),
             ];
         });
     }
 
     /**
-     * Create a report for a student with partial attendance
+     * Create a report for a student who left early
      */
-    public function partial(): static
+    public function leaved(): static
     {
         return $this->state(function (array $attributes) {
-            $attendanceMinutes = $this->faker->numberBetween(20, 35);
+            $attendanceMinutes = $this->faker->numberBetween(18, 29); // 30-49% of 60 minutes
 
             return [
-                'attendance_status' => 'partial',
+                'attendance_status' => 'leaved',
                 'attendance_percentage' => round(($attendanceMinutes / 60) * 100, 2),
                 'actual_attendance_minutes' => $attendanceMinutes,
                 'is_late' => $this->faker->boolean(),
                 'late_minutes' => $this->faker->boolean() ? $this->faker->numberBetween(0, 10) : 0,
                 'meeting_enter_time' => now()->subMinutes(40),
                 'meeting_leave_time' => now()->subMinutes(20),
-                'connection_quality_score' => $this->faker->numberBetween(30, 70),
             ];
         });
     }
@@ -152,7 +148,6 @@ class StudentSessionReportFactory extends Factory
                 'late_minutes' => 0,
                 'meeting_enter_time' => null,
                 'meeting_leave_time' => null,
-                'connection_quality_score' => 0,
                 'meeting_events' => [],
             ];
         });
@@ -198,7 +193,7 @@ class StudentSessionReportFactory extends Factory
                 'new_memorization_degree' => null,
                 'reservation_degree' => null,
                 'notes' => null,
-                'is_auto_calculated' => true,
+                'is_calculated' => true,
                 'manually_evaluated' => false,
             ];
         });
@@ -214,58 +209,11 @@ class StudentSessionReportFactory extends Factory
                 'new_memorization_degree' => $this->faker->randomFloat(1, 5, 9),
                 'reservation_degree' => $this->faker->randomFloat(1, 5, 9),
                 'notes' => $this->faker->sentence(),
-                'is_auto_calculated' => false,
+                'is_calculated' => false,
                 'manually_evaluated' => true,
                 'evaluated_at' => now(),
             ];
         });
     }
 
-    /**
-     * Create a report with excellent connection quality
-     */
-    public function excellentConnection(): static
-    {
-        return $this->state(function (array $attributes) {
-            return [
-                'connection_quality_score' => $this->faker->numberBetween(90, 100),
-                'meeting_events' => [
-                    [
-                        'joined_at' => now()->subMinutes(60)->toISOString(),
-                        'left_at' => now()->toISOString(),
-                        'duration_minutes' => 60,
-                    ],
-                ],
-            ];
-        });
-    }
-
-    /**
-     * Create a report with poor connection quality (many disconnections)
-     */
-    public function poorConnection(): static
-    {
-        return $this->state(function (array $attributes) {
-            return [
-                'connection_quality_score' => $this->faker->numberBetween(20, 50),
-                'meeting_events' => [
-                    [
-                        'joined_at' => now()->subMinutes(60)->toISOString(),
-                        'left_at' => now()->subMinutes(50)->toISOString(),
-                        'duration_minutes' => 10,
-                    ],
-                    [
-                        'joined_at' => now()->subMinutes(45)->toISOString(),
-                        'left_at' => now()->subMinutes(30)->toISOString(),
-                        'duration_minutes' => 15,
-                    ],
-                    [
-                        'joined_at' => now()->subMinutes(20)->toISOString(),
-                        'left_at' => now()->toISOString(),
-                        'duration_minutes' => 20,
-                    ],
-                ],
-            ];
-        });
-    }
 }

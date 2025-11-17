@@ -1,7 +1,10 @@
 /**
  * LiveKit Controls Module
  * Handles UI control interactions (mic, camera, screen share, etc.) using proper SDK methods
+ * VERSION: 2025-11-16-FIX-v6 - Fixed clearAllRaisedHands room reference & added debugging
  */
+
+console.log('🔧 CONTROLS.JS VERSION: 2025-11-16-FIX-v6 - CLEAR ALL FIX & DEBUG - Loading...');
 
 /**
  * Controls manager for meeting UI interactions
@@ -93,22 +96,13 @@ class LiveKitControls {
         this.setupKeyboardShortcuts();
         this.syncControlStates();
 
-        // Initialize global audio control state from UI toggle (teachers only)
+        // Initialize permission toggles from server (both teachers and students)
         if (this.canControlStudentAudio()) {
-            this.syncGlobalAudioStateFromToggle();
-            this.updateGlobalAudioControlToggle();
+            // For teachers, fetch current permissions and initialize toggles
+            this.initializeTeacherTogglesFromServer();
         } else {
-            // For students, ensure default permissions are set correctly
-            // CRITICAL FIX: Set explicit boolean values and ensure proper initialization
-            this.globalAudioControlsState.allStudentsMuted = false;
-            this.globalAudioControlsState.studentsCanSelfUnmute = true;
-            this.globalAudioControlsState.teacherControlsAudio = false;
-
-            console.log('🎓 Student initialized with default audio permissions:', {
-                allStudentsMuted: this.globalAudioControlsState.allStudentsMuted,
-                studentsCanSelfUnmute: this.globalAudioControlsState.studentsCanSelfUnmute,
-                teacherControlsAudio: this.globalAudioControlsState.teacherControlsAudio
-            });
+            // For students, fetch room permissions from server
+            this.fetchAndEnforceRoomPermissions();
         }
 
         this.updateControlButtons();
@@ -125,6 +119,188 @@ class LiveKitControls {
             this.isVideoEnabled = this.localParticipant.isCameraEnabled;
             console.log(`📊 Control states synced - Audio: ${this.isAudioEnabled}, Video: ${this.isVideoEnabled}`);
         }
+    }
+
+    /**
+     * Fetch room permissions from server and enforce them (students only)
+     */
+    async fetchAndEnforceRoomPermissions() {
+        try {
+            // Use actual LiveKit room name from connected room
+            const roomName = this.room?.name || this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
+
+            console.log('🔐 Fetching room permissions for students...', { roomName });
+
+            const response = await fetch(`/livekit/rooms/permissions?room_name=${encodeURIComponent(roomName)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch room permissions');
+            }
+
+            const result = await response.json();
+            const permissions = result.permissions || {};
+
+            console.log('✅ Room permissions received:', permissions);
+
+            // Store permissions locally
+            this.roomPermissions = {
+                microphoneAllowed: permissions.microphone_allowed !== false,
+                cameraAllowed: permissions.camera_allowed !== false,
+            };
+
+            // Enforce permissions on UI
+            this.enforcePermissionsOnUI();
+
+            // Start polling for permission changes every 5 seconds
+            this.startPermissionPolling();
+
+        } catch (error) {
+            console.error('❌ Failed to fetch room permissions:', error);
+            // Default to allowing everything if fetch fails
+            this.roomPermissions = {
+                microphoneAllowed: true,
+                cameraAllowed: true,
+            };
+        }
+    }
+
+    /**
+     * Initialize teacher toggle switches from server permissions (teachers only)
+     */
+    async initializeTeacherTogglesFromServer() {
+        try {
+            const roomName = this.room?.name || this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
+
+            console.log('🔐 Fetching room permissions for teacher initialization...', { roomName });
+
+            const response = await fetch(`/livekit/rooms/permissions?room_name=${encodeURIComponent(roomName)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch room permissions');
+            }
+
+            const result = await response.json();
+            const permissions = result.permissions || {};
+
+            console.log('✅ Teacher permissions received:', permissions);
+
+            // Set toggle switches based on current permissions
+            const micSwitch = document.getElementById('toggleAllStudentsMicSwitch');
+            const cameraSwitch = document.getElementById('toggleAllStudentsCameraSwitch');
+
+            if (micSwitch) {
+                micSwitch.checked = permissions.microphone_allowed !== false;
+                console.log('🎤 Mic toggle initialized:', micSwitch.checked ? 'ALLOWED' : 'MUTED');
+            }
+
+            if (cameraSwitch) {
+                cameraSwitch.checked = permissions.camera_allowed !== false;
+                console.log('📹 Camera toggle initialized:', cameraSwitch.checked ? 'ALLOWED' : 'DISABLED');
+            }
+
+            // Now sync the internal state from the correctly initialized toggles
+            this.syncGlobalAudioStateFromToggle();
+            this.updateGlobalAudioControlToggle();
+
+        } catch (error) {
+            console.error('❌ Failed to fetch teacher permissions:', error);
+            // Default to allowing everything if fetch fails
+            const micSwitch = document.getElementById('toggleAllStudentsMicSwitch');
+            const cameraSwitch = document.getElementById('toggleAllStudentsCameraSwitch');
+
+            if (micSwitch) micSwitch.checked = true;
+            if (cameraSwitch) cameraSwitch.checked = true;
+
+            this.syncGlobalAudioStateFromToggle();
+            this.updateGlobalAudioControlToggle();
+        }
+    }
+
+    /**
+     * Enforce room permissions on UI buttons
+     */
+    enforcePermissionsOnUI() {
+        if (!this.roomPermissions) return;
+
+        const micButton = document.getElementById('toggleMic');
+        const cameraButton = document.getElementById('toggleCamera');
+
+        // Microphone permission
+        if (!this.roomPermissions.microphoneAllowed) {
+            console.log('🚫 Microphone permission disabled by teacher');
+
+            if (micButton) {
+                micButton.disabled = true;
+                micButton.classList.add('opacity-50', 'cursor-not-allowed');
+                micButton.title = 'المعلم لم يسمح بإستخدام الميكروفون';
+            }
+
+            // Ensure mic is muted if permission disabled
+            if (this.isAudioEnabled && this.localParticipant) {
+                this.toggleMicrophone(); // This will mute it
+            }
+        } else {
+            if (micButton) {
+                micButton.disabled = false;
+                micButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                micButton.title = 'تشغيل/إيقاف الميكروفون';
+            }
+        }
+
+        // Camera permission
+        if (!this.roomPermissions.cameraAllowed) {
+            console.log('🚫 Camera permission disabled by teacher');
+
+            if (cameraButton) {
+                cameraButton.disabled = true;
+                cameraButton.classList.add('opacity-50', 'cursor-not-allowed');
+                cameraButton.title = 'المعلم لم يسمح بإستخدام الكاميرا';
+            }
+
+            // Ensure camera is off if permission disabled
+            if (this.isVideoEnabled && this.localParticipant) {
+                this.toggleCamera(); // This will turn it off
+            }
+        } else {
+            if (cameraButton) {
+                cameraButton.disabled = false;
+                cameraButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                cameraButton.title = 'تشغيل/إيقاف الكاميرا';
+            }
+        }
+    }
+
+    /**
+     * Poll for permission changes every 5 seconds
+     */
+    startPermissionPolling() {
+        // Clear existing interval if any
+        if (this.permissionPollingInterval) {
+            clearInterval(this.permissionPollingInterval);
+        }
+
+        // Poll every 5 seconds
+        this.permissionPollingInterval = setInterval(() => {
+            this.fetchAndEnforceRoomPermissions();
+        }, 5000);
+
+        console.log('🔄 Permission polling started (every 5 seconds)');
     }
 
     /**
@@ -216,6 +392,12 @@ class LiveKitControls {
         const toggleAllStudentsMicSwitch = document.getElementById('toggleAllStudentsMicSwitch');
         if (toggleAllStudentsMicSwitch && this.canControlStudentAudio()) {
             toggleAllStudentsMicSwitch.addEventListener('change', () => this.toggleAllStudentsMicrophones());
+        }
+
+        // Global camera control toggle switch (teachers only)
+        const toggleAllStudentsCameraSwitch = document.getElementById('toggleAllStudentsCameraSwitch');
+        if (toggleAllStudentsCameraSwitch && this.canControlStudentAudio()) {
+            toggleAllStudentsCameraSwitch.addEventListener('change', () => this.toggleAllStudentsCamera());
         }
 
         console.log('✅ Control buttons set up successfully');
@@ -745,8 +927,11 @@ class LiveKitControls {
 
         try {
             console.log('👋 Student toggling hand raise state...');
+            console.log(`👋 Current state BEFORE toggle: ${this.isHandRaised}`);
 
             this.isHandRaised = !this.isHandRaised;
+
+            console.log(`👋 New state AFTER toggle: ${this.isHandRaised}`);
 
             // Send hand raise state via data channel with enhanced data
             const data = {
@@ -848,7 +1033,7 @@ class LiveKitControls {
      * Remove a participant from the raised hands queue
      * @param {string} participantSid - Participant SID
      */
-    removeFromRaisedHandsQueue(participantSid) {
+    async removeFromRaisedHandsQueue(participantSid) {
         if (!this.canControlStudentAudio()) {
             return;
         }
@@ -856,11 +1041,36 @@ class LiveKitControls {
         const handRaise = this.raisedHandsQueue.get(participantSid);
         if (handRaise) {
             console.log(`👋 Removing ${handRaise.identity} from raised hands queue`);
-            
+
             // ✅ IMMEDIATE: Hide hand raise indicator for this student - SIMPLE DIRECT APPROACH
             console.log(`✋ IMMEDIATE: Removing hand raise indicator for student ${handRaise.identity}`);
             this.createHandRaiseIndicatorDirect(handRaise.identity, false);
-            
+
+            // Send message to student to lower their hand
+            try {
+                const data = {
+                    type: 'lower_hand',
+                    targetParticipantSid: participantSid,
+                    targetParticipantId: handRaise.identity,
+                    timestamp: Date.now(),
+                    teacherId: this.localParticipant.identity
+                };
+
+                const encoder = new TextEncoder();
+                const encodedData = encoder.encode(JSON.stringify(data));
+                const dataKind = window.LiveKit.DataPacket_Kind?.RELIABLE || 1;
+
+                await this.room.localParticipant.publishData(
+                    encodedData,
+                    dataKind,
+                    { reliable: true }
+                );
+
+                console.log(`✅ Sent lower hand message to ${handRaise.identity}`);
+            } catch (error) {
+                console.error('❌ Failed to send lower hand message:', error);
+            }
+
             this.raisedHandsQueue.delete(participantSid);
 
             // Update UI
@@ -1059,29 +1269,46 @@ class LiveKitControls {
      * Clear all raised hands with one click
      */
     async clearAllRaisedHands() {
-        if (!window.room || !this.dataChannel) {
-            console.warn('⚠️ Room or data channel not available for clearing raised hands');
+        if (!this.room) {
+            console.warn('⚠️ Room not available for clearing raised hands');
             return;
         }
 
         try {
-            const raisedHands = Object.keys(this.raisedHands);
-            
-            if (raisedHands.length === 0) {
+            const raisedHandsArray = Array.from(this.raisedHandsQueue.values());
+
+            if (raisedHandsArray.length === 0) {
                 console.log('ℹ️ No raised hands to clear');
                 return;
             }
 
-            console.log(`🧹 Clearing ${raisedHands.length} raised hands`);
+            console.log(`🧹 Clearing ${raisedHandsArray.length} raised hands`);
 
-            // Send clear all command via data channel
-            await this.dataChannel.sendMessage({
-                type: 'clear_all_raised_hands',
-                timestamp: Date.now(),
-                teacherId: window.room.localParticipant.identity
+            // Hide all hand raise indicators immediately (teacher side)
+            raisedHandsArray.forEach(handRaise => {
+                console.log(`✋ Hiding hand raise indicator for ${handRaise.identity}`);
+                this.createHandRaiseIndicatorDirect(handRaise.identity, false);
             });
 
+            // Send clear all command via data channel
+            const data = {
+                type: 'clear_all_raised_hands',
+                timestamp: Date.now(),
+                teacherId: this.localParticipant.identity
+            };
+
+            const encoder = new TextEncoder();
+            const encodedData = encoder.encode(JSON.stringify(data));
+            const dataKind = window.LiveKit.DataPacket_Kind?.RELIABLE || 1;
+
+            await this.room.localParticipant.publishData(
+                encodedData,
+                dataKind,
+                { reliable: true }
+            );
+
             // Clear local state
+            this.raisedHandsQueue.clear();
             this.raisedHands = {};
             this.handRaiseNotificationCount = 0;
 
@@ -1090,16 +1317,12 @@ class LiveKitControls {
             this.updateRaisedHandsNotificationBadge();
 
             // Show success notification
-            if (window.showNotification) {
-                window.showNotification('تم إخفاء جميع الأيدي المرفوعة بنجاح', 'success');
-            }
+            this.showNotification('تم إخفاء جميع الأيدي المرفوعة بنجاح', 'success');
 
             console.log('✅ All raised hands cleared successfully');
         } catch (error) {
             console.error('❌ Error clearing all raised hands:', error);
-            if (window.showNotification) {
-                window.showNotification('حدث خطأ أثناء إخفاء الأيدي المرفوعة', 'error');
-            }
+            this.showNotification('حدث خطأ أثناء إخفاء الأيدي المرفوعة', 'error');
         }
     }
 
@@ -1110,7 +1333,22 @@ class LiveKitControls {
     handleClearAllHandRaises(data) {
         console.log('✋ Handling clear all hand raises from teacher:', data);
 
-        // Clear local state
+        // If student, lower their hand
+        if (this.userRole === 'student' && this.isHandRaised) {
+            console.log('✋ Lowering my hand (student)');
+            this.isHandRaised = false;
+
+            // Hide local hand raise indicator
+            if (this.localParticipant) {
+                this.createHandRaiseIndicatorDirect(this.localParticipant.identity, false);
+            }
+
+            // Update control buttons
+            this.updateControlButtons();
+        }
+
+        // Clear local state (for both teacher and student)
+        this.raisedHandsQueue.clear();
         this.raisedHands = {};
         this.handRaiseNotificationCount = 0;
 
@@ -1164,8 +1402,18 @@ class LiveKitControls {
             this.globalAudioControlsState.studentsCanSelfUnmute = newAllowedState;
             this.globalStateExplicitlySet = true;
 
-            // Get room name from meeting config
-            const roomName = this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
+            // Use actual LiveKit room name from connected room
+            const roomName = this.room?.name || this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
+
+            // Debug logging
+            console.log('🔍 Mic Toggle Debug:', {
+                hasRoom: !!this.room,
+                roomName: roomName,
+                roomObject: this.room?.name,
+                configName: this.config?.meetingConfig?.roomName,
+                fallback: `session-${window.sessionId}`,
+                muted: newMutedState
+            });
 
             // Call server-side API to mute all students
             const response = await fetch('/livekit/participants/mute-all-students', {
@@ -1193,9 +1441,12 @@ class LiveKitControls {
             this.updateGlobalAudioControlToggle();
 
             const status = newMutedState ? 'تم كتم جميع الطلاب' : 'تم السماح للطلاب بإستخدام الميكروفون';
-            this.showNotification(`✅ ${status} (${result.affected_participants} مشارك)`, 'success');
+            this.showNotification(`✅ ${status}`, 'success');
 
             console.log(`✅ All students microphones toggled successfully via API:`, result);
+
+            // Update all participant mic status icons immediately
+            this.updateAllParticipantMicIcons(newMutedState);
 
             // Notify UI of state change
             this.notifyControlStateChange('globalAudioControl', {
@@ -1210,6 +1461,85 @@ class LiveKitControls {
 
             // Reset toggle switch on error
             const toggleSwitch = document.getElementById('toggleAllStudentsMicSwitch');
+            if (toggleSwitch) {
+                toggleSwitch.checked = !toggleSwitch.checked; // Revert
+            }
+        }
+    }
+
+    /**
+     * Toggle all students' cameras on/off using server-side API (teacher only)
+     */
+    async toggleAllStudentsCamera() {
+        if (!this.canControlStudentAudio()) {
+            this.showNotification('غير مسموح لك بإدارة صلاحيات الكاميرا', 'error');
+            return;
+        }
+
+        try {
+            // Get the switch state
+            const toggleSwitch = document.getElementById('toggleAllStudentsCameraSwitch');
+            const newAllowedState = toggleSwitch ? toggleSwitch.checked : false;
+            const newDisabledState = !newAllowedState; // Inverted logic: checked = allowed, unchecked = disabled
+
+            console.log(`📹 Teacher toggling all students cameras: ${newAllowedState ? 'ALLOWED' : 'DISABLED'}`);
+
+            // Use actual LiveKit room name from connected room
+            const roomName = this.room?.name || this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
+
+            // Debug logging
+            console.log('🔍 Camera Toggle Debug:', {
+                hasRoom: !!this.room,
+                roomName: roomName,
+                roomObject: this.room?.name,
+                configName: this.config?.meetingConfig?.roomName,
+                fallback: `session-${window.sessionId}`,
+                disabled: !newAllowedState
+            });
+
+            // Call server-side API to disable/enable all students cameras
+            const response = await fetch('/livekit/participants/disable-all-students-camera', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin', // Include session cookies for authentication
+                body: JSON.stringify({
+                    room_name: roomName,
+                    disabled: newDisabledState
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Server request failed');
+            }
+
+            const result = await response.json();
+
+            const status = newDisabledState ? 'تم تعطيل كاميرات جميع الطلاب' : 'تم السماح للطلاب بإستخدام الكاميرا';
+            this.showNotification(`✅ ${status}`, 'success');
+
+            console.log(`✅ All students cameras toggled successfully via API:`, result);
+
+            // Update all participant camera status icons immediately
+            this.updateAllParticipantCameraIcons(newDisabledState);
+
+            // Notify UI of state change
+            this.notifyControlStateChange('globalCameraControl', {
+                disabled: newDisabledState,
+                allowed: newAllowedState,
+                affectedParticipants: result.affected_participants
+            });
+
+        } catch (error) {
+            console.error('❌ Failed to toggle students cameras:', error);
+            this.showNotification('خطأ في إدارة كاميرات الطلاب: ' + error.message, 'error');
+
+            // Reset toggle switch on error
+            const toggleSwitch = document.getElementById('toggleAllStudentsCameraSwitch');
             if (toggleSwitch) {
                 toggleSwitch.checked = !toggleSwitch.checked; // Revert
             }
@@ -1388,6 +1718,11 @@ class LiveKitControls {
         switch (type) {
             case 'chat':
                 this.isChatOpen = true;
+                // Update sidebar title
+                const chatSidebarTitle = document.getElementById('sidebarTitle');
+                if (chatSidebarTitle) {
+                    chatSidebarTitle.textContent = 'الدردشة';
+                }
                 this.markChatAsRead();
                 break;
             case 'participants':
@@ -1396,6 +1731,10 @@ class LiveKitControls {
                 const participantsSidebarTitle = document.getElementById('sidebarTitle');
                 if (participantsSidebarTitle) {
                     participantsSidebarTitle.textContent = 'المشاركين';
+                }
+                // Update participants list when opening the sidebar
+                if (this.config.onParticipantsListOpened) {
+                    this.config.onParticipantsListOpened();
                 }
                 break;
             case 'raisedHands':
@@ -1413,6 +1752,11 @@ class LiveKitControls {
                 break;
             case 'settings':
                 this.isSettingsOpen = true;
+                // Update sidebar title
+                const settingsSidebarTitle = document.getElementById('sidebarTitle');
+                if (settingsSidebarTitle) {
+                    settingsSidebarTitle.textContent = 'الإعدادات';
+                }
                 this.updateSettingsPanel();
                 break;
         }
@@ -1743,6 +2087,7 @@ class LiveKitControls {
         const micButton = document.getElementById('toggleMic');
         if (micButton) {
             const svg = micButton.querySelector('svg');
+            const tooltip = micButton.querySelector('.control-tooltip');
 
             if (this.userRole === 'teacher') {
                 // Teachers see full mic status
@@ -1750,6 +2095,7 @@ class LiveKitControls {
                     micButton.classList.remove('bg-red-600', 'bg-red-500');
                     micButton.classList.add('bg-gray-600');
                     micButton.title = 'إيقاف الميكروفون';
+                    if (tooltip) tooltip.textContent = 'إيقاف الميكروفون';
                     if (svg) {
                         svg.innerHTML = '<path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 715 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>';
                     }
@@ -1757,6 +2103,7 @@ class LiveKitControls {
                     micButton.classList.add('bg-red-600');
                     micButton.classList.remove('bg-gray-600', 'bg-gray-700');
                     micButton.title = 'تشغيل الميكروفون';
+                    if (tooltip) tooltip.textContent = 'تشغيل الميكروفون';
                     if (svg) {
                         svg.innerHTML = '<path d="M2.5 8.5a6 6 0 0 1 12 0v2a1 1 0 0 0 2 0v-2a8 8 0 0 0-16 0v2a1 1 0 0 0 2 0v-2z"/><path d="M10 8a2 2 0 1 1-4 0V6a2 2 0 1 1 4 0v2zM8 13a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1z"/><path d="m2.5 1.5 15 15a1 1 0 0 1-1.414 1.414l-15-15A1 1 0 0 1 2.5 1.5z"/>';
                     }
@@ -1770,6 +2117,7 @@ class LiveKitControls {
                     micButton.classList.remove('bg-red-600', 'bg-red-500', 'bg-gray-500');
                     micButton.classList.add('bg-green-600');
                     micButton.title = 'إيقاف الميكروفون';
+                    if (tooltip) tooltip.textContent = 'إيقاف الميكروفون';
                     if (svg) {
                         svg.innerHTML = '<path fill-rule="evenodd" d="M7 4a3 3 0 0 1 6 0v4a3 3 0 1 1-6 0V4zm4 10.93A7.001 7.001 0 0 0 17 8a1 1 0 1 0-2 0A5 5 0 0 1 5 8a1 1 0 0 0-2 0 7.001 7.001 0 0 0 6 6.93V17H6a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-2.07z" clip-rule="evenodd"/>';
                     }
@@ -1780,11 +2128,13 @@ class LiveKitControls {
                         micButton.classList.remove('bg-green-600', 'bg-gray-500');
                         micButton.classList.add('bg-red-600');
                         micButton.title = 'تشغيل الميكروفون';
+                        if (tooltip) tooltip.textContent = 'تشغيل الميكروفون';
                     } else {
                         // Cannot unmute - show restricted state
                         micButton.classList.remove('bg-green-600', 'bg-red-600');
                         micButton.classList.add('bg-gray-500');
                         micButton.title = 'الميكروفون معطل من قبل المعلم';
+                        if (tooltip) tooltip.textContent = 'الميكروفون معطل من قبل المعلم';
                     }
                     if (svg) {
                         svg.innerHTML = '<path d="M2.5 8.5a6 6 0 0 1 12 0v2a1 1 0 0 0 2 0v-2a8 8 0 0 0-16 0v2a1 1 0 0 0 2 0v-2z"/><path d="M10 8a2 2 0 1 1-4 0V6a2 2 0 1 1 4 0v2zM8 13a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1z"/><path d="m2.5 1.5 15 15a1 1 0 0 1-1.414 1.414l-15-15A1 1 0 0 1 2.5 1.5z"/>';
@@ -1797,10 +2147,13 @@ class LiveKitControls {
         const cameraButton = document.getElementById('toggleCamera');
         if (cameraButton) {
             const svg = cameraButton.querySelector('svg');
+            const tooltip = cameraButton.querySelector('.control-tooltip');
+
             if (this.isVideoEnabled) {
                 cameraButton.classList.remove('bg-red-600', 'bg-red-500');
                 cameraButton.classList.add('bg-gray-600');
                 cameraButton.title = 'إيقاف الكاميرا';
+                if (tooltip) tooltip.textContent = 'إيقاف الكاميرا';
                 if (svg) {
                     svg.innerHTML = '<path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8v3l2 2 2-2v-3l4 8z" clip-rule="evenodd"/>';
                 }
@@ -1808,6 +2161,7 @@ class LiveKitControls {
                 cameraButton.classList.add('bg-red-600');
                 cameraButton.classList.remove('bg-gray-600', 'bg-gray-700');
                 cameraButton.title = 'تشغيل الكاميرا';
+                if (tooltip) tooltip.textContent = 'تشغيل الكاميرا';
                 if (svg) {
                     svg.innerHTML = '<path d="M4 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 00-2-2H4z"/><path d="m16 7 2-2v10l-2-2V7z"/><path d="m2.5 1.5 15 15a1 1 0 0 1-1.414 1.414l-15-15A1 1 0 0 1 2.5 1.5z"/>';
                 }
@@ -1818,10 +2172,13 @@ class LiveKitControls {
         const screenShareButton = document.getElementById('toggleScreenShare');
         if (screenShareButton) {
             const svg = screenShareButton.querySelector('svg');
+            const tooltip = screenShareButton.querySelector('.control-tooltip');
+
             if (this.isScreenSharing) {
                 screenShareButton.classList.add('bg-blue-600');
                 screenShareButton.classList.remove('bg-gray-600', 'bg-gray-700');
                 screenShareButton.title = 'إيقاف مشاركة الشاشة';
+                if (tooltip) tooltip.textContent = 'إيقاف مشاركة الشاشة';
                 if (svg) {
                     svg.innerHTML = '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/><path d="M6 16h4v2H6z"/>';
                 }
@@ -1829,6 +2186,7 @@ class LiveKitControls {
                 screenShareButton.classList.remove('bg-blue-600');
                 screenShareButton.classList.add('bg-gray-600');
                 screenShareButton.title = 'مشاركة الشاشة';
+                if (tooltip) tooltip.textContent = 'مشاركة الشاشة';
                 if (svg) {
                     svg.innerHTML = '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>';
                 }
@@ -1839,15 +2197,19 @@ class LiveKitControls {
         const handRaiseButton = document.getElementById('toggleHandRaise');
         if (handRaiseButton) {
             const icon = handRaiseButton.querySelector('i');
+            const tooltip = handRaiseButton.querySelector('.control-tooltip');
+
             if (this.isHandRaised) {
                 handRaiseButton.classList.add('bg-yellow-600');
                 handRaiseButton.classList.remove('bg-gray-600', 'bg-gray-700');
                 handRaiseButton.title = 'خفض اليد';
+                if (tooltip) tooltip.textContent = 'خفض اليد';
                 if (icon) icon.className = 'fa-solid fa-hand text-white text-xl';
             } else {
                 handRaiseButton.classList.remove('bg-yellow-600');
                 handRaiseButton.classList.add('bg-gray-600');
                 handRaiseButton.title = 'رفع اليد';
+                if (tooltip) tooltip.textContent = 'رفع اليد';
                 if (icon) icon.className = 'fa-regular fa-hand text-white text-xl';
             }
         }
@@ -2201,6 +2563,14 @@ class LiveKitControls {
                     }
                     break;
 
+                case 'lower_hand':
+                    this.handleLowerHandCommand(data, participant);
+                    break;
+
+                case 'clear_all_raised_hands':
+                    this.handleClearAllRaisedHandsCommand(data, participant);
+                    break;
+
                 case 'audioPermission':
                     this.handleAudioPermissionEvent(data, participant);
                     break;
@@ -2255,7 +2625,9 @@ class LiveKitControls {
      * @param {LiveKit.Participant} participant - Sender participant
      */
     handleHandRaiseEvent(data, participant) {
+        console.log('🔧🔧🔧 VERSION 2025-11-16-FIX-v6 - handleHandRaiseEvent RUNNING 🔧🔧🔧');
         console.log(`✋ Hand raise update from ${participant.identity}: ${data.isRaised}`);
+        console.log(`🔧 Participant SID: ${participant.sid}, Identity: ${participant.identity}`);
 
         // Don't process our own hand raise events
         if (participant?.identity === this.localParticipant?.identity) {
@@ -2272,7 +2644,8 @@ class LiveKitControls {
             }
 
             // Update participant visual indicator
-            this.updateParticipantHandRaiseIndicator(participant.sid, true);
+            console.log(`🔧 About to call updateParticipantHandRaiseIndicator(${participant.identity}, true)`);
+            this.updateParticipantHandRaiseIndicator(participant.identity, true);
 
         } else {
             console.log(`✋ ${participant.identity} lowered their hand`);
@@ -2283,7 +2656,75 @@ class LiveKitControls {
             }
 
             // Update participant visual indicator
-            this.updateParticipantHandRaiseIndicator(participant.sid, false);
+            console.log(`🔧 About to call updateParticipantHandRaiseIndicator(${participant.identity}, false)`);
+            this.updateParticipantHandRaiseIndicator(participant.identity, false);
+        }
+    }
+
+    /**
+     * Handle lower hand command from teacher
+     * @param {Object} data - Lower hand command data
+     * @param {LiveKit.Participant} participant - Sender participant (teacher)
+     */
+    handleLowerHandCommand(data, participant) {
+        console.log('✋ Received lower hand command from teacher:', data);
+
+        // Check if this message is for me
+        const myParticipantId = this.localParticipant?.identity;
+        const myParticipantSid = this.localParticipant?.sid;
+
+        if (data.targetParticipantId === myParticipantId || data.targetParticipantSid === myParticipantSid) {
+            console.log('✋ This lower hand command is for me, lowering my hand');
+
+            // Lower the hand
+            this.isHandRaised = false;
+
+            // Hide hand raise indicator
+            this.createHandRaiseIndicatorDirect(myParticipantId, false);
+
+            // Update control buttons
+            this.updateControlButtons();
+
+            // Show notification
+            this.showNotification('قام المعلم بإخفاء يدك المرفوعة', 'info');
+
+            console.log('✅ Hand lowered successfully');
+        } else {
+            console.log('✋ Lower hand command is for someone else, ignoring');
+        }
+    }
+
+    /**
+     * Handle clear all raised hands command from teacher
+     * @param {Object} data - Clear all command data
+     * @param {LiveKit.Participant} participant - Sender participant (teacher)
+     */
+    handleClearAllRaisedHandsCommand(data, participant) {
+        console.log('✋ Received clear all raised hands command from teacher:', data);
+
+        // If I'm a student and my hand is raised, lower it
+        if (!this.canControlStudentAudio() && this.isHandRaised) {
+            console.log('✋ Lowering my hand (student)');
+
+            // Lower the hand
+            this.isHandRaised = false;
+
+            // Hide hand raise indicator
+            const myParticipantId = this.localParticipant?.identity;
+            this.createHandRaiseIndicatorDirect(myParticipantId, false);
+
+            // Clear local queue if it exists
+            if (this.raisedHandsQueue) {
+                this.raisedHandsQueue.clear();
+            }
+
+            // Update control buttons
+            this.updateControlButtons();
+
+            // Show notification
+            this.showNotification('تم إخفاء جميع الأيدي المرفوعة من قبل المعلم', 'info');
+
+            console.log('✅ All raised hands cleared by teacher');
         }
     }
 
@@ -2508,12 +2949,21 @@ class LiveKitControls {
      * @param {boolean} isRaised - Whether hand is raised
      */
     createHandRaiseIndicatorDirect(participantIdentity, isRaised) {
+        console.log('🔧🔧🔧 VERSION 2025-11-16-FIX-v6 - createHandRaiseIndicatorDirect RUNNING 🔧🔧🔧');
         console.log(`✋ Direct hand raise indicator for ${participantIdentity}: ${isRaised ? 'SHOW' : 'HIDE'}`);
-        
+
         // Find participant element by identity
-        const participantElement = document.getElementById(`participant-${participantIdentity}`);
+        const elementId = `participant-${participantIdentity}`;
+        console.log(`🔧 Looking for element with ID: ${elementId}`);
+
+        const participantElement = document.getElementById(elementId);
+        console.log(`🔧 Element found:`, participantElement ? 'YES' : 'NO');
+
         if (!participantElement) {
-            console.warn(`✋ Participant element not found: participant-${participantIdentity}`);
+            console.warn(`✋ Participant element not found: ${elementId}`);
+            console.warn(`🔧 Listing all participant elements in DOM:`);
+            const allParticipants = document.querySelectorAll('[id^="participant-"]');
+            allParticipants.forEach(el => console.log(`  - ${el.id}`));
             return;
         }
         
@@ -2554,6 +3004,8 @@ class LiveKitControls {
                 // Show existing indicator
                 handRaiseIndicator.style.display = 'flex';
                 handRaiseIndicator.style.opacity = '1';
+                handRaiseIndicator.style.transform = 'scale(1)';
+                handRaiseIndicator.style.visibility = 'visible';
                 console.log(`✅ Showed existing hand raise indicator for ${participantIdentity}`);
             }
         } else {
@@ -2572,48 +3024,17 @@ class LiveKitControls {
 
     /**
      * Update participant hand raise visual indicator
-     * @param {string} participantSid - Participant SID
+     * @param {string} participantId - Participant identity
      * @param {boolean} isRaised - Whether hand is raised
      */
-    updateParticipantHandRaiseIndicator(participantSid, isRaised) {
-        console.log(`✋ Updating hand raise indicator for ${participantSid}: ${isRaised}`);
+    updateParticipantHandRaiseIndicator(participantId, isRaised) {
+        console.log('🔧🔧🔧 VERSION 2025-11-16-FIX-v6 - updateParticipantHandRaiseIndicator RUNNING 🔧🔧🔧');
+        console.log(`✋ Updating hand raise indicator for ${participantId}: ${isRaised}`);
 
-        // Try to find participant by SID first
-        let participantId = null;
-        
-        // Look for participant in the room
-        if (this.room) {
-            const participant = this.room.participants.get(participantSid);
-            if (participant) {
-                participantId = participant.identity;
-            }
-        }
-
-        // If we can't find by SID, try to find by identity
-        if (!participantId) {
-            // Look for participant element with matching identity
-            const participantElements = document.querySelectorAll('[id^="participant-"]');
-            for (const element of participantElements) {
-                const id = element.id.replace('participant-', '');
-                if (id === participantSid) {
-                    participantId = id;
-                    break;
-                }
-            }
-        }
-
-        if (!participantId) {
-            console.warn(`✋ Participant not found for SID: ${participantSid}`);
-            return;
-        }
-
-        // Use the participants module to update the hand raise indicator
-        if (window.livekitMeeting && window.livekitMeeting.participants) {
-            window.livekitMeeting.participants.updateHandRaiseStatus(participantId, isRaised);
-            console.log(`✋ ✅ Updated hand raise indicator via participants module for ${participantId}`);
-        } else {
-            console.warn(`✋ Participants module not available, cannot update hand raise indicator`);
-        }
+        // Use direct hand raise indicator method (works reliably)
+        console.log(`🔧 Calling createHandRaiseIndicatorDirect(${participantId}, ${isRaised})`);
+        this.createHandRaiseIndicatorDirect(participantId, isRaised);
+        console.log(`✋ ✅ Updated hand raise indicator for ${participantId}`);
     }
 
     /**
@@ -2852,6 +3273,92 @@ class LiveKitControls {
         }, 2000);
 
         console.log(`✋ ✅ Showed permission granted effect for ${participantSid}`);
+    }
+
+    /**
+     * Update all participant microphone status icons
+     * @param {boolean} muted - Whether microphones are muted
+     */
+    updateAllParticipantMicIcons(muted) {
+        if (!this.room) {
+            console.warn('⚠️ No room available to update participant icons');
+            return;
+        }
+
+        console.log(`🎤 Updating all participant mic icons: ${muted ? 'MUTED' : 'UNMUTED'}`);
+
+        // Get all remote participants
+        const participants = Array.from(this.room.remoteParticipants.values());
+
+        participants.forEach(participant => {
+            const participantId = participant.identity;
+            const micStatus = document.getElementById(`mic-status-${participantId}`);
+
+            if (micStatus) {
+                const icon = micStatus.querySelector('i');
+                if (muted) {
+                    // Show as muted/disabled
+                    micStatus.className = 'text-red-500';
+                    if (icon) icon.className = 'ri-mic-off-line text-sm';
+                } else {
+                    // Check actual track state
+                    const audioPublication = participant.getTrackPublication(window.LiveKit.Track.Source.Microphone);
+                    const hasActiveAudio = audioPublication && !audioPublication.isMuted && audioPublication.track;
+
+                    if (hasActiveAudio) {
+                        micStatus.className = 'text-green-500';
+                        if (icon) icon.className = 'ri-mic-line text-sm';
+                    } else {
+                        micStatus.className = 'text-red-500';
+                        if (icon) icon.className = 'ri-mic-off-line text-sm';
+                    }
+                }
+                console.log(`🎤 Updated mic icon for ${participantId}: ${muted ? 'MUTED' : 'CHECK TRACK'}`);
+            }
+        });
+    }
+
+    /**
+     * Update all participant camera status icons
+     * @param {boolean} disabled - Whether cameras are disabled
+     */
+    updateAllParticipantCameraIcons(disabled) {
+        if (!this.room) {
+            console.warn('⚠️ No room available to update participant icons');
+            return;
+        }
+
+        console.log(`📹 Updating all participant camera icons: ${disabled ? 'DISABLED' : 'ENABLED'}`);
+
+        // Get all remote participants
+        const participants = Array.from(this.room.remoteParticipants.values());
+
+        participants.forEach(participant => {
+            const participantId = participant.identity;
+            const cameraStatus = document.getElementById(`camera-status-${participantId}`);
+
+            if (cameraStatus) {
+                const icon = cameraStatus.querySelector('i');
+                if (disabled) {
+                    // Show as disabled
+                    cameraStatus.className = 'text-red-500';
+                    if (icon) icon.className = 'ri-video-off-line text-sm';
+                } else {
+                    // Check actual track state
+                    const videoPublication = participant.getTrackPublication(window.LiveKit.Track.Source.Camera);
+                    const hasActiveVideo = videoPublication && !videoPublication.isMuted && videoPublication.track;
+
+                    if (hasActiveVideo) {
+                        cameraStatus.className = 'text-green-500';
+                        if (icon) icon.className = 'ri-video-line text-sm';
+                    } else {
+                        cameraStatus.className = 'text-red-500';
+                        if (icon) icon.className = 'ri-video-off-line text-sm';
+                    }
+                }
+                console.log(`📹 Updated camera icon for ${participantId}: ${disabled ? 'DISABLED' : 'CHECK TRACK'}`);
+            }
+        });
     }
 
     /**

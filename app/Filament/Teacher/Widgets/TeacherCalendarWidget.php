@@ -41,8 +41,8 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 'center' => 'title',
                 'right' => 'dayGridMonth,timeGridWeek,timeGridDay',
             ],
-            'slotMinTime' => '06:00:00',
-            'slotMaxTime' => '23:00:00',
+            'slotMinTime' => '00:00:00',
+            'slotMaxTime' => '24:00:00',
             'height' => 'auto',
             'expandRows' => true,
             'nowIndicator' => true,
@@ -95,7 +95,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
 
         return $query
             ->with(['circle', 'individualCircle', 'individualCircle.subscription', 'individualCircle.subscription.package', 'student', 'trialRequest'])
-            ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
+            ->whereIn('status', ['scheduled', 'ready', 'ongoing', 'completed'])
             ->get()
             ->map(function (QuranSession $session) {
                 // Determine session type and details
@@ -129,14 +129,14 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 if ($sessionType !== 'trial') {
                     $color = match ($session->status) {
                         'cancelled' => '#ef4444', // red for cancelled
-                        'in_progress' => '#3b82f6', // blue for in progress
+                        'ongoing' => '#3b82f6', // blue for ongoing sessions
                         default => $color // keep the type-based color for scheduled/completed
                     };
                 }
 
                 // Add strikethrough class for passed sessions
                 $classNames = '';
-                if ($isPassed && $session->status !== 'in_progress') {
+                if ($isPassed && $session->status !== 'ongoing') {
                     $classNames = 'event-passed';
                 }
 

@@ -23,29 +23,20 @@
 
 <body class="bg-gray-50 font-sans">
 
-  <!-- Header -->
-  <header class="bg-white shadow-sm">
-    <div class="container mx-auto px-4 py-4">
-      <div class="flex items-center justify-between">
-        <!-- Logo and Academy Name -->
-        <div class="flex items-center space-x-3 space-x-reverse">
-          @if($academy->logo)
-            <img src="{{ asset('storage/' . $academy->logo) }}" alt="{{ $academy->name }}" class="h-10 w-10 rounded-lg">
-          @endif
-          <div>
-            <h1 class="text-xl font-bold text-gray-900">{{ $academy->name ?? 'أكاديمية إتقان' }}</h1>
-            <p class="text-sm text-gray-600">حجز جلسة تجريبية</p>
-          </div>
-        </div>
+  @php
+    // Get academy branding
+    $brandColor = $academy && $academy->brand_color ? $academy->brand_color->value : 'sky';
+    $brandColorClass = "text-{$brandColor}-600";
+    $brandBgClass = "bg-{$brandColor}-600";
+    $brandBgHoverClass = "hover:bg-{$brandColor}-700";
+  @endphp
 
-        <!-- Back Button -->
-        <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" 
-           class="text-gray-600 hover:text-primary transition-colors">
-          <i class="ri-arrow-right-line text-xl"></i>
-        </a>
-      </div>
-    </div>
-  </header>
+  <!-- Header -->
+  <x-booking.top-bar
+    :academy="$academy"
+    title="حجز جلسة تجريبية"
+    :backRoute="route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])" />
+
 
   <!-- Main Content -->
   <section class="py-8">
@@ -67,10 +58,10 @@
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="mb-6">
           <h3 class="text-2xl font-bold text-gray-900 mb-2">
-            <i class="ri-gift-line text-green-600 ml-2"></i>
+            <i class="ri-gift-line {{ $brandColorClass }} ml-2"></i>
             حجز جلسة تجريبية مجانية
           </h3>
-          <p class="text-gray-600">املأ النموذج أدناه وسيقوم المعلم بالتواصل معك لتحديد موعد الجلسة التجريبية</p>
+          <p class="text-gray-600">املأ النموذج أدناه وسيتم إرسال إشعار لك بموعد الجلسة التجريبية بعد مراجعة المعلم لطلبك</p>
         </div>
 
         <form action="{{ route('public.quran-teachers.trial.submit', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" method="POST" class="space-y-6">
@@ -116,27 +107,32 @@
           @endif
 
           <!-- Student Info Display -->
-          <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-            <h4 class="font-semibold text-gray-900 mb-3">معلومات الطالب</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span class="text-gray-600">الاسم:</span>
-                <span class="font-medium">{{ auth()->user()->studentProfile?->full_name ?? auth()->user()->name }}</span>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-8 h-8 rounded-lg bg-{{ $brandColor }}-100 flex items-center justify-center">
+                <i class="ri-user-line {{ $brandColorClass }} text-lg"></i>
               </div>
-              <div>
-                <span class="text-gray-600">البريد الإلكتروني:</span>
-                <span class="font-medium">{{ auth()->user()->email }}</span>
+              <h4 class="font-semibold text-gray-900">معلومات الطالب</h4>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div class="flex flex-col gap-1">
+                <span class="{{ $brandColorClass }} font-medium text-xs">الاسم</span>
+                <span class="font-medium text-gray-900">{{ auth()->user()->studentProfile?->full_name ?? auth()->user()->name }}</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="{{ $brandColorClass }} font-medium text-xs">البريد الإلكتروني</span>
+                <span class="font-medium text-gray-900">{{ auth()->user()->email }}</span>
               </div>
               @if(auth()->user()->studentProfile?->phone)
-              <div>
-                <span class="text-gray-600">رقم الهاتف:</span>
-                <span class="font-medium">{{ auth()->user()->studentProfile->phone }}</span>
+              <div class="flex flex-col gap-1">
+                <span class="{{ $brandColorClass }} font-medium text-xs">رقم الهاتف</span>
+                <span class="font-medium text-gray-900">{{ auth()->user()->studentProfile->phone }}</span>
               </div>
               @endif
               @if(auth()->user()->studentProfile?->birth_date)
-              <div>
-                <span class="text-gray-600">العمر:</span>
-                <span class="font-medium">{{ auth()->user()->studentProfile->birth_date->diffInYears(now()) }} سنة</span>
+              <div class="flex flex-col gap-1">
+                <span class="{{ $brandColorClass }} font-medium text-xs">العمر</span>
+                <span class="font-medium text-gray-900">{{ floor(auth()->user()->studentProfile->birth_date->diffInYears(now())) }} سنة</span>
               </div>
               @endif
             </div>
@@ -146,7 +142,7 @@
           <div>
             <label for="current_level" class="block text-sm font-medium text-gray-700 mb-2">المستوى الحالي في تعلم القرآن *</label>
             <select id="current_level" name="current_level" required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-{{ $brandColor }}-500 focus:border-{{ $brandColor }}-600">
               <option value="">اختر مستواك</option>
               <option value="beginner">مبتدئ (لا أعرف القراءة)</option>
               <option value="elementary">أساسي (أقرأ ببطء)</option>
@@ -162,19 +158,19 @@
             <label for="learning_goals" class="block text-sm font-medium text-gray-700 mb-2">أهدافك من تعلم القرآن *</label>
             <div class="space-y-2">
               <label class="flex items-center">
-                <input type="checkbox" name="learning_goals[]" value="reading" class="text-primary focus:ring-primary border-gray-300 rounded">
+                <input type="checkbox" name="learning_goals[]" value="reading" class="text-{{ $brandColor }}-600 focus:ring-{{ $brandColor }}-500 border-gray-300 rounded">
                 <span class="mr-2">تعلم القراءة الصحيحة</span>
               </label>
               <label class="flex items-center">
-                <input type="checkbox" name="learning_goals[]" value="tajweed" class="text-primary focus:ring-primary border-gray-300 rounded">
+                <input type="checkbox" name="learning_goals[]" value="tajweed" class="text-{{ $brandColor }}-600 focus:ring-{{ $brandColor }}-500 border-gray-300 rounded">
                 <span class="mr-2">تعلم أحكام التجويد</span>
               </label>
               <label class="flex items-center">
-                <input type="checkbox" name="learning_goals[]" value="memorization" class="text-primary focus:ring-primary border-gray-300 rounded">
+                <input type="checkbox" name="learning_goals[]" value="memorization" class="text-{{ $brandColor }}-600 focus:ring-{{ $brandColor }}-500 border-gray-300 rounded">
                 <span class="mr-2">حفظ القرآن الكريم</span>
               </label>
               <label class="flex items-center">
-                <input type="checkbox" name="learning_goals[]" value="improvement" class="text-primary focus:ring-primary border-gray-300 rounded">
+                <input type="checkbox" name="learning_goals[]" value="improvement" class="text-{{ $brandColor }}-600 focus:ring-{{ $brandColor }}-500 border-gray-300 rounded">
                 <span class="mr-2">تحسين الأداء والإتقان</span>
               </label>
             </div>
@@ -184,7 +180,7 @@
           <div>
             <label for="preferred_time" class="block text-sm font-medium text-gray-700 mb-2">الوقت المفضل للجلسة</label>
             <select id="preferred_time" name="preferred_time"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-{{ $brandColor }}-500 focus:border-{{ $brandColor }}-600">
               <option value="">اختر الوقت المفضل</option>
               <option value="morning">صباحاً (6:00 - 12:00)</option>
               <option value="afternoon">بعد الظهر (12:00 - 18:00)</option>
@@ -197,27 +193,32 @@
             <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">ملاحظات إضافية</label>
             <textarea id="notes" name="notes" rows="4"
                       placeholder="أي معلومات إضافية تود مشاركتها مع المعلم..."
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"></textarea>
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-{{ $brandColor }}-500 focus:border-{{ $brandColor }}-600"></textarea>
           </div>
 
-          <!-- Terms -->
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 class="font-semibold text-blue-900 mb-2">شروط الجلسة التجريبية:</h4>
-            <ul class="text-sm text-blue-800 space-y-1">
-              <li>• الجلسة التجريبية مجانية ومدتها 30 دقيقة</li>
-              <li>• سيتم التواصل معك خلال 24 ساعة لتحديد الموعد</li>
-              <li>• يمكن إجراء الجلسة عبر Google Meet أو Zoom</li>
-              <li>• يمكنك حجز جلسة تجريبية واحدة فقط مع كل معلم</li>
-            </ul>
+          <!-- Information -->
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div class="flex items-start gap-2">
+              <i class="ri-information-line text-amber-600 text-xl mt-0.5"></i>
+              <div class="flex-1">
+                <h4 class="font-semibold text-amber-900 mb-2">معلومات هامة:</h4>
+                <ul class="text-sm text-amber-800 space-y-1.5">
+                  <li>• الجلسة التجريبية مجانية تماماً ومدتها 30 دقيقة</li>
+                  <li>• سيتم إرسال إشعار لك بموعد الجلسة خلال 24 ساعة من مراجعة المعلم</li>
+                  <li>• يتم إجراء الجلسة عبر نظام الفيديو المدمج في المنصة</li>
+                  <li>• يمكنك حجز جلسة تجريبية واحدة فقط مع كل معلم</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
 
 
           <!-- Submit Button -->
           <div class="flex gap-4">
-            <button type="submit" 
+            <button type="submit"
                     onclick="console.log('Trial form submit clicked'); return true;"
-                    class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                    class="flex-1 {{ $brandBgClass }} text-white py-3 px-6 rounded-lg font-medium {{ $brandBgHoverClass }} transition-colors">
               <i class="ri-send-plane-line ml-2"></i>
               إرسال طلب الجلسة التجريبية
             </button>

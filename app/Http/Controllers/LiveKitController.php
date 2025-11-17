@@ -132,17 +132,17 @@ class LiveKitController extends Controller
 
             // Use room service client to mute/unmute
             $roomService = new \Agence104\LiveKit\RoomServiceClient(
-                config('livekit.server_url'),
+                config('livekit.api_url'),
                 config('livekit.api_key'),
                 config('livekit.api_secret')
             );
 
-            $result = $roomService->mutePublishedTrack([
-                'room' => $roomName,
-                'identity' => $participantIdentity,
-                'track_sid' => $trackSid,
-                'muted' => $muted,
-            ]);
+            $result = $roomService->mutePublishedTrack(
+                $roomName,
+                $participantIdentity,
+                $trackSid,
+                $muted
+            );
 
             Log::info('Participant mute/unmute action', [
                 'room' => $roomName,
@@ -197,7 +197,7 @@ class LiveKitController extends Controller
 
             // Get detailed participant info with tracks
             $roomService = new \Agence104\LiveKit\RoomServiceClient(
-                config('livekit.server_url'),
+                config('livekit.api_url'),
                 config('livekit.api_key'),
                 config('livekit.api_secret')
             );
@@ -249,6 +249,42 @@ class LiveKitController extends Controller
     }
 
     /**
+     * Get room permissions (microphone and camera allowed state)
+     */
+    public function getRoomPermissions(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'room_name' => 'required|string',
+            ]);
+
+            $roomName = $request->input('room_name');
+
+            // Get permission service
+            $permissionService = app(\App\Services\RoomPermissionService::class);
+            $permissions = $permissionService->getRoomPermissions($roomName);
+
+            return response()->json([
+                'success' => true,
+                'permissions' => [
+                    'microphone_allowed' => $permissions['microphone_allowed'] ?? true,
+                    'camera_allowed' => $permissions['camera_allowed'] ?? true,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get room permissions', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to get room permissions: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Mute all students in a room (Teacher only)
      */
     public function muteAllStudents(Request $request): JsonResponse
@@ -288,9 +324,14 @@ class LiveKitController extends Controller
                 'muted' => $muted,
             ]);
 
+            // Store permission state in RoomPermissionService
+            $permissionService = app(\App\Services\RoomPermissionService::class);
+            $allowed = ! $muted; // Inverted: muted=true means NOT allowed
+            $permissionService->setMicrophonePermission($roomName, $allowed, auth()->id());
+
             // Get room participants
             $roomService = new \Agence104\LiveKit\RoomServiceClient(
-                config('livekit.server_url'),
+                config('livekit.api_url'),
                 config('livekit.api_key'),
                 config('livekit.api_secret')
             );
@@ -323,14 +364,14 @@ class LiveKitController extends Controller
                     if ($isStudent) {
                         // Find audio tracks and mute them
                         foreach ($participant->getTracks() as $track) {
-                            if ($track->getType() === 1) { // Audio type = 1
+                            if ($track->getType() === \Livekit\TrackType::AUDIO) { // Audio type = 0
                                 try {
-                                    $roomService->mutePublishedTrack([
-                                        'room' => $roomName,
-                                        'identity' => $participant->getIdentity(),
-                                        'track_sid' => $track->getSid(),
-                                        'muted' => $muted,
-                                    ]);
+                                    $roomService->mutePublishedTrack(
+                                        $roomName,
+                                        $participant->getIdentity(),
+                                        $track->getSid(),
+                                        $muted
+                                    );
                                     $mutedCount++;
                                 } catch (\Exception $e) {
                                     Log::warning('Failed to mute individual student', [
@@ -366,6 +407,119 @@ class LiveKitController extends Controller
 
             return response()->json([
                 'error' => 'Failed to mute all students: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Disable/enable all students' cameras in a room (Teacher only)
+     */
+    public function disableAllStudentsCamera(Request $request): JsonResponse
+    {
+        try {
+            \Log::info('LiveKitController::disableAllStudentsCamera - Start', [
+                'auth_check' => auth()->check(),
+                'user_id' => auth()->check() ? auth()->user()->id : null,
+                'user_type' => auth()->check() ? auth()->user()->user_type : null,
+                'request_data' => $request->all(),
+            ]);
+
+            if (! auth()->check()) {
+                return response()->json(['error' => 'Authentication required'], 401);
+            }
+
+            $allowedTypes = ['quran_teacher', 'academic_teacher', 'admin', 'super_admin'];
+            if (! in_array(auth()->user()->user_type, $allowedTypes)) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $roomName = $request->input('room_name');
+            $disabled = $request->input('disabled');
+
+            \Log::info('LiveKitController::disableAllStudentsCamera - Processing', [
+                'room_name' => $roomName,
+                'disabled' => $disabled,
+            ]);
+
+            // Store permission state in RoomPermissionService
+            $permissionService = app(\App\Services\RoomPermissionService::class);
+            $allowed = ! $disabled; // Inverted: disabled=true means NOT allowed
+            $permissionService->setCameraPermission($roomName, $allowed, auth()->id());
+
+            $roomService = new \Agence104\LiveKit\RoomServiceClient(
+                config('livekit.api_url'),
+                config('livekit.api_key'),
+                config('livekit.api_secret')
+            );
+
+            try {
+                $participantsResponse = $roomService->listParticipants($roomName);
+            } catch (\Exception $e) {
+                Log::error('Failed to list participants for camera control', [
+                    'room' => $roomName,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'error' => 'Room not found or LiveKit server unavailable',
+                ], 404);
+            }
+
+            $affectedCount = 0;
+
+            if ($participantsResponse && method_exists($participantsResponse, 'getParticipants')) {
+                foreach ($participantsResponse->getParticipants() as $participant) {
+                    $metadata = $participant->getMetadata() ? json_decode($participant->getMetadata(), true) : [];
+                    $identity = $participant->getIdentity();
+                    $isStudent = (isset($metadata['role']) && $metadata['role'] === 'student') ||
+                                 (! str_contains($identity, 'teacher') && ! str_contains($identity, 'admin'));
+
+                    if ($isStudent) {
+                        // Find video tracks and disable/enable them
+                        foreach ($participant->getTracks() as $track) {
+                            if ($track->getType() === \Livekit\TrackType::VIDEO) { // Video type = 1
+                                try {
+                                    $roomService->mutePublishedTrack(
+                                        $roomName,
+                                        $participant->getIdentity(),
+                                        $track->getSid(),
+                                        $disabled
+                                    );
+                                    $affectedCount++;
+                                } catch (\Exception $e) {
+                                    Log::warning('Failed to control student camera', [
+                                        'participant' => $participant->getIdentity(),
+                                        'track_sid' => $track->getSid(),
+                                        'error' => $e->getMessage(),
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Log::info('Bulk camera control action', [
+                'room' => $roomName,
+                'disabled' => $disabled,
+                'affected_tracks' => $affectedCount,
+                'teacher' => auth()->id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'disabled' => $disabled,
+                'affected_participants' => $affectedCount,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to control students cameras', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to control cameras: '.$e->getMessage(),
             ], 500);
         }
     }

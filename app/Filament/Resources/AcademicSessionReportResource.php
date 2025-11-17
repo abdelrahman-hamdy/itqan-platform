@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AcademicSessionReportResource\Pages;
 use App\Filament\Resources\AcademicSessionReportResource\RelationManagers;
 use App\Models\AcademicSessionReport;
+use App\Enums\AttendanceStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -131,12 +132,7 @@ class AcademicSessionReportResource extends Resource
                             ->visible(fn (Forms\Get $get) => $get('is_late')),
                         Forms\Components\Select::make('attendance_status')
                             ->label('حالة الحضور')
-                            ->options([
-                                'present' => 'حاضر',
-                                'late' => 'متأخر',
-                                'partial' => 'حضور جزئي',
-                                'absent' => 'غائب',
-                            ])
+                            ->options(AttendanceStatus::options())
                             ->required(),
                         Forms\Components\TextInput::make('attendance_percentage')
                             ->label('نسبة الحضور')
@@ -208,12 +204,20 @@ class AcademicSessionReportResource extends Resource
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('Attendance')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'present' => 'success',
+                    ->color(fn (?string $state): string => match ($state) {
+                        'attended' => 'success',
                         'late' => 'warning',
-                        'partial' => 'info',
+                        'leaved' => 'info',
                         'absent' => 'danger',
                         default => 'gray',
+                    })
+                    ->formatStateUsing(function (?string $state): string {
+                        if (!$state) return '-';
+                        try {
+                            return AttendanceStatus::from($state)->label();
+                        } catch (\ValueError $e) {
+                            return $state;
+                        }
                     }),
                 Tables\Columns\TextColumn::make('attendance_percentage')
                     ->label('Attendance %')
@@ -269,12 +273,7 @@ class AcademicSessionReportResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('attendance_status')
                     ->label('Attendance Status')
-                    ->options([
-                        'present' => 'Present',
-                        'late' => 'Late',
-                        'partial' => 'Partial',
-                        'absent' => 'Absent',
-                    ]),
+                    ->options(AttendanceStatus::options()),
                 Tables\Filters\SelectFilter::make('academy_id')
                     ->label('Academy')
                     ->relationship('academy', 'name')

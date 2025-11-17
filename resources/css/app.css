@@ -55,6 +55,158 @@
     border-color: #0ea5e9;
 }
 
+/* Academy Dynamic Colors - Uses CSS variables from academy settings */
+.bg-primary {
+    background-color: var(--color-primary-500);
+}
+
+.bg-primary-50 {
+    background-color: var(--color-primary-50);
+}
+
+.bg-primary-100 {
+    background-color: var(--color-primary-100);
+}
+
+.bg-primary-200 {
+    background-color: var(--color-primary-200);
+}
+
+.bg-primary-600 {
+    background-color: var(--color-primary-600);
+}
+
+.bg-primary-700 {
+    background-color: var(--color-primary-700);
+}
+
+.bg-secondary {
+    background-color: var(--color-secondary-500);
+}
+
+.bg-secondary-100 {
+    background-color: var(--color-secondary-100);
+}
+
+.bg-secondary-600 {
+    background-color: var(--color-secondary-600);
+}
+
+.bg-secondary-700 {
+    background-color: var(--color-secondary-700);
+}
+
+.text-primary {
+    color: var(--color-primary-500);
+}
+
+.text-primary-600 {
+    color: var(--color-primary-600);
+}
+
+.text-primary-700 {
+    color: var(--color-primary-700);
+}
+
+.text-secondary {
+    color: var(--color-secondary-500);
+}
+
+.text-secondary-600 {
+    color: var(--color-secondary-600);
+}
+
+.border-primary {
+    border-color: var(--color-primary-500);
+}
+
+.border-primary-300 {
+    border-color: var(--color-primary-300);
+}
+
+.border-secondary {
+    border-color: var(--color-secondary-500);
+}
+
+.ring-primary {
+    --tw-ring-color: var(--color-primary-500);
+}
+
+.ring-primary-500 {
+    --tw-ring-color: var(--color-primary-500);
+}
+
+.focus\:ring-primary:focus {
+    --tw-ring-color: var(--color-primary-500);
+}
+
+.focus\:border-primary:focus {
+    border-color: var(--color-primary-500);
+}
+
+.hover\:bg-primary:hover {
+    background-color: var(--color-primary-500);
+}
+
+.hover\:bg-primary-600:hover {
+    background-color: var(--color-primary-600);
+}
+
+.hover\:bg-primary-700:hover {
+    background-color: var(--color-primary-700);
+}
+
+.hover\:bg-secondary:hover {
+    background-color: var(--color-secondary-500);
+}
+
+.hover\:bg-secondary-600:hover {
+    background-color: var(--color-secondary-600);
+}
+
+.hover\:text-primary:hover {
+    color: var(--color-primary-500);
+}
+
+.hover\:text-secondary:hover {
+    color: var(--color-secondary-500);
+}
+
+.hover\:border-primary:hover {
+    border-color: var(--color-primary-500);
+}
+
+/* Gradient utilities */
+.from-primary {
+    --tw-gradient-from: var(--color-primary-500);
+    --tw-gradient-to: rgb(255 255 255 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-secondary {
+    --tw-gradient-to: var(--color-secondary-500);
+}
+
+.from-primary-100 {
+    --tw-gradient-from: var(--color-primary-100);
+    --tw-gradient-to: rgb(255 255 255 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-primary-200 {
+    --tw-gradient-to: var(--color-primary-200);
+}
+
+.from-secondary-100 {
+    --tw-gradient-from: var(--color-secondary-100);
+    --tw-gradient-to: rgb(255 255 255 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-secondary-200 {
+    --tw-gradient-to: var(--color-secondary-200);
+}
+
 /* Background Pattern Utility */
 .bg-pattern {
     background-image: url('/storage/app-design-assets/bg-pattern1.png');

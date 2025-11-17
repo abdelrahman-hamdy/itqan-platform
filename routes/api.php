@@ -33,8 +33,118 @@ Route::middleware(['web', 'auth', 'verified'])->prefix('sessions')->group(functi
     Route::post('/meeting/end', [App\Http\Controllers\UnifiedMeetingController::class, 'endMeeting'])
         ->name('api.sessions.meeting.end');
 
-    Route::post('/meeting/leave', [App\Http\Controllers\UnifiedMeetingController::class, 'recordLeave'])
-        ->name('api.sessions.meeting.leave');
+    // 🔥 DEVELOPMENT FALLBACK: Manual attendance tracking for local testing
+    // Production uses LiveKit webhooks - these endpoints only work in local/development
+    if (app()->environment('local', 'development')) {
+        Route::post('/meeting/join-dev', function (Request $request) {
+            $user = $request->user();
+            $sessionId = $request->input('session_id');
+
+            if (!$user || !$sessionId) {
+                return response()->json(['error' => 'Missing user or session_id'], 400);
+            }
+
+            // Find session
+            $session = \App\Models\AcademicSession::find($sessionId)
+                ?? \App\Models\QuranSession::find($sessionId);
+
+            if (!$session) {
+                return response()->json(['error' => 'Session not found'], 404);
+            }
+
+            // Check if already has open event
+            $hasOpenEvent = \App\Models\MeetingAttendanceEvent::where('session_id', $session->id)
+                ->where('session_type', get_class($session))
+                ->where('user_id', $user->id)
+                ->where('event_type', 'join')
+                ->whereNull('left_at')
+                ->exists();
+
+            if ($hasOpenEvent) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Already in meeting',
+                    'is_currently_in_meeting' => true,
+                ]);
+            }
+
+            // Create join event (simulating webhook)
+            $event = \App\Models\MeetingAttendanceEvent::create([
+                'event_id' => 'DEV_JOIN_' . uniqid(),
+                'event_type' => 'join',
+                'event_timestamp' => now(),
+                'session_id' => $session->id,
+                'session_type' => get_class($session),
+                'user_id' => $user->id,
+                'academy_id' => $session->academy_id ?? null,
+                'participant_sid' => 'PA_DEV_' . uniqid(),
+                'participant_identity' => 'user-' . $user->id,
+                'participant_name' => $user->full_name,
+                'raw_webhook_data' => ['dev_mode' => true],
+            ]);
+
+            \Cache::forget("attendance_status_{$session->id}_{$user->id}");
+
+            \Log::info('🔧 DEV: Manual join event created', [
+                'event_id' => $event->id,
+                'user_id' => $user->id,
+                'session_id' => $session->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Join recorded (dev mode)',
+                'is_currently_in_meeting' => true,
+            ]);
+        })->name('api.sessions.meeting.join-dev');
+
+        Route::post('/meeting/leave-dev', function (Request $request) {
+            $user = $request->user();
+            $sessionId = $request->input('session_id');
+
+            if (!$user || !$sessionId) {
+                return response()->json(['error' => 'Missing user or session_id'], 400);
+            }
+
+            // Find open event
+            $event = \App\Models\MeetingAttendanceEvent::where('session_id', $sessionId)
+                ->where('user_id', $user->id)
+                ->where('event_type', 'join')
+                ->whereNull('left_at')
+                ->latest('event_timestamp')
+                ->first();
+
+            if (!$event) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No open event to close',
+                    'is_currently_in_meeting' => false,
+                ]);
+            }
+
+            // Close event
+            $durationMinutes = $event->event_timestamp->diffInMinutes(now());
+            $event->update([
+                'left_at' => now(),
+                'duration_minutes' => $durationMinutes,
+                'leave_event_id' => 'DEV_LEAVE_' . uniqid(),
+            ]);
+
+            \Cache::forget("attendance_status_{$sessionId}_{$user->id}");
+
+            \Log::info('🔧 DEV: Manual leave event recorded', [
+                'event_id' => $event->id,
+                'duration_minutes' => $durationMinutes,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Leave recorded (dev mode)',
+                'is_currently_in_meeting' => false,
+                'duration_minutes' => $durationMinutes,
+            ]);
+        })->name('api.sessions.meeting.leave-dev');
+    }
 });
 
 // Server time endpoint for session timer synchronization

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chat Layout Test - منصة إتقان</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="antialiased bg-gray-50">
+    <!-- Simulated Top Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 h-20 bg-white border-b border-gray-200 shadow-sm z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+            <div class="flex justify-between items-center h-full">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-primary">منصة إتقان</span>
+                </div>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <a href="#" class="text-gray-700 hover:text-primary">الرئيسية</a>
+                    <a href="#" class="text-gray-700 hover:text-primary">الرسائل</a>
+                    <a href="#" class="text-gray-700 hover:text-primary">الملف الشخصي</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Chat Container -->
+    <main class="fixed inset-0 pt-20 bg-gray-50">
+        <div class="h-full w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="h-full">
+                <!-- Chat Layout -->
+                <div class="h-full flex bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
+                    <!-- Conversations Sidebar -->
+                    <div class="w-full md:w-96 lg:w-[28rem] shrink-0 border-l border-gray-200 bg-white">
+                        <!-- Sidebar Header -->
+                        <div class="p-4 border-b border-gray-200">
+                            <h2 class="text-xl font-bold">المحادثات</h2>
+                        </div>
+
+                        <!-- Conversations List -->
+                        <div class="overflow-y-auto h-[calc(100%-60px)]">
+                            <!-- Sample Conversation Items -->
+                            <div class="p-3 hover:bg-gray-50 cursor-pointer border-b">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">م</div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold">محمد أحمد</h4>
+                                        <p class="text-sm text-gray-600 truncate">مرحبا، كيف حالك؟</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500">10:30</span>
+                                </div>
+                            </div>
+
+                            <div class="p-3 hover:bg-gray-50 cursor-pointer border-b bg-blue-50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">ف</div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold">فاطمة علي</h4>
+                                        <p class="text-sm text-gray-600 truncate">شكرا على المساعدة</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500">09:15</span>
+                                </div>
+                            </div>
+
+                            <div class="p-3 hover:bg-gray-50 cursor-pointer border-b">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">ع</div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold">عبدالله سالم</h4>
+                                        <p class="text-sm text-gray-600 truncate">موعد الدرس غدا</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500">أمس</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <main class="flex-1 flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 min-w-0">
+                        <!-- Chat Header -->
+                        <header class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm p-4">
+                            <div class="flex items-center gap-3">
+                                <button class="lg:hidden">
+                                    <i class="ri-arrow-right-line text-xl"></i>
+                                </button>
+                                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">ف</div>
+                                <div>
+                                    <h3 class="font-bold">فاطمة علي</h3>
+                                    <span class="text-xs text-green-500">متصل الآن</span>
+                                </div>
+                                <button class="mr-auto">
+                                    <i class="ri-more-2-line text-xl"></i>
+                                </button>
+                            </div>
+                        </header>
+
+                        <!-- Messages Area -->
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                            <!-- Received Message -->
+                            <div class="flex gap-2">
+                                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">ف</div>
+                                <div class="max-w-[70%]">
+                                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                                        <p>السلام عليكم ورحمة الله وبركاته</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500 mt-1 block">10:30 صباحا</span>
+                                </div>
+                            </div>
+
+                            <!-- Sent Message -->
+                            <div class="flex gap-2 justify-end">
+                                <div class="max-w-[70%]">
+                                    <div class="bg-blue-500 text-white rounded-lg p-3">
+                                        <p>وعليكم السلام ورحمة الله وبركاته، كيف حالك؟</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500 mt-1 block text-left">10:32 صباحا</span>
+                                </div>
+                            </div>
+
+                            <!-- Received Message -->
+                            <div class="flex gap-2">
+                                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">ف</div>
+                                <div class="max-w-[70%]">
+                                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                                        <p>الحمد لله بخير، شكرا على المساعدة في درس أمس</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500 mt-1 block">10:33 صباحا</span>
+                                </div>
+                            </div>
+
+                            <!-- Sent Message -->
+                            <div class="flex gap-2 justify-end">
+                                <div class="max-w-[70%]">
+                                    <div class="bg-blue-500 text-white rounded-lg p-3">
+                                        <p>العفو، سعيد بأن الشرح كان مفيدا</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500 mt-1 block text-left">10:35 صباحا</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Message Input -->
+                        <div class="bg-white border-t border-gray-200 p-4">
+                            <div class="flex items-end gap-2">
+                                <button class="p-2 hover:bg-gray-100 rounded-lg">
+                                    <i class="ri-attachment-line text-xl text-gray-600"></i>
+                                </button>
+                                <div class="flex-1 relative">
+                                    <textarea class="w-full border border-gray-300 rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                              rows="1"
+                                              placeholder="اكتب رسالة..."></textarea>
+                                </div>
+                                <button class="p-2 hover:bg-gray-100 rounded-lg">
+                                    <i class="ri-emotion-line text-xl text-gray-600"></i>
+                                </button>
+                                <button class="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                    <i class="ri-send-plane-line text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Test Info Box -->
+    <div class="fixed bottom-4 left-4 bg-white p-4 rounded-lg shadow-lg border border-gray-200 max-w-xs z-50">
+        <h4 class="font-bold text-sm mb-2 text-gray-800">Layout Test Status</h4>
+        <ul class="text-xs space-y-1">
+            <li class="text-green-600">✓ Top navigation fixed</li>
+            <li class="text-green-600">✓ Chat container within viewport</li>
+            <li class="text-green-600">✓ Sidebar beside main area</li>
+            <li class="text-green-600">✓ Proper RTL support</li>
+            <li class="text-green-600">✓ Responsive padding</li>
+        </ul>
+        <p class="text-xs text-gray-500 mt-2">This is a static HTML test page</p>
+    </div>
+</body>
+</html>

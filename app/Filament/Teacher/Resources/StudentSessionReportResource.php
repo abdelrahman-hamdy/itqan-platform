@@ -78,9 +78,9 @@ class StudentSessionReportResource extends Resource
                 Select::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options([
-                        'present' => 'حاضر',
+                        'attended' => 'حاضر',
                         'late' => 'متأخر',
-                        'partial' => 'جزئي',
+                        'leaved' => 'غادر مبكراً',
                         'absent' => 'غائب',
                     ])
                     ->helperText('اختياري - اتركه فارغاً للاحتفاظ بالحالة المحسوبة تلقائياً'),
@@ -126,18 +126,18 @@ class StudentSessionReportResource extends Resource
                     ->label('حالة الحضور')
                     ->formatStateUsing(function (string $state): string {
                         return match ($state) {
-                            'present' => 'حاضر',
+                            'attended' => 'حاضر',
                             'late' => 'متأخر',
-                            'partial' => 'جزئي',
+                            'leaved' => 'غادر مبكراً',
                             'absent' => 'غائب',
                             default => $state,
                         };
                     })
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'present' => 'success',
+                        'attended' => 'success',
                         'late' => 'warning',
-                        'partial' => 'info',
+                        'leaved' => 'info',
                         'absent' => 'danger',
                         default => 'gray',
                     }),
@@ -158,12 +158,7 @@ class StudentSessionReportResource extends Resource
                     ->suffix('/10')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('connection_quality_score')
-                    ->label('جودة الاتصال')
-                    ->suffix('/100')
-                    ->sortable(),
-
-                Tables\Columns\IconColumn::make('is_auto_calculated')
+                Tables\Columns\IconColumn::make('is_calculated')
                     ->label('محسوب تلقائياً')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
@@ -178,9 +173,9 @@ class StudentSessionReportResource extends Resource
                 SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options([
-                        'present' => 'حاضر',
+                        'attended' => 'حاضر',
                         'late' => 'متأخر',
-                        'partial' => 'جزئي',
+                        'leaved' => 'غادر مبكراً',
                         'absent' => 'غائب',
                     ]),
 

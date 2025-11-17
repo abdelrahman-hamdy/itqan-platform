@@ -381,7 +381,7 @@
         bottom: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        z-index: 50 !important;
+        z-index: 22 !important;
         backdrop-filter: blur(4px);
         margin: 0 !important;
         padding: 0 !important;
@@ -1159,6 +1159,7 @@
     /* Control button base styles */
     .control-button {
         position: relative;
+        z-index: 25;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -2338,7 +2339,7 @@ function showNotification(message, type = 'info', duration = 5000) {
     <!-- LiveKit Meeting Interface - Dynamic Height -->
     <div id="livekitMeetingInterface" class="bg-gray-900 relative overflow-hidden" style="min-height: 400px;">
         <!-- Loading Overlay - ENHANCED WITH SMOOTH TRANSITIONS -->
-        <div id="loadingOverlay" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div id="loadingOverlay" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-22">
             <div class="text-center text-white">
                 <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
                 <p class="text-xl font-medium">جاري الاتصال بالاجتماع...</p>
@@ -2442,18 +2443,6 @@ function showNotification(message, type = 'info', duration = 5000) {
                         <!-- Raised Hands Panel (Teachers Only) -->
                         @if($userType === 'quran_teacher')
                         <div id="raisedHandsContent" class="h-full flex-col hidden">
-                            <!-- Global Audio Controls -->
-                            <div class="p-4 border-b border-gray-600">
-                                <h4 class="text-white font-medium mb-3">إدارة الصوت</h4>
-                                <div class="flex items-center justify-between py-2">
-                                    <span class="text-white text-sm font-medium">السماح للطلاب بإستخدام الميكروفون</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" id="toggleAllStudentsMicSwitch" class="sr-only peer" checked>
-                                        <div class="w-11 h-6 bg-gray-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                                    </label>
-                                </div>
-                            </div>
-
                             <!-- Raised Hands Queue -->
                             <div class="flex-1 overflow-y-auto p-4">
                                 <div class="flex items-center justify-between mb-4">
@@ -2484,7 +2473,48 @@ function showNotification(message, type = 'info', duration = 5000) {
                         <!-- Settings Panel -->
                         <div id="settingsContent" class="h-full flex-col hidden">
                             <div class="flex-1 overflow-y-auto p-4 space-y-4">
-                                <!-- Camera Settings -->
+                                @if($userType === 'quran_teacher')
+                                <!-- Teacher Controls - Simplified Design -->
+                                <div class="bg-gray-700 rounded-lg p-4">
+                                    <h4 class="text-white font-medium mb-4">التحكم في الطلاب</h4>
+                                    <div class="space-y-4">
+                                        <!-- Microphone Control -->
+                                        <div class="flex items-center justify-between py-3 border-b border-gray-600">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                                                    <i class="ri-mic-line text-white text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-white font-medium text-sm">السماح بالميكروفون</p>
+                                                    <p class="text-gray-400 text-xs">السماح للطلاب بإستخدام الميكروفون</p>
+                                                </div>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="toggleAllStudentsMicSwitch" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-gray-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                            </label>
+                                        </div>
+
+                                        <!-- Camera Control -->
+                                        <div class="flex items-center justify-between py-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                                                    <i class="ri-vidicon-line text-white text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-white font-medium text-sm">السماح بالكاميرا</p>
+                                                    <p class="text-gray-400 text-xs">السماح للطلاب بإستخدام الكاميرا</p>
+                                                </div>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="toggleAllStudentsCameraSwitch" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-gray-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                @else
+                                <!-- Student Settings - Device Selection -->
                                 <div class="bg-gray-700 rounded-lg p-4">
                                     <h4 class="text-white font-medium mb-3">إعدادات الكاميرا</h4>
                                     <div class="space-y-2">
@@ -2505,7 +2535,6 @@ function showNotification(message, type = 'info', duration = 5000) {
                                     </div>
                                 </div>
 
-                                <!-- Microphone Settings -->
                                 <div class="bg-gray-700 rounded-lg p-4">
                                     <h4 class="text-white font-medium mb-3">إعدادات الميكروفون</h4>
                                     <div class="space-y-2">
@@ -2521,6 +2550,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                                         </div>
                                     </div>
                                 </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -2953,40 +2983,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         /**
          * Load current attendance status
+         * DISABLED: Attendance now handled by Livewire component via webhooks
          */
         async loadCurrentStatus() {
-            console.log('📊 Loading current attendance status from API...');
-            try {
-                // Use the generic API endpoint that works for both session types
-                const endpoint = `/api/sessions/${this.sessionId}/attendance-status`;
-                
-                const response = await fetch(endpoint, {
-                    method: 'GET',
-                    headers: {
-                        'X-CSRF-TOKEN': this.csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data) {
-                        this.updateAttendanceUI(data);
-                        
-                        // If backend says we're not in meeting, stop tracking
-                        if (!data.is_currently_in_meeting && this.isTracking) {
-                            console.log('🔄 Backend shows user not in meeting, stopping periodic tracking');
-                            this.isTracking = false;
-                            this.stopPeriodicUpdates();
-                        }
-                    }
-                } else {
-                    console.error('Failed to load attendance status:', response.status, response.statusText);
-                }
-            } catch (error) {
-                console.error('Failed to load attendance status:', error);
-            }
+            console.log('ℹ️ Attendance status via Livewire - skipping API call');
+            return; // DISABLED - Livewire component handles this now
         }
         
         /**
@@ -2999,35 +3000,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             try {
-                console.log('🎯 Recording meeting join...', {
-                    sessionId: this.sessionId,
-                    roomName: this.roomName,
-                    isTracking: this.isTracking
-                });
-                
-                const payload = {
-                    session_id: this.sessionId,
-                    session_type: window.sessionType || 'quran',
-                    room_name: this.roomName,
+                // DISABLED: Client-side attendance tracking - Now handled by LiveKit webhooks
+                console.log('ℹ️ Attendance tracking via webhooks - No client-side join needed');
+
+                // Simulate successful response for UI update
+                const data = {
+                    success: true,
+                    message: 'الحضور يتم تتبعه تلقائياً',
+                    attendance_status: {}
                 };
-                
-                console.log('📤 Sending join request:', payload);
-                
-                const response = await fetch('/api/meetings/attendance/join', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': this.csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(payload),
-                });
-                
-                console.log('📥 Join response status:', response.status);
-                
-                const data = await response.json();
-                console.log('📥 Join response data:', data);
                 
                 if (data.success) {
                     this.isTracking = true;

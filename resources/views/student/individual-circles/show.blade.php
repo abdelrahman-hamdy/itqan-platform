@@ -16,15 +16,15 @@
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Circle Header -->
-            <x-circle.individual-header :circle="$individualCircle" view-type="student" />
+            <x-circle.circle-header :circle="$individualCircle" type="individual" view-type="student" context="quran" />
 
             <!-- Quran Sessions Section -->
             @php
                 $allSessions = collect($upcomingSessions)->merge($pastSessions)->sortByDesc('scheduled_at');
             @endphp
-            
-            <x-sessions.unified-sessions-section 
-                :sessions="$allSessions" 
+
+            <x-sessions.sessions-list
+                :sessions="$allSessions"
                 title="جلسات الحلقة الفردية"
                 view-type="student"
                 :circle="$individualCircle"
@@ -38,7 +38,7 @@
             <x-circle.info-sidebar :circle="$individualCircle" view-type="student" context="individual" />
             
             <!-- Quick Actions -->
-            <x-circle.individual-quick-actions :circle="$individualCircle" view-type="student" />
+            <x-circle.quick-actions :circle="$individualCircle" type="individual" view-type="student" context="quran" />
             
             <!-- Progress Overview -->
             <x-circle.individual-progress-overview :circle="$individualCircle" view-type="student" />
@@ -53,26 +53,12 @@ function openSessionDetail(sessionId) {
     @if(auth()->check())
         const sessionUrl = '{{ route("student.sessions.show", ["subdomain" => request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
-        
+
         console.log('Student Session URL:', finalUrl);
         window.location.href = finalUrl;
     @else
         console.error('User not authenticated');
     @endif
-}
-
-function requestReschedule() {
-    showConfirmModal({
-        title: 'طلب إعادة جدولة',
-        message: 'هل تريد إرسال طلب إعادة جدولة للمعلم؟',
-        type: 'info',
-        confirmText: 'إرسال الطلب',
-        cancelText: 'إلغاء',
-        onConfirm: () => {
-            // This will be implemented when we create the reschedule functionality
-            alert('سيتم تنفيذ طلب إعادة الجدولة قريباً');
-        }
-    });
 }
 
 // Add any additional student-specific functionality here

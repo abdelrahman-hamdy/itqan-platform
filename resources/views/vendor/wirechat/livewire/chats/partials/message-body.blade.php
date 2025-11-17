@@ -12,7 +12,7 @@
     @endif
 
     <p @class([
-        'truncate text-sm dark:text-white  gap-2 items-center',
+        'truncate text-sm dark:text-white gap-2 items-center',
         'font-semibold text-black' =>
             !$isReadByAuth && !$lastMessage?->ownedBy($this->auth),
         'font-normal text-gray-600' =>
@@ -22,14 +22,6 @@
     ])>
         {{ $lastMessage->body != '' ? $lastMessage->body : ($lastMessage->isAttachment() ? '📎 '.__('wirechat::chats.labels.attachment') : '') }}
     </p>
-
-    <span class="font-medium px-1 text-xs shrink-0 text-gray-800 dark:text-gray-50">
-        @if ($lastMessage->created_at->diffInMinutes(now()) < 1)
-          @lang('wirechat::chats.labels.now')
-        @else
-            {{ $lastMessage->created_at->shortAbsoluteDiffForHumans() }}
-        @endif
-    </span>
 
 
 </div>

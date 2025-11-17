@@ -79,10 +79,10 @@ class SessionManagementService
         ?string $description = null
     ): QuranSession {
 
-        // Get duration - group circles use standard 60 minutes
-        // Duration should be defined when creating the session, not from academy settings
+        // CRITICAL FIX: Get duration from circle settings, not hardcoded 60 minutes
+        // Group circles should use their configured session_duration_minutes
         if ($durationMinutes === null) {
-            $durationMinutes = 60; // Standard group session duration
+            $durationMinutes = $circle->session_duration_minutes ?? 60;
         }
 
         // Check for conflicts

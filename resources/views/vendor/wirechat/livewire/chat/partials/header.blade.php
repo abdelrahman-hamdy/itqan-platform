@@ -114,16 +114,30 @@
 
                         {{-- Only show delete and clear if conversation is NOT group --}}
                         @if (!$conversation->isGroup())
-                            <button class="w-full" wire:click="clearConversation"
-                                wire:confirm="{{ __('wirechat::chat.actions.clear_chat.confirmation_message') }}">
+                            <button class="w-full"
+                                @click="$dispatch('open-confirmation', {
+                                    title: 'مسح سجل المحادثة',
+                                    message: '{{ __('wirechat::chat.actions.clear_chat.confirmation_message') }}',
+                                    confirmText: 'مسح',
+                                    cancelText: 'إلغاء',
+                                    isDangerous: true,
+                                    onConfirm: () => $wire.call('clearConversation')
+                                })">
 
                                 <x-wirechat::dropdown-link>
                                     @lang('wirechat::chat.actions.clear_chat.label')
                                 </x-wirechat::dropdown-link>
                             </button>
 
-                            <button wire:click="deleteConversation"
-                                wire:confirm="{{ __('wirechat::chat.actions.delete_chat.confirmation_message') }}"
+                            <button
+                                @click="$dispatch('open-confirmation', {
+                                    title: 'حذف المحادثة',
+                                    message: '{{ __('wirechat::chat.actions.delete_chat.confirmation_message') }}',
+                                    confirmText: 'حذف',
+                                    cancelText: 'إلغاء',
+                                    isDangerous: true,
+                                    onConfirm: () => $wire.call('deleteConversation')
+                                })"
                                 class="w-full text-start">
 
                                 <x-wirechat::dropdown-link class="text-red-500 dark:text-red-500">
@@ -135,8 +149,15 @@
 
 
                         @if ($conversation->isGroup() && !$this->auth->isOwnerOf($conversation))
-                            <button wire:click="exitConversation"
-                                wire:confirm="{{ __('wirechat::chat.actions.exit_group.confirmation_message') }}"
+                            <button
+                                @click="$dispatch('open-confirmation', {
+                                    title: 'مغادرة المجموعة',
+                                    message: '{{ __('wirechat::chat.actions.exit_group.confirmation_message') }}',
+                                    confirmText: 'مغادرة',
+                                    cancelText: 'إلغاء',
+                                    isDangerous: true,
+                                    onConfirm: () => $wire.call('exitConversation')
+                                })"
                                 class="w-full text-start ">
 
                                 <x-wirechat::dropdown-link class="text-red-500 dark:text-gray-500">

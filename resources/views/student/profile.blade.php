@@ -16,8 +16,8 @@
       theme: {
         extend: {
           colors: {
-            primary: "{{ auth()->user()->academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ auth()->user()->academy->secondary_color ?? '#6495ED' }}",
+            primary: "{{ auth()->user()->academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }}",
+            secondary: "{{ auth()->user()->academy->secondary_color?->getHexValue(500) ?? '#10B981' }}",
           },
           borderRadius: {
             none: "0px",
@@ -56,7 +56,7 @@
     
     /* Focus indicators */
     .focus\:ring-custom:focus {
-      outline: 2px solid {{ auth()->user()->academy->primary_color ?? '#4169E1' }};
+      outline: 2px solid {{ auth()->user()->academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }};
       outline-offset: 2px;
     }
   </style>
@@ -64,7 +64,7 @@
 
 <body class="bg-gray-50 text-gray-900">
   <!-- Navigation -->
-  @include('components.navigation.student-nav')
+  <x-navigation.app-navigation role="student" />
   
   <!-- Sidebar -->
   @include('components.sidebar.student-sidebar')
@@ -100,7 +100,7 @@
             'items' => $quranCircles->take(3)->map(function($circle) {
               return [
                 'title' => $circle->name,
-                'description' => 'مع ' . ($circle->quranTeacher->user->name ?? 'معلم القرآن') . 
+                'description' => 'مع ' . ($circle->quranTeacher->user->name ?? 'معلم القرآن') .
                                  ($circle->schedule_days_text ? ' - ' . $circle->schedule_days_text : ''),
                 'icon' => 'ri-group-line',
                 'iconBgColor' => 'bg-green-100',
@@ -132,7 +132,7 @@
               $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
               return [
                 'title' => $subscription->package->getDisplayName() ?? 'اشتراك مخصص',
-                'description' => 'مع ' . ($subscription->quranTeacher->full_name ?? 'معلم القرآن') . 
+                'description' => 'مع ' . ($subscription->quranTeacher->full_name ?? 'معلم القرآن') .
                                  ($nextSession ? ' - ' . $nextSession->scheduled_at->format('l، d F H:i') : ''),
                 'icon' => 'ri-user-star-line',
                 'iconBgColor' => 'bg-purple-100',
@@ -275,7 +275,7 @@
               <p class="text-gray-600 mb-4">
                 لم يتم العثور على كورسات مسجلة. استكشف المزيد من الدورات المتاحة.
               </p>
-              <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
+              <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
                  class="inline-block bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 <i class="ri-search-line ml-2"></i>
                 استكشاف الكورسات
@@ -404,11 +404,11 @@
                   </div>
                 </div>
                 
-                @if($trialRequest->status === 'scheduled' && $trialRequest->scheduled_session)
-                  <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain, 'sessionId' => $trialRequest->scheduled_session->id]) }}"
-                     class="w-full inline-block text-center bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                @if($trialRequest->trialSession)
+                  <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain, 'sessionId' => $trialRequest->trialSession->id]) }}"
+                     class="w-full inline-block text-center {{ $trialRequest->status === 'completed' ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-secondary' }} text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     <i class="ri-video-line ml-1"></i>
-                    دخول الجلسة
+                    {{ $trialRequest->status === 'completed' ? 'مراجعة الجلسة' : 'دخول الجلسة' }}
                   </a>
                 @elseif($trialRequest->status === 'pending')
                   <button class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed" disabled>
@@ -430,7 +430,7 @@
               <p class="text-gray-600 mb-4">
                 احجز جلسة تجريبية مجانية مع أحد معلمي القرآن المؤهلين وابدأ رحلة التعلم.
               </p>
-              <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
+              <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain]) }}"
                  class="inline-block bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 <i class="ri-add-circle-line ml-2"></i>
                 طلب جلسة تجريبية

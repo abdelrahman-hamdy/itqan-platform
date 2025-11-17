@@ -134,11 +134,6 @@ class QuranIndividualCircle extends Model
         return $this->sessions()->whereIn('status', ['completed', 'absent']);
     }
 
-    public function templateSessions(): HasMany
-    {
-        return $this->hasMany(QuranSession::class, 'individual_circle_id');
-    }
-
     public function homework(): HasMany
     {
         return $this->hasMany(QuranHomework::class, 'circle_id');
@@ -201,57 +196,6 @@ class QuranIndividualCircle extends Model
         return $code;
     }
 
-    public function createTemplateSessions(): void
-    {
-        // Only create if no sessions exist yet (prevent duplication)
-        if ($this->sessions()->count() > 0) {
-            return;
-        }
-
-        // Create all sessions as unscheduled when circle is created
-        for ($i = 1; $i <= $this->total_sessions; $i++) {
-            QuranSession::create([
-                'academy_id' => $this->academy_id,
-                'quran_teacher_id' => $this->quran_teacher_id,
-                'individual_circle_id' => $this->id,
-                'student_id' => $this->student_id,
-                'session_code' => $this->generateSessionCode($i),
-                'session_type' => 'individual',
-                'session_sequence' => $i,
-                'status' => 'unscheduled', // Changed from 'template'
-                'is_template' => false, // Changed from true
-                'is_scheduled' => false,
-                'title' => "الجلسة رقم {$i}",
-                'description' => "جلسة فردية للقرآن الكريم - الحلقة {$i}",
-                'duration_minutes' => $this->default_duration_minutes,
-                'created_by' => $this->created_by,
-            ]);
-        }
-
-        $this->updateSessionCounts();
-    }
-
-    private function generateSessionCode(int $sequence): string
-    {
-        $baseCode = "{$this->circle_code}-S{$sequence}";
-
-        // Check if this session code already exists for this academy (including soft deleted)
-        $attempt = 0;
-        $sessionCode = $baseCode;
-        while (
-            QuranSession::withTrashed()
-                ->where('academy_id', $this->academy_id)
-                ->where('session_code', $sessionCode)
-                ->exists() && $attempt < 10
-        ) {
-            $attempt++;
-            // Add timestamp suffix if collision occurs for better uniqueness
-            $sessionCode = $baseCode.'-'.now()->format('His')."-A{$attempt}";
-        }
-
-        return $sessionCode;
-    }
-
     public function updateSessionCounts(): void
     {
         $scheduled = $this->scheduledSessions()->count();
@@ -289,26 +233,6 @@ class QuranIndividualCircle extends Model
                 'started_at' => $this->completedSessions()->oldest('started_at')->first()?->started_at,
             ]);
         }
-    }
-
-    public function canScheduleSession(): bool
-    {
-        return $this->status === 'active' &&
-               $this->sessions_remaining > 0 &&
-               $this->templateSessions()->whereNull('scheduled_at')->exists();
-    }
-
-    public function getNextTemplateSession(): ?QuranSession
-    {
-        return $this->templateSessions()
-            ->whereNull('scheduled_at')
-            ->orderBy('id')
-            ->first();
-    }
-
-    public function getAvailableSessionsCount(): int
-    {
-        return $this->templateSessions()->whereNull('scheduled_at')->count();
     }
 
     // Paper-based helper methods
@@ -387,11 +311,6 @@ class QuranIndividualCircle extends Model
 
             // Calculate sessions remaining
             $circle->sessions_remaining = $circle->total_sessions;
-        });
-
-        static::created(function ($circle) {
-            // Create template sessions after circle is created
-            $circle->createTemplateSessions();
         });
 
         static::updating(function ($circle) {

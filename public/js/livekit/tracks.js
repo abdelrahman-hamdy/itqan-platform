@@ -436,7 +436,7 @@ class LiveKitTracks {
         // Create video element for screen share
         const videoElement = document.createElement('video');
         videoElement.id = `video-${screenShareId}`;
-        videoElement.className = 'absolute inset-0 w-full h-full object-contain opacity-1 transition-opacity duration-300 z-10 cursor-pointer';
+        videoElement.className = 'absolute inset-0 w-full h-full object-contain opacity-100 transition-opacity duration-300 z-10 cursor-pointer';
         videoElement.autoplay = true;
         videoElement.playsInline = true;
         videoElement.muted = isLocal; // Mute local screen share to avoid audio feedback
@@ -445,13 +445,15 @@ class LiveKitTracks {
         // Attach track to video element
         track.attach(videoElement);
 
+        console.log(`✅ Screen share video element created and track attached for ${participantId}`);
+
         // Create screen share overlay with info
         const overlay = document.createElement('div');
         overlay.className = 'absolute inset-0 bg-gradient-to-br from-blue-900/20 to-gray-800/20 flex flex-col justify-between p-4 pointer-events-none z-20';
 
-        // Add focus indicator overlay
+        // Add focus indicator overlay (without background to not cover the video)
         const focusIndicator = document.createElement('div');
-        focusIndicator.className = 'absolute inset-0 bg-blue-500 bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 pointer-events-none flex items-center justify-center z-30';
+        focusIndicator.className = 'absolute inset-0 transition-all duration-200 pointer-events-none flex items-center justify-center z-30';
         focusIndicator.innerHTML = `
             <div class="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-200">
                 <i class="fas fa-expand-arrows-alt mr-2"></i>
@@ -1005,7 +1007,7 @@ class LiveKitTracks {
             console.log(`✅ Video hidden for ${participantId}`);
         }
 
-        // Update camera status icon
+        // Update camera status icon (in status bar)
         this.updateCameraStatusIcon(participantId, hasVideo);
     }
 
@@ -1037,9 +1039,9 @@ class LiveKitTracks {
         const overlayMicIcon = document.getElementById(`overlay-mic-${participantId}`);
         if (overlayMicIcon) {
             if (hasAudio) {
-                overlayMicIcon.className = 'fas fa-microphone text-sm text-green-500';
+                overlayMicIcon.className = 'ri-mic-line text-sm text-green-500';
             } else {
-                overlayMicIcon.className = 'fas fa-microphone-slash text-sm text-red-500';
+                overlayMicIcon.className = 'ri-mic-off-line text-sm text-red-500';
             }
             console.log(`🎤 Updated overlay mic status for ${participantId}: ${hasAudio ? 'ON' : 'OFF'}`);
         }
@@ -1047,7 +1049,7 @@ class LiveKitTracks {
 
     /**
      * Update camera status icon
-     * @param {string} participantId - Participant ID  
+     * @param {string} participantId - Participant ID
      * @param {boolean} hasVideo - Whether participant has active video
      */
     updateCameraStatusIcon(participantId, hasVideo) {
@@ -1056,10 +1058,10 @@ class LiveKitTracks {
             const icon = cameraStatus.querySelector('i');
             if (hasVideo) {
                 cameraStatus.className = 'text-green-500';
-                if (icon) icon.className = 'fas fa-video text-sm';
+                if (icon) icon.className = 'ri-video-line text-sm';
             } else {
                 cameraStatus.className = 'text-red-500';
-                if (icon) icon.className = 'fas fa-video-slash text-sm';
+                if (icon) icon.className = 'ri-video-off-line text-sm';
             }
             console.log(`📹 Updated camera status icon for ${participantId}: ${hasVideo ? 'green' : 'red'}`);
         }
@@ -1076,10 +1078,10 @@ class LiveKitTracks {
             const icon = micStatus.querySelector('i');
             if (hasAudio) {
                 micStatus.className = 'text-green-500';
-                if (icon) icon.className = 'fas fa-microphone text-sm';
+                if (icon) icon.className = 'ri-mic-line text-sm';
             } else {
                 micStatus.className = 'text-red-500';
-                if (icon) icon.className = 'fas fa-microphone-slash text-sm';
+                if (icon) icon.className = 'ri-mic-off-line text-sm';
             }
             console.log(`🎤 Updated microphone status icon for ${participantId}: ${hasAudio ? 'green' : 'red'}`);
         }

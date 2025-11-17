@@ -16,8 +16,8 @@
       theme: {
         extend: {
           colors: {
-            primary: "{{ $academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ $academy->secondary_color ?? '#6495ED' }}",
+            primary: "{{ $academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }}",
+            secondary: "{{ $academy->secondary_color?->getHexValue(500) ?? '#10B981' }}",
           },
           borderRadius: {
             none: "0px",

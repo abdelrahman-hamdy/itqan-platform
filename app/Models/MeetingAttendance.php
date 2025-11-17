@@ -20,6 +20,7 @@ class MeetingAttendance extends Model
         'session_type',
         'first_join_time',
         'last_leave_time',
+        'last_heartbeat_at',
         'total_duration_minutes',
         'join_leave_cycles',
         'attendance_calculated_at',
@@ -36,6 +37,7 @@ class MeetingAttendance extends Model
     protected $casts = [
         'first_join_time' => 'datetime',
         'last_leave_time' => 'datetime',
+        'last_heartbeat_at' => 'datetime',
         'join_leave_cycles' => 'array',
         'attendance_calculated_at' => 'datetime',
         'session_start_time' => 'datetime',
@@ -159,9 +161,24 @@ class MeetingAttendance extends Model
         // Update the last cycle with leave time
         $cycles[$lastCycleIndex]['left_at'] = $now->toISOString();
 
-        // Calculate duration for this cycle
+        // Calculate duration for this cycle (capped at session start if joined during preparation)
         $joinTime = Carbon::parse($cycles[$lastCycleIndex]['joined_at']);
-        $cycleDurationMinutes = $joinTime->diffInMinutes($now);
+        $session = $this->session;
+        $effectiveJoinTime = $joinTime;
+
+        // Cap at session start if user joined during preparation time
+        if ($session && $session->scheduled_at && $joinTime->lessThan($session->scheduled_at)) {
+            $effectiveJoinTime = $session->scheduled_at;
+            Log::debug('Leave: Capping cycle duration at session start', [
+                'session_id' => $this->session_id,
+                'user_id' => $this->user_id,
+                'actual_join' => $joinTime->toISOString(),
+                'effective_join' => $effectiveJoinTime->toISOString(),
+                'session_start' => $session->scheduled_at->toISOString(),
+            ]);
+        }
+
+        $cycleDurationMinutes = $effectiveJoinTime->diffInMinutes($now);
         $cycles[$lastCycleIndex]['duration_minutes'] = $cycleDurationMinutes;
 
         $this->update([
@@ -175,6 +192,8 @@ class MeetingAttendance extends Model
             'session_id' => $this->session_id,
             'user_id' => $this->user_id,
             'leave_time' => $now,
+            'actual_join_time' => $joinTime->toISOString(),
+            'effective_join_time' => $effectiveJoinTime->toISOString(),
             'cycle_duration' => $cycleDurationMinutes,
             'total_duration' => $this->total_duration_minutes,
         ]);
@@ -188,12 +207,53 @@ class MeetingAttendance extends Model
     private function calculateTotalDuration(array $cycles): int
     {
         $totalMinutes = 0;
+        $session = $this->session;
 
         foreach ($cycles as $cycle) {
             if (isset($cycle['joined_at']) && isset($cycle['left_at'])) {
                 $joinTime = Carbon::parse($cycle['joined_at']);
                 $leaveTime = Carbon::parse($cycle['left_at']);
-                $totalMinutes += $joinTime->diffInMinutes($leaveTime);
+
+                // CRITICAL FIX: Only count attendance from session start time, not preparation time
+                // If user joined before session started, cap the effective join time at session start
+                if ($session && $session->scheduled_at) {
+                    $sessionStart = $session->scheduled_at;
+
+                    // If joined before session started, use session start as effective join time
+                    if ($joinTime->lessThan($sessionStart)) {
+                        // Only count if they stayed past session start
+                        if ($leaveTime->greaterThan($sessionStart)) {
+                            $effectiveJoinTime = $sessionStart;
+                            $duration = $effectiveJoinTime->diffInMinutes($leaveTime);
+                            $totalMinutes += $duration;
+
+                            Log::debug('Attendance capped at session start time', [
+                                'session_id' => $this->session_id,
+                                'user_id' => $this->user_id,
+                                'actual_join' => $joinTime->toISOString(),
+                                'session_start' => $sessionStart->toISOString(),
+                                'effective_join' => $effectiveJoinTime->toISOString(),
+                                'leave_time' => $leaveTime->toISOString(),
+                                'duration_minutes' => $duration,
+                            ]);
+                        } else {
+                            // User joined and left before session even started - don't count
+                            Log::debug('Attendance not counted - joined and left before session start', [
+                                'session_id' => $this->session_id,
+                                'user_id' => $this->user_id,
+                                'join_time' => $joinTime->toISOString(),
+                                'leave_time' => $leaveTime->toISOString(),
+                                'session_start' => $sessionStart->toISOString(),
+                            ]);
+                        }
+                    } else {
+                        // Joined after session started - normal calculation
+                        $totalMinutes += $joinTime->diffInMinutes($leaveTime);
+                    }
+                } else {
+                    // No session context - fallback to normal calculation
+                    $totalMinutes += $joinTime->diffInMinutes($leaveTime);
+                }
             }
         }
 
@@ -263,6 +323,7 @@ class MeetingAttendance extends Model
 
     /**
      * Determine attendance status based on join time and duration
+     * Using new 50% threshold logic with enum
      */
     private function determineAttendanceStatus(
         Carbon $sessionStartTime,
@@ -271,70 +332,229 @@ class MeetingAttendance extends Model
     ): string {
         // If never joined, definitely absent
         if (! $this->first_join_time) {
-            return 'absent';
+            return \App\Enums\AttendanceStatus::ABSENT->value;
         }
 
         $attendancePercentage = $sessionDuration > 0
             ? ($this->total_duration_minutes / $sessionDuration) * 100
             : 0;
 
-        // Determine status based on attendance percentage
-        if ($attendancePercentage < 30) {
-            return 'absent';
-        } elseif ($attendancePercentage < 80) {
-            return 'partial';
+        // Stayed < 50% - left early (regardless of join time)
+        if ($attendancePercentage < 50) {
+            return \App\Enums\AttendanceStatus::LEAVED->value;
         }
 
-        // If attended 80%+, check if they were late
+        // Stayed >= 50% - check if late
         $lateThreshold = $sessionStartTime->copy()->addMinutes($graceMinutes);
         $wasLate = $this->first_join_time->isAfter($lateThreshold);
 
-        return $wasLate ? 'late' : 'present';
+        // Stayed >= 50% and joined after tolerance - late
+        if ($wasLate) {
+            return \App\Enums\AttendanceStatus::LATE->value;
+        }
+
+        // Stayed >= 50% and joined on time - attended
+        return \App\Enums\AttendanceStatus::ATTENDED->value;
     }
 
     /**
-     * Check if user is currently in the meeting
+     * Check if user is currently in the meeting based on database cycles
+     * SOURCE OF TRUTH: Database cycles (created by manual join API or webhooks)
+     * This is FAST and doesn't hit external APIs on every check
      */
     public function isCurrentlyInMeeting(): bool
     {
-        // CRITICAL FIX: Auto-close stale cycles for ended sessions
-        $this->autoCloseStaleCycles();
-
         $cycles = $this->join_leave_cycles ?? [];
-        $lastCycle = end($cycles);
 
-        return $lastCycle && isset($lastCycle['joined_at']) && ! isset($lastCycle['left_at']);
+        if (empty($cycles)) {
+            return false;
+        }
+
+        // Check for open cycle (joined but not left)
+        foreach (array_reverse($cycles) as $cycle) {
+            if (isset($cycle['joined_at']) && !isset($cycle['left_at'])) {
+                // Found open cycle - but check if it's stale (> 5 minutes with no activity)
+                $joinedAt = \Carbon\Carbon::parse($cycle['joined_at']);
+                $minutesAgo = $joinedAt->diffInMinutes(now());
+
+                // If cycle is older than 5 minutes and session has ended, consider it stale
+                if ($minutesAgo > 5) {
+                    $session = $this->session;
+                    if ($session) {
+                        $sessionEnd = $session->scheduled_at
+                            ? $session->scheduled_at->copy()->addMinutes($session->duration_minutes ?? 60)
+                            : null;
+
+                        // If session has ended, this cycle is stale
+                        if ($sessionEnd && now()->isAfter($sessionEnd)) {
+                            return false;
+                        }
+                    }
+                }
+
+                return true; // Open cycle found and not stale
+            }
+        }
+
+        return false; // No open cycles
+    }
+
+    /**
+     * OLD METHOD - Kept for backwards compatibility but now just redirects to isCurrentlyInMeeting
+     */
+    private function verifyLiveKitPresence(): bool
+    {
+        // All verification now done in isCurrentlyInMeeting() by querying LiveKit directly
+        return $this->isCurrentlyInMeeting();
+    }
+
+    /**
+     * Auto-close cycle after verifying user is not in LiveKit
+     */
+    private function autoCloseWithLiveKitVerification(): void
+    {
+        $cycles = $this->join_leave_cycles ?? [];
+        $lastCycleIndex = count($cycles) - 1;
+
+        if ($lastCycleIndex >= 0 && !isset($cycles[$lastCycleIndex]['left_at'])) {
+            $now = now();
+            $joinTime = Carbon::parse($cycles[$lastCycleIndex]['joined_at']);
+
+            // Close the cycle
+            $cycles[$lastCycleIndex]['left_at'] = $now->toISOString();
+
+            // Calculate duration (with session boundary capping)
+            $session = $this->session;
+            $effectiveJoinTime = $joinTime;
+
+            if ($session && $session->scheduled_at && $joinTime->lessThan($session->scheduled_at)) {
+                $effectiveJoinTime = $session->scheduled_at;
+            }
+
+            $duration = $effectiveJoinTime->diffInMinutes($now);
+            $cycles[$lastCycleIndex]['duration_minutes'] = $duration;
+
+            // Update the attendance record
+            $this->update([
+                'join_leave_cycles' => $cycles,
+                'leave_count' => $this->leave_count + 1,
+                'last_leave_time' => $now,
+                'total_duration_minutes' => $this->calculateTotalDuration($cycles),
+            ]);
+
+            Log::info('Auto-closed stale cycle after LiveKit verification', [
+                'session_id' => $this->session_id,
+                'user_id' => $this->user_id,
+                'duration' => $duration,
+                'reason' => 'User not found in LiveKit room',
+            ]);
+        }
     }
 
     /**
      * Auto-close stale cycles for sessions that have ended
+     * 🔥 IMPROVED: Less strict conditions to ensure cycles are closed properly
      */
     private function autoCloseStaleCycles(): void
     {
         $cycles = $this->join_leave_cycles ?? [];
         $hasChanges = false;
 
+        // Get session to validate timing
+        $session = $this->session;
+        if (! $session) {
+            Log::warning('Cannot validate stale cycles - session not found', [
+                'session_id' => $this->session_id,
+                'user_id' => $this->user_id,
+            ]);
+
+            return; // Can't validate without session context
+        }
+
+        // Calculate when session actually ended (scheduled + duration + grace period)
+        $sessionDuration = $session->duration_minutes ?? 60;
+        $graceMinutes = 30; // 30-minute grace period after session end
+        $sessionStart = $session->scheduled_at;
+        $sessionEnd = $sessionStart->copy()->addMinutes($sessionDuration)->addMinutes($graceMinutes);
+
+        $now = now();
+
         foreach ($cycles as $index => $cycle) {
-            // If cycle has join but no leave
-            if (isset($cycle['joined_at']) && ! isset($cycle['left_at'])) {
+            // 🔥 NEW: Support both webhook format and manual format
+            $isWebhookFormat = isset($cycle['type']) && $cycle['type'] === 'join';
+            $isManualFormat = isset($cycle['joined_at']) && !isset($cycle['left_at']);
+
+            if (!$isWebhookFormat && !$isManualFormat) {
+                continue; // Skip if not an open cycle
+            }
+
+            // Extract join time based on format
+            $joinTime = null;
+            if ($isWebhookFormat) {
+                $joinTime = is_string($cycle['timestamp']) ? Carbon::parse($cycle['timestamp']) : $cycle['timestamp'];
+            } elseif ($isManualFormat) {
                 $joinTime = Carbon::parse($cycle['joined_at']);
+            }
 
-                // If join was more than 30 minutes ago, auto-close it
-                if ($joinTime->diffInMinutes(now()) > 30) {
-                    // Close with a reasonable end time (30 minutes after join or session end)
-                    $estimatedLeaveTime = $joinTime->copy()->addMinutes(30);
+            if (!$joinTime) {
+                continue;
+            }
 
-                    $cycles[$index]['left_at'] = $estimatedLeaveTime->toISOString();
-                    $cycles[$index]['duration_minutes'] = 30; // Default 30 minute session
-                    $hasChanges = true;
+            // 🔥 IMPROVED: Simpler logic - close if session has ended
+            $sessionHasEnded = $now->greaterThan($sessionEnd);
 
-                    Log::info('Auto-closed stale attendance cycle', [
+            if ($sessionHasEnded) {
+                // Session has ended - close the cycle at session end time (before grace period)
+                $actualSessionEnd = $sessionStart->copy()->addMinutes($sessionDuration);
+                $estimatedLeaveTime = $actualSessionEnd; // Close at actual session end, not grace period end
+
+                // Cap effective join time at session start (don't count preparation time)
+                $effectiveJoinTime = $joinTime;
+                if ($joinTime->lessThan($sessionStart)) {
+                    $effectiveJoinTime = $sessionStart;
+                    Log::debug('Auto-close: Capping cycle at session start', [
                         'session_id' => $this->session_id,
                         'user_id' => $this->user_id,
-                        'join_time' => $joinTime,
-                        'estimated_leave_time' => $estimatedLeaveTime,
+                        'actual_join' => $joinTime->toISOString(),
+                        'effective_join' => $effectiveJoinTime->toISOString(),
+                        'session_start' => $sessionStart->toISOString(),
                     ]);
                 }
+
+                // Calculate actual duration from effective join to estimated leave
+                $actualDuration = $effectiveJoinTime->diffInMinutes($estimatedLeaveTime);
+
+                // Update cycle based on format
+                if ($isManualFormat) {
+                    $cycles[$index]['left_at'] = $estimatedLeaveTime->toISOString();
+                    $cycles[$index]['duration_minutes'] = $actualDuration;
+                    $cycles[$index]['auto_closed'] = true;
+                    $cycles[$index]['auto_close_reason'] = 'session_ended';
+                }
+                // Note: We don't auto-close webhook format cycles here - they should get proper leave webhooks
+
+                $hasChanges = true;
+
+                Log::info('🔄 Auto-closed stale attendance cycle', [
+                    'session_id' => $this->session_id,
+                    'user_id' => $this->user_id,
+                    'cycle_format' => $isWebhookFormat ? 'webhook' : 'manual',
+                    'actual_join_time' => $joinTime->toISOString(),
+                    'effective_join_time' => $effectiveJoinTime->toISOString(),
+                    'estimated_leave_time' => $estimatedLeaveTime->toISOString(),
+                    'actual_duration' => $actualDuration,
+                    'session_start' => $sessionStart->toISOString(),
+                    'session_end' => $actualSessionEnd->toISOString(),
+                    'session_duration' => $sessionDuration,
+                ]);
+            } else {
+                Log::debug('Cycle not auto-closed - session still within grace period', [
+                    'session_id' => $this->session_id,
+                    'user_id' => $this->user_id,
+                    'session_end_with_grace' => $sessionEnd->toISOString(),
+                    'now' => $now->toISOString(),
+                    'minutes_until_end' => $now->diffInMinutes($sessionEnd, false),
+                ]);
             }
         }
 
@@ -343,13 +563,43 @@ class MeetingAttendance extends Model
                 'join_leave_cycles' => $cycles,
                 'leave_count' => $this->leave_count + 1,
                 'total_duration_minutes' => $this->calculateTotalDuration($cycles),
-                'last_leave_time' => Carbon::parse(end($cycles)['left_at']),
+                'last_leave_time' => $this->extractLastLeaveTime($cycles),
+            ]);
+
+            Log::info('✅ Stale cycles auto-closed and attendance updated', [
+                'session_id' => $this->session_id,
+                'user_id' => $this->user_id,
+                'new_total_duration' => $this->fresh()->total_duration_minutes,
             ]);
         }
     }
 
     /**
+     * Extract last leave time from cycles (supports both formats)
+     */
+    private function extractLastLeaveTime(array $cycles): ?Carbon
+    {
+        for ($i = count($cycles) - 1; $i >= 0; $i--) {
+            $cycle = $cycles[$i];
+
+            // Manual format
+            if (isset($cycle['left_at'])) {
+                return Carbon::parse($cycle['left_at']);
+            }
+
+            // Webhook format
+            if (isset($cycle['type']) && $cycle['type'] === 'leave' && isset($cycle['timestamp'])) {
+                return is_string($cycle['timestamp']) ? Carbon::parse($cycle['timestamp']) : $cycle['timestamp'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Get the current session duration if user is still in meeting
+     * IMPROVED: Cap duration at session end time AND session start time to avoid inflated attendance
+     * CRITICAL: Only calculate during actual session time, not before or after
      */
     public function getCurrentSessionDuration(): int
     {
@@ -365,9 +615,110 @@ class MeetingAttendance extends Model
         }
 
         $joinTime = Carbon::parse($lastCycle['joined_at']);
-        $currentDuration = $joinTime->diffInMinutes(now());
+        $now = now();
+        $session = $this->session;
 
-        return $this->total_duration_minutes + $currentDuration;
+        // CRITICAL FIX: Only calculate during actual session time
+        if ($session && $session->scheduled_at) {
+            $sessionStart = $session->scheduled_at;
+            $sessionDuration = $session->duration_minutes ?? 60;
+            $graceMinutes = 30; // Allow 30 minutes overtime
+            $sessionEnd = $sessionStart->copy()
+                ->addMinutes($sessionDuration)
+                ->addMinutes($graceMinutes);
+
+            // BEFORE session starts: Don't calculate, return completed duration only
+            if ($now->lessThan($sessionStart)) {
+                Log::debug('Session not started yet - not calculating current cycle', [
+                    'session_id' => $this->session_id,
+                    'user_id' => $this->user_id,
+                    'session_start' => $sessionStart->toISOString(),
+                    'now' => $now->toISOString(),
+                    'minutes_until_start' => $now->diffInMinutes($sessionStart, false),
+                ]);
+                return $this->total_duration_minutes; // Don't count current cycle before session starts
+            }
+
+            // AFTER session ends: Auto-close cycle and return completed duration
+            if ($now->greaterThan($sessionEnd)) {
+                Log::info('Session has ended - auto-closing open cycle and stopping calculation', [
+                    'session_id' => $this->session_id,
+                    'user_id' => $this->user_id,
+                    'session_end' => $sessionEnd->toISOString(),
+                    'now' => $now->toISOString(),
+                ]);
+
+                // Trigger auto-close for stale cycles
+                $this->autoCloseStaleCycles();
+
+                // Return the completed duration (after auto-close)
+                return $this->fresh()->total_duration_minutes;
+            }
+        }
+
+        // DURING session: Calculate real-time duration
+        // Cap effective join time at session start (don't count preparation time)
+        $effectiveJoinTime = $joinTime;
+        if ($session && $session->scheduled_at) {
+            $sessionStart = $session->scheduled_at;
+
+            // If user joined before session started, use session start as effective join time
+            if ($joinTime->lessThan($sessionStart)) {
+                $effectiveJoinTime = $sessionStart;
+
+                Log::debug('Capped current cycle join time at session start', [
+                    'session_id' => $this->session_id,
+                    'user_id' => $this->user_id,
+                    'actual_join' => $joinTime->toISOString(),
+                    'effective_join' => $effectiveJoinTime->toISOString(),
+                    'session_start' => $sessionStart->toISOString(),
+                ]);
+            }
+        }
+
+        // Calculate duration for current open cycle from effective join time
+        $currentCycleDuration = $effectiveJoinTime->diffInMinutes($now);
+
+        $totalDuration = $this->total_duration_minutes + $currentCycleDuration;
+
+        Log::debug('Calculated current session duration (session is running)', [
+            'session_id' => $this->session_id,
+            'user_id' => $this->user_id,
+            'completed_duration' => $this->total_duration_minutes,
+            'current_cycle_duration' => $currentCycleDuration,
+            'total_duration' => $totalDuration,
+            'effective_join_time' => $effectiveJoinTime->toISOString(),
+        ]);
+
+        return $totalDuration;
+    }
+
+    /**
+     * Update heartbeat timestamp
+     */
+    public function updateHeartbeat(): void
+    {
+        $this->update(['last_heartbeat_at' => now()]);
+
+        Log::debug('Heartbeat updated', [
+            'session_id' => $this->session_id,
+            'user_id' => $this->user_id,
+            'last_heartbeat_at' => now()->toISOString(),
+        ]);
+    }
+
+    /**
+     * Check if heartbeat is stale (no heartbeat for 5+ minutes)
+     */
+    public function hasStaleHeartbeat(): bool
+    {
+        if (! $this->last_heartbeat_at) {
+            return false; // No heartbeat data yet
+        }
+
+        $minutesSinceHeartbeat = $this->last_heartbeat_at->diffInMinutes(now());
+
+        return $minutesSinceHeartbeat > 5;
     }
 
     /**

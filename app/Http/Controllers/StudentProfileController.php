@@ -68,7 +68,7 @@ class StudentProfileController extends Controller
         // Get student's Quran trial requests
         $quranTrialRequests = QuranTrialRequest::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['teacher'])
+            ->with(['teacher', 'trialSession'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -294,7 +294,7 @@ class StudentProfileController extends Controller
 
         $quranTrialRequests = QuranTrialRequest::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['teacher'])
+            ->with(['teacher', 'trialSession'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -447,28 +447,101 @@ class StudentProfileController extends Controller
         }
     }
 
-    public function quranCircles()
+    public function quranCircles(Request $request)
     {
         $user = Auth::user();
         $academy = $user->academy;
 
-        // Get all available Quran circles for this academy
-        $availableCircles = QuranCircle::where('academy_id', $academy->id)
-            ->where('status', true)
-            ->where('enrollment_status', 'open')
-            ->with(['quranTeacher', 'students'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(12);
-
-        // Get student's enrolled circles
-        $enrolledCircles = $user->quranCircles()
+        // Get student's enrolled circle IDs
+        $enrolledCircleIds = $user->quranCircles()
             ->where('academy_id', $academy->id)
+            ->pluck('quran_circles.id')
+            ->toArray();
+
+        // Build query for all circles (both enrolled and available)
+        $query = QuranCircle::where('academy_id', $academy->id)
+            ->where('status', true)
             ->with(['quranTeacher', 'students'])
-            ->get();
+            ->withCount('students as students_count');
+
+        // Apply filters
+        if ($request->filled('enrollment_status')) {
+            if ($request->enrollment_status === 'enrolled') {
+                $query->whereIn('id', $enrolledCircleIds);
+            } elseif ($request->enrollment_status === 'available') {
+                $query->whereNotIn('id', $enrolledCircleIds)
+                      ->where('enrollment_status', 'open');
+            } else {
+                $query->where('enrollment_status', $request->enrollment_status);
+            }
+        }
+
+        if ($request->filled('memorization_level')) {
+            $query->where('memorization_level', $request->memorization_level);
+        }
+
+        if ($request->filled('schedule_days') && is_array($request->schedule_days)) {
+            // Map Arabic day names to English for database query
+            $arabicToEnglish = [
+                'السبت' => 'saturday',
+                'الأحد' => 'sunday',
+                'الاثنين' => 'monday',
+                'الثلاثاء' => 'tuesday',
+                'الأربعاء' => 'wednesday',
+                'الخميس' => 'thursday',
+                'الجمعة' => 'friday',
+            ];
+
+            $englishDays = array_map(function($arabicDay) use ($arabicToEnglish) {
+                return $arabicToEnglish[$arabicDay] ?? $arabicDay;
+            }, $request->schedule_days);
+
+            $query->where(function($q) use ($englishDays) {
+                foreach ($englishDays as $day) {
+                    $q->orWhereJsonContains('schedule_days', $day);
+                }
+            });
+        }
+
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('name_ar', 'LIKE', '%' . $request->search . '%')
+                  ->orWhere('name_en', 'LIKE', '%' . $request->search . '%')
+                  ->orWhere('description_ar', 'LIKE', '%' . $request->search . '%')
+                  ->orWhere('description_en', 'LIKE', '%' . $request->search . '%');
+            });
+        }
+
+        // Sort: Enrolled circles first, then by creation date
+        $circles = $query->get()->sortByDesc(function($circle) use ($enrolledCircleIds) {
+            return in_array($circle->id, $enrolledCircleIds) ? 1 : 0;
+        })->values();
+
+        // Paginate manually
+        $perPage = 12;
+        $currentPage = $request->get('page', 1);
+        $offset = ($currentPage - 1) * $perPage;
+
+        $paginatedCircles = new \Illuminate\Pagination\LengthAwarePaginator(
+            $circles->slice($offset, $perPage),
+            $circles->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // Get available memorization levels from circles
+        $levels = QuranCircle::where('academy_id', $academy->id)
+            ->where('status', true)
+            ->distinct()
+            ->pluck('memorization_level')
+            ->filter()
+            ->values();
 
         return view('student.quran-circles', compact(
-            'availableCircles',
-            'enrolledCircles'
+            'paginatedCircles',
+            'enrolledCircleIds',
+            'levels'
         ));
     }
 

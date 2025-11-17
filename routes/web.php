@@ -20,11 +20,13 @@ Broadcast::routes(['middleware' => ['web', 'auth']]);
 Route::prefix('livekit')->middleware(['auth'])->group(function () {
     // Basic participant endpoints available to authenticated users
     Route::get('participants', [App\Http\Controllers\LiveKitController::class, 'getParticipants']);
+    Route::get('rooms/permissions', [App\Http\Controllers\LiveKitController::class, 'getRoomPermissions']);
 
     // Teacher-only participant control endpoints with detailed debugging
     Route::middleware(['control-participants'])->group(function () {
         Route::post('participants/mute', [App\Http\Controllers\LiveKitController::class, 'muteParticipant']);
         Route::post('participants/mute-all-students', [App\Http\Controllers\LiveKitController::class, 'muteAllStudents']);
+        Route::post('participants/disable-all-students-camera', [App\Http\Controllers\LiveKitController::class, 'disableAllStudentsCamera']);
         Route::get('rooms/{room_name}/participants', [App\Http\Controllers\LiveKitController::class, 'getRoomParticipants']);
     });
 
@@ -1507,10 +1509,10 @@ Route::middleware(['auth'])->prefix('api/meetings')->group(function () {
     // LiveKit Token API
     Route::post('livekit/token', [\App\Http\Controllers\LiveKitController::class, 'getToken'])->name('api.livekit.token');
 
-    // Meeting Attendance API
-    Route::post('attendance/join', [\App\Http\Controllers\MeetingAttendanceController::class, 'recordJoin'])->name('api.meetings.attendance.join');
-    Route::post('attendance/leave', [\App\Http\Controllers\MeetingAttendanceController::class, 'recordLeave'])->name('api.meetings.attendance.leave');
-    Route::get('attendance/status', [\App\Http\Controllers\MeetingAttendanceController::class, 'getStatus'])->name('api.meetings.attendance.status');
+    // Meeting Attendance API - DEPRECATED: Now using webhook-based attendance
+    // Route::post('attendance/join', [\App\Http\Controllers\MeetingAttendanceController::class, 'recordJoin'])->name('api.meetings.attendance.join');
+    // Route::post('attendance/leave', [\App\Http\Controllers\MeetingAttendanceController::class, 'recordLeave'])->name('api.meetings.attendance.leave');
+    // Route::get('attendance/status', [\App\Http\Controllers\MeetingAttendanceController::class, 'getStatus'])->name('api.meetings.attendance.status');
 });
 
 // Custom file upload route for Filament components

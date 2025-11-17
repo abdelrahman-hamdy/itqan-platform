@@ -185,7 +185,11 @@ class LiveKitMeeting {
                 console.log(`🎮 Control state changed - ${control}: ${enabled}`);
             },
             onNotification: (message, type) => this.showNotification(message, type),
-            onLeaveRequest: () => this.handleLeaveRequest()
+            onLeaveRequest: () => this.handleLeaveRequest(),
+            onParticipantsListOpened: () => {
+                console.log('👥 Participants list opened, updating list...');
+                this.participants.updateParticipantsList();
+            }
         });
 
         // Set global reference for screen share controls
@@ -538,39 +542,8 @@ class LiveKitMeeting {
             // Update participants list immediately to show local participant
             this.participants.updateParticipantsList();
 
-            // Request media permissions with better error handling
-            let mediaPermissionsGranted = false;
-            
-            try {
-                console.log('🎤 Requesting microphone permission...');
-                await navigator.mediaDevices.getUserMedia({ audio: true });
-                await localParticipant.setMicrophoneEnabled(true);
-                console.log('✅ Microphone enabled');
-                mediaPermissionsGranted = true;
-            } catch (audioError) {
-                console.warn('⚠️ Microphone access denied:', audioError.message);
-                if (audioError.name === 'NotAllowedError') {
-                    this.showNotification('لا يمكن الوصول إلى الميكروفون. يرجى السماح بالوصول في المتصفح.', 'warning');
-                }
-            }
-
-            try {
-                console.log('📹 Requesting camera permission...');
-                await navigator.mediaDevices.getUserMedia({ video: true });
-                await localParticipant.setCameraEnabled(true);
-                console.log('✅ Camera enabled');
-                mediaPermissionsGranted = true;
-            } catch (videoError) {
-                console.warn('⚠️ Camera access denied:', videoError.message);
-                if (videoError.name === 'NotAllowedError') {
-                    this.showNotification('لا يمكن الوصول إلى الكاميرا. يرجى السماح بالوصول في المتصفح.', 'warning');
-                }
-            }
-
-            // Show a more general message only if no permissions were granted
-            if (!mediaPermissionsGranted) {
-                this.showNotification('لم يتم منح أي صلاحيات للوسائط. ستتمكن من المشاركة بالدردشة فقط.', 'info');
-            }
+            // Use the centralized setupMediaPermissions method with role-based defaults
+            await this.setupMediaPermissions(localParticipant);
 
             // Process existing tracks after a short delay to ensure they're initialized
             console.log('🔄 Processing local tracks...');
@@ -713,18 +686,34 @@ class LiveKitMeeting {
     }
 
     /**
-     * CRITICAL FIX: Setup media permissions with better error handling
+     * CRITICAL FIX: Setup media permissions with role-based defaults
+     * - Teachers: Mic ON, Camera OFF
+     * - Students: Mic OFF, Camera OFF
      */
     async setupMediaPermissions(localParticipant) {
+        // Determine user role from config
+        const isTeacher = this.config.role === 'teacher';
+
+        console.log(`🎤 Setting up media for role: ${this.config.role}`);
+        console.log(`   isTeacher: ${isTeacher}`);
+
         let mediaPermissionsGranted = false;
-        
-        // Try microphone
+
+        // MICROPHONE: ON for teachers, OFF for students
         try {
             console.log('🎤 Requesting microphone permission...');
             await navigator.mediaDevices.getUserMedia({ audio: true });
-            await localParticipant.setMicrophoneEnabled(true);
-            console.log('✅ Microphone enabled');
-            mediaPermissionsGranted = true;
+
+            if (isTeacher) {
+                await localParticipant.setMicrophoneEnabled(true);
+                console.log('✅ Teacher microphone enabled');
+                mediaPermissionsGranted = true;
+            } else {
+                // Request permission but keep it OFF for students
+                await localParticipant.setMicrophoneEnabled(false);
+                console.log('✅ Student microphone ready (muted by default)');
+                mediaPermissionsGranted = true;
+            }
         } catch (audioError) {
             console.warn('⚠️ Microphone access denied:', audioError.message);
             if (audioError.name === 'NotAllowedError') {
@@ -732,12 +721,12 @@ class LiveKitMeeting {
             }
         }
 
-        // Try camera
+        // CAMERA: OFF for everyone by default
         try {
             console.log('📹 Requesting camera permission...');
             await navigator.mediaDevices.getUserMedia({ video: true });
-            await localParticipant.setCameraEnabled(true);
-            console.log('✅ Camera enabled');
+            await localParticipant.setCameraEnabled(false);
+            console.log('✅ Camera ready (off by default)');
             mediaPermissionsGranted = true;
         } catch (videoError) {
             console.warn('⚠️ Camera access denied:', videoError.message);
@@ -748,6 +737,11 @@ class LiveKitMeeting {
 
         if (!mediaPermissionsGranted) {
             this.showNotification('لم يتم منح أي صلاحيات للوسائط. ستتمكن من المشاركة بالدردشة فقط.', 'info');
+        } else {
+            const statusMsg = isTeacher
+                ? 'تم الانضمام بنجاح. الميكروفون مفعّل.'
+                : 'تم الانضمام بنجاح. الميكروفون والكاميرا مغلقان.';
+            this.showNotification(statusMsg, 'success');
         }
     }
 
@@ -1403,8 +1397,6 @@ class LiveKitMeeting {
      * @param {LiveKit.Participant[]} speakers - Array of active speakers
      */
     handleActiveSpeakersChanged(speakers) {
-        console.log(`🗣️ Active speakers changed:`, speakers.map(s => s.identity));
-
         const speakerIds = speakers.map(speaker => speaker.identity);
         this.participants.highlightActiveSpeakers(speakerIds);
     }

@@ -11,9 +11,10 @@
 
 
 
-<img @class([ 
+<img @click="$dispatch('open-lightbox', { url: '{{ $attachment?->url }}', type: '{{ $attachment?->mime_type }}' })"
+        @class([
 
-        'max-w-max  h-[200px] min-h-[210px] bg-[var(--wc-light-secondary)] dark:bg-[var(--wc-dark-secondary)]   object-scale-down  grow-0 shrink  overflow-hidden  rounded-3xl',
+        'max-w-max  h-[200px] min-h-[210px] bg-[var(--wc-light-secondary)] dark:bg-[var(--wc-dark-secondary)]   object-scale-down  grow-0 shrink  overflow-hidden  rounded-3xl cursor-pointer hover:opacity-90 transition-opacity',
 
         'rounded-br-md rounded-tr-2xl' => ($isSameAsNext && $isNotSameAsPrevious && $belongsToAuth),
 
@@ -38,6 +39,6 @@
 
         // Last message on LEFT
         'rounded-bl-2xl' => ($isNotSameAsNext && !$belongsToAuth),
-        ]) 
-        
+        ])
+
         loading="lazy" src="{{$attachment?->url}}" alt="{{  __('wirechat::chat.labels.attachment') }}">

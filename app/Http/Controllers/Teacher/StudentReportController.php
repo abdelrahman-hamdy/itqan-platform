@@ -64,7 +64,6 @@ class StudentReportController extends Controller
                     'meeting_leave_time' => $report->meeting_leave_time,
                     'actual_attendance_minutes' => $report->actual_attendance_minutes,
                     'attendance_percentage' => $report->attendance_percentage,
-                    'connection_quality_score' => $report->connection_quality_score,
                     'is_late' => $report->is_late,
                     'late_minutes' => $report->late_minutes,
                     'manually_evaluated' => $report->manually_evaluated,
@@ -132,7 +131,7 @@ class StudentReportController extends Controller
                 'new_memorization_degree' => 'nullable|numeric|min:0|max:10',
                 'reservation_degree' => 'nullable|numeric|min:0|max:10',
                 'notes' => 'nullable|string|max:1000',
-                'attendance_status' => 'nullable|in:present,late,partial,absent',
+                'attendance_status' => 'nullable|in:attended,late,leaved,absent',
                 'report_id' => 'nullable|exists:student_session_reports,id',
             ]);
 
@@ -182,12 +181,25 @@ class StudentReportController extends Controller
             }
 
             // Update attendance status if provided
-            if ($request->attendance_status) {
-                $report->update([
-                    'attendance_status' => $request->attendance_status,
-                    'manually_evaluated' => true,
-                ]);
+            if ($request->has('attendance_status')) {
+                if ($request->attendance_status) {
+                    // Manual status selected - update with chosen value
+                    $report->update([
+                        'attendance_status' => $request->attendance_status,
+                        'manually_evaluated' => true,
+                    ]);
+                } else {
+                    // Empty value selected - use automatic calculation
+                    // Sync from MeetingAttendance to get auto-calculated status
+                    $report->syncFromMeetingAttendance();
+                    $report->update([
+                        'manually_evaluated' => false,
+                    ]);
+                }
             }
+
+            // Refresh the report to get updated values
+            $report->refresh();
 
             return response()->json([
                 'success' => true,
@@ -198,6 +210,13 @@ class StudentReportController extends Controller
                     'reservation_degree' => $report->reservation_degree,
                     'notes' => $report->notes,
                     'attendance_status' => $report->attendance_status,
+                    'attendance_percentage' => $report->attendance_percentage,
+                    'actual_attendance_minutes' => $report->actual_attendance_minutes,
+                    'meeting_enter_time' => $report->meeting_enter_time,
+                    'meeting_leave_time' => $report->meeting_leave_time,
+                    'is_late' => $report->is_late,
+                    'late_minutes' => $report->late_minutes,
+                    'manually_evaluated' => $report->manually_evaluated,
                 ],
             ]);
 

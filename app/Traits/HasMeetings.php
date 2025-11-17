@@ -89,6 +89,15 @@ trait HasMeetings
                 'meeting_created_at' => now(),
             ]);
 
+            // 🔥 FIX: Create student reports when meeting room is created
+            if (method_exists($this, 'initializeStudentReports')) {
+                $this->initializeStudentReports();
+                Log::info('Student reports initialized for session', [
+                    'session_type' => $this->getMeetingSessionType(),
+                    'session_id' => $this->id,
+                ]);
+            }
+
             Log::info('Meeting created successfully', [
                 'session_type' => $this->getMeetingSessionType(),
                 'session_id' => $this->id,

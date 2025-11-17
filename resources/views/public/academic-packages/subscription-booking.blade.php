@@ -1,11 +1,12 @@
-<x-subscription.page-layout 
-  :academy="$academy" 
+<x-subscription.page-layout
+  :academy="$academy"
   title="اشتراك {{ $package->name_ar ?? $package->name_en }} - {{ $teacher->user->name }}">
 
-  <x-subscription.academy-header 
-    :academy="$academy" 
+  <x-booking.top-bar
+    :academy="$academy"
     title="اشتراك أكاديمي جديد"
     :backRoute="route('public.academic-packages.teacher', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])" />
+
 
   <!-- Main Content -->
   <section class="py-8">

@@ -12,49 +12,49 @@
   // Role-specific configuration
   $roleConfig = [
     'student' => [
-      'nav' => 'components.navigation.student-nav',
+      'navRole' => 'student',
       'sidebar' => 'components.sidebar.student-sidebar',
       'description' => 'تواصل مع معلميك وزملائك في الأكاديمية',
       'icon' => 'ri-user-line',
       'badge' => null
     ],
     'quran_teacher' => [
-      'nav' => 'components.navigation.teacher-nav',
+      'navRole' => 'teacher',
       'sidebar' => 'components.sidebar.teacher-sidebar',
       'description' => 'تواصل مع طلابك وإدارة الأكاديمية',
       'icon' => 'ri-graduation-cap-line',
       'badge' => 'معلم قرآن'
     ],
     'academic_teacher' => [
-      'nav' => 'components.navigation.teacher-nav',
+      'navRole' => 'teacher',
       'sidebar' => 'components.sidebar.teacher-sidebar',
       'description' => 'تواصل مع طلابك وإدارة الأكاديمية',
       'icon' => 'ri-book-line',
       'badge' => 'معلم أكاديمي'
     ],
     'parent' => [
-      'nav' => 'components.navigation.parent-nav',
+      'navRole' => 'student', // Using student nav as fallback for now
       'sidebar' => 'components.sidebar.parent-sidebar',
       'description' => 'تابع تقدم أطفالك وتواصل مع المعلمين',
       'icon' => 'ri-parent-line',
       'badge' => 'ولي أمر'
     ],
     'supervisor' => [
-      'nav' => 'components.navigation.supervisor-nav',
+      'navRole' => 'teacher', // Using teacher nav as fallback for now
       'sidebar' => 'components.sidebar.supervisor-sidebar',
       'description' => 'إدارة التواصل مع جميع أعضاء الأكاديمية',
       'icon' => 'ri-shield-user-line',
       'badge' => 'مشرف'
     ],
     'academy_admin' => [
-      'nav' => 'components.navigation.academy-admin-nav',
+      'navRole' => 'teacher', // Using teacher nav as fallback for now
       'sidebar' => 'components.sidebar.academy-admin-sidebar',
       'description' => 'إدارة التواصل العامة لجميع أعضاء الأكاديمية',
       'icon' => 'ri-admin-line',
       'badge' => 'مدير أكاديمية'
     ],
     'admin' => [
-      'nav' => 'components.navigation.academy-admin-nav',
+      'navRole' => 'teacher', // Using teacher nav as fallback for now
       'sidebar' => 'components.sidebar.academy-admin-sidebar',
       'description' => 'إدارة التواصل العامة لجميع أعضاء الأكاديمية',
       'icon' => 'ri-shield-star-line',
@@ -68,50 +68,32 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ $pageTitle ?? 'الدردشة - منصة إتقان' }}</title>
-  <style>
-    body, html {
-      overscroll-behavior: none;
-      -webkit-overflow-scrolling: touch;
-    }
-  </style>
-  <meta name="description" content="نظام الرسائل - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <x-app-head :title="$pageTitle ?? 'الدردشة - منصة إتقان'" :description="'نظام الرسائل - ' . (auth()->user()->academy->name ?? 'أكاديمية إتقان')">
+    <style>
+      body, html {
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
 
-  <!-- CSRF Token and User ID for Chat -->
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="user-id" content="{{ auth()->id() }}">
+    <!-- Pacifico Font for Decorative Elements -->
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
 
-  <!-- Chat System Styles -->
-  <link rel="stylesheet" href="{{ asset('css/chat-enhanced.css') }}?v={{ time() }}">
+    <!-- CSRF Token and User ID for Chat -->
+    <meta name="user-id" content="{{ auth()->id() }}">
 
-  <!-- Pusher and Laravel Echo for Real-time -->
-  <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
-  
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ auth()->user()->academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ auth()->user()->academy->secondary_color ?? '#6495ED' }}",
-          },
-        },
-      },
-    };
-  </script>
+    <!-- Chat System Styles -->
+    <link rel="stylesheet" href="{{ asset('css/chat-enhanced.css') }}?v={{ time() }}">
+
+    <!-- Pusher and Laravel Echo for Real-time -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+  </x-app-head>
 </head>
 
 <body class="bg-gray-50 text-gray-900">
   <!-- Role-Specific Navigation -->
-  @include($config['nav'])
+  <x-navigation.app-navigation :role="$config['navRole']" />
   
   <!-- Role-Specific Sidebar -->
   @include($config['sidebar'])

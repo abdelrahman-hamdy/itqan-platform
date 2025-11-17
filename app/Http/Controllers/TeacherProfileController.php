@@ -244,17 +244,51 @@ class TeacherProfileController extends Controller
             abort(404, 'Teacher profile not found');
         }
 
-        // Validate and update profile
-        $validated = $request->validate([
+        // Build validation rules based on teacher type
+        $rules = [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'bio_arabic' => 'nullable|string',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'bio_arabic' => 'nullable|string|max:1000',
+            'bio_english' => 'nullable|string|max:1000',
             'available_days' => 'nullable|array',
             'available_time_start' => 'nullable|date_format:H:i',
             'available_time_end' => 'nullable|date_format:H:i',
-        ]);
+            'teaching_experience_years' => 'nullable|integer|min:0|max:50',
+            'certifications' => 'nullable|array',
+            'languages' => 'nullable|array',
+        ];
 
+        // Add Quran teacher specific fields
+        if ($user->isQuranTeacher()) {
+            $rules['educational_qualification'] = 'nullable|string|in:bachelor,master,phd,diploma,other';
+        }
+
+        // Add Academic teacher specific fields
+        if ($user->isAcademicTeacher()) {
+            $rules['education_level'] = 'nullable|string|in:diploma,bachelor,master,phd';
+            $rules['university'] = 'nullable|string|max:255';
+            $rules['qualification_degree'] = 'nullable|string|max:255';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Handle avatar upload
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($teacherProfile->avatar && \Storage::disk('public')->exists($teacherProfile->avatar)) {
+                \Storage::disk('public')->delete($teacherProfile->avatar);
+            }
+
+            $path = $request->file('avatar')->store(
+                $user->isQuranTeacher() ? 'avatars/quran-teachers' : 'avatars/academic-teachers',
+                'public'
+            );
+            $validated['avatar'] = $path;
+        }
+
+        // Update teacher profile
         $teacherProfile->update($validated);
 
         // Also update user info
@@ -294,11 +328,11 @@ class TeacherProfileController extends Controller
             ->with(['students', 'academy'])
             ->get();
 
-        // Get pending trial requests
+        // Get pending and scheduled trial requests
         $pendingTrialRequests = \App\Models\QuranTrialRequest::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $academy->id)
-            ->whereIn('status', ['pending', 'approved'])
-            ->with(['student', 'academy'])
+            ->whereIn('status', ['pending', 'approved', 'scheduled'])
+            ->with(['student', 'academy', 'trialSession'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
