@@ -3,161 +3,150 @@
 namespace App\Models;
 
 use App\Enums\SessionStatus;
+use App\Models\Traits\CountsTowardsSubscription;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+/**
+ * AcademicSession Model
+ *
+ * Represents an academic tutoring session (private lesson or interactive course session).
+ *
+ * ARCHITECTURE PATTERNS:
+ * - Inherits from BaseSession (polymorphic base class)
+ * - Uses CountsTowardsSubscription trait for subscription logic
+ * - Constructor merges parent fillable/casts to avoid duplication
+ * - Auto-generates unique session codes with transaction locking
+ *
+ * SESSION TYPES:
+ * - 'individual': 1-on-1 tutoring sessions with AcademicIndividualLesson
+ * - 'group': Group lessons (not yet fully implemented)
+ *
+ * KEY RELATIONSHIPS:
+ * - academicTeacher: The teacher conducting the session
+ * - academicSubscription: The subscription this session belongs to
+ * - academicIndividualLesson: Individual lesson details
+ * - student: The student attending (for individual sessions)
+ *
+ * SUBSCRIPTION COUNTING:
+ * - Individual sessions count against AcademicSubscription when completed/absent
+ * - Uses trait's updateSubscriptionUsage() with transaction locking
+ * - Prevents double-counting via subscription_counted flag
+ *
+ * ACADEMIC FEATURES:
+ * - Homework management: homework_description, homework_file
+ * - Session topics: session_topics_covered, lesson_content
+ * - Learning outcomes tracking
+ * - Materials management
+ *
+ * SESSION CODE FORMAT:
+ * - AS-{academyId:02d}-{sequence:06d}
+ * - Example: AS-01-000001
+ * - Generated automatically via boot() method with row locking
+ *
+ * @property int $academic_teacher_id
+ * @property int|null $academic_subscription_id
+ * @property int|null $academic_individual_lesson_id
+ * @property int|null $student_id
+ * @property string $session_type 'individual' or 'group'
+ * @property bool $subscription_counted Flag to prevent double-counting
+ * @property string|null $session_topics_covered
+ * @property string|null $lesson_content
+ *
+ * @see BaseSession Parent class with common session fields
+ * @see CountsTowardsSubscription Trait for subscription logic
+ */
 class AcademicSession extends BaseSession
 {
+    use CountsTowardsSubscription;
 
-    // Academic-specific fillable fields
-    // NOTE: Must explicitly include parent fields as Laravel doesn't auto-merge
+    /**
+     * Academic-specific fillable fields (merged with parent in constructor)
+     * NOTE: Parent BaseSession fields are auto-merged in constructor to avoid duplication
+     */
     protected $fillable = [
-        // Core session fields from BaseSession
-        'academy_id',
-        'session_code',
-        'status',
-        'title',
-        'description',
-        'scheduled_at',
-        'started_at',
-        'ended_at',
-        'duration_minutes',
-        'actual_duration_minutes',
-        'meeting_link',
-        'meeting_id',
-        'meeting_password',
-        'meeting_source',
-        'meeting_platform',
-        'meeting_data',
-        'meeting_room_name',
-        'meeting_auto_generated',
-        'meeting_expires_at',
-        'attendance_status',
-        'participants_count',
-        'attendance_notes',
-        'session_notes',
-        'teacher_feedback',
-        'student_feedback',
-        'parent_feedback',
-        'overall_rating',
-        'cancellation_reason',
-        'cancelled_by',
-        'cancelled_at',
-        'reschedule_reason',
-        'rescheduled_from',
-        'rescheduled_to',
-        'created_by',
-        'updated_by',
-        'scheduled_by',
-
         // Academic-specific fields
         'academic_teacher_id',
         'academic_subscription_id',
         'academic_individual_lesson_id',
-        'interactive_course_session_id',
         'student_id',
-        'session_sequence',
         'session_type',
-        'is_template',
-        'is_generated',
-        'is_scheduled',
         'teacher_scheduled_at',
         'lesson_objectives',
         'location_type',
         'location_details',
-        'google_event_id',
-        'google_calendar_id',
-        'google_meet_url',
-        'google_meet_id',
-        'google_attendees',
-        'attendance_log',
-        'attendance_marked_at',
-        'attendance_marked_by',
         'session_topics_covered',
         'lesson_content',
         'learning_outcomes',
         'homework_description',
         'homework_file',
-        'session_grade',
         'technical_issues',
         'makeup_session_for',
         'is_makeup_session',
-        'is_auto_generated',
-        'cancellation_type',
-        'rescheduling_note',
         'materials_used',
         'assessment_results',
         'follow_up_required',
         'follow_up_notes',
-        'notification_log',
-        'reminder_sent_at',
-        'meeting_creation_error',
-        'last_error_at',
-        'retry_count',
-    ];
 
-    // Academic-specific casts
-    // NOTE: Must explicitly include parent casts as Laravel doesn't auto-merge
-    protected $casts = [
-        // Core datetime casts from BaseSession
-        'status' => \App\Enums\SessionStatus::class,
-        'scheduled_at' => 'datetime',
-        'started_at' => 'datetime',
-        'ended_at' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'rescheduled_from' => 'datetime',
-        'rescheduled_to' => 'datetime',
-        'meeting_expires_at' => 'datetime',
-        'duration_minutes' => 'integer',
-        'actual_duration_minutes' => 'integer',
-        'participants_count' => 'integer',
-        'overall_rating' => 'integer',
-        'meeting_data' => 'array',
-        'meeting_auto_generated' => 'boolean',
-
-        // Academic-specific casts
-        'lesson_objectives' => 'array',
-        'teacher_scheduled_at' => 'datetime',
-        'google_attendees' => 'array',
-        'attendance_log' => 'array',
-        'attendance_marked_at' => 'datetime',
-        'learning_outcomes' => 'array',
-        'session_grade' => 'decimal:1',
-        'is_makeup_session' => 'boolean',
-        'is_auto_generated' => 'boolean',
-        'is_template' => 'boolean',
-        'is_generated' => 'boolean',
-        'is_scheduled' => 'boolean',
-        'materials_used' => 'array',
-        'assessment_results' => 'array',
-        'follow_up_required' => 'boolean',
-        'notification_log' => 'array',
-        'reminder_sent_at' => 'datetime',
-        'last_error_at' => 'datetime',
-        'retry_count' => 'integer',
-        'session_sequence' => 'integer',
+        // Fields aligned with QuranSession
+        'subscription_counted',
+        'recording_url',
+        'recording_enabled',
     ];
 
     protected $attributes = [
         'session_type' => 'individual',
         'status' => 'scheduled',
-        'is_template' => false,
-        'is_generated' => false,
-        'is_scheduled' => false,
         'duration_minutes' => 60,
         'location_type' => 'online',
         'meeting_auto_generated' => true,
         'attendance_status' => 'scheduled',
         'participants_count' => 0,
         'is_makeup_session' => false,
-        'is_auto_generated' => false,
         'follow_up_required' => false,
-        'retry_count' => 0,
-        'session_sequence' => 0,
+        'subscription_counted' => false,
+        'recording_enabled' => false,
         'meeting_source' => 'auto',
     ];
+
+    /**
+     * Constructor - Merge parent fillable with child-specific fields
+     * This approach avoids duplicating 37 BaseSession fields while maintaining consistency
+     */
+    public function __construct(array $attributes = [])
+    {
+        // Merge parent fillable fields with child-specific fields BEFORE parent constructor
+        $this->fillable = array_merge(parent::$fillable ?? [], $this->fillable);
+
+        parent::__construct($attributes);
+    }
+
+    /**
+     * Get the casts array - merges parent BaseSession casts with Academic-specific casts
+     * This ensures Laravel properly casts attributes like status (enum) and scheduled_at (datetime)
+     *
+     * NOTE: We don't use protected $casts property because it would override parent's casts.
+     * Instead, we merge parent casts with Academic-specific casts at runtime.
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), [
+            // Academic-specific casts
+            'lesson_objectives' => 'array',
+            'teacher_scheduled_at' => 'datetime',
+            'learning_outcomes' => 'array',
+            'is_makeup_session' => 'boolean',
+            'materials_used' => 'array',
+            'assessment_results' => 'array',
+            'follow_up_required' => 'boolean',
+
+            // Fields aligned with QuranSession
+            'subscription_counted' => 'boolean',
+            'recording_enabled' => 'boolean',
+        ]);
+    }
 
     /**
      * Boot method to auto-generate session code
@@ -238,11 +227,6 @@ class AcademicSession extends BaseSession
         return $this->belongsTo(AcademicIndividualLesson::class);
     }
 
-    public function interactiveCourseSession(): BelongsTo
-    {
-        return $this->belongsTo(InteractiveCourseSession::class);
-    }
-
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
@@ -256,11 +240,6 @@ class AcademicSession extends BaseSession
     public function studentReports(): HasMany
     {
         return $this->hasMany(AcademicSessionReport::class, 'session_id');
-    }
-
-    public function attendanceMarkedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'attendance_marked_by');
     }
 
     public function makeupSessionFor(): BelongsTo
@@ -296,11 +275,6 @@ class AcademicSession extends BaseSession
         return $query->where('session_type', 'individual');
     }
 
-    public function scopeInteractiveCourse($query)
-    {
-        return $query->where('session_type', 'interactive_course');
-    }
-
     // Common meeting methods (generateMeetingLink, getMeetingInfo, isMeetingValid,
     // getMeetingJoinUrl, generateParticipantToken, getRoomInfo, endMeeting,
     // isUserInMeeting, getMeetingStats) are inherited from BaseSession
@@ -308,12 +282,12 @@ class AcademicSession extends BaseSession
     // Override to provide Academic-specific defaults
     protected function getDefaultRecordingEnabled(): bool
     {
-        return false; // Academic sessions typically don't need recording
+        return $this->recording_enabled ?? false;
     }
 
     protected function getDefaultMaxParticipants(): int
     {
-        return $this->session_type === 'interactive_course' ? 25 : 2;
+        return 2; // Academic sessions are 1-on-1
     }
 
     // Common status helper methods (isScheduled, isCompleted, isCancelled,
@@ -322,11 +296,6 @@ class AcademicSession extends BaseSession
     public function isIndividual(): bool
     {
         return $this->session_type === 'individual';
-    }
-
-    public function isInteractiveCourse(): bool
-    {
-        return $this->session_type === 'interactive_course';
     }
 
     public function hasHomework(): bool
@@ -419,7 +388,7 @@ class AcademicSession extends BaseSession
             ];
         }
 
-        // Add the student
+        // Add the student (academic sessions are 1-on-1)
         if ($this->student) {
             $participants[] = [
                 'id' => $this->student->id,
@@ -431,26 +400,6 @@ class AcademicSession extends BaseSession
             ];
         }
 
-        // For interactive courses, add all enrolled students
-        if ($this->session_type === 'interactive_course' && $this->interactiveCourseSession) {
-            $course = $this->interactiveCourseSession->interactiveCourse;
-            if ($course) {
-                $enrolledStudents = $course->enrollments()->with('student')->get();
-                foreach ($enrolledStudents as $enrollment) {
-                    if ($enrollment->student && $enrollment->student->id !== $this->student_id) {
-                        $participants[] = [
-                            'id' => $enrollment->student->id,
-                            'name' => trim($enrollment->student->first_name.' '.$enrollment->student->last_name),
-                            'email' => $enrollment->student->email,
-                            'role' => 'student',
-                            'is_teacher' => false,
-                            'user' => $enrollment->student,
-                        ];
-                    }
-                }
-            }
-        }
-
         return $participants;
     }
 
@@ -459,36 +408,23 @@ class AcademicSession extends BaseSession
      */
     public function getMeetingConfiguration(): array
     {
-        $config = [
+        // Academic sessions are 1-on-1, so always use 2 participants
+        return [
             'session_type' => $this->session_type,
             'session_id' => $this->id,
             'session_code' => $this->session_code,
             'academy_id' => $this->academy_id,
             'duration_minutes' => $this->duration_minutes ?? 60,
-            'max_participants' => $this->session_type === 'interactive_course' ? 25 : 2,
-            'recording_enabled' => false, // Academic sessions typically don't need recording
+            'max_participants' => 2, // Academic sessions are 1-on-1
+            'recording_enabled' => $this->recording_enabled ?? false,
             'chat_enabled' => true,
             'screen_sharing_enabled' => true,
             'whiteboard_enabled' => true,
-            'breakout_rooms_enabled' => $this->session_type === 'interactive_course',
+            'breakout_rooms_enabled' => false, // Not needed for 1-on-1
             'waiting_room_enabled' => false,
             'mute_on_join' => false,
             'camera_on_join' => true,
         ];
-
-        // Add session-specific settings based on type
-        if ($this->session_type === 'individual') {
-            $config['max_participants'] = 2;
-            $config['breakout_rooms_enabled'] = false;
-            $config['waiting_room_enabled'] = false;
-        } elseif ($this->session_type === 'interactive_course') {
-            $config['max_participants'] = 25;
-            $config['breakout_rooms_enabled'] = true;
-            $config['waiting_room_enabled'] = true;
-            $config['mute_on_join'] = true;
-        }
-
-        return $config;
     }
 
     /**
@@ -503,18 +439,9 @@ class AcademicSession extends BaseSession
             $participants->push($this->academicTeacher->user);
         }
 
-        // Add the student
+        // Add the student (academic sessions are 1-on-1)
         if ($this->student) {
             $participants->push($this->student);
-        }
-
-        // For interactive courses, add all enrolled students
-        if ($this->session_type === 'interactive_course' && $this->interactiveCourseSession) {
-            $course = $this->interactiveCourseSession->interactiveCourse;
-            if ($course) {
-                $enrolledStudents = $course->enrollments()->with('student')->get()->pluck('student');
-                $participants = $participants->merge($enrolledStudents);
-            }
         }
 
         // Remove duplicates and null values
@@ -531,17 +458,9 @@ class AcademicSession extends BaseSession
             return true;
         }
 
-        // Student is a participant if they're enrolled
+        // Student is a participant if they're enrolled in this session
         if ($this->student_id === $user->id) {
             return true;
-        }
-
-        // For interactive courses, check enrollment
-        if ($this->session_type === 'interactive_course' && $this->interactiveCourseSession) {
-            $course = $this->interactiveCourseSession->interactiveCourse;
-            if ($course && $user->user_type === 'student') {
-                return $course->enrollments()->where('student_id', $user->id)->exists();
-            }
         }
 
         return false;
@@ -596,17 +515,172 @@ class AcademicSession extends BaseSession
      */
     protected function initializeStudentReports(): void
     {
-        if ($this->student) {
+        if ($this->student_id) {
             \App\Models\AcademicSessionReport::firstOrCreate([
                 'session_id' => $this->id,
                 'student_id' => $this->student_id,
-                'teacher_id' => $this->teacher_id,
-                'academy_id' => $this->academy_id,
             ], [
+                'teacher_id' => $this->academic_teacher_id,
+                'academy_id' => $this->academy_id,
                 'attendance_status' => 'absent', // Default to absent until meeting data is available
-                'is_auto_calculated' => true,
+                'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);
         }
+    }
+
+    // ========================================
+    // STATUS MANAGEMENT METHODS (Aligned with QuranSession)
+    // ========================================
+
+    /**
+     * Mark session as ongoing
+     * Called when teacher starts the session
+     */
+    public function markAsOngoing(): bool
+    {
+        if (!in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY])) {
+            return false;
+        }
+
+        $this->update([
+            'status' => SessionStatus::ONGOING,
+            'started_at' => now(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Mark session as completed
+     * Updates subscription usage and attendance records
+     */
+    public function markAsCompleted(array $additionalData = []): bool
+    {
+        return \DB::transaction(function () use ($additionalData) {
+            // Lock for update to prevent race conditions
+            $session = self::lockForUpdate()->find($this->id);
+
+            if (!$session) {
+                return false;
+            }
+
+            if (!in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+                return false;
+            }
+
+            $updateData = array_merge([
+                'status' => SessionStatus::COMPLETED,
+                'ended_at' => now(),
+                'attendance_status' => 'attended',
+            ], $additionalData);
+
+            $session->update($updateData);
+
+            // Update subscription usage (deduct session count)
+            $session->updateSubscriptionUsage();
+
+            // Refresh the model
+            $this->refresh();
+
+            return true;
+        });
+    }
+
+    /**
+     * Mark session as cancelled
+     * Does not count towards subscription
+     */
+    public function markAsCancelled(?string $reason = null, ?int $cancelledBy = null): bool
+    {
+        if (!in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING])) {
+            return false;
+        }
+
+        $this->update([
+            'status' => SessionStatus::CANCELLED,
+            'cancellation_reason' => $reason,
+            'cancelled_by' => $cancelledBy,
+            'cancelled_at' => now(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Mark session as absent
+     * Only for individual sessions where student didn't show up
+     * Counts towards subscription usage
+     */
+    public function markAsAbsent(?string $reason = null): bool
+    {
+        // Can only mark as absent if:
+        // 1. Session is individual (not group)
+        // 2. Session is in a completable state
+        // 3. Session time has passed
+        if ($this->session_type !== 'individual') {
+            return false;
+        }
+
+        if (!in_array($this->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+            return false;
+        }
+
+        if ($this->scheduled_at && $this->scheduled_at->isFuture()) {
+            return false;
+        }
+
+        $this->update([
+            'status' => SessionStatus::ABSENT,
+            'ended_at' => now(),
+            'attendance_status' => 'absent',
+            'attendance_notes' => $reason,
+        ]);
+
+        // Absent sessions still count towards subscription
+        $this->updateSubscriptionUsage();
+
+        return true;
+    }
+
+    // ========================================
+    // SUBSCRIPTION COUNTING LOGIC (Aligned with QuranSession)
+    // ========================================
+    // Note: countsTowardsSubscription() and updateSubscriptionUsage() are now provided by the CountsTowardsSubscription trait
+
+    /**
+     * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
+     *
+     * For Academic sessions:
+     * - Individual sessions: subscription comes from academic individual lesson
+     * - Group sessions: not yet implemented
+     *
+     * @return \App\Models\AcademicSubscription|null
+     */
+    protected function getSubscriptionForCounting()
+    {
+        // Only individual sessions with academic individual lesson have subscriptions
+        if ($this->session_type === 'individual' && $this->academicIndividualLesson) {
+            return $this->academicIndividualLesson->subscription;
+        }
+
+        // Group sessions subscription logic not yet implemented
+        return null;
+    }
+
+    /**
+     * Check if this is a makeup session
+     */
+    public function isMakeupSession(): bool
+    {
+        return $this->is_makeup_session && $this->makeup_session_for !== null;
+    }
+
+    /**
+     * Get makeup sessions for this session
+     */
+    public function makeupSessions(): HasMany
+    {
+        return $this->hasMany(AcademicSession::class, 'makeup_session_for');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SessionStatus;
+use App\Models\Traits\CountsTowardsSubscription;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,50 +11,56 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+/**
+ * QuranSession Model
+ *
+ * Represents a Quran memorization/recitation session (individual or group).
+ *
+ * ARCHITECTURE PATTERNS:
+ * - Inherits from BaseSession (polymorphic base class)
+ * - Uses CountsTowardsSubscription trait for subscription logic
+ * - Constructor merges parent fillable/casts to avoid duplication
+ *
+ * SESSION TYPES:
+ * - 'individual': 1-on-1 sessions with QuranIndividualCircle
+ * - 'circle'/'group': Group sessions with QuranCircle
+ *
+ * KEY RELATIONSHIPS:
+ * - quranTeacher: The teacher conducting the session
+ * - subscription: Through individualCircle for individual sessions
+ * - circle/individualCircle: The learning circle this session belongs to
+ * - student: Direct student relationship for individual sessions
+ *
+ * SUBSCRIPTION COUNTING:
+ * - Individual sessions count against QuranSubscription when completed/absent
+ * - Uses trait's updateSubscriptionUsage() with transaction locking
+ * - Prevents double-counting via subscription_counted flag
+ *
+ * QURAN PROGRESS TRACKING:
+ * - Pages-only system: current_page, current_face, page_covered_start/end
+ * - Memorization tracking: papers_memorized_today, papers_covered_today
+ * - Quality metrics: recitation_quality, tajweed_accuracy, mistakes_count
+ *
+ * @property int $quran_teacher_id
+ * @property int|null $quran_subscription_id
+ * @property int|null $circle_id
+ * @property int|null $individual_circle_id
+ * @property int|null $student_id
+ * @property string $session_type 'individual' or 'circle'/'group'
+ * @property bool $subscription_counted Flag to prevent double-counting
+ *
+ * @see BaseSession Parent class with common session fields
+ * @see CountsTowardsSubscription Trait for subscription logic
+ */
 class QuranSession extends BaseSession
 {
+    use CountsTowardsSubscription;
 
-    // Quran-specific fillable fields
-    // NOTE: Must explicitly include parent fields as Laravel doesn't auto-merge
+    /**
+     * Quran-specific fillable fields (merged with parent in constructor)
+     * NOTE: Parent BaseSession fields are auto-merged in constructor to avoid duplication
+     */
     protected $fillable = [
-        // Core session fields from BaseSession
-        'academy_id',
-        'session_code',
-        'status',
-        'title',
-        'description',
-        'scheduled_at',
-        'started_at',
-        'ended_at',
-        'duration_minutes',
-        'actual_duration_minutes',
-        'meeting_link',
-        'meeting_id',
-        'meeting_password',
-        'meeting_source',
-        'meeting_platform',
-        'meeting_data',
-        'meeting_room_name',
-        'meeting_auto_generated',
-        'meeting_expires_at',
-        'attendance_status',
-        'participants_count',
-        'attendance_notes',
-        'session_notes',
-        'teacher_feedback',
-        'student_feedback',
-        'parent_feedback',
-        'overall_rating',
-        'cancellation_reason',
-        'cancelled_by',
-        'cancelled_at',
-        'reschedule_reason',
-        'rescheduled_from',
-        'rescheduled_to',
-        'created_by',
-        'updated_by',
-        'scheduled_by',
-
         // Teacher and subscription (Quran-specific)
         'quran_teacher_id',
         'quran_subscription_id',
@@ -100,56 +107,67 @@ class QuranSession extends BaseSession
         'follow_up_notes',
         'teacher_scheduled_at',
         'subscription_counted',
+
+        // Fields that exist in database but were missing from fillable
+        'monthly_session_number',
+        'session_month',
+        'counts_toward_subscription',
+        'cancellation_type',
+        'rescheduling_note',
     ];
 
-    // Quran-specific casts
-    // NOTE: Must explicitly include parent casts as Laravel doesn't auto-merge
-    protected $casts = [
-        // Core datetime casts from BaseSession
-        'status' => \App\Enums\SessionStatus::class,
-        'scheduled_at' => 'datetime',
-        'started_at' => 'datetime',
-        'ended_at' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'rescheduled_from' => 'datetime',
-        'rescheduled_to' => 'datetime',
-        'meeting_expires_at' => 'datetime',
-        'duration_minutes' => 'integer',
-        'actual_duration_minutes' => 'integer',
-        'participants_count' => 'integer',
-        'overall_rating' => 'integer',
-        'meeting_data' => 'array',
-        'meeting_auto_generated' => 'boolean',
+    /**
+     * Constructor - Merge parent fillable with child-specific fields
+     * This approach avoids duplicating 37 BaseSession fields while maintaining consistency
+     */
+    public function __construct(array $attributes = [])
+    {
+        // Merge parent fillable fields with child-specific fields BEFORE parent constructor
+        $this->fillable = array_merge(parent::$fillable ?? [], $this->fillable);
 
-        // Quran-specific casts
-        'teacher_scheduled_at' => 'datetime',
+        parent::__construct($attributes);
+    }
 
-        // Quran progress (pages-only system)
-        'current_surah' => 'integer',
-        'current_page' => 'integer',
-        'current_face' => 'integer',
-        'page_covered_start' => 'integer',
-        'face_covered_start' => 'integer',
-        'page_covered_end' => 'integer',
-        'face_covered_end' => 'integer',
-        'papers_memorized_today' => 'decimal:2',
-        'papers_covered_today' => 'decimal:2',
+    /**
+     * Get the casts array - merges parent BaseSession casts with Quran-specific casts
+     * This ensures Laravel properly casts attributes like status (enum) and scheduled_at (datetime)
+     *
+     * NOTE: We don't use protected $casts property because it would override parent's casts.
+     * Instead, we merge parent casts with Quran-specific casts at runtime.
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), [
+            // Quran-specific datetime casts
+            'teacher_scheduled_at' => 'datetime',
 
-        'recitation_quality' => 'decimal:1',
-        'tajweed_accuracy' => 'decimal:1',
-        'mistakes_count' => 'integer',
-        'recording_enabled' => 'boolean',
-        'is_makeup_session' => 'boolean',
-        'follow_up_required' => 'boolean',
-        'lesson_objectives' => 'array',
-        'common_mistakes' => 'array',
-        'areas_for_improvement' => 'array',
-        'homework_assigned' => 'array',
-        'materials_used' => 'array',
-        'learning_outcomes' => 'array',
-        'assessment_results' => 'array',
-        'subscription_counted' => 'boolean',
-    ];
+            // Quran progress (pages-only system)
+            'current_surah' => 'integer',
+            'current_page' => 'integer',
+            'current_face' => 'integer',
+            'page_covered_start' => 'integer',
+            'face_covered_start' => 'integer',
+            'page_covered_end' => 'integer',
+            'face_covered_end' => 'integer',
+            'papers_memorized_today' => 'decimal:2',
+            'papers_covered_today' => 'decimal:2',
+
+            'recitation_quality' => 'decimal:1',
+            'tajweed_accuracy' => 'decimal:1',
+            'mistakes_count' => 'integer',
+            'recording_enabled' => 'boolean',
+            'is_makeup_session' => 'boolean',
+            'follow_up_required' => 'boolean',
+            'lesson_objectives' => 'array',
+            'common_mistakes' => 'array',
+            'areas_for_improvement' => 'array',
+            'homework_assigned' => 'array',
+            'materials_used' => 'array',
+            'learning_outcomes' => 'array',
+            'assessment_results' => 'array',
+            'subscription_counted' => 'boolean',
+        ]);
+    }
 
     // Quran-specific relationships
     // Common relationships (academy, meeting, meetingAttendances, cancelledBy,
@@ -437,14 +455,6 @@ class QuranSession extends BaseSession
     }
 
     /**
-     * Check if session counts towards subscription
-     */
-    public function countsTowardsSubscription(): bool
-    {
-        return $this->status->countsTowardsSubscription();
-    }
-
-    /**
      * Initialize student reports for session
      */
     protected function initializeStudentReports(): void
@@ -458,7 +468,7 @@ class QuranSession extends BaseSession
                 'academy_id' => $this->academy_id,
             ], [
                 'attendance_status' => 'absent', // Default to absent until meeting data is available
-                'is_auto_calculated' => true,
+                'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);
         } elseif ($this->session_type === 'circle' && $this->circle) {
@@ -472,7 +482,7 @@ class QuranSession extends BaseSession
                     'academy_id' => $this->academy_id,
                 ], [
                     'attendance_status' => 'absent', // Default to absent until meeting data is available
-                    'is_auto_calculated' => true,
+                    'is_calculated' => true,
                     'evaluated_at' => now(),
                 ]);
             }
@@ -480,59 +490,34 @@ class QuranSession extends BaseSession
     }
 
     /**
-     * Update subscription usage if this session counts towards subscription
+     * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
+     *
+     * For Quran sessions:
+     * - Individual sessions: subscription comes from individual circle
+     * - Group sessions: don't count against individual subscriptions
+     *
+     * @return \App\Models\QuranSubscription|null
      */
-    public function updateSubscriptionUsage(): void
+    protected function getSubscriptionForCounting()
     {
-        // Only count towards subscription if session is completed or marked as absent
-        if (! $this->countsTowardsSubscription()) {
-            return;
+        // Only individual sessions with individual circle have subscriptions
+        if ($this->session_type === 'individual' && $this->individualCircle) {
+            return $this->individualCircle->subscription;
         }
 
-        // For individual sessions with subscription
-        if ($this->session_type === 'individual' && $this->individualCircle && $this->individualCircle->subscription) {
-            $subscription = $this->individualCircle->subscription;
-
-            // Use database transaction to prevent race conditions
-            \DB::transaction(function () use ($subscription) {
-                // Lock the session row for update
-                $session = self::lockForUpdate()->find($this->id);
-
-                if (!$session) {
-                    throw new \Exception("Session {$this->id} not found");
-                }
-
-                // Check if this session was already counted
-                $alreadyCounted = $session->subscription_counted ?? false;
-
-                if (! $alreadyCounted) {
-                    try {
-                        $subscription->useSession();
-
-                        // Mark this session as counted
-                        $session->update(['subscription_counted' => true]);
-
-                        // Refresh the current instance
-                        $this->refresh();
-
-                    } catch (\Exception $e) {
-                        Log::warning("Failed to update subscription usage for session {$this->id}: ".$e->getMessage());
-                        throw $e; // Re-throw to rollback the transaction
-                    }
-                }
-            });
-        }
-        // For group sessions, we might handle differently in the future
-        // For now, group sessions don't directly count against individual subscriptions
+        // Group sessions don't count against individual subscriptions
+        return null;
     }
 
     /**
-     * Check if this session was already counted in subscription
+     * Alias for trait's isSubscriptionCounted() method
+     * Kept for backward compatibility
+     *
+     * @deprecated Use isSubscriptionCounted() instead
      */
     protected function isCountedInSubscription(): bool
     {
-        // Use a flag to track if session was already counted
-        return $this->subscription_counted ?? false;
+        return $this->isSubscriptionCounted();
     }
 
     // getStatusDisplayData() is inherited from BaseSession
