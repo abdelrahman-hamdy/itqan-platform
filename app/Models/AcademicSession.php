@@ -36,10 +36,9 @@ use Illuminate\Support\Str;
  * - Prevents double-counting via subscription_counted flag
  *
  * ACADEMIC FEATURES:
- * - Homework management: homework_description, homework_file
- * - Session topics: session_topics_covered, lesson_content
- * - Learning outcomes tracking
- * - Materials management
+ * - Homework management: homework_description, homework_file, homework_assigned
+ * - Lesson documentation: lesson_content
+ * - Recording support: recording_url, recording_enabled
  *
  * SESSION CODE FORMAT:
  * - AS-{academyId:02d}-{sequence:06d}
@@ -52,8 +51,12 @@ use Illuminate\Support\Str;
  * @property int|null $student_id
  * @property string $session_type 'individual' or 'group'
  * @property bool $subscription_counted Flag to prevent double-counting
- * @property string|null $session_topics_covered
  * @property string|null $lesson_content
+ * @property string|null $homework_description
+ * @property string|null $homework_file
+ * @property bool $homework_assigned
+ * @property string|null $recording_url
+ * @property bool $recording_enabled
  *
  * @see BaseSession Parent class with common session fields
  * @see CountsTowardsSubscription Trait for subscription logic
@@ -73,25 +76,19 @@ class AcademicSession extends BaseSession
         'academic_individual_lesson_id',
         'student_id',
         'session_type',
-        'teacher_scheduled_at',
-        'lesson_objectives',
-        'location_type',
-        'location_details',
-        'session_topics_covered',
+
+        // Content
         'lesson_content',
-        'learning_outcomes',
+
+        // Homework
         'homework_description',
         'homework_file',
-        'technical_issues',
-        'makeup_session_for',
-        'is_makeup_session',
-        'materials_used',
-        'assessment_results',
-        'follow_up_required',
-        'follow_up_notes',
+        'homework_assigned',
 
-        // Fields aligned with QuranSession
+        // Subscription counting
         'subscription_counted',
+
+        // Recording (aligned with QuranSession)
         'recording_url',
         'recording_enabled',
     ];
@@ -100,15 +97,11 @@ class AcademicSession extends BaseSession
         'session_type' => 'individual',
         'status' => 'scheduled',
         'duration_minutes' => 60,
-        'location_type' => 'online',
         'meeting_auto_generated' => true,
         'attendance_status' => 'scheduled',
         'participants_count' => 0,
-        'is_makeup_session' => false,
-        'follow_up_required' => false,
         'subscription_counted' => false,
         'recording_enabled' => false,
-        'meeting_source' => 'auto',
     ];
 
     /**
@@ -134,17 +127,9 @@ class AcademicSession extends BaseSession
     {
         return array_merge(parent::getCasts(), [
             // Academic-specific casts
-            'lesson_objectives' => 'array',
-            'teacher_scheduled_at' => 'datetime',
-            'learning_outcomes' => 'array',
-            'is_makeup_session' => 'boolean',
-            'materials_used' => 'array',
-            'assessment_results' => 'array',
-            'follow_up_required' => 'boolean',
-
-            // Fields aligned with QuranSession
             'subscription_counted' => 'boolean',
             'recording_enabled' => 'boolean',
+            'homework_assigned' => 'boolean',
         ]);
     }
 
@@ -242,10 +227,11 @@ class AcademicSession extends BaseSession
         return $this->hasMany(AcademicSessionReport::class, 'session_id');
     }
 
-    public function makeupSessionFor(): BelongsTo
-    {
-        return $this->belongsTo(AcademicSession::class, 'makeup_session_for');
-    }
+    // Makeup session relationship removed - makeup_session_for field deleted in simplification
+    // public function makeupSessionFor(): BelongsTo
+    // {
+    //     return $this->belongsTo(AcademicSession::class, 'makeup_session_for');
+    // }
 
     /**
      * Unified homework submission system (polymorphic)
@@ -634,7 +620,7 @@ class AcademicSession extends BaseSession
             'status' => SessionStatus::ABSENT,
             'ended_at' => now(),
             'attendance_status' => 'absent',
-            'attendance_notes' => $reason,
+            'session_notes' => $reason,
         ]);
 
         // Absent sessions still count towards subscription
@@ -668,19 +654,20 @@ class AcademicSession extends BaseSession
         return null;
     }
 
-    /**
-     * Check if this is a makeup session
-     */
-    public function isMakeupSession(): bool
-    {
-        return $this->is_makeup_session && $this->makeup_session_for !== null;
-    }
+    // Makeup session methods removed - makeup fields deleted in simplification
+    // /**
+    //  * Check if this is a makeup session
+    //  */
+    // public function isMakeupSession(): bool
+    // {
+    //     return $this->is_makeup_session && $this->makeup_session_for !== null;
+    // }
 
-    /**
-     * Get makeup sessions for this session
-     */
-    public function makeupSessions(): HasMany
-    {
-        return $this->hasMany(AcademicSession::class, 'makeup_session_for');
-    }
+    // /**
+    //  * Get makeup sessions for this session
+    //  */
+    // public function makeupSessions(): HasMany
+    // {
+    //     return $this->hasMany(AcademicSession::class, 'makeup_session_for');
+    // }
 }
