@@ -8,13 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Quran Session Attendance Model
  *
  * Extends BaseSessionAttendance with Quran-specific fields:
- * - recitation_quality: Quality of Quran recitation (0-10)
- * - tajweed_accuracy: Accuracy of Tajweed rules (0-10)
  * - verses_reviewed: Number of verses reviewed
  * - homework_completion: Whether homework was completed
- * - pages_memorized_today: Pages memorized in this session
- * - verses_memorized_today: Verses memorized in this session
  * - pages_reviewed_today: Pages reviewed in this session
+ *
+ * Note: Quality metrics (recitation_quality, tajweed_accuracy) removed - covered by homework system
  */
 class QuranSessionAttendance extends BaseSessionAttendance
 {
@@ -41,13 +39,8 @@ class QuranSessionAttendance extends BaseSessionAttendance
         'notes',
 
         // Quran-specific fields
-        'recitation_quality',
-        'tajweed_accuracy',
         'verses_reviewed',
         'homework_completion',
-        'papers_memorized_today',
-        'verses_memorized_today',
-        'pages_memorized_today',
         'pages_reviewed_today',
     ];
 
@@ -68,12 +61,7 @@ class QuranSessionAttendance extends BaseSessionAttendance
         'auto_duration_minutes' => 'integer',
 
         // Quran-specific casts
-        'recitation_quality' => 'decimal:1',
-        'tajweed_accuracy' => 'decimal:1',
         'homework_completion' => 'boolean',
-        'papers_memorized_today' => 'decimal:2',
-        'verses_memorized_today' => 'integer',
-        'pages_memorized_today' => 'decimal:2',
         'pages_reviewed_today' => 'decimal:2',
     ];
 
@@ -95,10 +83,7 @@ class QuranSessionAttendance extends BaseSessionAttendance
     protected function getSessionSpecificDetails(): array
     {
         return [
-            'recitation_quality' => $this->recitation_quality,
-            'tajweed_accuracy' => $this->tajweed_accuracy,
             'homework_completion' => $this->homework_completion,
-            'pages_memorized_today' => $this->pages_memorized_today,
             'pages_reviewed_today' => $this->pages_reviewed_today,
         ];
     }
@@ -116,34 +101,6 @@ class QuranSessionAttendance extends BaseSessionAttendance
     // ========================================
 
     /**
-     * تسجيل تقييم التلاوة
-     */
-    public function recordRecitationQuality(float $quality): bool
-    {
-        if ($quality < 0 || $quality > 10) {
-            return false;
-        }
-
-        $this->update(['recitation_quality' => $quality]);
-
-        return true;
-    }
-
-    /**
-     * تسجيل دقة التجويد
-     */
-    public function recordTajweedAccuracy(float $accuracy): bool
-    {
-        if ($accuracy < 0 || $accuracy > 10) {
-            return false;
-        }
-
-        $this->update(['tajweed_accuracy' => $accuracy]);
-
-        return true;
-    }
-
-    /**
      * تسجيل إكمال الواجب
      */
     public function recordHomeworkCompletion(bool $completed): bool
@@ -154,12 +111,11 @@ class QuranSessionAttendance extends BaseSessionAttendance
     }
 
     /**
-     * تسجيل الصفحات المحفوظة والمراجعة اليوم
+     * تسجيل الصفحات المراجعة اليوم
      */
-    public function recordPagesProgress(float $memorizedPages = 0, float $reviewedPages = 0): bool
+    public function recordReviewedPages(float $reviewedPages = 0): bool
     {
         $this->update([
-            'pages_memorized_today' => $memorizedPages,
             'pages_reviewed_today' => $reviewedPages,
         ]);
 

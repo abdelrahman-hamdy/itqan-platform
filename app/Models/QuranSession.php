@@ -37,9 +37,8 @@ use Illuminate\Support\Str;
  * - Prevents double-counting via subscription_counted flag
  *
  * QURAN PROGRESS TRACKING:
- * - Pages-only system: current_page, current_face, page_covered_start/end
- * - Memorization tracking: papers_memorized_today, papers_covered_today
- * - Quality metrics: recitation_quality, tajweed_accuracy, mistakes_count
+ * - Simplified pages system: current_surah, current_page
+ * - Quality metrics tracked via homework system
  *
  * @property int $quran_teacher_id
  * @property int|null $quran_subscription_id
@@ -71,47 +70,23 @@ class QuranSession extends BaseSession
 
         // Session configuration
         'session_type',
-        'location_type',
-        'location_details',
-        'lesson_objectives',
-
-        // Recording
-        'recording_url',
-        'recording_enabled',
 
         // Quran progress tracking (pages-only system)
         'current_surah',
         'current_page',
-        'current_face',
-        'page_covered_start',
-        'face_covered_start',
-        'page_covered_end',
-        'face_covered_end',
-        'papers_memorized_today',
-        'papers_covered_today',
-        'recitation_quality',
-        'tajweed_accuracy',
-        'mistakes_count',
-        'common_mistakes',
-        'areas_for_improvement',
+
+        // Homework
         'homework_assigned',
         'homework_details',
-        'next_session_plan',
-        'technical_issues',
-        'makeup_session_for',
-        'is_makeup_session',
-        'materials_used',
-        'learning_outcomes',
-        'assessment_results',
-        'follow_up_required',
-        'follow_up_notes',
-        'teacher_scheduled_at',
+
+        // Subscription counting
         'subscription_counted',
 
-        // Fields that exist in database but were missing from fillable
+        // Monthly tracking
         'monthly_session_number',
         'session_month',
-        'counts_toward_subscription',
+
+        // Cancellation (merged with BaseSession)
         'cancellation_type',
         'rescheduling_note',
     ];
@@ -138,33 +113,14 @@ class QuranSession extends BaseSession
     public function getCasts(): array
     {
         return array_merge(parent::getCasts(), [
-            // Quran-specific datetime casts
-            'teacher_scheduled_at' => 'datetime',
-
             // Quran progress (pages-only system)
             'current_surah' => 'integer',
             'current_page' => 'integer',
-            'current_face' => 'integer',
-            'page_covered_start' => 'integer',
-            'face_covered_start' => 'integer',
-            'page_covered_end' => 'integer',
-            'face_covered_end' => 'integer',
-            'papers_memorized_today' => 'decimal:2',
-            'papers_covered_today' => 'decimal:2',
 
-            'recitation_quality' => 'decimal:1',
-            'tajweed_accuracy' => 'decimal:1',
-            'mistakes_count' => 'integer',
-            'recording_enabled' => 'boolean',
-            'is_makeup_session' => 'boolean',
-            'follow_up_required' => 'boolean',
-            'lesson_objectives' => 'array',
-            'common_mistakes' => 'array',
-            'areas_for_improvement' => 'array',
+            // Homework
             'homework_assigned' => 'array',
-            'materials_used' => 'array',
-            'learning_outcomes' => 'array',
-            'assessment_results' => 'array',
+
+            // Subscription counting
             'subscription_counted' => 'boolean',
         ]);
     }

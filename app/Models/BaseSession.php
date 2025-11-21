@@ -39,7 +39,6 @@ use Illuminate\Support\Str;
  * @property string|null $meeting_link
  * @property string|null $meeting_id
  * @property string|null $meeting_password
- * @property string|null $meeting_source
  * @property string|null $meeting_platform
  * @property array|null $meeting_data
  * @property string|null $meeting_room_name
@@ -47,12 +46,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $meeting_expires_at
  * @property string|null $attendance_status
  * @property int $participants_count
- * @property string|null $attendance_notes
  * @property string|null $session_notes
  * @property string|null $teacher_feedback
- * @property string|null $student_feedback
- * @property string|null $parent_feedback
- * @property int|null $overall_rating
  * @property string|null $cancellation_reason
  * @property int|null $cancelled_by
  * @property Carbon|null $cancelled_at
@@ -88,7 +83,6 @@ abstract class BaseSession extends Model implements MeetingCapable
         'meeting_link',
         'meeting_id',
         'meeting_password',
-        'meeting_source',
         'meeting_platform',
         'meeting_data',
         'meeting_room_name',
@@ -98,14 +92,10 @@ abstract class BaseSession extends Model implements MeetingCapable
         // Attendance fields
         'attendance_status',
         'participants_count',
-        'attendance_notes',
 
         // Feedback fields
         'session_notes',
         'teacher_feedback',
-        'student_feedback',
-        'parent_feedback',
-        'overall_rating',
 
         // Cancellation fields
         'cancellation_reason',
@@ -139,7 +129,6 @@ abstract class BaseSession extends Model implements MeetingCapable
         'duration_minutes' => 'integer',
         'actual_duration_minutes' => 'integer',
         'participants_count' => 'integer',
-        'overall_rating' => 'integer',
         'meeting_data' => 'array',
         'meeting_auto_generated' => 'boolean',
     ];
