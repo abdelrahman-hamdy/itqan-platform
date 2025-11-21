@@ -86,9 +86,11 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->label('نوع الجلسة')
                             ->options([
                                 'individual' => 'فردية',
-                                'interactive_course' => 'دورة تفاعلية',
                             ])
                             ->default('individual')
+                            ->disabled()
+                            ->dehydrated()
+                            ->helperText('الجلسات الأكاديمية فردية (1-إلى-1) فقط')
                             ->required(),
                     ])->columns(2),
 
@@ -103,17 +105,9 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->label('وصف الجلسة')
                             ->rows(3),
 
-                        Forms\Components\TagsInput::make('lesson_objectives')
-                            ->label('أهداف الدرس')
-                            ->separator(','),
-
                         Forms\Components\Textarea::make('lesson_content')
                             ->label('محتوى الدرس')
                             ->rows(4),
-
-                        Forms\Components\TagsInput::make('learning_outcomes')
-                            ->label('نواتج التعلم')
-                            ->separator(','),
                     ]),
 
                 Forms\Components\Section::make('التوقيت والحالة')
@@ -125,8 +119,8 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         Forms\Components\TextInput::make('duration_minutes')
                             ->label('مدة الجلسة (بالدقائق)')
                             ->numeric()
-                            ->min(30)
-                            ->max(120)
+                            ->minValue(30)
+                            ->maxValue(120)
                             ->default(60)
                             ->required(),
 
@@ -142,23 +136,10 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->default('scheduled')
                             ->required(),
 
-                        Forms\Components\Select::make('location_type')
-                            ->label('نوع المكان')
-                            ->options([
-                                'online' => 'عبر الإنترنت',
-                                'physical' => 'حضوري',
-                                'hybrid' => 'مختلط',
-                            ])
-                            ->default('online')
-                            ->required(),
-
                         Forms\Components\TextInput::make('meeting_link')
                             ->label('رابط الاجتماع')
-                            ->url(),
-
-                        Forms\Components\Toggle::make('is_auto_generated')
-                            ->label('تم إنشاؤها تلقائياً')
-                            ->default(false),
+                            ->url()
+                            ->helperText('سيتم إنشاء رابط LiveKit تلقائياً عند بدء الجلسة'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('الواجبات والتقييم')
@@ -172,12 +153,9 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->directory('academic-homework')
                             ->acceptedFileTypes(['pdf', 'doc', 'docx', 'jpg', 'png']),
 
-                        Forms\Components\TextInput::make('session_grade')
-                            ->label('درجة الجلسة')
-                            ->numeric()
-                            ->min(0)
-                            ->max(10)
-                            ->step(0.1),
+                        Forms\Components\Toggle::make('homework_assigned')
+                            ->label('تم تكليف واجب')
+                            ->default(false),
 
                         Forms\Components\Textarea::make('session_notes')
                             ->label('ملاحظات الجلسة')
@@ -204,7 +182,7 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         Forms\Components\TextInput::make('participants_count')
                             ->label('عدد المشاركين')
                             ->numeric()
-                            ->min(0)
+                            ->minValue(0)
                             ->default(0),
 
                         Forms\Components\Textarea::make('attendance_notes')
@@ -251,14 +229,17 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         'danger' => 'cancelled',
                         'warning' => 'rescheduled',
                     ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'scheduled' => 'مجدولة',
-                        'ongoing' => 'جارية',
-                        'completed' => 'مكتملة',
-                        'cancelled' => 'ملغية',
-                        'rescheduled' => 'معاد جدولتها',
-                        default => $state,
-                    }),
+                    ->formatStateUsing(fn ($state): string => $state instanceof \App\Enums\SessionStatus
+                        ? $state->label()
+                        : match ($state) {
+                            'scheduled' => 'مجدولة',
+                            'ongoing' => 'جارية',
+                            'completed' => 'مكتملة',
+                            'cancelled' => 'ملغية',
+                            'rescheduled' => 'معاد جدولتها',
+                            default => (string) $state,
+                        }
+                    ),
 
                 Tables\Columns\BadgeColumn::make('attendance_status')
                     ->label('الحضور')
@@ -277,11 +258,6 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         'partial' => 'جزئي',
                         default => $state,
                     }),
-
-                Tables\Columns\TextColumn::make('session_grade')
-                    ->label('الدرجة')
-                    ->numeric()
-                    ->sortable(),
 
                 Tables\Columns\IconColumn::make('hasHomework')
                     ->label('واجب')
@@ -358,6 +334,7 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
     {
         return [
             'index' => Pages\ListAcademicSessions::route('/'),
+            'create' => Pages\CreateAcademicSession::route('/create'),
             'view' => Pages\ViewAcademicSession::route('/{record}'),
             'edit' => Pages\EditAcademicSession::route('/{record}/edit'),
         ];
