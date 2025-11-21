@@ -131,7 +131,7 @@
             'items' => $quranPrivateSessions->take(3)->map(function($subscription) {
               $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
               return [
-                'title' => $subscription->package->getDisplayName() ?? 'اشتراك مخصص',
+                'title' => $subscription->package?->getDisplayName() ?? 'اشتراك مخصص',
                 'description' => 'مع ' . ($subscription->quranTeacher->full_name ?? 'معلم القرآن') .
                                  ($nextSession ? ' - ' . $nextSession->scheduled_at->format('l، d F H:i') : ''),
                 'icon' => 'ri-user-star-line',
@@ -139,8 +139,8 @@
                 'iconColor' => 'text-purple-600',
                 'progress' => $subscription->progress_percentage,
                 'status' => $subscription->subscription_status,
-                'link' => $subscription->individualCircle ? 
-                    route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circle' => $subscription->individualCircle->id]) : 
+                'link' => $subscription->individualCircle ?
+                    route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circle' => $subscription->individualCircle->id]) :
                     '#'
               ];
             })->toArray(),
@@ -165,8 +165,8 @@
 
             foreach($interactiveCourses as $course) {
               $enrollment = $course->enrollments->first();
-              if ($enrollment && auth()->user()->student) {
-                $progress = $progressService->calculateCourseProgress($course->id, auth()->user()->student->id);
+              if ($enrollment && auth()->user()->studentProfile) {
+                $progress = $progressService->calculateCourseProgress($course->id, auth()->user()->studentProfile->id);
                 $totalSessions += $progress['total_sessions'];
                 $completedSessions += $progress['completed_sessions'];
 

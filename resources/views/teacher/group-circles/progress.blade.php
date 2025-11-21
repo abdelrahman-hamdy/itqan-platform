@@ -562,7 +562,7 @@
                     <div class="space-y-3">
                         @foreach($circle->students->take(5) as $student)
                             <div class="flex items-center space-x-3 space-x-reverse p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                <x-student-avatar :student="$student" size="sm" />
+                                <x-avatar :user="$student" size="sm" />
                                 <div class="flex-1">
                                     <p class="font-semibold text-gray-900 text-sm">{{ $student->name }}</p>
                                     <p class="text-xs text-gray-500">{{ $student->email ?? 'طالب' }}</p>

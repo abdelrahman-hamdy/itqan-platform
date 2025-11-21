@@ -7,12 +7,19 @@
   <div class="p-6 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100/50">
     <div class="flex flex-col items-center text-center mb-4">
       @php
-        $teacher = auth()->user()->isQuranTeacher() 
-                  ? auth()->user()->quranTeacherProfile 
+        $teacher = auth()->user()->isQuranTeacher()
+                  ? auth()->user()->quranTeacherProfile
                   : auth()->user()->academicTeacherProfile;
+        $teacherType = auth()->user()->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
+        $teacherGender = $teacher?->gender ?? auth()->user()?->gender ?? 'male';
       @endphp
-      
-      <x-teacher-avatar :teacher="$teacher" size="md" class="mb-3" />
+
+      <x-avatar
+        :user="auth()->user()"
+        size="md"
+        :userType="$teacherType"
+        :gender="$teacherGender"
+        class="mb-3" />
       
       <div>
         <h3 class="text-lg font-semibold text-gray-900">

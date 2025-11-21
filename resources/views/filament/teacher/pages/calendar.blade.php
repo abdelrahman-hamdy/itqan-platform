@@ -28,44 +28,78 @@
             @endforeach
         </x-filament::grid>
 
-        {{-- Circles Management Section --}}
+        {{-- Circles/Sessions Management Section --}}
         <x-filament::section>
             <x-slot name="heading">
-                إدارة الحلقات
+                @if ($this->isQuranTeacher())
+                    إدارة الحلقات
+                @elseif ($this->isAcademicTeacher())
+                    إدارة الدروس والدورات
+                @else
+                    إدارة الجلسات
+                @endif
             </x-slot>
-            
+
             <x-slot name="description">
-                اختر حلقة لجدولة جلساتها على التقويم
+                @if ($this->isQuranTeacher())
+                    اختر حلقة لجدولة جلساتها على التقويم
+                @elseif ($this->isAcademicTeacher())
+                    اختر درس خاص أو دورة تفاعلية لجدولة جلساتها
+                @else
+                    اختر عنصر لجدولة جلساته
+                @endif
             </x-slot>
-            
-            
+
+
 
             {{-- Tabs using Filament --}}
-            <x-filament::tabs label="أنواع الحلقات والجلسات">
-                <x-filament::tabs.item 
-                    :active="$activeTab === 'group'"
-                    wire:click="setActiveTab('group')"
-                    icon="heroicon-m-user-group"
-                >
-                    الحلقات الجماعية
-                </x-filament::tabs.item>
-                
-                <x-filament::tabs.item 
-                    :active="$activeTab === 'individual'"
-                    wire:click="setActiveTab('individual')"
-                    icon="heroicon-m-user"
-                >
-                    الحلقات الفردية
-                </x-filament::tabs.item>
-                
-                <x-filament::tabs.item 
-                    :active="$activeTab === 'trial'"
-                    wire:click="setActiveTab('trial')"
-                    icon="heroicon-m-clock"
-                >
-                    الجلسات التجريبية
-                </x-filament::tabs.item>
-            </x-filament::tabs>
+            @if ($this->isQuranTeacher())
+                {{-- Quran Teacher Tabs --}}
+                <x-filament::tabs label="أنواع الحلقات والجلسات">
+                    <x-filament::tabs.item
+                        :active="$activeTab === 'group'"
+                        wire:click="setActiveTab('group')"
+                        icon="heroicon-m-user-group"
+                    >
+                        الحلقات الجماعية
+                    </x-filament::tabs.item>
+
+                    <x-filament::tabs.item
+                        :active="$activeTab === 'individual'"
+                        wire:click="setActiveTab('individual')"
+                        icon="heroicon-m-user"
+                    >
+                        الحلقات الفردية
+                    </x-filament::tabs.item>
+
+                    <x-filament::tabs.item
+                        :active="$activeTab === 'trial'"
+                        wire:click="setActiveTab('trial')"
+                        icon="heroicon-m-clock"
+                    >
+                        الجلسات التجريبية
+                    </x-filament::tabs.item>
+                </x-filament::tabs>
+            @elseif ($this->isAcademicTeacher())
+                {{-- Academic Teacher Tabs --}}
+                <x-filament::tabs label="أنواع الدروس والدورات">
+                    <x-filament::tabs.item
+                        :active="$activeTab === 'private_lesson'"
+                        wire:click="setActiveTab('private_lesson')"
+                        icon="heroicon-m-user"
+                    >
+                        الدروس الخاصة
+                    </x-filament::tabs.item>
+
+                    <x-filament::tabs.item
+                        :active="$activeTab === 'interactive_course'"
+                        wire:click="setActiveTab('interactive_course')"
+                        icon="heroicon-m-user-group"
+                    >
+                        الدورات التفاعلية
+                    </x-filament::tabs.item>
+                </x-filament::tabs>
+            @endif
 
 
 
@@ -119,17 +153,11 @@
                                 </x-filament::card>
                             </div>
                         @empty
-                            <div class="col-span-full">
-                                <x-filament::section>
-                                    <div class="text-center py-12">
-                                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <x-heroicon-o-user-group class="w-8 h-8 text-gray-400" />
-                                        </div>
-                                        <h3 class="mt-2 text-lg font-medium text-gray-900">لا توجد حلقات جماعية</h3>
-                                        <p class="mt-1 text-sm text-gray-500">سيتم عرض الحلقات الجماعية المخصصة لك هنا</p>
-                                    </div>
-                                </x-filament::section>
-                            </div>
+                            <x-calendar.empty-state
+                                icon="heroicon-o-user-group"
+                                title="لا توجد حلقات جماعية"
+                                description="سيتم عرض الحلقات الجماعية المخصصة لك هنا"
+                            />
                         @endforelse
                     </div>
                     
@@ -206,17 +234,11 @@
                                 </x-filament::card>
                             </div>
                         @empty
-                            <div class="col-span-full">
-                                <x-filament::section>
-                                    <div class="text-center py-12">
-                                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <x-heroicon-o-user class="w-8 h-8 text-gray-400" />
-                                        </div>
-                                        <h3 class="mt-2 text-lg font-medium text-gray-900">لا توجد حلقات فردية</h3>
-                                        <p class="mt-1 text-sm text-gray-500">سيتم عرض الحلقات الفردية المخصصة لك هنا</p>
-                                    </div>
-                                </x-filament::section>
-                            </div>
+                            <x-calendar.empty-state
+                                icon="heroicon-o-user"
+                                title="لا توجد حلقات فردية"
+                                description="سيتم عرض الحلقات الفردية المخصصة لك هنا"
+                            />
                         @endforelse
                     </div>
                     
@@ -282,15 +304,11 @@
                                 </x-filament::card>
                             </div>
                         @empty
-                            <div class="col-span-full">
-                                <x-filament::section>
-                                    <div class="text-center py-12">
-                                        <x-heroicon-o-clock class="mx-auto h-12 w-12 text-gray-400"/>
-                                        <h3 class="mt-2 text-lg font-medium text-gray-900">لا توجد جلسات تجريبية</h3>
-                                        <p class="mt-1 text-sm text-gray-500">سيتم عرض طلبات الجلسات التجريبية المخصصة لك هنا</p>
-                                    </div>
-                                </x-filament::section>
-                            </div>
+                            <x-calendar.empty-state
+                                icon="heroicon-o-clock"
+                                title="لا توجد جلسات تجريبية"
+                                description="سيتم عرض طلبات الجلسات التجريبية المخصصة لك هنا"
+                            />
                         @endforelse
                     </div>
                     
@@ -313,6 +331,149 @@
                     @endif
                 @endif
 
+                {{-- Private Lessons Tab (Academic Teacher) --}}
+                @if ($activeTab === 'private_lesson' && $this->isAcademicTeacher())
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @forelse ($this->privateLessons as $lesson)
+                            <div
+                                wire:click="selectItem({{ $lesson['id'] }}, 'private_lesson')"
+                                class="cursor-pointer transition-all duration-200 item-card {{ $selectedItemId === $lesson['id'] && $selectedItemType === 'private_lesson' ? 'item-selected' : '' }}"
+                                data-item-id="{{ $lesson['id'] }}"
+                                data-item-type="private_lesson"
+                            >
+                                <x-filament::card
+                                    class="border-2 border-gray-200 hover:ring-2 hover:ring-primary-300 hover:shadow-md transition-all duration-200"
+                                >
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <h4 class="text-lg font-medium text-gray-900">{{ $lesson['student_name'] }}</h4>
+                                            <x-filament::badge
+                                                :color="$lesson['status'] === 'fully_scheduled' ? 'success' : ($lesson['status'] === 'partially_scheduled' ? 'info' : 'warning')"
+                                            >
+                                                @if ($lesson['status'] === 'fully_scheduled')
+                                                    مكتملة الجدولة
+                                                @elseif ($lesson['status'] === 'partially_scheduled')
+                                                    مجدولة جزئياً
+                                                @else
+                                                    غير مجدولة
+                                                @endif
+                                            </x-filament::badge>
+                                        </div>
+
+                                        <div class="space-y-2 text-sm text-gray-600">
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-book-open class="w-4 h-4" />
+                                                <span>المادة: {{ $lesson['subject_name'] }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-calendar-days class="w-4 h-4" />
+                                                <span>إجمالي الجلسات: {{ $lesson['total_sessions'] }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-check-circle class="w-4 h-4 text-green-500" />
+                                                <span>المجدولة: {{ $lesson['sessions_scheduled'] }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-clock class="w-4 h-4 text-orange-500" />
+                                                <span>المتبقية: {{ $lesson['sessions_remaining'] }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </x-filament::card>
+                            </div>
+                        @empty
+                            <x-calendar.empty-state
+                                icon="heroicon-o-user"
+                                title="لا توجد دروس خاصة"
+                                description="سيتم عرض الدروس الخاصة المخصصة لك هنا"
+                            />
+                        @endforelse
+                    </div>
+
+                    {{-- Schedule Action Button for Private Lessons --}}
+                    @if($selectedItemId && $selectedItemType === 'private_lesson')
+                        <div class="mt-6 flex justify-center">
+                            {{ $this->scheduleAction }}
+                        </div>
+                    @endif
+                @endif
+
+                {{-- Interactive Courses Tab (Academic Teacher) --}}
+                @if ($activeTab === 'interactive_course' && $this->isAcademicTeacher())
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @forelse ($this->interactiveCourses as $course)
+                            <div
+                                wire:click="selectItem({{ $course['id'] }}, 'interactive_course')"
+                                class="cursor-pointer transition-all duration-200 item-card {{ $selectedItemId === $course['id'] && $selectedItemType === 'interactive_course' ? 'item-selected' : '' }}"
+                                data-item-id="{{ $course['id'] }}"
+                                data-item-type="interactive_course"
+                            >
+                                <x-filament::card
+                                    class="border-2 border-gray-200 hover:ring-2 hover:ring-primary-300 hover:shadow-md transition-all duration-200"
+                                >
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <h4 class="text-lg font-medium text-gray-900">{{ $course['title'] }}</h4>
+                                            <x-filament::badge
+                                                :color="$course['status'] === 'active' ? 'success' : 'warning'"
+                                            >
+                                                {{ $course['status_arabic'] }}
+                                            </x-filament::badge>
+                                        </div>
+
+                                        <div class="space-y-2 text-sm text-gray-600">
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-book-open class="w-4 h-4" />
+                                                <span>المادة: {{ $course['subject_name'] }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-calendar-days class="w-4 h-4" />
+                                                <span>إجمالي الجلسات: {{ $course['total_sessions'] }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-check-circle class="w-4 h-4 text-green-500" />
+                                                <span>المجدولة: {{ $course['sessions_scheduled'] }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-clock class="w-4 h-4 text-orange-500" />
+                                                <span>المتبقية: {{ $course['sessions_remaining'] }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <x-heroicon-m-user-group class="w-4 h-4" />
+                                                <span>الطلاب: {{ $course['enrolled_students'] }}/{{ $course['max_students'] }}</span>
+                                            </div>
+                                            @if ($course['start_date'])
+                                                <div class="flex items-center gap-2">
+                                                    <x-heroicon-m-play class="w-4 h-4" />
+                                                    <span>البداية: {{ $course['start_date'] }}</span>
+                                                </div>
+                                            @endif
+                                            @if ($course['end_date'])
+                                                <div class="flex items-center gap-2">
+                                                    <x-heroicon-m-stop class="w-4 h-4" />
+                                                    <span>الانتهاء: {{ $course['end_date'] }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </x-filament::card>
+                            </div>
+                        @empty
+                            <x-calendar.empty-state
+                                icon="heroicon-o-user-group"
+                                title="لا توجد دورات تفاعلية"
+                                description="سيتم عرض الدورات التفاعلية المخصصة لك هنا"
+                            />
+                        @endforelse
+                    </div>
+
+                    {{-- Schedule Action Button for Interactive Courses --}}
+                    @if($selectedItemId && $selectedItemType === 'interactive_course')
+                        <div class="mt-6 flex justify-center">
+                            {{ $this->scheduleAction }}
+                        </div>
+                    @endif
+                @endif
 
             </div>
         </x-filament::section>
@@ -320,36 +481,26 @@
         {{-- Calendar widget will render in footer widgets automatically --}}
     </div>
 
-    {{-- CSS for circle and trial session selection --}}
+    {{-- CSS for circle, trial session, and item selection --}}
     <style>
-        .circle-card, .trial-card {
+        .circle-card, .trial-card, .item-card {
             transition: all 0.3s ease !important;
             position: relative;
         }
-        
-        .circle-card .fi-card, .trial-card .fi-card {
+
+        .circle-card .fi-card, .trial-card .fi-card, .item-card .fi-card {
             transition: all 0.3s ease !important;
         }
-        
-        .circle-selected .fi-card {
+
+        .circle-selected .fi-card, .trial-selected .fi-card, .item-selected .fi-card {
             border-width: 2px !important;
             border-color: #60a5fa !important; /* blue-400 */
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25) !important; /* subtle ring */
         }
 
-        .trial-selected .fi-card {
-            border-width: 2px !important;
-            border-color: #60a5fa !important; /* blue-400 */
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25) !important; /* subtle ring */
-        }
-
-        .circle-card.circle-selected .fi-section-content {
-            border: solid 1px #60a5fa !important; /* blue-600 */
-            border-radius: 10px;
-            background-color: #3d485b24 !important; /* blue-50 */
-        }
-
-        .trial-card.trial-selected .fi-section-content {
+        .circle-card.circle-selected .fi-section-content,
+        .trial-card.trial-selected .fi-section-content,
+        .item-card.item-selected .fi-section-content {
             border: solid 1px #60a5fa !important; /* blue-600 */
             border-radius: 10px;
             background-color: #3d485b24 !important; /* blue-50 */
@@ -399,7 +550,7 @@
         
         function makeTrialSelected(trialId) {
             console.log('🎯 Making trial selected:', trialId);
-            
+
             // Remove all trial selections first
             document.querySelectorAll('.trial-card').forEach(card => {
                 card.classList.remove('trial-selected');
@@ -410,13 +561,13 @@
                     cardElement.style.boxShadow = '';
                 }
             });
-            
+
             // Find target trial card and apply selection
             const targetCard = document.querySelector(`[data-trial-id="${trialId}"]`);
             if (targetCard) {
                 targetCard.classList.add('trial-selected');
                 console.log('✅ Applied trial-selected class');
-                
+
                 // Force styles as backup
                 const cardElement = targetCard.querySelector('.fi-card');
                 if (cardElement) {
@@ -428,27 +579,67 @@
                 window.__teacherTrialSelection = { id: String(trialId) };
             }
         }
+
+        function makeItemSelected(itemId, itemType) {
+            console.log('🎯 Making item selected:', itemId, itemType);
+
+            // Remove all item selections first
+            document.querySelectorAll('.item-card').forEach(card => {
+                card.classList.remove('item-selected');
+                const cardElement = card.querySelector('.fi-card');
+                if (cardElement) {
+                    cardElement.style.border = '';
+                    cardElement.style.backgroundColor = '';
+                    cardElement.style.boxShadow = '';
+                }
+            });
+
+            // Find and select the target item
+            const targetCard = document.querySelector(`[data-item-id="${itemId}"][data-item-type="${itemType}"]`);
+            if (targetCard) {
+                targetCard.classList.add('item-selected');
+                console.log('✅ Applied item-selected class');
+
+                // Force styles as backup
+                const cardElement = targetCard.querySelector('.fi-card');
+                if (cardElement) {
+                    cardElement.style.setProperty('border', '2px solid #60a5fa', 'important');
+                    cardElement.style.setProperty('background-color', '#eff6ff', 'important');
+                    cardElement.style.setProperty('box-shadow', '0 0 0 3px rgba(96, 165, 250, 0.25)', 'important');
+                }
+                // Persist selection
+                window.__teacherItemSelection = { id: String(itemId), type: String(itemType) };
+            }
+        }
         
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Circle and Trial selection system initialized');
-            
-            // Enhanced click handler for circles and trials
+            console.log('🚀 Calendar selection system initialized');
+
+            // Enhanced click handler for circles, trials, and items
             document.addEventListener('click', function(e) {
                 const circleCard = e.target.closest('.circle-card');
                 const trialCard = e.target.closest('.trial-card');
-                
+                const itemCard = e.target.closest('.item-card');
+
                 if (circleCard) {
                     const circleId = circleCard.getAttribute('data-circle-id');
                     const circleType = circleCard.getAttribute('data-circle-type');
-                    
+
                     if (circleId && circleType) {
                         makeCircleSelected(circleId, circleType);
                     }
                 } else if (trialCard) {
                     const trialId = trialCard.getAttribute('data-trial-id');
-                    
+
                     if (trialId) {
                         makeTrialSelected(trialId);
+                    }
+                } else if (itemCard) {
+                    const itemId = itemCard.getAttribute('data-item-id');
+                    const itemType = itemCard.getAttribute('data-item-type');
+
+                    if (itemId && itemType) {
+                        makeItemSelected(itemId, itemType);
                     }
                 }
             });
@@ -467,7 +658,7 @@
                     } else if (window.__teacherCalendarSelection && window.__teacherCalendarSelection.id) {
                         makeCircleSelected(window.__teacherCalendarSelection.id, window.__teacherCalendarSelection.type);
                     }
-                    
+
                     // Reapply trial selections
                     const selectedTrialCards = document.querySelectorAll('.trial-selected');
                     if (selectedTrialCards.length > 0) {
@@ -477,6 +668,18 @@
                         });
                     } else if (window.__teacherTrialSelection && window.__teacherTrialSelection.id) {
                         makeTrialSelected(window.__teacherTrialSelection.id);
+                    }
+
+                    // Reapply item selections (academic teacher)
+                    const selectedItemCards = document.querySelectorAll('.item-selected');
+                    if (selectedItemCards.length > 0) {
+                        selectedItemCards.forEach(card => {
+                            const itemId = card.getAttribute('data-item-id');
+                            const itemType = card.getAttribute('data-item-type');
+                            if (itemId && itemType) makeItemSelected(itemId, itemType);
+                        });
+                    } else if (window.__teacherItemSelection && window.__teacherItemSelection.id) {
+                        makeItemSelected(window.__teacherItemSelection.id, window.__teacherItemSelection.type);
                     }
                 }, 50);
             };

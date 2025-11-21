@@ -392,7 +392,7 @@ class StudentDashboardController extends Controller
             })
             ->where(function ($query) use ($enrolledSubjects) {
                 $query->whereIn('subject_id', $enrolledSubjects)
-                    ->orWhere('level', 'beginner')
+                    ->orWhere('difficulty_level', 'very_easy')
                     ->orWhere('is_featured', true);
             })
             ->with(['instructor', 'subject'])

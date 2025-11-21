@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CertificateTemplateStyle;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,8 @@ class RecordedCourse extends Model implements HasMedia
         'title_en',
         'description',
         'description_en',
+        'certificate_template_text',
+        'certificate_template_style',
         'course_code',
         'thumbnail_url',
         'duration_hours',
@@ -62,6 +65,7 @@ class RecordedCourse extends Model implements HasMedia
         'tags' => 'array',
         'enrollment_deadline' => 'datetime',
         'published_at' => 'datetime',
+        'certificate_template_style' => CertificateTemplateStyle::class,
     ];
 
     // Relationships
@@ -231,8 +235,8 @@ class RecordedCourse extends Model implements HasMedia
             'total_sections' => $this->sections()->count(),
             'total_duration_minutes' => $this->lessons()->sum('duration_minutes') ?? 0,
             'total_enrollments' => $this->enrollments()->where('status', 'active')->count(),
-            'avg_rating' => $this->reviews()->avg('rating') ?? 0,
-            'total_reviews' => $this->reviews()->count(),
+            'avg_rating' => $this->reviews()->approved()->avg('rating') ?? 0,
+            'total_reviews' => $this->reviews()->approved()->count(),
         ]);
     }
 

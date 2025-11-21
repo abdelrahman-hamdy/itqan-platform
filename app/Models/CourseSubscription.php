@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CourseSubscription extends Model
@@ -124,6 +125,11 @@ class CourseSubscription extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'subscription_id');
+    }
+
+    public function certificate(): MorphOne
+    {
+        return $this->morphOne(Certificate::class, 'certificateable');
     }
 
     // Scopes
@@ -370,14 +376,18 @@ class CourseSubscription extends Model
             return $this;
         }
 
-        // Generate certificate URL (this would integrate with certificate generation service)
-        $certificateUrl = $this->generateCertificateUrl();
+        try {
+            // Use CertificateService to generate the certificate
+            $certificateService = app(\App\Services\CertificateService::class);
+            $certificate = $certificateService->issueCertificateForRecordedCourse($this);
 
-        $this->update([
-            'certificate_issued' => true,
-            'certificate_issued_at' => now(),
-            'completion_certificate_url' => $certificateUrl
-        ]);
+            // The service already updates certificate_issued and certificate_issued_at
+            // Just refresh the model to get the updated values
+            $this->refresh();
+        } catch (\Exception $e) {
+            // Log the error but don't fail the completion
+            \Log::error('Failed to issue certificate for CourseSubscription ' . $this->id . ': ' . $e->getMessage());
+        }
 
         return $this;
     }

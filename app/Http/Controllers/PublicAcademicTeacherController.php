@@ -28,6 +28,28 @@ class PublicAcademicTeacherController extends Controller
             ->with(['user', 'academy', 'subjects', 'gradeLevels'])
             ->paginate(12);
 
+        // Calculate minimum price for each teacher from their packages
+        foreach ($teachers as $teacher) {
+            $packageIds = $this->getTeacherPackageIds($teacher, $academy);
+
+            if (! empty($packageIds)) {
+                $packages = AcademicPackage::where('academy_id', $academy->id)
+                    ->where('is_active', true)
+                    ->whereIn('id', $packageIds)
+                    ->get();
+            } else {
+                // Fallback to all packages if no defaults are set
+                $packages = AcademicPackage::where('academy_id', $academy->id)
+                    ->where('is_active', true)
+                    ->get();
+            }
+
+            // Calculate minimum monthly price from packages
+            if ($packages->count() > 0) {
+                $teacher->minimum_price = $packages->min('monthly_price');
+            }
+        }
+
         return view('public.academic-teachers.index', compact('academy', 'teachers'));
     }
 
@@ -48,7 +70,7 @@ class PublicAcademicTeacherController extends Controller
             ->where('id', $teacher)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
-            ->with(['user'])
+            ->with(['user', 'subjects', 'gradeLevels'])
             ->first();
 
         if (! $teacher) {
@@ -56,12 +78,12 @@ class PublicAcademicTeacherController extends Controller
         }
 
         // Get teacher's statistics
-        $teacher->load(['user']);
+        $teacher->load(['user', 'subjects', 'gradeLevels']);
 
         // Calculate additional metrics
         $teacher->students_count = $teacher->total_students ?? 0;
         $teacher->hourly_rate = $teacher->session_price_individual;
-        $teacher->bio = $teacher->notes ?? 'معلم أكاديمي مؤهل متخصص في التدريس';
+        $teacher->bio = $teacher->bio_arabic ?? $teacher->bio_english ?? 'معلم أكاديمي مؤهل متخصص في التدريس';
         $teacher->experience_years = $teacher->teaching_experience_years;
         $teacher->qualification = $teacher->qualification_degree ?? $teacher->education_level;
 

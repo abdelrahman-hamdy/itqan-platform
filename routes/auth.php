@@ -192,13 +192,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             Route::get('/lessons/{lesson}/progress', [App\Http\Controllers\AcademicIndividualLessonController::class, 'progressReport'])->name('lessons.progress');
             Route::put('/lessons/{lesson}/settings', [App\Http\Controllers\AcademicIndividualLessonController::class, 'updateSettings'])->name('lessons.update-settings');
 
-            // Academic Sessions
-            Route::get('/sessions', [App\Http\Controllers\AcademicSessionController::class, 'index'])->name('sessions.index');
-            Route::get('/sessions/{session}', [App\Http\Controllers\AcademicSessionController::class, 'show'])->name('sessions.show');
-            Route::put('/sessions/{session}/evaluation', [App\Http\Controllers\AcademicSessionController::class, 'updateEvaluation'])->name('sessions.evaluation');
-            Route::put('/sessions/{session}/status', [App\Http\Controllers\AcademicSessionController::class, 'updateStatus'])->name('sessions.status');
-            Route::put('/sessions/{session}/reschedule', [App\Http\Controllers\AcademicSessionController::class, 'reschedule'])->name('sessions.reschedule');
-            Route::put('/sessions/{session}/cancel', [App\Http\Controllers\AcademicSessionController::class, 'cancel'])->name('sessions.cancel');
+            // Note: Academic session routes consolidated in web.php under teacher.academic-sessions.*
+            // This provides better URL consistency: /teacher/academic-sessions/{session}
         });
     });
 

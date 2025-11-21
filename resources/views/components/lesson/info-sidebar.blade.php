@@ -40,9 +40,11 @@
                 <a href="{{ $teacherRoute }}" 
                    class="block p-4 hover:bg-gray-50 transition-colors">
                     <div class="flex items-center space-x-3 space-x-reverse">
-                        <x-teacher-avatar 
-                            :teacher="$teacher" 
-                            size="sm" 
+                        <x-avatar
+                            :user="$teacher"
+                            size="sm"
+                            :userType="$isAcademic ? 'academic_teacher' : 'quran_teacher'"
+                            :gender="$teacher->gender ?? 'male'"
                             class="flex-shrink-0" />
                         <div class="flex-1">
                             <span class="text-xs font-medium text-blue-600 uppercase tracking-wide">المعلم</span>

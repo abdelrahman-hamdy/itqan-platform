@@ -8,9 +8,11 @@ use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\Academy;
 use App\Models\RecordedCourse;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -71,52 +73,51 @@ class RecordedCourseResource extends Resource
                                             ->maxLength(1000)
                                             ->required()
                                             ->placeholder('أدخل وصف مفصل للدورة باللغة العربية')
-                                            ->helperText('مطلوب - يجب إدخال وصف للدورة')
-                                            ->default('وصف الدورة'),
+                                            ->helperText('مطلوب - يجب إدخال وصف للدورة'),
 
                                         Forms\Components\Textarea::make('description_en')
                                             ->label('وصف الدورة (إنجليزي)')
                                             ->rows(3)
                                             ->maxLength(1000)
                                             ->placeholder('Enter course description in English')
-                                            ->helperText('اختياري - يمكن تركه فارغاً')
-                                            ->default('Course Description'),
+                                            ->helperText('اختياري - يمكن تركه فارغاً'),
 
                                         Forms\Components\Select::make('academy_id')
                                             ->label('الأكاديمية')
                                             ->options(Academy::pluck('name', 'id'))
                                             ->default($currentAcademy?->id)
                                             ->disabled($currentAcademy !== null)
-                                            ->required(),
+                                            ->required()
+                                            ->live(),
 
                                         Forms\Components\Select::make('subject_id')
                                             ->label('المادة الدراسية')
-                                            ->options(function () use ($currentAcademy) {
-                                                $query = AcademicSubject::query();
-                                                if ($currentAcademy) {
-                                                    $query->where('academy_id', $currentAcademy->id);
-                                                }
-
-                                                return $query->pluck('name', 'id');
+                                            ->options(function () {
+                                                $academyId = AcademyContextService::getCurrentAcademyId();
+                                                return $academyId ? AcademicSubject::where('academy_id', $academyId)->where('is_active', true)->pluck('name', 'id') : [];
                                             })
+                                            ->required()
                                             ->searchable()
-                                            ->required(),
+                                            ->preload(),
 
                                         Forms\Components\Select::make('grade_level_id')
                                             ->label('الصف الدراسي')
-                                            ->options(function () use ($currentAcademy) {
-                                                $query = AcademicGradeLevel::query();
-                                                if ($currentAcademy) {
-                                                    $query->where('academy_id', $currentAcademy->id);
+                                            ->options(function (Get $get) use ($currentAcademy) {
+                                                $academyId = $get('academy_id') ?? $currentAcademy?->id;
+
+                                                if (!$academyId) {
+                                                    return [];
                                                 }
 
-                                                return $query->where('is_active', true)
+                                                return AcademicGradeLevel::where('academy_id', $academyId)
+                                                    ->where('is_active', true)
                                                     ->whereNotNull('name')
                                                     ->where('name', '!=', '')
                                                     ->orderBy('name')
                                                     ->pluck('name', 'id');
                                             })
                                             ->searchable()
+                                            ->preload()
                                             ->required(),
                                     ])->columns(2),
 

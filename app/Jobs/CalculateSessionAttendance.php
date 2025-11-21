@@ -65,16 +65,14 @@ class CalculateSessionAttendance implements ShouldQueue
             ->get();
         $sessionsToProcess = $sessionsToProcess->concat($academicSessions);
 
-        // Interactive course sessions (if exists)
-        // 🔥 TODO: InteractiveCourseSession uses scheduled_date/scheduled_time instead of scheduled_at
-        // Skip for now until we implement proper datetime handling
-        // if (class_exists(InteractiveCourseSession::class)) {
-        //     $interactiveSessions = InteractiveCourseSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-        //         ->whereIn('status', ['completed', 'live'])
-        //         ->where('scheduled_at', '>=', now()->subDays(7))
-        //         ->get();
-        //     $sessionsToProcess = $sessionsToProcess->concat($interactiveSessions);
-        // }
+        // Interactive course sessions
+        if (class_exists(InteractiveCourseSession::class)) {
+            $interactiveSessions = InteractiveCourseSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
+                ->whereIn('status', ['completed', 'live'])
+                ->where('scheduled_at', '>=', now()->subDays(7))
+                ->get();
+            $sessionsToProcess = $sessionsToProcess->concat($interactiveSessions);
+        }
 
         Log::info('📊 Found sessions to process', [
             'count' => $sessionsToProcess->count(),
@@ -322,7 +320,7 @@ class CalculateSessionAttendance implements ShouldQueue
                 'attendance_percentage' => $attendance->attendance_percentage,
                 'is_late' => $attendance->first_join_time && $attendance->first_join_time->gt($session->scheduled_at->copy()->addMinutes(15)),
                 'late_minutes' => $attendance->first_join_time ? max(0, $attendance->first_join_time->diffInMinutes($session->scheduled_at)) : 0,
-                'is_auto_calculated' => true,
+                'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);
 

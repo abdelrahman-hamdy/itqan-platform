@@ -9,10 +9,7 @@
     ];
     $cardClass = $statusColors[$session->status] ?? 'border-gray-300';
 
-    $scheduledDateTime = \Carbon\Carbon::parse(
-        $session->scheduled_date->format('Y-m-d') . ' ' .
-        $session->scheduled_time->format('H:i:s')
-    );
+    $scheduledDateTime = $session->scheduled_at;
 
     // Check if homework exists
     $hasHomework = $session->homework && $session->homework->count() > 0;
@@ -21,6 +18,10 @@
         $homework = $session->homework->first();
         $homeworkSubmitted = $homework->submissions()->where('student_id', Auth::user()->student->id)->exists();
     }
+
+    // Determine the correct route based on user role
+    $isTeacher = Auth::user() && Auth::user()->isAcademicTeacher();
+    $sessionRouteName = $isTeacher ? 'teacher.interactive-sessions.show' : 'student.interactive-sessions.show';
 @endphp
 
 <div class="border-2 {{ $cardClass }} rounded-xl p-5 hover:shadow-lg transition-all duration-300 group">
@@ -32,7 +33,7 @@
                     Session {{ $session->session_number }}
                 </span>
 
-                @if($session->status === 'in-progress')
+                @if($session->status === 'ongoing')
                     <span class="flex items-center text-xs bg-green-500 text-white px-3 py-1 rounded-full animate-pulse shadow-lg">
                         <span class="w-2 h-2 bg-white rounded-full mr-2 animate-ping"></span>
                         <span class="font-bold">LIVE NOW</span>
@@ -65,11 +66,11 @@
                 {{-- Status Badge --}}
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border
                     {{ $session->status === 'completed' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                       ($session->status === 'in-progress' ? 'bg-green-100 text-green-700 border-green-300' :
+                       ($session->status === 'ongoing' ? 'bg-green-100 text-green-700 border-green-300' :
                        ($session->status === 'cancelled' ? 'bg-red-100 text-red-700 border-red-300' :
                        'bg-blue-100 text-blue-700 border-blue-300')) }}">
                     <i class="mr-1 {{ $session->status === 'completed' ? 'ri-check-line' :
-                                      ($session->status === 'in-progress' ? 'ri-radio-button-line' :
+                                      ($session->status === 'ongoing' ? 'ri-radio-button-line' :
                                       ($session->status === 'cancelled' ? 'ri-close-line' : 'ri-calendar-event-line')) }}"></i>
                     {{ ucfirst($session->status) }}
                 </span>
@@ -98,26 +99,26 @@
 
         {{-- Actions --}}
         <div class="flex flex-col gap-2 flex-shrink-0">
-            @if($session->status === 'in-progress')
-                <a href="{{ route('student.interactive-sessions.show', $session->id) }}"
+            @if($session->status === 'ongoing')
+                <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-primary px-4 py-2 whitespace-nowrap shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
                     <i class="ri-vidicon-line mr-1"></i>
                     Join Now
                 </a>
             @elseif($session->status === 'scheduled')
-                <a href="{{ route('student.interactive-sessions.show', $session->id) }}"
+                <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-secondary px-4 py-2 whitespace-nowrap hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300 transition-all duration-200">
                     <i class="ri-eye-line mr-1"></i>
                     View Details
                 </a>
             @elseif($session->status === 'completed')
-                <a href="{{ route('student.interactive-sessions.show', $session->id) }}"
+                <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-secondary px-4 py-2 whitespace-nowrap hover:bg-gray-100 transition-all duration-200">
                     <i class="ri-history-line mr-1"></i>
                     Review
                 </a>
             @else
-                <a href="{{ route('student.interactive-sessions.show', $session->id) }}"
+                <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-secondary px-4 py-2 whitespace-nowrap transition-all duration-200">
                     <i class="ri-information-line mr-1"></i>
                     Details

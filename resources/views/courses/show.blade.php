@@ -25,7 +25,7 @@
         <li class="text-gray-400">
             <i class="ri-arrow-left-s-line"></i>
         </li>
-        <li class="text-primary font-medium">{{ $course->title }}</li>
+        <li class="text-cyan-500 font-medium">{{ $course->title }}</li>
     </ol>
 </nav>
 
@@ -103,42 +103,35 @@
               @if($course->original_price && $course->original_price > $course->price)
               <span class="text-sm text-gray-500 line-through">{{ number_format($course->original_price) }} ريال</span>
               @endif
-              <span class="text-2xl font-bold text-green-600">{{ number_format($course->price) }} ريال</span>
+              <span class="text-2xl font-bold text-cyan-500">{{ number_format($course->price) }} ريال</span>
             @else
-              <span class="text-2xl font-bold text-green-600">مجاني</span>
+              <span class="text-2xl font-bold text-cyan-500">مجاني</span>
             @endif
           </div>
           
           <!-- Action Buttons -->
           <div class="flex items-center gap-4">
-            @if(auth()->check())
+            @auth
               @if($isEnrolled)
-              <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
-                 class="bg-green-600 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+              <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
+                 class="bg-cyan-500 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                 <i class="ri-play-circle-fill text-2xl"></i>
                 متابعة الدراسة
               </a>
               @else
-              <button onclick="enrollInCourse()" 
-                      class="bg-green-600 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+              <button onclick="enrollInCourse()"
+                      class="bg-cyan-500 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                 <i class="ri-shopping-cart-2-fill text-2xl"></i>
                 {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
               </button>
               @endif
             @else
-            <div class="flex items-center gap-4">
-              <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}" 
-                 class="bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl">
-                <i class="ri-login-circle-line text-2xl"></i>
-                تسجيل الدخول
-              </a>
-              <a href="{{ route('student.register', ['subdomain' => $academy->subdomain]) }}" 
-                 class="bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl">
-                <i class="ri-user-add-line text-2xl"></i>
-                إنشاء حساب
-              </a>
-            </div>
-            @endif
+              <button onclick="enrollInCourse()"
+                      class="bg-cyan-500 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                <i class="ri-shopping-cart-2-fill text-2xl"></i>
+                {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
+              </button>
+            @endauth
           </div>
         </div>
       </div>
@@ -173,7 +166,7 @@
                   <div class="flex-1">
                     <h4 class="font-medium text-gray-900 mb-1 group-hover:text-primary transition-colors">{{ $lesson->title }}</h4>
                     @if($lesson->description)
-                      <p class="text-sm text-gray-600">{{ Str::limit($lesson->description, 120) }}</p>
+                      <p class="text-sm text-gray-600">{{ Str::limit(html_entity_decode(strip_tags($lesson->description)), 120) }}</p>
                     @endif
                     
                     <!-- Lesson Meta -->
@@ -258,27 +251,41 @@
     <!-- Course Stats & Info -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div class="flex items-center gap-3 mb-6">
-        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-          <i class="ri-information-line text-primary text-xl"></i>
+        <div class="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
+          <i class="ri-information-line text-cyan-500 text-xl"></i>
         </div>
         <h3 class="font-bold text-gray-900 text-lg">معلومات الدورة</h3>
       </div>
       
       <!-- Key Stats -->
       <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
-          <div class="text-2xl font-bold text-blue-600">{{ $course->total_lessons ?? 0 }}</div>
-          <div class="text-sm text-gray-600">عدد الدروس</div>
+        <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <i class="ri-play-list-2-line text-blue-600 text-2xl"></i>
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-blue-600">{{ $course->total_lessons ?? 0 }}</div>
+              <div class="text-sm text-gray-600">عدد الدروس</div>
+            </div>
+          </div>
         </div>
-        <div class="text-center p-4 bg-green-50 rounded-lg border border-green-100">
-          <div class="text-2xl font-bold text-green-600">{{ $course->duration_hours ?? 0 }}</div>
-          <div class="text-sm text-gray-600">ساعة</div>
+        <div class="p-4 bg-green-50 rounded-lg border border-green-100">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <i class="ri-time-line text-green-600 text-2xl"></i>
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-green-600">{{ $course->duration_hours ?? 0 }}</div>
+              <div class="text-sm text-gray-600">ساعة</div>
+            </div>
+          </div>
         </div>
       </div>
       
       <!-- Course Details -->
       <div class="space-y-4">
-        
+
         @if($course->subject)
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <div class="flex items-center">
@@ -288,7 +295,7 @@
           <span class="font-medium text-gray-900">{{ $course->subject->name }}</span>
         </div>
         @endif
-        
+
         @if($course->gradeLevel)
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <div class="flex items-center">
@@ -298,7 +305,7 @@
           <span class="font-medium text-gray-900">{{ $course->gradeLevel->name }}</span>
         </div>
         @endif
-        
+
         @if($course->difficulty_level)
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <div class="flex items-center">
@@ -315,7 +322,7 @@
           </span>
         </div>
         @endif
-        
+
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <div class="flex items-center">
             <i class="ri-calendar-line text-orange-500 ml-2"></i>
@@ -323,7 +330,7 @@
           </div>
           <span class="font-medium text-gray-900">{{ $course->published_at?->format('Y/m/d') ?? $course->created_at->format('Y/m/d') }}</span>
         </div>
-        
+
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <div class="flex items-center">
             <i class="ri-global-line text-blue-500 ml-2"></i>
@@ -337,32 +344,32 @@
     <!-- Course Features -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div class="flex items-center gap-3 mb-6">
-        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-          <i class="ri-star-line text-green-600 text-xl"></i>
+        <div class="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
+          <i class="ri-star-line text-cyan-500 text-xl"></i>
         </div>
         <h3 class="font-bold text-gray-900 text-lg">مميزات الدورة</h3>
       </div>
-      
+
       <div class="space-y-3">
-        <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-          <i class="ri-infinity-line text-green-500 ml-2 text-lg"></i>
+        <div class="flex items-center p-3 bg-cyan-50 rounded-lg border border-cyan-100">
+          <i class="ri-infinity-line text-cyan-500 ml-2 text-lg"></i>
           <span class="text-sm text-gray-700 font-medium">وصول مدى الحياة</span>
         </div>
-        <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-          <i class="ri-award-line text-green-500 ml-2 text-lg"></i>
+        <div class="flex items-center p-3 bg-cyan-50 rounded-lg border border-cyan-100">
+          <i class="ri-award-line text-cyan-500 ml-2 text-lg"></i>
           <span class="text-sm text-gray-700 font-medium">شهادة إتمام</span>
         </div>
-        <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-          <i class="ri-device-line text-green-500 ml-2 text-lg"></i>
+        <div class="flex items-center p-3 bg-cyan-50 rounded-lg border border-cyan-100">
+          <i class="ri-device-line text-cyan-500 ml-2 text-lg"></i>
           <span class="text-sm text-gray-700 font-medium">متاح على جميع الأجهزة</span>
         </div>
-        <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-          <i class="ri-video-hd-line text-green-500 ml-2 text-lg"></i>
+        <div class="flex items-center p-3 bg-cyan-50 rounded-lg border border-cyan-100">
+          <i class="ri-video-line text-cyan-500 ml-2 text-lg"></i>
           <span class="text-sm text-gray-700 font-medium">دروس مسجلة عالية الجودة</span>
         </div>
         @if($course->has_assignments)
-        <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-          <i class="ri-file-list-3-line text-green-500 ml-2 text-lg"></i>
+        <div class="flex items-center p-3 bg-cyan-50 rounded-lg border border-cyan-100">
+          <i class="ri-file-list-3-line text-cyan-500 ml-2 text-lg"></i>
           <span class="text-sm text-gray-700 font-medium">واجبات وتطبيقات عملية</span>
         </div>
         @endif
@@ -372,8 +379,8 @@
     <!-- Enrollment Status -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div class="flex items-center gap-3 mb-6">
-        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-          <i class="ri-user-settings-line text-blue-600 text-xl"></i>
+        <div class="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
+          <i class="ri-user-settings-line text-cyan-500 text-xl"></i>
         </div>
         <h3 class="font-bold text-gray-900 text-lg">حالة التسجيل</h3>
       </div>
@@ -388,8 +395,8 @@
           </div>
         </div>
         
-        <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
-           class="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold text-center hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-2">
+        <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
+           class="w-full bg-cyan-500 text-white py-3 px-6 rounded-lg font-semibold text-center hover:bg-cyan-600 transition-all duration-300 flex items-center justify-center gap-2">
           <i class="ri-play-circle-fill text-xl"></i>
           متابعة الدراسة
         </a>
@@ -407,16 +414,16 @@
             @if($course->original_price && $course->original_price > $course->price)
             <div class="text-sm text-gray-500 line-through mb-1">{{ number_format($course->original_price) }} ريال</div>
             @endif
-            <div class="text-2xl font-bold text-green-600 mb-1">{{ number_format($course->price) }} ريال</div>
+            <div class="text-2xl font-bold text-cyan-500 mb-1">{{ number_format($course->price) }} ريال</div>
             <div class="text-xs text-gray-600">سعر الدورة</div>
           @else
-            <div class="text-2xl font-bold text-green-600 mb-1">مجاني</div>
+            <div class="text-2xl font-bold text-cyan-500 mb-1">مجاني</div>
             <div class="text-xs text-gray-600">دورة مجانية بالكامل</div>
           @endif
         </div>
-        
-                                <button onclick="enrollInCourse()" 
-                                class="w-full bg-green-600 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+
+                                <button onclick="enrollInCourse()"
+                                class="w-full bg-cyan-500 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                           <i class="ri-shopping-cart-2-fill text-xl"></i>
                           {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
                         </button>
@@ -465,11 +472,17 @@ function toggleSection(sectionId) {
 }
 
 function enrollInCourse() {
+  // Check if user is authenticated
+  @guest
+    window.location.href = "{{ route('login', ['subdomain' => $academy->subdomain]) }}";
+    return;
+  @endguest
+
   const button = event.target;
   const originalHTML = button.innerHTML;
   button.innerHTML = '<i class="ri-loader-4-line animate-spin ml-2"></i>جاري التسجيل...';
   button.disabled = true;
-  
+
   fetch(`/api/courses/{{ $course->id }}/enroll`, {
     method: 'POST',
     headers: {

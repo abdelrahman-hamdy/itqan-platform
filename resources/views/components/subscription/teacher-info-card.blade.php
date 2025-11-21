@@ -6,7 +6,11 @@
     معلومات المعلم
   </h3>
   <div class="flex items-center gap-4 mb-4">
-    <x-teacher-avatar :teacher="$teacher" size="lg" />
+    <x-avatar
+      :user="$teacher"
+      size="lg"
+      :userType="$teacherType === 'quran' ? 'quran_teacher' : 'academic_teacher'"
+      :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'" />
     <div>
       <h4 class="font-bold text-gray-900">{{ $teacher->full_name ?? $teacher->user->name }}</h4>
       <p class="text-gray-600">

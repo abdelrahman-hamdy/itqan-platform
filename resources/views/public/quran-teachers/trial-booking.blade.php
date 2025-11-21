@@ -45,7 +45,11 @@
       <!-- Teacher Info -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
         <div class="flex items-center gap-4">
-          <x-teacher-avatar :teacher="$teacher" size="lg" />
+          <x-avatar
+            :user="$teacher"
+            size="lg"
+            userType="quran_teacher"
+            :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'" />
           <div>
             <h2 class="text-xl font-bold text-gray-900">{{ $teacher->full_name }}</h2>
             <p class="text-gray-600">معلم القرآن الكريم المعتمد</p>

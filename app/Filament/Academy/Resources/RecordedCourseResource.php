@@ -102,12 +102,14 @@ class RecordedCourseResource extends Resource
                                             ->label('وصف الدورة')
                                             ->required()
                                             ->columnSpanFull()
+                                            ->default(null)
                                             ->placeholder('أدخل وصف مفصل للدورة باللغة العربية'),
 
                                         Textarea::make('description_en')
                                             ->label('Course Description (English)')
                                             ->rows(3)
                                             ->columnSpanFull()
+                                            ->default(null)
                                             ->placeholder('Enter course description in English'),
                                     ])
                                     ->collapsible(),
@@ -126,6 +128,7 @@ class RecordedCourseResource extends Resource
                                                             ->pluck('name', 'id');
                                                     })
                                                     ->searchable()
+                                                    ->preload()
                                                     ->required()
                                                     ->placeholder('اختر المادة الدراسية'),
 
@@ -381,12 +384,14 @@ class RecordedCourseResource extends Resource
                                                     ->label('وصف الدرس')
                                                     ->required()
                                                     ->columnSpanFull()
+                                                    ->default(null)
                                                     ->placeholder('أدخل وصف مفصل للدرس'),
 
                                                 Textarea::make('description_en')
                                                     ->label('Lesson Description (English)')
                                                     ->rows(3)
                                                     ->columnSpanFull()
+                                                    ->default(null)
                                                     ->placeholder('Enter lesson description in English'),
 
                                                 KeyValue::make('learning_objectives')

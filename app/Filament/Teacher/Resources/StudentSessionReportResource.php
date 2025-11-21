@@ -218,7 +218,7 @@ class StudentSessionReportResource extends Resource
                             );
                     }),
 
-                SelectFilter::make('is_auto_calculated')
+                SelectFilter::make('is_calculated')
                     ->label('نوع التقييم')
                     ->options([
                         '1' => 'محسوب تلقائياً',

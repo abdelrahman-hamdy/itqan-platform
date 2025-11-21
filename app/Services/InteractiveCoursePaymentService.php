@@ -103,11 +103,11 @@ class InteractiveCoursePaymentService
 
         // If date range is specified, filter by session date
         if (isset($options['from_date'])) {
-            $query->where('scheduled_date', '>=', $options['from_date']);
+            $query->whereDate('scheduled_at', '>=', $options['from_date']);
         }
 
         if (isset($options['to_date'])) {
-            $query->where('scheduled_date', '<=', $options['to_date']);
+            $query->whereDate('scheduled_at', '<=', $options['to_date']);
         }
 
         return $query->count();

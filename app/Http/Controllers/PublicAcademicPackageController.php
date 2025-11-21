@@ -7,7 +7,7 @@ use App\Models\AcademicPackage;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
-use App\Models\Subject;
+use App\Models\AcademicSubject;
 use App\Models\AcademicGradeLevel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -44,7 +44,7 @@ class PublicAcademicPackageController extends Controller
             ->get();
 
         // Get subjects and grade levels for filtering
-        $subjects = Subject::where('academy_id', $academy->id)
+        $subjects = AcademicSubject::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -164,14 +164,16 @@ class PublicAcademicPackageController extends Controller
         // Log form submission
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'subject_id' => 'required|string',
-            'grade_level_id' => 'required|string',
+            'subject_id' => 'required|integer|exists:academic_subjects,id',
+            'grade_level_id' => 'required|integer|exists:academic_grade_levels,id',
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
             'preferred_schedule' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:500',
         ], [
             'subject_id.required' => 'اختيار المادة الدراسية مطلوب',
+            'subject_id.exists' => 'المادة الدراسية المختارة غير صحيحة',
             'grade_level_id.required' => 'اختيار المرحلة الدراسية مطلوب',
+            'grade_level_id.exists' => 'المرحلة الدراسية المختارة غير صحيحة',
             'billing_cycle.required' => 'اختيار دورة الفوترة مطلوب',
         ]);
 
@@ -229,28 +231,24 @@ class PublicAcademicPackageController extends Controller
             $sessionsPerMonth = $package->sessions_per_month;
             $hourlyRate = $price / $sessionsPerMonth;
 
-            // Get subject and grade level names from teacher's text arrays
+            // Get subject and grade level names from the database using IDs
             $subjectName = null;
             $gradeLevelName = null;
-            
-            // Handle subjects_text (extract index from prefixed value)
-            $subjects = $teacher->subjects_text;
-            if (is_string($subjects)) {
-                $subjects = json_decode($subjects, true) ?: [];
+
+            // Get subject name
+            $subject = AcademicSubject::where('id', $request->subject_id)
+                                      ->where('academy_id', $academy->id)
+                                      ->first();
+            if ($subject) {
+                $subjectName = $subject->name;
             }
-            $subjectIndex = str_replace('subject_', '', $request->subject_id);
-            if (is_array($subjects) && isset($subjects[$subjectIndex])) {
-                $subjectName = $subjects[$subjectIndex];
-            }
-            
-            // Handle grade_levels_text (extract index from prefixed value)
-            $gradeLevels = $teacher->grade_levels_text;
-            if (is_string($gradeLevels)) {
-                $gradeLevels = json_decode($gradeLevels, true) ?: [];
-            }
-            $gradeLevelIndex = str_replace('grade_', '', $request->grade_level_id);
-            if (is_array($gradeLevels) && isset($gradeLevels[$gradeLevelIndex])) {
-                $gradeLevelName = $gradeLevels[$gradeLevelIndex];
+
+            // Get grade level name
+            $gradeLevel = AcademicGradeLevel::where('id', $request->grade_level_id)
+                                            ->where('academy_id', $academy->id)
+                                            ->first();
+            if ($gradeLevel) {
+                $gradeLevelName = $gradeLevel->name;
             }
 
             // Generate unique subscription code

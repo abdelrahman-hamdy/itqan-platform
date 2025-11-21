@@ -364,11 +364,6 @@ class LiveKitMeetingController extends Controller
                 if ($session->academic_individual_lesson_id && $session->academicIndividualLesson) {
                     return $session->academicIndividualLesson->student_id === $user->id;
                 }
-
-                // Check if this is an interactive course session
-                if ($session->interactive_course_session_id && $session->interactiveCourseSession) {
-                    return $session->interactiveCourseSession->students()->where('student_id', $user->id)->exists();
-                }
             }
         }
 
@@ -408,11 +403,6 @@ class LiveKitMeetingController extends Controller
                 // Check individual lesson sessions
                 if ($session->academic_individual_lesson_id && $session->academicIndividualLesson) {
                     return in_array($session->academicIndividualLesson->student_id, $childrenIds->toArray());
-                }
-
-                // Check interactive course sessions
-                if ($session->interactive_course_session_id && $session->interactiveCourseSession) {
-                    return $session->interactiveCourseSession->students()->whereIn('student_id', $childrenIds)->exists();
                 }
             }
         }

@@ -27,7 +27,7 @@
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
          @click.away="open = false"
-         class="absolute right-auto left-0 z-[100] mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
+         class="absolute right-auto left-0 z-[100] mt-4 w-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
          style="transform-origin: top left;">
 
         {{-- Header --}}
@@ -35,13 +35,11 @@
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-800">{{ __('الإشعارات') }}</h3>
                 <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                    @if($unreadCount > 0)
-                        <button wire:click="markAllAsRead"
-                                type="button"
-                                class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
-                            {{ __('notifications.actions.mark_all_as_read') }}
-                        </button>
-                    @endif
+                    <button wire:click="markAllAsRead"
+                            type="button"
+                            class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                        {{ __('notifications.actions.mark_all_as_read') }}
+                    </button>
                     <button @click="open = false" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -70,78 +68,75 @@
         </div>
 
         {{-- Notifications List --}}
-        <div class="max-h-96 overflow-y-auto">
+        <div class="max-h-96 overflow-y-auto"
+             x-data="{ loading: false }"
+             @scroll.debounce.150ms="
+                if (($el.scrollHeight - $el.scrollTop - $el.clientHeight) < 100 && !loading && {{ $hasMore ? 'true' : 'false' }}) {
+                    loading = true;
+                    $wire.loadMore().then(() => { loading = false; });
+                }
+             ">
             @forelse($notifications as $notification)
                 @php
                     $data = json_decode($notification->data, true);
                     $metadata = json_decode($notification->metadata, true) ?? [];
-                    $isUnread = !$notification->read_at;
+                    $isUnclicked = !$notification->read_at; // Not clicked yet (highlighted)
+
+                    // Map category to colors
+                    $categoryColors = [
+                        'session' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600'],
+                        'attendance' => ['bg' => 'bg-green-100', 'text' => 'text-green-600'],
+                        'homework' => ['bg' => 'bg-amber-100', 'text' => 'text-amber-600'],
+                        'payment' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-600'],
+                        'meeting' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
+                        'progress' => ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-600'],
+                        'chat' => ['bg' => 'bg-pink-100', 'text' => 'text-pink-600'],
+                        'system' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
+                    ];
+                    $colors = $categoryColors[$notification->category] ?? $categoryColors['system'];
                 @endphp
 
-                <div class="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 {{ $isUnread ? 'bg-blue-50' : '' }}">
-                    <div class="flex items-start space-x-3 rtl:space-x-reverse">
-                        {{-- Icon --}}
-                        <div class="flex-shrink-0 mt-1">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center {{ $notification->icon_color ? 'bg-'.$notification->icon_color.'-100 text-'.$notification->icon_color.'-600' : 'bg-gray-100 text-gray-600' }}">
-                                @if($notification->icon)
-                                    <x-dynamic-component :component="$notification->icon" class="w-5 h-5" />
-                                @else
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                                    </svg>
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- Content --}}
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium text-gray-900">
-                                        {{ $data['title'] ?? '' }}
-                                    </p>
-                                    <p class="mt-1 text-sm text-gray-600">
-                                        {{ $data['message'] ?? '' }}
-                                    </p>
-                                    <p class="mt-1 text-xs text-gray-400">
-                                        {{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}
-                                    </p>
-                                </div>
-
-                                {{-- Actions --}}
-                                <div class="flex items-center space-x-2 rtl:space-x-reverse ml-2">
-                                    @if($notification->action_url)
-                                        <a href="{{ $notification->action_url }}"
-                                           class="text-blue-600 hover:text-blue-800">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                            </svg>
-                                        </a>
-                                    @endif
-
-                                    @if($isUnread)
-                                        <button wire:click="markAsRead('{{ $notification->id }}')"
-                                                type="button"
-                                                class="text-green-600 hover:text-green-800 p-1"
-                                                title="{{ __('notifications.actions.mark_as_read') }}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                        </button>
-                                    @endif
-
-                                    <button wire:click="deleteNotification('{{ $notification->id }}')"
-                                            type="button"
-                                            class="text-red-600 hover:text-red-800 p-1"
-                                            title="{{ __('notifications.actions.delete') }}">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                <div class="{{ $isUnclicked ? 'bg-blue-50' : 'bg-white' }}">
+                    {{-- Clickable notification item --}}
+                    @if($notification->action_url)
+                        <a href="{{ $notification->action_url }}"
+                           wire:click="markAsRead('{{ $notification->id }}')"
+                           class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                    @else
+                        <div class="px-4 py-3 border-b border-gray-100">
+                    @endif
+                        <div class="flex items-start space-x-3 rtl:space-x-reverse">
+                            {{-- Icon with fixed colors --}}
+                            <div class="flex-shrink-0 mt-0.5">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center {{ $colors['bg'] }} {{ $colors['text'] }}">
+                                    @if($notification->icon)
+                                        <x-dynamic-component :component="$notification->icon" class="w-5 h-5" />
+                                    @else
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                                         </svg>
-                                    </button>
+                                    @endif
                                 </div>
                             </div>
+
+                            {{-- Content --}}
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900">
+                                    {{ $data['title'] ?? '' }}
+                                </p>
+                                <p class="mt-1 text-sm text-gray-600 line-clamp-2">
+                                    {{ $data['message'] ?? '' }}
+                                </p>
+                                <p class="mt-1.5 text-xs text-gray-400">
+                                    {{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    @if($notification->action_url)
+                        </a>
+                    @else
+                        </div>
+                    @endif
                 </div>
             @empty
                 <div class="px-4 py-8 text-center">
@@ -151,14 +146,28 @@
                     <p class="mt-2 text-sm text-gray-500">{{ __('notifications.empty.message') }}</p>
                 </div>
             @endforelse
+
+            {{-- Loading indicator for infinite scroll --}}
+            <div x-show="loading || ({{ $hasMore ? 'true' : 'false' }} && {{ count($notifications) }} > 0)"
+                 x-cloak
+                 class="px-4 py-3 text-center border-t border-gray-100">
+                <div class="inline-flex items-center text-xs text-gray-500">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ __('جاري التحميل...') }}</span>
+                </div>
+            </div>
         </div>
 
-        {{-- Footer with Pagination --}}
-        @if($notifications->hasPages())
-            <div class="px-4 py-2 border-t border-gray-200 bg-gray-50">
-                {{ $notifications->links('pagination::simple-tailwind') }}
-            </div>
-        @endif
+        {{-- Footer --}}
+        <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+            <a href="{{ route('notifications.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}"
+               class="block text-center text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors py-1 hover:bg-blue-50 rounded">
+                {{ __('عرض كل الإشعارات') }}
+            </a>
+        </div>
     </div>
 
 </div>
@@ -179,6 +188,21 @@
     }
     .scrollbar-thin::-webkit-scrollbar-thumb:hover {
         background: #555;
+    }
+
+    /* Scrollbar styles for notifications list */
+    .max-h-96::-webkit-scrollbar {
+        width: 6px;
+    }
+    .max-h-96::-webkit-scrollbar-track {
+        background: #f9fafb;
+    }
+    .max-h-96::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+    .max-h-96::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
     }
 </style>
 @endpush

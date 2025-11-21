@@ -241,7 +241,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
             return [];
         }
 
-        return \App\Models\Subject::where('academy_id', $academy->id)
+        return \App\Models\AcademicSubject::where('academy_id', $academy->id)
             ->pluck('name', 'id')
             ->toArray();
     }

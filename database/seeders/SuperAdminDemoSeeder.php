@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Academy;
 use App\Models\User;
-use App\Models\Subject;
+use App\Models\AcademicSubject;
 use App\Models\AcademicGradeLevel;
 use Illuminate\Support\Facades\Hash;
 
@@ -247,7 +247,7 @@ class SuperAdminDemoSeeder extends Seeder
 
         foreach ($academies as $academy) {
             foreach ($subjects as $subject) {
-                Subject::create(array_merge($subject, [
+                AcademicSubject::create(array_merge($subject, [
                     'academy_id' => $academy->id,
                     'description' => 'مادة ' . $subject['name'] . ' في أكاديمية ' . $academy->name,
                 ]));

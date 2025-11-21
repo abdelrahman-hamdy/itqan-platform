@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
-use App\Models\Subject;
 use App\Models\AcademicGradeLevel;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -61,6 +60,7 @@ class AcademicTeacherProfileResource extends BaseResource
                                 $user = auth()->user();
                                 return $user && $user->isSuperAdmin() && !AcademyContextService::getCurrentAcademy();
                             })
+                            ->dehydrated(true) // CRITICAL: Always include in form data even when hidden
                             ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المدرس')
                             ->live(), // Make it reactive so subjects and grade levels update when changed
                         
@@ -81,11 +81,43 @@ class AcademicTeacherProfileResource extends BaseResource
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255)
                                     ->helperText('سيستخدم المعلم هذا البريد للدخول إلى المنصة'),
+                                Forms\Components\Select::make('gender')
+                                    ->label('الجنس')
+                                    ->options([
+                                        'male' => 'معلم',
+                                        'female' => 'معلمة',
+                                    ])
+                                    ->required()
+                                    ->native(false),
                                 Forms\Components\TextInput::make('phone')
                                     ->label('رقم الهاتف')
                                     ->tel()
                                     ->maxLength(20),
                             ]),
+
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('password')
+                                    ->label('كلمة المرور')
+                                    ->password()
+                                    ->revealable()
+                                    ->dehydrated(fn ($state) => filled($state))
+                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->minLength(8)
+                                    ->maxLength(255)
+                                    ->helperText('سيتم إنشاء حساب تلقائياً للمعلم باستخدام هذه الكلمة. الحد الأدنى 8 أحرف.')
+                                    ->visible(fn ($record) => !$record || !$record->user_id),
+                                Forms\Components\TextInput::make('password_confirmation')
+                                    ->label('تأكيد كلمة المرور')
+                                    ->password()
+                                    ->revealable()
+                                    ->dehydrated(false)
+                                    ->required(fn (string $context, $get): bool => $context === 'create' && filled($get('password')))
+                                    ->same('password')
+                                    ->maxLength(255)
+                                    ->visible(fn ($record) => !$record || !$record->user_id),
+                            ]),
+
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
                             ->image()
@@ -173,7 +205,7 @@ class AcademicTeacherProfileResource extends BaseResource
                                     return [];
                                 }
                                 
-                                return \App\Models\Subject::where('academy_id', $academyId)
+                                return \App\Models\AcademicSubject::where('academy_id', $academyId)
                                     ->where('is_active', true)
                                     ->orderBy('name')
                                     ->pluck('name', 'id')
@@ -191,7 +223,7 @@ class AcademicTeacherProfileResource extends BaseResource
                                     return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
                                 }
                                 
-                                $count = \App\Models\Subject::where('academy_id', $academyId)->where('is_active', true)->count();
+                                $count = \App\Models\AcademicSubject::where('academy_id', $academyId)->where('is_active', true)->count();
                                 if ($count === 0) {
                                     return 'لا توجد مواد دراسية متاحة في هذه الأكاديمية. يرجى إضافة المواد الدراسية أولاً.';
                                 }
@@ -361,6 +393,19 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->label('البريد الإلكتروني')
                     ->searchable()
                     ->copyable(),
+                Tables\Columns\TextColumn::make('gender')
+                    ->label('الجنس')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'male' => 'معلم',
+                        'female' => 'معلمة',
+                        default => '-',
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'male' => 'info',
+                        'female' => 'pink',
+                        default => 'gray',
+                    }),
                 Tables\Columns\IconColumn::make('user_id')
                     ->label('مربوط بحساب')
                     ->boolean()

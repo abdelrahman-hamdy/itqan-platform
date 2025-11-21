@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Traits\ScopedToAcademy;
 use Illuminate\Support\Facades\DB;
-use App\Models\Subject;
 use App\Models\AcademicSubject;
 
 class AcademicTeacherProfile extends Model
@@ -21,6 +20,7 @@ class AcademicTeacherProfile extends Model
         'academy_id', // Direct academy relationship
         'user_id', // Nullable - will be linked during registration
         'email',
+        'gender',
         'first_name',
         'last_name',
         'phone',
@@ -44,6 +44,8 @@ class AcademicTeacherProfile extends Model
         // 'approval_status',   // ← REMOVED - using is_active only
         'is_active',          // ← PRIMARY ACTIVATION FIELD
         'notes',
+        'bio_arabic',
+        'bio_english',
     ];
 
     protected $casts = [
@@ -152,8 +154,7 @@ class AcademicTeacherProfile extends Model
      */
     public function subjects(): BelongsToMany
     {
-        return $this->belongsToMany(Subject::class, 'academic_teacher_subjects', 'teacher_id', 'subject_id')
-            ->where('subjects.academy_id', $this->academy_id)
+        return $this->belongsToMany(AcademicSubject::class, 'academic_teacher_subjects', 'teacher_id', 'subject_id')
             ->withPivot(['proficiency_level', 'years_experience', 'is_primary', 'certification'])
             ->withTimestamps();
     }
@@ -164,7 +165,6 @@ class AcademicTeacherProfile extends Model
     public function gradeLevels(): BelongsToMany
     {
         return $this->belongsToMany(AcademicGradeLevel::class, 'academic_teacher_grade_levels', 'teacher_id', 'grade_level_id')
-            ->where('academic_grade_levels.academy_id', $this->academy_id)
             ->withPivot(['years_experience', 'specialization_notes'])
             ->withTimestamps();
     }
@@ -177,7 +177,7 @@ class AcademicTeacherProfile extends Model
         if (empty($this->grade_level_ids)) {
             return collect();
         }
-        
+
         // Ensure grade_level_ids is an array
         $gradeLevelIds = $this->grade_level_ids;
         if (is_string($gradeLevelIds)) {
@@ -186,10 +186,66 @@ class AcademicTeacherProfile extends Model
         if (!is_array($gradeLevelIds)) {
             return collect();
         }
-        
+
         return AcademicGradeLevel::whereIn('id', $gradeLevelIds)
                                  ->where('academy_id', $this->academy_id)
                                  ->get();
+    }
+
+    /**
+     * Get subjects as text array for forms (backward compatibility)
+     */
+    public function getSubjectsTextAttribute()
+    {
+        if (empty($this->subject_ids)) {
+            return [];
+        }
+
+        // Ensure subject_ids is an array
+        $subjectIds = $this->subject_ids;
+        if (is_string($subjectIds)) {
+            $subjectIds = json_decode($subjectIds, true) ?: [];
+        }
+        if (!is_array($subjectIds)) {
+            return [];
+        }
+
+        // Get the actual subject names from the database
+        $subjects = AcademicSubject::whereIn('id', $subjectIds)
+                                   ->where('academy_id', $this->academy_id)
+                                   ->pluck('name', 'id')
+                                   ->toArray();
+
+        // Return array of subject names with IDs as keys (for consistent indexing)
+        return $subjects;
+    }
+
+    /**
+     * Get grade levels as text array for forms (backward compatibility)
+     */
+    public function getGradeLevelsTextAttribute()
+    {
+        if (empty($this->grade_level_ids)) {
+            return [];
+        }
+
+        // Ensure grade_level_ids is an array
+        $gradeLevelIds = $this->grade_level_ids;
+        if (is_string($gradeLevelIds)) {
+            $gradeLevelIds = json_decode($gradeLevelIds, true) ?: [];
+        }
+        if (!is_array($gradeLevelIds)) {
+            return [];
+        }
+
+        // Get the actual grade level names from the database
+        $gradeLevels = AcademicGradeLevel::whereIn('id', $gradeLevelIds)
+                                         ->where('academy_id', $this->academy_id)
+                                         ->pluck('name', 'id')
+                                         ->toArray();
+
+        // Return array of grade level names with IDs as keys (for consistent indexing)
+        return $gradeLevels;
     }
 
     /**

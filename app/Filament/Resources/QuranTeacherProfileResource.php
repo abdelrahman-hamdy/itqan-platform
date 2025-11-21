@@ -67,6 +67,30 @@ class QuranTeacherProfileResource extends BaseResource
                                     ->tel()
                                     ->maxLength(20),
                             ]),
+
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('password')
+                                    ->label('كلمة المرور')
+                                    ->password()
+                                    ->revealable()
+                                    ->dehydrated(fn ($state) => filled($state))
+                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->minLength(8)
+                                    ->maxLength(255)
+                                    ->helperText('سيتم إنشاء حساب تلقائياً للمعلم باستخدام هذه الكلمة. الحد الأدنى 8 أحرف.')
+                                    ->visible(fn ($record) => !$record || !$record->user_id),
+                                Forms\Components\TextInput::make('password_confirmation')
+                                    ->label('تأكيد كلمة المرور')
+                                    ->password()
+                                    ->revealable()
+                                    ->dehydrated(false)
+                                    ->required(fn (string $context, $get): bool => $context === 'create' && filled($get('password')))
+                                    ->same('password')
+                                    ->maxLength(255)
+                                    ->visible(fn ($record) => !$record || !$record->user_id),
+                            ]),
+
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
                             ->image()

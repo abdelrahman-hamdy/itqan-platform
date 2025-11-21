@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QuranSubscription extends Model
@@ -51,6 +52,8 @@ class QuranSubscription extends Model
         'metadata',
         'created_by',
         'updated_by',
+        'certificate_issued',
+        'certificate_issued_at',
     ];
 
     protected $casts = [
@@ -73,6 +76,8 @@ class QuranSubscription extends Model
         'next_payment_at' => 'datetime',
         'last_payment_at' => 'datetime',
         'reviewed_at' => 'datetime',
+        'certificate_issued' => 'boolean',
+        'certificate_issued_at' => 'datetime',
         'metadata' => 'array',
     ];
 
@@ -164,14 +169,18 @@ class QuranSubscription extends Model
         return $this->hasMany(QuranProgress::class);
     }
 
-    public function homework(): HasMany
-    {
-        return $this->hasMany(QuranHomework::class);
-    }
+    // Note: homework() relationship removed - Quran homework is now tracked through
+    // QuranSession model fields and graded through student session reports
+    // See migration: 2025_11_17_190605_drop_quran_homework_tables.php
 
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'subscription_id');
+    }
+
+    public function certificate(): MorphOne
+    {
+        return $this->morphOne(Certificate::class, 'certificateable');
     }
 
     // Scopes

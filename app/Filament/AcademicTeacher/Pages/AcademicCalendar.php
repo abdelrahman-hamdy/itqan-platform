@@ -165,7 +165,7 @@ class AcademicCalendar extends Page
             $query->where('assigned_teacher_id', $teacherProfile->id)
                 ->where('academy_id', $user->academy_id);
         })
-            ->whereDate('scheduled_date', $today)
+            ->whereDate('scheduled_at', $today)
             ->with(['course'])
             ->get();
 
@@ -498,7 +498,7 @@ class AcademicCalendar extends Page
                     ->placeholder('اختر الساعة')
                     ->options(function () {
                         $options = [];
-                        for ($hour = 6; $hour <= 23; $hour++) {
+                        for ($hour = 0; $hour <= 23; $hour++) {
                             $time = sprintf('%02d:00', $hour);
                             $display = sprintf('%02d:00', $hour).' ('.($hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour)).' '.($hour >= 12 ? 'م' : 'ص').')';
                             $options[$time] = $display;
@@ -506,6 +506,7 @@ class AcademicCalendar extends Page
 
                         return $options;
                     })
+                    ->searchable()
                     ->helperText('الوقت الذي ستبدأ فيه الجلسات'),
 
                 Forms\Components\TextInput::make('session_count')
@@ -773,25 +774,21 @@ class AcademicCalendar extends Page
 
                 // Check if session already exists for this date/time
                 $existingSession = InteractiveCourseSession::where('course_id', $course->id)
-                    ->whereDate('scheduled_date', $sessionDateTime->toDateString())
-                    ->whereTime('scheduled_time', $sessionDateTime->toTimeString())
+                    ->where('scheduled_at', $sessionDateTime)
                     ->first();
 
                 if (! $existingSession) {
                     // Create new course session
                     $sessionNumber = $scheduledCount + 1;
                     InteractiveCourseSession::create([
-                        'academy_id' => $course->academy_id,
                         'course_id' => $course->id,
                         'session_number' => $sessionNumber,
                         'title' => "جلسة {$sessionNumber} - {$course->title}",
                         'description' => "جلسة من دورة {$course->title}",
-                        'scheduled_date' => $sessionDateTime->toDateString(),
-                        'scheduled_time' => $sessionDateTime->toTimeString(),
+                        'scheduled_at' => $sessionDateTime,
                         'duration_minutes' => $course->session_duration_minutes ?? 60,
                         'status' => 'scheduled',
                         'meeting_link' => null, // Will be generated when session starts
-                        'created_by' => $user->id,
                     ]);
 
                     $scheduledCount++;
@@ -865,7 +862,7 @@ class AcademicCalendar extends Page
     protected function getFooterWidgets(): array
     {
         return [
-            \App\Filament\AcademicTeacher\Widgets\AcademicFullCalendarWidget::make([
+            \App\Filament\Teacher\Widgets\TeacherCalendarWidget::make([
                 'selectedItemId' => $this->selectedItemId,
                 'selectedItemType' => $this->selectedItemType,
             ]),

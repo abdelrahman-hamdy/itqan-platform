@@ -73,7 +73,7 @@
                 
                 return [
                   'title' => $subscription->student->name ?? 'طالب',
-                  'description' => 'باقة ' . ($subscription->package->getDisplayName() ?? 'مخصصة') . 
+                  'description' => 'باقة ' . ($subscription->package ? $subscription->package->getDisplayName() : 'مخصصة') .
                                    ' - متبقي ' . ($subscription->remaining_sessions ?? 0) . ' جلسة',
                   'icon' => 'ri-user-star-line',
                   'iconBgColor' => 'bg-purple-100',

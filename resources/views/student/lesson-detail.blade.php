@@ -5,8 +5,8 @@
 <nav class="mb-8">
     <ol class="flex items-center space-x-2 space-x-reverse text-sm">
         <li>
-            <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" 
-               class="text-gray-500 hover:text-primary transition-colors flex items-center">
+            <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}"
+               class="text-gray-500 hover:text-cyan-500 transition-colors flex items-center">
                 <i class="ri-home-line ml-1"></i>
                 الرئيسية
             </a>
@@ -15,8 +15,8 @@
             <i class="ri-arrow-left-s-line"></i>
         </li>
         <li>
-            <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}" 
-               class="text-gray-500 hover:text-primary transition-colors">
+            <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}"
+               class="text-gray-500 hover:text-cyan-500 transition-colors">
                 الدورات المسجلة
             </a>
         </li>
@@ -24,15 +24,15 @@
             <i class="ri-arrow-left-s-line"></i>
         </li>
         <li>
-            <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
-               class="text-gray-500 hover:text-primary transition-colors">
+            <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
+               class="text-gray-500 hover:text-cyan-500 transition-colors">
                 {{ $course->title }}
             </a>
         </li>
         <li class="text-gray-400">
             <i class="ri-arrow-left-s-line"></i>
         </li>
-        <li class="text-primary font-medium">{{ $lesson->title }}</li>
+        <li class="text-cyan-500 font-medium">{{ $lesson->title }}</li>
     </ol>
 </nav>
 
@@ -154,16 +154,16 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">الإجراءات السريعة</h3>
                     <div class="space-y-3">
                         <!-- Return to Learn Page Button -->
-                        <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" 
-                           class="w-full flex items-center justify-center px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
+                           class="w-full flex items-center justify-center px-4 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
                             <i class="ri-arrow-right-line ml-2"></i>
                             العودة لصفحة التعلم
                         </a>
-                        
+
                         <!-- Download Video Button (only if downloadable) -->
                         @if($lesson->is_downloadable)
-                        <button onclick="downloadVideo()" 
-                                class="w-full flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        <button onclick="downloadVideo()"
+                                class="w-full flex items-center justify-center px-4 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
                             <i class="ri-download-line ml-2"></i>
                             تحميل الفيديو
                         </button>
@@ -182,7 +182,7 @@
                                 <span class="text-gray-900">{{ $progressPercentage }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-primary h-2 rounded-full" style="width: {{ $progressPercentage }}%"></div>
+                                <div class="bg-cyan-500 h-2 rounded-full" style="width: {{ $progressPercentage }}%"></div>
                             </div>
                         </div>
                         <div class="text-sm text-gray-600">
@@ -199,12 +199,12 @@
                     <div class="space-y-2">
                         @foreach($course->lessons->sortBy('id') as $index => $courseLesson)
                         <div class="p-3 rounded-lg border transition-colors
-                            {{ $courseLesson->id === $lesson->id ? 'bg-primary/10 border-primary' : 'border-gray-200' }}
+                            {{ $courseLesson->id === $lesson->id ? 'bg-cyan-50 border-cyan-500' : 'border-gray-200' }}
                             {{ $isEnrolled || $courseLesson->is_free_preview ? 'hover:bg-gray-50 cursor-pointer' : 'cursor-not-allowed opacity-75' }}"
                              @if($isEnrolled || $courseLesson->is_free_preview) onclick="openLesson({{ $courseLesson->id }}, {{ $course->id }})" @endif>
                             <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span class="text-xs font-bold text-primary">{{ $index + 1 }}</span>
+                                <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-xs font-bold text-cyan-500">{{ $index + 1 }}</span>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <h4 class="font-medium text-gray-900 text-sm truncate">{{ $courseLesson->title }}</h4>
@@ -216,7 +216,7 @@
                                 </div>
                                 <div class="flex-shrink-0">
                                     @if($courseLesson->id === $lesson->id)
-                                        <i class="ri-play-circle-fill text-primary text-2xl"></i>
+                                        <i class="ri-play-circle-fill text-cyan-500 text-2xl"></i>
                                     @elseif($isEnrolled || $courseLesson->is_free_preview)
                                         <i class="ri-play-circle-line text-gray-400 text-2xl"></i>
                                     @else

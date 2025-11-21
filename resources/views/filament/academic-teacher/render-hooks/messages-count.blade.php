@@ -48,8 +48,8 @@
 </style>
 
 <div class="message-count-container">
-    <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" 
-       class="message-count-icon" 
+    <a href="{{ route('chats') }}"
+       class="message-count-icon"
        title="الرسائل">
         <i class="ri-message-2-line"></i>
         <span id="filament-unread-count-badge" class="message-count-badge">0</span>

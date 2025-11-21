@@ -165,8 +165,8 @@ class ChatGroupService
                 return $existingGroup;
             }
             
-            $teacher = $course->teacher;
-            
+            $teacher = $course->assignedTeacher;
+
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $course->academy_id,

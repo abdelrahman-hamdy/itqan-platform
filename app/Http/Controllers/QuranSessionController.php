@@ -119,7 +119,6 @@ class QuranSessionController extends Controller
             'quranTeacher',
             'sessionHomework',
             'studentReports',
-            'homework',
             'progress',
         ])
             ->first();

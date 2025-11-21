@@ -30,8 +30,6 @@ use App\Filament\Resources\QuranSubscriptionResource;
 use App\Filament\Resources\QuranPackageResource;
 use App\Filament\Resources\InteractiveCourseResource;
 
-use App\Filament\Resources\SubjectResource;
-
 class AcademyPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -79,8 +77,7 @@ class AcademyPanelProvider extends PanelProvider
                 
                 // إدارة التعليم الأكاديمي
                 InteractiveCourseResource::class,
-                SubjectResource::class,
-                
+
                 // إدارة الدورات المسجلة
                 RecordedCourseResource::class,
                 

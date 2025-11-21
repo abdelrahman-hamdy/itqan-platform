@@ -168,7 +168,15 @@ class PublicQuranTeacherController extends Controller
             $user->load('studentProfile');
         }
 
-        return view('public.quran-teachers.subscription-booking', compact('academy', 'teacher', 'package'));
+        // Get the selected pricing period from query string (default to monthly)
+        $selectedPeriod = $request->query('period', 'monthly');
+
+        // Validate period value
+        if (!in_array($selectedPeriod, ['monthly', 'quarterly', 'yearly'])) {
+            $selectedPeriod = 'monthly';
+        }
+
+        return view('public.quran-teachers.subscription-booking', compact('academy', 'teacher', 'package', 'selectedPeriod'));
     }
 
     /**

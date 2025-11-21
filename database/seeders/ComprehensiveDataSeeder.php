@@ -20,7 +20,7 @@ use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use App\Models\StudentProfile;
 use App\Models\StudentProgress;
-use App\Models\Subject;
+use App\Models\AcademicSubject;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -196,7 +196,7 @@ class ComprehensiveDataSeeder extends Seeder
 
         foreach ($academies as $academy) {
             foreach ($subjectData as $index => $subject) {
-                $subjectModel = Subject::firstOrCreate(
+                $subjectModel = AcademicSubject::firstOrCreate(
                     [
                         'academy_id' => $academy->id,
                         'name' => $subject['name'],

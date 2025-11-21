@@ -297,7 +297,7 @@ abstract class BaseReportSyncService
                 'actual_attendance_minutes' => $actualMinutes,
                 'attendance_status' => $attendanceStatus,
                 'attendance_percentage' => $attendancePercentage,
-                'is_auto_calculated' => true,
+                'is_calculated' => true,
             ]);
 
             Log::info('Session attendance synced to report', [
@@ -435,14 +435,14 @@ abstract class BaseReportSyncService
                         'teacher_id' => $teacher->id,
                         'academy_id' => $session->academy_id,
                         'attendance_status' => $newStatus,
-                        'manually_overridden' => true,
+                        'manually_evaluated' => true,
                         'override_reason' => $reason,
                     ]);
                 }
             } else {
                 $report->update([
                     'attendance_status' => $newStatus,
-                    'manually_overridden' => true,
+                    'manually_evaluated' => true,
                     'override_reason' => $reason,
                 ]);
             }
@@ -500,7 +500,7 @@ abstract class BaseReportSyncService
             [
                 'teacher_id' => $teacher->id,
                 'academy_id' => $session->academy_id,
-                'is_auto_calculated' => true,
+                'is_calculated' => true,
             ]
         );
 

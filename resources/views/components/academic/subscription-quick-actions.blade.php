@@ -52,14 +52,20 @@
             </a>
 
             <!-- Contact Student -->
-            <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $student->id]) }}" 
-               class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group">
-                <div class="flex items-center">
-                    <i class="ri-chat-1-line text-gray-600 ml-3"></i>
-                    <span class="text-sm font-medium text-gray-800">راسل الطالب</span>
-                </div>
-                <i class="ri-arrow-left-s-line text-gray-600 group-hover:text-gray-700"></i>
-            </a>
+            @php
+                $studentUser = ($student instanceof \App\Models\User) ? $student : ($student->user ?? null);
+                $conv = $studentUser ? auth()->user()->getOrCreatePrivateConversation($studentUser) : null;
+            @endphp
+            @if($conv)
+                <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
+                   class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group">
+                    <div class="flex items-center">
+                        <i class="ri-chat-1-line text-gray-600 ml-3"></i>
+                        <span class="text-sm font-medium text-gray-800">راسل الطالب</span>
+                    </div>
+                    <i class="ri-arrow-left-s-line text-gray-600 group-hover:text-gray-700"></i>
+                </a>
+            @endif
 
             <!-- Subscription Settings -->
             <button onclick="editSubscriptionSettings({{ $subscription->id }})" 
@@ -95,14 +101,21 @@
             </button>
 
             <!-- Contact Teacher -->
-            <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $subscription->teacher->user_id ?? $subscription->teacher_id]) }}" 
-               class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group">
-                <div class="flex items-center">
-                    <i class="ri-chat-1-line text-gray-600 ml-3"></i>
-                    <span class="text-sm font-medium text-gray-800">راسل المعلم</span>
-                </div>
-                <i class="ri-arrow-left-s-line text-gray-600 group-hover:text-gray-700"></i>
-            </a>
+            @php
+                $teacher = $subscription->academicTeacher ?? $subscription->teacher ?? null;
+                $teacherUser = $teacher ? ($teacher->user ?? null) : null;
+                $conv = $teacherUser ? auth()->user()->getOrCreatePrivateConversation($teacherUser) : null;
+            @endphp
+            @if($conv)
+                <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
+                   class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group">
+                    <div class="flex items-center">
+                        <i class="ri-chat-1-line text-gray-600 ml-3"></i>
+                        <span class="text-sm font-medium text-gray-800">راسل المعلم</span>
+                    </div>
+                    <i class="ri-arrow-left-s-line text-gray-600 group-hover:text-gray-700"></i>
+                </a>
+            @endif
 
             <!-- View Progress -->
             <a href="{{ route('student.progress.academic', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}?subscription={{ $subscription->id }}" 

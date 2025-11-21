@@ -5,7 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\InteractiveCourseResource\Pages;
 use App\Models\InteractiveCourse;
 use App\Models\AcademicTeacherProfile;
-use App\Models\Subject;
+use App\Models\AcademicSubject;
 use App\Models\AcademicGradeLevel;
 use App\Enums\SessionDuration;
 use App\Enums\DifficultyLevel;
@@ -75,10 +75,11 @@ class InteractiveCourseResource extends BaseResource
                                     ->label('المادة الدراسية')
                                     ->options(function () {
                                         $academyId = AcademyContextService::getCurrentAcademyId();
-                                        return $academyId ? Subject::forAcademy($academyId)->pluck('name', 'id') : [];
+                                        return $academyId ? AcademicSubject::where('academy_id', $academyId)->where('is_active', true)->pluck('name', 'id') : [];
                                     })
                                     ->required()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->preload(),
 
                                 Forms\Components\Select::make('grade_level_id')
                                     ->label('المرحلة الدراسية')

@@ -49,7 +49,7 @@
                 <!-- Student Avatar and Basic Info -->
                 <div class="flex items-center space-x-4 space-x-reverse">
                     <div class="relative">
-                        <x-student-avatar :student="$circle->student" size="xl" />
+                        <x-avatar :user="$circle->student" size="xl" />
                         <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
                             <i class="ri-user-star-line text-xs text-white"></i>
                         </div>
@@ -549,7 +549,7 @@
                 <div class="space-y-4">
                     <!-- Basic Info -->
                     <div class="flex items-center space-x-3 space-x-reverse">
-                        <x-student-avatar :student="$circle->student" size="lg" />
+                        <x-avatar :user="$circle->student" size="lg" />
                         <div class="flex-1">
                             <p class="font-bold text-gray-900 text-lg">{{ $circle->student->name }}</p>
                             <p class="text-sm text-gray-500">{{ $circle->student->email }}</p>

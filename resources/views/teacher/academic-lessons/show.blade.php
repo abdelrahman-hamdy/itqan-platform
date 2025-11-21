@@ -52,11 +52,11 @@
 // Session detail function
 function openSessionDetail(sessionId) {
     @if(auth()->check())
-        // Use Laravel route helper to generate correct URL for teacher sessions
-        const sessionUrl = '{{ route("teacher.sessions.show", ["subdomain" => request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
+        // Use consolidated academic session route
+        const sessionUrl = '{{ route("teacher.academic-sessions.show", ["subdomain" => request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy", "session" => "SESSION_ID_PLACEHOLDER"]) }}';
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
-        
-        console.log('Teacher Session URL:', finalUrl);
+
+        console.log('Academic Teacher Session URL:', finalUrl);
         window.location.href = finalUrl;
     @else
         console.error('User not authenticated');

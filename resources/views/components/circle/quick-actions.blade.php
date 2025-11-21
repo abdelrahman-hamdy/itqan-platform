@@ -23,8 +23,9 @@
         $teacher = $circle->quranTeacher?->user ?? null;
     } elseif ($isIndividual || $isTrial) {
         if ($isAcademic) {
-            // Academic teacher is already a User model
-            $teacher = $circle->teacher ?? null;
+            // Academic teacher - get User from AcademicTeacherProfile
+            $academicTeacher = $circle->teacher ?? null;
+            $teacher = $academicTeacher?->user ?? null;
         } else {
             // Get User model from QuranTeacherProfile
             $teacher = $circle->quranTeacher?->user ?? null;
@@ -77,7 +78,10 @@
 
             {{-- Message Student (Individual/Trial only) --}}
             @if(($isIndividual || $isTrial) && $student)
-                @php $conv = auth()->user()->getOrCreatePrivateConversation($student); @endphp
+                @php
+                    $studentUser = ($student instanceof \App\Models\User) ? $student : ($student->user ?? null);
+                    $conv = $studentUser ? auth()->user()->getOrCreatePrivateConversation($studentUser) : null;
+                @endphp
                 @if($conv)
                     <a href="{{ route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
@@ -136,7 +140,10 @@
 
             {{-- Message Teacher (Group circles: only for enrolled students) --}}
             @if($teacher && (!$isGroup || $isEnrolled))
-                @php $conv = auth()->user()->getOrCreatePrivateConversation($teacher); @endphp
+                @php
+                    $teacherUser = ($teacher instanceof \App\Models\User) ? $teacher : ($teacher->user ?? null);
+                    $conv = $teacherUser ? auth()->user()->getOrCreatePrivateConversation($teacherUser) : null;
+                @endphp
                 @if($conv)
                     <a href="{{ route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">

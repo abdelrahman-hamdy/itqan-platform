@@ -45,7 +45,7 @@ class ListStudentSessionReports extends ListRecords
             'absent' => Tab::make('الغائبون')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('attendance_status', 'absent')),
             'manual' => Tab::make('مقيم يدوياً')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_auto_calculated', false)),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_calculated', false)),
         ];
     }
 }

@@ -285,7 +285,8 @@ class CalendarService
     private function getCourseSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
         $query = InteractiveCourseSession::where(function ($q) use ($startDate, $endDate) {
-            $q->whereBetween('scheduled_date', [$startDate->toDateString(), $endDate->toDateString()]);
+            $q->whereDate('scheduled_at', '>=', $startDate->toDateString())
+              ->whereDate('scheduled_at', '<=', $endDate->toDateString());
         })
             ->with(['course']);
 
@@ -428,13 +429,13 @@ class CalendarService
                 'source' => 'course_session',
                 'title' => $courseTitle.' - '.$sessionTitle,
                 'description' => $session->description ?? '',
-                'start_time' => $session->scheduled_datetime,
-                'end_time' => $session->scheduled_datetime->copy()->addMinutes($session->duration_minutes),
+                'start_time' => $session->scheduled_at,
+                'end_time' => $session->scheduled_at->copy()->addMinutes($session->duration_minutes),
                 'duration_minutes' => $session->duration_minutes,
                 'status' => $status,
                 'color' => '#3B82F6', // Blue for courses
                 'url' => $sessionUrl,
-                'meeting_url' => $session->google_meet_link ?? null,
+                'meeting_url' => $session->meeting_link ?? null,
                 'participants' => $participantsCount,
                 'metadata' => [
                     'session_id' => $session->id,
@@ -550,9 +551,9 @@ class CalendarService
     ): Collection {
 
         $query = InteractiveCourseSession::where(function ($q) use ($startTime, $endTime) {
-            // For interactive course sessions, we need to check date ranges
-            $q->where('scheduled_date', '>=', $startTime->toDateString())
-                ->where('scheduled_date', '<=', $endTime->toDateString());
+            // Check for time conflicts using scheduled_at datetime
+            $q->where('scheduled_at', '>=', $startTime)
+                ->where('scheduled_at', '<=', $endTime);
         })->where('status', '!=', 'cancelled');
 
         if ($user->isAcademicTeacher()) {

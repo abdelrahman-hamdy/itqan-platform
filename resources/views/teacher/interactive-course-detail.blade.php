@@ -129,6 +129,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Quick Actions Sidebar -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <x-circle.quick-actions
+        :circle="$course"
+        type="group"
+        view-type="teacher"
+        context="academic"
+      />
+    </div>
   </div>
 
   <!-- Tabs Navigation -->
@@ -216,65 +226,17 @@
 
   <!-- Sessions Tab -->
   <div id="sessions-tab" class="tab-content hidden">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-bold text-gray-900">جلسات الكورس</h2>
-        <button class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg">
-          <i class="ri-add-line ml-1"></i>
-          إضافة جلسة جديدة
-        </button>
-      </div>
+    @php
+      // Combine all sessions for the unified display
+      $allCourseSessions = collect($upcomingSessions ?? [])->merge($pastSessions ?? []);
+    @endphp
 
-      @if($course->sessions && $course->sessions->count() > 0)
-        <div class="space-y-4">
-          @foreach($course->sessions as $session)
-            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <h3 class="font-medium text-gray-900 mb-2">{{ $session->title ?? 'جلسة رقم ' . $loop->iteration }}</h3>
-                  <div class="flex items-center space-x-6 space-x-reverse text-sm text-gray-600">
-                    <span><i class="ri-calendar-line ml-1"></i>{{ $session->session_date ? $session->session_date->format('Y/m/d') : 'غير مجدولة' }}</span>
-                    <span><i class="ri-time-line ml-1"></i>{{ $session->duration_minutes ?? 60 }} دقيقة</span>
-                    @if($session->status)
-                      <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                        @if($session->status === 'completed') bg-green-100 text-green-800 
-                        @elseif($session->status === 'ongoing') bg-blue-100 text-blue-800 
-                        @elseif($session->status === 'scheduled') bg-yellow-100 text-yellow-800 
-                        @else bg-gray-100 text-gray-800 @endif">
-                        {{ $session->status }}
-                      </span>
-                    @endif
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2 space-x-reverse">
-                  @if($session->status === 'scheduled' || $session->status === 'ongoing')
-                    <a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id]) }}#session-{{ $session->id }}"
-                       class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg">
-                      <i class="ri-play-line ml-1"></i>
-                      بدء الجلسة
-                    </a>
-                  @endif
-                  <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg">
-                    <i class="ri-edit-line ml-1"></i>
-                    تعديل
-                  </button>
-                </div>
-              </div>
-            </div>
-          @endforeach
-        </div>
-      @else
-        <div class="text-center py-8">
-          <i class="ri-calendar-line text-4xl text-gray-400 mb-4"></i>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">لا توجد جلسات بعد</h3>
-          <p class="text-gray-600 mb-4">قم بإنشاء جلسات للكورس ليتمكن الطلاب من المشاركة</p>
-          <button class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg">
-            <i class="ri-add-line ml-1"></i>
-            إضافة جلسة جديدة
-          </button>
-        </div>
-      @endif
-    </div>
+    <x-sessions.sessions-list
+      :sessions="$allCourseSessions"
+      title="جلسات الكورس"
+      view-type="teacher"
+      :show-tabs="false"
+      empty-message="لا توجد جلسات مجدولة بعد" />
   </div>
 
   <!-- Materials Tab -->
@@ -366,27 +328,41 @@
       tabButtons.forEach(button => {
         button.addEventListener('click', () => {
           const targetTab = button.getAttribute('data-tab');
-          
+
           // Remove active class from all buttons
           tabButtons.forEach(btn => {
             btn.classList.remove('active', 'border-primary', 'text-primary');
             btn.classList.add('border-transparent', 'text-gray-500');
           });
-          
+
           // Add active class to clicked button
           button.classList.add('active', 'border-primary', 'text-primary');
           button.classList.remove('border-transparent', 'text-gray-500');
-          
+
           // Hide all tab contents
           tabContents.forEach(content => {
             content.classList.add('hidden');
           });
-          
+
           // Show target tab content
           document.getElementById(targetTab + '-tab').classList.remove('hidden');
         });
       });
     });
+
+    // Function to handle session detail clicks
+    function openSessionDetail(sessionId) {
+      @if(auth()->check())
+          // Redirect to interactive course session detail page
+          const sessionUrl = '{{ route("teacher.interactive-sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => "SESSION_ID_PLACEHOLDER"]) }}';
+          const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
+
+          console.log('Interactive Course Session URL:', finalUrl);
+          window.location.href = finalUrl;
+      @else
+          console.error('User not authenticated');
+      @endif
+    }
   </script>
 
 </x-layouts.teacher>

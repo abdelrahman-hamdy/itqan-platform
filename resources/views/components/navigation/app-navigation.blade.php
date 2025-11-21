@@ -30,7 +30,7 @@
     $studentNavItems[] = ['route' => 'student.academic-teachers', 'label' => 'المعلمون الأكاديميون', 'activeRoutes' => ['student.academic-teachers']];
   }
   if (Route::has('courses.index')) {
-    $studentNavItems[] = ['route' => 'courses.index', 'label' => 'الكورسات المسجلة', 'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn']];
+    $studentNavItems[] = ['route' => 'courses.index', 'label' => 'الكورسات المسجلة', 'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn', 'lessons.show']];
   }
   if (Route::has('student.homework.index')) {
     $studentNavItems[] = ['route' => 'student.homework.index', 'label' => 'الواجبات', 'activeRoutes' => ['student.homework.index', 'student.homework.submit', 'student.homework.view']];
@@ -78,12 +78,16 @@
     $profile = $user ? $user->studentProfile : null;
     $displayName = $profile ? ($profile->first_name ?? ($user ? $user->name : 'ضيف')) : ($user ? $user->name : 'ضيف');
     $roleLabel = 'طالب';
+    $userAvatarType = 'student';
+    $userGender = $profile?->gender ?? $user?->gender ?? 'male';
   } else {
     $profile = $user && $user->isQuranTeacher()
               ? $user->quranTeacherProfile
               : ($user ? $user->academicTeacherProfile : null);
     $displayName = $profile ? ($profile->first_name ?? ($user ? $user->name : 'معلم')) : ($user ? $user->name : 'معلم');
     $roleLabel = $user && $user->isQuranTeacher() ? 'معلم قرآن' : 'معلم أكاديمي';
+    $userAvatarType = $user && $user->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
+    $userGender = $profile?->gender ?? $user?->gender ?? 'male';
   }
 @endphp
 
@@ -130,9 +134,14 @@
                 }
               }
               $itemRoute = Route::has($item['route']) ? route($item['route'], ['subdomain' => $subdomain]) : '#';
+              $isCourseRoute = $item['route'] === 'courses.index';
+              $isQuranTeacherRoute = $item['route'] === 'student.quran-teachers';
+              $isAcademicTeacherRoute = $item['route'] === 'student.academic-teachers';
+              $activeColorClass = $isCourseRoute ? 'text-cyan-500' : ($isQuranTeacherRoute ? 'text-yellow-600' : ($isAcademicTeacherRoute ? 'text-violet-600' : $brandColorClass));
+              $hoverColorClass = $isCourseRoute ? 'hover:text-cyan-500' : ($isQuranTeacherRoute ? 'hover:text-yellow-600' : ($isAcademicTeacherRoute ? 'hover:text-violet-600' : 'hover:' . $brandColorClass));
             @endphp
             <a href="{{ $itemRoute }}"
-               class="flex items-center font-medium {{ $role === 'teacher' ? 'px-3 py-2 text-sm' : '' }} {{ $isActive ? $brandColorClass . ($role === 'teacher' ? ' border-b-2 border-' . $brandColor . '-600' : '') : 'text-gray-700' }} hover:{{ $brandColorClass }} transition-colors duration-200 focus:ring-2 focus:ring-{{ $brandColor }}-500">
+               class="flex items-center font-medium {{ $role === 'teacher' ? 'px-3 py-2 text-sm' : '' }} {{ $isActive ? $activeColorClass . ($role === 'teacher' ? ' border-b-2 border-' . $brandColor . '-600' : '') : 'text-gray-700' }} {{ $hoverColorClass }} transition-colors duration-200 focus:ring-2 focus:ring-{{ $brandColor }}-500">
               @if(isset($item['icon']) && $role === 'teacher')
                 <i class="{{ $item['icon'] }} ml-2"></i>
               @endif
@@ -218,11 +227,11 @@
                   aria-expanded="false"
                   aria-haspopup="true">
             <div class="flex items-center space-x-3 space-x-reverse">
-              @if($role === 'student')
-                <x-student-avatar :student="$profile" size="sm" />
-              @else
-                <x-teacher-avatar :teacher="$profile" size="sm" />
-              @endif
+              <x-avatar
+                :user="$user"
+                size="sm"
+                :userType="$userAvatarType"
+                :gender="$userGender" />
               <div class="text-right">
                 <p class="text-sm font-medium text-gray-900">{{ $displayName }}</p>
                 <p class="text-xs text-gray-500">{{ $roleLabel }}</p>
@@ -300,9 +309,14 @@
               }
             }
             $itemRoute = Route::has($item['route']) ? route($item['route'], ['subdomain' => $subdomain]) : '#';
+            $isCourseRoute = $item['route'] === 'courses.index';
+            $isQuranTeacherRoute = $item['route'] === 'student.quran-teachers';
+            $isAcademicTeacherRoute = $item['route'] === 'student.academic-teachers';
+            $mobileActiveColorClass = $isCourseRoute ? 'text-cyan-500 bg-cyan-50' : ($isQuranTeacherRoute ? 'text-yellow-600 bg-yellow-50' : ($isAcademicTeacherRoute ? 'text-violet-600 bg-violet-50' : $brandColorClass . ' bg-gray-50'));
+            $mobileHoverColorClass = $isCourseRoute ? 'hover:text-cyan-500 hover:bg-cyan-50' : ($isQuranTeacherRoute ? 'hover:text-yellow-600 hover:bg-yellow-50' : ($isAcademicTeacherRoute ? 'hover:text-violet-600 hover:bg-violet-50' : 'hover:' . $brandColorClass . ' hover:bg-gray-50'));
           @endphp
           <a href="{{ $itemRoute }}"
-             class="flex items-center px-3 py-2 font-medium {{ $isActive ? $brandColorClass . ' bg-gray-50' : 'text-gray-700' }} hover:{{ $brandColorClass }} hover:bg-gray-50 rounded-md focus:ring-2 focus:ring-{{ $brandColor }}-500">
+             class="flex items-center px-3 py-2 font-medium {{ $isActive ? $mobileActiveColorClass : 'text-gray-700' }} {{ $mobileHoverColorClass }} rounded-md focus:ring-2 focus:ring-{{ $brandColor }}-500">
             @if(isset($item['icon']))
               <i class="{{ $item['icon'] }} ml-2"></i>
             @endif

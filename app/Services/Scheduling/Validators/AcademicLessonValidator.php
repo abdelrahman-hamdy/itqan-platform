@@ -215,10 +215,10 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
             ];
         }
 
-        if ($this->subscription->expires_at->isPast()) {
+        if ($this->subscription->end_date && $this->subscription->end_date->isPast()) {
             return [
                 'status' => 'expired',
-                'message' => 'انتهى الاشتراك في ' . $this->subscription->expires_at->format('Y/m/d'),
+                'message' => 'انتهى الاشتراك في ' . $this->subscription->end_date->format('Y/m/d'),
                 'color' => 'red',
                 'can_schedule' => false,
                 'urgent' => false,
@@ -240,7 +240,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         }
 
         // Get future scheduled sessions
-        $futureScheduled = $this->subscription->academicSessions()
+        $futureScheduled = $this->subscription->sessions()
             ->where('status', 'scheduled')
             ->where('scheduled_at', '>', now())
             ->count();
@@ -283,15 +283,15 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         $totalSessions = $this->subscription->total_sessions ?? 12;
 
         // Calculate used sessions
-        $usedSessions = $this->subscription->academicSessions()
+        $usedSessions = $this->subscription->sessions()
             ->whereIn('status', ['completed', 'scheduled', 'in_progress'])
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $usedSessions);
 
         // Calculate subscription period
-        $startDate = $this->subscription->starts_at;
-        $endDate = $this->subscription->expires_at;
+        $startDate = $this->subscription->start_date ?? now();
+        $endDate = $this->subscription->end_date ?? now()->addMonths(1);
 
         // Calculate remaining time
         $now = now();

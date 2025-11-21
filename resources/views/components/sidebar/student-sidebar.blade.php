@@ -18,12 +18,18 @@
       @php
         $user = auth()->user();
         $student = $user ? $user->studentProfile : null;
-        $fullName = $student ? 
+        $fullName = $student ?
                    ($student->first_name && $student->last_name ? $student->first_name . ' ' . $student->last_name : $student->first_name) :
                    ($user ? $user->name : 'زائر');
+        $studentGender = $student?->gender ?? $user?->gender ?? 'male';
       @endphp
-      
-      <x-student-avatar :student="$student" size="md" class="mb-3" />
+
+      <x-avatar
+        :user="$user"
+        size="md"
+        userType="student"
+        :gender="$studentGender"
+        class="mb-3" />
       
       <div id="profile-info" class="transition-all duration-300">
         <h3 class="text-lg font-semibold text-gray-900">

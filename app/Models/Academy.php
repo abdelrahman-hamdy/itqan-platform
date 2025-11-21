@@ -208,7 +208,7 @@ class Academy extends Model
      */
     public function subjects(): HasMany
     {
-        return $this->hasMany(Subject::class);
+        return $this->hasMany(AcademicSubject::class);
     }
 
     /**
@@ -225,6 +225,22 @@ class Academy extends Model
     public function quranCircles(): HasMany
     {
         return $this->hasMany(QuranCircle::class);
+    }
+
+    /**
+     * Get academic teacher profiles in this academy
+     */
+    public function academicTeacherProfiles(): HasMany
+    {
+        return $this->hasMany(AcademicTeacherProfile::class);
+    }
+
+    /**
+     * Get Quran teacher profiles in this academy
+     */
+    public function quranTeacherProfiles(): HasMany
+    {
+        return $this->hasMany(QuranTeacherProfile::class);
     }
 
     /**

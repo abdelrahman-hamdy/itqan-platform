@@ -4,7 +4,12 @@
   <!-- Header with Avatar beside Name and Status -->
   <div class="flex items-start gap-4 mb-4">
     <!-- Teacher Avatar -->
-    <x-teacher-avatar :teacher="$teacher" size="md" class="flex-shrink-0" />
+    <x-avatar
+      :user="$teacher"
+      size="md"
+      userType="quran_teacher"
+      :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'"
+      class="flex-shrink-0" />
     
     <!-- Name and Description -->
     <div class="flex-1 min-w-0">
@@ -18,7 +23,7 @@
   </div>
   
   <div class="space-y-2">
-    @if($teacher->certifications && count($teacher->certifications) > 0)
+    @if(!empty($teacher->certifications) && is_array($teacher->certifications) && count($teacher->certifications) > 0)
       <div class="flex items-center text-sm text-gray-600">
         <i class="ri-award-line ml-2"></i>
         <span>{{ implode('، ', $teacher->certifications) }}</span>

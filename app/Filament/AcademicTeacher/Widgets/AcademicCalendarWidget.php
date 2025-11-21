@@ -39,7 +39,7 @@ class AcademicCalendarWidget extends Widget
         $todayCourseSessions = InteractiveCourseSession::whereHas('course', function ($query) use ($teacherProfile) {
                 $query->where('assigned_teacher_id', $teacherProfile->id);
             })
-            ->whereDate('scheduled_date', $today->toDateString())
+            ->whereDate('scheduled_at', $today->toDateString())
             ->with(['course.subject'])
             ->get();
 
@@ -58,8 +58,8 @@ class AcademicCalendarWidget extends Widget
         }
 
         foreach ($todayCourseSessions as $courseSession) {
-            // Convert scheduled_time to academy timezone for display
-            $scheduledTime = Carbon::parse($courseSession->scheduled_time)->timezone($timezone);
+            // Convert scheduled_at to academy timezone for display
+            $scheduledTime = $courseSession->scheduled_at->timezone($timezone);
             $events[] = [
                 'title' => $courseSession->title . ' - دورة تفاعلية',
                 'time' => $scheduledTime->format('H:i'),

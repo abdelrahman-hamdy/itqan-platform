@@ -30,29 +30,9 @@ class RedirectAuthenticatedPublicViews
             $courseId = $request->route('course');
 
             if ($user->isStudent()) {
-                // If viewing a specific course
+                // If viewing a specific course, always redirect to authenticated student view
                 if ($courseId) {
-                    // Check if student has any enrollment (any status)
-                    $studentId = $user->studentProfile->id ?? $user->id;
-                    $enrollment = \App\Models\InteractiveCourseEnrollment::where('course_id', $courseId)
-                        ->where('student_id', $studentId)
-                        ->first();
-
-                    if ($enrollment) {
-                        // Redirect based on enrollment status
-                        if (in_array($enrollment->enrollment_status, ['enrolled', 'completed'])) {
-                            // Active or completed enrollments: redirect to student course view
-                            return redirect()->route('my.interactive-course.show', ['subdomain' => $subdomain, 'course' => $courseId]);
-                        } elseif ($enrollment->enrollment_status === 'pending') {
-                            // Pending enrollment: redirect to enrollment/payment page
-                            return redirect()->route('interactive-courses.enroll', ['subdomain' => $subdomain, 'course' => $courseId])
-                                ->with('info', 'يرجى إتمام عملية التسجيل والدفع');
-                        }
-                        // For 'dropped' or 'expelled': allow access to public view to re-enroll
-                    }
-
-                    // Not enrolled or enrollment dropped/expelled: allow access to public course details
-                    return $next($request);
+                    return redirect()->route('my.interactive-course.show', ['subdomain' => $subdomain, 'course' => $courseId]);
                 }
 
                 // If viewing course listing, redirect to student courses

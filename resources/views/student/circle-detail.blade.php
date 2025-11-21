@@ -74,6 +74,7 @@
             <x-circle.info-sidebar :circle="$circle" view-type="student" />
 
             <!-- Enrollment Card -->
+            @if(!isset($subscription) || !$subscription)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 @if($isEnrolled)
                 <!-- Already Enrolled -->
@@ -86,14 +87,14 @@
                     <h3 class="text-lg font-bold text-green-600 mb-2">مسجل في الحلقة</h3>
                     <p class="text-sm text-gray-600">أنت مسجل في هذه الحلقة ويمكنك حضور الجلسات</p>
                 </div>
-                
+
                 @if($circle->room_link)
                 <a href="{{ $circle->room_link }}" target="_blank"
                    class="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-600 transition-colors text-center block mb-4">
                     دخول الجلسة
                 </a>
                 @endif
-                
+
                 @elseif($canEnroll)
                 <!-- Can Enroll -->
                 <div class="text-center mb-6">
@@ -133,11 +134,18 @@
                 </div>
                 @endif
             </div>
+            @endif
 
             <!-- Quick Actions -->
             <x-circle.quick-actions :circle="$circle" type="group" view-type="student" :isEnrolled="$isEnrolled" :canEnroll="$canEnroll" />
 
-            <!-- Circle Features -->
+            <!-- Subscription Details Widget (for subscribed users) -->
+            @if(isset($subscription) && $subscription)
+            <x-circle.subscription-details :subscription="$subscription" view-type="student" />
+            @endif
+
+            <!-- Circle Features (hide for subscribed users) -->
+            @if(!isset($subscription) || !$subscription)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 class="font-bold text-gray-900 mb-4">مميزات الحلقة</h3>
                 <div class="space-y-3">
@@ -177,6 +185,7 @@
                     @endif
                 </div>
             </div>
+            @endif
         </div>
     </div>
 </div>

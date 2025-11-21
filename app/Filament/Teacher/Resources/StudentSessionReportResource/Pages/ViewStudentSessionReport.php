@@ -134,7 +134,7 @@ class ViewStudentSessionReport extends ViewRecord
 
                         Infolists\Components\Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('is_auto_calculated')
+                                Infolists\Components\TextEntry::make('is_calculated')
                                     ->label('نوع التقييم')
                                     ->formatStateUsing(fn (bool $state): string => $state ? 'محسوب تلقائياً' : 'مقيم يدوياً')
                                     ->badge()

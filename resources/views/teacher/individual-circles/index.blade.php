@@ -96,7 +96,7 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-4 space-x-reverse">
                                     <!-- Student Avatar -->
-                                    <x-student-avatar :student="$circle->student" size="sm" />
+                                    <x-avatar :user="$circle->student" size="sm" />
 
                                     <!-- Circle Info -->
                                     <div class="flex-1 min-w-0">
@@ -158,12 +158,18 @@
                                         </a>
                                         
                                         @if($circle->subscription && $circle->subscription->student)
-                                        <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $circle->student->id]) }}" 
-                                           class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm group"
-                                           title="راسل الطالب">
-                                            <i class="ri-message-line ml-1"></i>
-                                            راسل الطالب
-                                        </a>
+                                            @php
+                                                $studentUser = ($circle->student instanceof \App\Models\User) ? $circle->student : ($circle->student->user ?? null);
+                                                $conv = $studentUser ? auth()->user()->getOrCreatePrivateConversation($studentUser) : null;
+                                            @endphp
+                                            @if($conv)
+                                            <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
+                                               class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm group"
+                                               title="راسل الطالب">
+                                                <i class="ri-message-line ml-1"></i>
+                                                راسل الطالب
+                                            </a>
+                                            @endif
                                         @endif
                                     @endif
                                 </div>

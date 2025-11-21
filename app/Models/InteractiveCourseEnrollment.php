@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class InteractiveCourseEnrollment extends Model
 {
@@ -60,6 +61,11 @@ class InteractiveCourseEnrollment extends Model
     public function enrolledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'enrolled_by');
+    }
+
+    public function certificate(): MorphOne
+    {
+        return $this->morphOne(Certificate::class, 'certificateable');
     }
 
     /**

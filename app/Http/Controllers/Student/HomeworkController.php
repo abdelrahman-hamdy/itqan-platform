@@ -179,9 +179,8 @@ class HomeworkController extends Controller
             'academic' => \App\Models\AcademicHomework::where('id', $id)
                 ->where('academy_id', $academyId)
                 ->first(),
-            'quran' => \App\Models\QuranHomework::where('id', $id)
-                ->where('academy_id', $academyId)
-                ->first(),
+            // Note: 'quran' type removed - Quran homework is now tracked through QuranSession model
+            // and graded through student session reports. See migration: 2025_11_17_190605_drop_quran_homework_tables.php
             'interactive' => \App\Models\InteractiveCourseHomework::where('id', $id)
                 ->whereHas('session.interactiveCourse', function($q) use ($academyId) {
                     $q->where('academy_id', $academyId);

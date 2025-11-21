@@ -241,8 +241,8 @@ class QuranSubscriptionController extends Controller
             'progress_percentage' => $subscription->progress_percentage,
             'days_remaining' => $subscription->expires_at ? now()->diffInDays($subscription->expires_at, false) : null,
             'average_session_rating' => $subscription->quranSessions()->whereNotNull('student_rating')->avg('student_rating'),
-            'homework_completed' => $subscription->homework()->completed()->count(),
-            'homework_pending' => $subscription->homework()->assigned()->count(),
+            // Note: homework stats removed - Quran homework is now tracked through QuranSession model fields
+            // and graded through student session reports (oral evaluation)
         ];
 
         if (request()->expectsJson()) {

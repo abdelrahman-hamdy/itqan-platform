@@ -132,10 +132,9 @@ class QuranIndividualCircle extends Model
         return $this->sessions()->whereIn('status', ['completed', 'absent']);
     }
 
-    public function homework(): HasMany
-    {
-        return $this->hasMany(QuranHomework::class, 'circle_id');
-    }
+    // Note: homework() relationship removed - Quran homework is now tracked through
+    // QuranSession model fields and graded through student session reports
+    // See migration: 2025_11_17_190605_drop_quran_homework_tables.php
 
     public function progress(): HasMany
     {

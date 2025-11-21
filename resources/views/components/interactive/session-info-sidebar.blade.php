@@ -80,7 +80,7 @@
                 Teacher
             </span>
             <span class="font-medium text-gray-900 text-right">
-                {{ $session->course->teacher->user->name ?? 'N/A' }}
+                {{ $session->course->assignedTeacher->user->name ?? 'N/A' }}
             </span>
         </div>
 
@@ -100,7 +100,7 @@
                 Date
             </span>
             <span class="font-medium text-gray-900 text-right">
-                {{ $session->scheduled_date->format('M d, Y') }}
+                {{ $session->scheduled_at->format('M d, Y') }}
             </span>
         </div>
 
@@ -110,7 +110,7 @@
                 Time
             </span>
             <span class="font-medium text-gray-900">
-                {{ \Carbon\Carbon::parse($session->scheduled_time)->format('g:i A') }}
+                {{ $session->scheduled_at->format('g:i A') }}
             </span>
         </div>
 

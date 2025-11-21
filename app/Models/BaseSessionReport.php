@@ -278,7 +278,7 @@ abstract class BaseSessionReport extends Model
                 'attendance_status' => $this->calculateRealtimeAttendanceStatus($meetingAttendance),
                 'attendance_percentage' => $this->calculateAttendancePercentage($actualMinutes),
                 'meeting_events' => $meetingAttendance->join_leave_cycles ?? [],
-                'is_auto_calculated' => $meetingAttendance->is_calculated,
+                'is_calculated' => $meetingAttendance->is_calculated,
             ]);
 
             // Recalculate lateness based on session timing
@@ -433,8 +433,8 @@ abstract class BaseSessionReport extends Model
         // Determine attendance status
         $this->attendance_status = $this->determineAttendanceStatus($sessionStartTime, $sessionDuration, $lateThreshold);
 
-        // Mark as auto-calculated
-        $this->is_auto_calculated = true;
+        // Mark as calculated
+        $this->is_calculated = true;
 
         $this->save();
     }

@@ -115,13 +115,13 @@ class AcademicSessionReportResource extends Resource
                                 'absent' => 'Absent',
                             ])
                             ->helperText('Only change if the automatic attendance calculation is incorrect'),
-                        Forms\Components\Toggle::make('manually_overridden')
-                            ->label('Mark as Manually Overridden')
+                        Forms\Components\Toggle::make('manually_evaluated')
+                            ->label('Mark as Manually Evaluated')
                             ->helperText('Check this if you\'re overriding the automatic attendance'),
                         Forms\Components\Textarea::make('override_reason')
                             ->label('Reason for Override')
                             ->placeholder('Explain why you\'re overriding the automatic attendance...')
-                            ->visible(fn (Forms\Get $get) => $get('manually_overridden'))
+                            ->visible(fn (Forms\Get $get) => $get('manually_evaluated'))
                             ->columnSpanFull(),
                     ])->columns(2)
                     ->collapsed()
@@ -190,7 +190,7 @@ class AcademicSessionReportResource extends Resource
                     ->formatStateUsing(fn (string $state): string => $state . ' min')
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\IconColumn::make('manually_overridden')
+                Tables\Columns\IconColumn::make('manually_evaluated')
                     ->label('Override')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),

@@ -109,7 +109,11 @@
         <div class="mt-6 pt-6 border-t border-gray-200">
             <a href="{{ route('teacher.students.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}"
                class="flex items-center space-x-4 space-x-reverse p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
-                <x-student-avatar :student="$student" size="lg" />
+                <x-avatar
+                    :user="$student"
+                    size="lg"
+                    userType="student"
+                    :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                 <div class="flex-1">
                     <h3 class="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
                         {{ $student->name ?? 'طالب' }}

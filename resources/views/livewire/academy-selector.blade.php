@@ -1,20 +1,7 @@
-<div class="relative" x-data="{ open: false }" 
-     x-init="
-        $wire.on('academy-selected', (event) => {
-            // Reload the page to refresh all resources and navigation
-            window.location.reload();
-        });
-        $wire.on('academy-cleared', () => {
-            // Reload the page to refresh all resources and navigation
-            window.location.reload();
-        });
-        $wire.on('global-view-enabled', () => {
-            // Reload page when global view is enabled
-            setTimeout(() => {
-                window.location.reload();
-            }, 100);
-        });
-     ">
+<div class="relative" x-data="{ open: false }"
+     @academy-selected.window="window.location.reload()"
+     @global-view-enabled.window="setTimeout(() => window.location.reload(), 100)"
+     >
     <!-- Academy Selector Button -->
     <button 
         @click="open = !open"

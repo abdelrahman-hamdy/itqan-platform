@@ -130,7 +130,7 @@ class NotificationService
     }
 
     /**
-     * Mark notification as read
+     * Mark notification as read (clicked)
      */
     public function markAsRead(string $notificationId, User $user): bool
     {
@@ -138,19 +138,40 @@ class NotificationService
             ->where('id', $notificationId)
             ->where('notifiable_id', $user->id)
             ->where('notifiable_type', get_class($user))
-            ->update(['read_at' => now()]) > 0;
+            ->where('tenant_id', $user->academy_id)
+            ->update([
+                'read_at' => now(),
+                'panel_opened_at' => DB::raw('COALESCE(panel_opened_at, NOW())'),
+            ]) > 0;
     }
 
     /**
-     * Mark all notifications as read for a user
+     * Mark all notifications as panel-opened (seen in panel but not clicked)
+     */
+    public function markAllAsPanelOpened(User $user): int
+    {
+        return DB::table('notifications')
+            ->where('notifiable_id', $user->id)
+            ->where('notifiable_type', get_class($user))
+            ->where('tenant_id', $user->academy_id)
+            ->whereNull('panel_opened_at')
+            ->update(['panel_opened_at' => now()]);
+    }
+
+    /**
+     * Mark all notifications as fully read for a user
      */
     public function markAllAsRead(User $user): int
     {
         return DB::table('notifications')
             ->where('notifiable_id', $user->id)
             ->where('notifiable_type', get_class($user))
+            ->where('tenant_id', $user->academy_id)
             ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+            ->update([
+                'read_at' => now(),
+                'panel_opened_at' => DB::raw('COALESCE(panel_opened_at, NOW())'),
+            ]);
     }
 
     /**
@@ -162,6 +183,7 @@ class NotificationService
             ->where('id', $notificationId)
             ->where('notifiable_id', $user->id)
             ->where('notifiable_type', get_class($user))
+            ->where('tenant_id', $user->academy_id)
             ->delete() > 0;
     }
 
@@ -177,14 +199,15 @@ class NotificationService
     }
 
     /**
-     * Get unread notifications count for a user
+     * Get unread notifications count for a user (not seen in panel yet)
      */
     public function getUnreadCount(User $user): int
     {
         return DB::table('notifications')
             ->where('notifiable_id', $user->id)
             ->where('notifiable_type', get_class($user))
-            ->whereNull('read_at')
+            ->where('tenant_id', $user->academy_id)
+            ->whereNull('panel_opened_at')
             ->count();
     }
 
@@ -195,7 +218,8 @@ class NotificationService
     {
         $query = DB::table('notifications')
             ->where('notifiable_id', $user->id)
-            ->where('notifiable_type', get_class($user));
+            ->where('notifiable_type', get_class($user))
+            ->where('tenant_id', $user->academy_id);
 
         if ($category) {
             $query->where('category', $category);
@@ -322,7 +346,7 @@ class NotificationService
                 'currency' => $paymentData['currency'] ?? 'SAR',
                 'description' => $paymentData['description'] ?? '',
             ],
-            '/student/payments',
+            '/payments',
             [
                 'payment_id' => $paymentData['payment_id'] ?? null,
                 'transaction_id' => $paymentData['transaction_id'] ?? null,
@@ -341,16 +365,50 @@ class NotificationService
 
         if ($user->hasRole(['student'])) {
             return match($sessionType) {
-                'quransession' => "/student/session-detail/{$sessionId}",
-                'academicsession' => "/student/academic-session-detail/{$sessionId}",
-                'interactivesession' => "/student/interactive-course-detail/{$session->course_id}",
-                default => "/student/sessions",
+                'quransession' => "/sessions/{$sessionId}",
+                'academicsession' => "/academic-sessions/{$sessionId}",
+                'interactivecoursesession' => "/interactive-sessions/{$sessionId}",
+                'quransessioninstance' => $this->getCircleUrlFromSession($session),
+                default => "/sessions",
             };
-        } elseif ($user->hasRole(['quran_teacher', 'academic_teacher'])) {
-            return "/teacher/session-detail/{$sessionId}";
+        } elseif ($user->hasRole(['quran_teacher'])) {
+            return $this->getTeacherCircleUrl($session);
+        } elseif ($user->hasRole(['academic_teacher'])) {
+            return "/teacher/academic-sessions/{$sessionId}";
         }
 
         return '/';
+    }
+
+    /**
+     * Get circle URL from session for students
+     */
+    protected function getCircleUrlFromSession(Model $session): string
+    {
+        // For Quran sessions that belong to a circle
+        if (method_exists($session, 'circle') && $session->circle) {
+            return "/circles/{$session->circle->id}";
+        }
+
+        return "/sessions/{$session->id}";
+    }
+
+    /**
+     * Get appropriate teacher URL based on circle type
+     */
+    protected function getTeacherCircleUrl(Model $session): string
+    {
+        if (method_exists($session, 'circle') && $session->circle) {
+            $circle = $session->circle;
+
+            if ($circle->circle_type === 'individual') {
+                return "/teacher/individual-circles/{$circle->id}";
+            } elseif ($circle->circle_type === 'group') {
+                return "/teacher/group-circles/{$circle->id}";
+            }
+        }
+
+        return "/teacher/sessions/{$session->id}";
     }
 
     /**

@@ -535,3 +535,42 @@ body {
     animation: fadeInUp 0.5s ease-out forwards;
     opacity: 0;
 }
+
+/* Calendar Event Styling - Passed Sessions */
+.fc-event.event-passed .fc-event-main {
+    text-decoration: line-through !important;
+    opacity: 0.7;
+}
+
+.fc-event.event-passed .fc-event-title-container {
+    text-decoration: line-through !important;
+}
+
+.fc-event.event-passed .fc-event-title {
+    text-decoration: line-through !important;
+}
+
+.fc-event.event-passed .fc-event-time {
+    text-decoration: line-through !important;
+}
+
+.fc-daygrid-event.event-passed {
+    text-decoration: line-through !important;
+    opacity: 0.7;
+}
+
+.fc-timegrid-event.event-passed {
+    text-decoration: line-through !important;
+    opacity: 0.7;
+}
+
+/* Calendar Day Numbers - Clickable Link Styling */
+.fc-daygrid-day-number {
+    cursor: pointer !important;
+    color: #3b82f6 !important;
+    transition: text-decoration 0.2s ease;
+}
+
+.fc-daygrid-day-number:hover {
+    text-decoration: underline !important;
+}

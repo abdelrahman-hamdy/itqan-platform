@@ -57,7 +57,10 @@
             @endif
 
             @if($student)
-                @php $conv = auth()->user()->getOrCreatePrivateConversation($student->user ?? $student); @endphp
+                @php
+                    $studentUser = ($student instanceof \App\Models\User) ? $student : ($student->user ?? null);
+                    $conv = $studentUser ? auth()->user()->getOrCreatePrivateConversation($studentUser) : null;
+                @endphp
                 @if($conv)
                     <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
@@ -87,7 +90,10 @@
             @endif
 
             @if($teacher)
-                @php $conv = auth()->user()->getOrCreatePrivateConversation($teacher->user ?? $teacher); @endphp
+                @php
+                    $teacherUser = $isAcademic ? ($teacher->user ?? null) : ($teacher->user ?? $teacher);
+                    $conv = $teacherUser ? auth()->user()->getOrCreatePrivateConversation($teacherUser) : null;
+                @endphp
                 @if($conv)
                     <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">

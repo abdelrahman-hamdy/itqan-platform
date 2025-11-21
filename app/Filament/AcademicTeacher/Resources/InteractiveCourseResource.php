@@ -379,8 +379,8 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
             Tables\Filters\TernaryFilter::make('has_enrolled_students')
                 ->label('لديه طلاب مسجلين')
                 ->queries(
-                    yes: fn (Builder $query) => $query->whereHas('enrolledStudents'),
-                    no: fn (Builder $query) => $query->doesntHave('enrolledStudents'),
+                    true: fn (Builder $query) => $query->whereHas('enrolledStudents'),
+                    false: fn (Builder $query) => $query->doesntHave('enrolledStudents'),
                 ),
 
             Tables\Filters\Filter::make('upcoming')

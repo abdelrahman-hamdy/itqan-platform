@@ -2,18 +2,28 @@
 
 namespace App\Filament\Teacher\Pages;
 
+use App\Filament\Shared\Traits\FormatsCalendarData;
+use App\Filament\Shared\Traits\HandlesScheduling;
+use App\Filament\Shared\Traits\ManagesSessionStatistics;
+use App\Filament\Shared\Traits\ValidatesConflicts;
 use App\Filament\Teacher\Widgets\ColorIndicatorsWidget;
 use App\Filament\Teacher\Widgets\TeacherCalendarWidget;
+use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
-use App\Services\SessionManagementService;
+use App\Services\Scheduling\Validators\AcademicLessonValidator;
 use App\Services\Scheduling\Validators\GroupCircleValidator;
 use App\Services\Scheduling\Validators\IndividualCircleValidator;
+use App\Services\Scheduling\Validators\InteractiveCourseValidator;
 use App\Services\Scheduling\Validators\TrialSessionValidator;
+use App\Services\SessionManagementService;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -26,6 +36,10 @@ use Illuminate\Support\Str;
 
 class Calendar extends Page
 {
+    use HandlesScheduling;
+    use ManagesSessionStatistics;
+    use FormatsCalendarData;
+    use ValidatesConflicts;
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static string $view = 'filament.teacher.pages.calendar';
@@ -40,11 +54,16 @@ class Calendar extends Page
 
     public ?int $selectedCircleId = null;
 
-    public string $selectedCircleType = 'group'; // 'group' or 'individual'
+    public ?string $selectedCircleType = 'group'; // 'group' or 'individual'
 
     public string $activeTab = 'group'; // Tab state for circles, trials
 
     public ?int $selectedTrialRequestId = null;
+
+    // Academic teacher properties
+    public ?int $selectedItemId = null;
+
+    public ?string $selectedItemType = 'private_lesson'; // 'private_lesson' or 'interactive_course'
 
     // Scheduling form properties
     public array $scheduleDays = [];
@@ -74,70 +93,26 @@ class Calendar extends Page
     }
 
     /**
-     * Get session statistics for the top 4 boxes
+     * Check if current user is a Quran teacher
+     *
+     * @return bool
      */
-    public function getSessionStatistics(): array
+    protected function isQuranTeacher(): bool
     {
-        $userId = Auth::id();
-        if (! $userId) {
-            return [
-                ['title' => 'جلسات اليوم', 'value' => 0, 'icon' => 'heroicon-o-calendar-days', 'color' => 'primary'],
-                ['title' => 'الجلسات القادمة', 'value' => 0, 'icon' => 'heroicon-o-clock', 'color' => 'warning'],
-                ['title' => 'مكتملة هذا الشهر', 'value' => 0, 'icon' => 'heroicon-o-check-circle', 'color' => 'success'],
-                ['title' => 'في الانتظار', 'value' => 0, 'icon' => 'heroicon-o-exclamation-triangle', 'color' => 'danger'],
-            ];
-        }
-
-        // Get today's sessions
-        $todaySessions = QuranSession::where('quran_teacher_id', $userId)
-            ->whereDate('scheduled_at', today())
-            ->count();
-
-        // Get upcoming sessions (next 7 days)
-        $upcomingSessions = QuranSession::where('quran_teacher_id', $userId)
-            ->where('scheduled_at', '>', now())
-            ->where('scheduled_at', '<=', now()->addDays(7))
-            ->count();
-
-        // Get completed sessions this month
-        $completedThisMonth = QuranSession::where('quran_teacher_id', $userId)
-            ->whereMonth('scheduled_at', now()->month)
-            ->whereYear('scheduled_at', now()->year)
-            ->where('status', 'completed')
-            ->count();
-
-        // Get pending/unscheduled sessions
-        $pendingSessions = QuranSession::where('quran_teacher_id', $userId)
-            ->where('status', 'pending')
-            ->count();
-
-        return [
-            [
-                'title' => 'جلسات اليوم',
-                'value' => $todaySessions,
-                'icon' => 'heroicon-o-calendar-days',
-                'color' => 'primary',
-            ],
-            [
-                'title' => 'الجلسات القادمة',
-                'value' => $upcomingSessions,
-                'icon' => 'heroicon-o-clock',
-                'color' => 'warning',
-            ],
-            [
-                'title' => 'مكتملة هذا الشهر',
-                'value' => $completedThisMonth,
-                'icon' => 'heroicon-o-check-circle',
-                'color' => 'success',
-            ],
-            [
-                'title' => 'في الانتظار',
-                'value' => $pendingSessions,
-                'icon' => 'heroicon-o-exclamation-triangle',
-                'color' => 'danger',
-            ],
-        ];
+        return Auth::user()?->user_type === 'quran_teacher';
     }
+
+    /**
+     * Check if current user is an Academic teacher
+     *
+     * @return bool
+     */
+    protected function isAcademicTeacher(): bool
+    {
+        return Auth::user()?->user_type === 'academic_teacher';
+    }
+
+    // getSessionStatistics() is now provided by ManagesSessionStatistics trait
 
     /**
      * Get group circles for the teacher
@@ -288,20 +263,7 @@ class Calendar extends Page
     /**
      * Get validator for the selected circle
      */
-    private function getSelectedCircleValidator()
-    {
-        if (!$this->selectedCircleId || !$this->selectedCircleType) {
-            return null;
-        }
-
-        if ($this->selectedCircleType === 'group') {
-            $circle = QuranCircle::find($this->selectedCircleId);
-            return $circle ? new GroupCircleValidator($circle) : null;
-        } else {
-            $circle = QuranIndividualCircle::find($this->selectedCircleId);
-            return $circle ? new IndividualCircleValidator($circle) : null;
-        }
-    }
+    // getSelectedCircleValidator() is now defined later with academic support
 
     /**
      * Get validator for the selected trial request
@@ -316,16 +278,7 @@ class Calendar extends Page
         return $trialRequest ? new TrialSessionValidator($trialRequest) : null;
     }
 
-    /**
-     * Change active tab
-     */
-    public function setActiveTab(string $tab): void
-    {
-        $this->activeTab = $tab;
-        // Clear selections when switching tabs
-        $this->selectedCircleId = null;
-        $this->selectedTrialRequestId = null;
-    }
+    // setActiveTab() is now provided by HandlesScheduling trait
 
     /**
      * Get trial requests for the teacher
@@ -382,6 +335,139 @@ class Calendar extends Page
         $trialRequests = $this->getTrialRequests();
 
         return $trialRequests->firstWhere('id', $this->selectedTrialRequestId);
+    }
+
+    /**
+     * Get private lessons (academic subscriptions) for the academic teacher
+     */
+    public function getPrivateLessonsProperty(): Collection
+    {
+        if (! $this->isAcademicTeacher()) {
+            return collect();
+        }
+
+        $user = Auth::user();
+        $teacherProfile = $user->academicTeacherProfile;
+
+        if (! $teacherProfile) {
+            return collect();
+        }
+
+        return AcademicSubscription::where('teacher_id', $teacherProfile->id)
+            ->where('academy_id', $user->academy_id)
+            ->whereIn('status', ['active', 'approved'])
+            ->with(['student', 'subject', 'sessions'])
+            ->get()
+            ->map(function ($subscription) {
+                $allSessions = $subscription->sessions;
+                $totalSessions = $allSessions->count();
+                $scheduledSessions = $allSessions->filter(function ($session) {
+                    return $session->status->value === 'scheduled' && ! is_null($session->scheduled_at);
+                })->count();
+                $unscheduledSessions = $allSessions->filter(function ($session) {
+                    return $session->status->value === 'unscheduled' || is_null($session->scheduled_at);
+                })->count();
+
+                $status = 'not_scheduled';
+                if ($scheduledSessions > 0) {
+                    if ($unscheduledSessions > 0) {
+                        $status = 'partially_scheduled';
+                    } else {
+                        $status = 'fully_scheduled';
+                    }
+                }
+
+                return [
+                    'id' => $subscription->id,
+                    'type' => 'private_lesson',
+                    'name' => 'درس خاص - '.($subscription->subject_name ?? 'مادة أكاديمية'),
+                    'status' => $status,
+                    'total_sessions' => $totalSessions,
+                    'sessions_scheduled' => $scheduledSessions,
+                    'sessions_remaining' => $unscheduledSessions,
+                    'student_name' => $subscription->student->name ?? 'طالب',
+                    'subject_name' => $subscription->subject_name ?? 'مادة أكاديمية',
+                    'can_schedule' => $unscheduledSessions > 0,
+                ];
+            });
+    }
+
+    /**
+     * Get interactive courses for the academic teacher
+     */
+    public function getInteractiveCoursesProperty(): Collection
+    {
+        if (! $this->isAcademicTeacher()) {
+            return collect();
+        }
+
+        $user = Auth::user();
+        $teacherProfile = $user->academicTeacherProfile;
+
+        if (! $teacherProfile) {
+            return collect();
+        }
+
+        return InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $user->academy_id)
+            ->whereIn('status', ['active', 'published'])
+            ->with(['subject', 'sessions', 'enrollments'])
+            ->get()
+            ->map(function ($course) {
+                $scheduledSessions = $course->sessions()->whereIn('status', ['scheduled', 'in_progress', 'completed'])->count();
+                $totalSessions = $course->total_sessions;
+                $remainingSessions = max(0, $totalSessions - $scheduledSessions);
+                $enrolledStudents = $course->enrollments()->where('enrollment_status', 'enrolled')->count();
+
+                return [
+                    'id' => $course->id,
+                    'type' => 'interactive_course',
+                    'title' => $course->title,
+                    'name' => $course->title, // For consistency with other items
+                    'status' => $course->status,
+                    'status_arabic' => $course->getStatusInArabicAttribute(),
+                    'total_sessions' => $totalSessions,
+                    'sessions_scheduled' => $scheduledSessions,
+                    'sessions_remaining' => $remainingSessions,
+                    'start_date' => $course->start_date?->format('Y/m/d'),
+                    'end_date' => $course->end_date?->format('Y/m/d'),
+                    'subject_name' => $course->subject?->name ?? 'مادة أكاديمية',
+                    'enrolled_students' => $enrolledStudents,
+                    'max_students' => $course->max_students ?? 20,
+                    'can_schedule' => $remainingSessions > 0,
+                ];
+            });
+    }
+
+    /**
+     * Select an item (private lesson or interactive course) for scheduling
+     */
+    public function selectItem(int $itemId, string $type): void
+    {
+        $this->selectedItemId = $itemId;
+        $this->selectedItemType = $type;
+    }
+
+    /**
+     * Get currently selected item data
+     */
+    public function getSelectedItem(): ?array
+    {
+        if (! $this->selectedItemId || ! $this->selectedItemType) {
+            return null;
+        }
+
+        if ($this->selectedItemType === 'private_lesson') {
+            $lessons = $this->privateLessons;
+
+            return $lessons->firstWhere('id', $this->selectedItemId);
+        } elseif ($this->selectedItemType === 'interactive_course') {
+            $courses = $this->interactiveCourses;
+
+            return $courses->firstWhere('id', $this->selectedItemId);
+        }
+
+        return null;
     }
 
     /**
@@ -503,6 +589,7 @@ class Calendar extends Page
 
                         return $options;
                     })
+                    ->searchable()
                     ->helperText(function () {
                         $timezone = AcademyContextService::getTimezone();
                         $currentTime = Carbon::now($timezone)->format('H:i');
@@ -637,23 +724,49 @@ class Calendar extends Page
         $this->validate([
             'scheduleDays' => 'required|array|min:1',
             'scheduleTime' => 'required|string',
-            'selectedCircleId' => 'required|integer',
         ]);
 
-        $selectedCircle = $this->getSelectedCircle();
-        if (! $selectedCircle) {
+        // Get selected item (circle or academic lesson/course)
+        $selectedItem = null;
+        $validator = null;
+
+        if ($this->isQuranTeacher()) {
+            if (! $this->selectedCircleId) {
+                Notification::make()
+                    ->title('خطأ')
+                    ->body('يرجى اختيار حلقة أولاً')
+                    ->danger()
+                    ->send();
+                return;
+            }
+
+            $selectedItem = $this->getSelectedCircle();
+            $validator = $this->getSelectedCircleValidator();
+        } elseif ($this->isAcademicTeacher()) {
+            if (! $this->selectedItemId) {
+                Notification::make()
+                    ->title('خطأ')
+                    ->body('يرجى اختيار درس أو دورة أولاً')
+                    ->danger()
+                    ->send();
+                return;
+            }
+
+            $selectedItem = $this->getSelectedItem();
+            $validator = $this->getSelectedItemValidator();
+        }
+
+        if (! $selectedItem) {
             Notification::make()
                 ->title('خطأ')
-                ->body('يرجى اختيار حلقة أولاً')
+                ->body('لم يتم العثور على العنصر المحدد')
                 ->danger()
                 ->send();
-
             return;
         }
 
         try {
             // CRITICAL: Use validator to validate BEFORE creating any sessions
-            $validator = $this->getSelectedCircleValidator();
             if ($validator) {
                 // Validate day selection
                 $dayResult = $validator->validateDaySelection($this->scheduleDays);
@@ -661,7 +774,7 @@ class Calendar extends Page
                     throw new \Exception($dayResult->getMessage());
                 }
 
-                // Validate session count (for both group and individual circles)
+                // Validate session count
                 $countResult = $validator->validateSessionCount($this->sessionCount);
                 if ($countResult->isError()) {
                     throw new \Exception($countResult->getMessage());
@@ -669,9 +782,6 @@ class Calendar extends Page
 
                 // Validate date range
                 $startDate = $this->scheduleStartDate ? Carbon::parse($this->scheduleStartDate) : null;
-
-                // Calculate weeks needed based on session count and selected days
-                // For both group and individual circles, use the user-specified session count
                 $weeksAhead = ceil($this->sessionCount / count($this->scheduleDays));
 
                 $dateResult = $validator->validateDateRange($startDate, $weeksAhead);
@@ -688,13 +798,22 @@ class Calendar extends Page
 
             $sessionsCreated = 0;
 
-            if ($selectedCircle['type'] === 'group') {
-                $sessionsCreated = $this->createGroupCircleSchedule($selectedCircle);
-            } else {
-                $sessionsCreated = $this->createIndividualCircleSchedule($selectedCircle);
+            // Route to appropriate scheduling method based on type
+            if ($this->isQuranTeacher()) {
+                if ($selectedItem['type'] === 'group') {
+                    $sessionsCreated = $this->createGroupCircleSchedule($selectedItem);
+                } elseif ($selectedItem['type'] === 'individual') {
+                    $sessionsCreated = $this->createIndividualCircleSchedule($selectedItem);
+                } elseif ($selectedItem['type'] === 'trial') {
+                    $sessionsCreated = $this->createTrialSessionSchedule($selectedItem);
+                }
+            } elseif ($this->isAcademicTeacher()) {
+                if ($selectedItem['type'] === 'private_lesson') {
+                    $sessionsCreated = $this->createPrivateLessonSchedule($selectedItem);
+                } elseif ($selectedItem['type'] === 'interactive_course') {
+                    $sessionsCreated = $this->createInteractiveCourseSchedule($selectedItem);
+                }
             }
-
-            // Modal closes automatically after successful action
 
             Notification::make()
                 ->title('تم بنجاح')
@@ -703,7 +822,7 @@ class Calendar extends Page
                 ->duration(5000)
                 ->send();
 
-            // Refresh the page after a short delay to show the notification
+            // Refresh the page after a short delay
             $this->js('setTimeout(() => window.location.reload(), 2000)');
 
         } catch (\Exception $e) {
@@ -713,6 +832,50 @@ class Calendar extends Page
                 ->danger()
                 ->send();
         }
+    }
+
+    /**
+     * Get validator for the selected circle (Quran teacher)
+     */
+    protected function getSelectedCircleValidator()
+    {
+        $selectedCircle = $this->getSelectedCircle();
+        if (! $selectedCircle) {
+            return null;
+        }
+
+        if ($selectedCircle['type'] === 'group') {
+            $circle = QuranCircle::find($selectedCircle['id']);
+            return $circle ? new GroupCircleValidator($circle) : null;
+        } elseif ($selectedCircle['type'] === 'individual') {
+            $circle = QuranIndividualCircle::find($selectedCircle['id']);
+            return $circle ? new IndividualCircleValidator($circle) : null;
+        } elseif ($selectedCircle['type'] === 'trial') {
+            $trial = QuranTrialRequest::find($selectedCircle['id']);
+            return $trial ? new TrialSessionValidator($trial) : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get validator for the selected item (Academic teacher)
+     */
+    protected function getSelectedItemValidator()
+    {
+        if (!$this->selectedItemId || !$this->selectedItemType) {
+            return null;
+        }
+
+        if ($this->selectedItemType === 'private_lesson') {
+            $subscription = AcademicSubscription::find($this->selectedItemId);
+            return $subscription ? new AcademicLessonValidator($subscription) : null;
+        } elseif ($this->selectedItemType === 'interactive_course') {
+            $course = InteractiveCourse::find($this->selectedItemId);
+            return $course ? new InteractiveCourseValidator($course) : null;
+        }
+
+        return null;
     }
 
     /**
@@ -953,27 +1116,191 @@ class Calendar extends Page
     /**
      * Get next date for specific day
      */
-    private function getNextDateForDay(Carbon $startDate, string $day): Carbon
+    // getNextDateForDay() is now provided by HandlesScheduling trait
+
+    /**
+     * Create schedule for trial session (simple - just one session)
+     */
+    private function createTrialSessionSchedule(array $trialData): int
     {
-        $dayMapping = [
-            'saturday' => Carbon::SATURDAY,
-            'sunday' => Carbon::SUNDAY,
-            'monday' => Carbon::MONDAY,
-            'tuesday' => Carbon::TUESDAY,
-            'wednesday' => Carbon::WEDNESDAY,
-            'thursday' => Carbon::THURSDAY,
-            'friday' => Carbon::FRIDAY,
-        ];
+        $trial = QuranTrialRequest::findOrFail($trialData['id']);
 
-        $targetDay = $dayMapping[$day] ?? Carbon::MONDAY;
-
-        // If today is the target day, return today
-        if ($startDate->dayOfWeek === $targetDay) {
-            return $startDate->copy();
+        if (!$trial->session) {
+            throw new \Exception('لا توجد جلسة تجريبية للجدولة');
         }
 
-        // Otherwise, get the next occurrence
-        return $startDate->next($targetDay);
+        if (count($this->scheduleDays) !== 1) {
+            throw new \Exception('يمكن اختيار يوم واحد فقط للجلسة التجريبية');
+        }
+
+        $timezone = AcademyContextService::getTimezone();
+        $startDate = $this->scheduleStartDate
+            ? Carbon::parse($this->scheduleStartDate, $timezone)
+            : Carbon::now($timezone);
+
+        $day = $this->scheduleDays[0];
+        $sessionDate = $this->getNextDateForDay($startDate, $day);
+        $sessionDateTime = $sessionDate->setTimeFromTimeString($this->scheduleTime);
+
+        // Update the trial session
+        $trial->session->update([
+            'scheduled_at' => $sessionDateTime,
+            'status' => 'scheduled',
+        ]);
+
+        // Update trial request
+        $trial->update([
+            'scheduled_at' => $sessionDateTime,
+            'status' => 'scheduled',
+        ]);
+
+        return 1; // Always 1 session for trials
+    }
+
+    /**
+     * Create schedule for private lesson (academic subscription)
+     */
+    private function createPrivateLessonSchedule(array $itemData): int
+    {
+        $subscription = AcademicSubscription::findOrFail($itemData['id']);
+
+        $remainingSessions = $itemData['sessions_remaining'];
+        if ($remainingSessions <= 0) {
+            throw new \Exception('لا توجد جلسات متبقية للجدولة في هذا الاشتراك.');
+        }
+
+        // Get unscheduled sessions
+        $unscheduledSessions = $subscription->sessions()
+            ->where('status', 'unscheduled')
+            ->orderBy('session_sequence')
+            ->limit($remainingSessions)
+            ->get();
+
+        if ($unscheduledSessions->isEmpty()) {
+            throw new \Exception('لا توجد جلسات غير مجدولة متاحة.');
+        }
+
+        $selectedDaysCount = count($this->scheduleDays);
+        $weeksToSchedule = 8; // Schedule for next 8 weeks
+        $maxSessionsToSchedule = min($selectedDaysCount * $weeksToSchedule, $unscheduledSessions->count(), $this->sessionCount);
+
+        $timezone = AcademyContextService::getTimezone();
+        $startDate = $this->scheduleStartDate
+            ? Carbon::parse($this->scheduleStartDate, $timezone)
+            : Carbon::now($timezone);
+
+        $scheduledCount = 0;
+        $weekCount = 0;
+        $user = Auth::user();
+        $teacherProfile = $user->academicTeacherProfile;
+        $sessionIndex = 0;
+
+        while ($scheduledCount < $maxSessionsToSchedule && $weekCount < $weeksToSchedule && $sessionIndex < $unscheduledSessions->count()) {
+            foreach ($this->scheduleDays as $day) {
+                if ($scheduledCount >= $maxSessionsToSchedule || $sessionIndex >= $unscheduledSessions->count()) {
+                    break;
+                }
+
+                $sessionDate = $this->getNextDateForDay($startDate->copy()->addWeeks($weekCount), $day);
+                $sessionDateTime = $sessionDate->setTimeFromTimeString($this->scheduleTime);
+
+                // Check for conflicts
+                $hasConflict = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+                    ->whereDate('scheduled_at', $sessionDateTime->toDateString())
+                    ->whereTime('scheduled_at', $sessionDateTime->toTimeString())
+                    ->where('status', '!=', 'cancelled')
+                    ->exists();
+
+                if (!$hasConflict) {
+                    $session = $unscheduledSessions[$sessionIndex];
+                    $session->update([
+                        'status' => 'scheduled',
+                        'is_scheduled' => true,
+                        'scheduled_at' => $sessionDateTime,
+                        'duration_minutes' => $subscription->session_duration_minutes ?? 60,
+                        'location_type' => 'online',
+                        'meeting_source' => 'livekit',
+                        'scheduled_by' => $user->id,
+                        'teacher_scheduled_at' => Carbon::now($timezone),
+                    ]);
+
+                    $scheduledCount++;
+                    $sessionIndex++;
+                }
+            }
+            $weekCount++;
+        }
+
+        if ($scheduledCount === 0) {
+            throw new \Exception('لم يتم جدولة أي جلسات. تأكد من عدم وجود تعارض في المواعيد.');
+        }
+
+        return $scheduledCount;
+    }
+
+    /**
+     * Create schedule for interactive course
+     */
+    private function createInteractiveCourseSchedule(array $itemData): int
+    {
+        $course = InteractiveCourse::findOrFail($itemData['id']);
+
+        $remainingSessions = $itemData['sessions_remaining'];
+        if ($remainingSessions <= 0) {
+            throw new \Exception('لا توجد جلسات متبقية للجدولة في هذه الدورة.');
+        }
+
+        $maxSessionsToSchedule = min($this->sessionCount, $remainingSessions);
+
+        $timezone = AcademyContextService::getTimezone();
+        $startDate = $this->scheduleStartDate
+            ? Carbon::parse($this->scheduleStartDate, $timezone)
+            : Carbon::now($timezone);
+
+        $scheduledCount = 0;
+        $weekCount = 0;
+        $user = Auth::user();
+
+        while ($scheduledCount < $maxSessionsToSchedule && $weekCount < 12) {
+            foreach ($this->scheduleDays as $day) {
+                if ($scheduledCount >= $maxSessionsToSchedule) {
+                    break;
+                }
+
+                $sessionDate = $this->getNextDateForDay($startDate->copy()->addWeeks($weekCount), $day);
+                $sessionDateTime = $sessionDate->setTimeFromTimeString($this->scheduleTime);
+
+                // Check if session already exists
+                $existingSession = InteractiveCourseSession::where('course_id', $course->id)
+                    ->where('scheduled_at', $sessionDateTime)
+                    ->first();
+
+                if (!$existingSession) {
+                    $sessionNumber = $scheduledCount + 1;
+                    InteractiveCourseSession::create([
+                        'academy_id' => $course->academy_id,
+                        'course_id' => $course->id,
+                        'session_number' => $sessionNumber,
+                        'title' => "جلسة {$sessionNumber} - {$course->title}",
+                        'description' => "جلسة من دورة {$course->title}",
+                        'scheduled_at' => $sessionDateTime,
+                        'duration_minutes' => $course->session_duration_minutes ?? 60,
+                        'status' => 'scheduled',
+                        'meeting_link' => null,
+                        'created_by' => $user->id,
+                    ]);
+
+                    $scheduledCount++;
+                }
+            }
+            $weekCount++;
+        }
+
+        if ($scheduledCount === 0) {
+            throw new \Exception('لم يتم إنشاء أي جلسات. تأكد من عدم وجود تعارض.');
+        }
+
+        return $scheduledCount;
     }
 
     /**

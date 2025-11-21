@@ -44,10 +44,13 @@
                 <x-academic.progress-summary :progressSummary="$progressSummary" />
             @endif
 
-            <!-- Actions and Basic Progress -->
-            <div class="space-y-6">
-                <x-circle.individual-quick-actions :circle="$subscription" viewType="student" type="academic" />
-            </div>
+            <!-- Quick Actions -->
+            <x-circle.quick-actions
+                :circle="$subscription"
+                type="individual"
+                view-type="student"
+                context="academic"
+            />
         </div>
     </div>
 </div>
@@ -55,14 +58,20 @@
 <script>
 // Session detail function
 function openSessionDetail(sessionId) {
-    const baseUrl = "{{ route('student.academic-sessions.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => 'PLACEHOLDER']) }}";
+    const baseUrl = "{{ route('student.academic-sessions.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => 'PLACEHOLDER']) }}";
     window.location.href = baseUrl.replace('PLACEHOLDER', sessionId);
 }
 
 // Chat with teacher function
 function openChatWithTeacher() {
     @if($subscription->academicTeacher && $subscription->academicTeacher->user)
-    window.location.href = "{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $subscription->academicTeacher->user->id]) }}";
+        @php
+            $teacherUser = $subscription->academicTeacher->user;
+            $conv = auth()->user()->getOrCreatePrivateConversation($teacherUser);
+        @endphp
+        @if($conv)
+            window.location.href = "{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}";
+        @endif
     @endif
 }
 </script>

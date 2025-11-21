@@ -35,7 +35,11 @@
                 
                 <!-- Student Profile -->
                 <div class="flex items-center space-x-4 space-x-reverse">
-                    <x-student-avatar :student="$student" size="xl" />
+                    <x-avatar
+                        :user="$student"
+                        size="xl"
+                        userType="student"
+                        :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                     <div>
                         <h1 class="text-3xl font-bold mb-1">{{ $student->name }}</h1>
                         <div class="flex items-center space-x-4 space-x-reverse text-white/90">

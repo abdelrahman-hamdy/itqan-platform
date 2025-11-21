@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Country;
+use App\Models\AcademicGradeLevel;
 use App\Models\AcademicProgress;
 use App\Models\AcademicSession;
+use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\CourseSubscription;
@@ -74,14 +76,20 @@ class StudentProfileController extends Controller
             ->get();
 
         // Get student's interactive courses
-        $interactiveCourses = InteractiveCourse::where('academy_id', $academy->id)
-            ->whereHas('enrollments', function ($query) use ($user) {
-                $query->where('student_id', $user->id);
-            })
-            ->with(['assignedTeacher', 'enrollments' => function ($query) use ($user) {
-                $query->where('student_id', $user->id);
-            }])
-            ->get();
+        $studentId = $studentProfile?->id;
+        $interactiveCourses = collect();
+
+        if ($studentId) {
+            $interactiveCourses = InteractiveCourse::where('academy_id', $academy->id)
+                ->whereHas('enrollments', function ($query) use ($studentId) {
+                    $query->where('student_id', $studentId)
+                          ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                })
+                ->with(['assignedTeacher', 'enrollments' => function ($query) use ($studentId) {
+                    $query->where('student_id', $studentId);
+                }])
+                ->get();
+        }
 
         // Get student's recorded courses
         $recordedCourses = RecordedCourse::where('academy_id', $academy->id)
@@ -138,11 +146,17 @@ class StudentProfileController extends Controller
         $hoursGrowth = 12; // Percentage growth this month
 
         // Count active interactive courses
-        $activeInteractiveCourses = InteractiveCourse::where('academy_id', $academy->id)
-            ->whereHas('enrollments', function ($query) use ($user) {
-                $query->where('student_id', $user->id);
-            })
-            ->count();
+        $studentId = $user->studentProfile?->id;
+        $activeInteractiveCourses = 0;
+
+        if ($studentId) {
+            $activeInteractiveCourses = InteractiveCourse::where('academy_id', $academy->id)
+                ->whereHas('enrollments', function ($query) use ($studentId) {
+                    $query->where('student_id', $studentId)
+                          ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                })
+                ->count();
+        }
 
         // Count active recorded courses
         $activeRecordedCourses = RecordedCourse::where('academy_id', $academy->id)
@@ -594,13 +608,55 @@ class StudentProfileController extends Controller
                 ->take(5);
         }
 
+        // Get active group subscription for this circle if student is enrolled
+        $subscription = null;
+        if ($isEnrolled && $circle->quran_teacher_id) {
+            // Try to find subscription by matching teacher and subscription type
+            $subscription = \App\Models\QuranSubscription::where('student_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->where('quran_teacher_id', $circle->quran_teacher_id)
+                ->where('subscription_type', 'group')
+                ->whereIn('subscription_status', ['active', 'pending'])
+                ->with(['package', 'quranTeacherUser'])
+                ->first();
+
+            // If no subscription exists for this enrollment, create one
+            if (!$subscription) {
+                $subscription = \App\Models\QuranSubscription::create([
+                    'academy_id' => $academy->id,
+                    'student_id' => $user->id,
+                    'quran_teacher_id' => $circle->quran_teacher_id,
+                    'subscription_code' => \App\Models\QuranSubscription::generateSubscriptionCode($academy->id),
+                    'subscription_type' => 'group',
+                    'total_sessions' => $circle->sessions_per_month ?? 8,
+                    'sessions_used' => 0,
+                    'sessions_remaining' => $circle->sessions_per_month ?? 8,
+                    'total_price' => $circle->monthly_fee ?? 0,
+                    'discount_amount' => 0,
+                    'final_price' => $circle->monthly_fee ?? 0,
+                    'currency' => $circle->currency ?? 'SAR',
+                    'billing_cycle' => 'monthly',
+                    'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
+                    'subscription_status' => 'active',
+                    'memorization_level' => $circle->memorization_level ?? 'beginner',
+                    'starts_at' => now(),
+                    'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
+                    'auto_renew' => true,
+                ]);
+
+                // Reload with relationships
+                $subscription->load(['package', 'quranTeacherUser']);
+            }
+        }
+
         return view('student.circle-detail', compact(
             'circle',
             'isEnrolled',
             'canEnroll',
             'academy',
             'upcomingSessions',
-            'pastSessions'
+            'pastSessions',
+            'subscription'
         ));
     }
 
@@ -694,7 +750,7 @@ class StudentProfileController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($circle, $user) {
+            DB::transaction(function () use ($circle, $user, $academy) {
                 // Enroll student in circle
                 $circle->students()->attach($user->id, [
                     'enrolled_at' => now(),
@@ -703,6 +759,29 @@ class StudentProfileController extends Controller
                     'missed_sessions' => 0,
                     'makeup_sessions_used' => 0,
                     'current_level' => 'beginner',
+                ]);
+
+                // Create a group subscription for this enrollment
+                $subscription = \App\Models\QuranSubscription::create([
+                    'academy_id' => $academy->id,
+                    'student_id' => $user->id,
+                    'quran_teacher_id' => $circle->quran_teacher_id,
+                    'subscription_code' => \App\Models\QuranSubscription::generateSubscriptionCode($academy->id),
+                    'subscription_type' => 'group',
+                    'total_sessions' => $circle->sessions_per_month ?? 8, // Default sessions per month
+                    'sessions_used' => 0,
+                    'sessions_remaining' => $circle->sessions_per_month ?? 8,
+                    'total_price' => $circle->monthly_fee ?? 0,
+                    'discount_amount' => 0,
+                    'final_price' => $circle->monthly_fee ?? 0,
+                    'currency' => $circle->currency ?? 'SAR',
+                    'billing_cycle' => 'monthly',
+                    'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
+                    'subscription_status' => 'active',
+                    'memorization_level' => $circle->memorization_level ?? 'beginner',
+                    'starts_at' => now(),
+                    'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
+                    'auto_renew' => true,
                 ]);
 
                 // Update circle enrollment count
@@ -753,9 +832,21 @@ class StudentProfileController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($circle, $user) {
+            DB::transaction(function () use ($circle, $user, $academy) {
                 // Remove student from circle
                 $circle->students()->detach($user->id);
+
+                // Cancel the group subscription if it exists
+                $subscription = \App\Models\QuranSubscription::where('student_id', $user->id)
+                    ->where('academy_id', $academy->id)
+                    ->where('quran_teacher_id', $circle->quran_teacher_id)
+                    ->where('subscription_type', 'group')
+                    ->whereIn('subscription_status', ['active', 'pending'])
+                    ->first();
+
+                if ($subscription) {
+                    $subscription->cancel('Student left the circle');
+                }
 
                 // Update circle enrollment count
                 $circle->decrement('enrolled_students');
@@ -787,29 +878,88 @@ class StudentProfileController extends Controller
         $user = Auth::user();
         $academy = $user->academy;
 
-        // Get student's existing subscribed teacher IDs (regardless of status)
-        $subscribedTeacherIds = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->whereIn('subscription_status', ['active', 'pending', 'paused'])
-            ->pluck('quran_teacher_id')
-            ->toArray();
+        // Get student's active/pending subscriptions mapped by teacher ID
+        // Prioritize subscriptions with individual circles when multiple exist for same teacher
+        $subscriptions = QuranSubscription::where('quran_subscriptions.student_id', $user->id)
+            ->where('quran_subscriptions.academy_id', $academy->id)
+            ->whereIn('quran_subscriptions.subscription_status', ['active', 'pending'])
+            ->leftJoin('quran_individual_circles', 'quran_subscriptions.id', '=', 'quran_individual_circles.subscription_id')
+            ->select('quran_subscriptions.*')
+            ->orderByRaw('quran_individual_circles.id IS NOT NULL DESC')
+            ->orderBy('quran_subscriptions.created_at', 'desc')
+            ->with(['package', 'sessions', 'individualCircle'])
+            ->get();
 
-        // Get all active and approved Quran teachers for this academy, excluding already subscribed
-        // Fix: use user_id instead of id since quran_teacher_id points to User model
-        $quranTeachers = QuranTeacherProfile::where('academy_id', $academy->id)
+        // Group by teacher and take first (prioritized) subscription for each
+        $subscriptionsByTeacherId = $subscriptions
+            ->groupBy('quran_teacher_id')
+            ->map(fn($group) => $group->first());
+
+        // Build query for Quran teachers with filters
+        $query = QuranTeacherProfile::where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->where('approval_status', 'approved')
-            ->whereNotIn('user_id', $subscribedTeacherIds)
+            ->where('approval_status', 'approved');
+
+        // Apply search filter
+        if (request('search')) {
+            $search = request('search');
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Apply experience filter
+        if (request('experience')) {
+            $experience = request('experience');
+            if ($experience === '1-3') {
+                $query->whereBetween('teaching_experience_years', [1, 3]);
+            } elseif ($experience === '3-5') {
+                $query->whereBetween('teaching_experience_years', [3, 5]);
+            } elseif ($experience === '5-10') {
+                $query->whereBetween('teaching_experience_years', [5, 10]);
+            } elseif ($experience === '10+') {
+                $query->where('teaching_experience_years', '>=', 10);
+            }
+        }
+
+        // Apply gender filter (via user relationship)
+        if (request('gender')) {
+            $query->whereHas('user', function($userQuery) {
+                $userQuery->where('gender', request('gender'));
+            });
+        }
+
+        // Apply schedule days filter
+        if (request('schedule_days') && is_array(request('schedule_days'))) {
+            $query->where(function($q) {
+                foreach (request('schedule_days') as $day) {
+                    $q->orWhereJsonContains('available_days', $day);
+                }
+            });
+        }
+
+        // Get all active and approved Quran teachers for this academy
+        $quranTeachers = $query
             ->with(['user', 'quranCircles', 'quranSessions'])
             ->withCount(['quranSessions as total_sessions'])
+            ->orderByRaw('CASE WHEN user_id IN (' . implode(',', $subscriptionsByTeacherId->keys()->toArray() ?: [0]) . ') THEN 0 ELSE 1 END')
             ->orderBy('rating', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
-        // Calculate additional stats for each teacher
-        $quranTeachers->getCollection()->transform(function ($teacher) {
+        // Calculate additional stats and subscription info for each teacher
+        $quranTeachers->getCollection()->transform(function ($teacher) use ($subscriptionsByTeacherId) {
+            // Check if student is subscribed to this teacher
+            $teacher->my_subscription = $subscriptionsByTeacherId->get($teacher->user_id);
+            $teacher->is_subscribed = $teacher->my_subscription !== null;
+
             // Count active students from subscriptions
-            // Fix: use user_id instead of id since quran_teacher_id points to User model
             $activeStudents = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
                 ->where('subscription_status', 'active')
                 ->distinct('student_id')
@@ -818,7 +968,6 @@ class StudentProfileController extends Controller
             $teacher->active_students_count = $activeStudents;
 
             // Get average rating from subscriptions reviews
-            // Fix: use user_id instead of id since quran_teacher_id points to User model
             $averageRating = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
                 ->whereNotNull('rating')
                 ->avg('rating');
@@ -828,13 +977,8 @@ class StudentProfileController extends Controller
             return $teacher;
         });
 
-        // Get student's active subscriptions to show which teachers they're already learning with
-        $activeSubscriptions = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->whereIn('subscription_status', ['active', 'pending'])
-            ->with(['package', 'sessions'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Count of active subscriptions for stats box
+        $activeSubscriptionsCount = $subscriptionsByTeacherId->count();
 
         // Get available packages for this academy
         $availablePackages = QuranPackage::where('academy_id', $academy->id)
@@ -845,41 +989,96 @@ class StudentProfileController extends Controller
 
         return view('student.quran-teachers', compact(
             'quranTeachers',
-            'activeSubscriptions',
+            'activeSubscriptionsCount',
             'availablePackages'
         ));
     }
 
-    public function interactiveCourses()
+    public function interactiveCourses(Request $request)
     {
         $user = Auth::user();
         $academy = $user->academy;
-        $studentId = $user->studentProfile->id ?? $user->id;
 
-        // Get all available interactive courses for this academy
-        $availableCourses = InteractiveCourse::where('academy_id', $academy->id)
+        // Ensure user has a student profile
+        if (!$user->studentProfile) {
+            return redirect()->route('student.profile')
+                ->with('error', 'يجب إكمال الملف الشخصي للطالب أولاً');
+        }
+
+        $studentId = $user->studentProfile->id;
+
+        // Get all interactive courses with student enrollment data
+        $query = InteractiveCourse::where('academy_id', $academy->id)
             ->where('is_published', true)
             ->where('enrollment_deadline', '>=', now()->toDateString())
             ->with(['assignedTeacher', 'subject', 'gradeLevel', 'enrollments' => function ($query) use ($studentId) {
                 $query->where('student_id', $studentId);
-            }])
-            ->orderBy('created_at', 'desc')
-            ->paginate(12);
+            }]);
 
-        // Get student's enrolled courses
-        $enrolledCourses = InteractiveCourse::where('academy_id', $academy->id)
+        // Apply filters
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('title', 'LIKE', '%'.$request->search.'%')
+                    ->orWhere('description', 'LIKE', '%'.$request->search.'%');
+            });
+        }
+
+        if ($request->filled('subject_id')) {
+            $query->where('subject_id', $request->subject_id);
+        }
+
+        if ($request->filled('grade_level_id')) {
+            $query->where('grade_level_id', $request->grade_level_id);
+        }
+
+        // Order by enrollment status (enrolled courses first), then by creation date
+        $allCourses = $query->get()->sortByDesc(function ($course) {
+            return $course->enrollments->isNotEmpty() ? 1 : 0;
+        })->values();
+
+        // Paginate manually
+        $perPage = 12;
+        $currentPage = $request->get('page', 1);
+        $offset = ($currentPage - 1) * $perPage;
+
+        $courses = new \Illuminate\Pagination\LengthAwarePaginator(
+            $allCourses->slice($offset, $perPage),
+            $allCourses->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // Count enrolled courses for the stats
+        $enrolledCoursesCount = InteractiveCourse::where('academy_id', $academy->id)
             ->whereHas('enrollments', function ($query) use ($studentId) {
                 $query->where('student_id', $studentId)
                       ->whereIn('enrollment_status', ['enrolled', 'completed']);
             })
-            ->with(['assignedTeacher', 'subject', 'gradeLevel', 'enrollments' => function ($query) use ($studentId) {
-                $query->where('student_id', $studentId);
-            }])
+            ->count();
+
+        // Get filter options (only subjects and grade levels that have interactive courses)
+        $subjects = AcademicSubject::where('academy_id', $academy->id)
+            ->whereHas('interactiveCourses', function ($query) {
+                $query->where('is_published', true)
+                      ->where('enrollment_deadline', '>=', now()->toDateString());
+            })
+            ->orderBy('name')
+            ->get();
+
+        $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
+            ->whereHas('interactiveCourses', function ($query) {
+                $query->where('is_published', true)
+                      ->where('enrollment_deadline', '>=', now()->toDateString());
+            })
+            ->orderBy('name')
             ->get();
 
         return view('student.interactive-courses', compact(
-            'availableCourses',
-            'enrolledCourses'
+            'courses',
+            'enrolledCoursesCount',
+            'subjects',
+            'gradeLevels'
         ));
     }
 
@@ -929,8 +1128,8 @@ class StudentProfileController extends Controller
                             $q->where('student_id', $student->id);
                         }
                     },
-                    'meeting'
-                ])->orderBy('scheduled_date')->orderBy('scheduled_time');
+                    // Meeting info is stored directly on the session (meeting_link, meeting_id, etc.)
+                ])->orderBy('scheduled_at');
             },
         ]);
 
@@ -959,20 +1158,24 @@ class StudentProfileController extends Controller
         }
 
         // For students: Check enrollment and get enrollment data
-        $isEnrolled = null;
+        $isEnrolled = false;
         $enrollmentStats = [];
 
         if ($isStudent) {
-            $studentId = $user->studentProfile ? $user->studentProfile->id : $user->id;
-            $isEnrolled = $courseModel->enrollments->where('student_id', $studentId)->first();
-
-            // CRITICAL: Students can only view courses they are enrolled in
-            if (!$isEnrolled || !in_array($isEnrolled->enrollment_status, ['enrolled', 'completed'])) {
-                // Not enrolled or enrollment not active, redirect to public course page
-                return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'course' => $course])
-                    ->with('error', 'يجب التسجيل في الكورس أولاً للوصول إلى محتواه');
+            // Ensure user has a student profile
+            if (!$user->studentProfile) {
+                abort(403, 'يجب إكمال الملف الشخصي للطالب أولاً');
             }
 
+            $studentId = $user->studentProfile->id;
+            $enrollment = $courseModel->enrollments->where('student_id', $studentId)->first();
+
+            // Check if student is enrolled with active status
+            if ($enrollment && in_array($enrollment->enrollment_status, ['enrolled', 'completed'])) {
+                $isEnrolled = true;
+            }
+
+            // Always show enrollment stats for students (whether enrolled or not)
             $enrollmentStats = [
                 'total_enrolled' => $courseModel->enrollments->count(),
                 'available_spots' => max(0, $courseModel->max_students - $courseModel->enrollments->count()),
@@ -995,24 +1198,20 @@ class StudentProfileController extends Controller
         $now = now();
         $upcomingSessions = $courseModel->sessions
             ->filter(function ($session) use ($now) {
-                $scheduledDateTime = \Carbon\Carbon::parse(
-                    $session->scheduled_date->format('Y-m-d') . ' ' .
-                    $session->scheduled_time->format('H:i:s')
-                );
-                return $scheduledDateTime->gte($now) || $session->status === 'in-progress';
+                // Use the scheduled_at accessor which handles date/time concatenation
+                $scheduledDateTime = $session->scheduled_at;
+                return $scheduledDateTime && ($scheduledDateTime->gte($now) || $session->status === 'in-progress');
             })
             ->values();
 
         $pastSessions = $courseModel->sessions
             ->filter(function ($session) use ($now) {
-                $scheduledDateTime = \Carbon\Carbon::parse(
-                    $session->scheduled_date->format('Y-m-d') . ' ' .
-                    $session->scheduled_time->format('H:i:s')
-                );
-                return $scheduledDateTime->lt($now) && $session->status !== 'in-progress';
+                // Use the scheduled_at accessor which handles date/time concatenation
+                $scheduledDateTime = $session->scheduled_at;
+                return $scheduledDateTime && $scheduledDateTime->lt($now) && $session->status !== 'in-progress';
             })
             ->sortByDesc(function ($session) {
-                return $session->scheduled_date->format('Y-m-d') . ' ' . $session->scheduled_time->format('H:i:s');
+                return $session->scheduled_at ? $session->scheduled_at->timestamp : 0;
             })
             ->values();
 
@@ -1051,14 +1250,15 @@ class StudentProfileController extends Controller
 
         // Find the session with relationships
         $session = \App\Models\InteractiveCourseSession::with([
-            'course.teacher.user',
+            'course.assignedTeacher.user',
             'course.subject',
             'course.gradeLevel',
+            'course.enrolledStudents.student.user',  // Load enrolled students with their User data
             'homework',
-            'attendances' => function ($q) use ($user) {
-                $q->where('student_id', $user->id);
-            },
-            'meeting'
+            'attendances',  // Load all attendances, filter later by student_profile id
+            'meetingAttendances',  // Load meeting attendance data
+            // Note: studentReports relationship doesn't exist on InteractiveCourseSession yet
+            // Meeting info is stored directly on the session (meeting_link, meeting_id, etc.)
         ])->findOrFail($sessionId);
 
         // Ensure session's course belongs to the academy
@@ -1066,82 +1266,229 @@ class StudentProfileController extends Controller
             abort(403, 'Access denied to this session');
         }
 
-        // Verify enrollment in the course
-        $enrollment = \App\Models\InteractiveCourseEnrollment::where([
-            'course_id' => $session->course_id,
-            'student_id' => $user->id,
-            'status' => 'active'
-        ])->first();
+        // Check user permission: either enrolled student or assigned teacher
+        $isTeacher = false;
+        $enrollment = null;
 
-        if (!$enrollment) {
-            abort(403, 'You must be enrolled in this course to view sessions');
+        if ($user->isAcademicTeacher()) {
+            // Check if user is the assigned teacher for this course
+            $teacherProfile = $user->academicTeacherProfile;
+            if ($teacherProfile && $session->course->assigned_teacher_id === $teacherProfile->id) {
+                $isTeacher = true;
+            } else {
+                abort(403, 'You are not the assigned teacher for this course');
+            }
+        } elseif ($user->isStudent()) {
+            // Get the student profile
+            $studentProfile = $user->studentProfile;
+            if (!$studentProfile) {
+                abort(403, 'Student profile not found');
+            }
+
+            // Verify enrollment in the course
+            $enrollment = \App\Models\InteractiveCourseEnrollment::where([
+                'course_id' => $session->course_id,
+                'student_id' => $studentProfile->id,
+                'enrollment_status' => 'enrolled'
+            ])->first();
+
+            if (!$enrollment) {
+                abort(403, 'You must be enrolled in this course to view sessions');
+            }
+        } else {
+            abort(403, 'Access denied');
         }
 
-        $student = $user->studentProfile;
+        $student = $isTeacher ? null : $user->studentProfile;
 
-        // Get attendance record for this student
-        $attendance = $session->attendances->where('student_id', $student->id)->first();
-
-        // Get homework submission if homework exists
+        // Get student-specific data only for students
+        $attendance = null;
         $homeworkSubmission = null;
-        if ($session->homework()->count() > 0) {
-            $homework = $session->homework()->first();
-            if ($homework) {
-                $homeworkSubmission = $homework->submissions()
-                    ->where('student_id', $student->id)
-                    ->first();
+
+        if (!$isTeacher && $student) {
+            // Get attendance record for this student
+            $attendance = $session->attendances->where('student_id', $student->id)->first();
+
+            // Get homework submission if homework exists
+            if ($session->homework()->count() > 0) {
+                $homework = $session->homework()->first();
+                if ($homework) {
+                    $homeworkSubmission = $homework->submissions()
+                        ->where('student_id', $student->id)
+                        ->first();
+                }
             }
         }
 
-        return view('student.interactive-sessions.show', compact(
-            'session',
-            'attendance',
-            'homeworkSubmission',
-            'student',
-            'enrollment'
-        ));
+        // Determine view type for conditional rendering
+        $viewType = $isTeacher ? 'teacher' : 'student';
+
+        // Return appropriate view based on user role
+        if ($isTeacher) {
+            return view('teacher.interactive-course-sessions.show', compact(
+                'session',
+                'viewType'
+            ));
+        } else {
+            return view('student.interactive-course-sessions.show', compact(
+                'session',
+                'attendance',
+                'homeworkSubmission',
+                'student',
+                'enrollment',
+                'viewType'
+            ));
+        }
     }
 
     public function addInteractiveSessionFeedback(Request $request, $subdomain, $sessionId)
     {
         $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'feedback_text' => 'nullable|string|max:1000'
+            'feedback' => 'required|string|max:1000'
         ]);
 
         $user = Auth::user();
         $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
 
         // Verify enrollment and session completion
+        $studentProfile = $user->studentProfile;
+        if (!$studentProfile) {
+            return response()->json(['success' => false, 'message' => 'Student profile not found'], 403);
+        }
+
         $enrollment = \App\Models\InteractiveCourseEnrollment::where([
             'course_id' => $session->course_id,
-            'student_id' => $user->id,
-            'status' => 'active'
+            'student_id' => $studentProfile->id,
+            'enrollment_status' => 'enrolled'
         ])->firstOrFail();
 
         if ($session->status !== 'completed') {
-            return back()->with('error', 'Cannot submit feedback for incomplete session');
+            return response()->json(['success' => false, 'message' => 'لا يمكن إضافة تقييم لجلسة لم تكتمل'], 400);
         }
 
-        $student = $user->studentProfile;
+        // Update session with student feedback
+        $session->update([
+            'student_feedback' => $validated['feedback']
+        ]);
 
-        // Create or update feedback
-        // Note: You may need to create an InteractiveSessionFeedback model
-        // For now, we'll use a generic approach that can be adapted
-        \DB::table('interactive_session_feedback')->updateOrInsert(
-            [
-                'session_id' => $sessionId,
-                'student_id' => $student->id
-            ],
-            [
-                'rating' => $validated['rating'],
-                'feedback_text' => $validated['feedback_text'] ?? null,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]
-        );
+        return response()->json([
+            'success' => true,
+            'message' => 'تم إرسال تقييمك بنجاح'
+        ]);
+    }
 
-        return back()->with('success', 'Feedback submitted successfully');
+    public function updateInteractiveSessionContent(Request $request, $subdomain, $sessionId)
+    {
+        $validated = $request->validate([
+            'learning_outcomes' => 'nullable|string|max:2000',
+            'teacher_notes' => 'nullable|string|max:2000'
+        ]);
+
+        $user = Auth::user();
+        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+
+        // Verify teacher is assigned to this course
+        if (!$user->isAcademicTeacher()) {
+            return response()->json(['success' => false, 'message' => 'غير مسموح لك بالوصول'], 403);
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (!$teacherProfile || $session->course->assigned_teacher_id !== $teacherProfile->id) {
+            return response()->json(['success' => false, 'message' => 'غير مسموح لك بتعديل هذه الجلسة'], 403);
+        }
+
+        // Update session
+        $session->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حفظ المحتوى بنجاح',
+            'session' => $session->fresh()
+        ]);
+    }
+
+    public function assignInteractiveSessionHomework(Request $request, $subdomain, $sessionId)
+    {
+        $validated = $request->validate([
+            'homework_description' => 'required|string|max:2000',
+            'homework_file' => 'nullable|file|mimes:pdf,doc,docx|max:10240'
+        ]);
+
+        $user = Auth::user();
+        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+
+        // Verify teacher is assigned to this course
+        if (!$user->isAcademicTeacher()) {
+            abort(403, 'غير مسموح لك بالوصول');
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (!$teacherProfile || $session->course->assigned_teacher_id !== $teacherProfile->id) {
+            abort(403, 'غير مسموح لك بتعيين واجب لهذه الجلسة');
+        }
+
+        // Handle file upload
+        $homeworkFilePath = null;
+        if ($request->hasFile('homework_file')) {
+            $homeworkFilePath = $request->file('homework_file')->store(
+                "tenants/{$session->course->academy_id}/interactive-homework",
+                'public'
+            );
+        }
+
+        // Update session with homework
+        $session->update([
+            'homework_description' => $validated['homework_description'],
+            'homework_file' => $homeworkFilePath,
+        ]);
+
+        return redirect()->back()->with('success', 'تم تعيين الواجب بنجاح');
+    }
+
+    /**
+     * Update homework for interactive session (Teacher)
+     */
+    public function updateInteractiveSessionHomework(Request $request, $subdomain, $sessionId)
+    {
+        $validated = $request->validate([
+            'homework_description' => 'required|string|max:2000',
+            'homework_file' => 'nullable|file|mimes:pdf,doc,docx|max:10240'
+        ]);
+
+        $user = Auth::user();
+        $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
+
+        // Verify teacher is assigned to this course
+        if (!$user->isAcademicTeacher()) {
+            abort(403, 'غير مسموح لك بالوصول');
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (!$teacherProfile || $session->course->assigned_teacher_id !== $teacherProfile->id) {
+            abort(403, 'غير مسموح لك بتحديث واجب هذه الجلسة');
+        }
+
+        // Handle file upload
+        $homeworkFilePath = $session->homework_file; // Keep existing file if no new file uploaded
+        if ($request->hasFile('homework_file')) {
+            // Delete old file if exists
+            if ($session->homework_file) {
+                Storage::disk('public')->delete($session->homework_file);
+            }
+
+            $homeworkFilePath = $request->file('homework_file')->store(
+                "tenants/{$session->course->academy_id}/interactive-homework",
+                'public'
+            );
+        }
+
+        // Update session with homework
+        $session->update([
+            'homework_description' => $validated['homework_description'],
+            'homework_file' => $homeworkFilePath,
+        ]);
+
+        return redirect()->back()->with('success', 'تم تحديث الواجب بنجاح');
     }
 
     public function submitInteractiveCourseHomework(Request $request, $subdomain, $sessionId)
@@ -1204,7 +1551,7 @@ class StudentProfileController extends Controller
         return back()->with('success', 'Homework submitted successfully');
     }
 
-    public function academicTeachers()
+    public function academicTeachers(Request $request)
     {
         $user = Auth::user();
         $academy = $user->academy;
@@ -1216,39 +1563,103 @@ class StudentProfileController extends Controller
             ->with(['academicTeacher'])
             ->get();
 
-        // Get all active and approved academic teachers for this academy
-        $academicTeachers = AcademicTeacherProfile::where('academy_id', $academy->id)
+        // Get active subscriptions count
+        $activeSubscriptionsCount = $mySubscriptions->count();
+
+        // Get all subjects and grade levels for filters
+        $subjects = \App\Models\AcademicSubject::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        // Build teachers query with filters
+        $query = AcademicTeacherProfile::where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
-            ->with(['user'])
-            ->withCount(['interactiveCourses as active_courses_count'])
+            ->with(['user']);
+
+        // Apply filters
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('subject')) {
+            $query->whereJsonContains('subject_ids', (int) $request->subject);
+        }
+
+        if ($request->filled('grade_level')) {
+            $query->whereJsonContains('grade_level_ids', (int) $request->grade_level);
+        }
+
+        if ($request->filled('experience')) {
+            $experienceRange = $request->experience;
+            if ($experienceRange === '1-3') {
+                $query->whereBetween('teaching_experience_years', [1, 3]);
+            } elseif ($experienceRange === '3-5') {
+                $query->whereBetween('teaching_experience_years', [3, 5]);
+            } elseif ($experienceRange === '5-10') {
+                $query->whereBetween('teaching_experience_years', [5, 10]);
+            } elseif ($experienceRange === '10+') {
+                $query->where('teaching_experience_years', '>=', 10);
+            }
+        }
+
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
+
+        // Get paginated teachers
+        $academicTeachers = $query->withCount(['interactiveCourses as active_courses_count'])
             ->orderBy('rating', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(12);
+            ->paginate(12)
+            ->appends($request->except('page'));
+
+        // Get all active packages for calculating minimum price
+        $allPackages = \App\Models\AcademicPackage::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->get();
 
         // Calculate additional stats for each teacher
-        $academicTeachers->getCollection()->transform(function ($teacher) {
-            // Get subjects and grade levels
-            $teacher->subjects = $teacher->subjects;
-            $teacher->gradeLevels = $teacher->gradeLevels;
+        $academicTeachers->getCollection()->transform(function ($teacher) use ($mySubscriptions, $allPackages) {
+            // Mark if student is subscribed to this teacher
+            $teacher->is_subscribed = $mySubscriptions->where('teacher_id', $teacher->id)->isNotEmpty();
+            $teacher->my_subscription = $mySubscriptions->where('teacher_id', $teacher->id)->first();
 
             // Calculate average rating from interactive courses or use profile rating
             $teacher->average_rating = $teacher->rating ?? 4.8;
 
-            // Get active students count (this could be expanded based on actual enrollment system)
+            // Get active students count
             $teacher->students_count = $teacher->total_students ?? 0;
 
             // Format hourly rate
             $teacher->hourly_rate = $teacher->session_price_individual;
 
-            // Set bio from profile or generate default
-            $teacher->bio = $teacher->notes ?? 'معلم أكاديمي مؤهل متخصص في التدريس';
+            // Set bio from profile
+            $teacher->bio = $teacher->bio_arabic ?? $teacher->notes ?? 'معلم أكاديمي مؤهل متخصص في التدريس';
 
             // Set experience years
             $teacher->experience_years = $teacher->teaching_experience_years;
 
             // Set qualification
             $teacher->qualification = $teacher->qualification_degree ?? $teacher->education_level;
+
+            // Calculate minimum price from available packages
+            if ($allPackages->count() > 0) {
+                $teacher->minimum_price = $allPackages->min('monthly_price');
+            }
 
             return $teacher;
         });
@@ -1262,7 +1673,10 @@ class StudentProfileController extends Controller
         return view('student.academic-teachers', compact(
             'academicTeachers',
             'academicProgress',
-            'mySubscriptions'
+            'mySubscriptions',
+            'activeSubscriptionsCount',
+            'subjects',
+            'gradeLevels'
         ));
     }
 

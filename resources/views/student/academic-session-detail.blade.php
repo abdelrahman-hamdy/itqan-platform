@@ -71,21 +71,6 @@
                             </div>
                         </div>
                     @endif
-
-                    @if($session->session_grade !== null)
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-gray-800 mb-2">التقييم العام:</h4>
-                            <div class="flex items-center space-x-3 space-x-reverse">
-                                <div class="text-2xl font-bold text-primary">
-                                    {{ $session->session_grade }}/10
-                                </div>
-                                <div class="flex-1 bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-primary to-secondary h-3 rounded-full transition-all duration-300" 
-                                         style="width: {{ ($session->session_grade / 10) * 100 }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
                 </div>
             @endif
 
@@ -151,24 +136,6 @@
                     </div>
                 </div>
             @endif
-        </div>
-    </div>
-
-                
-                <div class="space-y-3">
-
-
-
-
-
-
-
-
-
-
-
-
-        </div>
     </div>
 </div>
 
@@ -186,9 +153,9 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
         alert('الرجاء كتابة تقييمك للجلسة');
         return;
     }
-    
+
     // Submit feedback via AJAX
-    fetch('{{ route("student.academic-sessions.feedback", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => $session->id]) }}', {
+    fetch('{{ route("student.academic-sessions.feedback", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => $session->id]) }}', {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -234,9 +201,9 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
     // Show loading state
     submitButton.disabled = true;
     submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ التسليم...';
-    
+
     // Submit homework via AJAX
-    fetch('{{ route("student.academic-sessions.homework.submit", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => $session->id]) }}', {
+    fetch('{{ route("student.academic-sessions.submit-homework", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => $session->id]) }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')

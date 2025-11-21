@@ -61,7 +61,7 @@ class PublicInteractiveCourseController extends Controller
     }
 
     /**
-     * Show enrollment form for a course
+     * Enroll student in a course (bypassing payment for now)
      */
     public function enroll(Request $request, $subdomain, $courseId)
     {
@@ -91,13 +91,20 @@ class PublicInteractiveCourseController extends Controller
 
         // Check if enrollment is open
         if (! $course->isEnrollmentOpen()) {
-            return redirect("/interactive-courses/{$courseId}")
+            return redirect()->route('my.interactive-course.show', ['subdomain' => $subdomain, 'course' => $courseId])
                 ->with('error', 'عذراً، التسجيل في هذا الكورس مغلق حالياً');
         }
 
         // Check if already enrolled
         $user = Auth::user();
-        $studentId = $user->student ? $user->student->id : $user->id;
+
+        // Ensure user has a student profile
+        if (!$user->studentProfile) {
+            return redirect()->back()
+                ->with('error', 'يجب إكمال الملف الشخصي للطالب أولاً قبل التسجيل في الكورس');
+        }
+
+        $studentId = $user->studentProfile->id;
 
         $existingEnrollment = InteractiveCourseEnrollment::where('course_id', $course->id)
             ->where('student_id', $studentId)
@@ -109,7 +116,21 @@ class PublicInteractiveCourseController extends Controller
                 ->with('info', 'أنت مسجل بالفعل في هذا الكورس');
         }
 
-        return view('public.interactive-courses.enroll', compact('academy', 'course'));
+        // Create enrollment directly (bypassing payment for now)
+        $enrollment = InteractiveCourseEnrollment::create([
+            'course_id' => $course->id,
+            'student_id' => $studentId,
+            'academy_id' => $academy->id,
+            'enrollment_status' => 'enrolled', // Direct enrollment, bypassing payment
+            'enrollment_date' => now(),
+            'payment_status' => 'paid', // Mark as paid (bypassing payment for now)
+            'payment_amount' => $course->student_price ?? 0,
+            'discount_applied' => $course->student_price ?? 0, // Full discount for now
+        ]);
+
+        // Redirect to course page with success message
+        return redirect()->route('my.interactive-course.show', ['subdomain' => $subdomain, 'course' => $courseId])
+            ->with('success', 'تم تسجيلك بنجاح في الكورس! يمكنك الآن متابعة الجلسات والمحتوى التعليمي.');
     }
 
     /**
@@ -152,7 +173,14 @@ class PublicInteractiveCourseController extends Controller
 
         // Check if already enrolled
         $user = Auth::user();
-        $studentId = $user->student ? $user->student->id : $user->id;
+
+        // Ensure user has a student profile
+        if (!$user->studentProfile) {
+            return redirect()->back()
+                ->with('error', 'يجب إكمال الملف الشخصي للطالب أولاً قبل التسجيل في الكورس');
+        }
+
+        $studentId = $user->studentProfile->id;
 
         $existingEnrollment = InteractiveCourseEnrollment::where('course_id', $course->id)
             ->where('student_id', $studentId)
@@ -169,7 +197,7 @@ class PublicInteractiveCourseController extends Controller
             'student_id' => $studentId,
             'academy_id' => $academy->id,
             'enrollment_status' => 'pending', // Will be 'enrolled' after payment
-            'enrolled_at' => now(),
+            'enrollment_date' => now(),
             'notes' => $validated['goals'] ?? null,
         ]);
 

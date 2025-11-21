@@ -38,16 +38,16 @@
           @endif
           
           @if($academy->academic_enabled ?? true)
-            <a href="{{ route('public.interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" 
-               class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium {{ request()->routeIs('public.interactive-courses.*') ? 'text-primary bg-primary/5' : '' }}" 
+            <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
+               class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium {{ request()->routeIs('interactive-courses.*') ? 'text-primary bg-primary/5' : '' }}"
                aria-label="الكورسات التفاعلية">
               الكورسات التفاعلية
             </a>
           @endif
           
           @if($academy->academic_enabled ?? true)
-            <a href="{{ route('public.academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" 
-               class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium {{ request()->routeIs('public.academic-teachers.*') ? 'text-primary bg-primary/5' : '' }}" 
+            <a href="{{ route('public.academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
+               class="flex items-center h-20 px-4 text-gray-700 hover:text-violet-600 hover:bg-violet-50 transition-colors duration-200 focus:outline-none font-medium {{ request()->routeIs('public.academic-teachers.*') ? 'text-violet-600 bg-violet-50' : '' }}"
                aria-label="المعلمون الأكاديميون">
               المعلمون الأكاديميون
             </a>
@@ -130,11 +130,11 @@
         @endif
         
         @if($academy->academic_enabled ?? true)
-          <a href="{{ route('public.interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="الكورسات التفاعلية">الكورسات التفاعلية</a>
+          <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="الكورسات التفاعلية">الكورسات التفاعلية</a>
         @endif
         
         @if($academy->academic_enabled ?? true)
-          <a href="{{ route('public.academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="المعلمون الأكاديميون">المعلمون الأكاديميون</a>
+          <a href="{{ route('public.academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-violet-600 hover:bg-violet-50 rounded-md focus:outline-none {{ request()->routeIs('public.academic-teachers.*') ? 'text-violet-600 bg-violet-50' : '' }}" aria-label="المعلمون الأكاديميون">المعلمون الأكاديميون</a>
         @endif
         
         @if($academy->recorded_courses_enabled ?? true)

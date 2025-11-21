@@ -289,15 +289,10 @@ class SearchService
                     ],
                     'status' => 'published',
                     'is_enrolled' => $enrollment !== null,
-                    'route' => $enrollment
-                        ? route('my.interactive-course.show', [
-                            'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
-                            'course' => $course->id
-                          ])
-                        : route('interactive-courses.show', [
-                            'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
-                            'course' => $course->id
-                          ]),
+                    'route' => route('my.interactive-course.show', [
+                        'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
+                        'course' => $course->id
+                    ]),
                 ];
             });
     }

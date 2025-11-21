@@ -39,20 +39,26 @@ class AcademySelector extends Component
         }
 
         $this->selectedAcademyId = $academyId;
-        
+
         // Disable global view when selecting a specific academy
         if ($this->isGlobalView) {
             AcademyContextService::disableGlobalView();
             $this->isGlobalView = false;
         }
-        
+
         // Set academy context using the service
         if (AcademyContextService::setAcademyContext($academyId)) {
+            // Force session save
+            session()->save();
+
             // Update current academy
             $this->currentAcademy = AcademyContextService::getCurrentAcademy();
-            
-            // Use JavaScript redirect for full page reload to refresh all resources
+
+            // Dispatch browser event for page reload
             $this->dispatch('academy-selected', academyId: $academyId);
+
+            // Use JavaScript to force immediate reload
+            $this->js('window.location.reload()');
         }
     }
 
@@ -64,14 +70,18 @@ class AcademySelector extends Component
 
         // Enable global view and clear academy context
         AcademyContextService::enableGlobalView();
-        
+
+        // Force session save
+        session()->save();
+
         // Update component state
         $this->isGlobalView = true;
         $this->selectedAcademyId = null;
         $this->currentAcademy = null;
 
-        // Trigger page refresh to reload all resources in global mode
+        // Dispatch browser event and force reload
         $this->dispatch('global-view-enabled');
+        $this->js('window.location.reload()');
     }
 
     public function toggleGlobalView()

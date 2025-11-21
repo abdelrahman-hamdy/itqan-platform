@@ -3,13 +3,13 @@
     <nav class="mb-6 text-sm breadcrumbs">
         <ul class="flex items-center space-x-2 text-gray-600">
             <li>
-                <a href="{{ route('student.interactive-courses') }}" class="hover:text-primary-600 transition">
+                <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary-600 transition">
                     <i class="ri-book-2-line"></i> My Courses
                 </a>
             </li>
             <li class="text-gray-400">/</li>
             <li>
-                <a href="{{ route('my.interactive-course.show', $session->course) }}" class="hover:text-primary-600 transition">
+                <a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $session->course->id]) }}" class="hover:text-primary-600 transition">
                     {{ $session->course->title }}
                 </a>
             </li>
@@ -33,9 +33,9 @@
             {{-- LiveKit Meeting Interface (if session is active or joinable) --}}
             @php
                 $now = now();
-                $scheduledDateTime = \Carbon\Carbon::parse($session->scheduled_date->format('Y-m-d') . ' ' . $session->scheduled_time->format('H:i:s'));
+                $scheduledDateTime = $session->scheduled_at;
                 $tenMinutesBefore = $scheduledDateTime->copy()->subMinutes(10);
-                $canJoin = $session->status === 'in-progress' ||
+                $canJoin = $session->status === 'ongoing' ||
                            ($session->status === 'scheduled' && $now->gte($tenMinutesBefore) && $now->lte($scheduledDateTime->copy()->addMinutes($session->duration_minutes)));
             @endphp
 
@@ -116,7 +116,7 @@
                         Session Feedback
                     </h2>
 
-                    <form method="POST" action="{{ route('student.interactive-sessions.feedback', $session->id) }}" class="space-y-4">
+                    <form method="POST" action="{{ route('student.interactive-sessions.feedback', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}" class="space-y-4">
                         @csrf
 
                         <div>

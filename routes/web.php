@@ -482,7 +482,7 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
     // Use whichever exists (prioritize the one that actually has this ID)
     if ($academicSession && $quranSession) {
         // If both exist with same ID, determine by user context
-        if ($user->hasRole('academic_teacher') || $user->studentProfile?->academicSessions()->where('id', $session)->exists()) {
+        if ($user->hasRole('academic_teacher') || $academicSession->student_id === $user->id) {
             $session = $academicSession;
         } else {
             $session = $quranSession;
@@ -686,7 +686,7 @@ Route::get('/api/sessions/{session}/attendance-status', function (Request $reque
     // Use whichever exists (prioritize the one that actually has this ID)
     if ($academicSession && $quranSession) {
         // If both exist with same ID, determine by user context
-        if ($user->hasRole('academic_teacher') || $user->studentProfile?->academicSessions()->where('id', $session)->exists()) {
+        if ($user->hasRole('academic_teacher') || $academicSession->student_id === $user->id) {
             $session = $academicSession;
         } else {
             $session = $quranSession;
@@ -1044,13 +1044,23 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    // Course Listing & Discovery (Public Access)
-    Route::get('/courses', [RecordedCourseController::class, 'index'])->name('courses.index');
+    // Redirect old /courses GET route to new /my-courses route
+    Route::get('/courses', function () {
+        if (auth()->check()) {
+            $academy = auth()->user()->academy;
+            return redirect()->route('courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']);
+        }
+        // For guest users, redirect to login
+        return redirect()->route('login');
+    })->name('courses.redirect');
 
     // Course Management (Admin/Teacher Only)
     Route::middleware(['auth', 'role:admin,teacher,quran_teacher,academic_teacher'])->group(function () {
         Route::get('/courses/create', [RecordedCourseController::class, 'create'])->name('courses.create');
         Route::post('/courses', [RecordedCourseController::class, 'store'])->name('courses.store');
+
+        // Certificate Preview (Teachers/Admins)
+        Route::post('/certificates/preview', [\App\Http\Controllers\CertificateController::class, 'preview'])->name('certificates.preview');
     });
 
     /*
@@ -1103,6 +1113,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/api/courses/{id}/enroll', [RecordedCourseController::class, 'enrollApi'])->name('courses.enroll.api')->where('id', '[0-9]+');
         Route::get('/courses/{id}/checkout', [RecordedCourseController::class, 'checkout'])->name('courses.checkout')->where('id', '[0-9]+');
         Route::get('/courses/{id}/learn', [RecordedCourseController::class, 'learn'])->name('courses.learn')->where('id', '[0-9]+');
+
+        // Notifications page (available for all authenticated users)
+        Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+
+        // Notification API endpoints
+        Route::post('/api/notifications/{id}/mark-as-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
+        Route::post('/api/notifications/mark-all-as-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
+        Route::delete('/api/notifications/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
     });
 
     // Legacy redirect for backward compatibility
@@ -1136,22 +1154,28 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    // Main Dashboard
-    Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
-    // Note: student.courses functionality is now handled by courses.index route (unified for both public and students)
-    // Route::get('/my-courses', function () {
-    //     return redirect()->route('courses.index', ['subdomain' => request()->route('subdomain')]);
-    // })->name('student.courses');
-    Route::get('/enrollments/{enrollment}/progress', [StudentDashboardController::class, 'courseProgress'])->name('student.course-progress');
+    Route::middleware(['auth'])->group(function () {
+        // Main Dashboard
+        Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
+        // Note: student.courses functionality is now handled by courses.index route (unified for both public and students)
+        // Route::get('/my-courses', function () {
+        //     return redirect()->route('courses.index', ['subdomain' => request()->route('subdomain')]);
+        // })->name('student.courses');
+        Route::get('/enrollments/{enrollment}/progress', [StudentDashboardController::class, 'courseProgress'])->name('student.course-progress');
 
-    // Learning Resources
-    Route::get('/certificates', [StudentDashboardController::class, 'certificates'])->name('student.certificates');
-    Route::get('/enrollments/{enrollment}/certificate', [StudentDashboardController::class, 'downloadCertificate'])->name('student.certificate.download');
-    Route::get('/bookmarks', [StudentDashboardController::class, 'bookmarks'])->name('student.bookmarks');
-    Route::get('/notes', [StudentDashboardController::class, 'notes'])->name('student.notes');
+        // Certificates
+        Route::get('/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('student.certificates');
+        Route::get('/certificates/{certificate}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('student.certificate.download');
+        Route::get('/certificates/{certificate}/view', [\App\Http\Controllers\CertificateController::class, 'view'])->name('student.certificate.view');
+        Route::post('/certificates/request-interactive', [\App\Http\Controllers\CertificateController::class, 'requestForInteractiveCourse'])->name('student.certificate.request-interactive');
 
-    // Learning Analytics
-    Route::get('/analytics', [StudentDashboardController::class, 'analytics'])->name('student.analytics');
+        // Learning Resources
+        Route::get('/bookmarks', [StudentDashboardController::class, 'bookmarks'])->name('student.bookmarks');
+        Route::get('/notes', [StudentDashboardController::class, 'notes'])->name('student.notes');
+
+        // Learning Analytics
+        Route::get('/analytics', [StudentDashboardController::class, 'analytics'])->name('student.analytics');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -1167,6 +1191,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/payments', [App\Http\Controllers\StudentProfileController::class, 'payments'])->name('student.payments');
         Route::get('/my-quran-circles', [App\Http\Controllers\StudentProfileController::class, 'quranCircles'])->name('student.quran-circles');
         Route::get('/my-academic-teachers', [App\Http\Controllers\StudentProfileController::class, 'academicTeachers'])->name('student.academic-teachers');
+        Route::get('/my-courses', [RecordedCourseController::class, 'index'])->name('courses.index');
 
         // Student session routes (moved from auth.php for subdomain compatibility)
         Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForStudent'])->name('student.sessions.show');
@@ -1176,9 +1201,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/academic-subscriptions/{subscriptionId}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSubscription'])->name('student.academic-subscriptions.show');
 
         // Academic session routes for students
-        Route::get('/academic-sessions/{sessionId}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSession'])->name('student.academic-sessions.show');
-        Route::put('/academic-sessions/{sessionId}/feedback', [App\Http\Controllers\AcademicSessionController::class, 'addStudentFeedback'])->name('student.academic-sessions.feedback');
-        Route::post('/academic-sessions/{sessionId}/homework', [App\Http\Controllers\AcademicSessionController::class, 'submitHomework'])->name('student.academic-sessions.homework.submit');
+        Route::get('/academic-sessions/{session}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSession'])->name('student.academic-sessions.show');
+        Route::put('/academic-sessions/{session}/feedback', [App\Http\Controllers\AcademicSessionController::class, 'addStudentFeedback'])->name('student.academic-sessions.feedback');
+        Route::post('/academic-sessions/{session}/submit-homework', [App\Http\Controllers\AcademicSessionController::class, 'submitHomework'])->name('student.academic-sessions.submit-homework');
 
         // Homework routes for students
         Route::prefix('homework')->name('student.homework.')->group(function () {
@@ -1256,8 +1281,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/academic-packages/teachers/{teacher}/subscribe/{packageId}', [App\Http\Controllers\PublicAcademicPackageController::class, 'showSubscriptionForm'])->name('public.academic-packages.subscribe');
         Route::post('/academic-packages/teachers/{teacher}/subscribe/{packageId}', [App\Http\Controllers\PublicAcademicPackageController::class, 'submitSubscriptionRequest'])->name('public.academic-packages.subscribe.submit');
 
-        // Student Academic Sessions
-        Route::get('/academic-sessions/{sessionId}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSession'])->name('student.academic-sessions.show');
+        // Note: Student academic session route moved to line 1195 with other student routes
 
         // Quran Subscription Payment
         Route::get('/quran/subscription/{subscription}/payment', [App\Http\Controllers\QuranSubscriptionPaymentController::class, 'create'])->name('quran.subscription.payment');
@@ -1287,40 +1311,23 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     | Public Interactive Courses Routes
     |--------------------------------------------------------------------------
     | These routes are for PUBLIC (unauthenticated) users only.
-    | Authenticated users are redirected to role-based views by middleware.
+    | Authenticated students are automatically redirected to their enrolled view.
     */
 
     // Public Interactive Courses Listing (with middleware to redirect authenticated users)
-    Route::get('/public/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])
-        ->middleware('redirect.authenticated.public:interactive-course')
-        ->name('public.interactive-courses.index');
-
     Route::get('/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])
         ->middleware('redirect.authenticated.public:interactive-course')
         ->name('interactive-courses.index');
 
     // Individual Interactive Course Details (with middleware to redirect authenticated users)
-    Route::get('/public/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])
-        ->middleware('redirect.authenticated.public:interactive-course')
-        ->name('public.interactive-courses.show');
-
     Route::get('/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])
         ->middleware('redirect.authenticated.public:interactive-course')
         ->name('interactive-courses.show');
 
-    // Interactive Course Enrollment (requires authentication)
+    // Interactive Course Enrollment (requires authentication) - Direct enrollment bypassing payment
     Route::get('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'enroll'])
         ->middleware('auth')
         ->name('interactive-courses.enroll');
-
-    Route::post('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'storeEnrollment'])
-        ->middleware('auth')
-        ->name('interactive-courses.store-enrollment');
-
-    // Enrolled students can view course details (no redirect middleware)
-    Route::get('/interactive-courses/{course}/details', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])
-        ->middleware(['auth', 'interactive.course'])
-        ->name('interactive-courses.details');
 
     /*
     |--------------------------------------------------------------------------
@@ -1351,6 +1358,65 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
             Route::post('/{submissionId}/revision', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'requestRevision'])->name('request-revision');
             Route::get('/statistics', [App\Http\Controllers\Teacher\HomeworkGradingController::class, 'statistics'])->name('statistics');
         });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Academic Session Routes
+    |--------------------------------------------------------------------------
+    | Consolidated routes for academic teachers to manage individual lessons
+    */
+    Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        // Academic sessions list
+        Route::get('/academic-sessions', [App\Http\Controllers\AcademicSessionController::class, 'index'])->name('academic-sessions.index');
+
+        Route::prefix('academic-sessions/{session}')->name('academic-sessions.')->group(function () {
+            // Session view (moved from auth.php for consistency)
+            Route::get('/', [App\Http\Controllers\AcademicSessionController::class, 'show'])->name('show');
+
+            // Session management
+            Route::put('/evaluation', [App\Http\Controllers\AcademicSessionController::class, 'updateEvaluation'])->name('evaluation');
+            Route::put('/status', [App\Http\Controllers\AcademicSessionController::class, 'updateStatus'])->name('status');
+            Route::put('/reschedule', [App\Http\Controllers\AcademicSessionController::class, 'reschedule'])->name('reschedule');
+            Route::put('/cancel', [App\Http\Controllers\AcademicSessionController::class, 'cancel'])->name('cancel');
+
+            // Homework management
+            Route::post('/homework/assign', [App\Http\Controllers\AcademicSessionController::class, 'assignHomework'])->name('assign-homework');
+            Route::put('/homework/update', [App\Http\Controllers\AcademicSessionController::class, 'updateHomework'])->name('update-homework');
+            Route::post('/reports/{reportId}/homework/grade', [App\Http\Controllers\AcademicSessionController::class, 'gradeHomework'])->name('grade-homework');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Interactive Course Session Routes
+    |--------------------------------------------------------------------------
+    | Routes for academic teachers to manage interactive course sessions
+    */
+    Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        Route::prefix('interactive-sessions/{session}')->name('interactive-sessions.')->group(function () {
+            // Session view for teachers
+            Route::get('/', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourseSession'])->name('show');
+            // Update session content
+            Route::put('/content', [App\Http\Controllers\StudentProfileController::class, 'updateInteractiveSessionContent'])->name('content');
+            // Assign homework
+            Route::post('/assign-homework', [App\Http\Controllers\StudentProfileController::class, 'assignInteractiveSessionHomework'])->name('assign-homework');
+            // Update homework
+            Route::put('/update-homework', [App\Http\Controllers\StudentProfileController::class, 'updateInteractiveSessionHomework'])->name('update-homework');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher Student Report Management Routes (AJAX)
+    |--------------------------------------------------------------------------
+    | Unified routes for creating and updating student reports across all session types
+    */
+    Route::middleware(['auth', 'role:academic_teacher,quran_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        // Create new report
+        Route::post('/reports/{type}', [App\Http\Controllers\StudentReportController::class, 'store'])->name('reports.store');
+        // Update existing report
+        Route::put('/reports/{type}/{report}', [App\Http\Controllers\StudentReportController::class, 'update'])->name('reports.update');
     });
 
     /*
@@ -1471,10 +1537,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     });
 
     // Interactive course session detail - for enrolled students
-    Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/interactive-sessions/{session}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourseSession'])->name('student.interactive-sessions.show');
-        Route::post('/interactive-sessions/{session}/feedback', [App\Http\Controllers\StudentProfileController::class, 'addInteractiveSessionFeedback'])->name('student.interactive-sessions.feedback');
-        Route::post('/interactive-sessions/{session}/homework', [App\Http\Controllers\StudentProfileController::class, 'submitInteractiveCourseHomework'])->name('student.interactive-sessions.homework');
+    Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
+        Route::get('/interactive-sessions/{session}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourseSession'])->name('interactive-sessions.show');
+        Route::post('/interactive-sessions/{session}/feedback', [App\Http\Controllers\StudentProfileController::class, 'addInteractiveSessionFeedback'])->name('interactive-sessions.feedback');
+        Route::post('/interactive-sessions/{session}/homework', [App\Http\Controllers\StudentProfileController::class, 'submitInteractiveCourseHomework'])->name('interactive-sessions.homework');
     });
 
     // Chat routes removed - WireChat uninstalled

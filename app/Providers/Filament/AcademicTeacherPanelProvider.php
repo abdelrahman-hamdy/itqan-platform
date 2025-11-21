@@ -85,11 +85,15 @@ class AcademicTeacherPanelProvider extends PanelProvider
             ->userMenuItems([
                 'profile-page' => \Filament\Navigation\MenuItem::make()
                     ->label('الملف الشخصي العام')
-                    ->url(fn (): string => route('academic-teacher.public-profile', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'default'
-                    ]))
+                    ->url(fn (): string => auth()->user()->academicTeacherProfile && auth()->user()->academy
+                        ? route('public.academic-teachers.show', [
+                            'subdomain' => auth()->user()->academy->subdomain,
+                            'teacher' => auth()->user()->academicTeacherProfile->id
+                        ])
+                        : '#')
                     ->icon('heroicon-o-user-circle')
-                    ->openUrlInNewTab(),
+                    ->openUrlInNewTab()
+                    ->visible(fn (): bool => auth()->user()->academicTeacherProfile !== null),
             ])
             ->plugins([
                 FilamentFullCalendarPlugin::make()

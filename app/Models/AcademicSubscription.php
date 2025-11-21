@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class AcademicSubscription extends Model
 {
@@ -63,6 +64,8 @@ class AcademicSubscription extends Model
         'total_sessions_completed',
         'total_sessions_missed',
         'completion_rate',
+        'certificate_issued',
+        'certificate_issued_at',
     ];
 
     protected $casts = [
@@ -86,6 +89,8 @@ class AcademicSubscription extends Model
         'auto_renewal' => 'boolean',
         'last_reminder_sent' => 'datetime',
         'completion_rate' => 'decimal:2',
+        'certificate_issued' => 'boolean',
+        'certificate_issued_at' => 'datetime',
     ];
 
     // Relationships
@@ -173,7 +178,7 @@ class AcademicSubscription extends Model
      */
     public function subject(): BelongsTo
     {
-        return $this->belongsTo(Subject::class);
+        return $this->belongsTo(AcademicSubject::class);
     }
 
     /**
@@ -214,6 +219,14 @@ class AcademicSubscription extends Model
     public function sessions(): HasMany
     {
         return $this->hasMany(\App\Models\AcademicSession::class, 'academic_subscription_id');
+    }
+
+    /**
+     * Get the certificate for this subscription
+     */
+    public function certificate(): MorphOne
+    {
+        return $this->morphOne(Certificate::class, 'certificateable');
     }
 
     /**

@@ -16,13 +16,10 @@
                 Join Live Session
             </a>
         @elseif($session->status === 'scheduled')
-            @php
-                $scheduledDateTime = \Carbon\Carbon::parse($session->scheduled_date->format('Y-m-d') . ' ' . $session->scheduled_time->format('H:i:s'));
-            @endphp
             <button disabled
                     class="btn btn-secondary w-full opacity-60 cursor-not-allowed flex items-center justify-center">
                 <i class="ri-time-line mr-2"></i>
-                Starts {{ $scheduledDateTime->diffForHumans() }}
+                Starts {{ $session->scheduled_at->diffForHumans() }}
             </button>
         @elseif($session->status === 'completed')
             @if($session->meeting && $session->meeting->recording_url)
@@ -35,17 +32,8 @@
             @endif
         @endif
 
-        {{-- Chat with Teacher --}}
-        @if($session->course->teacher && $session->course->teacher->user_id)
-            <a href="{{ route('chatify', ['id' => $session->course->teacher->user_id]) }}"
-               class="btn btn-secondary w-full flex items-center justify-center hover:bg-blue-50 hover:text-blue-700 transition-all duration-200">
-                <i class="ri-message-3-line mr-2"></i>
-                Chat with Teacher
-            </a>
-        @endif
-
         {{-- View Course Details --}}
-        <a href="{{ route('my.interactive-course.show', $session->course) }}"
+        <a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $session->course->id]) }}"
            class="btn btn-secondary w-full flex items-center justify-center hover:bg-purple-50 hover:text-purple-700 transition-all duration-200">
             <i class="ri-book-open-line mr-2"></i>
             View Course
@@ -91,7 +79,7 @@
                     <i class="ri-information-line text-blue-500"></i>
                     Session not started yet
                 </div>
-            @elseif($session->status === 'in-progress')
+            @elseif($session->status === 'ongoing')
                 <div class="text-sm text-green-600 font-medium animate-pulse">
                     <i class="ri-radio-button-line"></i>
                     Session is currently live

@@ -42,7 +42,10 @@
             @endif
 
             @if($student)
-                @php $conv = auth()->user()->getOrCreatePrivateConversation($student); @endphp
+                @php
+                    $studentUser = ($student instanceof \App\Models\User) ? $student : ($student->user ?? null);
+                    $conv = $studentUser ? auth()->user()->getOrCreatePrivateConversation($studentUser) : null;
+                @endphp
                 @if($conv)
                     <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
@@ -78,9 +81,14 @@
             @endif
 
             @if($teacher)
-                @php $conv = auth()->user()->getOrCreatePrivateConversation($teacher); @endphp
+                @php
+                    // For academic teachers, $teacher is AcademicTeacherProfile, so we need the user relationship
+                    // For Quran teachers, $teacher is already a User object
+                    $teacherUser = $isAcademic ? ($teacher->user ?? null) : ($teacher instanceof \App\Models\User ? $teacher : ($teacher->user ?? null));
+                    $conv = $teacherUser ? auth()->user()->getOrCreatePrivateConversation($teacherUser) : null;
+                @endphp
                 @if($conv)
-                    <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}" 
+                    <a href="{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                         <i class="ri-message-3-line ml-2"></i>
                         مراسلة المعلم

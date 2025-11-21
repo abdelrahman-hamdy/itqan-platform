@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomework;
-use App\Models\QuranHomework;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -180,31 +179,9 @@ class HomeworkService
             }
         }
 
-        if (!$type || $type === 'quran') {
-            $quranHomework = QuranHomework::getStudentHomework($studentId, $academyId, $status ? ['status' => $status] : []);
-            foreach ($quranHomework as $hw) {
-                $homework[] = [
-                    'type' => 'quran',
-                    'id' => $hw->id,
-                    'homework_id' => $hw->id,
-                    'title' => $hw->title ?? 'واجب قرآن',
-                    'description' => $hw->description ?? '',
-                    'due_date' => $hw->due_date,
-                    'status' => $hw->status,
-                    'status_text' => $hw->status_text,
-                    'is_late' => $hw->is_overdue,
-                    'score' => $hw->grade,
-                    'max_score' => 10,
-                    'score_percentage' => $hw->grade ? ($hw->grade * 10) : null,
-                    'grade_performance' => $hw->grade_text,
-                    'teacher_feedback' => $hw->teacher_feedback,
-                    'submitted_at' => $hw->submitted_at,
-                    'graded_at' => $hw->evaluated_at,
-                    'homework' => $hw,
-                    'submission' => $hw,
-                ];
-            }
-        }
+        // Note: Quran homework is now tracked through QuranSession model fields
+        // and graded through student session reports (oral evaluation)
+        // See migration: 2025_11_17_190605_drop_quran_homework_tables.php
 
         if (!$type || $type === 'interactive') {
             $interactiveHomework = InteractiveCourseHomework::forStudent($studentId)

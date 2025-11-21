@@ -30,7 +30,11 @@
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-6 space-x-reverse">
-                <x-student-avatar :student="$student" size="xl" />
+                <x-avatar
+                    :user="$student"
+                    size="xl"
+                    userType="student"
+                    :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                 <div class="flex-1">
                     <h1 class="text-2xl font-bold text-gray-900">{{ $student->name }}</h1>
                     @if($student->studentProfile && $student->studentProfile->birth_date)

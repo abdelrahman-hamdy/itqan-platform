@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CertificateTemplateStyle;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,6 +49,8 @@ class InteractiveCourse extends Model
         'status',
         'is_published',
         'publication_date',
+        'certificate_enabled',
+        'certificate_template_style',
     ];
 
     protected $casts = [
@@ -71,6 +74,8 @@ class InteractiveCourse extends Model
         'sessions_per_week' => 'integer',
         'session_duration_minutes' => 'integer',
         'total_sessions' => 'integer',
+        'certificate_enabled' => 'boolean',
+        'certificate_template_style' => CertificateTemplateStyle::class,
     ];
 
     /**

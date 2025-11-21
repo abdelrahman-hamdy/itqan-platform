@@ -21,7 +21,11 @@
             <div class="space-y-3">
                 @foreach($circle->students as $student)
                     <div class="flex items-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:from-blue-50 hover:to-blue-100 transition-all duration-200 group">
-                        <x-student-avatar :student="$student" size="md" />
+                        <x-avatar
+                            :user="$student"
+                            size="md"
+                            userType="student"
+                            :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                         <div class="mr-4 flex-1">
                             <h4 class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">{{ $student->name }}</h4>
                             <p class="text-sm text-gray-500">{{ $student->email ?? 'طالب' }}</p>

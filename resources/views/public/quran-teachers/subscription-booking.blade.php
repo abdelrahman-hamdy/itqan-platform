@@ -7,6 +7,7 @@
   <title>اشتراك {{ $package->getDisplayName() }} - {{ $teacher->full_name }} - {{ $academy->name ?? 'أكاديمية إتقان' }}</title>
   <script src="https://cdn.tailwindcss.com/3.4.16"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -41,7 +42,11 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 class="text-lg font-bold text-gray-900 mb-4">معلومات المعلم</h3>
           <div class="flex items-center gap-4">
-            <x-teacher-avatar :teacher="$teacher" size="lg" />
+            <x-avatar
+              :user="$teacher"
+              size="lg"
+              userType="quran_teacher"
+              :gender="$teacher->gender ?? $teacher->user?->gender ?? 'male'" />
             <div>
               <h4 class="font-bold text-gray-900">{{ $teacher->full_name }}</h4>
               <p class="text-gray-600">معلم القرآن الكريم المعتمد</p>
@@ -67,7 +72,15 @@
           <div class="space-y-3">
             <div class="flex justify-between items-center">
               <span class="font-medium">{{ $package->getDisplayName() }}</span>
-              <span class="text-lg font-bold text-primary">{{ $package->monthly_price }} {{ $package->getDisplayCurrency() }}</span>
+              <span class="text-lg font-bold text-blue-600">
+                @if($selectedPeriod === 'quarterly')
+                  {{ $package->quarterly_price }} {{ $package->getDisplayCurrency() }}
+                @elseif($selectedPeriod === 'yearly')
+                  {{ $package->yearly_price }} {{ $package->getDisplayCurrency() }}
+                @else
+                  {{ $package->monthly_price }} {{ $package->getDisplayCurrency() }}
+                @endif
+              </span>
             </div>
             
             <div class="text-sm text-gray-600">
@@ -100,13 +113,24 @@
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="mb-6">
           <h3 class="text-2xl font-bold text-gray-900 mb-2">
-            <i class="ri-vip-crown-line text-primary ml-2"></i>
+            <i class="ri-vip-crown-line text-blue-600 ml-2"></i>
             اشتراك جديد
           </h3>
           <p class="text-gray-600">املأ البيانات أدناه لإتمام عملية الاشتراك</p>
         </div>
 
-        <form action="{{ route('public.quran-teachers.subscribe.submit', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id]) }}" method="POST" class="space-y-6">
+        <form action="{{ route('public.quran-teachers.subscribe.submit', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id]) }}" method="POST" class="space-y-6"
+              x-data="{
+                billingCycle: '{{ old('billing_cycle', $selectedPeriod ?? 'monthly') }}',
+                prices: {
+                  monthly: {{ $package->monthly_price }},
+                  quarterly: {{ $package->quarterly_price }},
+                  yearly: {{ $package->yearly_price }}
+                },
+                get currentPrice() {
+                  return this.prices[this.billingCycle];
+                }
+              }">
           @csrf
           <input type="hidden" name="teacher_id" value="{{ $teacher->id }}">
           <input type="hidden" name="package_id" value="{{ $package->id }}">
@@ -180,43 +204,43 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-3">دورة الفوترة *</label>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <label class="relative">
-                <input type="radio" name="billing_cycle" value="monthly" 
-                       {{ old('billing_cycle', 'monthly') == 'monthly' ? 'checked' : '' }}
+              <label class="relative h-full">
+                <input type="radio" name="billing_cycle" value="monthly"
+                       x-model="billingCycle"
                        class="sr-only peer">
-                <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5">
+                <div class="h-full p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50 flex items-center justify-center">
                   <div class="text-center">
                     <div class="text-lg font-bold text-gray-900">شهرياً</div>
                     <div class="text-sm text-gray-600">{{ $package->monthly_price }} {{ $package->getDisplayCurrency() }}/شهر</div>
                   </div>
                 </div>
               </label>
-              
+
               @if($package->quarterly_price)
-                <label class="relative">
+                <label class="relative h-full">
                   <input type="radio" name="billing_cycle" value="quarterly"
-                         {{ old('billing_cycle') == 'quarterly' ? 'checked' : '' }}
+                         x-model="billingCycle"
                          class="sr-only peer">
-                  <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5">
+                  <div class="h-full p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50 flex items-center justify-center">
                     <div class="text-center">
                       <div class="text-lg font-bold text-gray-900">ربع سنوي</div>
                       <div class="text-sm text-gray-600">{{ $package->quarterly_price }} {{ $package->getDisplayCurrency() }}/3 أشهر</div>
-                      <div class="text-xs text-green-600 font-medium">وفر 10%</div>
+                      <div class="text-xs text-green-600 font-medium mt-1">وفر 10%</div>
                     </div>
                   </div>
                 </label>
               @endif
-              
+
               @if($package->yearly_price)
-                <label class="relative">
+                <label class="relative h-full">
                   <input type="radio" name="billing_cycle" value="yearly"
-                         {{ old('billing_cycle') == 'yearly' ? 'checked' : '' }}
+                         x-model="billingCycle"
                          class="sr-only peer">
-                  <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5">
+                  <div class="h-full p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50 flex items-center justify-center">
                     <div class="text-center">
                       <div class="text-lg font-bold text-gray-900">سنوياً</div>
                       <div class="text-sm text-gray-600">{{ $package->yearly_price }} {{ $package->getDisplayCurrency() }}/سنة</div>
-                      <div class="text-xs text-green-600 font-medium">وفر 20%</div>
+                      <div class="text-xs text-green-600 font-medium mt-1">وفر 20%</div>
                     </div>
                   </div>
                 </label>
@@ -228,7 +252,7 @@
           <div>
             <label for="current_level" class="block text-sm font-medium text-gray-700 mb-2">المستوى الحالي في تعلم القرآن *</label>
             <select id="current_level" name="current_level" required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
               <option value="">اختر مستواك</option>
               <option value="beginner" {{ old('current_level') == 'beginner' ? 'selected' : '' }}>مبتدئ (لا أعرف القراءة)</option>
               <option value="elementary" {{ old('current_level') == 'elementary' ? 'selected' : '' }}>أساسي (أقرأ ببطء)</option>
@@ -244,27 +268,27 @@
             <label for="learning_goals" class="block text-sm font-medium text-gray-700 mb-2">أهدافك من تعلم القرآن *</label>
             <div class="space-y-2">
               <label class="flex items-center">
-                <input type="checkbox" name="learning_goals[]" value="reading" 
+                <input type="checkbox" name="learning_goals[]" value="reading"
                        {{ in_array('reading', old('learning_goals', [])) ? 'checked' : '' }}
-                       class="text-primary focus:ring-primary border-gray-300 rounded">
+                       class="text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                 <span class="mr-2">تعلم القراءة الصحيحة</span>
               </label>
               <label class="flex items-center">
-                <input type="checkbox" name="learning_goals[]" value="tajweed" 
+                <input type="checkbox" name="learning_goals[]" value="tajweed"
                        {{ in_array('tajweed', old('learning_goals', [])) ? 'checked' : '' }}
-                       class="text-primary focus:ring-primary border-gray-300 rounded">
+                       class="text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                 <span class="mr-2">تعلم أحكام التجويد</span>
               </label>
               <label class="flex items-center">
-                <input type="checkbox" name="learning_goals[]" value="memorization" 
+                <input type="checkbox" name="learning_goals[]" value="memorization"
                        {{ in_array('memorization', old('learning_goals', [])) ? 'checked' : '' }}
-                       class="text-primary focus:ring-primary border-gray-300 rounded">
+                       class="text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                 <span class="mr-2">حفظ القرآن الكريم</span>
               </label>
               <label class="flex items-center">
-                <input type="checkbox" name="learning_goals[]" value="improvement" 
+                <input type="checkbox" name="learning_goals[]" value="improvement"
                        {{ in_array('improvement', old('learning_goals', [])) ? 'checked' : '' }}
-                       class="text-primary focus:ring-primary border-gray-300 rounded">
+                       class="text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                 <span class="mr-2">تحسين الأداء والإتقان</span>
               </label>
             </div>
@@ -287,15 +311,15 @@
               @endphp
               @foreach($daysInArabic as $day => $arabicName)
                 <label class="flex items-center">
-                  <input type="checkbox" name="preferred_days[]" value="{{ $day }}" 
+                  <input type="checkbox" name="preferred_days[]" value="{{ $day }}"
                          {{ in_array($day, old('preferred_days', [])) ? 'checked' : '' }}
-                         class="text-primary focus:ring-primary border-gray-300 rounded">
+                         class="text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                   <span class="mr-2 text-sm">{{ $arabicName }}</span>
                 </label>
               @endforeach
             </div>
-            
-            <select name="preferred_time" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+
+            <select name="preferred_time" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
               <option value="">اختر الوقت المفضل</option>
               <option value="morning" {{ old('preferred_time') == 'morning' ? 'selected' : '' }}>صباحاً (6:00 - 12:00)</option>
               <option value="afternoon" {{ old('preferred_time') == 'afternoon' ? 'selected' : '' }}>بعد الظهر (12:00 - 18:00)</option>
@@ -308,7 +332,7 @@
             <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">ملاحظات إضافية</label>
             <textarea id="notes" name="notes" rows="4"
                       placeholder="أي معلومات إضافية تود مشاركتها مع المعلم..."
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">{{ old('notes') }}</textarea>
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">{{ old('notes') }}</textarea>
           </div>
 
           <!-- Pricing Summary -->
@@ -316,8 +340,12 @@
             <h4 class="font-semibold text-gray-900 mb-4">ملخص التكلفة</h4>
             <div class="space-y-2">
               <div class="flex justify-between">
-                <span>سعر الباقة (شهرياً)</span>
-                <span>{{ $package->monthly_price }} {{ $package->getDisplayCurrency() }}</span>
+                <span>
+                  <span x-show="billingCycle === 'monthly'">سعر الباقة (شهرياً)</span>
+                  <span x-show="billingCycle === 'quarterly'" x-cloak>سعر الباقة (ربع سنوي)</span>
+                  <span x-show="billingCycle === 'yearly'" x-cloak>سعر الباقة (سنوياً)</span>
+                </span>
+                <span x-text="currentPrice.toFixed(2)"></span> <span>{{ $package->getDisplayCurrency() }}</span>
               </div>
               <div class="flex justify-between">
                 <span>رسوم الخدمة</span>
@@ -325,10 +353,14 @@
               </div>
               <div class="border-t border-gray-300 pt-2 flex justify-between font-bold text-lg">
                 <span>المجموع</span>
-                <span class="text-primary">{{ $package->monthly_price }} {{ $package->getDisplayCurrency() }}</span>
+                <span class="text-blue-600"><span x-text="currentPrice.toFixed(2)"></span> {{ $package->getDisplayCurrency() }}</span>
               </div>
             </div>
           </div>
+
+          <style>
+            [x-cloak] { display: none !important; }
+          </style>
 
           <!-- Payment Terms -->
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -345,9 +377,9 @@
 
           <!-- Submit Button -->
           <div class="flex gap-4">
-            <button type="submit" 
+            <button type="submit"
                     onclick="console.log('Subscription form submit clicked'); return true;"
-                    class="flex-1 bg-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-secondary transition-colors">
+                    class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
               <i class="ri-secure-payment-line ml-2"></i>
               المتابعة للدفع
             </button>

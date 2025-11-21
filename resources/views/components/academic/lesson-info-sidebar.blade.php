@@ -26,9 +26,11 @@
         @if($teacher)
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div class="flex items-center space-x-3 space-x-reverse">
-                    <x-teacher-avatar 
-                        :teacher="$teacher" 
-                        size="sm" 
+                    <x-avatar
+                        :user="$teacher"
+                        size="sm"
+                        userType="academic_teacher"
+                        :gender="$teacher->gender ?? 'male'"
                         class="flex-shrink-0" />
                     <div class="flex-1">
                         <span class="text-xs font-bold text-green-700 uppercase tracking-wide">المعلم</span>
@@ -56,9 +58,11 @@
         @if($viewType === 'teacher' && $student)
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div class="flex items-center space-x-3 space-x-reverse">
-                    <x-student-avatar 
-                        :student="$student" 
-                        size="sm" 
+                    <x-avatar
+                        :user="$student"
+                        size="sm"
+                        userType="student"
+                        :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'"
                         class="flex-shrink-0" />
                     <div class="flex-1">
                         <span class="text-xs font-bold text-purple-700 uppercase tracking-wide">الطالب</span>

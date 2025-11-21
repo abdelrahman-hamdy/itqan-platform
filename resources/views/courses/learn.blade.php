@@ -9,11 +9,11 @@
             <!-- Breadcrumb -->
             <nav class="mb-8">
                 <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-                    <li><a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}" class="hover:text-primary">الدورات المسجلة</a></li>
+                    <li><a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}" class="hover:text-cyan-500">الدورات المسجلة</a></li>
                     <li>/</li>
-                    <li><a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" class="hover:text-primary">{{ $course->title }}</a></li>
+                    <li><a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" class="hover:text-cyan-500">{{ $course->title }}</a></li>
                     <li>/</li>
-                    <li class="text-gray-900">التعلم</li>
+                    <li class="text-cyan-500 font-medium">التعلم</li>
                 </ol>
             </nav>
 
@@ -27,17 +27,17 @@
                     <div class="flex items-center gap-6">
                         
                         <!-- Start Next Lesson Button -->
-                        <button id="start-next-lesson-btn" 
-                                onclick="startNextLesson()" 
-                                class="hidden flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        <button id="start-next-lesson-btn"
+                                onclick="startNextLesson()"
+                                class="hidden flex items-center px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
                             <i class="ri-play-circle-line ml-2"></i>
                             بدء الدرس التالي
                         </button>
-                        
+
                         <!-- Progress Display -->
                         <div class="text-right">
                             <div class="text-sm text-gray-600 mb-1">التقدم الإجمالي</div>
-                            <div class="text-2xl font-bold text-primary text-center">
+                            <div class="text-2xl font-bold text-cyan-500 text-center">
                                 <span id="progress-percentage">0</span>%
                             </div>
                         </div>
@@ -47,7 +47,7 @@
                 <!-- Progress Bar -->
                 <div class="mt-4">
                     <div class="w-full bg-gray-200 rounded-full h-2 mb-2 overflow-hidden">
-                        <div class="bg-primary h-2 rounded-full transition-all duration-1000 ease-out shadow-sm" 
+                        <div class="bg-cyan-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-sm"
                              id="progress-bar"
                              style="width: 0%"></div>
                     </div>
@@ -91,8 +91,8 @@
                                  data-lesson-id="{{ $lesson->id }}">
                                 <div class="flex items-start gap-3">
                                     <!-- Lesson Number -->
-                                    <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-xs font-bold text-primary">{{ $index + 1 }}</span>
+                                    <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-xs font-bold text-cyan-500">{{ $index + 1 }}</span>
                                     </div>
                                     
                                     <div class="flex-1 min-w-0">
@@ -116,12 +116,12 @@
                                         
                                         <!-- Action Buttons -->
                                         <div class="flex gap-2">
-                                            <button onclick="playLesson({{ $lesson->id }}, '{{ $lesson->title }}')" 
-                                                    class="flex items-center px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors">
+                                            <button onclick="playLesson({{ $lesson->id }}, '{{ $lesson->title }}')"
+                                                    class="flex items-center px-3 py-1.5 bg-cyan-500 text-white text-xs rounded-lg hover:bg-cyan-600 transition-colors">
                                                 <i class="ri-play-line ml-1"></i>
                                                 تشغيل
                                             </button>
-                                            <a href="{{ route('lessons.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id, 'lessonId' => $lesson->id]) }}" 
+                                            <a href="{{ route('lessons.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id, 'lessonId' => $lesson->id]) }}"
                                                class="flex items-center px-3 py-1.5 bg-gray-600 text-white text-xs rounded-lg hover:bg-gray-700 transition-colors">
                                                 <i class="ri-eye-line ml-1"></i>
                                             عرض الدرس
@@ -141,13 +141,13 @@
                                                 class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 hover:scale-110 transition-all duration-200"
                                                 title="انقر لتغيير حالة الدرس">
                                             @if($lessonProgress && $lessonProgress->is_completed)
-                                                <i class="ri-checkbox-circle-fill text-green-500 text-2xl lesson-status" 
+                                                <i class="ri-checkbox-circle-fill text-green-500 text-2xl lesson-status"
                                                    id="lesson-status-{{ $lesson->id }}"></i>
                                             @elseif($lessonProgress && $lessonProgress->progress_percentage > 0)
-                                                <i class="ri-checkbox-circle-line text-blue-500 text-lg lesson-status" 
+                                                <i class="ri-checkbox-circle-line text-cyan-500 text-lg lesson-status"
                                                    id="lesson-status-{{ $lesson->id }}"></i>
                                             @else
-                                                <i class="ri-checkbox-blank-circle-line text-gray-300 text-lg lesson-status" 
+                                                <i class="ri-checkbox-blank-circle-line text-gray-300 text-lg lesson-status"
                                                    id="lesson-status-{{ $lesson->id }}"></i>
                                             @endif
                                         </button>
@@ -270,12 +270,12 @@ function playLesson(lessonId, lessonTitle) {
     
     // Highlight current lesson
     document.querySelectorAll('[data-lesson-id]').forEach(el => {
-        el.classList.remove('bg-blue-50', 'border-blue-200');
+        el.classList.remove('bg-cyan-50', 'border-cyan-200');
     });
-    
+
     const currentLessonEl = document.querySelector(`[data-lesson-id="${lessonId}"]`);
     if (currentLessonEl) {
-        currentLessonEl.classList.add('bg-blue-50', 'border-blue-200');
+        currentLessonEl.classList.add('bg-cyan-50', 'border-cyan-200');
     }
     
     // Add video event listeners
@@ -334,8 +334,8 @@ function playLesson(lessonId, lessonTitle) {
                     <i class="ri-video-line text-4xl mb-4"></i>
                     <h3 class="text-xl font-semibold mb-2">خطأ في تشغيل الفيديو</h3>
                     <p class="text-gray-300">يرجى المحاولة مرة أخرى أو زيارة صفحة الدرس</p>
-                    <a href="#" onclick="window.location.href='/courses/{{ $course->id }}/lessons/' + ${lessonId}" 
-                       class="mt-4 inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    <a href="#" onclick="window.location.href='/courses/{{ $course->id }}/lessons/' + ${lessonId}"
+                       class="mt-4 inline-block bg-cyan-500 text-white px-4 py-2 rounded-lg hover:bg-cyan-600 transition-colors">
                         <i class="ri-eye-line ml-1"></i>
                         عرض الدرس
                     </a>
@@ -529,9 +529,9 @@ function showNotification(message, type = 'info') {
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white ${
-        type === 'success' ? 'bg-green-600' : 
-        type === 'error' ? 'bg-red-600' : 
-        'bg-blue-600'
+        type === 'success' ? 'bg-green-600' :
+        type === 'error' ? 'bg-red-600' :
+        'bg-cyan-500'
     }`;
     notification.textContent = message;
     
@@ -625,7 +625,7 @@ function toggleLessonStatus(lessonId) {
             } else {
                 // Check if there's any progress to determine the appropriate icon
                 if (data.progress.progress_percentage > 0) {
-                    statusIcon.className = 'ri-checkbox-circle-line text-blue-500 text-lg lesson-status';
+                    statusIcon.className = 'ri-checkbox-circle-line text-cyan-500 text-lg lesson-status';
                 } else {
                     statusIcon.className = 'ri-checkbox-blank-circle-line text-gray-300 text-lg lesson-status';
                 }

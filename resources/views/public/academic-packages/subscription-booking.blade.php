@@ -55,11 +55,11 @@
                 <i class="ri-book-line text-blue-500 ml-1"></i>
                 المادة الدراسية *
               </label>
-              <select id="subject_id" name="subject_id" required 
+              <select id="subject_id" name="subject_id" required
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary @error('subject_id') border-red-500 @enderror">
                 <option value="">اختر المادة الدراسية</option>
                 @php
-                  $subjects = $teacher->subjects_text;
+                  $subjects = $teacher->subjects_text ?? [];
                   if (is_string($subjects)) {
                     $subjects = json_decode($subjects, true) ?: [];
                   }
@@ -68,9 +68,9 @@
                   }
                 @endphp
                 @if(count($subjects) > 0)
-                  @foreach($subjects as $index => $subject)
-                    <option value="subject_{{ $index }}" {{ old('subject_id') == "subject_$index" ? 'selected' : '' }}>
-                      {{ $subject }}
+                  @foreach($subjects as $subjectId => $subjectName)
+                    <option value="{{ $subjectId }}" {{ old('subject_id') == $subjectId ? 'selected' : '' }}>
+                      {{ $subjectName }}
                     </option>
                   @endforeach
                 @endif
@@ -86,11 +86,11 @@
                 <i class="ri-school-line text-green-500 ml-1"></i>
                 المرحلة الدراسية *
               </label>
-              <select id="grade_level_id" name="grade_level_id" required 
+              <select id="grade_level_id" name="grade_level_id" required
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary @error('grade_level_id') border-red-500 @enderror">
                 <option value="">اختر المرحلة الدراسية</option>
                 @php
-                  $gradeLevels = $teacher->grade_levels_text;
+                  $gradeLevels = $teacher->grade_levels_text ?? [];
                   if (is_string($gradeLevels)) {
                     $gradeLevels = json_decode($gradeLevels, true) ?: [];
                   }
@@ -99,9 +99,9 @@
                   }
                 @endphp
                 @if(count($gradeLevels) > 0)
-                  @foreach($gradeLevels as $index => $gradeLevel)
-                    <option value="grade_{{ $index }}" {{ old('grade_level_id') == "grade_$index" ? 'selected' : '' }}>
-                      {{ $gradeLevel }}
+                  @foreach($gradeLevels as $gradeLevelId => $gradeLevelName)
+                    <option value="{{ $gradeLevelId }}" {{ old('grade_level_id') == $gradeLevelId ? 'selected' : '' }}>
+                      {{ $gradeLevelName }}
                     </option>
                   @endforeach
                 @endif
