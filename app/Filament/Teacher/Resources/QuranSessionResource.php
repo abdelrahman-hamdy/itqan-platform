@@ -103,10 +103,6 @@ class QuranSessionResource extends Resource
                         Textarea::make('description')
                             ->label('وصف الجلسة')
                             ->rows(3),
-
-                        Textarea::make('lesson_objectives')
-                            ->label('أهداف الدرس')
-                            ->rows(3),
                     ]),
 
                 Section::make('الواجب المنزلي')
