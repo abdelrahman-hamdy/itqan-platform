@@ -73,21 +73,6 @@
         </div>
     </div>
 
-    <!-- Session Objectives (if available) -->
-    @if($session->lesson_objectives && is_array($session->lesson_objectives) && count($session->lesson_objectives) > 0)
-        <div class="mt-6 pt-6 border-t border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">أهداف الجلسة</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                @foreach($session->lesson_objectives as $objective)
-                <div class="flex items-center space-x-2 space-x-reverse">
-                    <div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                    <span class="text-gray-700 text-sm">{{ $objective }}</span>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
-
     <!-- Current Session Info for Group Sessions -->
     @if($session->session_type === 'group' && $session->circle && $isTeacher)
         <div class="mt-6 pt-6 border-t border-gray-200">

@@ -36,7 +36,11 @@
                     <div class="flex items-center justify-between">
                         <!-- Student Info -->
                         <div class="flex items-center space-x-3 space-x-reverse">
-                            <x-student-avatar :student="$student" size="md" />
+                            <x-avatar
+                                :user="$student"
+                                size="md"
+                                userType="student"
+                                :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                             <div>
                                 <h4 class="font-semibold text-gray-900">{{ $student->name }}</h4>
                                 <p class="text-sm text-gray-600">{{ $student->email ?? 'لا يوجد بريد إلكتروني' }}</p>
@@ -123,29 +127,13 @@
                             </div>
                             
                             <!-- Additional Quranic Details -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">جودة التلاوة (0-10)</label>
-                                    <input type="number" name="recitation_quality_{{ $student->id }}" min="0" max="10" step="0.1"
-                                           class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                           value="{{ $attendance ? $attendance->recitation_quality : '' }}">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">دقة التجويد (0-10)</label>
-                                    <input type="number" name="tajweed_accuracy_{{ $student->id }}" min="0" max="10" step="0.1"
-                                           class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                           value="{{ $attendance ? $attendance->tajweed_accuracy : '' }}">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">الآيات المراجعة</label>
-                                    <input type="number" name="verses_reviewed_{{ $student->id }}" min="0"
-                                           class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                           value="{{ $attendance ? $attendance->verses_reviewed : '' }}">
-                                </div>
+                            <div class="mt-4">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">الآيات المراجعة</label>
+                                <input type="number" name="verses_reviewed_{{ $student->id }}" min="0"
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                       value="{{ $attendance ? $attendance->verses_reviewed : '' }}">
                             </div>
-                            
+
                             <!-- Notes -->
                             <div class="mt-4">
                                 <label class="block text-xs font-medium text-gray-700 mb-1">ملاحظات خاصة بالطالب</label>
@@ -269,8 +257,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 leave_time: row.querySelector(`input[name="leave_time_${studentId}"]`)?.value || null,
                 participation_score: row.querySelector(`input[name="participation_score_${studentId}"]`)?.value || null,
                 homework_completion: row.querySelector(`select[name="homework_completion_${studentId}"]`)?.value || null,
-                recitation_quality: row.querySelector(`input[name="recitation_quality_${studentId}"]`)?.value || null,
-                tajweed_accuracy: row.querySelector(`input[name="tajweed_accuracy_${studentId}"]`)?.value || null,
                 verses_reviewed: row.querySelector(`input[name="verses_reviewed_${studentId}"]`)?.value || null,
                 notes: row.querySelector(`textarea[name="notes_${studentId}"]`)?.value || null
             };

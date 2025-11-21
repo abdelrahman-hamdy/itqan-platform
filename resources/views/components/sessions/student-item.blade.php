@@ -9,8 +9,9 @@
     use App\Enums\AttendanceStatus;
 
     // 🔥 FIX: Use new webhook-based attendance system with enum
-    $report = $session->studentReports->where('student_id', $student->id)->first();
-    $meetingAttendance = $session->meetingAttendances->where('user_id', $student->id)->first();
+    // Handle different session types - some may not have studentReports loaded
+    $report = $session->studentReports ? $session->studentReports->where('student_id', $student->id)->first() : null;
+    $meetingAttendance = $session->meetingAttendances ? $session->meetingAttendances->where('user_id', $student->id)->first() : null;
 
     // Determine attendance status:
     // 1. If session ended and report is calculated, use report status (most accurate)
@@ -51,11 +52,16 @@
     }
 
     $homework = $session->homework ? $session->homework->first() : null;
-    
+
     // Collect all info items
     $infoItems = [];
-    
-    if($report && $report->new_memorization_degree !== null) {
+
+    // Check session type to determine which fields to display
+    $isQuranSession = in_array(get_class($session), ['App\Models\QuranSession']);
+    $isAcademicSession = in_array(get_class($session), ['App\Models\AcademicSession', 'App\Models\InteractiveCourseSession']);
+
+    // Quran-specific fields
+    if($isQuranSession && $report && $report->new_memorization_degree !== null) {
         $infoItems[] = [
             'icon' => 'ri-book-line text-green-600',
             'label' => 'درجة الحفظ',
@@ -63,14 +69,23 @@
             'badge_class' => 'bg-green-100 text-green-800'
         ];
     }
-    
-    // Show reservation degree
-    if($report && $report->reservation_degree !== null) {
+
+    if($isQuranSession && $report && $report->reservation_degree !== null) {
         $infoItems[] = [
             'icon' => 'ri-refresh-line text-blue-600',
             'label' => 'درجة المراجعة',
             'value' => $report->reservation_degree . '/10',
             'badge_class' => 'bg-blue-100 text-blue-800'
+        ];
+    }
+
+    // Academic-specific fields (for AcademicSession and InteractiveCourseSession)
+    if($isAcademicSession && $report && $report->homework_completion_degree !== null) {
+        $infoItems[] = [
+            'icon' => 'ri-file-list-line text-purple-600',
+            'label' => 'درجة الواجب',
+            'value' => $report->homework_completion_degree . '/10',
+            'badge_class' => 'bg-purple-100 text-purple-800'
         ];
     }
 
@@ -111,7 +126,11 @@
     <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
             <!-- Student Avatar -->
-            <x-student-avatar :student="$student" :size="$size" />
+            <x-avatar
+                :user="$student"
+                :size="$size"
+                userType="student"
+                :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
             
             <div>
                 <h4 class="font-semibold text-gray-900 {{ $size === 'md' ? 'text-lg' : '' }}">{{ $student->name }}</h4>
@@ -139,7 +158,7 @@
                     <i class="ri-logout-box-line ml-1"></i>
                     غادر الجلسة
                 </span>
-            @elseif($session->status->value === 'completed' && !$isCalculated)
+            @elseif((is_object($session->status) ? $session->status->value : $session->status) === 'completed' && !$isCalculated)
                 {{-- Session completed but not calculated yet --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
                     <i class="ri-loader-4-line animate-spin ml-1"></i>
@@ -257,7 +276,7 @@
                 <span>تم حساب الحضور - لم يتم إضافة تقييم للطالب بعد</span>
             </div>
         </div>
-    @elseif($session->status->value === 'completed')
+    @elseif((is_object($session->status) ? $session->status->value : $session->status) === 'completed')
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
             <div class="flex items-center text-blue-700 text-sm">
                 <i class="ri-loader-4-line animate-spin ml-2"></i>
