@@ -453,8 +453,6 @@ class QuranGroupCircleScheduleController extends Controller
         $totalAttended = $attendedSessions + $lateSessions + $leftEarlySessions + $completedWithoutStatus;
 
         // Performance metrics calculation
-        $avgRecitation = $completedSessions->avg('recitation_quality') ?? 0;
-        $avgTajweed = $completedSessions->avg('tajweed_accuracy') ?? 0;
         $avgDuration = $completedSessions->avg('actual_duration_minutes') ?? 0;
 
         // Group circle specific metrics
@@ -498,8 +496,6 @@ class QuranGroupCircleScheduleController extends Controller
             'left_early_sessions' => $leftEarlySessions,
 
             // Performance and progress metrics
-            'avg_recitation_quality' => $avgRecitation,
-            'avg_tajweed_accuracy' => $avgTajweed,
             'avg_session_duration' => $avgDuration,
             'avg_session_attendance' => $avgSessionAttendance,
 
