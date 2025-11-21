@@ -9,73 +9,62 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class InteractiveCourseSession extends BaseSession
 {
 
-    // Interactive-specific fillable fields
-    // Common fields are inherited from BaseSession
-    // Note: Uses scheduled_date + scheduled_time instead of scheduled_at
+    /**
+     * Interactive-specific fillable fields (merged with parent in constructor)
+     * NOTE: Parent BaseSession fields are auto-merged in constructor to avoid duplication
+     */
     protected $fillable = [
+        // Interactive-specific fields
         'course_id',
+        'academy_id',  // Now a real column with FK
         'session_number',
-        'scheduled_date',
-        'scheduled_time',
-        'google_meet_link', // Maps to meeting_link via accessor
+        'scheduled_at',  // Consolidated from scheduled_date + scheduled_time
         'attendance_count',
-        'materials_uploaded',
+
+        // Homework
         'homework_assigned',
         'homework_description',
-        'homework_due_date',
-        'homework_max_score',
-        'allow_late_submissions',
-    ];
-
-    // Interactive-specific casts
-    // Common casts are inherited from BaseSession
-    protected $casts = [
-        'scheduled_date' => 'date',
-        'scheduled_time' => 'datetime:H:i',
-        'homework_due_date' => 'datetime',
-        'homework_max_score' => 'integer',
-        'attendance_count' => 'integer',
-        'materials_uploaded' => 'boolean',
-        'homework_assigned' => 'boolean',
-        'allow_late_submissions' => 'boolean',
+        'homework_file',
     ];
 
     protected $attributes = [
         'status' => 'scheduled',
         'attendance_count' => 0,
-        'materials_uploaded' => false,
         'homework_assigned' => false,
     ];
 
-    // Accessors/Mutators for BaseSession compatibility
-    // scheduled_at is computed from scheduled_date + scheduled_time
-    public function getScheduledAtAttribute(): ?Carbon
+    /**
+     * Constructor - Merge parent fillable with child-specific fields
+     * This approach avoids duplicating 37 BaseSession fields while maintaining consistency
+     */
+    public function __construct(array $attributes = [])
     {
-        if ($this->scheduled_date && $this->scheduled_time) {
-            return Carbon::parse($this->scheduled_date . ' ' . $this->scheduled_time);
-        }
-        return null;
+        // Merge parent fillable fields with child-specific fields BEFORE parent constructor
+        $this->fillable = array_merge(parent::$fillable ?? [], $this->fillable);
+
+        parent::__construct($attributes);
     }
 
-    public function setScheduledAtAttribute($value): void
+    /**
+     * Get the casts array - merges parent BaseSession casts with Interactive-specific casts
+     * This ensures Laravel properly casts attributes like status (enum) and scheduled_at (datetime)
+     *
+     * NOTE: We don't use protected $casts property because it would override parent's casts.
+     * Instead, we merge parent casts with Interactive-specific casts at runtime.
+     */
+    public function getCasts(): array
     {
-        if ($value) {
-            $date = Carbon::parse($value);
-            $this->attributes['scheduled_date'] = $date->toDateString();
-            $this->attributes['scheduled_time'] = $date->format('H:i');
-        }
+        return array_merge(parent::getCasts(), [
+            // Interactive-specific casts
+            'attendance_count' => 'integer',
+            'homework_assigned' => 'boolean',
+        ]);
     }
 
-    // meeting_link maps to google_meet_link
-    public function getMeetingLinkAttribute(): ?string
-    {
-        return $this->attributes['google_meet_link'] ?? null;
-    }
-
-    public function setMeetingLinkAttribute($value): void
-    {
-        $this->attributes['google_meet_link'] = $value;
-    }
+    /**
+     * Note: academy() relationship is inherited from BaseSession
+     * It uses belongsTo(Academy::class) with the academy_id column
+     */
 
     /**
      * العلاقة مع الدورة التفاعلية
@@ -144,9 +133,9 @@ class InteractiveCourseSession extends BaseSession
      */
     public function scopeThisWeek($query)
     {
-        return $query->whereBetween('scheduled_date', [
-            now()->startOfWeek()->toDateString(),
-            now()->endOfWeek()->toDateString()
+        return $query->whereBetween('scheduled_at', [
+            now()->startOfWeek(),
+            now()->endOfWeek()
         ]);
     }
 
@@ -166,10 +155,11 @@ class InteractiveCourseSession extends BaseSession
 
     /**
      * الحصول على وقت الجلسة المكتمل
+     * Alias for scheduled_at for backward compatibility
      */
-    public function getScheduledDateTimeAttribute(): Carbon
+    public function getScheduledDateTimeAttribute(): ?Carbon
     {
-        return Carbon::parse($this->scheduled_date . ' ' . $this->scheduled_time);
+        return $this->scheduled_at;
     }
 
     /**
@@ -199,43 +189,109 @@ class InteractiveCourseSession extends BaseSession
                $this->scheduled_datetime->isFuture();
     }
 
+    // ========================================
+    // STATUS MANAGEMENT METHODS (Aligned with AcademicSession/QuranSession)
+    // ========================================
+
     /**
-     * بدء الجلسة
+     * Mark session as ongoing
+     * Called when teacher starts the session
+     * Alias: start() for backward compatibility
+     */
+    public function markAsOngoing(): bool
+    {
+        if (!in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])) {
+            return false;
+        }
+
+        $this->update([
+            'status' => \App\Enums\SessionStatus::ONGOING,
+            'started_at' => now(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Backward compatibility alias
      */
     public function start(): bool
     {
-        if (!$this->canStart()) {
-            return false;
-        }
-
-        $this->update(['status' => 'ongoing']);
-        return true;
+        return $this->markAsOngoing();
     }
 
     /**
-     * إكمال الجلسة
+     * Mark session as completed
+     * Updates attendance counts and session records
+     * Alias: complete() for backward compatibility
+     */
+    public function markAsCompleted(array $additionalData = []): bool
+    {
+        return \DB::transaction(function () use ($additionalData) {
+            // Lock for update to prevent race conditions
+            $session = self::lockForUpdate()->find($this->id);
+
+            if (!$session) {
+                return false;
+            }
+
+            if (!in_array($session->status, [\App\Enums\SessionStatus::ONGOING, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::SCHEDULED])) {
+                return false;
+            }
+
+            $updateData = array_merge([
+                'status' => \App\Enums\SessionStatus::COMPLETED,
+                'ended_at' => now(),
+                'attendance_status' => 'attended',
+            ], $additionalData);
+
+            $session->update($updateData);
+
+            // Update attendance count cache
+            $session->updateAttendanceCount();
+
+            // Refresh the model
+            $this->refresh();
+
+            return true;
+        });
+    }
+
+    /**
+     * Backward compatibility alias
      */
     public function complete(): bool
     {
-        if ($this->status !== 'ongoing') {
+        return $this->markAsCompleted();
+    }
+
+    /**
+     * Mark session as cancelled
+     * Does not affect course completion
+     * Alias: cancel() for backward compatibility
+     */
+    public function markAsCancelled(?string $reason = null, ?int $cancelledBy = null): bool
+    {
+        if (!in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING])) {
             return false;
         }
 
-        $this->update(['status' => 'completed']);
+        $this->update([
+            'status' => \App\Enums\SessionStatus::CANCELLED,
+            'cancellation_reason' => $reason,
+            'cancelled_by' => $cancelledBy,
+            'cancelled_at' => now(),
+        ]);
+
         return true;
     }
 
     /**
-     * إلغاء الجلسة
+     * Backward compatibility alias
      */
     public function cancel(): bool
     {
-        if (!$this->canCancel()) {
-            return false;
-        }
-
-        $this->update(['status' => 'cancelled']);
-        return true;
+        return $this->markAsCancelled();
     }
 
     /**
@@ -278,17 +334,6 @@ class InteractiveCourseSession extends BaseSession
         return round($scores->avg(), 1);
     }
 
-    /**
-     * إنشاء رابط Google Meet
-     */
-    public function generateGoogleMeetLink(): string
-    {
-        // في التطبيق الحقيقي، سيتم دمج مع Google Calendar API
-        $meetingId = 'meet_' . uniqid();
-        $this->update(['google_meet_link' => "https://meet.google.com/{$meetingId}"]);
-        
-        return $this->google_meet_link;
-    }
 
     /**
      * الحصول على تفاصيل الجلسة
@@ -300,17 +345,17 @@ class InteractiveCourseSession extends BaseSession
             'title' => $this->title,
             'description' => $this->description,
             'session_number' => $this->session_number,
-            'scheduled_date' => $this->scheduled_date->format('Y-m-d'),
-            'scheduled_time' => $this->scheduled_time->format('H:i'),
+            'scheduled_at' => $this->scheduled_at?->format('Y-m-d H:i'),
+            'scheduled_date' => $this->scheduled_at?->format('Y-m-d'), // Backward compatibility
+            'scheduled_time' => $this->scheduled_at?->format('H:i'), // Backward compatibility
             'duration_minutes' => $this->duration_minutes,
             'status' => $this->status,
             'status_in_arabic' => $this->status_in_arabic,
             'attendance_count' => $this->attendance_count,
             'attendance_rate' => $this->attendance_rate,
             'average_participation_score' => $this->average_participation_score,
-            'materials_uploaded' => $this->materials_uploaded,
             'homework_assigned' => $this->homework_assigned,
-            'google_meet_link' => $this->google_meet_link,
+            'meeting_link' => $this->meeting_link, // Now using LiveKit
             'can_start' => $this->canStart(),
             'can_cancel' => $this->canCancel(),
         ];
@@ -406,7 +451,7 @@ class InteractiveCourseSession extends BaseSession
         }
 
         // Course teacher can manage their sessions
-        if ($user->user_type === 'academic_teacher' && $this->course && $this->course->academic_teacher_id === $user->id) {
+        if ($user->user_type === 'academic_teacher' && $this->course && $this->course->assignedTeacher && $this->course->assignedTeacher->user_id === $user->id) {
             return true;
         }
 
@@ -419,7 +464,7 @@ class InteractiveCourseSession extends BaseSession
     public function isUserParticipant(User $user): bool
     {
         // Teacher is a participant
-        if ($this->course && $this->course->academic_teacher_id === $user->id) {
+        if ($this->course && $this->course->assignedTeacher && $this->course->assignedTeacher->user_id === $user->id) {
             return true;
         }
 
