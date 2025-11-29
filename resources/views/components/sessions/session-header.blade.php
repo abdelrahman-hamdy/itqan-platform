@@ -82,7 +82,7 @@
                     <div class="text-sm text-gray-600">الطلاب المسجلين</div>
                 </div>
                 
-                @if($session->status === 'completed')
+                @if($session->status === \App\Enums\SessionStatus::COMPLETED)
                 <div class="text-center">
                     <div class="text-2xl font-bold text-green-600">
                         {{ $session->attendances->where('attendance_status', 'present')->count() ?? 0 }}

@@ -509,18 +509,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Notification function
+    // Notification function (unified centered toast style)
     function showNotification(message, type = 'info') {
-        // Simple notification implementation
         const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
-            type === 'success' ? 'bg-green-500' : 
+        notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg text-white shadow-lg z-50 flex items-center gap-2 ${
+            type === 'success' ? 'bg-green-500' :
             type === 'error' ? 'bg-red-500' : 'bg-blue-500'
         }`;
-        notification.textContent = message;
-        
+        notification.innerHTML = `<i class="ri-${type === 'success' ? 'check' : type === 'error' ? 'close' : 'information'}-line"></i><span>${message}</span>`;
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.remove();
         }, 3000);

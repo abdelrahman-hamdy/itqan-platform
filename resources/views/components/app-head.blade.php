@@ -40,9 +40,6 @@
 <!-- Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
 
-<!-- Alpine.js for interactive components -->
-<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
 <!-- Styles -->
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 

@@ -405,9 +405,9 @@ class MeetingAttendanceService
 
         $stats = [
             'total_participants' => $attendances->count(),
-            'present' => $attendances->where('attendance_status', 'present')->count(),
+            'present' => $attendances->where('attendance_status', 'attended')->count(),
             'late' => $attendances->where('attendance_status', 'late')->count(),
-            'partial' => $attendances->where('attendance_status', 'partial')->count(),
+            'partial' => $attendances->where('attendance_status', 'leaved')->count(),
             'absent' => $attendances->where('attendance_status', 'absent')->count(),
             'average_attendance_percentage' => 0,
             'total_meeting_duration' => 0,

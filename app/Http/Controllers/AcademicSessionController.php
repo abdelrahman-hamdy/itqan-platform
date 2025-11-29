@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Services\Attendance\AcademicReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -170,6 +172,11 @@ class AcademicSessionController extends Controller
             'homework_description' => $request->homework_description,
         ]);
 
+        // Return JSON for AJAX requests, redirect for regular form submissions
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'تم تعيين الواجب بنجاح']);
+        }
+
         return redirect()->back()->with('success', 'تم تعيين الواجب بنجاح');
     }
 
@@ -217,6 +224,11 @@ class AcademicSessionController extends Controller
             $studentReport->update([
                 'homework_description' => $request->homework_description,
             ]);
+        }
+
+        // Return JSON for AJAX requests, redirect for regular form submissions
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'تم تحديث الواجب بنجاح']);
         }
 
         return redirect()->back()->with('success', 'تم تحديث الواجب بنجاح');
@@ -364,7 +376,7 @@ class AcademicSessionController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:scheduled,ongoing,completed,cancelled,rescheduled',
-            'attendance_status' => 'nullable|in:scheduled,present,absent,late,partial',
+            'attendance_status' => 'nullable|in:scheduled,attended,absent,late,leaved',
             'attendance_notes' => 'nullable|string|max:500',
         ]);
 
@@ -467,5 +479,113 @@ class AcademicSessionController extends Controller
             'message' => 'تم إلغاء الجلسة بنجاح',
             'session' => $session->fresh(),
         ]);
+    }
+
+    /**
+     * Show comprehensive report for academic subscription (teacher view)
+     */
+    public function subscriptionReport($subdomain, $subscription)
+    {
+        $user = Auth::user();
+
+        // If $subscription is not a model instance, fetch it
+        if (!$subscription instanceof AcademicSubscription) {
+            $subscription = AcademicSubscription::findOrFail($subscription);
+        }
+
+        // Check permissions - only the teacher who owns this subscription can view
+        if (!$user->isAcademicTeacher()) {
+            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
+        }
+
+        $teacherProfile = $user->academicTeacherProfile;
+        if (!$teacherProfile || (int) $subscription->teacher_id !== (int) $teacherProfile->id) {
+            abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
+        }
+
+        // Load subscription with relationships
+        $subscription->load([
+            'student',
+            'teacher',
+            'subject',
+            'gradeLevel',
+            'sessions' => function ($query) {
+                $query->orderBy('scheduled_at', 'desc');
+            },
+            'sessions.studentReports',
+        ]);
+
+        $student = $subscription->student;
+        $subject = $subscription->subject;
+
+        // Get report service
+        $reportService = app(AcademicReportService::class);
+
+        // Calculate report data
+        $performance = $reportService->calculatePerformance($subscription);
+        $attendance = $reportService->calculateAttendance($subscription);
+        $progress = $reportService->calculateProgress($subscription);
+
+        return view('teacher.circle-report', [
+            'reportType' => 'academic',
+            'subscription' => $subscription,
+            'student' => $student->user ?? $student,
+            'subject' => $subject,
+            'performance' => $performance,
+            'attendance' => $attendance,
+            'progress' => $progress,
+        ]);
+    }
+
+    /**
+     * Show comprehensive report for academic subscription (student view)
+     */
+    public function studentSubscriptionReport($subdomain, $subscription)
+    {
+        $user = Auth::user();
+
+        // If $subscription is not a model instance, fetch it
+        if (!$subscription instanceof AcademicSubscription) {
+            $subscription = AcademicSubscription::findOrFail($subscription);
+        }
+
+        // Check permissions - only the student who owns this subscription can view
+        if (!$user->isStudent() || (int) $subscription->student_id !== (int) $user->id) {
+            abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
+        }
+
+        // Load subscription with relationships
+        $subscription->load([
+            'student',
+            'teacher.user',
+            'subject',
+            'gradeLevel',
+            'sessions' => function ($query) {
+                $query->orderBy('scheduled_at', 'desc');
+            },
+            'sessions.studentReports',
+        ]);
+
+        $student = $subscription->student;
+        $subject = $subscription->subject;
+        $teacher = $subscription->teacher;
+
+        // Get report service
+        $reportService = app(AcademicReportService::class);
+
+        // Calculate report data
+        $performance = $reportService->calculatePerformance($subscription);
+        $attendance = $reportService->calculateAttendance($subscription);
+        $progress = $reportService->calculateProgress($subscription);
+
+        return view('student.circle-report', array_merge(compact(
+            'subscription',
+            'student',
+            'subject',
+            'teacher',
+            'performance',
+            'attendance',
+            'progress'
+        ), ['reportType' => 'academic']));
     }
 }

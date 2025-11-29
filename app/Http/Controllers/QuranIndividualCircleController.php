@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Services\QuranSessionSchedulingService;
-use App\Services\QuranProgressService;
+use App\Services\QuranCircleReportService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,14 +14,14 @@ use Illuminate\Support\Facades\Auth;
 class QuranIndividualCircleController extends Controller
 {
     private QuranSessionSchedulingService $schedulingService;
-    private QuranProgressService $progressService;
+    private QuranCircleReportService $reportService;
 
     public function __construct(
         QuranSessionSchedulingService $schedulingService,
-        QuranProgressService $progressService
+        QuranCircleReportService $reportService
     ) {
         $this->schedulingService = $schedulingService;
-        $this->progressService = $progressService;
+        $this->reportService = $reportService;
         $this->middleware('auth');
     }
 
@@ -232,11 +232,15 @@ class QuranIndividualCircleController extends Controller
                 $query->orderBy('scheduled_at', 'desc');
             },
             'homework',
-            'progress',
         ]);
 
-        // Calculate progress statistics using the service
-        $stats = $this->progressService->calculateProgressStats($circleModel);
+        // Get comprehensive report data using the QuranCircleReportService
+        $reportData = $this->reportService->getIndividualCircleReport($circleModel);
+
+        // Extract stats for view compatibility
+        $stats = $reportData['progress'];
+        $stats['attendance'] = $reportData['attendance'];
+        $stats['trends'] = $reportData['trends'];
 
         // Rename for view consistency
         $circle = $circleModel;

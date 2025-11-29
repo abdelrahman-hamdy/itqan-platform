@@ -148,6 +148,11 @@ class AcademicIndividualLesson extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(QuizAssignment::class, 'assignable');
+    }
+
     /**
      * Scopes
      */

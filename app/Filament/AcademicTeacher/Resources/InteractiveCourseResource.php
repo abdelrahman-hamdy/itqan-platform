@@ -247,6 +247,11 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
 
             Forms\Components\Section::make('إعدادات المعلم')
                 ->schema([
+                    Forms\Components\Toggle::make('recording_enabled')
+                        ->label('تسجيل جلسات الدورة')
+                        ->default(true)
+                        ->helperText('تفعيل تسجيل جميع جلسات هذه الدورة'),
+
                     Forms\Components\Textarea::make('teacher_notes')
                         ->label('ملاحظات المعلم')
                         ->rows(4)

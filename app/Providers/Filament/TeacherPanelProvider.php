@@ -49,6 +49,7 @@ class TeacherPanelProvider extends PanelProvider
                 'الواجبات',
                 'الاختبارات',
                 'دوراتي',
+                'الشهادات',
                 'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')

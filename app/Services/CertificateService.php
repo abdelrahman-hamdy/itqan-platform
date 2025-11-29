@@ -12,8 +12,10 @@ use App\Models\InteractiveCourseEnrollment;
 use App\Models\QuranSubscription;
 use App\Models\User;
 use App\Notifications\CertificateIssuedNotification;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Mpdf\Mpdf;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -276,20 +278,71 @@ class CertificateService
     }
 
     /**
-     * Generate certificate PDF
+     * Generate certificate PDF using mPDF
      */
-    public function generateCertificatePDF(Certificate $certificate)
+    public function generateCertificatePDF(Certificate $certificate): Mpdf
     {
         $data = $this->getCertificateData($certificate);
         $viewPath = $certificate->template_style->viewPath();
 
-        return Pdf::loadView($viewPath, $data)
-            ->setPaper('a4', 'landscape')
-            ->setOptions([
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'defaultFont' => 'sans-serif',
-            ]);
+        // Create mPDF instance with Arabic support
+        $mpdf = $this->createMpdfInstance();
+
+        // Render the view and write to PDF
+        $html = view($viewPath, $data)->render();
+        $mpdf->WriteHTML($html);
+
+        return $mpdf;
+    }
+
+    /**
+     * Create mPDF instance with proper Arabic font configuration
+     */
+    protected function createMpdfInstance(): Mpdf
+    {
+        $defaultConfig = (new ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+
+        $defaultFontConfig = (new FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+
+        // Create mPDF with landscape A4 and RTL support
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4-L', // Landscape
+            'default_font_size' => 12,
+            'default_font' => 'xbriyaz', // Arabic font
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'tempDir' => storage_path('app/mpdf'),
+            // Add custom fonts directory if needed
+            'fontDir' => array_merge($fontDirs, [
+                public_path('fonts'),
+            ]),
+            'fontdata' => $fontData + [
+                'cairo' => [
+                    'R' => 'Cairo-Regular.ttf',
+                    'B' => 'Cairo-Bold.ttf',
+                ],
+                'tajawal' => [
+                    'R' => 'Tajawal-Regular.ttf',
+                    'B' => 'Tajawal-Bold.ttf',
+                ],
+                'amiri' => [
+                    'R' => 'Amiri-Regular.ttf',
+                    'B' => 'Amiri-Bold.ttf',
+                ],
+            ],
+            'autoArabic' => true,
+            'autoLangToFont' => true,
+        ]);
+
+        // Set RTL direction for Arabic
+        $mpdf->SetDirectionality('rtl');
+
+        return $mpdf;
     }
 
     /**
@@ -329,7 +382,7 @@ class CertificateService
     /**
      * Store certificate PDF to storage
      */
-    protected function storeCertificatePDF($pdf, Certificate $certificate): string
+    protected function storeCertificatePDF(Mpdf $mpdf, Certificate $certificate): string
     {
         $academy = $certificate->academy;
         $year = now()->year;
@@ -340,8 +393,8 @@ class CertificateService
         $directory = "tenants/{$academy->id}/certificates/{$year}/{$type}";
         $filePath = "{$directory}/{$fileName}";
 
-        // Save PDF
-        Storage::put($filePath, $pdf->output());
+        // Save PDF - mPDF uses Output() method
+        Storage::put($filePath, $mpdf->Output('', 'S'));
 
         return $filePath;
     }
@@ -352,20 +405,21 @@ class CertificateService
     public function previewCertificate(
         array $data,
         CertificateTemplateStyle|string $templateStyle
-    ) {
+    ): Mpdf {
         if (is_string($templateStyle)) {
             $templateStyle = CertificateTemplateStyle::from($templateStyle);
         }
 
         $viewPath = $templateStyle->viewPath();
 
-        return Pdf::loadView($viewPath, $data)
-            ->setPaper('a4', 'landscape')
-            ->setOptions([
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'defaultFont' => 'sans-serif',
-            ]);
+        // Create mPDF instance
+        $mpdf = $this->createMpdfInstance();
+
+        // Render the view and write to PDF
+        $html = view($viewPath, $data)->render();
+        $mpdf->WriteHTML($html);
+
+        return $mpdf;
     }
 
     /**
@@ -375,8 +429,8 @@ class CertificateService
     {
         if (!$certificate->fileExists()) {
             // Regenerate if file doesn't exist
-            $pdf = $this->generateCertificatePDF($certificate);
-            $filePath = $this->storeCertificatePDF($pdf, $certificate);
+            $mpdf = $this->generateCertificatePDF($certificate);
+            $filePath = $this->storeCertificatePDF($mpdf, $certificate);
             $certificate->update(['file_path' => $filePath]);
         }
 
@@ -393,8 +447,11 @@ class CertificateService
     {
         if (!$certificate->fileExists()) {
             // Regenerate if file doesn't exist
-            $pdf = $this->generateCertificatePDF($certificate);
-            return $pdf->stream("{$certificate->certificate_number}.pdf");
+            $mpdf = $this->generateCertificatePDF($certificate);
+            // mPDF Output: 'I' = inline (browser), 'D' = download, 'S' = string
+            return response($mpdf->Output('', 'S'), 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $certificate->certificate_number . '.pdf"');
         }
 
         return response()->file(Storage::path($certificate->file_path));
@@ -458,5 +515,74 @@ class CertificateService
         }
 
         return $text;
+    }
+
+    /**
+     * Issue certificate for a group circle student
+     * Since group circles don't have individual subscriptions, we create
+     * certificates directly linked to the QuranCircle model
+     */
+    public function issueGroupCircleCertificate(
+        \App\Models\QuranCircle $circle,
+        User $student,
+        string $achievementText,
+        CertificateTemplateStyle|string $templateStyle,
+        ?int $issuedBy = null
+    ): Certificate {
+        // Allow multiple certificates - no restriction check
+
+        $academy = $circle->academy;
+        $teacher = $circle->teacher;
+
+        // Get template text
+        $templateText = $this->getDefaultTemplateText($academy, CertificateType::QURAN_SUBSCRIPTION);
+
+        // Replace placeholders
+        $certificateText = $this->replacePlaceholders($templateText, [
+            'student_name' => $student->name,
+            'achievement' => $achievementText,
+            'teacher_name' => $teacher?->name ?? '',
+            'academy_name' => $academy->name_ar,
+            'completion_date' => now()->format('Y-m-d'),
+            'circle_name' => $circle->name,
+        ]);
+
+        // Convert template style to enum if string
+        if (is_string($templateStyle)) {
+            $templateStyle = CertificateTemplateStyle::from($templateStyle);
+        }
+
+        // Create certificate (linked to QuranCircle instead of subscription)
+        $certificate = $this->createCertificate([
+            'academy_id' => $academy->id,
+            'student_id' => $student->id,
+            'teacher_id' => $circle->quran_teacher_id,
+            'certificateable_type' => \App\Models\QuranCircle::class,
+            'certificateable_id' => $circle->id,
+            'certificate_type' => CertificateType::QURAN_SUBSCRIPTION,
+            'template_style' => $templateStyle,
+            'certificate_text' => $certificateText,
+            'custom_achievement_text' => $achievementText,
+            'is_manual' => true,
+            'issued_by' => $issuedBy,
+            'metadata' => [
+                'circle_code' => $circle->circle_code ?? null,
+                'circle_name' => $circle->name,
+                'circle_type' => 'group',
+            ],
+        ]);
+
+        // Send notification (wrapped in try-catch to not fail certificate issuance)
+        try {
+            $student->notify(new CertificateIssuedNotification($certificate));
+        } catch (\Exception $e) {
+            \Log::warning('Certificate notification failed (certificate still issued)', [
+                'certificate_id' => $certificate->id,
+                'student_id' => $student->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $certificate;
     }
 }

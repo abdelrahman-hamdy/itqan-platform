@@ -323,7 +323,7 @@ class CalendarService
                     'quran_teacher_id', 'circle_id', 'session_type',
                 ])
                     ->whereBetween('scheduled_at', [$startDate, $endDate])
-                    ->where('session_type', 'circle')
+                    ->where('session_type', 'group')
                     ->where('quran_teacher_id', $user->id)
                     ->with(['circle:id,name_ar,circle_code,enrolled_students'])
                     ->get();
@@ -338,7 +338,7 @@ class CalendarService
                     'quran_teacher_id', 'circle_id', 'session_type',
                 ])
                     ->whereBetween('scheduled_at', [$startDate, $endDate])
-                    ->where('session_type', 'circle')
+                    ->where('session_type', 'group')
                     ->whereIn('circle_id', $userCircles)
                     ->with([
                         'circle:id,name_ar,circle_code',
@@ -588,7 +588,7 @@ class CalendarService
             return collect();
         }
 
-        $query = QuranSession::where('session_type', 'circle')
+        $query = QuranSession::where('session_type', 'group')
             ->where('quran_teacher_id', $user->id)
             ->where(function ($q) use ($startTime, $endTime) {
                 $q->whereBetween('scheduled_at', [$startTime, $endTime])
@@ -622,7 +622,7 @@ class CalendarService
 
     private function getSessionTitle($session, string $perspective): string
     {
-        if ($session->session_type === 'circle') {
+        if ($session->session_type === 'group') {
             return $session->circle?->name_ar ?? 'حلقة جماعية';
         }
 
@@ -672,7 +672,7 @@ class CalendarService
     private function getSessionUrl($session): string
     {
         // Return URL based on session type
-        if ($session->session_type === 'circle' && $session->circle_id) {
+        if ($session->session_type === 'group' && $session->circle_id) {
             try {
                 return route('circles.show', $session->circle_id);
             } catch (\Exception $e) {

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\Country;
 use App\Models\AcademicGradeLevel;
-use App\Models\AcademicProgress;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
@@ -168,10 +167,10 @@ class StudentProfileController extends Controller
         // Total active courses
         $activeCourses = $activeInteractiveCourses + $activeRecordedCourses;
 
-        // Count completed lessons
-        $completedLessons = AcademicProgress::where('student_id', $user->id)
+        // Count completed academic sessions (replacing AcademicProgress)
+        $completedLessons = AcademicSession::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->where('progress_status', 'completed')
+            ->where('status', \App\Enums\SessionStatus::COMPLETED)
             ->count();
 
         // Calculate real Quran progress
@@ -365,16 +364,20 @@ class StudentProfileController extends Controller
         $user = Auth::user();
         $academy = $user->academy;
 
-        // Get academic progress
-        $academicProgress = AcademicProgress::where('student_id', $user->id)
+        // Get academic sessions with reports (replacing AcademicProgress)
+        $academicSessions = AcademicSession::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['course', 'teacher'])
+            ->with(['academicTeacher', 'reports'])
+            ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        // Calculate overall progress
-        $totalLessons = $academicProgress->count();
-        $completedLessons = $academicProgress->where('status', 'completed')->count();
+        // Calculate overall progress from sessions
+        $totalLessons = $academicSessions->count();
+        $completedLessons = $academicSessions->where('status', \App\Enums\SessionStatus::COMPLETED)->count();
         $overallProgress = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
+
+        // Transform to academicProgress for view compatibility
+        $academicProgress = $academicSessions;
 
         return view('student.progress', compact('academicProgress', 'overallProgress'));
     }
@@ -1341,6 +1344,231 @@ class StudentProfileController extends Controller
         }
     }
 
+    /**
+     * Display comprehensive report for an interactive course (Teacher view)
+     */
+    public function interactiveCourseReport($subdomain, $courseId)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            abort(401, 'User not authenticated');
+        }
+
+        // Verify user is an academic teacher
+        if (!$user->isAcademicTeacher()) {
+            abort(403, 'Access denied - teachers only');
+        }
+
+        // Get academy from subdomain
+        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+
+        // Ensure user belongs to this academy
+        if ($user->academy_id !== $academy->id) {
+            abort(403, 'Access denied to this academy');
+        }
+
+        // Load course with relationships
+        $course = \App\Models\InteractiveCourse::with([
+            'subject',
+            'gradeLevel',
+            'assignedTeacher.user',
+            'enrollments.student.user',
+            'sessions' => function ($query) {
+                $query->orderBy('scheduled_at', 'desc');
+            },
+            'sessions.studentReports',
+        ])->findOrFail($courseId);
+
+        // Verify teacher is assigned to this course
+        $teacherProfile = $user->academicTeacherProfile;
+        if (!$teacherProfile || $course->assigned_teacher_id !== $teacherProfile->id) {
+            abort(403, 'You are not the assigned teacher for this course');
+        }
+
+        // Get report service
+        $reportService = app(\App\Services\Attendance\InteractiveReportService::class);
+
+        // Calculate metrics
+        $performance = $reportService->calculatePerformance($course);
+        $attendance = $reportService->calculateAttendance($course);
+        $progress = $reportService->calculateProgress($course);
+
+        // Get recent sessions
+        $recentSessions = $course->sessions->take(5);
+
+        return view('teacher.interactive-courses.report', [
+            'course' => $course,
+            'teacher' => $course->assignedTeacher,
+            'performance' => $performance,
+            'attendance' => $attendance,
+            'progress' => $progress,
+            'recentSessions' => $recentSessions,
+        ]);
+    }
+
+    /**
+     * Display individual student report for an interactive course (Teacher view)
+     */
+    public function interactiveCourseStudentReport($subdomain, $courseId, $studentId)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            abort(401, 'User not authenticated');
+        }
+
+        // Verify user is an academic teacher
+        if (!$user->isAcademicTeacher()) {
+            abort(403, 'Access denied - teachers only');
+        }
+
+        // Get academy from subdomain
+        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+
+        // Ensure user belongs to this academy
+        if ($user->academy_id !== $academy->id) {
+            abort(403, 'Access denied to this academy');
+        }
+
+        // Load course with relationships
+        $course = \App\Models\InteractiveCourse::with([
+            'subject',
+            'gradeLevel',
+            'assignedTeacher.user',
+            'enrollments.student.user',
+            'sessions' => function ($query) {
+                $query->orderBy('scheduled_at', 'desc');
+            },
+            'sessions.studentReports',
+        ])->findOrFail($courseId);
+
+        // Verify teacher is assigned to this course
+        $teacherProfile = $user->academicTeacherProfile;
+        if (!$teacherProfile || $course->assigned_teacher_id !== $teacherProfile->id) {
+            abort(403, 'You are not the assigned teacher for this course');
+        }
+
+        // Get student
+        $student = \App\Models\User::findOrFail($studentId);
+
+        // Verify student is enrolled in this course
+        $enrollment = $course->enrollments->first(function ($e) use ($student) {
+            return $e->student?->user?->id === $student->id || $e->student_id === $student->id;
+        });
+
+        if (!$enrollment) {
+            abort(404, 'الطالب غير مسجل في هذا الكورس');
+        }
+
+        // Get report service
+        $reportService = app(\App\Services\Attendance\InteractiveReportService::class);
+
+        // Calculate metrics for this specific student
+        $performance = $reportService->calculatePerformance($course, $student->id);
+        $attendance = $reportService->calculateAttendance($course, $student->id);
+        $progress = $reportService->calculateProgress($course);
+
+        // Add homework metrics for this student
+        $studentReports = $course->sessions->flatMap(function ($session) use ($student) {
+            return $session->studentReports->where('student_id', $student->id);
+        });
+
+        $homeworkAssigned = $course->sessions->filter(function ($session) {
+            return !empty($session->homework_description);
+        })->count();
+
+        $homeworkSubmitted = $studentReports->whereNotNull('homework_submitted_at')->count();
+        $homeworkCompletionRate = $homeworkAssigned > 0 ? round(($homeworkSubmitted / $homeworkAssigned) * 100) : 0;
+
+        $progress['homework_assigned'] = $homeworkAssigned;
+        $progress['homework_submitted'] = $homeworkSubmitted;
+        $progress['homework_completion_rate'] = $homeworkCompletionRate;
+
+        return view('teacher.circle-report', [
+            'reportType' => 'interactive',
+            'course' => $course,
+            'student' => $student,
+            'enrollment' => $enrollment,
+            'performance' => $performance,
+            'attendance' => $attendance,
+            'progress' => $progress,
+        ]);
+    }
+
+    /**
+     * Display comprehensive report for an interactive course (Student view)
+     */
+    public function studentInteractiveCourseReport($subdomain, $courseId)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            abort(401, 'User not authenticated');
+        }
+
+        // Verify user is a student
+        if (!$user->isStudent()) {
+            abort(403, 'Access denied - students only');
+        }
+
+        // Get academy from subdomain
+        $academy = \App\Models\Academy::where('subdomain', $subdomain)->firstOrFail();
+
+        // Ensure user belongs to this academy
+        if ($user->academy_id !== $academy->id) {
+            abort(403, 'Access denied to this academy');
+        }
+
+        // Load course with relationships
+        $course = \App\Models\InteractiveCourse::with([
+            'subject',
+            'gradeLevel',
+            'assignedTeacher.user',
+            'sessions' => function ($query) {
+                $query->orderBy('scheduled_at', 'desc');
+            },
+            'sessions.studentReports',
+        ])->findOrFail($courseId);
+
+        // Verify student is enrolled in this course
+        $studentProfile = $user->studentProfile;
+        if (!$studentProfile) {
+            abort(403, 'Student profile not found');
+        }
+
+        $enrollment = \App\Models\InteractiveCourseEnrollment::where([
+            'course_id' => $course->id,
+            'student_id' => $studentProfile->id,
+            'enrollment_status' => 'enrolled'
+        ])->first();
+
+        if (!$enrollment) {
+            abort(403, 'You must be enrolled in this course to view the report');
+        }
+
+        // Get report service
+        $reportService = app(\App\Services\Attendance\InteractiveReportService::class);
+
+        // Calculate metrics for this specific student
+        $performance = $reportService->calculatePerformance($course, $studentProfile->id);
+        $attendance = $reportService->calculateAttendance($course, $studentProfile->id);
+        $progress = $reportService->calculateProgress($course);
+
+        // Get recent sessions
+        $recentSessions = $course->sessions->take(5);
+
+        return view('student.circle-report', [
+            'reportType' => 'interactive',
+            'course' => $course,
+            'student' => $studentProfile,
+            'performance' => $performance,
+            'attendance' => $attendance,
+            'progress' => $progress,
+            'recentSessions' => $recentSessions,
+        ]);
+    }
+
     public function addInteractiveSessionFeedback(Request $request, $subdomain, $sessionId)
     {
         $validated = $request->validate([
@@ -1380,8 +1608,7 @@ class StudentProfileController extends Controller
     public function updateInteractiveSessionContent(Request $request, $subdomain, $sessionId)
     {
         $validated = $request->validate([
-            'learning_outcomes' => 'nullable|string|max:2000',
-            'teacher_notes' => 'nullable|string|max:2000'
+            'lesson_content' => 'nullable|string|max:5000',
         ]);
 
         $user = Auth::user();
@@ -1442,6 +1669,11 @@ class StudentProfileController extends Controller
             'homework_file' => $homeworkFilePath,
         ]);
 
+        // Return JSON for AJAX requests, redirect for regular form submissions
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'تم تعيين الواجب بنجاح']);
+        }
+
         return redirect()->back()->with('success', 'تم تعيين الواجب بنجاح');
     }
 
@@ -1487,6 +1719,11 @@ class StudentProfileController extends Controller
             'homework_description' => $validated['homework_description'],
             'homework_file' => $homeworkFilePath,
         ]);
+
+        // Return JSON for AJAX requests, redirect for regular form submissions
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'تم تحديث الواجب بنجاح']);
+        }
 
         return redirect()->back()->with('success', 'تم تحديث الواجب بنجاح');
     }
@@ -1664,10 +1901,11 @@ class StudentProfileController extends Controller
             return $teacher;
         });
 
-        // Get student's academic progress to show which teachers they're learning with
-        $academicProgress = AcademicProgress::where('student_id', $user->id)
+        // Get student's academic subscriptions to show which teachers they're learning with
+        // (Replacing AcademicProgress - now using subscriptions with sessions data)
+        $academicProgress = AcademicSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['teacher', 'subject', 'subscription'])
+            ->with(['academicTeacher', 'subject', 'sessions'])
             ->get();
 
         return view('student.academic-teachers', compact(
@@ -1773,9 +2011,57 @@ class StudentProfileController extends Controller
             ->with(['student', 'academicTeacher'])
             ->get();
 
-        // Get progress summary using the AcademicProgressService
-        $progressService = app(\App\Services\AcademicProgressService::class);
-        $progressSummary = $progressService->getProgressSummary($subscription);
+        // Calculate progress summary from sessions (replacing AcademicProgressService)
+        $allSessions = $subscription->sessions()->get();
+        $totalSessions = $allSessions->count();
+        $completedSessions = $allSessions->where('status', \App\Enums\SessionStatus::COMPLETED)->count();
+        $missedSessions = $allSessions->where('status', \App\Enums\SessionStatus::ABSENT)->count();
+        $attendanceRate = $subscription->getAttendanceRate();
+
+        // Get homework/assignment data from session reports
+        $sessionReports = \App\Models\AcademicSessionReport::whereIn('session_id', $allSessions->pluck('id'))
+            ->where('student_id', $subscription->student_id)
+            ->get();
+        $totalAssignments = $sessionReports->count();
+        $completedAssignments = $sessionReports->whereNotNull('homework_degree')->count();
+        $homeworkCompletionRate = $totalAssignments > 0 ? round(($completedAssignments / $totalAssignments) * 100) : 0;
+        $overallGrade = $sessionReports->whereNotNull('homework_degree')->avg('homework_degree');
+        $overallGrade = $overallGrade ? round($overallGrade * 10) : null; // Convert 0-10 to 0-100
+
+        // Get last and next session dates
+        $lastSession = $allSessions->where('status', \App\Enums\SessionStatus::COMPLETED)->sortByDesc('scheduled_at')->first();
+        $nextSession = $upcomingSessions->first();
+
+        // Calculate consecutive missed sessions
+        $consecutiveMissed = 0;
+        $sortedSessions = $allSessions->sortByDesc('scheduled_at');
+        foreach ($sortedSessions as $session) {
+            if ($session->status === \App\Enums\SessionStatus::ABSENT) {
+                $consecutiveMissed++;
+            } else {
+                break;
+            }
+        }
+
+        $progressSummary = [
+            'total_sessions' => $totalSessions,
+            'completed_sessions' => $completedSessions,
+            'sessions_completed' => $completedSessions,
+            'sessions_planned' => $totalSessions,
+            'sessions_missed' => $missedSessions,
+            'progress_percentage' => $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0,
+            'attendance_rate' => $attendanceRate,
+            'total_assignments' => $totalAssignments,
+            'completed_assignments' => $completedAssignments,
+            'homework_completion_rate' => $homeworkCompletionRate,
+            'overall_grade' => $overallGrade,
+            'needs_support' => $attendanceRate < 60 || ($overallGrade !== null && $overallGrade < 60),
+            'progress_status' => $attendanceRate >= 80 ? 'ممتاز' : ($attendanceRate >= 60 ? 'جيد' : 'يحتاج تحسين'),
+            'engagement_level' => $attendanceRate >= 80 ? 'عالي' : ($attendanceRate >= 60 ? 'متوسط' : 'منخفض'),
+            'last_session' => $lastSession?->scheduled_at,
+            'next_session' => $nextSession?->scheduled_at,
+            'consecutive_missed' => $consecutiveMissed,
+        ];
 
         return view('student.academic-subscription-detail', compact('subscription', 'upcomingSessions', 'pastSessions', 'progressSummary'));
     }

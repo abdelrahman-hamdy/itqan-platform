@@ -28,59 +28,30 @@
             />
         </div>
 
-        <!-- Session Content & Description -->
-        @if($session->description)
+        {{-- Session Content Section --}}
+        @if($session->lesson_content)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-bold text-gray-900 mb-4">
                     <i class="ri-file-text-line text-primary ml-2"></i>
                     محتوى الجلسة
                 </h3>
-                <div class="text-gray-700 bg-gray-50 rounded-lg p-4 leading-relaxed">
-                    {!! nl2br(e($session->description)) !!}
+
+                <div class="prose max-w-none text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4">
+                    {!! nl2br(e($session->lesson_content)) !!}
                 </div>
             </div>
         @endif
 
-        <!-- Session Progress & Content (for completed sessions) -->
-        @if($session->status === 'completed')
-
-            <!-- Homework Display -->
-            @if($session->homework_description)
-                <x-sessions.homework-display
-                    :session="$session"
-                    view-type="student"
-                    session-type="interactive" />
-            @endif
-
-            <!-- Session Summary -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">
-                    <i class="ri-file-list-line text-primary ml-2"></i>
-                    ملخص الجلسة
-                </h3>
-
-                @if($session->learning_outcomes)
-                    <div class="mb-4">
-                        <h4 class="font-semibold text-gray-800 mb-2">نواتج التعلم:</h4>
-                        <div class="text-gray-700 bg-gray-50 rounded-lg p-4">
-                            {{ $session->learning_outcomes }}
-                        </div>
-                    </div>
-                @endif
-
-                @if($session->teacher_notes)
-                    <div class="mb-4">
-                        <h4 class="font-semibold text-gray-800 mb-2">ملاحظات المعلم:</h4>
-                        <div class="text-gray-700 bg-blue-50 rounded-lg p-4">
-                            {{ $session->teacher_notes }}
-                        </div>
-                    </div>
-                @endif
-            </div>
+        {{-- Homework Display (for completed sessions) --}}
+        @if($session->status === \App\Enums\SessionStatus::COMPLETED && $session->homework_description)
+            <x-sessions.homework-display
+                :session="$session"
+                view-type="student"
+                session-type="interactive" />
         @endif
 
         <!-- Student Feedback Section (for completed sessions) -->
-        @if($session->status === 'completed')
+        @if($session->status === \App\Enums\SessionStatus::COMPLETED)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-bold text-gray-900 mb-4">
                     <i class="ri-message-line text-primary ml-2"></i>
@@ -130,6 +101,19 @@
 <!-- Scripts -->
 <x-slot name="scripts">
 <script>
+// Auto-scroll to meeting if session is starting soon
+document.addEventListener('DOMContentLoaded', function() {
+    @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 5 && $session->scheduled_at->diffInMinutes(now()) >= -5)
+        setTimeout(() => {
+            const meetingContainer = document.getElementById('meetingContainer');
+            if (meetingContainer) {
+                meetingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 1000);
+    @endif
+    // Note: "Session starting soon" notification is centralized in livekit-interface component
+});
+
 // Student Feedback Form Submission
 document.getElementById('feedbackForm')?.addEventListener('submit', function(e) {
     e.preventDefault();

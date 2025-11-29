@@ -1,13 +1,15 @@
 @props(['session', 'attendance' => null])
 
 @php
+    use App\Enums\SessionStatus;
     $statusColors = [
-        'scheduled' => 'border-blue-300 bg-blue-50',
-        'in-progress' => 'border-green-400 bg-green-50',
-        'completed' => 'border-gray-300 bg-gray-50',
-        'cancelled' => 'border-red-300 bg-red-50'
+        SessionStatus::SCHEDULED->value => 'border-blue-300 bg-blue-50',
+        SessionStatus::ONGOING->value => 'border-green-400 bg-green-50',
+        SessionStatus::COMPLETED->value => 'border-gray-300 bg-gray-50',
+        SessionStatus::CANCELLED->value => 'border-red-300 bg-red-50'
     ];
-    $cardClass = $statusColors[$session->status] ?? 'border-gray-300';
+    $statusValue = $session->status instanceof SessionStatus ? $session->status->value : $session->status;
+    $cardClass = $statusColors[$statusValue] ?? 'border-gray-300';
 
     $scheduledDateTime = $session->scheduled_at;
 
@@ -33,7 +35,7 @@
                     Session {{ $session->session_number }}
                 </span>
 
-                @if($session->status === 'ongoing')
+                @if($session->status === SessionStatus::ONGOING)
                     <span class="flex items-center text-xs bg-green-500 text-white px-3 py-1 rounded-full animate-pulse shadow-lg">
                         <span class="w-2 h-2 bg-white rounded-full mr-2 animate-ping"></span>
                         <span class="font-bold">LIVE NOW</span>
@@ -65,14 +67,14 @@
             <div class="flex flex-wrap gap-2">
                 {{-- Status Badge --}}
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border
-                    {{ $session->status === 'completed' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                       ($session->status === 'ongoing' ? 'bg-green-100 text-green-700 border-green-300' :
-                       ($session->status === 'cancelled' ? 'bg-red-100 text-red-700 border-red-300' :
+                    {{ $session->status === SessionStatus::COMPLETED ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                       ($session->status === SessionStatus::ONGOING ? 'bg-green-100 text-green-700 border-green-300' :
+                       ($session->status === SessionStatus::CANCELLED ? 'bg-red-100 text-red-700 border-red-300' :
                        'bg-blue-100 text-blue-700 border-blue-300')) }}">
-                    <i class="mr-1 {{ $session->status === 'completed' ? 'ri-check-line' :
-                                      ($session->status === 'ongoing' ? 'ri-radio-button-line' :
-                                      ($session->status === 'cancelled' ? 'ri-close-line' : 'ri-calendar-event-line')) }}"></i>
-                    {{ ucfirst($session->status) }}
+                    <i class="mr-1 {{ $session->status === SessionStatus::COMPLETED ? 'ri-check-line' :
+                                      ($session->status === SessionStatus::ONGOING ? 'ri-radio-button-line' :
+                                      ($session->status === SessionStatus::CANCELLED ? 'ri-close-line' : 'ri-calendar-event-line')) }}"></i>
+                    {{ ucfirst($statusValue) }}
                 </span>
 
                 {{-- Attendance Badge --}}
@@ -99,19 +101,19 @@
 
         {{-- Actions --}}
         <div class="flex flex-col gap-2 flex-shrink-0">
-            @if($session->status === 'ongoing')
+            @if($session->status === SessionStatus::ONGOING)
                 <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-primary px-4 py-2 whitespace-nowrap shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
                     <i class="ri-vidicon-line mr-1"></i>
                     Join Now
                 </a>
-            @elseif($session->status === 'scheduled')
+            @elseif($session->status === SessionStatus::SCHEDULED)
                 <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-secondary px-4 py-2 whitespace-nowrap hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300 transition-all duration-200">
                     <i class="ri-eye-line mr-1"></i>
                     View Details
                 </a>
-            @elseif($session->status === 'completed')
+            @elseif($session->status === SessionStatus::COMPLETED)
                 <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-secondary px-4 py-2 whitespace-nowrap hover:bg-gray-100 transition-all duration-200">
                     <i class="ri-history-line mr-1"></i>
@@ -128,7 +130,7 @@
     </div>
 
     {{-- Quick Info (shown on hover for completed sessions) --}}
-    @if($session->status === 'completed' && $session->description)
+    @if($session->status === SessionStatus::COMPLETED && $session->description)
         <div class="mt-4 pt-4 border-t border-gray-200 hidden group-hover:block transition-all duration-300">
             <p class="text-sm text-gray-600 line-clamp-2">
                 {{ Str::limit($session->description, 120) }}

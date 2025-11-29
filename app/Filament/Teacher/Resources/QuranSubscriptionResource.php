@@ -2,12 +2,15 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Enums\CertificateTemplateStyle;
 use App\Filament\Teacher\Resources\QuranSubscriptionResource\Pages;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use App\Models\QuranSubscription;
+use App\Services\CertificateService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Filament\Teacher\Resources\BaseTeacherResource;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Infolists;
@@ -323,7 +326,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
                 Tables\Actions\ViewAction::make()
                     ->label('عرض')
                     ->icon('heroicon-m-eye'),
-                    
+
                 Tables\Actions\EditAction::make()
                     ->label('تعديل')
                     ->icon('heroicon-m-pencil')
@@ -335,13 +338,81 @@ class QuranSubscriptionResource extends BaseTeacherResource
                             'notes' => $data['notes'] ?? null,
                         ];
                     }),
-                    
+
                 Tables\Actions\Action::make('view_sessions')
                     ->label('عرض الجلسات')
                     ->icon('heroicon-m-calendar')
-                    ->url(fn (QuranSubscription $record): string => 
+                    ->url(fn (QuranSubscription $record): string =>
                         QuranSessionResource::getUrl('index', ['tableFilters[subscription][value]' => $record->id])
                     ),
+
+                Tables\Actions\Action::make('issue_certificate')
+                    ->label('إصدار شهادة')
+                    ->icon('heroicon-o-academic-cap')
+                    ->color('warning')
+                    ->visible(fn (QuranSubscription $record): bool =>
+                        !$record->certificate_issued && $record->subscription_status === 'active'
+                    )
+                    ->form([
+                        Select::make('template_style')
+                            ->label('تصميم الشهادة')
+                            ->options(CertificateTemplateStyle::options())
+                            ->default('modern')
+                            ->required()
+                            ->helperText('اختر التصميم المناسب للشهادة'),
+
+                        Textarea::make('achievement_text')
+                            ->label('نص الإنجاز')
+                            ->required()
+                            ->rows(4)
+                            ->minLength(10)
+                            ->maxLength(1000)
+                            ->placeholder('مثال: لإتمامه حفظ جزء عم بإتقان، وتميزه في أحكام التلاوة والتجويد...')
+                            ->helperText('اكتب وصفاً للإنجازات التي حققها الطالب'),
+                    ])
+                    ->modalHeading('إصدار شهادة للطالب')
+                    ->modalDescription(fn (QuranSubscription $record): string =>
+                        "سيتم إصدار شهادة للطالب: {$record->student->name}"
+                    )
+                    ->modalSubmitActionLabel('إصدار الشهادة')
+                    ->action(function (QuranSubscription $record, array $data): void {
+                        try {
+                            $certificateService = app(CertificateService::class);
+                            $certificate = $certificateService->issueManualCertificate(
+                                $record,
+                                $data['achievement_text'],
+                                $data['template_style'],
+                                Auth::id(),
+                                Auth::user()->quranTeacherProfile?->user_id
+                            );
+
+                            Notification::make()
+                                ->success()
+                                ->title('تم إصدار الشهادة بنجاح')
+                                ->body("رقم الشهادة: {$certificate->certificate_number}")
+                                ->persistent()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->danger()
+                                ->title('خطأ في إصدار الشهادة')
+                                ->body($e->getMessage())
+                                ->send();
+                        }
+                    }),
+
+                Tables\Actions\Action::make('view_certificate')
+                    ->label('عرض الشهادة')
+                    ->icon('heroicon-o-document')
+                    ->color('success')
+                    ->visible(fn (QuranSubscription $record): bool => $record->certificate_issued)
+                    ->url(fn (QuranSubscription $record): ?string =>
+                        $record->certificate ? route('student.certificate.view', [
+                            'subdomain' => $record->certificate->academy?->subdomain ?? 'itqan-academy',
+                            'certificate' => $record->certificate->id,
+                        ]) : null
+                    )
+                    ->openUrlInNewTab(),
             ]),
         ];
     }

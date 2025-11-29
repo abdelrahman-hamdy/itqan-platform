@@ -208,14 +208,18 @@ class QuranCircle extends Model
     // QuranSession model fields and graded through student session reports
     // See migration: 2025_11_17_190605_drop_quran_homework_tables.php
 
-    public function progress(): HasMany
-    {
-        return $this->hasMany(QuranProgress::class, 'circle_id');
-    }
+    // Note: progress() relationship removed - Progress is now calculated
+    // dynamically from session reports using the QuranReportService
+    // See migration: 2025_11_23_drop_progress_tables.php
 
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'circle_id');
+    }
+
+    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(QuizAssignment::class, 'assignable');
     }
 
     // Scopes
@@ -638,7 +642,7 @@ class QuranCircle extends Model
         $session = $this->sessions()->create(array_merge($sessionData, [
             'academy_id' => $this->academy_id,
             'quran_teacher_id' => $this->quran_teacher_id,
-            'session_type' => 'circle',
+            'session_type' => 'group',
             'participants_count' => $this->current_students,
         ]));
 

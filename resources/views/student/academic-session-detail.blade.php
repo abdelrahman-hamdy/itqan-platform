@@ -31,7 +31,7 @@
         </div>
 
             <!-- Session Progress & Content -->
-            @if($session->status === 'completed')
+            @if($session->status === \App\Enums\SessionStatus::COMPLETED)
                 <!-- Academic Homework Display -->
                 <x-sessions.homework-display 
                     :session="$session" 
@@ -62,20 +62,11 @@
                             </div>
                         </div>
                     @endif
-
-                    @if($session->teacher_feedback)
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-gray-800 mb-2">ملاحظات المعلم:</h4>
-                            <div class="text-gray-700 bg-blue-50 rounded-lg p-4">
-                                {{ $session->teacher_feedback }}
-                            </div>
-                        </div>
-                    @endif
                 </div>
             @endif
 
             <!-- Student Feedback Section -->
-            @if($session->status === 'completed')
+            @if($session->status === \App\Enums\SessionStatus::COMPLETED)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
                         <i class="ri-message-line text-primary ml-2"></i>
@@ -113,29 +104,6 @@
                 </div>
             @endif
 
-            <!-- Session Instructions (for upcoming sessions) -->
-            @if($session->status === 'scheduled')
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">تعليمات الجلسة</h3>
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center mt-1">
-                                <i class="fas fa-info text-white text-xs"></i>
-                            </div>
-                            <div class="text-blue-800">
-                                <p class="font-medium mb-2">نصائح للاستعداد للجلسة:</p>
-                                <ul class="space-y-1 text-sm">
-                                    <li>• تأكد من جودة اتصال الإنترنت</li>
-                                    <li>• اختبر الكاميرا والميكروفون قبل بدء الجلسة</li>
-                                    <li>• أحضر المواد الدراسية المطلوبة</li>
-                                    <li>• اختر مكاناً هادئاً للجلسة</li>
-                                    <li>• كن مستعداً قبل الموعد بـ 5 دقائق</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
     </div>
 </div>
 
@@ -259,7 +227,7 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Academic session detail page loaded');
-    
+
     // Auto-scroll to meeting if session is starting soon
     @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 5 && $session->scheduled_at->diffInMinutes(now()) >= -5)
         setTimeout(() => {
@@ -269,48 +237,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 1000);
     @endif
-    
-    // Show notification if session is starting soon
-    @if($session->scheduled_at && $session->scheduled_at->isFuture() && $session->scheduled_at->diffInMinutes(now()) <= 10)
-        @php
-            $timeData = formatTimeRemaining($session->scheduled_at);
-        @endphp
-        @if(!$timeData['is_past'])
-            showNotification('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', 'info', 8000);
-        @endif
-    @endif
-});
 
-function showNotification(message, type = 'info', duration = 5000) {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 transform translate-x-full transition-transform duration-300`;
-    
-    const colors = {
-        success: 'bg-green-500 text-white',
-        error: 'bg-red-500 text-white',
-        warning: 'bg-yellow-500 text-white',
-        info: 'bg-blue-500 text-white'
-    };
-    
-    notification.className += ` ${colors[type] || colors.info}`;
-    
-    notification.innerHTML = `
-        <div class="flex items-center justify-between">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 hover:opacity-70">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.classList.remove('translate-x-full'), 100);
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        setTimeout(() => notification.remove(), 300);
-    }, duration);
-}
+    // Note: "Session starting soon" notification is now centralized in livekit-interface component
+});
 </script>
 </x-slot>
 

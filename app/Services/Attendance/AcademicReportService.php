@@ -5,6 +5,7 @@ namespace App\Services\Attendance;
 use App\Enums\AttendanceStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
+use App\Models\AcademicSubscription;
 use App\Models\MeetingAttendance;
 use App\Models\User;
 
@@ -69,9 +70,9 @@ class AcademicReportService extends BaseReportSyncService
 
         // Determine status based on attendance percentage
         if ($attendancePercentage >= $requiredPercentage) {
-            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::PRESENT->value;
+            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
         } elseif ($attendancePercentage > 0) {
-            return AttendanceStatus::PARTIAL->value;
+            return AttendanceStatus::LEAVED->value;
         } else {
             return AttendanceStatus::ABSENT->value;
         }
@@ -82,7 +83,7 @@ class AcademicReportService extends BaseReportSyncService
      */
     protected function getPerformanceFieldName(): string
     {
-        return 'student_performance_grade'; // Academic performance metric (1-10)
+        return 'homework_degree'; // Academic performance metric (0-10)
     }
 
     // ========================================
@@ -90,37 +91,22 @@ class AcademicReportService extends BaseReportSyncService
     // ========================================
 
     /**
-     * Record academic performance grade
+     * Record homework grade for academic session
      */
-    public function recordPerformanceGrade(
+    public function recordHomeworkGrade(
         AcademicSessionReport $report,
-        int $grade,
+        float $grade,
         ?string $notes = null
     ): AcademicSessionReport {
-        if ($grade < 1 || $grade > 10) {
-            throw new \InvalidArgumentException('Performance grade must be between 1 and 10');
+        if ($grade < 0 || $grade > 10) {
+            throw new \InvalidArgumentException('Homework grade must be between 0 and 10');
         }
 
         $report->update([
-            'student_performance_grade' => $grade,
+            'homework_degree' => $grade,
             'notes' => $notes,
             'evaluated_at' => now(),
-        ]);
-
-        return $report->fresh();
-    }
-
-    /**
-     * Record homework for academic session
-     */
-    public function recordHomework(
-        AcademicSessionReport $report,
-        string $homeworkText,
-        ?string $feedback = null
-    ): AcademicSessionReport {
-        $report->update([
-            'homework_text' => $homeworkText,
-            'homework_feedback' => $feedback,
+            'manually_evaluated' => true,
         ]);
 
         return $report->fresh();
@@ -140,5 +126,243 @@ class AcademicReportService extends BaseReportSyncService
         }
 
         return collect();
+    }
+
+    /**
+     * Create reports for all students in an academic session
+     *
+     * @param AcademicSession $session
+     * @return \Illuminate\Support\Collection Collection of created reports
+     */
+    public function createReportsForSession(AcademicSession $session): \Illuminate\Support\Collection
+    {
+        $students = $this->getSessionStudents($session);
+        $reports = collect();
+
+        foreach ($students as $student) {
+            // Check if report already exists
+            $existingReport = AcademicSessionReport::where('session_id', $session->id)
+                ->where('student_id', $student->id)
+                ->first();
+
+            if ($existingReport) {
+                $reports->push($existingReport);
+                continue;
+            }
+
+            // Create new report
+            $report = AcademicSessionReport::create([
+                'session_id' => $session->id,
+                'student_id' => $student->id,
+                'teacher_id' => $this->getSessionTeacher($session)?->id,
+                'academy_id' => $session->academy_id,
+                'attendance_status' => AttendanceStatus::ABSENT->value,
+                'is_calculated' => false,
+                'manually_evaluated' => false,
+            ]);
+
+            $reports->push($report);
+        }
+
+        return $reports;
+    }
+
+    /**
+     * Record complete academic evaluation for a report
+     */
+    public function recordFullEvaluation(
+        AcademicSessionReport $report,
+        array $data
+    ): AcademicSessionReport {
+        $updateData = [];
+
+        // Attendance status
+        if (isset($data['attendance_status'])) {
+            $updateData['attendance_status'] = $data['attendance_status'];
+            $updateData['manually_evaluated'] = true;
+        }
+
+        // Homework degree (0-10)
+        if (isset($data['homework_degree'])) {
+            $grade = (float) $data['homework_degree'];
+            if ($grade < 0 || $grade > 10) {
+                throw new \InvalidArgumentException('Homework degree must be between 0 and 10');
+            }
+            $updateData['homework_degree'] = $grade;
+        }
+
+        // Notes
+        if (isset($data['notes'])) {
+            $updateData['notes'] = $data['notes'];
+        }
+
+        if (!empty($updateData)) {
+            $updateData['evaluated_at'] = now();
+            $report->update($updateData);
+        }
+
+        return $report->fresh();
+    }
+
+    // ========================================
+    // Subscription Report Calculation Methods
+    // ========================================
+
+    /**
+     * Calculate performance metrics for an academic subscription
+     */
+    public function calculatePerformance(AcademicSubscription $subscription): array
+    {
+        $sessions = $subscription->sessions()->with('studentReports')->get();
+        $reports = $sessions->flatMap(function ($session) use ($subscription) {
+            return $session->studentReports->where('student_id', $subscription->student_id);
+        });
+
+        $totalReports = $reports->count();
+
+        if ($totalReports === 0) {
+            return [
+                'average_overall_performance' => 0,
+                'average_homework_degree' => 0,
+                'total_evaluated' => 0,
+            ];
+        }
+
+        // Calculate averages
+        $homeworkSum = $reports->sum('homework_degree');
+        $homeworkCount = $reports->whereNotNull('homework_degree')->count();
+        $avgHomework = $homeworkCount > 0 ? $homeworkSum / $homeworkCount : 0;
+
+        return [
+            'average_overall_performance' => round($avgHomework, 1),
+            'average_homework_degree' => round($avgHomework, 1),
+            'total_evaluated' => $homeworkCount,
+        ];
+    }
+
+    /**
+     * Calculate attendance metrics for an academic subscription
+     */
+    public function calculateAttendance(AcademicSubscription $subscription): array
+    {
+        $sessions = $subscription->sessions()->with('studentReports')->get();
+        $completedSessions = $sessions->filter(function ($session) {
+            return $session->status?->value === 'completed' || $session->status === 'completed';
+        });
+
+        $totalCompleted = $completedSessions->count();
+
+        if ($totalCompleted === 0) {
+            return [
+                'attendance_rate' => 0,
+                'attended' => 0,
+                'absent' => 0,
+                'late' => 0,
+                'total_sessions' => $totalCompleted,
+            ];
+        }
+
+        $attended = 0;
+        $absent = 0;
+        $late = 0;
+
+        foreach ($completedSessions as $session) {
+            $report = $session->studentReports->where('student_id', $subscription->student_id)->first();
+
+            if (!$report) {
+                $absent++;
+                continue;
+            }
+
+            $status = $report->attendance_status;
+            if (is_object($status)) {
+                $status = $status->value;
+            }
+
+            if (in_array($status, ['attended', 'leaved'])) {
+                $attended++;
+            } elseif ($status === 'late') {
+                $late++;
+                $attended++; // Late counts as attended
+            } else {
+                $absent++;
+            }
+        }
+
+        $attendanceRate = $totalCompleted > 0 ? round(($attended / $totalCompleted) * 100) : 0;
+
+        return [
+            'attendance_rate' => $attendanceRate,
+            'attended' => $attended,
+            'absent' => $absent,
+            'late' => $late,
+            'total_sessions' => $totalCompleted,
+        ];
+    }
+
+    /**
+     * Calculate progress metrics for an academic subscription
+     */
+    public function calculateProgress(AcademicSubscription $subscription): array
+    {
+        $sessions = $subscription->sessions()->with('studentReports')->get();
+        $totalSessions = $sessions->count();
+
+        $completedSessions = $sessions->filter(function ($session) {
+            return $session->status?->value === 'completed' || $session->status === 'completed';
+        })->count();
+
+        // Calculate homework metrics
+        $homeworkAssigned = $sessions->filter(function ($session) {
+            return !empty($session->homework_description);
+        })->count();
+
+        $homeworkSubmitted = $sessions->flatMap(function ($session) use ($subscription) {
+            return $session->studentReports
+                ->where('student_id', $subscription->student_id)
+                ->whereNotNull('homework_submitted_at');
+        })->count();
+
+        $homeworkCompletionRate = $homeworkAssigned > 0
+            ? round(($homeworkSubmitted / $homeworkAssigned) * 100)
+            : 0;
+
+        // Grade improvement (compare first half vs second half of sessions)
+        $gradeImprovement = 0;
+        if ($completedSessions >= 4) {
+            $orderedSessions = $sessions->sortBy('scheduled_at')->values();
+            $halfPoint = (int) floor($orderedSessions->count() / 2);
+
+            $firstHalf = $orderedSessions->take($halfPoint);
+            $secondHalf = $orderedSessions->skip($halfPoint);
+
+            $firstHalfGrades = $firstHalf->flatMap(function ($s) use ($subscription) {
+                return $s->studentReports->where('student_id', $subscription->student_id)
+                    ->whereNotNull('homework_degree')
+                    ->pluck('homework_degree');
+            });
+
+            $secondHalfGrades = $secondHalf->flatMap(function ($s) use ($subscription) {
+                return $s->studentReports->where('student_id', $subscription->student_id)
+                    ->whereNotNull('homework_degree')
+                    ->pluck('homework_degree');
+            });
+
+            if ($firstHalfGrades->count() > 0 && $secondHalfGrades->count() > 0) {
+                $firstAvg = $firstHalfGrades->avg();
+                $secondAvg = $secondHalfGrades->avg();
+                $gradeImprovement = round($secondAvg - $firstAvg, 1);
+            }
+        }
+
+        return [
+            'sessions_completed' => $completedSessions,
+            'total_sessions' => $totalSessions,
+            'completion_rate' => $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0,
+            'grade_improvement' => $gradeImprovement,
+            'homework_assigned' => $homeworkAssigned,
+            'homework_submitted' => $homeworkSubmitted,
+            'homework_completion_rate' => $homeworkCompletionRate,
+        ];
     }
 }

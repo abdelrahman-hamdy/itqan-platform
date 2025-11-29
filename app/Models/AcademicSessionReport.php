@@ -8,13 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Academic Session Report Model
  *
  * Extends BaseSessionReport with Academic-specific fields:
- * - academic_grade: Overall grade (0-10) - manually set or auto-calculated
- * - lesson_understanding_degree: Understanding/mastery score (0-10)
- * - homework_completion_degree: Homework quality score (0-10)
- * - homework_description: Homework assignment text
- * - homework_file: Homework file path
- * - homework_submitted_at: Student submission timestamp
- * - homework_feedback: Teacher feedback on homework
+ * - homework_degree: Homework quality score (0-10)
+ * - notes: Teacher notes (inherited from base)
+ *
+ * Simplified to match Interactive Session Reports structure.
  */
 class AcademicSessionReport extends BaseSessionReport
 {
@@ -41,19 +38,8 @@ class AcademicSessionReport extends BaseSessionReport
         'manually_evaluated',
         'override_reason',
 
-        // Academic-specific grading fields (matching migration column names)
-        'academic_grade',                   // Overall academic grade (0-10)
-        'lesson_understanding_degree',      // Understanding/mastery (0-10)
-        'homework_completion_degree',       // Homework quality (0-10)
-
-        // Homework management fields
-        'homework_description',             // Homework assignment text
-        'homework_file',                    // Homework file path
-        'homework_submitted_at',            // When student submitted homework
-        'homework_feedback',                // Teacher feedback on homework
-
-        // Connection quality
-        'connection_quality_score',         // 1-5 score
+        // Academic-specific field (unified with Interactive)
+        'homework_degree',                  // Homework quality (0-10)
     ];
 
     /**
@@ -72,16 +58,8 @@ class AcademicSessionReport extends BaseSessionReport
         'is_calculated' => 'boolean',
         'manually_evaluated' => 'boolean',
 
-        // Academic-specific grade casts (0-10 scale, 1 decimal)
-        'academic_grade' => 'decimal:1',
-        'lesson_understanding_degree' => 'decimal:1',
-        'homework_completion_degree' => 'decimal:1',
-
-        // Homework casts
-        'homework_submitted_at' => 'datetime',
-
-        // Connection quality
-        'connection_quality_score' => 'integer',
+        // Academic-specific cast (0-10 scale, 1 decimal)
+        'homework_degree' => 'decimal:1',
     ];
 
     // ========================================
@@ -97,47 +75,12 @@ class AcademicSessionReport extends BaseSessionReport
     }
 
     /**
-     * Get Academic-specific performance data (calculated from multiple grades)
-     *
-     * Calculation weights:
-     * - Participation: 30%
-     * - Lesson Understanding: 40%
-     * - Homework Completion: 30%
-     *
-     * If academic_grade is set manually, it takes precedence.
+     * Get Academic-specific performance data
+     * Returns homework_degree as the performance metric (0-10 scale)
      */
     protected function getSessionSpecificPerformanceData(): ?float
     {
-        // If manually set academic grade exists, use it
-        if ($this->academic_grade !== null) {
-            return (float) $this->academic_grade;
-        }
-
-        // Calculate from component grades
-        $grades = array_filter([
-            'understanding' => $this->lesson_understanding_degree,
-            'homework' => $this->homework_completion_degree,
-        ], fn($grade) => $grade !== null);
-
-        if (empty($grades)) {
-            return null;
-        }
-
-        // Weighted average calculation
-        $weights = [
-            'understanding' => 0.50,  // 50%
-            'homework' => 0.50,       // 50%
-        ];
-
-        $totalWeight = 0;
-        $weightedSum = 0;
-
-        foreach ($grades as $key => $value) {
-            $weightedSum += $value * $weights[$key];
-            $totalWeight += $weights[$key];
-        }
-
-        return $totalWeight > 0 ? round($weightedSum / $totalWeight, 1) : null;
+        return $this->homework_degree;
     }
 
     /**
@@ -153,101 +96,42 @@ class AcademicSessionReport extends BaseSessionReport
     // ========================================
 
     /**
-     * Check if homework has been submitted by student
+     * Record homework grade
      */
-    public function hasSubmittedHomework(): bool
-    {
-        return $this->homework_submitted_at !== null;
-    }
-
-    /**
-     * Check if homework has been assigned by teacher
-     */
-    public function hasHomeworkAssigned(): bool
-    {
-        return ! empty($this->homework_description) || ! empty($this->homework_file);
-    }
-
-    /**
-     * Record homework assignment from teacher
-     */
-    public function assignHomework(string $description, ?string $filePath = null): void
-    {
-        $this->update([
-            'homework_description' => $description,
-            'homework_file' => $filePath,
-        ]);
-    }
-
-    /**
-     * Record student homework submission
-     */
-    public function submitHomework(?string $filePath = null): void
-    {
-        $this->update([
-            'homework_file' => $filePath,
-            'homework_submitted_at' => now(),
-        ]);
-    }
-
-    /**
-     * Record teacher feedback on homework
-     */
-    public function recordHomeworkFeedback(float $grade, ?string $feedback = null): void
+    public function recordHomeworkGrade(float $grade, ?string $notes = null): void
     {
         if ($grade < 0 || $grade > 10) {
             throw new \InvalidArgumentException('Homework grade must be between 0 and 10');
         }
 
-        $this->update([
-            'homework_completion_degree' => $grade,
-            'homework_feedback' => $feedback,
+        $data = [
+            'homework_degree' => $grade,
             'evaluated_at' => now(),
-        ]);
+            'manually_evaluated' => true,
+        ];
+
+        if ($notes !== null) {
+            $data['notes'] = $notes;
+        }
+
+        $this->update($data);
     }
 
     /**
-     * Record complete academic performance evaluation
+     * Record teacher evaluation (unified method)
      */
-    public function recordPerformanceEvaluation(
-        ?float $understandingDegree = null,
+    public function recordTeacherEvaluation(
         ?float $homeworkDegree = null,
         ?string $notes = null
     ): void {
         $data = array_filter([
-            'lesson_understanding_degree' => $understandingDegree,
-            'homework_completion_degree' => $homeworkDegree,
+            'homework_degree' => $homeworkDegree,
             'notes' => $notes,
             'evaluated_at' => now(),
             'manually_evaluated' => true,
         ], fn($value) => $value !== null);
 
         $this->update($data);
-    }
-
-    /**
-     * Manually set overall academic grade (overrides calculated grade)
-     */
-    public function setAcademicGrade(float $grade, ?string $reason = null): void
-    {
-        if ($grade < 0 || $grade > 10) {
-            throw new \InvalidArgumentException('Academic grade must be between 0 and 10');
-        }
-
-        $this->update([
-            'academic_grade' => $grade,
-            'manually_evaluated' => true,
-            'override_reason' => $reason,
-            'evaluated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Get the overall performance (alias for compatibility)
-     */
-    public function getOverallPerformanceAttribute(): ?float
-    {
-        return $this->getSessionSpecificPerformanceData();
     }
 
     /**
@@ -264,21 +148,9 @@ class AcademicSessionReport extends BaseSessionReport
     // Additional Scopes
     // ========================================
 
-    public function scopeWithHomework($query)
-    {
-        return $query->whereNotNull('homework_description');
-    }
-
-    public function scopeHomeworkSubmitted($query)
-    {
-        return $query->whereNotNull('homework_submitted_at');
-    }
-
     public function scopeGraded($query)
     {
-        return $query->whereNotNull('academic_grade')
-            ->orWhereNotNull('lesson_understanding_degree')
-            ->orWhereNotNull('homework_completion_degree');
+        return $query->whereNotNull('homework_degree');
     }
 
     // ========================================
@@ -311,16 +183,16 @@ class AcademicSessionReport extends BaseSessionReport
             ];
         }
 
-        $attended = $reports->where('attendance_status', 'present')->count();
+        $attended = $reports->whereIn('attendance_status', ['attended', 'leaved'])->count();
         $absent = $reports->where('attendance_status', 'absent')->count();
         $late = $reports->where('attendance_status', 'late')->count();
 
         return [
             'total_sessions' => $totalSessions,
-            'attended' => $attended,
+            'attended' => $attended + $late, // Late counts as attended
             'absent' => $absent,
             'late' => $late,
-            'attendance_rate' => round(($attended / $totalSessions) * 100, 1),
+            'attendance_rate' => round((($attended + $late) / $totalSessions) * 100, 1),
         ];
     }
 
@@ -330,7 +202,7 @@ class AcademicSessionReport extends BaseSessionReport
     public static function getPerformanceStatistics(int $studentId, ?int $academicSubscriptionId = null): array
     {
         $query = static::where('student_id', $studentId)
-            ->whereNotNull('lesson_understanding_degree');
+            ->whereNotNull('homework_degree');
 
         if ($academicSubscriptionId) {
             $query->whereHas('session', function ($q) use ($academicSubscriptionId) {
@@ -342,16 +214,16 @@ class AcademicSessionReport extends BaseSessionReport
 
         if ($reports->isEmpty()) {
             return [
-                'average_understanding_degree' => 0,
                 'average_homework_degree' => 0,
                 'average_overall_performance' => 0,
+                'total_evaluated' => 0,
             ];
         }
 
         return [
-            'average_understanding_degree' => round($reports->avg('lesson_understanding_degree') ?? 0, 1),
-            'average_homework_degree' => round($reports->avg('homework_completion_degree') ?? 0, 1),
-            'average_overall_performance' => round($reports->map(fn($r) => $r->overall_performance)->filter()->avg() ?? 0, 1),
+            'average_homework_degree' => round($reports->avg('homework_degree') ?? 0, 1),
+            'average_overall_performance' => round($reports->avg('homework_degree') ?? 0, 1),
+            'total_evaluated' => $reports->count(),
         ];
     }
 
@@ -376,32 +248,22 @@ class AcademicSessionReport extends BaseSessionReport
 
         $totalSessions = $reports->count();
 
-        // Calculate homework statistics
-        $homeworkAssigned = $reports->filter(fn($r) => $r->hasHomeworkAssigned())->count();
-        $homeworkSubmitted = $reports->filter(fn($r) => $r->hasSubmittedHomework())->count();
-        $homeworkCompletionRate = $homeworkAssigned > 0
-            ? round(($homeworkSubmitted / $homeworkAssigned) * 100, 1)
-            : 0;
-
         // Calculate grade improvement (compare first 3 sessions to last 3 sessions)
         $gradeImprovement = 0;
-        $gradedReports = $reports->filter(fn($r) => $r->overall_performance !== null);
+        $gradedReports = $reports->filter(fn($r) => $r->homework_degree !== null);
 
         if ($gradedReports->count() >= 6) {
-            $firstThree = $gradedReports->take(3)->avg('overall_performance');
-            $lastThree = $gradedReports->slice(-3)->avg('overall_performance');
+            $firstThree = $gradedReports->take(3)->avg('homework_degree');
+            $lastThree = $gradedReports->slice(-3)->avg('homework_degree');
             $gradeImprovement = round($lastThree - $firstThree, 1);
         }
 
         return [
             'sessions_completed' => $completedSessions,
             'total_sessions' => $totalSessions,
-            'homework_assigned' => $homeworkAssigned,
-            'homework_submitted' => $homeworkSubmitted,
-            'homework_completion_rate' => $homeworkCompletionRate,
-            'average_grade' => round($gradedReports->avg('overall_performance') ?? 0, 1),
+            'completion_rate' => $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0,
+            'average_grade' => round($gradedReports->avg('homework_degree') ?? 0, 1),
             'grade_improvement' => $gradeImprovement,
-            'topics_covered' => 0, // TODO: Track topics when implemented
         ];
     }
 

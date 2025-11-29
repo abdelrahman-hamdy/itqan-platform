@@ -80,6 +80,56 @@
                 />
             </div>
 
+            {{-- Session Content Section --}}
+            @if($viewType === 'teacher')
+                {{-- Teacher: Editable Form --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">
+                        <i class="ri-file-text-line text-primary ml-2"></i>
+                        محتوى الجلسة
+                    </h3>
+
+                    <form id="sessionContentForm" class="space-y-4">
+                        @csrf
+                        <div>
+                            <label for="lesson_content" class="block text-sm font-medium text-gray-700 mb-2">
+                                محتوى الدرس
+                            </label>
+                            <textarea
+                                id="lesson_content"
+                                name="lesson_content"
+                                rows="4"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
+                                placeholder="ما هي المواضيع التي تم تغطيتها في هذه الجلسة؟">{{ $session->lesson_content ?? '' }}</textarea>
+                        </div>
+
+                        <p class="text-sm text-gray-500">
+                            <i class="ri-information-line ml-1"></i>
+                            لإضافة ملاحظات على أداء الطالب، استخدم تقرير الجلسة المنفصل
+                        </p>
+
+                        <button
+                            type="submit"
+                            class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
+                            <i class="ri-save-line ml-2"></i>
+                            حفظ محتوى الدرس
+                        </button>
+                    </form>
+                </div>
+            @elseif($session->lesson_content)
+                {{-- Student: Display Only --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="ri-file-text-line text-primary-600 ml-2"></i>
+                        محتوى الجلسة
+                    </h2>
+
+                    <div class="prose max-w-none text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4">
+                        {!! nl2br(e($session->lesson_content)) !!}
+                    </div>
+                </div>
+            @endif
+
             <!-- Trial Session Information (Student Only) -->
             @if($viewType === 'student' && $session->session_type === 'trial' && $session->trialRequest)
                 <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6">
@@ -177,34 +227,157 @@
                 @endif
             @endif
 
-            <!-- Session Instructions (Student Only, for Scheduled Sessions) -->
-            @if($viewType === 'student' && $session->status === 'scheduled')
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">تعليمات الجلسة</h3>
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center mt-1">
-                                <i class="fas fa-info text-white text-xs"></i>
-                            </div>
-                            <div class="text-blue-800">
-                                <p class="font-medium mb-2">نصائح للاستعداد للجلسة:</p>
-                                <ul class="space-y-1 text-sm">
-                                    <li>• تأكد من جودة اتصال الإنترنت</li>
-                                    <li>• اختبر الكاميرا والميكروفون قبل بدء الجلسة</li>
-                                    <li>• أحضر المصحف أو افتح تطبيق القرآن الكريم</li>
-                                    <li>• اختر مكاناً هادئاً للجلسة</li>
-                                    <li>• كن مستعداً قبل الموعد بـ 5 دقائق</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
         </div>
     </div>
 </div>
 
-<!-- Student Evaluation Modal Component (Teacher Only) -->
+<!-- Unified Report Edit Modal (Teacher Only) -->
 @if($viewType === 'teacher')
-    <x-teacher.student-evaluation-modal :session="$session" />
+    <x-modals.student-report-edit session-type="quran" />
+
+    <!-- Pre-rendered avatars for modal (using unified x-avatar component) -->
+    <div id="prerendered_avatars_container" class="hidden">
+        @if($session->session_type === 'group' && $session->students && $session->students->count() > 0)
+            @foreach($session->students as $student)
+                <div id="prerendered_avatar_{{ $student->id }}" class="hidden">
+                    <x-avatar :user="$student" size="sm" user-type="student" />
+                </div>
+            @endforeach
+        @elseif($session->session_type === 'individual' && $session->student)
+            <div id="prerendered_avatar_{{ $session->student->id }}" class="hidden">
+                <x-avatar :user="$session->student" size="sm" user-type="student" />
+            </div>
+        @endif
+    </div>
+
+    <!-- Session Content Form Script & Report Modal Functions -->
+    <script>
+    // Students info for the unified modal
+    const studentsInfo = {
+        @if($session->session_type === 'group' && $session->students && $session->students->count() > 0)
+            @foreach($session->students as $student)
+                {{ $student->id }}: {
+                    name: '{{ $student->name ?? "طالب" }}',
+                    avatar: '{{ $student->avatar ?? "" }}',
+                    email: '{{ $student->email ?? "" }}',
+                    gender: '{{ $student->gender ?? "male" }}'
+                },
+            @endforeach
+        @elseif($session->session_type === 'individual' && $session->student)
+            {{ $session->student->id }}: {
+                name: '{{ $session->student->name ?? "طالب" }}',
+                avatar: '{{ $session->student->avatar ?? "" }}',
+                email: '{{ $session->student->email ?? "" }}',
+                gender: '{{ $session->student->gender ?? "male" }}'
+            },
+        @endif
+    };
+
+    // Get report data for modal
+    function getReportData(studentId) {
+        @php
+            $reports = $session->studentReports ?? collect();
+        @endphp
+
+        const reports = {
+            @foreach($reports as $report)
+                {{ $report->student_id }}: {
+                    id: {{ $report->id ?? 'null' }},
+                    attendance_status: '{{ $report->attendance_status ?? '' }}',
+                    manually_evaluated: {{ $report->manually_evaluated ? 'true' : 'false' }},
+                    attendance_percentage: {{ $report->attendance_percentage ?? 'null' }},
+                    actual_attendance_minutes: {{ $report->actual_attendance_minutes ?? 'null' }},
+                    new_memorization_degree: {{ $report->new_memorization_degree ?? 'null' }},
+                    reservation_degree: {{ $report->reservation_degree ?? 'null' }},
+                    notes: `{{ addslashes($report->notes ?? '') }}`
+                },
+            @endforeach
+        };
+
+        return reports[studentId] || null;
+    }
+
+    function getStudentName(studentId) {
+        return studentsInfo[studentId]?.name || 'الطالب';
+    }
+
+    function getStudentData(studentId) {
+        return studentsInfo[studentId] || null;
+    }
+
+    // Edit Student Report Function - Uses unified modal
+    function editStudentReport(studentId, reportId) {
+        const reportData = getReportData(studentId);
+        const studentName = getStudentName(studentId);
+        const studentData = getStudentData(studentId);
+
+        openReportModal(
+            {{ $session->id }},
+            studentId,
+            studentName,
+            reportData,
+            'quran',
+            studentData
+        );
+    }
+
+    // Message Student Function
+    function messageStudent(studentId) {
+        const subdomain = '{{ request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy" }}';
+        const chatUrl = '/chat?user=' + studentId;
+        window.location.href = chatUrl;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const sessionContentForm = document.getElementById('sessionContentForm');
+        if (sessionContentForm) {
+            sessionContentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries());
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.innerHTML;
+
+                // Show loading state
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الحفظ...';
+
+                fetch('{{ route("teacher.sessions.update-notes", ["subdomain" => request()->route("subdomain"), "sessionId" => $session->id]) }}', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success notification
+                        const notification = document.createElement('div');
+                        notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
+                        notification.innerHTML = '<i class="ri-check-line"></i><span>تم حفظ محتوى الدرس بنجاح</span>';
+                        document.body.appendChild(notification);
+
+                        setTimeout(() => {
+                            notification.remove();
+                        }, 3000);
+                    } else {
+                        alert(data.message || 'حدث خطأ أثناء الحفظ');
+                    }
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('حدث خطأ أثناء حفظ محتوى الدرس');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                });
+            });
+        }
+    });
+    </script>
 @endif

@@ -64,52 +64,22 @@ class AcademicSessionReportResource extends Resource
 
                 Forms\Components\Section::make('الأداء الأكاديمي')
                     ->schema([
-                        Forms\Components\TextInput::make('academic_performance_score')
-                            ->label('الأداء الأكاديمي (0-10)')
+                        Forms\Components\TextInput::make('homework_degree')
+                            ->label('درجة الواجب (0-10)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(10)
-                            ->step(0.1),
-                        Forms\Components\TextInput::make('engagement_score')
-                            ->label('درجة التفاعل (0-10)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(10)
-                            ->step(0.1),
-                        Forms\Components\TagsInput::make('learning_objectives_achieved')
-                            ->label('الأهداف التعليمية المحققة')
-                            ->placeholder('أضف الأهداف التعليمية')
-                            ->columnSpanFull(),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('إدارة الواجبات')
-                    ->schema([
-                        Forms\Components\Textarea::make('homework_description')
-                            ->label('وصف الواجب')
-                            ->placeholder('اكتب وصف الواجب المنزلي...')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                        Forms\Components\FileUpload::make('homework_file_path')
-                            ->label('ملف الواجب')
-                            ->directory('academic-homework')
-                            ->acceptedFileTypes(['pdf', 'doc', 'docx', 'txt', 'jpg', 'png'])
-                            ->maxSize(5120) // 5MB
-                            ->downloadable()
-                            ->openable()
-                            ->columnSpanFull(),
+                            ->step(0.5),
                     ]),
 
-                Forms\Components\Section::make('الملاحظات والتغذية الراجعة')
+                Forms\Components\Section::make('الملاحظات')
                     ->schema([
-                        Forms\Components\Textarea::make('teacher_notes')
+                        Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات المعلم')
-                            ->placeholder('ملاحظات ومشاهدات المعلم...')
-                            ->rows(3),
-                        Forms\Components\Textarea::make('student_notes')
-                            ->label('ملاحظات الطالب')
-                            ->placeholder('ملاحظات الطالب والتأملات الذاتية...')
-                            ->rows(3),
-                    ])->columns(2),
+                            ->placeholder('أضف ملاحظات حول أداء الطالب...')
+                            ->rows(4)
+                            ->columnSpanFull(),
+                    ]),
 
                 Forms\Components\Section::make('تفاصيل الحضور')
                     ->schema([
@@ -181,24 +151,15 @@ class AcademicSessionReportResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('academic_performance_score')
-                    ->label('Performance')
+                Tables\Columns\TextColumn::make('homework_degree')
+                    ->label('درجة الواجب')
                     ->numeric()
                     ->sortable()
                     ->badge()
-                    ->color(fn (string $state): string => match (true) {
-                        $state >= 8 => 'success',
-                        $state >= 6 => 'warning',
-                        default => 'danger',
-                    }),
-                Tables\Columns\TextColumn::make('engagement_score')
-                    ->label('Engagement')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->color(fn (string $state): string => match (true) {
-                        $state >= 8 => 'success',
-                        $state >= 6 => 'warning',
+                    ->color(fn (?string $state): string => match (true) {
+                        $state === null => 'gray',
+                        (float) $state >= 8 => 'success',
+                        (float) $state >= 6 => 'warning',
                         default => 'danger',
                     }),
                 Tables\Columns\TextColumn::make('attendance_status')
@@ -233,18 +194,6 @@ class AcademicSessionReportResource extends Resource
                     ->label('Late')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('homework_description')
-                    ->label('Has Homework')
-                    ->formatStateUsing(fn (?string $state): string => $state ? 'Yes' : 'No')
-                    ->badge()
-                    ->color(fn (?string $state): string => $state ? 'success' : 'gray')
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('homework_file_path')
-                    ->label('Homework File')
-                    ->formatStateUsing(fn (?string $state): string => $state ? 'Uploaded' : 'None')
-                    ->badge()
-                    ->color(fn (?string $state): string => $state ? 'success' : 'gray')
-                    ->toggleable(),
                 Tables\Columns\TextColumn::make('meeting_enter_time')
                     ->label('Join Time')
                     ->dateTime()
@@ -279,12 +228,9 @@ class AcademicSessionReportResource extends Resource
                     ->relationship('academy', 'name')
                     ->searchable()
                     ->preload(),
-                Tables\Filters\Filter::make('has_homework')
-                    ->label('Has Homework')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_description')),
-                Tables\Filters\Filter::make('has_homework_file')
-                    ->label('Has Homework File')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_file_path')),
+                Tables\Filters\Filter::make('has_homework_grade')
+                    ->label('تم تقييم الواجب')
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

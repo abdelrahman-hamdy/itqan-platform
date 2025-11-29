@@ -328,7 +328,7 @@ class SessionSchedule extends Model
                 $sessionData['title'] = "جلسة قرآن - {$this->subscription->student->name}";
             } elseif ($this->schedule_type === self::TYPE_CIRCLE) {
                 $sessionData['quran_circle_id'] = $this->quran_circle_id;
-                $sessionData['session_type'] = 'circle';
+                $sessionData['session_type'] = 'group';
                 $sessionData['title'] = "حلقة {$this->circle->name_ar}";
             }
 

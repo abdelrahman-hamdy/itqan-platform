@@ -13,8 +13,8 @@
 
     @if(!$session->homework_description)
         <!-- Assign Homework Form -->
-        <form action="{{ route('teacher.' . ($sessionType === 'academic' ? 'academic' : 'interactive') . '-sessions.assign-homework', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
-              method="POST"
+        <form id="assignHomeworkForm"
+              data-url="{{ route('teacher.' . ($sessionType === 'academic' ? 'academic' : 'interactive') . '-sessions.assign-homework', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
               enctype="multipart/form-data"
               class="space-y-4">
             @csrf
@@ -51,12 +51,11 @@
         </form>
     @else
         <!-- Edit Assigned Homework Form -->
-        <form action="{{ route('teacher.' . ($sessionType === 'academic' ? 'academic' : 'interactive') . '-sessions.update-homework', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
-              method="POST"
+        <form id="updateHomeworkForm"
+              data-url="{{ route('teacher.' . ($sessionType === 'academic' ? 'academic' : 'interactive') . '-sessions.update-homework', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
               enctype="multipart/form-data"
               class="space-y-4 mb-4">
             @csrf
-            @method('PUT')
             <div>
                 <label for="homework_description_edit" class="block text-sm font-medium text-gray-700 mb-2">
                     وصف الواجب <span class="text-red-500">*</span>
@@ -126,10 +125,10 @@
                     </div>
                 </div>
 
-                @if($studentReport->homework_completion_degree === null)
+                @if($studentReport->homework_degree === null)
                     <!-- Grade Homework Form -->
-                    <form action="{{ route('teacher.academic-sessions.grade-homework', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id, 'reportId' => $studentReport->id]) }}"
-                          method="POST"
+                    <form id="gradeHomeworkForm"
+                          data-url="{{ route('teacher.academic-sessions.grade-homework', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id, 'reportId' => $studentReport->id]) }}"
                           class="space-y-4">
                         @csrf
                         <div>
@@ -148,12 +147,12 @@
                                 required>
                         </div>
                         <div>
-                            <label for="homework_feedback" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
                                 ملاحظات على الواجب (اختياري)
                             </label>
                             <textarea
-                                id="homework_feedback"
-                                name="homework_feedback"
+                                id="notes"
+                                name="notes"
                                 rows="3"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
                                 placeholder="ملاحظاتك على أداء الطالب..."></textarea>
@@ -174,12 +173,12 @@
                                 <h4 class="font-semibold text-purple-900 mb-2">التقييم:</h4>
                                 <div class="flex items-center gap-3 mb-2">
                                     <span class="text-2xl font-bold text-purple-600">
-                                        {{ $studentReport->homework_completion_degree }}/10
+                                        {{ $studentReport->homework_degree }}/10
                                     </span>
                                 </div>
-                                @if($studentReport->homework_feedback)
+                                @if($studentReport->notes)
                                     <p class="text-purple-800 text-sm">
-                                        {{ $studentReport->homework_feedback }}
+                                        {{ $studentReport->notes }}
                                     </p>
                                 @endif
                             </div>
@@ -204,3 +203,123 @@
         @endif
     @endif
 </div>
+
+<!-- Academic Homework AJAX Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Unified notification function (centered toast style)
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg text-white shadow-lg z-50 flex items-center gap-2 ${
+            type === 'success' ? 'bg-green-500' :
+            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`;
+        notification.innerHTML = `<i class="ri-${type === 'success' ? 'check' : type === 'error' ? 'close' : 'information'}-line"></i><span>${message}</span>`;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Generic form submission handler
+    function handleHomeworkFormSubmit(form, method = 'POST', successMessage = 'تم الحفظ بنجاح') {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const url = this.dataset.url;
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الحفظ...';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(successMessage, 'success');
+                    // Reload page after short delay to show updated content
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showNotification(data.message || 'حدث خطأ أثناء الحفظ', 'error');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('حدث خطأ أثناء الحفظ', 'error');
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            });
+        });
+    }
+
+    // Assign homework form
+    const assignForm = document.getElementById('assignHomeworkForm');
+    if (assignForm) {
+        handleHomeworkFormSubmit(assignForm, 'POST', 'تم تعيين الواجب بنجاح');
+    }
+
+    // Update homework form (uses PUT method)
+    const updateForm = document.getElementById('updateHomeworkForm');
+    if (updateForm) {
+        updateForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            formData.append('_method', 'PUT'); // Add method spoofing for Laravel
+            const url = this.dataset.url;
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الحفظ...';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('تم تحديث الواجب بنجاح', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showNotification(data.message || 'حدث خطأ أثناء الحفظ', 'error');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('حدث خطأ أثناء الحفظ', 'error');
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            });
+        });
+    }
+
+    // Grade homework form
+    const gradeForm = document.getElementById('gradeHomeworkForm');
+    if (gradeForm) {
+        handleHomeworkFormSubmit(gradeForm, 'POST', 'تم حفظ التقييم بنجاح');
+    }
+});
+</script>

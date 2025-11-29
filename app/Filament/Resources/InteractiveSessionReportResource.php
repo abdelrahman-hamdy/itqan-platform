@@ -62,34 +62,14 @@ class InteractiveSessionReportResource extends Resource
                             ->preload(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('الأداء والتفاعل')
+                Forms\Components\Section::make('الأداء')
                     ->schema([
-                        Forms\Components\TextInput::make('quiz_score')
-                            ->label('درجة الاختبار (0-100)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->step(0.01)
-                            ->suffix('%'),
-                        Forms\Components\TextInput::make('video_completion_percentage')
-                            ->label('نسبة إكمال الفيديو (0-100)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->step(0.01)
-                            ->suffix('%')
-                            ->default(0),
-                        Forms\Components\TextInput::make('exercises_completed')
-                            ->label('عدد التمارين المكتملة')
-                            ->numeric()
-                            ->minValue(0)
-                            ->default(0),
-                        Forms\Components\TextInput::make('engagement_score')
-                            ->label('درجة التفاعل (0-10)')
+                        Forms\Components\TextInput::make('homework_degree')
+                            ->label('درجة الواجب (0-10)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(10)
-                            ->step(0.1),
+                            ->step(0.5),
                     ])->columns(2),
 
                 Forms\Components\Section::make('تفاصيل الحضور')
@@ -174,37 +154,8 @@ class InteractiveSessionReportResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('quiz_score')
-                    ->label('درجة الاختبار')
-                    ->numeric()
-                    ->sortable()
-                    ->suffix('%')
-                    ->badge()
-                    ->color(fn (?string $state): string => match (true) {
-                        $state === null => 'gray',
-                        (float) $state >= 80 => 'success',
-                        (float) $state >= 60 => 'warning',
-                        default => 'danger',
-                    }),
-                Tables\Columns\TextColumn::make('video_completion_percentage')
-                    ->label('إكمال الفيديو')
-                    ->numeric()
-                    ->sortable()
-                    ->suffix('%')
-                    ->badge()
-                    ->color(fn (string $state): string => match (true) {
-                        (float) $state >= 100 => 'success',
-                        (float) $state >= 80 => 'info',
-                        (float) $state >= 50 => 'warning',
-                        default => 'danger',
-                    }),
-                Tables\Columns\TextColumn::make('exercises_completed')
-                    ->label('التمارين')
-                    ->numeric()
-                    ->sortable()
-                    ->badge(),
-                Tables\Columns\TextColumn::make('engagement_score')
-                    ->label('التفاعل')
+                Tables\Columns\TextColumn::make('homework_degree')
+                    ->label('درجة الواجب')
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -271,12 +222,9 @@ class InteractiveSessionReportResource extends Resource
                     ->relationship('academy', 'name')
                     ->searchable()
                     ->preload(),
-                Tables\Filters\Filter::make('quiz_completed')
-                    ->label('اكتمل الاختبار')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('quiz_score')),
-                Tables\Filters\Filter::make('video_completed')
-                    ->label('اكتمل الفيديو')
-                    ->query(fn (Builder $query): Builder => $query->where('video_completion_percentage', '>=', 100)),
+                Tables\Filters\Filter::make('has_homework_grade')
+                    ->label('تم تقييم الواجب')
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

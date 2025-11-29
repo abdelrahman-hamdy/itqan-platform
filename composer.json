@@ -19,6 +19,7 @@
         "laravel/reverb": "^1.0",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.0",
+        "mpdf/mpdf": "^8.2",
         "munafio/chatify": "^1.6",
         "namu/wirechat": "^0.2.11",
         "nesbot/carbon": "^3.10",
@@ -78,6 +79,10 @@
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
+        ],
+        "dev:full": [
+            "Composer\\Config::disableProcessTimeout",
+            "./dev-full.sh"
         ],
         "test": [
             "@php artisan config:clear --ansi",

@@ -8,10 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Interactive Session Report Model
  *
  * Extends BaseSessionReport with Interactive-specific fields:
- * - quiz_score: Score achieved on session quizzes (0-100)
- * - video_completion_percentage: Percentage of video content watched (0-100)
- * - exercises_completed: Number of practical exercises completed
- * - engagement_score: Overall engagement score (0-10)
+ * - homework_degree: Homework quality score (0-10)
+ * - notes: Teacher notes (inherited from base)
+ *
+ * Simplified to match Academic Session Reports structure.
  */
 class InteractiveSessionReport extends BaseSessionReport
 {
@@ -38,11 +38,8 @@ class InteractiveSessionReport extends BaseSessionReport
         'manually_evaluated',
         'override_reason',
 
-        // Interactive-specific fields
-        'quiz_score',
-        'video_completion_percentage',
-        'exercises_completed',
-        'engagement_score',
+        // Interactive-specific field (unified with Academic)
+        'homework_degree',
     ];
 
     /**
@@ -61,11 +58,8 @@ class InteractiveSessionReport extends BaseSessionReport
         'is_calculated' => 'boolean',
         'manually_evaluated' => 'boolean',
 
-        // Interactive-specific casts
-        'quiz_score' => 'decimal:2',
-        'video_completion_percentage' => 'decimal:2',
-        'exercises_completed' => 'integer',
-        'engagement_score' => 'decimal:1',
+        // Interactive-specific cast (0-10 scale, 1 decimal)
+        'homework_degree' => 'decimal:1',
     ];
 
     // ========================================
@@ -81,11 +75,12 @@ class InteractiveSessionReport extends BaseSessionReport
     }
 
     /**
-     * Get Interactive-specific performance data (engagement score)
+     * Get Interactive-specific performance data
+     * Returns homework_degree as the performance metric (0-10 scale)
      */
     protected function getSessionSpecificPerformanceData(): ?float
     {
-        return $this->engagement_score;
+        return $this->homework_degree;
     }
 
     /**
@@ -101,107 +96,50 @@ class InteractiveSessionReport extends BaseSessionReport
     // ========================================
 
     /**
-     * Record quiz score
+     * Record homework grade
      */
-    public function recordQuizScore(float $score): void
+    public function recordHomeworkGrade(float $grade, ?string $notes = null): void
     {
-        if ($score < 0 || $score > 100) {
-            throw new \InvalidArgumentException('Quiz score must be between 0 and 100');
+        if ($grade < 0 || $grade > 10) {
+            throw new \InvalidArgumentException('Homework grade must be between 0 and 10');
         }
 
-        $this->update(['quiz_score' => $score]);
-    }
-
-    /**
-     * Record video completion percentage
-     */
-    public function recordVideoCompletion(float $percentage): void
-    {
-        if ($percentage < 0 || $percentage > 100) {
-            throw new \InvalidArgumentException('Video completion must be between 0 and 100');
-        }
-
-        $this->update(['video_completion_percentage' => $percentage]);
-    }
-
-    /**
-     * Record exercises completed
-     */
-    public function recordExercisesCompleted(int $count): void
-    {
-        if ($count < 0) {
-            throw new \InvalidArgumentException('Exercises completed cannot be negative');
-        }
-
-        $this->update(['exercises_completed' => $count]);
-    }
-
-    /**
-     * Record engagement score
-     */
-    public function recordEngagementScore(float $score): void
-    {
-        if ($score < 0 || $score > 10) {
-            throw new \InvalidArgumentException('Engagement score must be between 0 and 10');
-        }
-
-        $this->update([
-            'engagement_score' => $score,
+        $data = [
+            'homework_degree' => $grade,
             'evaluated_at' => now(),
-        ]);
+            'manually_evaluated' => true,
+        ];
+
+        if ($notes !== null) {
+            $data['notes'] = $notes;
+        }
+
+        $this->update($data);
     }
 
     /**
-     * Calculate overall completion percentage (video + exercises + quiz)
+     * Record teacher evaluation (unified method)
      */
-    public function getOverallCompletionPercentageAttribute(): float
-    {
-        $videoWeight = 0.4;
-        $exercisesWeight = 0.3;
-        $quizWeight = 0.3;
+    public function recordTeacherEvaluation(
+        ?float $homeworkDegree = null,
+        ?string $notes = null
+    ): void {
+        $data = array_filter([
+            'homework_degree' => $homeworkDegree,
+            'notes' => $notes,
+            'evaluated_at' => now(),
+            'manually_evaluated' => true,
+        ], fn($value) => $value !== null);
 
-        $videoCompletion = $this->video_completion_percentage ?? 0;
-        $quizCompletion = $this->quiz_score ?? 0;
-
-        // Assume 100% if all exercises completed (you might want to adjust this based on total exercises)
-        $exercisesCompletion = min(100, ($this->exercises_completed ?? 0) * 20); // 5 exercises = 100%
-
-        return round(
-            ($videoCompletion * $videoWeight) +
-            ($exercisesCompletion * $exercisesWeight) +
-            ($quizCompletion * $quizWeight),
-            2
-        );
-    }
-
-    /**
-     * Check if session is fully completed
-     */
-    public function isFullyCompleted(): bool
-    {
-        return $this->video_completion_percentage >= 100 &&
-               $this->quiz_score !== null &&
-               $this->exercises_completed > 0;
+        $this->update($data);
     }
 
     // ========================================
     // Additional Scopes
     // ========================================
 
-    public function scopeWithQuizCompleted($query)
+    public function scopeGraded($query)
     {
-        return $query->whereNotNull('quiz_score');
-    }
-
-    public function scopeWithVideoCompleted($query)
-    {
-        return $query->where('video_completion_percentage', '>=', 100);
-    }
-
-    public function scopeFullyCompleted($query)
-    {
-        return $query->where('video_completion_percentage', '>=', 100)
-                     ->whereNotNull('quiz_score')
-                     ->where('exercises_completed', '>', 0);
+        return $query->whereNotNull('homework_degree');
     }
 }

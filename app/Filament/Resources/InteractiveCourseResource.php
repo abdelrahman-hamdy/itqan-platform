@@ -324,13 +324,18 @@ class InteractiveCourseResource extends BaseResource
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('حالة الدورة')
+                Forms\Components\Section::make('حالة الدورة والإعدادات')
                     ->schema([
                         Forms\Components\Toggle::make('is_published')
                             ->label('مفعل للنشر')
                             ->default(false)
                             ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟'),
-                    ]),
+
+                        Forms\Components\Toggle::make('recording_enabled')
+                            ->label('تسجيل جلسات الدورة')
+                            ->default(true)
+                            ->helperText('تفعيل تسجيل جميع جلسات هذه الدورة'),
+                    ])->columns(2),
             ]);
     }
 

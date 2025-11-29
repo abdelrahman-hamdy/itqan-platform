@@ -1,68 +1,115 @@
 <x-layouts.student
-    :title="'تقريري في الحلقة - ' . config('app.name', 'منصة إتقان')"
-    :description="'تقريري الشامل في حلقة القرآن'">
+    :title="'تقريري - ' . config('app.name', 'منصة إتقان')"
+    :description="'تقريري الشامل'">
+
+@php
+    // Determine report type: quran, academic, interactive
+    $reportType = $reportType ?? 'quran';
+    $isQuran = $reportType === 'quran';
+    $isAcademic = $reportType === 'academic';
+    $isInteractive = $reportType === 'interactive';
+@endphp
 
 <div>
     <!-- Breadcrumb -->
     <nav class="mb-8">
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">لوحة التحكم</a></li>
+            <li><a href="{{ route('student.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">لوحة التحكم</a></li>
             <li>/</li>
-            @if($circleType === 'individual')
-                <li><a href="{{ route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" class="hover:text-primary">حلقتي الفردية</a></li>
-            @else
-                <li><a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" class="hover:text-primary">{{ $circle->name }}</a></li>
+            @if($isQuran)
+                @if(($circleType ?? 'individual') === 'individual')
+                    <li><a href="{{ route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" class="hover:text-primary">حلقتي الفردية</a></li>
+                @else
+                    <li><a href="{{ route('student.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" class="hover:text-primary">{{ $circle->name }}</a></li>
+                @endif
+            @elseif($isAcademic)
+                <li><a href="{{ route('student.academic-subscriptions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'subscriptionId' => $subscription->id]) }}" class="hover:text-primary">اشتراكي الأكاديمي</a></li>
+            @elseif($isInteractive)
+                <li><a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $course->id]) }}" class="hover:text-primary">{{ $course->title }}</a></li>
             @endif
             <li>/</li>
             <li class="text-gray-900">تقريري</li>
         </ol>
     </nav>
 
-    <!-- Header with Subscription Info -->
+    <!-- Header with Info -->
     <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-8 mb-6 text-white">
         <div class="flex items-center justify-between">
             <div class="flex-1">
-                <h1 class="text-3xl font-bold">تقريري في الحلقة</h1>
+                <h1 class="text-3xl font-bold">
+                    @if($isQuran)
+                        تقريري في الحلقة
+                    @elseif($isAcademic)
+                        تقريري الأكاديمي
+                    @elseif($isInteractive)
+                        تقريري في الكورس
+                    @endif
+                </h1>
                 <p class="mt-2 text-blue-100">
-                    @if($circleType === 'individual')
-                        حلقة فردية
-                    @else
-                        الحلقة: {{ $circle->name }}
+                    @if($isQuran)
+                        @if(($circleType ?? 'individual') === 'individual')
+                            حلقة فردية
+                        @else
+                            {{ $circle->name }}
+                        @endif
+                    @elseif($isAcademic)
+                        {{ $subject->name ?? 'اشتراك أكاديمي' }}
+                    @elseif($isInteractive)
+                        {{ $course->title }}
                     @endif
                 </p>
 
-                <!-- Subscription Info -->
-                @if($circleType === 'individual' && isset($overall))
-                <div class="mt-4 flex gap-6 text-sm text-blue-100">
-                    <div class="flex items-center gap-2">
-                        <i class="ri-calendar-line"></i>
-                        <span>تاريخ البداية: {{ $overall['started_at'] ? $overall['started_at']->format('Y-m-d') : 'لم تبدأ' }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="ri-file-list-line"></i>
-                        <span>الجلسات المخططة: {{ $overall['total_sessions_planned'] ?? 0 }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="ri-time-line"></i>
-                        <span>الجلسات المتبقية: {{ $overall['sessions_remaining'] ?? 0 }}</span>
-                    </div>
+                <!-- Info based on type -->
+                <div class="mt-4 flex flex-wrap gap-6 text-sm text-blue-100">
+                    @if($isQuran && ($circleType ?? 'individual') === 'individual' && isset($overall))
+                        <div class="flex items-center gap-2">
+                            <i class="ri-calendar-line"></i>
+                            <span>تاريخ البداية: {{ $overall['started_at'] ? $overall['started_at']->format('Y-m-d') : 'لم تبدأ' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="ri-file-list-line"></i>
+                            <span>الجلسات المخططة: {{ $overall['total_sessions_planned'] ?? 0 }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="ri-time-line"></i>
+                            <span>الجلسات المتبقية: {{ $overall['sessions_remaining'] ?? 0 }}</span>
+                        </div>
+                    @elseif($isQuran && isset($enrollment))
+                        <div class="flex items-center gap-2">
+                            <i class="ri-calendar-line"></i>
+                            <span>تاريخ الانضمام: {{ $enrollment['enrolled_at'] ? $enrollment['enrolled_at']->format('Y-m-d') : '-' }}</span>
+                        </div>
+                    @elseif($isAcademic && isset($subscription))
+                        <div class="flex items-center gap-2">
+                            <i class="ri-calendar-line"></i>
+                            <span>تاريخ البداية: {{ $subscription->start_date?->format('Y-m-d') ?? 'لم تبدأ' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="ri-file-list-line"></i>
+                            <span>الجلسات المخططة: {{ $progress['total_sessions'] ?? 0 }}</span>
+                        </div>
+                    @elseif($isInteractive && isset($course))
+                        @if($course->start_date)
+                        <div class="flex items-center gap-2">
+                            <i class="ri-calendar-line"></i>
+                            <span>تاريخ البداية: {{ $course->start_date->format('Y-m-d') }}</span>
+                        </div>
+                        @endif
+                        <div class="flex items-center gap-2">
+                            <i class="ri-file-list-line"></i>
+                            <span>الجلسات المخططة: {{ $progress['total_sessions'] ?? 0 }}</span>
+                        </div>
+                    @endif
                 </div>
-                @elseif(isset($enrollment))
-                <div class="mt-4 flex gap-6 text-sm text-blue-100">
-                    <div class="flex items-center gap-2">
-                        <i class="ri-calendar-line"></i>
-                        <span>تاريخ الانضمام: {{ $enrollment['enrolled_at'] ? $enrollment['enrolled_at']->format('Y-m-d') : '-' }}</span>
-                    </div>
-                </div>
-                @endif
             </div>
             <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                <i class="ri-trophy-line text-5xl"></i>
+                <i class="ri-file-chart-line text-5xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Time Filter -->
+    <!-- Time Filter (Quran only) -->
+    @if($isQuran)
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <form method="GET" class="flex flex-wrap items-end gap-4">
             <div class="flex-1 min-w-[200px]">
@@ -105,31 +152,34 @@
                 customDateRange.style.display = 'flex';
             } else {
                 customDateRange.style.display = 'none';
-                // Clear date inputs when not using custom
                 startDateInput.value = '';
                 endDateInput.value = '';
             }
         });
     </script>
+    @endif
 
-    <!-- Performance Graph -->
+    <!-- Performance Graph (Quran only - has trend data) -->
+    @if($isQuran && isset($trends))
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
             <i class="ri-line-chart-line text-blue-600 ml-2"></i>
-            تطور الأداء
+            تطور أدائي
         </h2>
         <div class="h-80">
             <canvas id="performanceChart"></canvas>
         </div>
     </div>
+    @endif
 
     <!-- Overall Stats -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Stat 1: Attendance Rate (All types) -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-600">نسبة الحضور</p>
-                    <p class="text-3xl font-bold text-green-600 mt-1">{{ $attendance['attendance_rate'] }}%</p>
+                    <p class="text-sm text-gray-600">نسبة حضوري</p>
+                    <p class="text-3xl font-bold text-green-600 mt-1">{{ $attendance['attendance_rate'] ?? 0 }}%</p>
                 </div>
                 <div class="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center">
                     <i class="ri-user-star-line text-green-600 text-2xl"></i>
@@ -137,41 +187,81 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600">الصفحات المحفوظة</p>
-                    <p class="text-3xl font-bold text-purple-600 mt-1">{{ number_format($progress['pages_memorized'] ?? 0, 1) }}</p>
-                </div>
-                <div class="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-book-open-line text-purple-600 text-2xl"></i>
+        @if($isQuran)
+            <!-- Quran Stats -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">الصفحات المحفوظة</p>
+                        <p class="text-3xl font-bold text-purple-600 mt-1">{{ number_format($progress['pages_memorized'] ?? 0, 1) }}</p>
+                    </div>
+                    <div class="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="ri-book-open-line text-purple-600 text-2xl"></i>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600">الصفحات المُراجعة</p>
-                    <p class="text-3xl font-bold text-blue-600 mt-1">{{ $progress['pages_reviewed'] ?? 0 }}</p>
-                </div>
-                <div class="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-refresh-line text-blue-600 text-2xl"></i>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">الصفحات المُراجعة</p>
+                        <p class="text-3xl font-bold text-blue-600 mt-1">{{ $progress['pages_reviewed'] ?? 0 }}</p>
+                    </div>
+                    <div class="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="ri-refresh-line text-blue-600 text-2xl"></i>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600">التقييم العام</p>
-                    <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $progress['overall_assessment'] ?? 0 }}/10</p>
-                </div>
-                <div class="w-14 h-14 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <i class="ri-star-line text-yellow-600 text-2xl"></i>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">تقييمي العام</p>
+                        <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $progress['overall_assessment'] ?? 0 }}/10</p>
+                    </div>
+                    <div class="w-14 h-14 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <i class="ri-star-line text-yellow-600 text-2xl"></i>
+                    </div>
                 </div>
             </div>
-        </div>
+        @else
+            <!-- Academic/Interactive Stats -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">الجلسات المكتملة</p>
+                        <p class="text-3xl font-bold text-blue-600 mt-1">{{ $progress['sessions_completed'] ?? 0 }}</p>
+                    </div>
+                    <div class="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="ri-checkbox-circle-line text-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">متوسط أدائي</p>
+                        <p class="text-3xl font-bold text-purple-600 mt-1">{{ number_format($performance['average_overall_performance'] ?? 0, 1) }}/10</p>
+                    </div>
+                    <div class="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="ri-star-line text-purple-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">نسبة التقدم</p>
+                        <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $progress['completion_rate'] ?? 0 }}%</p>
+                    </div>
+                    <div class="w-14 h-14 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <i class="ri-pie-chart-line text-yellow-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 
     <!-- Attendance and Performance Cards Side by Side -->
@@ -181,13 +271,20 @@
             :attendance="$attendance"
             title="إحصائيات حضوري" />
 
-        <!-- Performance Card -->
-        <x-reports.performance-card
-            :performance="$progress"
-            title="أدائي الأكاديمي" />
+        <!-- Performance Card - Use appropriate component based on type -->
+        @if($isQuran)
+            <x-reports.performance-card
+                :performance="$progress"
+                title="أدائي في الحفظ" />
+        @else
+            <x-academic.performance-card
+                :performance="$performance"
+                title="أدائي الأكاديمي" />
+        @endif
     </div>
 </div>
 
+@if($isQuran && isset($trends))
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
@@ -277,5 +374,6 @@
         new Chart(ctx, config);
     });
 </script>
+@endif
 
 </x-layouts.student>

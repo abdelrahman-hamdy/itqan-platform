@@ -132,12 +132,40 @@
 
     <!-- Quick Actions Sidebar -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <x-circle.quick-actions
-        :circle="$course"
-        type="group"
-        view-type="teacher"
-        context="academic"
-      />
+      <h3 class="font-bold text-gray-900 mb-4">إجراءات سريعة</h3>
+      <div class="space-y-3">
+        <!-- View Course Report -->
+        <a href="{{ route('teacher.interactive-courses.report', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $course->id]) }}"
+           class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+            <i class="ri-file-chart-line ml-2"></i>
+            عرض التقرير التفصيلي
+        </a>
+
+        @php
+            // Get conversation with any enrolled student for messaging
+            $firstEnrollment = $course->enrollments->first();
+            $studentUser = $firstEnrollment?->student?->user;
+        @endphp
+        @if($studentUser)
+            @php
+                $conv = auth()->user()->getOrCreatePrivateConversation($studentUser);
+            @endphp
+            @if($conv)
+                <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
+                    <i class="ri-message-3-line ml-2"></i>
+                    مراسلة الطلاب
+                </a>
+            @endif
+        @endif
+
+        <!-- Course Settings -->
+        <button onclick="document.querySelector('[data-tab=settings]').click()"
+           class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+            <i class="ri-settings-line ml-2"></i>
+            إعدادات الكورس
+        </button>
+      </div>
     </div>
   </div>
 
@@ -181,6 +209,7 @@
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الطالب</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ التسجيل</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الشهادة</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
               </tr>
             </thead>
@@ -205,6 +234,28 @@
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                       مسجل
                     </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    @if($enrollment->certificate)
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
+                          <i class="ri-award-fill ml-1"></i>
+                          صدرت
+                        </span>
+                        <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $enrollment->certificate->id]) }}"
+                           target="_blank"
+                           class="text-blue-600 hover:text-blue-800 text-xs">
+                          <i class="ri-eye-line"></i>
+                        </a>
+                      </div>
+                    @else
+                      <button type="button"
+                              onclick="Livewire.dispatch('openModal', { subscriptionType: 'interactive', subscriptionId: {{ $enrollment->id }}, circleId: null })"
+                              class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
+                        <i class="ri-award-line ml-1"></i>
+                        إصدار شهادة
+                      </button>
+                    @endif
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button class="text-primary hover:text-primary-dark">عرض الملف</button>
@@ -318,6 +369,9 @@
       </form>
     </div>
   </div>
+
+  <!-- Certificate Modal -->
+  @livewire('issue-certificate-modal')
 
   <!-- Tab Switching Script -->
   <script>

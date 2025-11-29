@@ -255,7 +255,7 @@ class AcademicAttendanceService
 
             // For active users, ensure we show real-time data
             if ($meetingAttendance && $meetingAttendance->isCurrentlyInMeeting()) {
-                $attendanceStatus = AttendanceStatus::PRESENT->value; // Override to show current activity
+                $attendanceStatus = AttendanceStatus::ATTENDED->value; // Override to show current activity
             }
 
             $result = [
@@ -413,9 +413,9 @@ class AcademicAttendanceService
 
         // Determine status
         if ($attendancePercentage >= $requiredPercentage) {
-            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::PRESENT->value;
+            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
         } elseif ($attendancePercentage > 0) {
-            return AttendanceStatus::PARTIAL->value;
+            return AttendanceStatus::LEAVED->value;
         } else {
             return AttendanceStatus::ABSENT->value;
         }
@@ -488,9 +488,9 @@ class AcademicAttendanceService
 
         $stats = [
             'total_students' => $reports->count(),
-            'present' => $reports->where('attendance_status', AttendanceStatus::PRESENT->value)->count(),
+            'present' => $reports->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
             'late' => $reports->where('attendance_status', AttendanceStatus::LATE->value)->count(),
-            'partial' => $reports->where('attendance_status', AttendanceStatus::PARTIAL->value)->count(),
+            'partial' => $reports->where('attendance_status', AttendanceStatus::LEAVED->value)->count(),
             'absent' => $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
             'average_attendance_percentage' => 0,
             'average_academic_performance' => 0,

@@ -359,29 +359,88 @@
             <!-- Quick Actions -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                 <h3 class="text-lg font-bold text-gray-900 mb-4">إجراءات سريعة</h3>
-                
+
                 <div class="space-y-3">
-                    <a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
+                    <a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}"
                        class="block w-full text-center px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-colors shadow-lg">
                         <i class="ri-group-line ml-2"></i>
                         عرض الحلقة
                     </a>
-                    
-                    <a href="{{ route('teacher.group-circles.progress', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
+
+                    <a href="{{ route('teacher.group-circles.progress', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}"
                        class="block w-full text-center px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-medium rounded-xl hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg">
                         <i class="ri-bar-chart-line ml-2"></i>
                         تقرير الحلقة الكامل
                     </a>
-                    
+
                     <button class="w-full px-5 py-3 border-2 border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors">
                         <i class="ri-download-line ml-2"></i>
                         تصدير التقرير
                     </button>
                 </div>
             </div>
+
+            <!-- Certificate Section -->
+            @php
+                $studentSubscription = $student->quranSubscriptions()
+                    ->where('quran_circle_id', $circle->id)
+                    ->orWhere(function($q) use ($circle) {
+                        $q->whereHas('individualCircle', function($iq) use ($circle) {
+                            $iq->where('quran_circle_id', $circle->id);
+                        });
+                    })
+                    ->first();
+            @endphp
+
+            @if($studentSubscription)
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="ri-award-line text-amber-500"></i>
+                    الشهادات
+                </h3>
+
+                @if($studentSubscription->certificate_issued && $studentSubscription->certificate)
+                    <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border-2 border-amber-200 mb-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                                <i class="ri-award-fill text-xl text-amber-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-amber-800">تم إصدار الشهادة</p>
+                                <p class="text-xs text-amber-600">{{ $studentSubscription->certificate->certificate_number }}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $studentSubscription->certificate->id]) }}"
+                               target="_blank"
+                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors">
+                                <i class="ri-eye-line ml-2"></i>
+                                عرض الشهادة
+                            </a>
+                            <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $studentSubscription->certificate->id]) }}"
+                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors">
+                                <i class="ri-download-line ml-2"></i>
+                                تحميل PDF
+                            </a>
+                        </div>
+                    </div>
+                @else
+                    <p class="text-sm text-gray-600 mb-4">يمكنك إصدار شهادة للطالب عند إتمام البرنامج أو تحقيق إنجاز معين</p>
+                    <button type="button"
+                            onclick="Livewire.dispatch('openModal', { subscriptionType: 'quran', subscriptionId: {{ $studentSubscription->id }}, circleId: null })"
+                            class="w-full inline-flex items-center justify-center px-5 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
+                        <i class="ri-award-line ml-2 text-lg"></i>
+                        إصدار شهادة
+                    </button>
+                @endif
+            </div>
+            @endif
         </div>
     </div>
 </div>
+
+<!-- Certificate Modal -->
+@livewire('issue-certificate-modal')
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

@@ -2,131 +2,102 @@
 
 @section('styles')
 <style>
-    body {
-        background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+    .outer-border {
+        border-color: #3b82f6;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
     }
 
-    .certificate-container {
-        background: white;
-        border: 3px solid #3b82f6;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1);
-        margin: 20px;
+    .inner-border {
+        border-color: rgba(59, 130, 246, 0.4);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.95);
     }
 
     .certificate-title {
-        color: #3b82f6;
-        text-transform: uppercase;
-        background: linear-gradient(90deg, #3b82f6, #10b981);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: #1e40af;
     }
 
     .recipient-name {
         color: #1e3a8a;
-        border-bottom: 3px solid #3b82f6;
+        border-bottom-color: #3b82f6;
     }
 
-    .modern-decoration {
-        position: absolute;
-        opacity: 0.05;
+    .signature-line {
+        border-top-color: #3b82f6;
     }
 
-    .decoration-top-left {
-        top: 0;
-        left: 0;
-        width: 200px;
-        height: 200px;
-        border-top: 40px solid #3b82f6;
-        border-left: 40px solid #3b82f6;
-        border-top-left-radius: 20px;
-    }
-
-    .decoration-bottom-right {
-        bottom: 0;
-        right: 0;
-        width: 200px;
-        height: 200px;
-        border-bottom: 40px solid #10b981;
-        border-right: 40px solid #10b981;
-        border-bottom-right-radius: 20px;
-    }
-
-    .modern-icon {
-        display: inline-block;
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #3b82f6, #10b981);
-        border-radius: 50%;
-        margin-bottom: 20px;
-        position: relative;
-    }
-
-    .modern-icon::after {
-        content: "✓";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: white;
-        font-size: 32px;
-        font-weight: bold;
+    /* Decorative star */
+    .award-star {
+        font-size: 48pt;
+        color: #f59e0b;
+        margin-bottom: 10px;
     }
 </style>
 @endsection
 
 @section('content')
 <div class="certificate-container">
-    <div class="modern-decoration decoration-top-left"></div>
-    <div class="modern-decoration decoration-bottom-right"></div>
+    <div class="outer-border">
+        <div class="inner-border">
+            <!-- Header with Logo -->
+            <div class="header-section">
+                @if($academy_logo)
+                    <img src="{{ $academy_logo }}" alt="{{ $academy_name }}" class="academy-logo">
+                @endif
+                <div class="academy-name">{{ $academy_name }}</div>
+            </div>
 
-    <div class="certificate-header">
-        @if($academy_logo)
-            <img src="{{ $academy_logo }}" alt="{{ $academy_name }}" class="academy-logo">
-        @endif
-        <div class="academy-name">{{ $academy_name }}</div>
-        <div class="modern-icon"></div>
-    </div>
+            <!-- Award Icon -->
+            <div class="award-star">★</div>
 
-    <h1 class="certificate-title">شهادة إتمام</h1>
+            <!-- Certificate Title -->
+            <h1 class="certificate-title">شهادة تقدير</h1>
 
-    <div class="certificate-body">
-        <div class="recipient-section">
-            <div class="recipient-label">هذا يشهد بأن</div>
+            <!-- Decorative Line -->
+            <div style="width: 180px; height: 3px; background: linear-gradient(90deg, #3b82f6, #10b981); margin: 0 auto 25px;"></div>
+
+            <!-- Recipient Section -->
+            <div class="recipient-label">تُمنح هذه الشهادة إلى</div>
             <div class="recipient-name">{{ $student_name }}</div>
-        </div>
 
-        <div class="certificate-text">
-            {!! nl2br(e($certificate_text)) !!}
-        </div>
-    </div>
+            <!-- Certificate Text -->
+            <div class="certificate-text">
+                {!! nl2br(e($certificate_text)) !!}
+            </div>
 
-    <div class="certificate-footer">
-        <div class="signature-section">
-            <div class="signature-line"></div>
-            <div class="signature-name">{{ $signature_name }}</div>
-            <div class="signature-title">{{ $signature_title }}</div>
-        </div>
+            <!-- Signatures -->
+            <table class="signatures-table">
+                <tr>
+                    <td class="signature-cell">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">{{ $signature_name }}</div>
+                        <div class="signature-title">{{ $signature_title }}</div>
+                    </td>
 
-        @if($teacher_name)
-        <div class="signature-section">
-            <div class="signature-line"></div>
-            <div class="signature-name">{{ $teacher_name }}</div>
-            <div class="signature-title">المعلم</div>
-        </div>
-        @endif
+                    @if($teacher_name)
+                    <td class="signature-cell">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">{{ $teacher_name }}</div>
+                        <div class="signature-title">المعلم</div>
+                    </td>
+                    @endif
 
-        <div class="signature-section">
-            <div class="signature-line"></div>
-            <div style="font-size: 14px; margin-top: 5px;">{{ $issued_date_formatted }}</div>
-            <div class="signature-title">تاريخ الإصدار</div>
-        </div>
-    </div>
+                    <td class="signature-cell">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">{{ $issued_date_formatted }}</div>
+                        <div class="signature-title">تاريخ الإصدار</div>
+                    </td>
+                </tr>
+            </table>
 
-    <div class="certificate-meta">
-        <div class="certificate-number">Certificate No: {{ $certificate_number }}</div>
-        <div>{{ $academy_name }}</div>
+            <!-- Meta Information -->
+            <div class="meta-section">
+                <span>{{ $academy_name }}</span>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                <span class="certificate-number">{{ $certificate_number }}</span>
+            </div>
+        </div>
     </div>
 </div>
 @endsection

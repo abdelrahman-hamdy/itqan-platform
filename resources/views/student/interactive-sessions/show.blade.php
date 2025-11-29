@@ -35,8 +35,8 @@
                 $now = now();
                 $scheduledDateTime = $session->scheduled_at;
                 $tenMinutesBefore = $scheduledDateTime->copy()->subMinutes(10);
-                $canJoin = $session->status === 'ongoing' ||
-                           ($session->status === 'scheduled' && $now->gte($tenMinutesBefore) && $now->lte($scheduledDateTime->copy()->addMinutes($session->duration_minutes)));
+                $canJoin = $session->status === \App\Enums\SessionStatus::ONGOING ||
+                           ($session->status === \App\Enums\SessionStatus::SCHEDULED && $now->gte($tenMinutesBefore) && $now->lte($scheduledDateTime->copy()->addMinutes($session->duration_minutes)));
             @endphp
 
             @if($canJoin && $session->meeting)
@@ -53,7 +53,7 @@
                         participantType="student"
                     />
                 </div>
-            @elseif($session->status === 'scheduled')
+            @elseif($session->status === \App\Enums\SessionStatus::SCHEDULED)
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
                     <div class="flex items-start">
                         <i class="ri-time-line text-blue-600 text-3xl mr-4"></i>
@@ -77,14 +77,15 @@
             @endif
 
             {{-- Session Content --}}
-            @if($session->description)
+            @if($session->lesson_content)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
                         <i class="ri-file-text-line text-primary-600 mr-2"></i>
-                        Session Content
+                        محتوى الجلسة
                     </h2>
-                    <div class="prose max-w-none text-gray-700 leading-relaxed">
-                        {!! nl2br(e($session->description)) !!}
+
+                    <div class="prose max-w-none text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4">
+                        {!! nl2br(e($session->lesson_content)) !!}
                     </div>
                 </div>
             @endif
@@ -109,7 +110,7 @@
             @endif
 
             {{-- Student Feedback Form (after session completion) --}}
-            @if($session->status === 'completed')
+            @if($session->status === \App\Enums\SessionStatus::COMPLETED)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
                         <i class="ri-feedback-line text-green-600 mr-2"></i>
@@ -169,4 +170,20 @@
             />
         </div>
     </div>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-scroll to meeting section when session is about to start (within 5 minutes)
+    @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 5 && $session->scheduled_at->diffInMinutes(now()) >= -5)
+        setTimeout(() => {
+            const meetingContainer = document.getElementById('meetingContainer');
+            if (meetingContainer) {
+                meetingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 1000);
+    @endif
+    // Note: "Session starting soon" notification is centralized in livekit-interface component
+});
+</script>
+@endpush
 </x-layouts.student-layout>

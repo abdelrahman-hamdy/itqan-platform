@@ -41,7 +41,7 @@ class ListStudentSessionReports extends ListRecords
                     $subQuery->where('session_type', 'group');
                 })),
             'present' => Tab::make('الحاضرون')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('attendance_status', 'present')),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('attendance_status', 'attended')),
             'absent' => Tab::make('الغائبون')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('attendance_status', 'absent')),
             'manual' => Tab::make('مقيم يدوياً')

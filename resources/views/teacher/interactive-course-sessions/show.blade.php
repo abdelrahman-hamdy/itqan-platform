@@ -26,50 +26,40 @@
             />
         </div>
 
-        <!-- Session Content & Evaluation (for teachers) -->
-        <!-- Always show management sections for teachers regardless of session status -->
+        <!-- Session Content Management -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">
+                <i class="ri-file-text-line text-primary ml-2"></i>
+                محتوى الجلسة
+            </h3>
 
-            <!-- Session Content Management -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">
-                    <i class="ri-file-text-line text-primary ml-2"></i>
-                    محتوى وتقييم الجلسة
-                </h3>
+            <form id="sessionContentForm" class="space-y-4">
+                @csrf
+                <div>
+                    <label for="lesson_content" class="block text-sm font-medium text-gray-700 mb-2">
+                        محتوى الدرس
+                    </label>
+                    <textarea
+                        id="lesson_content"
+                        name="lesson_content"
+                        rows="4"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
+                        placeholder="ما هي المواضيع التي تم تغطيتها في هذه الجلسة؟">{{ $session->lesson_content ?? '' }}</textarea>
+                </div>
 
-                <form id="sessionContentForm" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="learning_outcomes" class="block text-sm font-medium text-gray-700 mb-2">
-                            نواتج التعلم
-                        </label>
-                        <textarea
-                            id="learning_outcomes"
-                            name="learning_outcomes"
-                            rows="3"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-                            placeholder="ما هي نواتج التعلم التي تم تحقيقها؟">{{ $session->learning_outcomes ?? '' }}</textarea>
-                    </div>
+                <p class="text-sm text-gray-500">
+                    <i class="ri-information-line ml-1"></i>
+                    لإضافة ملاحظات على أداء الطلاب، استخدم تقارير الجلسة المنفصلة
+                </p>
 
-                    <div>
-                        <label for="teacher_notes" class="block text-sm font-medium text-gray-700 mb-2">
-                            ملاحظات على الجلسة
-                        </label>
-                        <textarea
-                            id="teacher_notes"
-                            name="teacher_notes"
-                            rows="3"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-                            placeholder="ملاحظاتك على سير الجلسة...">{{ $session->teacher_notes ?? '' }}</textarea>
-                    </div>
-
-                    <button
-                        type="submit"
-                        class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
-                        <i class="ri-save-line ml-2"></i>
-                        حفظ المحتوى
-                    </button>
-                </form>
-            </div>
+                <button
+                    type="submit"
+                    class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
+                    <i class="ri-save-line ml-2"></i>
+                    حفظ محتوى الدرس
+                </button>
+            </form>
+        </div>
 
             <!-- Homework Management Component -->
             <x-sessions.academic-homework-management
@@ -114,7 +104,22 @@
 </div>
 
 <!-- Report Edit Modal -->
-<x-modals.student-report-edit session-type="academic" />
+<x-modals.student-report-edit session-type="interactive" />
+
+<!-- Pre-rendered avatars for modal (using unified x-avatar component) -->
+<div id="prerendered_avatars_container" class="hidden">
+    @php
+        $enrolledStudentsForAvatars = $session->course->enrolledStudents;
+    @endphp
+    @foreach($enrolledStudentsForAvatars as $studentData)
+        @php
+            $studentUser = $studentData->student?->user ?? $studentData->student ?? $studentData;
+        @endphp
+        <div id="prerendered_avatar_{{ $studentUser->id }}" class="hidden">
+            <x-avatar :user="$studentUser" size="sm" user-type="student" />
+        </div>
+    @endforeach
+</div>
 
 <!-- Scripts -->
 <x-slot name="scripts">
@@ -136,27 +141,23 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success message
-            const successMsg = document.createElement('div');
-            successMsg.className = 'bg-green-50 border border-green-200 rounded-lg p-4 mt-4';
-            successMsg.innerHTML = `
-                <div class="flex items-center gap-2 text-green-800">
-                    <i class="ri-check-line text-green-600"></i>
-                    <span>تم حفظ المحتوى بنجاح</span>
-                </div>
-            `;
-            this.appendChild(successMsg);
+            // Show success notification (toast style)
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
+            notification.innerHTML = '<i class="ri-check-line"></i><span>تم حفظ محتوى الدرس بنجاح</span>';
+            document.body.appendChild(notification);
 
-            setTimeout(() => successMsg.remove(), 3000);
+            setTimeout(() => notification.remove(), 3000);
         } else {
-            alert(data.message || 'حدث خطأ أثناء حفظ المحتوى');
+            alert(data.message || 'حدث خطأ أثناء الحفظ');
         }
 
         // Restore button state
@@ -165,7 +166,7 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('حدث خطأ أثناء حفظ المحتوى');
+        alert('حدث خطأ أثناء حفظ محتوى الدرس');
 
         // Restore button state
         submitButton.disabled = false;
@@ -194,7 +195,8 @@ function getReportData(studentId) {
                 manually_evaluated: {{ $report->manually_evaluated ? 'true' : 'false' }},
                 attendance_percentage: {{ $report->attendance_percentage ?? 'null' }},
                 actual_attendance_minutes: {{ $report->actual_attendance_minutes ?? 'null' }},
-                homework_completion_degree: {{ $report->homework_completion_degree ?? 'null' }},
+                // Simplified to homework_degree only (unified with Academic)
+                homework_degree: {{ $report->homework_degree ?? 'null' }},
                 notes: `{{ addslashes($report->notes ?? '') }}`
             }
             @else
@@ -206,32 +208,43 @@ function getReportData(studentId) {
     return reports[studentId] || null;
 }
 
-// Get student name by ID
-function getStudentName(studentId) {
-    const students = {
-        @foreach($enrolledStudents as $studentData)
-            @php
-                // Access the actual User through student->user relationship
-                $student = $studentData->student?->user ?? $studentData->student ?? $studentData;
-            @endphp
-            {{ $student->id }}: '{{ $student->name ?? "طالب" }}',
-        @endforeach
-    };
+// Get student info by ID (includes name, avatar, email)
+const studentsInfo = {
+    @foreach($enrolledStudents as $studentData)
+        @php
+            // Access the actual User through student->user relationship
+            $student = $studentData->student?->user ?? $studentData->student ?? $studentData;
+        @endphp
+        {{ $student->id }}: {
+            name: '{{ $student->name ?? "طالب" }}',
+            avatar: '{{ $student->avatar ?? "" }}',
+            email: '{{ $student->email ?? "" }}',
+            gender: '{{ $student->gender ?? "male" }}'
+        },
+    @endforeach
+};
 
-    return students[studentId] || 'الطالب';
+function getStudentName(studentId) {
+    return studentsInfo[studentId]?.name || 'الطالب';
+}
+
+function getStudentData(studentId) {
+    return studentsInfo[studentId] || null;
 }
 
 // Edit Student Report Function - UPDATED TO USE MODAL
 function editStudentReport(studentId, reportId) {
     const reportData = getReportData(studentId);
     const studentName = getStudentName(studentId);
+    const studentData = getStudentData(studentId);
 
     openReportModal(
         {{ $session->id }},
         studentId,
         studentName,
         reportData,
-        'academic'
+        'interactive',
+        studentData
     );
 }
 

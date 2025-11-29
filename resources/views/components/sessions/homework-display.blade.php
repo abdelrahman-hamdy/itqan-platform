@@ -29,7 +29,7 @@
             <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4 border border-purple-200">
                 <div class="flex items-center justify-between mb-3">
                     <h4 class="font-semibold text-purple-900">واجب أكاديمي</h4>
-                    @if($session->status === 'completed' && $session->session_grade)
+                    @if($session->status === \App\Enums\SessionStatus::COMPLETED && $session->session_grade)
                         <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800">
                             التقييم: {{ $session->session_grade }}/10
                         </span>
@@ -101,11 +101,11 @@
                             </a>
                         @endif
                         
-                        @if($submittedHomework->homework_completion_degree !== null)
+                        @if($submittedHomework->homework_degree !== null)
                             <div class="mt-3 pt-3 border-t border-green-200">
                                 <div class="text-sm text-green-800">
                                     <span class="font-medium">الدرجة:</span>
-                                    <span class="text-lg font-bold">{{ $submittedHomework->homework_completion_degree }}/10</span>
+                                    <span class="text-lg font-bold">{{ $submittedHomework->homework_degree }}/10</span>
                                 </div>
                             </div>
                         @endif

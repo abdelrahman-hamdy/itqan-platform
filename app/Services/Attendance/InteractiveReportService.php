@@ -68,9 +68,9 @@ class InteractiveReportService extends BaseReportSyncService
 
         // Determine status based on attendance percentage
         if ($attendancePercentage >= $requiredPercentage) {
-            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::PRESENT->value;
+            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
         } elseif ($attendancePercentage > 0) {
-            return AttendanceStatus::PARTIAL->value;
+            return AttendanceStatus::LEAVED->value;
         } else {
             return AttendanceStatus::ABSENT->value;
         }
@@ -81,7 +81,7 @@ class InteractiveReportService extends BaseReportSyncService
      */
     protected function getPerformanceFieldName(): string
     {
-        return 'engagement_score'; // Interactive performance metric (0-10)
+        return 'homework_degree'; // Interactive performance metric (0-10)
     }
 
     // ========================================
@@ -89,67 +89,22 @@ class InteractiveReportService extends BaseReportSyncService
     // ========================================
 
     /**
-     * Record quiz score for interactive session
+     * Record homework grade for interactive session
      */
-    public function recordQuizScore(
+    public function recordHomeworkGrade(
         InteractiveSessionReport $report,
-        float $score
+        float $grade,
+        ?string $notes = null
     ): InteractiveSessionReport {
-        if ($score < 0 || $score > 100) {
-            throw new \InvalidArgumentException('Quiz score must be between 0 and 100');
-        }
-
-        $report->update(['quiz_score' => $score]);
-
-        return $report->fresh();
-    }
-
-    /**
-     * Record video completion percentage
-     */
-    public function recordVideoCompletion(
-        InteractiveSessionReport $report,
-        float $percentage
-    ): InteractiveSessionReport {
-        if ($percentage < 0 || $percentage > 100) {
-            throw new \InvalidArgumentException('Video completion must be between 0 and 100');
-        }
-
-        $report->update(['video_completion_percentage' => $percentage]);
-
-        return $report->fresh();
-    }
-
-    /**
-     * Record exercises completed
-     */
-    public function recordExercisesCompleted(
-        InteractiveSessionReport $report,
-        int $count
-    ): InteractiveSessionReport {
-        if ($count < 0) {
-            throw new \InvalidArgumentException('Exercises completed cannot be negative');
-        }
-
-        $report->update(['exercises_completed' => $count]);
-
-        return $report->fresh();
-    }
-
-    /**
-     * Record engagement score
-     */
-    public function recordEngagementScore(
-        InteractiveSessionReport $report,
-        float $score
-    ): InteractiveSessionReport {
-        if ($score < 0 || $score > 10) {
-            throw new \InvalidArgumentException('Engagement score must be between 0 and 10');
+        if ($grade < 0 || $grade > 10) {
+            throw new \InvalidArgumentException('Homework grade must be between 0 and 10');
         }
 
         $report->update([
-            'engagement_score' => $score,
+            'homework_degree' => $grade,
+            'notes' => $notes,
             'evaluated_at' => now(),
+            'manually_evaluated' => true,
         ]);
 
         return $report->fresh();
@@ -165,5 +120,252 @@ class InteractiveReportService extends BaseReportSyncService
         }
 
         return collect();
+    }
+
+    /**
+     * Create reports for all students enrolled in an interactive course session
+     *
+     * @param InteractiveCourseSession $session
+     * @return \Illuminate\Support\Collection Collection of created reports
+     */
+    public function createReportsForSession(InteractiveCourseSession $session): \Illuminate\Support\Collection
+    {
+        $students = $this->getSessionStudents($session);
+        $reports = collect();
+
+        foreach ($students as $student) {
+            // Check if report already exists
+            $existingReport = InteractiveSessionReport::where('session_id', $session->id)
+                ->where('student_id', $student->id)
+                ->first();
+
+            if ($existingReport) {
+                $reports->push($existingReport);
+                continue;
+            }
+
+            // Create new report
+            $report = InteractiveSessionReport::create([
+                'session_id' => $session->id,
+                'student_id' => $student->id,
+                'teacher_id' => $this->getSessionTeacher($session)?->id,
+                'academy_id' => $session->course?->academy_id,
+                'attendance_status' => AttendanceStatus::ABSENT->value,
+                'is_calculated' => false,
+                'manually_evaluated' => false,
+            ]);
+
+            $reports->push($report);
+        }
+
+        return $reports;
+    }
+
+    // ========================================
+    // Course Report Calculation Methods
+    // ========================================
+
+    /**
+     * Calculate performance metrics for an interactive course
+     */
+    public function calculatePerformance(\App\Models\InteractiveCourse $course, ?int $studentId = null): array
+    {
+        $sessions = $course->sessions()->with('studentReports')->get();
+
+        // Filter reports by student if specified
+        $reports = $sessions->flatMap(function ($session) use ($studentId) {
+            $studentReports = $session->studentReports;
+            if ($studentId) {
+                $studentReports = $studentReports->where('student_id', $studentId);
+            }
+            return $studentReports;
+        });
+
+        $totalReports = $reports->count();
+
+        if ($totalReports === 0) {
+            return [
+                'average_overall_performance' => 0,
+                'average_homework_degree' => 0,
+                'total_evaluated' => 0,
+            ];
+        }
+
+        // Calculate averages
+        $homeworkSum = $reports->sum('homework_degree');
+        $homeworkCount = $reports->whereNotNull('homework_degree')->count();
+        $avgHomework = $homeworkCount > 0 ? $homeworkSum / $homeworkCount : 0;
+
+        return [
+            'average_overall_performance' => round($avgHomework, 1),
+            'average_homework_degree' => round($avgHomework, 1),
+            'total_evaluated' => $homeworkCount,
+        ];
+    }
+
+    /**
+     * Calculate attendance metrics for an interactive course
+     */
+    public function calculateAttendance(\App\Models\InteractiveCourse $course, ?int $studentId = null): array
+    {
+        $sessions = $course->sessions()->with('studentReports')->get();
+        $completedSessions = $sessions->filter(function ($session) {
+            return $session->status?->value === 'completed' || $session->status === 'completed';
+        });
+
+        $totalCompleted = $completedSessions->count();
+
+        if ($totalCompleted === 0) {
+            return [
+                'attendance_rate' => 0,
+                'attended' => 0,
+                'absent' => 0,
+                'late' => 0,
+                'total_sessions' => $totalCompleted,
+            ];
+        }
+
+        $attended = 0;
+        $absent = 0;
+        $late = 0;
+
+        foreach ($completedSessions as $session) {
+            $reports = $session->studentReports;
+            if ($studentId) {
+                $reports = $reports->where('student_id', $studentId);
+            }
+
+            foreach ($reports->unique('student_id') as $report) {
+                $status = $report->attendance_status;
+                if (is_object($status)) {
+                    $status = $status->value;
+                }
+
+                if (in_array($status, ['attended', 'leaved'])) {
+                    $attended++;
+                } elseif ($status === 'late') {
+                    $late++;
+                    $attended++; // Late counts as attended
+                } else {
+                    $absent++;
+                }
+            }
+        }
+
+        // For course-wide stats (no specific student), calculate per-session averages
+        $totalStudents = $course->enrollments->count() ?: 1;
+        if (!$studentId) {
+            $attendanceRate = $totalCompleted > 0 && $totalStudents > 0
+                ? round(($attended / ($totalCompleted * $totalStudents)) * 100)
+                : 0;
+        } else {
+            $attendanceRate = $totalCompleted > 0 ? round(($attended / $totalCompleted) * 100) : 0;
+        }
+
+        return [
+            'attendance_rate' => min(100, $attendanceRate),
+            'attended' => $attended,
+            'absent' => $absent,
+            'late' => $late,
+            'total_sessions' => $totalCompleted,
+        ];
+    }
+
+    /**
+     * Calculate progress metrics for an interactive course
+     */
+    public function calculateProgress(\App\Models\InteractiveCourse $course): array
+    {
+        $sessions = $course->sessions()->with('studentReports')->get();
+        $totalSessions = $sessions->count();
+
+        $completedSessions = $sessions->filter(function ($session) {
+            return $session->status?->value === 'completed' || $session->status === 'completed';
+        })->count();
+
+        // Calculate homework metrics
+        $homeworkAssigned = $sessions->filter(function ($session) {
+            return !empty($session->homework_description);
+        })->count();
+
+        $homeworkSubmitted = $sessions->flatMap(function ($session) {
+            return $session->studentReports->whereNotNull('homework_submitted_at');
+        })->count();
+
+        $homeworkCompletionRate = $homeworkAssigned > 0
+            ? round(($homeworkSubmitted / $homeworkAssigned) * 100)
+            : 0;
+
+        // Calculate average grade improvement (first half vs second half)
+        $gradeImprovement = 0;
+        if ($completedSessions >= 4) {
+            $orderedSessions = $sessions->sortBy('scheduled_at')->values();
+            $halfPoint = (int) floor($orderedSessions->count() / 2);
+
+            $firstHalf = $orderedSessions->take($halfPoint);
+            $secondHalf = $orderedSessions->skip($halfPoint);
+
+            $firstHalfScores = $firstHalf->flatMap(function ($s) {
+                return $s->studentReports->whereNotNull('homework_degree')->pluck('homework_degree');
+            });
+
+            $secondHalfScores = $secondHalf->flatMap(function ($s) {
+                return $s->studentReports->whereNotNull('homework_degree')->pluck('homework_degree');
+            });
+
+            if ($firstHalfScores->count() > 0 && $secondHalfScores->count() > 0) {
+                $firstAvg = $firstHalfScores->avg();
+                $secondAvg = $secondHalfScores->avg();
+                $gradeImprovement = round($secondAvg - $firstAvg, 1);
+            }
+        }
+
+        return [
+            'sessions_completed' => $completedSessions,
+            'total_sessions' => $totalSessions,
+            'completion_rate' => $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0,
+            'grade_improvement' => $gradeImprovement,
+            'enrolled_students' => $course->enrollments->count(),
+            'homework_assigned' => $homeworkAssigned,
+            'homework_submitted' => $homeworkSubmitted,
+            'homework_completion_rate' => $homeworkCompletionRate,
+        ];
+    }
+
+    /**
+     * Record complete interactive evaluation for a report
+     */
+    public function recordFullEvaluation(
+        InteractiveSessionReport $report,
+        array $data
+    ): InteractiveSessionReport {
+        $updateData = [];
+
+        // Attendance status
+        if (isset($data['attendance_status'])) {
+            $updateData['attendance_status'] = $data['attendance_status'];
+            $updateData['manually_evaluated'] = true;
+        }
+
+        // Homework degree (0-10)
+        if (isset($data['homework_degree'])) {
+            $grade = (float) $data['homework_degree'];
+            if ($grade < 0 || $grade > 10) {
+                throw new \InvalidArgumentException('Homework degree must be between 0 and 10');
+            }
+            $updateData['homework_degree'] = $grade;
+        }
+
+        // Notes
+        if (isset($data['notes'])) {
+            $updateData['notes'] = $data['notes'];
+        }
+
+        if (!empty($updateData)) {
+            $updateData['evaluated_at'] = now();
+            $report->update($updateData);
+        }
+
+        return $report->fresh();
     }
 }

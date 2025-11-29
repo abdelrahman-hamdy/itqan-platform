@@ -197,13 +197,9 @@ class AcademicSubscription extends Model
         return $this->belongsTo(SessionRequest::class);
     }
 
-    /**
-     * العلاقة مع سجل التقدم الأكاديمي
-     */
-    public function progress(): HasOne
-    {
-        return $this->hasOne(AcademicProgress::class, 'subscription_id');
-    }
+    // Note: progress() relationship removed - Progress is now calculated
+    // dynamically from session reports using the AcademicReportService
+    // See migration: 2025_11_23_drop_progress_tables.php
 
     /**
      * العلاقة مع المدفوعات
@@ -227,6 +223,14 @@ class AcademicSubscription extends Model
     public function certificate(): MorphOne
     {
         return $this->morphOne(Certificate::class, 'certificateable');
+    }
+
+    /**
+     * Get quiz assignments for this subscription
+     */
+    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(QuizAssignment::class, 'assignable');
     }
 
     /**
@@ -443,6 +447,20 @@ class AcademicSubscription extends Model
             $this->completion_rate = ($this->total_sessions_completed / $this->total_sessions_scheduled) * 100;
             $this->save();
         }
+    }
+
+    /**
+     * Get attendance rate based on completed and missed sessions
+     */
+    public function getAttendanceRate(): float
+    {
+        $totalAttendable = $this->total_sessions_completed + $this->total_sessions_missed;
+
+        if ($totalAttendable === 0) {
+            return 0;
+        }
+
+        return round(($this->total_sessions_completed / $totalAttendable) * 100, 1);
     }
 
     /**

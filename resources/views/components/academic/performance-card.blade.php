@@ -4,10 +4,9 @@
 ])
 
 @php
-    $averageParticipation = $performance['average_participation_degree'] ?? 0;
-    $averageUnderstanding = $performance['average_understanding_degree'] ?? 0;
     $averageHomework = $performance['average_homework_degree'] ?? 0;
-    $averageOverall = $performance['average_overall_performance'] ?? 0;
+    $averageOverall = $performance['average_overall_performance'] ?? $averageHomework;
+    $totalEvaluated = $performance['total_evaluated'] ?? 0;
 
     // Get color based on performance
     $getColorClass = function($degree) {
@@ -86,45 +85,7 @@
 
     <!-- Performance Breakdown -->
     <div class="space-y-4">
-        <!-- Participation -->
-        <div>
-            <div class="flex justify-between items-center mb-2">
-                <div class="flex items-center">
-                    <i class="ri-user-voice-line text-gray-600 ml-2"></i>
-                    <span class="text-sm text-gray-700">المشاركة</span>
-                </div>
-                <span class="text-sm font-bold {{ $getColorClass($averageParticipation) }}">
-                    {{ number_format($averageParticipation, 1) }}/10
-                </span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div
-                    class="h-2 rounded-full transition-all duration-500 {{ $averageParticipation >= 8 ? 'bg-green-500' : ($averageParticipation >= 6 ? 'bg-blue-500' : ($averageParticipation >= 4 ? 'bg-yellow-500' : 'bg-red-500')) }}"
-                    style="width: {{ ($averageParticipation / 10) * 100 }}%">
-                </div>
-            </div>
-        </div>
-
-        <!-- Lesson Understanding -->
-        <div>
-            <div class="flex justify-between items-center mb-2">
-                <div class="flex items-center">
-                    <i class="ri-lightbulb-line text-gray-600 ml-2"></i>
-                    <span class="text-sm text-gray-700">الفهم والاستيعاب</span>
-                </div>
-                <span class="text-sm font-bold {{ $getColorClass($averageUnderstanding) }}">
-                    {{ number_format($averageUnderstanding, 1) }}/10
-                </span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div
-                    class="h-2 rounded-full transition-all duration-500 {{ $averageUnderstanding >= 8 ? 'bg-green-500' : ($averageUnderstanding >= 6 ? 'bg-blue-500' : ($averageUnderstanding >= 4 ? 'bg-yellow-500' : 'bg-red-500')) }}"
-                    style="width: {{ ($averageUnderstanding / 10) * 100 }}%">
-                </div>
-            </div>
-        </div>
-
-        <!-- Homework Completion -->
+        <!-- Homework Performance -->
         <div>
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center">
@@ -142,5 +103,18 @@
                 </div>
             </div>
         </div>
+
+        <!-- Total Evaluated -->
+        @if($totalEvaluated > 0)
+        <div class="pt-2 border-t border-gray-200">
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <i class="ri-checkbox-circle-line text-blue-600 ml-2"></i>
+                    <span class="text-sm text-gray-700">إجمالي التقييمات</span>
+                </div>
+                <span class="text-sm font-bold text-blue-600">{{ $totalEvaluated }}</span>
+            </div>
+        </div>
+        @endif
     </div>
 </div>

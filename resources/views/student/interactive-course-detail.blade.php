@@ -315,6 +315,17 @@
                     :show-tabs="false"
                     empty-message="لا توجد جلسات مجدولة بعد" />
             </div>
+
+            <!-- Quizzes Section -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    الاختبارات
+                </h3>
+                <livewire:quizzes-widget :assignable="$course" />
+            </div>
             @endif
 
         </div>
@@ -560,13 +571,13 @@
                                 </div>
 
                                 <div class="flex gap-3">
-                                    <a href="{{ route('student.certificate.view', $certificate) }}"
+                                    <a href="{{ route('student.certificate.view', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                                        target="_blank"
                                        class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors duration-200 font-semibold">
                                         <i class="ri-eye-line ml-2"></i>
                                         عرض
                                     </a>
-                                    <a href="{{ route('student.certificate.download', $certificate) }}"
+                                    <a href="{{ route('student.certificate.download', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                                        class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors duration-200 font-semibold">
                                         <i class="ri-download-line ml-2"></i>
                                         تحميل PDF

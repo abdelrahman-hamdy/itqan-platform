@@ -164,10 +164,9 @@ class QuranSubscription extends Model
         return $this->hasOne(QuranIndividualCircle::class, 'subscription_id');
     }
 
-    public function progress(): HasMany
-    {
-        return $this->hasMany(QuranProgress::class);
-    }
+    // Note: progress() relationship removed - Progress is now calculated
+    // dynamically from session reports using the QuranReportService
+    // See migration: 2025_11_23_drop_progress_tables.php
 
     // Note: homework() relationship removed - Quran homework is now tracked through
     // QuranSession model fields and graded through student session reports
@@ -280,6 +279,19 @@ class QuranSubscription extends Model
     public function getFormattedPriceAttribute(): string
     {
         return number_format((float) $this->total_price, 2).' '.$this->currency;
+    }
+
+    /**
+     * Calculate price per session from total price and total sessions
+     * Virtual accessor - no database column needed
+     */
+    public function getPricePerSessionAttribute(): float
+    {
+        if (!$this->total_sessions || $this->total_sessions <= 0) {
+            return 0;
+        }
+
+        return round($this->total_price / $this->total_sessions, 2);
     }
 
     public function getFormattedPricePerSessionAttribute(): string
@@ -571,7 +583,7 @@ class QuranSubscription extends Model
             'subscription_status' => 'active',
             'payment_status' => 'free',
             'total_price' => 0,
-            'price_per_session' => 0,
+            // Note: price_per_session is a calculated virtual attribute (total_price / total_sessions)
         ]));
     }
 

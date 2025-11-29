@@ -3,24 +3,25 @@
 namespace App\Observers;
 
 use App\Models\AcademicSessionAttendance;
-use App\Services\AcademicProgressService;
-use Illuminate\Support\Facades\Log;
 
+/**
+ * Academic Session Attendance Observer
+ *
+ * NOTE: AcademicProgress model has been removed. Progress is now calculated
+ * dynamically from session reports using the AcademicReportService.
+ *
+ * This observer is kept as a placeholder for potential future attendance-level
+ * lifecycle hooks (e.g., notifications, analytics events).
+ */
 class AcademicSessionAttendanceObserver
 {
-    protected AcademicProgressService $progressService;
-
-    public function __construct(AcademicProgressService $progressService)
-    {
-        $this->progressService = $progressService;
-    }
-
     /**
      * Handle the AcademicSessionAttendance "created" event.
      */
     public function created(AcademicSessionAttendance $attendance): void
     {
-        $this->updateProgress($attendance);
+        // Progress tracking has been moved to report-based calculations
+        // No action needed here
     }
 
     /**
@@ -28,27 +29,7 @@ class AcademicSessionAttendanceObserver
      */
     public function updated(AcademicSessionAttendance $attendance): void
     {
-        // Only update if status changed
-        if ($attendance->isDirty('status')) {
-            $this->updateProgress($attendance);
-        }
-    }
-
-    /**
-     * Update progress from attendance record
-     */
-    private function updateProgress(AcademicSessionAttendance $attendance): void
-    {
-        try {
-            $session = $attendance->academicSession;
-            if ($session && $attendance->status) {
-                $this->progressService->updateFromAttendance($session, $attendance->status);
-            }
-        } catch (\Exception $e) {
-            Log::error('Failed to update progress from attendance', [
-                'attendance_id' => $attendance->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        // Progress tracking has been moved to report-based calculations
+        // No action needed here
     }
 }

@@ -44,9 +44,55 @@
                 <x-circle.individual-quick-actions :circle="$subscription" viewType="teacher" type="academic" />
                 <x-circle.individual-progress-overview :circle="$subscription" type="academic" />
             </div>
+
+            <!-- Certificate Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="ri-award-line text-amber-500"></i>
+                    الشهادات
+                </h3>
+
+                @if($subscription->certificate_issued && $subscription->certificate)
+                    <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border-2 border-amber-200 mb-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                                <i class="ri-award-fill text-xl text-amber-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-amber-800">تم إصدار الشهادة</p>
+                                <p class="text-xs text-amber-600">{{ $subscription->certificate->certificate_number }}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $subscription->certificate->id]) }}"
+                               target="_blank"
+                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors">
+                                <i class="ri-eye-line ml-2"></i>
+                                عرض الشهادة
+                            </a>
+                            <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $subscription->certificate->id]) }}"
+                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors">
+                                <i class="ri-download-line ml-2"></i>
+                                تحميل PDF
+                            </a>
+                        </div>
+                    </div>
+                @else
+                    <p class="text-sm text-gray-600 mb-4">يمكنك إصدار شهادة للطالب عند إتمام البرنامج أو تحقيق إنجاز معين</p>
+                    <button type="button"
+                            onclick="Livewire.dispatch('openModal', { subscriptionType: 'academic', subscriptionId: {{ $subscription->id }}, circleId: null })"
+                            class="w-full inline-flex items-center justify-center px-5 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
+                        <i class="ri-award-line ml-2 text-lg"></i>
+                        إصدار شهادة
+                    </button>
+                @endif
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Certificate Modal -->
+@livewire('issue-certificate-modal')
 
 <script>
 // Session detail function

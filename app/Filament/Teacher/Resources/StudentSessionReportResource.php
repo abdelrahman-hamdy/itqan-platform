@@ -255,9 +255,9 @@ class StudentSessionReportResource extends Resource
                             Select::make('attendance_status')
                                 ->label('حالة الحضور')
                                 ->options([
-                                    'present' => 'حاضر',
+                                    'attended' => 'حاضر',
                                     'late' => 'متأخر',
-                                    'partial' => 'جزئي',
+                                    'leaved' => 'غادر مبكراً',
                                     'absent' => 'غائب',
                                 ])
                                 ->helperText('اختياري - اتركه فارغاً للاحتفاظ بالحالة المحسوبة تلقائياً'),

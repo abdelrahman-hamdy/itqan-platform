@@ -21,6 +21,9 @@ class InteractiveCourseSession extends BaseSession
         'scheduled_at',  // Consolidated from scheduled_date + scheduled_time
         'attendance_count',
 
+        // Lesson content
+        'lesson_content',
+
         // Homework
         'homework_assigned',
         'homework_description',
@@ -83,6 +86,22 @@ class InteractiveCourseSession extends BaseSession
     }
 
     /**
+     * تقارير الطلاب لهذه الجلسة
+     */
+    public function studentReports(): HasMany
+    {
+        return $this->hasMany(InteractiveSessionReport::class, 'session_id');
+    }
+
+    /**
+     * Alias for studentReports for consistency with other session types
+     */
+    public function reports(): HasMany
+    {
+        return $this->studentReports();
+    }
+
+    /**
      * الواجبات المنزلية لهذه الجلسة
      */
     public function homework(): HasMany
@@ -104,7 +123,7 @@ class InteractiveCourseSession extends BaseSession
     public function presentStudents(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-                    ->where('attendance_status', 'present');
+                    ->where('attendance_status', 'attended');
     }
 
     /**
@@ -300,7 +319,7 @@ class InteractiveCourseSession extends BaseSession
     public function updateAttendanceCount(): void
     {
         $this->update([
-            'attendance_count' => $this->attendances()->where('attendance_status', 'present')->count()
+            'attendance_count' => $this->attendances()->where('attendance_status', 'attended')->count()
         ]);
     }
 
@@ -414,6 +433,7 @@ class InteractiveCourseSession extends BaseSession
 
     /**
      * Get meeting-specific configuration (abstract method implementation)
+     * Recording setting is controlled at course level
      */
     public function getMeetingConfiguration(): array
     {
@@ -424,7 +444,7 @@ class InteractiveCourseSession extends BaseSession
             'course_id' => $this->course_id,
             'duration_minutes' => $this->duration_minutes ?? 90,
             'max_participants' => 30,
-            'recording_enabled' => true,
+            'recording_enabled' => $this->course?->recording_enabled ?? true,
             'chat_enabled' => true,
             'screen_sharing_enabled' => true,
             'whiteboard_enabled' => true,

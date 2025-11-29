@@ -162,18 +162,18 @@ class ManageAcademicSessionMeetings extends Command
     }
 
     /**
-     * Check if current time is off-hours (midnight to 6 AM)
-     * DISABLED FOR DEBUGGING - academic sessions can be scheduled at any time
+     * Check if current time is off-hours (midnight to 5 AM Saudi time)
+     * During off-hours, only maintenance/cleanup operations run
+     * Full session processing runs during business hours
      */
     private function isOffHours(): bool
     {
-        // TEMPORARY: Disable off-hours check for debugging
-        // Academic sessions can be scheduled at any time, including early morning
-        return false;
+        // Use Saudi Arabia timezone for business hours calculation
+        $hour = now('Asia/Riyadh')->hour;
 
-        // Original logic (commented out for debugging):
-        // $hour = now()->hour;
-        // return $hour >= 0 && $hour < 6;
+        // Off-hours: midnight to 5 AM (0-4 hours)
+        // This allows early morning sessions (5 AM onwards) to be processed
+        return $hour >= 0 && $hour < 5;
     }
 
     /**

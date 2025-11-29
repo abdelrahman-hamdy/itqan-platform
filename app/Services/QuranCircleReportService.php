@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
-use App\Models\QuranProgress;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -16,15 +15,12 @@ use Illuminate\Support\Facades\DB;
  * including attendance, progress, homework, and performance metrics.
  *
  * IMPORTANT: All progress tracking is pages-only (NOT verses)
+ *
+ * NOTE: QuranProgress model has been removed. Progress is now calculated
+ * dynamically from session reports and circle model fields.
  */
 class QuranCircleReportService
 {
-    protected QuranProgressService $progressService;
-
-    public function __construct(QuranProgressService $progressService)
-    {
-        $this->progressService = $progressService;
-    }
     /**
      * Generate comprehensive report for individual circle
      *
@@ -230,18 +226,18 @@ class QuranCircleReportService
             ];
         }
 
-        $attended = $sessionReports->where('attendance_status', 'present')->count();
+        $attended = $sessionReports->where('attendance_status', 'attended')->count();
         $absent = $sessionReports->where('attendance_status', 'absent')->count();
         $late = $sessionReports->where('is_late', true)->count();
 
-        $avgDuration = $sessionReports->where('attendance_status', 'present')
+        $avgDuration = $sessionReports->where('attendance_status', 'attended')
             ->avg('actual_attendance_minutes') ?? 0;
 
         // Calculate attendance using points system
         // Attended = 1 point, Late = 0.5 points, Absent = 0 points
         $totalPoints = 0;
         foreach ($sessionReports as $report) {
-            if ($report->attendance_status === 'present') {
+            if ($report->attendance_status === 'attended') {
                 $totalPoints += $report->is_late ? 0.5 : 1.0;
             }
             // Absent = 0 points (no addition)
@@ -262,18 +258,10 @@ class QuranCircleReportService
 
     /**
      * Calculate progress statistics for individual circle
-     * Uses QuranProgress model for cumulative tracking (pages-only)
+     * Progress is calculated from session reports and circle model fields
      */
     protected function calculateProgressStats(QuranIndividualCircle $circle, Collection $completedSessions, Collection $sessionReports): array
     {
-        $student = $circle->student;
-
-        // Get cumulative progress from QuranProgress
-        $quranProgressData = QuranProgress::where('student_id', $student->id)
-            ->where('circle_id', $circle->id)
-            ->orderBy('progress_date', 'desc')
-            ->first();
-
         // Calculate performance averages from session reports
         $totalMemorization = $sessionReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?? 0;
         $totalReservation = $sessionReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?? 0;
@@ -291,11 +279,9 @@ class QuranCircleReportService
         }
         $averageOverallPerformance = $count > 0 ? round($overallPerformance / $count, 1) : 0;
 
-        // Pages memorized (from QuranProgress or circle model)
-        $pagesMemorized = $quranProgressData ? $quranProgressData->total_pages_memorized :
-                         ($circle->papers_memorized_precise ? $circle->papers_memorized_precise / 2 : 0);
-
+        // Pages memorized from circle model (papers_memorized_precise / 2 = pages)
         $papersMemorized = $circle->papers_memorized_precise ?? $circle->papers_memorized ?? 0;
+        $pagesMemorized = $papersMemorized > 0 ? $papersMemorized / 2 : 0;
 
         // Lifetime statistics (if available)
         $lifetimePagesMemorized = $circle->lifetime_pages_memorized ?? null;
@@ -351,7 +337,7 @@ class QuranCircleReportService
 
     /**
      * Calculate progress statistics for student in group circle
-     * Uses QuranProgress model for cumulative tracking (pages-only)
+     * Progress is calculated from session reports
      */
     protected function calculateProgressStatsForStudent(User $student, Collection $completedSessions, Collection $sessionReports): array
     {
@@ -372,14 +358,18 @@ class QuranCircleReportService
         }
         $averageOverallPerformance = $count > 0 ? round($overallPerformance / $count, 1) : 0;
 
-        // Get pages memorized from QuranProgress (for this student in all circles)
-        $totalPagesMemorized = QuranProgress::where('student_id', $student->id)
-            ->sum('total_pages_memorized') ?? 0;
-
-        // Calculate average pages per session
+        // Estimate pages memorized from session count and average performance
+        // In group circles, we don't track individual pages - estimate from session reports
         $sessionsWithMemorization = $sessionReports->whereNotNull('new_memorization_degree')
             ->where('new_memorization_degree', '>', 0)
             ->count();
+
+        // Estimate: each successful memorization session covers approximately 0.5-1 page
+        // Use performance grade to scale the estimate
+        $estimatedPagesPerSession = $totalMemorization > 0 ? ($totalMemorization / 10) : 0.5;
+        $totalPagesMemorized = round($sessionsWithMemorization * $estimatedPagesPerSession, 1);
+
+        // Calculate average pages per session
         $averagePagesPerSession = $sessionsWithMemorization > 0 ?
             round($totalPagesMemorized / $sessionsWithMemorization, 2) : 0;
 
@@ -566,7 +556,7 @@ class QuranCircleReportService
 
             // Calculate attendance points (attended=1, late=0.5, absent=0) * 10 to scale to 0-10
             $attendancePoints = 0;
-            if ($report && $report->attendance_status === 'present') {
+            if ($report && $report->attendance_status === 'attended') {
                 $attendancePoints = $report->is_late ? 5 : 10;
             }
             $attendanceData[] = $attendancePoints;

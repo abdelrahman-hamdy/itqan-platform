@@ -74,6 +74,7 @@ class AdminPanelProvider extends PanelProvider
                 'النظام الأكاديمي',
                 'إدارة التعليم الأكاديمي',
                 'إدارة الدورات المسجلة',
+                'إدارة الاختبارات',
                 'المالية',
                 'التقارير والحضور',
                 'متابعة التقدم',
@@ -132,12 +133,16 @@ class AdminPanelProvider extends PanelProvider
             \App\Filament\Resources\HomeworkSubmissionResource::class,
 
             // متابعة التقدم - Progress Tracking
+            // Note: QuranProgressResource and InteractiveCourseProgressResource removed
+            // Progress is now calculated dynamically from session reports
             \App\Filament\Resources\StudentProgressResource::class,
-            \App\Filament\Resources\QuranProgressResource::class,
-            \App\Filament\Resources\InteractiveCourseProgressResource::class,
 
             // إدارة الشهادات - Certificates Management
             \App\Filament\Resources\CertificateResource::class,
+
+            // إدارة الاختبارات - Quiz Management
+            \App\Filament\Resources\QuizResource::class,
+            \App\Filament\Resources\QuizAssignmentResource::class,
 
             // الإعدادات
             // Business Services - Access controlled by resource authorization

@@ -7,7 +7,7 @@
 @php
     $hasHomework = !empty($session->homework_description) || !empty($session->homework_file);
     $hasSubmitted = $report->homework_submitted_at !== null;
-    $isGraded = $report->homework_completion_degree !== null;
+    $isGraded = $report->homework_degree !== null;
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -126,13 +126,13 @@
                         <div class="flex items-center justify-between mb-2">
                             <label class="text-sm font-bold text-green-900">الدرجة الحالية</label>
                             <div class="flex items-center">
-                                <span class="text-2xl font-bold text-green-600">{{ number_format($report->homework_completion_degree, 1) }}</span>
+                                <span class="text-2xl font-bold text-green-600">{{ number_format($report->homework_degree, 1) }}</span>
                                 <span class="text-sm text-green-600 mr-1">/10</span>
                             </div>
                         </div>
-                        @if($report->homework_feedback)
+                        @if($report->notes)
                             <div class="text-sm text-green-800 mt-2">
-                                <strong>الملاحظات:</strong> {{ $report->homework_feedback }}
+                                <strong>الملاحظات:</strong> {{ $report->notes }}
                             </div>
                         @endif
                         <button type="button"
@@ -162,7 +162,7 @@
                                min="0"
                                max="10"
                                step="0.5"
-                               value="{{ $report->homework_completion_degree ?? '' }}"
+                               value="{{ $report->homework_degree ?? '' }}"
                                class="w-full px-4 py-2 text-lg font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
                                required>
                     </div>
@@ -173,10 +173,10 @@
                             <i class="ri-message-2-line ml-1"></i>
                             ملاحظات وتعليقات
                         </label>
-                        <textarea name="homework_feedback"
+                        <textarea name="notes"
                                   rows="3"
                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                                  placeholder="اكتب ملاحظاتك وتعليقاتك على أداء الطالب...">{{ $report->homework_feedback ?? '' }}</textarea>
+                                  placeholder="اكتب ملاحظاتك وتعليقاتك على أداء الطالب...">{{ $report->notes ?? '' }}</textarea>
                     </div>
 
                     <!-- Submit Button -->

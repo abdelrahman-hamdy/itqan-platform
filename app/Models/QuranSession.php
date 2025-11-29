@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\Traits\CountsTowardsSubscription;
 use Carbon\Carbon;
@@ -45,7 +46,7 @@ use Illuminate\Support\Str;
  * @property int|null $circle_id
  * @property int|null $individual_circle_id
  * @property int|null $student_id
- * @property string $session_type 'individual' or 'circle'/'group'
+ * @property string $session_type 'individual', 'group', or 'trial'
  * @property bool $subscription_counted Flag to prevent double-counting
  *
  * @see BaseSession Parent class with common session fields
@@ -74,6 +75,9 @@ class QuranSession extends BaseSession
         // Quran progress tracking (pages-only system)
         'current_surah',
         'current_page',
+
+        // Lesson content
+        'lesson_content',
 
         // Homework
         'homework_assigned',
@@ -117,8 +121,9 @@ class QuranSession extends BaseSession
             'current_surah' => 'integer',
             'current_page' => 'integer',
 
-            // Homework
-            'homework_assigned' => 'array',
+            // Homework - stored as simple text description (not array/boolean)
+            // Note: Column is JSON type but used for plain text storage
+            // No cast needed - Laravel handles JSON columns with string values
 
             // Subscription counting
             'subscription_counted' => 'boolean',
@@ -175,10 +180,8 @@ class QuranSession extends BaseSession
         return $this->hasMany(QuranSession::class, 'makeup_session_for');
     }
 
-    public function progress(): HasMany
-    {
-        return $this->hasMany(QuranProgress::class, 'session_id');
-    }
+    // Note: progress() relationship removed - Progress is now calculated
+    // dynamically from session reports using the QuranReportService
 
     public function attendances(): HasMany
     {
@@ -244,9 +247,21 @@ class QuranSession extends BaseSession
         return $query->where('session_type', 'individual');
     }
 
+    /**
+     * Scope for group sessions (circles)
+     * Note: Standardized to 'group' value - 'circle' is deprecated
+     */
     public function scopeCircle($query)
     {
-        return $query->whereIn('session_type', ['circle', 'group']); // Support both old and new types
+        return $query->where('session_type', 'group');
+    }
+
+    /**
+     * Alias for scopeCircle - preferred method name
+     */
+    public function scopeGroup($query)
+    {
+        return $query->where('session_type', 'group');
     }
 
     public function scopeMakeupSessions($query)
@@ -343,7 +358,7 @@ class QuranSession extends BaseSession
             }
 
             // Record attendance for students
-            $session->recordSessionAttendance('present');
+            $session->recordSessionAttendance('attended');
 
             // Update subscription usage (this also uses transactions internally)
             $session->updateSubscriptionUsage();
@@ -427,7 +442,7 @@ class QuranSession extends BaseSession
                 'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);
-        } elseif ($this->session_type === 'circle' && $this->circle) {
+        } elseif ($this->session_type === 'group' && $this->circle) {
             // For group sessions - create reports for all enrolled students
             $students = $this->circle->students;
             foreach ($students as $student) {
@@ -463,17 +478,6 @@ class QuranSession extends BaseSession
 
         // Group sessions don't count against individual subscriptions
         return null;
-    }
-
-    /**
-     * Alias for trait's isSubscriptionCounted() method
-     * Kept for backward compatibility
-     *
-     * @deprecated Use isSubscriptionCounted() instead
-     */
-    protected function isCountedInSubscription(): bool
-    {
-        return $this->isSubscriptionCounted();
     }
 
     // getStatusDisplayData() is inherited from BaseSession
@@ -540,7 +544,7 @@ class QuranSession extends BaseSession
             $subQuery->where('student_id', $studentId)
                 // OR group sessions: student enrolled in the circle (use correct session_type)
                 ->orWhere(function ($groupQuery) use ($studentId) {
-                    $groupQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
+                    $groupQuery->where('session_type', 'group')
                         ->whereHas('circle.students', function ($circleQuery) use ($studentId) {
                             $circleQuery->where('student_id', $studentId);
                         });
@@ -575,11 +579,10 @@ class QuranSession extends BaseSession
     public function getAttendanceStatusTextAttribute(): string
     {
         $statuses = [
-            'attended' => 'حضر',
+            'attended' => 'حاضر',
             'absent' => 'غائب',
             'late' => 'متأخر',
-            'left_early' => 'غادر مبكراً',
-            'partial' => 'حضور جزئي',
+            'leaved' => 'غادر مبكراً',
         ];
 
         return $statuses[$this->attendance_status] ?? $this->attendance_status;
@@ -760,12 +763,12 @@ class QuranSession extends BaseSession
     // Methods
     public function start(): self
     {
-        if ($this->status !== 'scheduled') {
+        if ($this->status !== SessionStatus::SCHEDULED && $this->status !== SessionStatus::READY) {
             throw new \Exception('لا يمكن بدء الجلسة. الحالة الحالية: '.$this->status_text);
         }
 
         $this->update([
-            'status' => 'ongoing',
+            'status' => SessionStatus::ONGOING,
             'started_at' => now(),
         ]);
 
@@ -774,7 +777,7 @@ class QuranSession extends BaseSession
 
     public function complete(array $sessionData = []): self
     {
-        if (! in_array($this->status, ['ongoing', 'scheduled'])) {
+        if (! in_array($this->status, [SessionStatus::ONGOING, SessionStatus::SCHEDULED, SessionStatus::READY])) {
             throw new \Exception('لا يمكن إنهاء الجلسة. الحالة الحالية: '.$this->status_text);
         }
 
@@ -782,10 +785,10 @@ class QuranSession extends BaseSession
         $actualDuration = $this->started_at ? $this->started_at->diffInMinutes($endTime) : $this->duration_minutes;
 
         $updateData = array_merge([
-            'status' => 'completed',
+            'status' => SessionStatus::COMPLETED,
             'ended_at' => $endTime,
             'actual_duration_minutes' => $actualDuration,
-            'attendance_status' => 'attended',
+            'attendance_status' => AttendanceStatus::ATTENDED,
         ], $sessionData);
 
         $this->update($updateData);
@@ -815,7 +818,7 @@ class QuranSession extends BaseSession
         }
 
         $this->update([
-            'status' => 'cancelled',
+            'status' => SessionStatus::CANCELLED,
             'cancellation_reason' => $reason,
             'cancelled_by' => $cancelledBy?->id,
             'cancelled_at' => now(),
@@ -834,7 +837,7 @@ class QuranSession extends BaseSession
             'rescheduled_from' => $this->scheduled_at,
             'scheduled_at' => $newDateTime,
             'reschedule_reason' => $reason,
-            'status' => 'rescheduled',
+            'status' => SessionStatus::SCHEDULED, // Reset to scheduled after rescheduling
         ]);
 
         return $this;
@@ -843,8 +846,8 @@ class QuranSession extends BaseSession
     public function markAsNoShow(): self
     {
         $this->update([
-            'status' => 'missed',
-            'attendance_status' => 'absent',
+            'status' => SessionStatus::ABSENT,
+            'attendance_status' => AttendanceStatus::ABSENT,
             'ended_at' => $this->scheduled_at->addMinutes($this->duration_minutes),
         ]);
 
@@ -861,7 +864,7 @@ class QuranSession extends BaseSession
             'student_id' => $this->student_id,
             'session_code' => self::generateSessionCode($this->academy_id),
             'session_type' => $this->session_type,
-            'status' => 'scheduled',
+            'status' => SessionStatus::SCHEDULED,
             'title' => 'جلسة تعويضية - '.$this->title,
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => $this->duration_minutes,
@@ -873,25 +876,8 @@ class QuranSession extends BaseSession
         return self::create($makeupData);
     }
 
-    public function recordProgress(array $progressData): QuranProgress
-    {
-        return QuranProgress::create([
-            'academy_id' => $this->academy_id,
-            'student_id' => $this->student_id,
-            'quran_teacher_id' => $this->quran_teacher_id,
-            'quran_subscription_id' => $this->quran_subscription_id,
-            'circle_id' => $this->circle_id,
-            'session_id' => $this->id,
-            'progress_date' => now(),
-            'current_surah' => $this->current_surah,
-            'current_verse' => $this->current_verse,
-            'verses_memorized' => $this->verses_memorized_today,
-            'recitation_quality' => $this->recitation_quality,
-            'tajweed_accuracy' => $this->tajweed_accuracy,
-            'areas_for_improvement' => $this->areas_for_improvement,
-            'notes' => $this->session_notes,
-        ]);
-    }
+    // Note: recordProgress() method removed - Progress is now calculated
+    // dynamically from session reports using the QuranReportService
 
     // Common meeting methods (generateMeetingLink, getMeetingInfo, isMeetingValid,
     // getMeetingJoinUrl, generateParticipantToken, getRoomInfo, endMeeting,
@@ -905,7 +891,7 @@ class QuranSession extends BaseSession
 
     protected function getDefaultMaxParticipants(): int
     {
-        return $this->session_type === 'circle' ? 50 : 2;
+        return $this->session_type === 'group' ? 50 : 2;
     }
 
     /**
@@ -1116,7 +1102,7 @@ class QuranSession extends BaseSession
                 $subQuery->where('student_id', $filters['student_id'])
                     // OR group sessions: student enrolled in the circle (use correct session_type)
                     ->orWhere(function ($groupQuery) use ($filters) {
-                        $groupQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
+                        $groupQuery->where('session_type', 'group')
                             ->whereHas('circle.students', function ($circleQuery) use ($filters) {
                                 $circleQuery->where('student_id', $filters['student_id']);
                             });
@@ -1214,10 +1200,10 @@ class QuranSession extends BaseSession
 
         return [
             'total_students' => $attendances->count(),
-            'present_count' => $attendances->where('attendance_status', 'present')->count(),
+            'present_count' => $attendances->where('attendance_status', 'attended')->count(),
             'late_count' => $attendances->where('attendance_status', 'late')->count(),
             'absent_count' => $attendances->where('attendance_status', 'absent')->count(),
-            'left_early_count' => $attendances->where('attendance_status', 'left_early')->count(),
+            'left_early_count' => $attendances->where('attendance_status', 'leaved')->count(),
             'auto_tracked_count' => $attendances->where('auto_tracked', true)->count(),
             'manually_overridden_count' => $attendances->where('manually_overridden', true)->count(),
             'average_participation' => $attendances->whereNotNull('participation_score')->avg('participation_score') ?? 0,
@@ -1278,7 +1264,7 @@ class QuranSession extends BaseSession
         // Add students based on session type
         if ($this->session_type === 'individual' && $this->student) {
             $participants->push($this->student);
-        } elseif ($this->session_type === 'circle' && $this->circle) {
+        } elseif ($this->session_type === 'group' && $this->circle) {
             $participants = $participants->merge($this->circle->students);
         }
 
@@ -1373,7 +1359,7 @@ class QuranSession extends BaseSession
         }
 
         // For group sessions, add all enrolled students from the circle
-        if ($this->session_type === 'circle' && $this->circle) {
+        if ($this->session_type === 'group' && $this->circle) {
             $students = $this->circle->students()->get();
             foreach ($students as $student) {
                 $participants[] = [
@@ -1426,7 +1412,7 @@ class QuranSession extends BaseSession
             $config['max_participants'] = 2;
             $config['waiting_room_enabled'] = false;
             $config['recording_enabled'] = $settingsJson['individual_recording_enabled'] ?? $defaultRecordingEnabled;
-        } elseif ($this->session_type === 'circle') {
+        } elseif ($this->session_type === 'group') {
             // Group sessions: 1 teacher + multiple students
             $config['max_participants'] = $settingsJson['circle_max_participants'] ?? 10;
             $config['recording_enabled'] = $settingsJson['circle_recording_enabled'] ?? $defaultRecordingEnabled;

@@ -64,7 +64,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
         Route::get('/progress', [App\Http\Controllers\StudentProfileController::class, 'progress'])->name('student.progress');
-        Route::get('/certificates', [App\Http\Controllers\StudentProfileController::class, 'certificates'])->name('student.certificates');
+        // Note: /certificates route moved to web.php CertificateController for unified handling
 
         // Interactive courses routes moved to web.php for proper ordering
         // Academic teachers route moved to web.php for subdomain compatibility
@@ -80,8 +80,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Course detail pages - REMOVED: Moved to main web.php with ID-based routing
         // Route::get('/courses/{course}', [App\Http\Controllers\StudentProfileController::class, 'courseShow'])->name('student.courses.show');
 
-        // Certificate downloads
-        Route::get('/certificates/{enrollment}/download', [App\Http\Controllers\StudentProfileController::class, 'downloadCertificate'])->name('student.certificates.download');
+        // Certificate downloads - MOVED to web.php CertificateController
+        // Route::get('/certificates/{enrollment}/download', [App\Http\Controllers\StudentProfileController::class, 'downloadCertificate'])->name('student.certificates.download');
 
         // Quran circle management
         Route::get('/circles/{circleId}', [App\Http\Controllers\StudentProfileController::class, 'showCircle'])->name('student.circles.show');

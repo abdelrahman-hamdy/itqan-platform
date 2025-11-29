@@ -51,6 +51,7 @@ class InteractiveCourse extends Model
         'publication_date',
         'certificate_enabled',
         'certificate_template_style',
+        'recording_enabled',
     ];
 
     protected $casts = [
@@ -76,6 +77,7 @@ class InteractiveCourse extends Model
         'total_sessions' => 'integer',
         'certificate_enabled' => 'boolean',
         'certificate_template_style' => CertificateTemplateStyle::class,
+        'recording_enabled' => 'boolean',
     ];
 
     /**
@@ -172,6 +174,11 @@ class InteractiveCourse extends Model
     {
         return $this->hasMany(InteractiveCourseEnrollment::class, 'course_id')
             ->where('enrollment_status', 'enrolled');
+    }
+
+    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(QuizAssignment::class, 'assignable');
     }
 
     /**

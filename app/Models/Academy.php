@@ -244,6 +244,14 @@ class Academy extends Model
     }
 
     /**
+     * Get all quizzes for this academy
+     */
+    public function quizzes(): HasMany
+    {
+        return $this->hasMany(Quiz::class);
+    }
+
+    /**
      * Get the full domain URL
      */
     public function getFullDomainAttribute(): string

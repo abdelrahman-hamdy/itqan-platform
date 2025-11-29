@@ -8,7 +8,7 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">إدارة حضور الطلاب</h3>
-        @if($session->status === 'ongoing' || $session->status === 'completed')
+        @if($session->status === \App\Enums\SessionStatus::ONGOING || $session->status === \App\Enums\SessionStatus::COMPLETED)
             <div class="flex items-center space-x-2 space-x-reverse">
                 <button id="markAllPresentBtn" 
                         class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
@@ -49,7 +49,7 @@
                         
                         <!-- Attendance Status -->
                         <div class="flex items-center space-x-4 space-x-reverse">
-                            @if($session->status === 'ongoing' || $session->status === 'completed')
+                            @if($session->status === \App\Enums\SessionStatus::ONGOING || $session->status === \App\Enums\SessionStatus::COMPLETED)
                                 <!-- Attendance Options -->
                                 <div class="flex items-center space-x-2 space-x-reverse">
                                     <label class="flex items-center">
@@ -147,7 +147,7 @@
             @endforeach
         </div>
         
-        @if($session->status === 'ongoing' || $session->status === 'completed')
+        @if($session->status === \App\Enums\SessionStatus::ONGOING || $session->status === \App\Enums\SessionStatus::COMPLETED)
             <div class="mt-6 pt-4 border-t border-gray-200">
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-gray-600">

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\CertificateTemplateStyle;
 use App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
@@ -10,6 +11,8 @@ use App\Enums\Currency;
 use App\Enums\Timezone;
 use App\Models\AcademicPackage;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Grid;
@@ -227,18 +230,76 @@ class AcademyGeneralSettingsResource extends BaseResource
                             ]),
                     ]),
 
-                // Future panels can be added here
-                Section::make('إعدادات إضافية')
-                    ->description('إعدادات إضافية سيتم إضافتها لاحقاً')
-                    ->schema([
-                        TextInput::make('temp_note')
-                            ->label('ملاحظة')
-                            ->disabled()
-                            ->default('سيتم إضافة المزيد من الإعدادات في المستقبل')
-                            ->columnSpanFull(),
-                    ])
+                // Certificate Settings
+                Section::make('إعدادات الشهادات')
+                    ->description('تخصيص إعدادات إصدار الشهادات للطلاب')
+                    ->icon('heroicon-o-academic-cap')
                     ->collapsible()
-                    ->collapsed(true),
+                    ->collapsed()
+                    ->schema([
+                        Toggle::make('certificate_settings.enabled')
+                            ->label('تفعيل نظام الشهادات')
+                            ->helperText('السماح بإصدار الشهادات في هذه الأكاديمية')
+                            ->default(true),
+
+                        Grid::make(2)
+                            ->schema([
+                                Select::make('certificate_settings.default_template_style')
+                                    ->label('التصميم الافتراضي للشهادات')
+                                    ->options(CertificateTemplateStyle::options())
+                                    ->default('modern')
+                                    ->helperText('التصميم الذي سيتم استخدامه افتراضياً عند إصدار الشهادات'),
+
+                                Toggle::make('certificate_settings.auto_issue_recorded_courses')
+                                    ->label('إصدار تلقائي للدورات المسجلة')
+                                    ->helperText('إصدار شهادة تلقائياً عند إتمام الدورة المسجلة بنسبة 100%')
+                                    ->default(true),
+                            ]),
+
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('certificate_settings.signature_name')
+                                    ->label('اسم الموقّع')
+                                    ->helperText('الاسم الذي سيظهر أسفل التوقيع في الشهادة')
+                                    ->default('المدير التنفيذي')
+                                    ->maxLength(100),
+
+                                TextInput::make('certificate_settings.signature_title')
+                                    ->label('منصب الموقّع')
+                                    ->helperText('المسمى الوظيفي الذي سيظهر أسفل اسم الموقّع')
+                                    ->default('مدير الأكاديمية')
+                                    ->maxLength(100),
+                            ]),
+
+                        Section::make('قوالب نصوص الشهادات')
+                            ->description('تخصيص النصوص الافتراضية لكل نوع من الشهادات')
+                            ->collapsed()
+                            ->schema([
+                                Textarea::make('certificate_settings.templates.quran_default')
+                                    ->label('قالب شهادة حلقات القرآن')
+                                    ->rows(3)
+                                    ->default('هذا يشهد بأن {student_name} قد أتم {achievement} تحت إشراف المعلم {teacher_name} في أكاديمية {academy_name}.')
+                                    ->helperText('المتغيرات المتاحة: {student_name}, {achievement}, {teacher_name}, {academy_name}, {completion_date}'),
+
+                                Textarea::make('certificate_settings.templates.academic_default')
+                                    ->label('قالب شهادة الدروس الأكاديمية')
+                                    ->rows(3)
+                                    ->default('هذا يشهد بأن {student_name} قد أتم {achievement} تحت إشراف المعلم {teacher_name} في أكاديمية {academy_name}.')
+                                    ->helperText('المتغيرات المتاحة: {student_name}, {achievement}, {teacher_name}, {academy_name}, {completion_date}'),
+
+                                Textarea::make('certificate_settings.templates.recorded_course')
+                                    ->label('قالب شهادة الدورات المسجلة')
+                                    ->rows(3)
+                                    ->default('هذا يشهد بأن {student_name} قد أتم بنجاح دورة {course_name} بتاريخ {completion_date}.')
+                                    ->helperText('المتغيرات المتاحة: {student_name}, {course_name}, {completion_date}, {academy_name}'),
+
+                                Textarea::make('certificate_settings.templates.interactive_course')
+                                    ->label('قالب شهادة الدورات التفاعلية')
+                                    ->rows(3)
+                                    ->default('هذا يشهد بأن {student_name} قد أتم بنجاح الدورة التفاعلية {course_name} تحت إشراف المعلم {teacher_name}.')
+                                    ->helperText('المتغيرات المتاحة: {student_name}, {course_name}, {teacher_name}, {academy_name}, {completion_date}'),
+                            ]),
+                    ]),
             ]);
     }
 

@@ -158,7 +158,7 @@
         <!-- Interactive Courses -->
         <div id="interactive-courses">
           @php
-            $progressService = app(\App\Services\InteractiveCourseProgressService::class);
+            // Calculate progress directly from sessions (replacing InteractiveCourseProgressService)
             $interactiveCourseItems = [];
             $totalSessions = 0;
             $completedSessions = 0;
@@ -166,17 +166,22 @@
             foreach($interactiveCourses as $course) {
               $enrollment = $course->enrollments->first();
               if ($enrollment && auth()->user()->studentProfile) {
-                $progress = $progressService->calculateCourseProgress($course->id, auth()->user()->studentProfile->id);
-                $totalSessions += $progress['total_sessions'];
-                $completedSessions += $progress['completed_sessions'];
+                // Calculate progress from course sessions
+                $courseSessions = $course->sessions;
+                $courseTotal = $courseSessions->count();
+                $courseCompleted = $courseSessions->where('status', 'completed')->count();
+                $completionPercentage = $courseTotal > 0 ? round(($courseCompleted / $courseTotal) * 100) : 0;
+
+                $totalSessions += $courseTotal;
+                $completedSessions += $courseCompleted;
 
                 $interactiveCourseItems[] = [
                   'title' => $course->title,
-                  'description' => 'مع ' . ($course->assignedTeacher->user->name ?? 'المعلم') . ' - ' . $progress['completed_sessions'] . ' جلسة مكتملة من ' . $progress['total_sessions'],
+                  'description' => 'مع ' . ($course->assignedTeacher->user->name ?? 'المعلم') . ' - ' . $courseCompleted . ' جلسة مكتملة من ' . $courseTotal,
                   'icon' => 'ri-book-open-line',
                   'iconBgColor' => 'bg-blue-100',
                   'iconColor' => 'text-blue-600',
-                  'progress' => $progress['completion_percentage'],
+                  'progress' => $completionPercentage,
                   'status' => 'active',
                   'link' => route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
                 ];

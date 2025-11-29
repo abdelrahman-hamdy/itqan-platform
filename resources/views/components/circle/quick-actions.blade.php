@@ -14,6 +14,9 @@
     $isTrial = $type === 'trial';
     $isAcademic = $context === 'academic';
 
+    // Detect if this is an interactive course (not a Quran circle)
+    $isInteractiveCourse = $circle instanceof \App\Models\InteractiveCourse;
+
     // Get student and teacher based on circle type
     $student = ($isIndividual || $isTrial) ? ($circle->student ?? null) : null;
     $teacher = null;
@@ -54,7 +57,13 @@
             {{-- TEACHER ACTIONS --}}
 
             {{-- Progress Reports Link --}}
-            @if($isGroup)
+            @if($isInteractiveCourse)
+                <a href="{{ route('teacher.interactive-courses.report', ['subdomain' => $subdomain, 'course' => $circle->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <i class="ri-file-chart-line ml-2"></i>
+                    عرض التقرير التفصيلي
+                </a>
+            @elseif($isGroup)
                 <a href="{{ route('teacher.group-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
                     <i class="ri-file-chart-line ml-2"></i>
@@ -62,9 +71,9 @@
                 </a>
             @elseif($isIndividual)
                 @if($isAcademic)
-                    <a href="#" onclick="alert('سيتم تنفيذ التقرير التفصيلي قريباً')"
-                       class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                        <i class="ri-line-chart-line ml-2"></i>
+                    <a href="{{ route('teacher.academic-subscriptions.report', ['subdomain' => $subdomain, 'subscription' => $circle->id]) }}"
+                       class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                        <i class="ri-file-chart-line ml-2"></i>
                         عرض التقرير التفصيلي
                     </a>
                 @else
@@ -163,7 +172,13 @@
             @endif
 
             {{-- View Full Report (Enrolled/Subscribed students only) --}}
-            @if($isGroup && $isEnrolled)
+            @if($isInteractiveCourse && $isEnrolled)
+                <a href="{{ route('student.interactive-courses.report', ['subdomain' => $subdomain, 'course' => $circle->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <i class="ri-file-chart-line ml-2"></i>
+                    عرض تقريري
+                </a>
+            @elseif($isGroup && $isEnrolled)
                 <a href="{{ route('student.group-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
                     <i class="ri-file-chart-line ml-2"></i>
@@ -174,6 +189,12 @@
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
                     <i class="ri-file-chart-line ml-2"></i>
                     عرض التقرير الكامل
+                </a>
+            @elseif($isIndividual && $isAcademic)
+                <a href="{{ route('student.academic-subscriptions.report', ['subdomain' => $subdomain, 'subscription' => $circle->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <i class="ri-file-chart-line ml-2"></i>
+                    عرض تقريري
                 </a>
             @endif
 

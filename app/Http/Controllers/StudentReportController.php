@@ -6,8 +6,9 @@ use App\Enums\AttendanceStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourseSession;
+use App\Models\InteractiveSessionReport;
 use App\Models\QuranSession;
-use App\Models\QuranSessionReport;
+use App\Models\StudentSessionReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -37,16 +38,18 @@ class StudentReportController extends Controller
                 // Quran-specific fields
                 'new_memorization_degree' => 'nullable|numeric|min:0|max:10',
                 'reservation_degree' => 'nullable|numeric|min:0|max:10',
-                // Academic-specific fields
-                'homework_completion_degree' => 'nullable|numeric|min:0|max:10',
+                // Academic & Interactive unified fields (only homework_degree)
+                'homework_degree' => 'nullable|numeric|min:0|max:10',
             ]);
 
             DB::beginTransaction();
 
             // Determine model class based on type
-            $modelClass = $type === 'quran'
-                ? QuranSessionReport::class
-                : AcademicSessionReport::class;
+            $modelClass = match ($type) {
+                'quran' => StudentSessionReport::class,
+                'interactive' => InteractiveSessionReport::class,
+                default => AcademicSessionReport::class,
+            };
 
             // Verify teacher has permission to create report for this session
             $session = $this->getSession($type, $validated['session_id']);
@@ -58,19 +61,28 @@ class StudentReportController extends Controller
                 ], 403);
             }
 
-            // Prepare report data
+            // Prepare report data based on session type
             $reportData = [
                 'session_id' => $validated['session_id'],
                 'teacher_id' => auth()->id(),
-                'academy_id' => auth()->user()->academy_id,
+                'academy_id' => $type === 'interactive'
+                    ? ($session->course?->academy_id ?? auth()->user()->academy_id)
+                    : auth()->user()->academy_id,
                 'student_id' => $validated['student_id'],
                 'notes' => $validated['notes'] ?? null,
-                // Quran fields
-                'new_memorization_degree' => $validated['new_memorization_degree'] ?? null,
-                'reservation_degree' => $validated['reservation_degree'] ?? null,
-                // Academic fields
-                'homework_completion_degree' => $validated['homework_completion_degree'] ?? null,
             ];
+
+            // Add type-specific fields
+            if ($type === 'quran') {
+                $reportData['new_memorization_degree'] = $validated['new_memorization_degree'] ?? null;
+                $reportData['reservation_degree'] = $validated['reservation_degree'] ?? null;
+            } elseif ($type === 'academic') {
+                // Academic: simplified to homework_degree only
+                $reportData['homework_degree'] = $validated['homework_degree'] ?? null;
+            } elseif ($type === 'interactive') {
+                // Interactive: unified with Academic (homework_degree only)
+                $reportData['homework_degree'] = $validated['homework_degree'] ?? null;
+            }
 
             // Only set attendance_status if provided (otherwise keep auto-calculated)
             if (!empty($validated['attendance_status'])) {
@@ -132,16 +144,18 @@ class StudentReportController extends Controller
                 // Quran-specific fields
                 'new_memorization_degree' => 'nullable|numeric|min:0|max:10',
                 'reservation_degree' => 'nullable|numeric|min:0|max:10',
-                // Academic-specific fields
-                'homework_completion_degree' => 'nullable|numeric|min:0|max:10',
+                // Academic & Interactive unified fields (only homework_degree)
+                'homework_degree' => 'nullable|numeric|min:0|max:10',
             ]);
 
             DB::beginTransaction();
 
             // Determine model class based on type
-            $modelClass = $type === 'quran'
-                ? QuranSessionReport::class
-                : AcademicSessionReport::class;
+            $modelClass = match ($type) {
+                'quran' => StudentSessionReport::class,
+                'interactive' => InteractiveSessionReport::class,
+                default => AcademicSessionReport::class,
+            };
 
             // Find report
             $report = $modelClass::findOrFail($reportId);
@@ -155,15 +169,22 @@ class StudentReportController extends Controller
                 ], 403);
             }
 
-            // Prepare update data
+            // Prepare update data based on type
             $updateData = [
                 'notes' => $validated['notes'] ?? null,
-                // Quran fields
-                'new_memorization_degree' => $validated['new_memorization_degree'] ?? $report->new_memorization_degree,
-                'reservation_degree' => $validated['reservation_degree'] ?? $report->reservation_degree,
-                // Academic fields
-                'homework_completion_degree' => $validated['homework_completion_degree'] ?? $report->homework_completion_degree,
             ];
+
+            // Add type-specific fields
+            if ($type === 'quran') {
+                $updateData['new_memorization_degree'] = $validated['new_memorization_degree'] ?? $report->new_memorization_degree;
+                $updateData['reservation_degree'] = $validated['reservation_degree'] ?? $report->reservation_degree;
+            } elseif ($type === 'academic') {
+                // Academic: simplified to homework_degree only
+                $updateData['homework_degree'] = $validated['homework_degree'] ?? $report->homework_degree;
+            } elseif ($type === 'interactive') {
+                // Interactive: unified with Academic (homework_degree only)
+                $updateData['homework_degree'] = $validated['homework_degree'] ?? $report->homework_degree;
+            }
 
             // Only update attendance_status if provided (otherwise keep auto-calculated)
             if (!empty($validated['attendance_status'])) {
@@ -245,10 +266,10 @@ class StudentReportController extends Controller
                 && $session->academicTeacher->user_id === $teacher->id;
         }
 
-        // For QuranSession, teacher is accessed through quranTeacher profile
+        // For QuranSession, quranTeacher returns User model directly (not a profile)
         if ($session instanceof \App\Models\QuranSession) {
             return $session->quranTeacher
-                && $session->quranTeacher->user_id === $teacher->id;
+                && $session->quranTeacher->id === $teacher->id;
         }
 
         return false;

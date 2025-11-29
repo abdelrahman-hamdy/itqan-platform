@@ -222,14 +222,20 @@ class CertificateResource extends Resource
                     ->label('عرض PDF')
                     ->icon('heroicon-o-eye')
                     ->color('primary')
-                    ->url(fn (Certificate $record): string => route('student.certificate.view', $record))
+                    ->url(fn (Certificate $record): string => route('student.certificate.view', [
+                        'subdomain' => $record->academy?->subdomain ?? 'itqan-academy',
+                        'certificate' => $record->id,
+                    ]))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\Action::make('download')
                     ->label('تحميل')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn (Certificate $record): string => route('student.certificate.download', $record)),
+                    ->url(fn (Certificate $record): string => route('student.certificate.download', [
+                        'subdomain' => $record->academy?->subdomain ?? 'itqan-academy',
+                        'certificate' => $record->id,
+                    ])),
 
                 Tables\Actions\ViewAction::make()
                     ->label('التفاصيل'),

@@ -47,60 +47,23 @@ class AcademicSessionReportResource extends Resource
                             ->disabled(fn (?AcademicSessionReport $record) => $record !== null),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Academic Evaluation')
+                Forms\Components\Section::make('تقييم الواجب')
                     ->schema([
-                        Forms\Components\TextInput::make('academic_performance_score')
-                            ->label('Academic Performance (0-10)')
+                        Forms\Components\TextInput::make('homework_degree')
+                            ->label('درجة الواجب (0-10)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(10)
-                            ->step(0.1)
-                            ->helperText('Rate the student\'s academic performance during this session'),
-                        Forms\Components\TextInput::make('engagement_score')
-                            ->label('Student Engagement (0-10)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(10)
-                            ->step(0.1)
-                            ->helperText('Rate how engaged the student was during the session'),
-                        Forms\Components\TagsInput::make('learning_objectives_achieved')
-                            ->label('Learning Objectives Achieved')
-                            ->placeholder('Add objectives that were achieved in this session')
-                            ->helperText('List the learning goals that the student successfully completed')
-                            ->columnSpanFull(),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('Homework Assignment')
-                    ->schema([
-                        Forms\Components\Textarea::make('homework_description')
-                            ->label('Homework Assignment')
-                            ->placeholder('Describe the homework assignment for the student...')
-                            ->rows(4)
-                            ->helperText('Clearly describe what the student needs to complete for next time')
-                            ->columnSpanFull(),
-                        Forms\Components\FileUpload::make('homework_file_path')
-                            ->label('Homework Materials')
-                            ->directory('academic-homework')
-                            ->acceptedFileTypes(['pdf', 'doc', 'docx', 'txt', 'jpg', 'png'])
-                            ->maxSize(5120) // 5MB
-                            ->downloadable()
-                            ->openable()
-                            ->helperText('Upload any materials or worksheets for the homework')
-                            ->columnSpanFull(),
+                            ->step(0.5)
+                            ->helperText('تقييم جودة وإنجاز الواجب المنزلي'),
                     ]),
 
-                Forms\Components\Section::make('Teacher Notes & Feedback')
+                Forms\Components\Section::make('الملاحظات')
                     ->schema([
-                        Forms\Components\Textarea::make('teacher_notes')
-                            ->label('Teacher Observations')
-                            ->placeholder('Record your observations about the student\'s progress, behavior, and areas for improvement...')
+                        Forms\Components\Textarea::make('notes')
+                            ->label('ملاحظات المعلم')
+                            ->placeholder('أضف ملاحظات حول أداء الطالب...')
                             ->rows(4)
-                            ->columnSpanFull(),
-                        Forms\Components\Textarea::make('student_notes')
-                            ->label('Student Self-Reflection Notes')
-                            ->placeholder('Encourage student to reflect on their learning...')
-                            ->rows(3)
-                            ->helperText('Optional: Notes from student about their own learning')
                             ->columnSpanFull(),
                     ]),
 
@@ -109,10 +72,10 @@ class AcademicSessionReportResource extends Resource
                         Forms\Components\Select::make('attendance_status')
                             ->label('Override Attendance Status')
                             ->options([
-                                'present' => 'Present',
-                                'late' => 'Late',
-                                'partial' => 'Partial Attendance',
-                                'absent' => 'Absent',
+                                'attended' => 'حاضر',
+                                'late' => 'متأخر',
+                                'leaved' => 'غادر مبكراً',
+                                'absent' => 'غائب',
                             ])
                             ->helperText('Only change if the automatic attendance calculation is incorrect'),
                         Forms\Components\Toggle::make('manually_evaluated')
@@ -141,50 +104,28 @@ class AcademicSessionReportResource extends Resource
                     ->label('Student')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('academic_performance_score')
-                    ->label('Performance')
+                Tables\Columns\TextColumn::make('homework_degree')
+                    ->label('درجة الواجب')
                     ->numeric()
                     ->sortable()
                     ->badge()
                     ->color(fn (?string $state): string => match (true) {
                         $state === null => 'gray',
-                        $state >= 8 => 'success',
-                        $state >= 6 => 'warning',
+                        (float) $state >= 8 => 'success',
+                        (float) $state >= 6 => 'warning',
                         default => 'danger',
                     })
-                    ->formatStateUsing(fn (?string $state): string => $state ? $state . '/10' : 'Not graded'),
-                Tables\Columns\TextColumn::make('engagement_score')
-                    ->label('Engagement')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->color(fn (?string $state): string => match (true) {
-                        $state === null => 'gray',
-                        $state >= 8 => 'success',
-                        $state >= 6 => 'warning',
-                        default => 'danger',
-                    })
-                    ->formatStateUsing(fn (?string $state): string => $state ? $state . '/10' : 'Not graded'),
+                    ->formatStateUsing(fn (?string $state): string => $state ? $state . '/10' : 'لم يقيم'),
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('Attendance')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'present' => 'success',
+                        'attended' => 'success',
                         'late' => 'warning',
-                        'partial' => 'info',
+                        'leaved' => 'info',
                         'absent' => 'danger',
                         default => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('homework_description')
-                    ->label('Homework')
-                    ->formatStateUsing(fn (?string $state): string => $state ? 'Assigned' : 'None')
-                    ->badge()
-                    ->color(fn (?string $state): string => $state ? 'success' : 'gray'),
-                Tables\Columns\TextColumn::make('homework_file_path')
-                    ->label('Materials')
-                    ->formatStateUsing(fn (?string $state): string => $state ? 'Uploaded' : 'None')
-                    ->badge()
-                    ->color(fn (?string $state): string => $state ? 'info' : 'gray'),
                 Tables\Columns\TextColumn::make('actual_attendance_minutes')
                     ->label('Duration')
                     ->formatStateUsing(fn (string $state): string => $state . ' min')
@@ -209,17 +150,14 @@ class AcademicSessionReportResource extends Resource
                 Tables\Filters\SelectFilter::make('attendance_status')
                     ->label('Attendance Status')
                     ->options([
-                        'present' => 'Present',
-                        'late' => 'Late',
-                        'partial' => 'Partial',
-                        'absent' => 'Absent',
+                        'attended' => 'حاضر',
+                        'late' => 'متأخر',
+                        'leaved' => 'غادر مبكراً',
+                        'absent' => 'غائب',
                     ]),
-                Tables\Filters\Filter::make('has_homework')
-                    ->label('Has Homework')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_description')),
-                Tables\Filters\Filter::make('graded')
-                    ->label('Has Grade')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('academic_performance_score')),
+                Tables\Filters\Filter::make('has_homework_grade')
+                    ->label('تم تقييم الواجب')
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

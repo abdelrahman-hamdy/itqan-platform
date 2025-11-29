@@ -7,6 +7,7 @@ use App\Models\QuranSession;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -53,14 +54,14 @@ class CalculateSessionAttendance implements ShouldQueue
         // Quran sessions
         // 🔥 FIX: Calculate end time as scheduled_at + duration_minutes (no scheduled_end_at column)
         $quranSessions = QuranSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-            ->whereIn('status', ['completed', 'live']) // Include live in case status update missed
+            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value]) // Include ongoing in case status update missed
             ->where('scheduled_at', '>=', now()->subDays(7)) // Only last 7 days
             ->get();
         $sessionsToProcess = $sessionsToProcess->concat($quranSessions);
 
         // Academic sessions
         $academicSessions = AcademicSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-            ->whereIn('status', ['completed', 'live'])
+            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
             ->where('scheduled_at', '>=', now()->subDays(7))
             ->get();
         $sessionsToProcess = $sessionsToProcess->concat($academicSessions);
@@ -68,7 +69,7 @@ class CalculateSessionAttendance implements ShouldQueue
         // Interactive course sessions
         if (class_exists(InteractiveCourseSession::class)) {
             $interactiveSessions = InteractiveCourseSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-                ->whereIn('status', ['completed', 'live'])
+                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
                 ->where('scheduled_at', '>=', now()->subDays(7))
                 ->get();
             $sessionsToProcess = $sessionsToProcess->concat($interactiveSessions);

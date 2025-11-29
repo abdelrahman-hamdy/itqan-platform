@@ -1,10 +1,51 @@
 @props(['courseId', 'studentId'])
 
 @php
-    $progressService = app(\App\Services\InteractiveCourseProgressService::class);
-    $progress = $progressService->calculateCourseProgress($courseId, $studentId);
-    $progressColor = $progressService->getProgressColor($progress['completion_percentage']);
-    $attendanceColor = $progressService->getAttendanceColor($progress['attendance_rate']);
+    // Calculate progress from session reports (replacing InteractiveCourseProgressService)
+    $course = \App\Models\InteractiveCourse::find($courseId);
+    $sessions = $course ? $course->sessions()->orderBy('scheduled_at')->get() : collect();
+    $totalSessions = $sessions->count();
+
+    // Get attendance records
+    $attendanceRecords = \App\Models\InteractiveSessionAttendance::whereIn('session_id', $sessions->pluck('id'))
+        ->where('student_id', $studentId)
+        ->get();
+
+    $sessionsAttended = $attendanceRecords->whereIn('attendance_status', ['present', 'late'])->count();
+    $completedSessions = $sessions->where('status', 'completed')->count();
+
+    // Get session reports for homework data
+    $sessionReports = \App\Models\InteractiveSessionReport::whereIn('session_id', $sessions->pluck('id'))
+        ->where('student_id', $studentId)
+        ->get();
+
+    // Calculate metrics
+    $attendanceRate = $totalSessions > 0 ? round(($sessionsAttended / $totalSessions) * 100) : 0;
+    $completionPercentage = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0;
+
+    // Homework metrics
+    $totalHomework = $sessions->where('homework_description', '!=', null)->count();
+    $homeworkSubmitted = $sessionReports->whereNotNull('homework_submitted_at')->count();
+    $homeworkCompletionRate = $totalHomework > 0 ? round(($homeworkSubmitted / $totalHomework) * 100) : 0;
+    $gradedHomework = $sessionReports->whereNotNull('homework_degree')->count();
+    $averageGrade = $gradedHomework > 0 ? round($sessionReports->whereNotNull('homework_degree')->avg('homework_degree') * 10) : null;
+
+    $progress = [
+        'completion_percentage' => $completionPercentage,
+        'attendance_rate' => $attendanceRate,
+        'sessions_attended' => $sessionsAttended,
+        'completed_sessions' => $completedSessions,
+        'total_sessions' => $totalSessions,
+        'total_homework' => $totalHomework,
+        'homework_submitted' => $homeworkSubmitted,
+        'homework_completion_rate' => $homeworkCompletionRate,
+        'graded_homework' => $gradedHomework,
+        'average_grade' => $averageGrade,
+    ];
+
+    // Color helpers
+    $progressColor = $completionPercentage >= 75 ? 'green' : ($completionPercentage >= 50 ? 'yellow' : 'red');
+    $attendanceColor = $attendanceRate >= 80 ? 'green' : ($attendanceRate >= 60 ? 'yellow' : 'red');
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

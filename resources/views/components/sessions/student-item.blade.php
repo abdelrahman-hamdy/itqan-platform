@@ -58,7 +58,8 @@
 
     // Check session type to determine which fields to display
     $isQuranSession = in_array(get_class($session), ['App\Models\QuranSession']);
-    $isAcademicSession = in_array(get_class($session), ['App\Models\AcademicSession', 'App\Models\InteractiveCourseSession']);
+    $isAcademicSession = in_array(get_class($session), ['App\Models\AcademicSession']);
+    $isInteractiveSession = in_array(get_class($session), ['App\Models\InteractiveCourseSession']);
 
     // Quran-specific fields
     if($isQuranSession && $report && $report->new_memorization_degree !== null) {
@@ -79,12 +80,22 @@
         ];
     }
 
-    // Academic-specific fields (for AcademicSession and InteractiveCourseSession)
-    if($isAcademicSession && $report && $report->homework_completion_degree !== null) {
+    // Academic-specific fields - Simplified to only homework_degree
+    if($isAcademicSession && $report && $report->homework_degree !== null) {
         $infoItems[] = [
             'icon' => 'ri-file-list-line text-purple-600',
             'label' => 'درجة الواجب',
-            'value' => $report->homework_completion_degree . '/10',
+            'value' => $report->homework_degree . '/10',
+            'badge_class' => 'bg-purple-100 text-purple-800'
+        ];
+    }
+
+    // Interactive-specific fields - Unified with Academic (only homework_degree)
+    if($isInteractiveSession && $report && $report->homework_degree !== null) {
+        $infoItems[] = [
+            'icon' => 'ri-file-list-line text-purple-600',
+            'label' => 'درجة الواجب',
+            'value' => $report->homework_degree . '/10',
             'badge_class' => 'bg-purple-100 text-purple-800'
         ];
     }

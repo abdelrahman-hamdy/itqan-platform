@@ -92,7 +92,8 @@ class Certificate extends Model
      */
     public function getDownloadUrlAttribute(): string
     {
-        return route('student.certificate.download', $this->id);
+        $subdomain = $this->academy?->subdomain ?? 'itqan-academy';
+        return route('student.certificate.download', ['subdomain' => $subdomain, 'certificate' => $this->id]);
     }
 
     /**
@@ -100,7 +101,8 @@ class Certificate extends Model
      */
     public function getViewUrlAttribute(): string
     {
-        return route('student.certificate.view', $this->id);
+        $subdomain = $this->academy?->subdomain ?? 'itqan-academy';
+        return route('student.certificate.view', ['subdomain' => $subdomain, 'certificate' => $this->id]);
     }
 
     /**

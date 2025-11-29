@@ -50,8 +50,10 @@ class CertificateController extends Controller
     /**
      * Download certificate PDF
      */
-    public function download(Certificate $certificate)
+    public function download(string $subdomain, string $certificate)
     {
+        $certificate = Certificate::findOrFail($certificate);
+
         // Authorization
         $this->authorize('view', $certificate);
 
@@ -65,8 +67,10 @@ class CertificateController extends Controller
     /**
      * View certificate in browser
      */
-    public function view(Certificate $certificate)
+    public function view(string $subdomain, string $certificate)
     {
+        $certificate = Certificate::findOrFail($certificate);
+
         // Authorization
         $this->authorize('view', $certificate);
 

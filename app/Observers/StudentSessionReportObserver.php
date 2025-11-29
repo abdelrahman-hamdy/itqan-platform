@@ -3,16 +3,16 @@
 namespace App\Observers;
 
 use App\Models\StudentSessionReport;
-use App\Services\QuranProgressService;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Student Session Report Observer
  *
  * Listens to StudentSessionReport changes and triggers secondary updates:
- * - Creates/updates QuranProgress records for cumulative tracking
- * - Updates circle-level progress statistics
  * - Updates pivot table counters for group circles
+ *
+ * NOTE: QuranProgress model has been removed. Progress is now calculated
+ * dynamically from session reports using the Report Services.
  *
  * CRITICAL: This observer ONLY reads attendance data, never modifies it.
  * Auto-attendance system (LiveKit webhooks) has exclusive write access to:
@@ -24,77 +24,23 @@ use Illuminate\Support\Facades\DB;
  */
 class StudentSessionReportObserver
 {
-    protected QuranProgressService $progressService;
-
-    public function __construct(QuranProgressService $progressService)
-    {
-        $this->progressService = $progressService;
-    }
-
     /**
      * Handle the StudentSessionReport "updated" event.
      *
      * Triggered AFTER auto-attendance or teacher evaluation updates the report.
-     * Propagates changes to QuranProgress and circle statistics.
+     * Updates pivot table counters for group circles.
      */
     public function updated(StudentSessionReport $report): void
     {
-        // Only proceed if attendance status or performance degrees changed
-        if (! $this->shouldProcessUpdate($report)) {
+        // Only proceed if attendance status changed (for pivot counter updates)
+        if (! $report->isDirty('attendance_status')) {
             return;
         }
 
-        // 1. Create/update QuranProgress record
-        $this->progressService->createOrUpdateSessionProgress($report);
-
-        // 2. Update circle-level progress
-        $this->updateCircleProgress($report);
-
-        // 3. Update pivot table counters (group circles only)
+        // Update pivot table counters (group circles only)
         if ($report->session->circle_id) {
             $this->updateGroupCirclePivotCounters($report);
         }
-    }
-
-    /**
-     * Determine if this update should trigger progress tracking
-     */
-    protected function shouldProcessUpdate(StudentSessionReport $report): bool
-    {
-        // Process if attendance status changed (auto-attendance update)
-        if ($report->isDirty('attendance_status')) {
-            return true;
-        }
-
-        // Process if performance degrees changed (teacher evaluation)
-        if ($report->isDirty('new_memorization_degree') || $report->isDirty('reservation_degree')) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Update circle-level progress statistics
-     */
-    protected function updateCircleProgress(StudentSessionReport $report): void
-    {
-        $session = $report->session;
-        if (! $session) {
-            return;
-        }
-
-        // Get the circle (individual or group)
-        $circle = $session->session_type === 'individual'
-            ? $session->individualCircle
-            : $session->circle;
-
-        if (! $circle) {
-            return;
-        }
-
-        // Update circle progress
-        $this->progressService->updateCircleProgress($circle);
     }
 
     /**
@@ -118,14 +64,14 @@ class StudentSessionReportObserver
             ->where('student_session_reports.student_id', $report->student_id)
             ->selectRaw('
                 COUNT(*) as total_sessions,
-                SUM(CASE WHEN attendance_status = ? THEN 1 ELSE 0 END) as attended,
-                SUM(CASE WHEN attendance_status = ? THEN 1 ELSE 0 END) as missed
+                SUM(CASE WHEN student_session_reports.attendance_status = ? THEN 1 ELSE 0 END) as attended,
+                SUM(CASE WHEN student_session_reports.attendance_status = ? THEN 1 ELSE 0 END) as missed
             ', ['present', 'absent'])
             ->first();
 
         // Update pivot table
         DB::table('quran_circle_students')
-            ->where('quran_circle_id', $circle->id)
+            ->where('circle_id', $circle->id)
             ->where('student_id', $report->student_id)
             ->update([
                 'attendance_count' => $attendanceStats->attended ?? 0,

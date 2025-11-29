@@ -726,7 +726,7 @@ class MeetingAttendance extends Model
      */
     public function scopePresent($query)
     {
-        return $query->where('attendance_status', 'present');
+        return $query->where('attendance_status', 'attended');
     }
 
     public function scopeAbsent($query)
@@ -741,7 +741,7 @@ class MeetingAttendance extends Model
 
     public function scopePartial($query)
     {
-        return $query->where('attendance_status', 'partial');
+        return $query->where('attendance_status', 'leaved');
     }
 
     public function scopeCalculated($query)

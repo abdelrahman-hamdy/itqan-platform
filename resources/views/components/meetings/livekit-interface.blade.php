@@ -2825,6 +2825,43 @@ function showNotification(message, type = 'info', duration = 5000) {
 <!-- Meeting Timer System -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // =====================================================
+    // Session Starting Soon Notification (Centralized)
+    // Shows toast notification when session is starting soon
+    // =====================================================
+    @if($session->scheduled_at && $session->scheduled_at->isFuture() && $session->scheduled_at->diffInMinutes(now()) <= 15)
+        @php
+            $timeData = formatTimeRemaining($session->scheduled_at);
+        @endphp
+        @if(!$timeData['is_past'])
+            (function() {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 transform translate-x-full transition-transform duration-300 bg-blue-500 text-white';
+                notification.innerHTML = `
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <i class="ri-time-line text-lg"></i>
+                            <span>الجلسة ستبدأ خلال {{ $timeData['formatted'] }}</span>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="hover:opacity-70 flex-shrink-0">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+
+                // Animate in
+                setTimeout(() => notification.classList.remove('translate-x-full'), 100);
+
+                // Auto-dismiss after 8 seconds
+                setTimeout(() => {
+                    notification.classList.add('translate-x-full');
+                    setTimeout(() => notification.remove(), 300);
+                }, 8000);
+            })();
+        @endif
+    @endif
+
     // Meeting Timer Class
     class MeetingTimer {
         constructor() {
@@ -2832,12 +2869,12 @@ document.addEventListener('DOMContentLoaded', function() {
             this.displayElement = document.getElementById('timerDisplay');
             this.labelElement = document.getElementById('timerLabel');
             this.statusElement = document.getElementById('timerStatus');
-            
+
             @if($session->scheduled_at)
             this.scheduledAt = new Date('{{ $session->scheduled_at->toISOString() }}');
             this.duration = {{ $session->duration_minutes ?? 60 }} * 60 * 1000; // milliseconds
             this.endingBuffer = {{ $endingBufferMinutes ?? 5 }} * 60 * 1000; // milliseconds
-            
+
             if (this.timerElement && this.displayElement) {
                 console.log('🕐 Timer initialized for session at:', this.scheduledAt);
                 this.start();

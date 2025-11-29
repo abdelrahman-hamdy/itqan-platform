@@ -118,7 +118,7 @@ abstract class BaseSessionReport extends Model
 
     public function scopePresent($query)
     {
-        return $query->where('attendance_status', 'present');
+        return $query->where('attendance_status', 'attended');
     }
 
     public function scopeAbsent($query)
@@ -133,7 +133,7 @@ abstract class BaseSessionReport extends Model
 
     public function scopePartial($query)
     {
-        return $query->where('attendance_status', 'partial');
+        return $query->where('attendance_status', 'leaved');
     }
 
     public function scopeEvaluated($query)
@@ -345,9 +345,9 @@ abstract class BaseSessionReport extends Model
 
         $attendancePercentage = $sessionDuration > 0 ? ($currentDuration / $sessionDuration) * 100 : 0;
 
-        // CRITICAL: 100% attendance override - if student attended 100%+, always mark as present
+        // CRITICAL: 100% attendance override - if student attended 100%+, always mark as attended
         if ($attendancePercentage >= 100) {
-            return 'present'; // Anyone who attended full session should be marked present
+            return 'attended'; // Anyone who attended full session should be marked attended
         }
 
         // If first join was after grace time, check if they made up for it with attendance
@@ -356,7 +356,7 @@ abstract class BaseSessionReport extends Model
             if ($attendancePercentage >= 95) {
                 return 'late'; // Late arrival but excellent attendance
             } elseif ($attendancePercentage >= 80) {
-                return 'partial'; // Late and decent attendance
+                return 'leaved'; // Late and decent attendance
             } else {
                 return 'absent'; // Late and poor attendance
             }
@@ -364,9 +364,9 @@ abstract class BaseSessionReport extends Model
 
         // Joined on time - standard percentage rules
         if ($attendancePercentage >= 80) {
-            return 'present';
+            return 'attended';
         } elseif ($attendancePercentage >= 30) {
-            return 'partial';
+            return 'leaved';
         } else {
             return 'absent';
         }
@@ -449,25 +449,25 @@ abstract class BaseSessionReport extends Model
             return 'absent';
         }
 
-        // CRITICAL: 100% attendance override - always mark as present
+        // CRITICAL: 100% attendance override - always mark as attended
         if ($this->attendance_percentage >= 100) {
-            return 'present'; // Anyone who attended full session should be marked present
+            return 'attended'; // Anyone who attended full session should be marked attended
         }
 
         // Determine status based on attendance percentage
         if ($this->attendance_percentage < 30) {
             return 'absent';
         } elseif ($this->attendance_percentage < 80) {
-            return 'partial';
+            return 'leaved';
         }
 
         // If attended 80%+, check if they were late
-        // If 95%+ attendance but late, still mark as 'present' (they made up for it)
+        // If 95%+ attendance but late, still mark as 'attended' (they made up for it)
         if ($this->attendance_percentage >= 95) {
-            return 'present'; // Excellent attendance overrides lateness
+            return 'attended'; // Excellent attendance overrides lateness
         }
 
-        return $this->is_late ? 'late' : 'present';
+        return $this->is_late ? 'late' : 'attended';
     }
 
     /**

@@ -1,5 +1,9 @@
 @props(['session', 'canJoin' => false])
 
+@php
+    use App\Enums\SessionStatus;
+@endphp
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h3 class="font-bold text-lg text-gray-900 mb-4 flex items-center">
         <i class="ri-flashlight-line text-primary-600 mr-2"></i>
@@ -15,13 +19,13 @@
                 <i class="ri-vidicon-line mr-2 group-hover:scale-110 transition-transform"></i>
                 Join Live Session
             </a>
-        @elseif($session->status === 'scheduled')
+        @elseif($session->status === SessionStatus::SCHEDULED)
             <button disabled
                     class="btn btn-secondary w-full opacity-60 cursor-not-allowed flex items-center justify-center">
                 <i class="ri-time-line mr-2"></i>
                 Starts {{ $session->scheduled_at->diffForHumans() }}
             </button>
-        @elseif($session->status === 'completed')
+        @elseif($session->status === SessionStatus::COMPLETED)
             @if($session->meeting && $session->meeting->recording_url)
                 <a href="{{ $session->meeting->recording_url }}"
                    target="_blank"
@@ -74,22 +78,22 @@
     {{-- Session Status Info --}}
     <div class="mt-6 pt-6 border-t border-gray-200">
         <div class="text-center">
-            @if($session->status === 'scheduled')
+            @if($session->status === SessionStatus::SCHEDULED)
                 <div class="text-sm text-gray-600">
                     <i class="ri-information-line text-blue-500"></i>
                     Session not started yet
                 </div>
-            @elseif($session->status === 'ongoing')
+            @elseif($session->status === SessionStatus::ONGOING)
                 <div class="text-sm text-green-600 font-medium animate-pulse">
                     <i class="ri-radio-button-line"></i>
                     Session is currently live
                 </div>
-            @elseif($session->status === 'completed')
+            @elseif($session->status === SessionStatus::COMPLETED)
                 <div class="text-sm text-gray-600">
                     <i class="ri-check-double-line text-green-500"></i>
                     Session completed
                 </div>
-            @elseif($session->status === 'cancelled')
+            @elseif($session->status === SessionStatus::CANCELLED)
                 <div class="text-sm text-red-600">
                     <i class="ri-close-circle-line"></i>
                     Session cancelled

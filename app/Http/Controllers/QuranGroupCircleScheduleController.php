@@ -625,7 +625,7 @@ class QuranGroupCircleScheduleController extends Controller
             ->whereIn('session_id', $sessions->pluck('id'))
             ->get();
 
-        $attendedReports = $studentReports->whereIn('attendance_status', ['present', 'late', 'partial']);
+        $attendedReports = $studentReports->whereIn('attendance_status', ['attended', 'late', 'leaved']);
 
         $stats = [
             'total_sessions' => $circle->sessions()->count(),

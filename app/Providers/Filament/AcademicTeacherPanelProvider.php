@@ -47,7 +47,9 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 'الدورات التفاعلية',
                 'جلساتي',
                 'الواجبات الأكاديمية',
+                'الاختبارات',
                 'التقييمات',
+                'الشهادات',
                 'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/AcademicTeacher/Resources'), for: 'App\\Filament\\AcademicTeacher\\Resources')

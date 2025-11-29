@@ -221,7 +221,7 @@ abstract class BaseReportSyncService
 
             // For active users, ensure we show real-time data
             if ($meetingAttendance && $meetingAttendance->isCurrentlyInMeeting()) {
-                $attendanceStatus = AttendanceStatus::PRESENT->value;
+                $attendanceStatus = AttendanceStatus::ATTENDED->value;
             }
 
             return [
@@ -386,9 +386,9 @@ abstract class BaseReportSyncService
 
         $stats = [
             'total_students' => $reports->count(),
-            'present' => $reports->where('attendance_status', AttendanceStatus::PRESENT->value)->count(),
+            'present' => $reports->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
             'late' => $reports->where('attendance_status', AttendanceStatus::LATE->value)->count(),
-            'partial' => $reports->where('attendance_status', AttendanceStatus::PARTIAL->value)->count(),
+            'partial' => $reports->where('attendance_status', AttendanceStatus::LEAVED->value)->count(),
             'absent' => $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
             'average_attendance_percentage' => 0,
             'average_performance' => 0,

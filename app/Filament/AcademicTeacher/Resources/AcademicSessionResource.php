@@ -69,13 +69,18 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->relationship('academicSubscription', 'subscription_code')
                             ->label('الاشتراك')
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->disabled(fn ($record) => $record !== null)
+                            ->dehydrated(),
 
                         Forms\Components\Select::make('student_id')
-                            ->relationship('student', 'name')
+                            ->relationship('student', 'id')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->first_name ?? '') . ' ' . ($record->last_name ?? '')) ?: $record->name ?? 'طالب #' . $record->id)
                             ->label('الطالب')
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->disabled(fn ($record) => $record !== null)
+                            ->dehydrated(),
 
                         Forms\Components\TextInput::make('session_code')
                             ->label('رمز الجلسة')
@@ -90,7 +95,7 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->default('individual')
                             ->disabled()
                             ->dehydrated()
-                            ->helperText('الجلسات الأكاديمية فردية (1-إلى-1) فقط')
+                            ->helperText('الجلسات الأكاديمية فردية فقط حالياً')
                             ->required(),
                     ])->columns(2),
 
@@ -114,7 +119,9 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                     ->schema([
                         Forms\Components\DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة')
-                            ->required(),
+                            ->required()
+                            ->native(false)
+                            ->seconds(false),
 
                         Forms\Components\TextInput::make('duration_minutes')
                             ->label('مدة الجلسة (بالدقائق)')
@@ -135,60 +142,38 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ])
                             ->default('scheduled')
                             ->required(),
-
-                        Forms\Components\TextInput::make('meeting_link')
-                            ->label('رابط الاجتماع')
-                            ->url()
-                            ->helperText('سيتم إنشاء رابط LiveKit تلقائياً عند بدء الجلسة'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('الواجبات والتقييم')
+                Forms\Components\Section::make('الواجبات')
                     ->schema([
+                        Forms\Components\Toggle::make('homework_assigned')
+                            ->label('يوجد واجب منزلي')
+                            ->default(false)
+                            ->live(),
+
                         Forms\Components\Textarea::make('homework_description')
                             ->label('وصف الواجب')
-                            ->rows(3),
+                            ->rows(3)
+                            ->visible(fn ($get) => $get('homework_assigned')),
 
                         Forms\Components\FileUpload::make('homework_file')
                             ->label('ملف الواجب')
                             ->directory('academic-homework')
-                            ->acceptedFileTypes(['pdf', 'doc', 'docx', 'jpg', 'png']),
-
-                        Forms\Components\Toggle::make('homework_assigned')
-                            ->label('تم تكليف واجب')
-                            ->default(false),
-
-                        Forms\Components\Textarea::make('session_notes')
-                            ->label('ملاحظات الجلسة')
-                            ->rows(3),
-
-                        Forms\Components\Textarea::make('teacher_feedback')
-                            ->label('تقييم المعلم')
-                            ->rows(3),
+                            ->acceptedFileTypes(['pdf', 'doc', 'docx', 'jpg', 'png'])
+                            ->visible(fn ($get) => $get('homework_assigned')),
                     ]),
 
-                Forms\Components\Section::make('الحضور والمشاركة')
+                Forms\Components\Section::make('معلومات إضافية')
                     ->schema([
-                        Forms\Components\Select::make('attendance_status')
-                            ->label('حالة الحضور')
-                            ->options([
-                                'scheduled' => 'مجدولة',
-                                'present' => 'حاضر',
-                                'absent' => 'غائب',
-                                'late' => 'متأخر',
-                                'partial' => 'حضور جزئي',
-                            ])
-                            ->default('scheduled'),
-
                         Forms\Components\TextInput::make('participants_count')
                             ->label('عدد المشاركين')
                             ->numeric()
                             ->minValue(0)
-                            ->default(0),
-
-                        Forms\Components\Textarea::make('attendance_notes')
-                            ->label('ملاحظات الحضور')
-                            ->rows(2),
-                    ])->columns(3),
+                            ->default(0)
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->helperText('يتم التحديث تلقائياً'),
+                    ])->columns(2),
             ]);
     }
 
@@ -245,17 +230,17 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                     ->label('الحضور')
                     ->colors([
                         'secondary' => 'scheduled',
-                        'success' => 'present',
+                        'success' => 'attended',
                         'danger' => 'absent',
                         'warning' => 'late',
-                        'primary' => 'partial',
+                        'primary' => 'leaved',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'scheduled' => 'مجدولة',
-                        'present' => 'حاضر',
+                        'attended' => 'حاضر',
                         'absent' => 'غائب',
                         'late' => 'متأخر',
-                        'partial' => 'جزئي',
+                        'leaved' => 'غادر مبكراً',
                         default => $state,
                     }),
 
@@ -286,10 +271,10 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                     ->label('حالة الحضور')
                     ->options([
                         'scheduled' => 'مجدولة',
-                        'present' => 'حاضر',
+                        'attended' => 'حاضر',
                         'absent' => 'غائب',
                         'late' => 'متأخر',
-                        'partial' => 'جزئي',
+                        'leaved' => 'غادر مبكراً',
                     ]),
 
                 Tables\Filters\SelectFilter::make('student_id')
@@ -306,15 +291,50 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-
-                Tables\Actions\Action::make('join_meeting')
-                    ->label('دخول الاجتماع')
-                    ->icon('heroicon-o-video-camera')
-                    ->url(fn (AcademicSession $record): string => $record->meeting_link ?? '#')
-                    ->openUrlInNewTab()
-                    ->visible(fn (AcademicSession $record): bool => !empty($record->meeting_link)),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make()
+                        ->label('عرض'),
+                    Tables\Actions\EditAction::make()
+                        ->label('تعديل'),
+                    Tables\Actions\Action::make('start_session')
+                        ->label('بدء الجلسة')
+                        ->icon('heroicon-o-play')
+                        ->color('success')
+                        ->visible(fn (AcademicSession $record): bool =>
+                            $record->status instanceof \App\Enums\SessionStatus
+                                ? $record->status === \App\Enums\SessionStatus::SCHEDULED
+                                : $record->status === 'scheduled')
+                        ->action(function (AcademicSession $record) {
+                            $record->update([
+                                'status' => \App\Enums\SessionStatus::ONGOING,
+                                'started_at' => now(),
+                            ]);
+                        }),
+                    Tables\Actions\Action::make('complete_session')
+                        ->label('إنهاء الجلسة')
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (AcademicSession $record): bool =>
+                            $record->status instanceof \App\Enums\SessionStatus
+                                ? $record->status === \App\Enums\SessionStatus::ONGOING
+                                : $record->status === 'ongoing')
+                        ->action(function (AcademicSession $record) {
+                            $record->update([
+                                'status' => \App\Enums\SessionStatus::COMPLETED,
+                                'ended_at' => now(),
+                                'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
+                                'attendance_status' => 'attended',
+                            ]);
+                            // Update subscription usage
+                            $record->updateSubscriptionUsage();
+                        }),
+                    Tables\Actions\Action::make('join_meeting')
+                        ->label('دخول الاجتماع')
+                        ->icon('heroicon-o-video-camera')
+                        ->url(fn (AcademicSession $record): string => $record->meeting_link ?? '#')
+                        ->openUrlInNewTab()
+                        ->visible(fn (AcademicSession $record): bool => !empty($record->meeting_link)),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -41,7 +41,7 @@ class QuranSessionController extends Controller
                 $query->where('student_id', $user->id)
                     // OR group sessions: student enrolled in the circle
                     ->orWhere(function ($subQuery) use ($user) {
-                        $subQuery->whereIn('session_type', ['circle', 'group'])
+                        $subQuery->where('session_type', 'group')
                             ->whereHas('circle.students', function ($circleQuery) use ($user) {
                                 $circleQuery->where('student_id', $user->id);
                             });
@@ -52,7 +52,7 @@ class QuranSessionController extends Controller
                 'individualCircle.subscription.package',
                 'circle.students',
                 'sessionHomework',
-                'progress',
+                'studentReports',
                 'trialRequest', // For trial sessions
             ])
             ->first();
@@ -119,7 +119,6 @@ class QuranSessionController extends Controller
             'quranTeacher',
             'sessionHomework',
             'studentReports',
-            'progress',
         ])
             ->first();
 
@@ -157,12 +156,14 @@ class QuranSessionController extends Controller
         }
 
         $request->validate([
+            'lesson_content' => 'nullable|string|max:5000',
             'teacher_notes' => 'nullable|string|max:2000',
             'student_progress' => 'nullable|string|max:1000',
             'homework_assigned' => 'nullable|string|max:1000',
         ]);
 
         $session->update([
+            'lesson_content' => $request->lesson_content,
             'teacher_notes' => $request->teacher_notes,
             'student_progress' => $request->student_progress,
             'homework_assigned' => $request->homework_assigned,
@@ -472,9 +473,9 @@ class QuranSessionController extends Controller
             ->where(function ($query) use ($user) {
                 // Individual sessions: direct student_id match
                 $query->where('student_id', $user->id)
-                    // OR group sessions: student enrolled in the circle (use correct session_type)
+                    // OR group sessions: student enrolled in the circle
                     ->orWhere(function ($subQuery) use ($user) {
-                        $subQuery->whereIn('session_type', ['circle', 'group']) // Support both old and new types
+                        $subQuery->where('session_type', 'group')
                             ->whereHas('circle.students', function ($circleQuery) use ($user) {
                                 $circleQuery->where('student_id', $user->id);
                             });

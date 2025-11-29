@@ -104,6 +104,10 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                         Forms\Components\Textarea::make('description')
                             ->label('وصف الجلسة')
                             ->rows(3),
+
+                        Forms\Components\Textarea::make('lesson_content')
+                            ->label('محتوى الدرس')
+                            ->rows(4),
                     ]),
 
                 Forms\Components\Section::make('التوقيت والحالة')
@@ -133,18 +137,9 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                             ])
                             ->default('scheduled')
                             ->required(),
-
-                        Forms\Components\TextInput::make('meeting_link')
-                            ->label('رابط الاجتماع')
-                            ->url()
-                            ->helperText('سيتم إنشاء رابط LiveKit تلقائياً عند بدء الجلسة'),
-
-                        Forms\Components\Toggle::make('recording_enabled')
-                            ->label('تسجيل الجلسة')
-                            ->default(false),
                     ])->columns(2),
 
-                Forms\Components\Section::make('الواجبات والمواد')
+                Forms\Components\Section::make('الواجبات')
                     ->schema([
                         Forms\Components\Toggle::make('homework_assigned')
                             ->label('يوجد واجب منزلي')
@@ -161,9 +156,9 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                             ->directory('interactive-course-homework')
                             ->acceptedFileTypes(['pdf', 'doc', 'docx', 'jpg', 'png'])
                             ->visible(fn ($get) => $get('homework_assigned')),
-                    ])->columns(2),
+                    ]),
 
-                Forms\Components\Section::make('الحضور والمشاركة')
+                Forms\Components\Section::make('معلومات إضافية')
                     ->schema([
                         Forms\Components\TextInput::make('attendance_count')
                             ->label('عدد الحضور')
@@ -172,8 +167,8 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                             ->default(0)
                             ->disabled()
                             ->dehydrated(false)
-                            ->helperText('يتم التحديث تلقائياً من سجلات الحضور'),
-                    ]),
+                            ->helperText('يتم التحديث تلقائياً'),
+                    ])->columns(2),
             ]);
     }
 
@@ -284,15 +279,52 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                     ->falseLabel('بدون واجبات'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-
-                Tables\Actions\Action::make('join_meeting')
-                    ->label('دخول الاجتماع')
-                    ->icon('heroicon-o-video-camera')
-                    ->url(fn (InteractiveCourseSession $record): string => $record->meeting_link ?? '#')
-                    ->openUrlInNewTab()
-                    ->visible(fn (InteractiveCourseSession $record): bool => !empty($record->meeting_link)),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make()
+                        ->label('عرض'),
+                    Tables\Actions\EditAction::make()
+                        ->label('تعديل'),
+                    Tables\Actions\Action::make('start_session')
+                        ->label('بدء الجلسة')
+                        ->icon('heroicon-o-play')
+                        ->color('success')
+                        ->visible(fn (InteractiveCourseSession $record): bool =>
+                            $record->status instanceof \App\Enums\SessionStatus
+                                ? in_array($record->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])
+                                : in_array($record->status, ['scheduled', 'ready']))
+                        ->action(function (InteractiveCourseSession $record) {
+                            $record->markAsOngoing();
+                        }),
+                    Tables\Actions\Action::make('complete_session')
+                        ->label('إنهاء الجلسة')
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (InteractiveCourseSession $record): bool =>
+                            $record->status instanceof \App\Enums\SessionStatus
+                                ? $record->status === \App\Enums\SessionStatus::ONGOING
+                                : $record->status === 'ongoing')
+                        ->action(function (InteractiveCourseSession $record) {
+                            $record->markAsCompleted();
+                        }),
+                    Tables\Actions\Action::make('cancel_session')
+                        ->label('إلغاء الجلسة')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->visible(fn (InteractiveCourseSession $record): bool =>
+                            $record->status instanceof \App\Enums\SessionStatus
+                                ? in_array($record->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])
+                                : in_array($record->status, ['scheduled', 'ready']))
+                        ->requiresConfirmation()
+                        ->action(function (InteractiveCourseSession $record) {
+                            $record->markAsCancelled('ألغيت بواسطة المعلم', auth()->id());
+                        }),
+                    Tables\Actions\Action::make('join_meeting')
+                        ->label('دخول الاجتماع')
+                        ->icon('heroicon-o-video-camera')
+                        ->url(fn (InteractiveCourseSession $record): string => $record->meeting_link ?? '#')
+                        ->openUrlInNewTab()
+                        ->visible(fn (InteractiveCourseSession $record): bool => !empty($record->meeting_link)),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

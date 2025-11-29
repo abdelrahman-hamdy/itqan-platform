@@ -24,13 +24,17 @@
             <input type="hidden" id="student_id" name="student_id">
             <input type="hidden" id="report_type" name="report_type" value="{{ $sessionType }}">
 
-            <!-- Student Info (Read-only) -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <!-- Student Info Display (Quran modal style with unified x-avatar component) -->
+            <div id="studentInfoDisplay" class="bg-gray-50 rounded-lg p-4">
                 <div class="flex items-center gap-3">
-                    <i class="ri-user-line text-blue-600 text-2xl"></i>
+                    <!-- Student Avatar Container (will be populated with cloned x-avatar) -->
+                    <div id="modal_avatar_container" class="flex-shrink-0">
+                        <!-- Pre-rendered avatars will be cloned here -->
+                    </div>
+                    <!-- Student Details -->
                     <div>
-                        <p class="text-sm text-blue-600">الطالب</p>
-                        <p class="font-semibold text-blue-900" id="student_name">-</p>
+                        <h4 id="student_name" class="font-semibold text-gray-900">-</h4>
+                        <p id="student_info_extra" class="text-sm text-gray-600">-</p>
                     </div>
                 </div>
             </div>
@@ -103,17 +107,35 @@
                 </div>
             </div>
 
-            <!-- Academic-specific fields -->
+            <!-- Academic-specific fields - Simplified to only homework_degree -->
             <div id="academic_fields" class="space-y-4" style="display: none;">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="ri-file-list-line ml-1"></i>
                         درجة الواجب (0-10)
                     </label>
-                    <input type="number" id="homework_completion_degree" name="homework_completion_degree"
+                    <input type="number" id="homework_degree" name="homework_degree"
                            min="0" max="10" step="0.5"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
                            placeholder="0.0">
+                    <p class="text-xs text-gray-500 mt-1">تقييم جودة وإنجاز الواجب المنزلي</p>
+                </div>
+            </div>
+
+            <!-- Interactive-specific fields - Unified with Academic (only homework_degree) -->
+            <div id="interactive_fields" class="space-y-4" style="display: none;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="ri-file-list-line ml-1"></i>
+                            درجة الواجب (0-10)
+                        </label>
+                        <input type="number" id="interactive_homework_degree" name="homework_degree"
+                               min="0" max="10" step="0.5"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
+                               placeholder="0.0">
+                        <p class="text-xs text-gray-500 mt-1">تقييم جودة وإنجاز الواجب المنزلي</p>
+                    </div>
                 </div>
             </div>
 
@@ -150,7 +172,7 @@
 
 <script>
 // Global functions for modal management
-function openReportModal(sessionId, studentId, studentName, reportData = null, reportType = '{{ $sessionType }}') {
+function openReportModal(sessionId, studentId, studentName, reportData = null, reportType = '{{ $sessionType }}', studentData = null) {
     const modal = document.getElementById('reportEditModal');
     const form = document.getElementById('reportEditForm');
     const modalTitle = document.getElementById('modalTitle');
@@ -165,16 +187,56 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
     document.getElementById('student_name').textContent = studentName;
     document.getElementById('report_type').value = reportType;
 
+    // Update student avatar using pre-rendered x-avatar component
+    const modalAvatarContainer = document.getElementById('modal_avatar_container');
+    const studentInfoExtra = document.getElementById('student_info_extra');
+
+    // Clear previous avatar
+    modalAvatarContainer.innerHTML = '';
+
+    // Clone pre-rendered avatar from hidden container (rendered by session detail page)
+    const preRenderedAvatar = document.getElementById('prerendered_avatar_' + studentId);
+    if (preRenderedAvatar) {
+        const avatarClone = preRenderedAvatar.cloneNode(true);
+        avatarClone.id = ''; // Remove ID from clone
+        avatarClone.classList.remove('hidden');
+        modalAvatarContainer.appendChild(avatarClone);
+    }
+
+    // Set extra student info (attendance info style from Quran modal)
+    if (reportData && reportData.attendance_status) {
+        const statusMap = {
+            'attended': 'حاضر',
+            'late': 'متأخر',
+            'leaved': 'غادر مبكراً',
+            'absent': 'غائب'
+        };
+        let infoText = 'الحضور: ' + (statusMap[reportData.attendance_status] || reportData.attendance_status);
+        if (reportData.attendance_percentage !== null && reportData.attendance_percentage !== undefined) {
+            infoText += ' (' + Math.round(reportData.attendance_percentage) + '%)';
+        }
+        studentInfoExtra.textContent = infoText;
+    } else {
+        studentInfoExtra.textContent = 'بدون معلومات حضور';
+    }
+
     // Show/hide fields based on report type
     const quranFields = document.getElementById('quran_fields');
     const academicFields = document.getElementById('academic_fields');
+    const interactiveFields = document.getElementById('interactive_fields');
+
+    // Hide all type-specific fields first
+    quranFields.style.display = 'none';
+    academicFields.style.display = 'none';
+    interactiveFields.style.display = 'none';
 
     if (reportType === 'quran') {
         quranFields.style.display = 'block';
-        academicFields.style.display = 'none';
         modalTitle.textContent = 'تعديل تقرير حلقة القرآن';
+    } else if (reportType === 'interactive') {
+        interactiveFields.style.display = 'block';
+        modalTitle.textContent = 'تعديل تقرير الكورس التفاعلي';
     } else {
-        quranFields.style.display = 'none';
         academicFields.style.display = 'block';
         modalTitle.textContent = 'تعديل التقرير الأكاديمي';
     }
@@ -216,9 +278,13 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
             document.getElementById('reservation_degree').value = reportData.reservation_degree;
         }
 
-        // Academic fields
-        if (reportData.homework_completion_degree !== null && reportData.homework_completion_degree !== undefined) {
-            document.getElementById('homework_completion_degree').value = reportData.homework_completion_degree;
+        // Academic fields - Simplified to homework_degree only
+        if (reportData.homework_degree !== null && reportData.homework_degree !== undefined) {
+            document.getElementById('homework_degree').value = reportData.homework_degree;
+            // Also populate interactive field if exists
+            if (document.getElementById('interactive_homework_degree')) {
+                document.getElementById('interactive_homework_degree').value = reportData.homework_degree;
+            }
         }
     } else {
         // Hide auto-attendance info for new reports
@@ -270,13 +336,17 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
     const reportType = data.report_type;
     let url, method;
 
+    // Use role-specific routes to avoid middleware conflicts
+    // Quran teachers use quran-reports, academic teachers use academic-reports (also for interactive)
+    const routePrefix = reportType === 'quran' ? 'quran-reports' : 'academic-reports';
+
     if (reportId) {
         // Update existing report - use relative URL that works with subdomain routing
-        url = `/teacher/reports/${reportType}/${reportId}`;
+        url = `/teacher/${routePrefix}/${reportType}/${reportId}`;
         method = 'PUT';
     } else {
         // Create new report
-        url = `/teacher/reports/${reportType}`;
+        url = `/teacher/${routePrefix}/${reportType}`;
         method = 'POST';
     }
 
@@ -284,11 +354,24 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
         method: method,
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
+        credentials: 'same-origin',
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            // If response is not OK, try to get error message
+            return response.json().catch(() => {
+                // If JSON parsing fails, throw with status
+                throw new Error(`خطأ ${response.status}: ${response.statusText}`);
+            }).then(errorData => {
+                throw new Error(errorData.message || `خطأ ${response.status}`);
+            });
+        }
+        return response.json();
+    })
     .then(result => {
         if (result.success) {
             // Show success message
@@ -324,12 +407,12 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
     .catch(error => {
         console.error('Error:', error);
 
-        // Show error message
+        // Show error message with details
         messageDiv.className = 'bg-red-50 border border-red-200 rounded-lg p-4';
         messageDiv.innerHTML = `
             <div class="flex items-center gap-2 text-red-800">
                 <i class="ri-error-warning-line text-red-600"></i>
-                <span>حدث خطأ أثناء حفظ التقرير</span>
+                <span>${error.message || 'حدث خطأ أثناء حفظ التقرير'}</span>
             </div>
         `;
         messageDiv.classList.remove('hidden');

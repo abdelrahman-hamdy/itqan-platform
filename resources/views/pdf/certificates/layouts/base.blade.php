@@ -2,144 +2,156 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>شهادة - Certificate</title>
     <style>
+        /* mPDF optimized styles - using tables for layout */
         @page {
             margin: 0;
-            size: A4 landscape;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            size: A4-L; /* Landscape */
         }
 
         body {
-            font-family: 'Cairo', 'DejaVu Sans', sans-serif;
+            font-family: 'xbriyaz', 'dejavusans', sans-serif;
             direction: rtl;
             text-align: center;
-            width: 297mm;
-            height: 210mm;
-            position: relative;
-            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            background: #fff;
         }
 
         .certificate-container {
             width: 100%;
             height: 100%;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 40px 60px;
+            padding: 15mm 20mm;
         }
 
-        .certificate-header {
-            margin-bottom: 30px;
+        /* Decorative border */
+        .outer-border {
+            border: 4px solid #1e3a8a;
+            padding: 8px;
         }
 
-        .academy-logo {
-            width: 100px;
-            height: 100px;
-            object-fit: contain;
+        .inner-border {
+            border: 2px solid #3b82f6;
+            padding: 20px 30px;
+            background: linear-gradient(180deg, #fefefe 0%, #f8fafc 100%);
+        }
+
+        /* Header section */
+        .header-section {
             margin-bottom: 15px;
         }
 
-        .academy-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1e3a8a;
-            margin-bottom: 10px;
+        .academy-logo {
+            width: 80px;
+            height: 80px;
         }
 
-        .certificate-title {
-            font-size: 48px;
+        .academy-name {
+            font-size: 22pt;
             font-weight: bold;
-            margin-bottom: 40px;
+            color: #1e3a8a;
+            margin: 10px 0;
+        }
+
+        /* Title */
+        .certificate-title {
+            font-size: 42pt;
+            font-weight: bold;
+            color: #1e40af;
+            margin: 20px 0;
             letter-spacing: 2px;
         }
 
-        .certificate-body {
-            max-width: 800px;
-            margin: 0 auto 40px;
+        .title-decoration {
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #3b82f6, #10b981, transparent);
+            margin: 0 auto 20px;
         }
 
-        .recipient-section {
-            margin-bottom: 30px;
-        }
-
+        /* Recipient section */
         .recipient-label {
-            font-size: 18px;
+            font-size: 14pt;
+            color: #6b7280;
             margin-bottom: 10px;
-            color: #4b5563;
         }
 
         .recipient-name {
-            font-size: 36px;
+            font-size: 32pt;
             font-weight: bold;
+            color: #1e3a8a;
+            padding-bottom: 8px;
+            border-bottom: 3px solid #3b82f6;
+            display: inline-block;
             margin-bottom: 20px;
-            padding-bottom: 10px;
         }
 
+        /* Certificate text */
         .certificate-text {
-            font-size: 20px;
-            line-height: 1.8;
+            font-size: 14pt;
+            line-height: 2;
             color: #374151;
-            margin-bottom: 30px;
+            max-width: 600px;
+            margin: 0 auto 25px;
             text-align: center;
         }
 
-        .certificate-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            max-width: 800px;
-            margin: 0 auto;
-            padding-top: 40px;
+        /* Footer signatures */
+        .signatures-table {
+            width: 100%;
+            margin-top: 30px;
         }
 
-        .signature-section {
+        .signature-cell {
+            width: 33%;
             text-align: center;
-            width: 200px;
+            vertical-align: bottom;
+            padding: 0 20px;
         }
 
         .signature-line {
-            border-top: 2px solid #000;
-            margin-bottom: 10px;
-            width: 100%;
+            border-top: 2px solid #1e3a8a;
+            width: 150px;
+            margin: 0 auto 8px;
         }
 
         .signature-name {
-            font-family: 'Satisfy', 'Dancing Script', cursive;
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 12pt;
+            font-weight: bold;
+            color: #1f2937;
         }
 
         .signature-title {
-            font-size: 14px;
+            font-size: 10pt;
             color: #6b7280;
         }
 
-        .certificate-meta {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 60px;
-            font-size: 12px;
+        /* Certificate meta */
+        .meta-section {
+            margin-top: 20px;
+            font-size: 9pt;
             color: #9ca3af;
         }
 
         .certificate-number {
             direction: ltr;
+            display: inline;
         }
 
-        /* Template-specific styles will be added by child templates */
+        /* Decorative elements */
+        .corner-decoration {
+            width: 60px;
+            height: 60px;
+        }
+
+        .seal-watermark {
+            opacity: 0.08;
+            width: 120px;
+            height: 120px;
+        }
+
+        /* Template-specific styles */
         @yield('styles')
     </style>
 </head>

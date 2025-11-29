@@ -84,12 +84,15 @@ class QuranSessionResource extends Resource
                                         'trial' => 'تجريبية',
                                         'makeup' => 'تعويضية',
                                     ])
-                                    ->required(),
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->helperText('نوع الجلسة يُحدد تلقائياً'),
 
                                 DateTimePicker::make('scheduled_at')
                                     ->label('موعد الجلسة')
                                     ->required()
-                                    ->native(false),
+                                    ->native(false)
+                                    ->seconds(false),
 
                                 TextInput::make('duration_minutes')
                                     ->label('مدة الجلسة (بالدقائق)')
@@ -97,12 +100,31 @@ class QuranSessionResource extends Resource
                                     ->default(60)
                                     ->disabled()
                                     ->dehydrated()
-                                    ->helperText('المدة محددة بناءً على باقة القرآن المشترك بها'),
-                            ]),
+                                    ->helperText('المدة محددة بناءً على باقة القرآن'),
 
+                                Select::make('status')
+                                    ->label('حالة الجلسة')
+                                    ->options([
+                                        'scheduled' => 'مجدولة',
+                                        'ongoing' => 'جارية',
+                                        'completed' => 'مكتملة',
+                                        'cancelled' => 'ملغية',
+                                        'absent' => 'غياب الطالب',
+                                    ])
+                                    ->default('scheduled')
+                                    ->required(),
+                            ]),
+                    ]),
+
+                Section::make('تفاصيل الجلسة')
+                    ->schema([
                         Textarea::make('description')
                             ->label('وصف الجلسة')
                             ->rows(3),
+
+                        Textarea::make('lesson_content')
+                            ->label('محتوى الدرس')
+                            ->rows(4),
                     ]),
 
                 Section::make('الواجب المنزلي')
@@ -267,15 +289,17 @@ class QuranSessionResource extends Resource
                 BadgeColumn::make('attendance_status')
                     ->label('الحضور')
                     ->colors([
-                        'success' => 'present',
+                        'success' => 'attended',
                         'danger' => 'absent',
                         'warning' => 'late',
+                        'info' => 'leaved',
                         'gray' => 'pending',
                     ])
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'present' => 'حاضر',
+                        'attended' => 'حاضر',
                         'absent' => 'غائب',
                         'late' => 'متأخر',
+                        'leaved' => 'غادر مبكراً',
                         'pending' => 'في الانتظار',
                         null => 'غير محدد',
                         default => $state,
@@ -314,9 +338,10 @@ class QuranSessionResource extends Resource
                 SelectFilter::make('attendance_status')
                     ->label('الحضور')
                     ->options([
-                        'present' => 'حاضر',
+                        'attended' => 'حاضر',
                         'absent' => 'غائب',
                         'late' => 'متأخر',
+                        'leaved' => 'غادر مبكراً',
                         'pending' => 'في الانتظار',
                     ]),
 

@@ -7,7 +7,7 @@
 @php
     $hasHomework = !empty($session->homework_description) || !empty($session->homework_file);
     $hasSubmitted = $report && $report->homework_submitted_at !== null;
-    $isGraded = $report && $report->homework_completion_degree !== null;
+    $isGraded = $report && $report->homework_degree !== null;
 
     // Determine status
     $status = 'not_assigned';
@@ -119,14 +119,14 @@
                         <div class="flex items-center justify-between mb-2">
                             <label class="text-sm font-bold text-blue-900">تقييم المعلم</label>
                             <div class="flex items-center">
-                                <span class="text-2xl font-bold text-blue-600">{{ number_format($report->homework_completion_degree, 1) }}</span>
+                                <span class="text-2xl font-bold text-blue-600">{{ number_format($report->homework_degree, 1) }}</span>
                                 <span class="text-sm text-blue-600 mr-1">/10</span>
                             </div>
                         </div>
-                        @if($report->homework_feedback)
+                        @if($report->notes)
                             <div class="text-sm text-blue-800 mt-2">
                                 <i class="ri-message-2-line ml-1"></i>
-                                {{ $report->homework_feedback }}
+                                {{ $report->notes }}
                             </div>
                         @endif
                     </div>

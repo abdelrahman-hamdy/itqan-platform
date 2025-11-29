@@ -1199,6 +1199,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         // Academic subscription routes for students
         Route::get('/academic-subscriptions/{subscriptionId}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSubscription'])->name('student.academic-subscriptions.show');
+        Route::get('/academic-subscriptions/{subscription}/report', [App\Http\Controllers\AcademicSessionController::class, 'studentSubscriptionReport'])->name('student.academic-subscriptions.report');
 
         // Academic session routes for students
         Route::get('/academic-sessions/{session}', [App\Http\Controllers\StudentProfileController::class, 'showAcademicSession'])->name('student.academic-sessions.show');
@@ -1216,6 +1217,51 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Circle Report routes for students
         Route::get('/individual-circles/{circle}/report', [App\Http\Controllers\Student\CircleReportController::class, 'showIndividual'])->name('student.individual-circles.report');
         Route::get('/group-circles/{circle}/report', [App\Http\Controllers\Student\CircleReportController::class, 'showGroup'])->name('student.group-circles.report');
+
+        // Quiz test route - no auth
+        Route::get('/quiz-debug/{id}', function ($subdomain, $id) {
+            return response()->json([
+                'status' => 'ok',
+                'subdomain' => $subdomain,
+                'id' => $id,
+                'user' => auth()->id(),
+            ]);
+        })->name('quiz.debug');
+
+        // MINIMAL test - same pattern as quiz-debug that works
+        Route::get('/quiz-start-test/{id}', function ($subdomain, $id) {
+            return response()->json([
+                'route' => 'quiz-start-test',
+                'subdomain' => $subdomain,
+                'id' => $id,
+                'user' => auth()->id(),
+            ]);
+        })->name('quiz.start.test');
+
+        // Quiz routes - using closures to wrap controller calls for debugging
+        Route::get('/quizzes', function ($subdomain) {
+            return app(\App\Http\Controllers\QuizController::class)->index();
+        })->name('student.quizzes');
+
+        Route::get('/student-quiz-start/{quiz_id}', function ($subdomain, $quiz_id) {
+            \Log::info('Quiz start route reached (closure wrapper)', ['subdomain' => $subdomain, 'quiz_id' => $quiz_id, 'user_id' => auth()->id()]);
+            return app(\App\Http\Controllers\QuizController::class)->start($quiz_id);
+        })->name('student.quiz.start');
+
+        Route::get('/student-quiz-take/{attempt_id}', function ($subdomain, $attempt_id) {
+            \Log::info('Quiz take route reached', ['subdomain' => $subdomain, 'attempt_id' => $attempt_id]);
+            return app(\App\Http\Controllers\QuizController::class)->take($attempt_id);
+        })->name('student.quiz.take');
+
+        Route::post('/student-quiz-submit/{attempt_id}', function (\Illuminate\Http\Request $request, $subdomain, $attempt_id) {
+            \Log::info('Quiz submit route reached', ['subdomain' => $subdomain, 'attempt_id' => $attempt_id]);
+            return app(\App\Http\Controllers\QuizController::class)->submit($request, $attempt_id);
+        })->name('student.quiz.submit');
+
+        Route::get('/student-quiz-results/{quiz_id}', function ($subdomain, $quiz_id) {
+            \Log::info('Quiz results route reached', ['subdomain' => $subdomain, 'quiz_id' => $quiz_id]);
+            return app(\App\Http\Controllers\QuizController::class)->result($quiz_id);
+        })->name('student.quiz.result');
     });
 
     /*
@@ -1370,6 +1416,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Academic sessions list
         Route::get('/academic-sessions', [App\Http\Controllers\AcademicSessionController::class, 'index'])->name('academic-sessions.index');
 
+        // Academic subscription comprehensive report
+        Route::get('/academic-subscriptions/{subscription}/report', [App\Http\Controllers\AcademicSessionController::class, 'subscriptionReport'])->name('academic-subscriptions.report');
+
         Route::prefix('academic-sessions/{session}')->name('academic-sessions.')->group(function () {
             // Session view (moved from auth.php for consistency)
             Route::get('/', [App\Http\Controllers\AcademicSessionController::class, 'show'])->name('show');
@@ -1394,6 +1443,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     | Routes for academic teachers to manage interactive course sessions
     */
     Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        // Interactive course comprehensive report
+        Route::get('/interactive-courses/{course}/report', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourseReport'])->name('interactive-courses.report');
+        // Interactive course individual student report
+        Route::get('/interactive-courses/{course}/students/{student}/report', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourseStudentReport'])->name('interactive-courses.student-report');
+
         Route::prefix('interactive-sessions/{session}')->name('interactive-sessions.')->group(function () {
             // Session view for teachers
             Route::get('/', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourseSession'])->name('show');
@@ -1412,6 +1466,19 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     | Unified routes for creating and updating student reports across all session types
     */
+    // Quran teacher reports - specific route
+    Route::middleware(['auth', 'role:quran_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        Route::post('/quran-reports/{type}', [App\Http\Controllers\StudentReportController::class, 'store'])->name('quran-reports.store');
+        Route::put('/quran-reports/{type}/{report}', [App\Http\Controllers\StudentReportController::class, 'update'])->name('quran-reports.update');
+    });
+
+    // Academic teacher reports - specific route
+    Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        Route::post('/academic-reports/{type}', [App\Http\Controllers\StudentReportController::class, 'store'])->name('academic-reports.store');
+        Route::put('/academic-reports/{type}/{report}', [App\Http\Controllers\StudentReportController::class, 'update'])->name('academic-reports.update');
+    });
+
+    // Legacy unified route (keeping for backwards compatibility)
     Route::middleware(['auth', 'role:academic_teacher,quran_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
         // Create new report
         Route::post('/reports/{type}', [App\Http\Controllers\StudentReportController::class, 'store'])->name('reports.store');
@@ -1541,6 +1608,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/interactive-sessions/{session}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourseSession'])->name('interactive-sessions.show');
         Route::post('/interactive-sessions/{session}/feedback', [App\Http\Controllers\StudentProfileController::class, 'addInteractiveSessionFeedback'])->name('interactive-sessions.feedback');
         Route::post('/interactive-sessions/{session}/homework', [App\Http\Controllers\StudentProfileController::class, 'submitInteractiveCourseHomework'])->name('interactive-sessions.homework');
+        // Interactive course report - for enrolled students
+        Route::get('/interactive-courses/{course}/report', [App\Http\Controllers\StudentProfileController::class, 'studentInteractiveCourseReport'])->name('interactive-courses.report');
     });
 
     // Chat routes removed - WireChat uninstalled

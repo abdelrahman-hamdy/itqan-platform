@@ -4,10 +4,10 @@ namespace App\Enums;
 
 enum AttendanceStatus: string
 {
-    case ATTENDED = 'attended';
-    case LATE = 'late';
-    case LEAVED = 'leaved';
-    case ABSENT = 'absent';
+    case ATTENDED = 'attended';     // Full attendance
+    case LATE = 'late';             // Arrived late but attended
+    case LEAVED = 'leaved';         // Left early (partial attendance)
+    case ABSENT = 'absent';         // Did not attend
 
     /**
      * Get Arabic label for the status

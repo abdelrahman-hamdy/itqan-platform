@@ -132,14 +132,18 @@ class QuranIndividualCircle extends Model
         return $this->sessions()->whereIn('status', ['completed', 'absent']);
     }
 
+    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(QuizAssignment::class, 'assignable');
+    }
+
     // Note: homework() relationship removed - Quran homework is now tracked through
     // QuranSession model fields and graded through student session reports
     // See migration: 2025_11_17_190605_drop_quran_homework_tables.php
 
-    public function progress(): HasMany
-    {
-        return $this->hasMany(QuranProgress::class, 'circle_id');
-    }
+    // Note: progress() relationship removed - Progress is now calculated
+    // dynamically from session reports using the QuranReportService
+    // See migration: 2025_11_23_drop_progress_tables.php
 
     public function createdBy(): BelongsTo
     {

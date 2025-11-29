@@ -28,9 +28,9 @@
         @if($isTeacher)
             <!-- Teacher Actions -->
             @if($isAcademic)
-                <a href="#" onclick="alert('سيتم تنفيذ التقرير التفصيلي قريباً')"
-                   class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                    <i class="ri-line-chart-line ml-2"></i>
+                <a href="{{ route('teacher.academic-subscriptions.report', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'subscription' => $circle->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <i class="ri-file-chart-line ml-2"></i>
                     عرض التقرير التفصيلي
                 </a>
             @else
@@ -64,7 +64,13 @@
             @endif
         @else
             <!-- Student Actions -->
-            @if(!$isAcademic)
+            @if($isAcademic)
+                <a href="{{ route('student.academic-subscriptions.report', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'subscription' => $circle->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <i class="ri-file-chart-line ml-2"></i>
+                    عرض تقريري
+                </a>
+            @else
                 <a href="{{ route('student.individual-circles.report', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
                     <i class="ri-file-chart-line ml-2"></i>

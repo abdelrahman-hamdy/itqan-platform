@@ -101,6 +101,12 @@
             <i class="ri-file-list-3-line ml-3"></i>
             <span class="nav-text transition-all duration-300">الواجبات</span>
           </a>
+          <a href="{{ route('student.quizzes', ['subdomain' => ($user && $user->academy) ? $user->academy->subdomain : 'itqan-academy']) }}"
+             class="nav-item flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors {{ request()->routeIs('student.quizzes') ? 'bg-gray-100 text-primary' : '' }}"
+             data-tooltip="الاختبارات">
+            <i class="ri-questionnaire-line ml-3"></i>
+            <span class="nav-text transition-all duration-300">الاختبارات</span>
+          </a>
         </div>
       </div>
 

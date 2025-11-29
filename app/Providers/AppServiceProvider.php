@@ -3,12 +3,10 @@
 namespace App\Providers;
 
 use App\Helpers\AcademyHelper;
-use App\Models\AcademicSession;
 use App\Models\AcademicSessionAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Observers\AcademicSessionAttendanceObserver;
-use App\Observers\AcademicSessionObserver;
 use App\Observers\MediaObserver;
 use App\Observers\QuranSessionObserver;
 use App\Observers\StudentSessionReportObserver;
@@ -40,8 +38,6 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('academy.context', \App\Http\Middleware\AcademyContext::class);
         Route::aliasMiddleware('resolve.tenant', \App\Http\Middleware\ResolveTenantFromSubdomain::class);
 
-        // Route model bindings handled manually in controllers
-
         // Share academy context with all views
         View::composer('*', function ($view) {
             $view->with('currentAcademy', AcademyHelper::getCurrentAcademy());
@@ -51,16 +47,13 @@ class AppServiceProvider extends ServiceProvider
         // Register Media Observer to handle UTF-8 filename sanitization
         Media::observe(MediaObserver::class);
 
-        // Register AcademicSession Observer for auto-progress tracking
-        AcademicSession::observe(AcademicSessionObserver::class);
-
         // Register AcademicSessionAttendance Observer for attendance-based progress tracking
         AcademicSessionAttendance::observe(AcademicSessionAttendanceObserver::class);
 
         // Register QuranSession Observer for trial request status synchronization
         QuranSession::observe(QuranSessionObserver::class);
 
-        // Register StudentSessionReport Observer for QuranProgress integration
+        // Register StudentSessionReport Observer for pivot table counter updates
         StudentSessionReport::observe(StudentSessionReportObserver::class);
 
         // Override WireChat Info component with custom implementation

@@ -18,14 +18,11 @@ $createMeetingsCommand = Schedule::command('meetings:create-scheduled')
     ->runInBackground()
     ->description('Create video meetings for scheduled sessions');
 
-// Set to every minute for testing regardless of environment
-$createMeetingsCommand->everyMinute(); // Every minute for testing
-
-// if ($isLocal) {
-//     $createMeetingsCommand->everyMinute(); // Every minute for development
-// } else {
-//     $createMeetingsCommand->everyFiveMinutes(); // Every 5 minutes for production
-// }
+if ($isLocal) {
+    $createMeetingsCommand->everyMinute();
+} else {
+    $createMeetingsCommand->everyFiveMinutes();
+}
 
 // Cleanup expired meetings
 $cleanupMeetingsCommand = Schedule::command('meetings:cleanup-expired')
@@ -34,14 +31,11 @@ $cleanupMeetingsCommand = Schedule::command('meetings:cleanup-expired')
     ->runInBackground()
     ->description('End expired video meetings and cleanup resources');
 
-// Set to every minute for testing regardless of environment
-$cleanupMeetingsCommand->everyMinute(); // Every minute for testing
-
-// if ($isLocal) {
-//     $cleanupMeetingsCommand->everyThreeMinutes(); // Every 3 minutes for development
-// } else {
-//     $cleanupMeetingsCommand->everyTenMinutes(); // Every 10 minutes for production
-// }
+if ($isLocal) {
+    $cleanupMeetingsCommand->everyThreeMinutes();
+} else {
+    $cleanupMeetingsCommand->everyTenMinutes();
+}
 
 // Update session statuses based on time
 $updateStatusesCommand = Schedule::command('sessions:update-statuses')
@@ -50,14 +44,11 @@ $updateStatusesCommand = Schedule::command('sessions:update-statuses')
     ->runInBackground()
     ->description('Update session statuses based on current time and business rules');
 
-// Set to every minute for testing regardless of environment
-$updateStatusesCommand->everyMinute(); // Every minute for testing
-
-// if ($isLocal) {
-//     $updateStatusesCommand->everyTwoMinutes(); // Every 2 minutes for development
-// } else {
-//     $updateStatusesCommand->everyFiveMinutes(); // Every 5 minutes for production
-// }
+if ($isLocal) {
+    $updateStatusesCommand->everyTwoMinutes();
+} else {
+    $updateStatusesCommand->everyFiveMinutes();
+}
 
 // Enhanced session meeting management (replaces individual commands above)
 $sessionMeetingCommand = Schedule::command('sessions:manage-meetings')
@@ -66,14 +57,11 @@ $sessionMeetingCommand = Schedule::command('sessions:manage-meetings')
     ->runInBackground()
     ->description('Comprehensive session meeting management - create, update, cleanup');
 
-// Set to every minute for testing regardless of environment
-$sessionMeetingCommand->everyMinute(); // Every minute for testing
-
-// if ($isLocal) {
-//     $sessionMeetingCommand->everyThreeMinutes(); // Every 3 minutes for development
-// } else {
-//     $sessionMeetingCommand->everyFiveMinutes(); // Every 5 minutes for production
-// }
+if ($isLocal) {
+    $sessionMeetingCommand->everyThreeMinutes();
+} else {
+    $sessionMeetingCommand->everyFiveMinutes();
+}
 
 // Session meeting maintenance during off-hours
 Schedule::command('sessions:manage-meetings --force')
@@ -91,14 +79,11 @@ $academicSessionMeetingCommand = Schedule::command('academic-sessions:manage-mee
     ->runInBackground()
     ->description('Comprehensive academic session meeting management - create, update, cleanup');
 
-// Set to every minute for testing regardless of environment
-$academicSessionMeetingCommand->everyMinute(); // Every minute for testing
-
-// if ($isLocal) {
-//     $academicSessionMeetingCommand->everyThreeMinutes(); // Every 3 minutes for development
-// } else {
-//     $academicSessionMeetingCommand->everyFiveMinutes(); // Every 5 minutes for production
-// }
+if ($isLocal) {
+    $academicSessionMeetingCommand->everyThreeMinutes();
+} else {
+    $academicSessionMeetingCommand->everyFiveMinutes();
+}
 
 // Academic session meeting maintenance during off-hours
 Schedule::command('academic-sessions:manage-meetings --force')

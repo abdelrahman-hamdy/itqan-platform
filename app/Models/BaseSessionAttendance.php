@@ -116,7 +116,7 @@ abstract class BaseSessionAttendance extends Model
 
     public function scopePresent($query)
     {
-        return $query->where('attendance_status', 'present');
+        return $query->where('attendance_status', 'attended');
     }
 
     public function scopeAbsent($query)
@@ -179,11 +179,10 @@ abstract class BaseSessionAttendance extends Model
     public function getAttendanceStatusInArabicAttribute(): string
     {
         return match ($this->attendance_status) {
-            'present' => 'حاضر',
+            'attended' => 'حاضر',
             'absent' => 'غائب',
             'late' => 'متأخر',
-            'partial' => 'حضور جزئي',
-            'left_early' => 'غادر مبكراً',
+            'leaved' => 'غادر مبكراً',
             default => 'غير معروفة'
         };
     }
@@ -205,7 +204,7 @@ abstract class BaseSessionAttendance extends Model
      */
     public function getAttendedFullSessionAttribute(): bool
     {
-        if ($this->attendance_status !== 'present') {
+        if ($this->attendance_status !== 'attended') {
             return false;
         }
 
@@ -302,7 +301,7 @@ abstract class BaseSessionAttendance extends Model
      */
     public function recordJoin(): bool
     {
-        if ($this->attendance_status === 'present' && $this->join_time) {
+        if ($this->attendance_status === 'attended' && $this->join_time) {
             return false; // Already joined
         }
 
@@ -311,7 +310,7 @@ abstract class BaseSessionAttendance extends Model
         $lateThreshold = $this->getLateThresholdMinutes();
         $lateTime = $sessionStartTime->copy()->addMinutes($lateThreshold);
 
-        $attendanceStatus = $now->isAfter($lateTime) ? 'late' : 'present';
+        $attendanceStatus = $now->isAfter($lateTime) ? 'late' : 'attended';
 
         $this->update([
             'attendance_status' => $attendanceStatus,
@@ -395,10 +394,10 @@ abstract class BaseSessionAttendance extends Model
         // Check if left early
         $expectedEnd = $sessionStart->copy()->addMinutes($this->session->duration_minutes);
         if ($leaveTime && $leaveTime->isBefore($expectedEnd->subMinutes(10))) {
-            return 'left_early';
+            return 'leaved';
         }
 
-        return 'present';
+        return 'attended';
     }
 
     /**
@@ -483,7 +482,7 @@ abstract class BaseSessionAttendance extends Model
      */
     public function canLeaveSession(): bool
     {
-        return $this->attendance_status === 'present' &&
+        return $this->attendance_status === 'attended' &&
                $this->join_time &&
                ! $this->leave_time;
     }
