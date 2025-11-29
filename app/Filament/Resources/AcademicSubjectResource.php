@@ -26,9 +26,9 @@ class AcademicSubjectResource extends BaseResource
 
     protected static ?string $navigationLabel = 'المواد الأكاديمية';
 
-    protected static ?string $navigationGroup = 'النظام الأكاديمي';
+    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $modelLabel = 'مادة أكاديمية';
 
