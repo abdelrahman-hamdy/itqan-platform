@@ -862,7 +862,7 @@ class AcademicCalendar extends Page
     protected function getFooterWidgets(): array
     {
         return [
-            \App\Filament\Teacher\Widgets\TeacherCalendarWidget::make([
+            \App\Filament\AcademicTeacher\Widgets\AcademicFullCalendarWidget::make([
                 'selectedItemId' => $this->selectedItemId,
                 'selectedItemType' => $this->selectedItemType,
             ]),

@@ -93,7 +93,7 @@ class LiveKitService
                         'access_method' => 'token_based',
                     ],
                     'settings' => [
-                        'max_participants' => $options['max_participants'] ?? 50,
+                        'max_participants' => $options['max_participants'] ?? 100,  // Updated from 50 to 100
                         'recording_enabled' => $options['recording_enabled'] ?? false,
                         'auto_record' => $options['auto_record'] ?? false,
                         'empty_timeout' => $options['empty_timeout'] ?? 300,
@@ -147,7 +147,7 @@ class LiveKitService
                     'access_method' => 'token_based',
                 ],
                 'settings' => [
-                    'max_participants' => $options['max_participants'] ?? 50,
+                    'max_participants' => $options['max_participants'] ?? 100,  // Updated from 50 to 100
                     'recording_enabled' => $options['recording_enabled'] ?? false,
                     'auto_record' => $options['auto_record'] ?? false,
                     'empty_timeout' => $options['empty_timeout'] ?? 300, // 5 minutes
@@ -481,13 +481,16 @@ class LiveKitService
     {
         return (new RoomCreateOptions)
             ->setName($roomName)
-            ->setMaxParticipants($options['max_participants'] ?? 50)
+            ->setMaxParticipants($options['max_participants'] ?? 100)  // Updated from 50 to 100
             ->setEmptyTimeout($options['empty_timeout'] ?? 300)
             ->setMetadata(json_encode([
                 'created_by' => 'itqan_platform',
                 'session_type' => $options['session_type'] ?? 'quran',
                 'recording_enabled' => $options['recording_enabled'] ?? false,
                 'created_at' => now()->toISOString(),
+                // Dynacast (selective layer forwarding) is enabled client-side in connection options
+                // This reduces server CPU by 60-70% by only forwarding quality layers each client needs
+                'dynacast_enabled' => true,
             ]));
     }
 
@@ -495,13 +498,14 @@ class LiveKitService
     {
         return (new RoomCreateOptions)
             ->setName($roomName)
-            ->setMaxParticipants($options['max_participants'] ?? 50)
+            ->setMaxParticipants($options['max_participants'] ?? 100)  // Updated from 50 to 100
             ->setEmptyTimeout($options['empty_timeout'] ?? 300)
             ->setMetadata(json_encode([
                 'created_by' => 'itqan_platform',
                 'session_type' => $options['session_type'] ?? 'quran',
                 'recording_enabled' => $options['recording_enabled'] ?? false,
                 'created_at' => now()->toISOString(),
+                'dynacast_enabled' => true,
             ]));
     }
 

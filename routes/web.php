@@ -473,7 +473,14 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
     }
 
     $user = $request->user();
-    $userType = $user->hasRole('quran_teacher') ? 'quran_teacher' : 'student';
+    // Determine user type
+    if ($user->hasRole('quran_teacher')) {
+        $userType = 'quran_teacher';
+    } elseif ($user->hasRole('academic_teacher')) {
+        $userType = 'academic_teacher';
+    } else {
+        $userType = 'student';
+    }
 
     // Smart session resolution - check both types and find the one that exists
     $academicSession = \App\Models\AcademicSession::find($session);
@@ -511,32 +518,14 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
     }
 
     // Determine if user can join
+    // Anyone (students and teachers) can join when session is READY or ONGOING
     $canJoinMeeting = in_array($session->status, [
         SessionStatus::READY,
         SessionStatus::ONGOING,
     ]);
 
-    // CRITICAL FIX: Teachers can ALWAYS join ongoing/ready sessions regardless of status
-    if ($userType === 'quran_teacher' && in_array($session->status, [
-        SessionStatus::READY,
-        SessionStatus::ONGOING,
-        SessionStatus::ABSENT,  // Teachers can join even if marked absent (student absence)
-        SessionStatus::SCHEDULED,
-    ])) {
-        $now = now();
-        // Only check timing if session is scheduled
-        if ($session->scheduled_at) {
-            $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
-            $sessionEnd = $session->scheduled_at->copy()->addMinutes(($session->duration_minutes ?? 60) + $endingBufferMinutes);
-
-            if ($now->gte($preparationStart) && $now->lt($sessionEnd)) {
-                $canJoinMeeting = true;
-            }
-        }
-    }
-
-    // Allow students to join even if marked absent, as long as session is not completed
-    if ($userType === 'student' && in_array($session->status, [
+    // Allow anyone to join even if marked absent or scheduled (within time window)
+    if (in_array($session->status, [
         SessionStatus::ABSENT,
         SessionStatus::SCHEDULED,
     ])) {
@@ -559,24 +548,14 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
 
     switch ($session->status) {
         case SessionStatus::READY:
-            if ($canJoinMeeting) {
-                $message = $userType === 'quran_teacher'
-                    ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع'
-                    : 'الجلسة جاهزة - انضم الآن';
-                $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'انضم للجلسة';
-                $buttonClass = 'bg-green-600 hover:bg-green-700';
-                $buttonDisabled = false;
-            } else {
-                $message = $userType === 'quran_teacher'
-                    ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع'
-                    : 'الجلسة جاهزة';
-                $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'غير متاح';
-                $buttonClass = $userType === 'quran_teacher' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed';
-                $buttonDisabled = $userType !== 'quran_teacher';
-            }
+            // Anyone can join/start the session
+            $message = 'الجلسة جاهزة - يمكنك الانضمام الآن';
+            $buttonText = 'انضم للجلسة';
+            $buttonClass = 'bg-green-600 hover:bg-green-700';
             break;
 
         case SessionStatus::ONGOING:
+            // Anyone can join the ongoing session
             $message = 'الجلسة جارية الآن - انضم للمشاركة';
             $buttonText = 'انضمام للجلسة الجارية';
             $buttonClass = 'bg-orange-600 hover:bg-orange-700 animate-pulse';
@@ -605,7 +584,7 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
 
         case SessionStatus::ABSENT:
             if ($canJoinMeeting) {
-                if ($userType === 'quran_teacher') {
+                if (in_array($userType, ['quran_teacher', 'academic_teacher'])) {
                     $message = 'الجلسة نشطة - يمكنك بدء أو الانضمام للاجتماع';
                     $buttonText = 'انضم للجلسة';
                     $buttonClass = 'bg-green-600 hover:bg-green-700';
@@ -615,7 +594,7 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
                     $buttonClass = 'bg-yellow-600 hover:bg-yellow-700';
                 }
             } else {
-                if ($userType === 'quran_teacher') {
+                if (in_array($userType, ['quran_teacher', 'academic_teacher'])) {
                     $message = 'انتهت فترة الجلسة';
                     $buttonText = 'الجلسة منتهية';
                     $buttonClass = 'bg-gray-400 cursor-not-allowed';

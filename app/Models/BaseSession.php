@@ -64,9 +64,10 @@ abstract class BaseSession extends Model implements MeetingCapable
 
     /**
      * Common fillable fields across all session types
-     * Child classes should merge their specific fields with parent::$fillable
+     * Child classes should merge their specific fields with this static property
+     * IMPORTANT: Made static to allow child classes to access via parent::$fillable
      */
-    protected $fillable = [
+    protected static $baseFillable = [
         // Core session fields
         'academy_id',
         'session_code',
@@ -112,6 +113,22 @@ abstract class BaseSession extends Model implements MeetingCapable
         'updated_by',
         'scheduled_by',
     ];
+
+    /**
+     * Instance-level fillable (automatically set from $baseFillable)
+     * This ensures Laravel's mass assignment protection works correctly
+     */
+    protected $fillable = [];
+
+    /**
+     * Constructor to initialize fillable from static $baseFillable
+     */
+    public function __construct(array $attributes = [])
+    {
+        // Initialize fillable from static base fillable
+        $this->fillable = static::$baseFillable;
+        parent::__construct($attributes);
+    }
 
     /**
      * Common casts across all session types
@@ -477,6 +494,21 @@ abstract class BaseSession extends Model implements MeetingCapable
     }
 
     /**
+     * Check if session is in "preparing meeting" state
+     * This happens when status is READY or ONGOING but meeting room is not yet created
+     */
+    public function isPreparingMeeting(): bool
+    {
+        $status = is_string($this->status) ? SessionStatus::from($this->status) : $this->status;
+
+        // Meeting is being prepared if:
+        // 1. Status is READY or ONGOING
+        // 2. But meeting room hasn't been created yet
+        return in_array($status, [SessionStatus::READY, SessionStatus::ONGOING])
+            && empty($this->meeting_room_name);
+    }
+
+    /**
      * Get session status display data
      */
     public function getStatusDisplayData(): array
@@ -484,8 +516,43 @@ abstract class BaseSession extends Model implements MeetingCapable
         // Convert string status to enum if needed
         $status = is_string($this->status) ? SessionStatus::from($this->status) : $this->status;
 
+        // Check if meeting is being prepared
+        $isPreparingMeeting = $this->isPreparingMeeting();
+
+        // Override display data when preparing meeting
+        if ($isPreparingMeeting) {
+            return [
+                'status' => $status->value,
+                'actual_status' => $status->value,
+                'label' => 'جارٍ تجهيز الاجتماع...',
+                'icon' => 'ri-settings-3-line', // Gear icon
+                'color' => 'amber',
+                'can_join' => false, // Cannot join while preparing
+                'can_complete' => in_array($status, [
+                    SessionStatus::READY,
+                    SessionStatus::ONGOING,
+                ]),
+                'can_cancel' => in_array($status, [
+                    SessionStatus::SCHEDULED,
+                    SessionStatus::READY,
+                ]),
+                'can_reschedule' => in_array($status, [
+                    SessionStatus::SCHEDULED,
+                    SessionStatus::READY,
+                ]),
+                'is_upcoming' => false,
+                'is_active' => true,
+                'is_preparing_meeting' => true,
+                'preparation_minutes' => $this->getPreparationMinutes(),
+                'ending_buffer_minutes' => $this->getEndingBufferMinutes(),
+                'grace_period_minutes' => $this->getGracePeriodMinutes(),
+            ];
+        }
+
+        // Normal status display
         return [
             'status' => $status->value,
+            'actual_status' => $status->value,
             'label' => $status->label(),
             'icon' => $status->icon(),
             'color' => $status->color(),
@@ -507,6 +574,7 @@ abstract class BaseSession extends Model implements MeetingCapable
             ]),
             'is_upcoming' => $status === SessionStatus::SCHEDULED && $this->scheduled_at && $this->scheduled_at->isFuture(),
             'is_active' => in_array($status, [SessionStatus::READY, SessionStatus::ONGOING]),
+            'is_preparing_meeting' => false,
             'preparation_minutes' => $this->getPreparationMinutes(),
             'ending_buffer_minutes' => $this->getEndingBufferMinutes(),
             'grace_period_minutes' => $this->getGracePeriodMinutes(),
@@ -539,6 +607,12 @@ abstract class BaseSession extends Model implements MeetingCapable
     {
         // If no scheduled time, allow join (for manual sessions)
         if (!$this->scheduled_at) {
+            return true;
+        }
+
+        // If session is marked as "ongoing" or "ready", allow all authorized users to join
+        // This handles cases where sessions are kept open or status updates are delayed
+        if (in_array($this->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
             return true;
         }
 

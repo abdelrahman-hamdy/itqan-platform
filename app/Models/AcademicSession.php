@@ -110,10 +110,11 @@ class AcademicSession extends BaseSession
      */
     public function __construct(array $attributes = [])
     {
-        // Merge parent fillable fields with child-specific fields BEFORE parent constructor
-        $this->fillable = array_merge(parent::$fillable ?? [], $this->fillable);
+        // Merge parent's static base fillable fields with child-specific fields FIRST
+        $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
 
-        parent::__construct($attributes);
+        // Call grandparent (Model) constructor directly to avoid BaseSession overwriting fillable
+        \Illuminate\Database\Eloquent\Model::__construct($attributes);
     }
 
     /**

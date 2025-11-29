@@ -119,6 +119,7 @@ class AdminPanelProvider extends PanelProvider
             // إدارة التعليم الأكاديمي
             \App\Filament\Resources\InteractiveCourseResource::class,
             \App\Filament\Resources\AcademicGradeLevelResource::class,
+            \App\Filament\Resources\AcademicSubjectResource::class,
             \App\Filament\Resources\RecordedCourseResource::class,
             \App\Filament\Resources\AcademicPackageResource::class,
 

@@ -18,6 +18,9 @@
         $prepMessage = getMeetingPreparationMessage($session);
         $isInPreparation = $prepMessage['type'] === 'preparing';
     }
+
+    // Check if session is preparing meeting (READY/ONGOING but meeting room not created)
+    $isPreparingMeeting = method_exists($session, 'isPreparingMeeting') ? $session->isPreparingMeeting() : false;
 @endphp
 
 <div class="attendance-indicator rounded-xl p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer" onclick="openSessionDetail({{ $session->id }})">
@@ -26,7 +29,11 @@
         <div class="flex items-center space-x-4 space-x-reverse">
             <!-- Session Status Indicator with Animated Circles -->
             <div class="flex flex-col items-center">
-                @if($statusValue === 'completed')
+                @if($isPreparingMeeting)
+                    <!-- Preparing Meeting State (READY/ONGOING but room not created) -->
+                    <div class="w-4 h-4 bg-amber-500 rounded-full mb-1 animate-spin"></div>
+                    <span class="text-xs text-amber-600 font-bold">تجهيز الاجتماع</span>
+                @elseif($statusValue === 'completed')
                     <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
                     <span class="text-xs text-green-600 font-bold">مكتملة</span>
                 @elseif($statusValue === 'ongoing')
@@ -82,7 +89,12 @@
                 </div>
 
                 <!-- Meeting timing info for active sessions -->
-                @if($statusValue === 'scheduled' && $session->scheduled_at)
+                @if($isPreparingMeeting)
+                    <div class="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block self-start">
+                        <i class="ri-settings-3-line animate-spin inline-block"></i>
+                        جارٍ تجهيز غرفة الاجتماع... يرجى الانتظار
+                    </div>
+                @elseif($statusValue === 'scheduled' && $session->scheduled_at)
                     @php
                         $preparationMessage = getMeetingPreparationMessage($session);
                     @endphp

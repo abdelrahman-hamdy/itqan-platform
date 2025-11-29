@@ -31,22 +31,23 @@
         $graceMinutes = $circle?->late_join_grace_period_minutes ?? 15;
     }
     
-    // CRITICAL FIX: Students should be able to join unless session is completed/cancelled
+    // Anyone can join when session is READY or ONGOING (students and teachers)
+    // Both can initiate the meeting if room doesn't exist
     $canJoinMeeting = in_array($session->status, [
         App\Enums\SessionStatus::READY,
         App\Enums\SessionStatus::ONGOING
     ]);
-    
-    // ADDITIONAL FIX: Allow students to join even if marked absent, as long as session is not completed
+
+    // ADDITIONAL FIX: Allow students to join even if marked absent, as long as session is active
     if ($userType === 'student' && in_array($session->status, [
         App\Enums\SessionStatus::ABSENT,
         App\Enums\SessionStatus::SCHEDULED
-    ])) {
+    ]) && $hasMeetingRoom) {
         // Students can join during preparation time or if session hasn't ended
         $now = now();
         $preparationStart = $session->scheduled_at?->copy()->subMinutes($preparationMinutes);
         $sessionEnd = $session->scheduled_at?->copy()->addMinutes(($session->duration_minutes ?? 30) + $endingBufferMinutes);
-        
+
         if ($now->gte($preparationStart) && $now->lt($sessionEnd)) {
             $canJoinMeeting = true;
         }
@@ -60,29 +61,19 @@
     
     switch($session->status) {
         case App\Enums\SessionStatus::READY:
-            if ($session->meeting_room_name) {
-                // Meeting room exists, both teachers and students can join
-                $meetingMessage = $userType === 'quran_teacher' 
-                    ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع' 
-                    : 'الجلسة جاهزة - يمكنك الانضمام الآن';
-                $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'انضم للجلسة';
-                $buttonClass = $userType === 'quran_teacher' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
-                $buttonDisabled = false;
-            } else {
-                // No meeting room yet, only teachers can start
-                $meetingMessage = $userType === 'quran_teacher' 
-                    ? 'الجلسة جاهزة للبدء - يمكنك الآن بدء الاجتماع' 
-                    : 'الجلسة جاهزة - في انتظار المعلم لبدء الاجتماع';
-                $buttonText = $userType === 'quran_teacher' ? 'بدء الجلسة' : 'في انتظار المعلم';
-                $buttonClass = $userType === 'quran_teacher' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed';
-                $buttonDisabled = $userType !== 'quran_teacher';
-            }
+            // Anyone can join/start the session
+            $meetingMessage = 'الجلسة جاهزة - يمكنك الانضمام الآن';
+            $buttonText = 'انضم للجلسة';
+            $buttonClass = 'bg-green-600 hover:bg-green-700';
+            $buttonDisabled = false;
             break;
-            
+
         case App\Enums\SessionStatus::ONGOING:
+            // Anyone can join the ongoing session
             $meetingMessage = 'الجلسة جارية الآن - انضم للمشاركة';
             $buttonText = 'انضمام للجلسة الجارية';
             $buttonClass = 'bg-orange-600 hover:bg-orange-700 animate-pulse';
+            $buttonDisabled = false;
             break;
             
         case App\Enums\SessionStatus::SCHEDULED:
