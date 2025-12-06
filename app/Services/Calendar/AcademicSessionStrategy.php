@@ -1,0 +1,372 @@
+<?php
+
+namespace App\Services\Calendar;
+
+use App\Filament\AcademicTeacher\Widgets\AcademicFullCalendarWidget;
+use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseSession;
+use App\Services\Scheduling\Validators\AcademicLessonValidator;
+use App\Services\Scheduling\Validators\InteractiveCourseValidator;
+use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
+use App\Services\SessionManagementService;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+
+/**
+ * Academic teacher session strategy
+ *
+ * Handles calendar operations for Academic teachers:
+ * - Private lessons (academic subscriptions)
+ * - Interactive courses
+ */
+class AcademicSessionStrategy implements SessionStrategyInterface
+{
+    public function __construct(
+        private SessionManagementService $sessionService
+    ) {}
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSchedulableItems(): Collection
+    {
+        // Returns all schedulable items across all tabs
+        // Not used in this implementation - we fetch items per tab
+        return collect();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTabConfiguration(): array
+    {
+        return [
+            'private_lessons' => [
+                'label' => 'الدروس الفردية',
+                'icon' => 'heroicon-m-user',
+                'items_method' => 'getPrivateLessons',
+            ],
+            'interactive_courses' => [
+                'label' => 'الدورات التفاعلية',
+                'icon' => 'heroicon-m-user-group',
+                'items_method' => 'getInteractiveCourses',
+            ],
+        ];
+    }
+
+    /**
+     * Get private lessons (academic subscriptions) for the teacher
+     */
+    public function getPrivateLessons(): Collection
+    {
+        $user = Auth::user();
+        $teacherProfile = $user->academicTeacherProfile;
+
+        if (!$teacherProfile) {
+            return collect();
+        }
+
+        return AcademicSubscription::where('teacher_id', $teacherProfile->id)
+            ->where('academy_id', $user->academy_id)
+            ->whereIn('status', ['active', 'approved'])
+            ->with(['student', 'subject', 'sessions'])
+            ->get()
+            ->map(function ($subscription) {
+                $allSessions = $subscription->sessions;
+                $totalSessions = $allSessions->count();
+                $scheduledSessions = $allSessions->filter(function ($session) {
+                    return $session->status->value === 'scheduled' && !is_null($session->scheduled_at);
+                })->count();
+                $unscheduledSessions = $allSessions->filter(function ($session) {
+                    return $session->status->value === 'unscheduled' || is_null($session->scheduled_at);
+                })->count();
+
+                $status = 'not_scheduled';
+                if ($scheduledSessions > 0) {
+                    if ($unscheduledSessions > 0) {
+                        $status = 'partially_scheduled';
+                    } else {
+                        $status = 'fully_scheduled';
+                    }
+                }
+
+                return [
+                    'id' => $subscription->id,
+                    'type' => 'private_lesson',
+                    'name' => 'درس خاص - ' . ($subscription->subject_name ?? 'مادة أكاديمية'),
+                    'status' => $status,
+                    'total_sessions' => $totalSessions,
+                    'sessions_scheduled' => $scheduledSessions,
+                    'sessions_remaining' => $unscheduledSessions,
+                    'student_name' => $subscription->student?->name ?? 'غير محدد',
+                    'subject_name' => $subscription->subject_name ?? 'مادة أكاديمية',
+                    'can_schedule' => $unscheduledSessions > 0,
+                ];
+            });
+    }
+
+    /**
+     * Get interactive courses for the teacher
+     */
+    public function getInteractiveCourses(): Collection
+    {
+        $user = Auth::user();
+        $teacherProfile = $user->academicTeacherProfile;
+
+        if (!$teacherProfile) {
+            return collect();
+        }
+
+        return InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $user->academy_id)
+            ->whereIn('status', ['active', 'published'])
+            ->with(['subject', 'sessions', 'enrollments'])
+            ->get()
+            ->map(function ($course) {
+                $scheduledSessions = $course->sessions()->whereIn('status', ['scheduled', 'in_progress', 'completed'])->count();
+                $totalSessions = $course->total_sessions;
+                $remainingSessions = max(0, $totalSessions - $scheduledSessions);
+                $enrolledStudents = $course->enrollments()->where('enrollment_status', 'enrolled')->count();
+
+                return [
+                    'id' => $course->id,
+                    'type' => 'interactive_course',
+                    'title' => $course->title,
+                    'name' => $course->title, // For consistency
+                    'status' => $course->status,
+                    'status_arabic' => $course->getStatusInArabicAttribute(),
+                    'total_sessions' => $totalSessions,
+                    'sessions_scheduled' => $scheduledSessions,
+                    'sessions_remaining' => $remainingSessions,
+                    'start_date' => $course->start_date?->format('Y/m/d'),
+                    'end_date' => $course->end_date?->format('Y/m/d'),
+                    'subject_name' => $course->subject?->name ?? 'مادة أكاديمية',
+                    'enrolled_students' => $enrolledStudents,
+                    'max_students' => $course->max_students ?? 20,
+                    'can_schedule' => $remainingSessions > 0,
+                ];
+            });
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getValidator(string $itemType, $item): ScheduleValidatorInterface
+    {
+        return match ($itemType) {
+            'private_lesson' => new AcademicLessonValidator(AcademicSubscription::find($item['id'])),
+            'interactive_course' => new InteractiveCourseValidator(InteractiveCourse::find($item['id'])),
+            default => throw new \InvalidArgumentException("Unknown item type: {$itemType}"),
+        };
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createSchedule(array $data, ScheduleValidatorInterface $validator): void
+    {
+        $itemType = $data['item_type'] ?? null;
+        $itemId = $data['item_id'] ?? null;
+
+        if (!$itemType || !$itemId) {
+            throw new \Exception('معلومات العنصر غير مكتملة');
+        }
+
+        match ($itemType) {
+            'private_lesson' => $this->createPrivateLessonSchedule($itemId, $data),
+            'interactive_course' => $this->createInteractiveCourseSchedule($itemId, $data),
+            default => throw new \InvalidArgumentException("Unknown item type: {$itemType}"),
+        };
+    }
+
+    /**
+     * Create schedule for private lesson (academic subscription)
+     */
+    private function createPrivateLessonSchedule(int $subscriptionId, array $data): int
+    {
+        $subscription = AcademicSubscription::findOrFail($subscriptionId);
+
+        if (!$subscription->student) {
+            throw new \Exception('لا يمكن جدولة جلسات لدرس بدون طالب مسجل');
+        }
+
+        // Get unscheduled sessions
+        $unscheduledSessions = $subscription->sessions()
+            ->where(function ($query) {
+                $query->where('status', 'unscheduled')
+                    ->orWhereNull('scheduled_at');
+            })
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        if ($unscheduledSessions->isEmpty()) {
+            throw new \Exception('لا توجد جلسات غير مجدولة لهذا الدرس');
+        }
+
+        $requestedSessionCount = $data['session_count'];
+        $sessionsToSchedule = $unscheduledSessions->take($requestedSessionCount);
+
+        // Generate session dates
+        $sessionDates = $this->generateSessionDates(
+            $data['schedule_days'],
+            $data['schedule_time'],
+            $data['schedule_start_date'] ?? now()->toDateString(),
+            $sessionsToSchedule->count()
+        );
+
+        // Schedule the sessions
+        $scheduledCount = 0;
+        foreach ($sessionsToSchedule as $index => $session) {
+            if (isset($sessionDates[$index])) {
+                $session->update([
+                    'scheduled_at' => $sessionDates[$index],
+                    'status' => 'scheduled',
+                ]);
+                $scheduledCount++;
+            }
+        }
+
+        return $scheduledCount;
+    }
+
+    /**
+     * Create schedule for interactive course
+     */
+    private function createInteractiveCourseSchedule(int $courseId, array $data): int
+    {
+        $course = InteractiveCourse::findOrFail($courseId);
+
+        $requestedSessionCount = $data['session_count'];
+        $remainingSessions = max(0, $course->total_sessions - $course->sessions()->count());
+
+        if ($remainingSessions <= 0) {
+            throw new \Exception('لا توجد جلسات متبقية لجدولتها في هذه الدورة');
+        }
+
+        $sessionsToCreate = min($requestedSessionCount, $remainingSessions);
+
+        // Generate session dates
+        $sessionDates = $this->generateSessionDates(
+            $data['schedule_days'],
+            $data['schedule_time'],
+            $data['schedule_start_date'] ?? now()->toDateString(),
+            $sessionsToCreate
+        );
+
+        // Get the maximum existing session number for this course
+        // Use max() instead of count() to handle gaps in session numbers and avoid duplicates
+        $maxSessionNumber = $course->sessions()->max('session_number') ?? 0;
+
+        // Create the sessions
+        $createdCount = 0;
+        foreach ($sessionDates as $index => $sessionDate) {
+            $newSessionNumber = $maxSessionNumber + $index + 1;
+            InteractiveCourseSession::create([
+                'course_id' => $course->id,
+                'session_number' => $newSessionNumber,
+                'title' => $course->title . ' - جلسة ' . $newSessionNumber,
+                'scheduled_at' => $sessionDate,
+                'duration_minutes' => $course->session_duration_minutes ?? 60,
+                'status' => 'scheduled',
+            ]);
+            $createdCount++;
+        }
+
+        return $createdCount;
+    }
+
+    /**
+     * Generate session dates based on schedule configuration
+     * Times are interpreted in academy timezone and stored in UTC
+     */
+    private function generateSessionDates(array $days, string $time, string $startDate, int $count): array
+    {
+        $dates = [];
+
+        // Get academy timezone for proper time interpretation
+        $academyTimezone = \App\Services\AcademyContextService::getTimezone();
+
+        // Parse start date in academy timezone
+        $currentDate = Carbon::parse($startDate, $academyTimezone)->startOfDay();
+
+        $dayMapping = [
+            'saturday' => 6,
+            'sunday' => 0,
+            'monday' => 1,
+            'tuesday' => 2,
+            'wednesday' => 3,
+            'thursday' => 4,
+            'friday' => 5,
+        ];
+
+        $selectedDayNumbers = array_map(fn($day) => $dayMapping[$day], $days);
+
+        while (count($dates) < $count) {
+            $dayOfWeek = $currentDate->dayOfWeek;
+
+            if (in_array($dayOfWeek, $selectedDayNumbers)) {
+                // Create datetime in academy timezone, then convert to UTC for storage
+                $sessionDateTime = Carbon::parse(
+                    $currentDate->format('Y-m-d') . ' ' . $time,
+                    $academyTimezone
+                )->utc();
+
+                $dates[] = $sessionDateTime;
+            }
+
+            $currentDate->addDay();
+
+            // Safety: don't generate more than 1 year ahead
+            if ($currentDate->diffInDays(Carbon::parse($startDate, $academyTimezone)) > 365) {
+                break;
+            }
+        }
+
+        return $dates;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getFooterWidgets(): array
+    {
+        return [
+            AcademicFullCalendarWidget::class,
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSessionTypes(): array
+    {
+        return ['private_lesson', 'interactive_course'];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSectionHeading(): string
+    {
+        return 'إدارة الجلسات الأكاديمية';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSectionDescription(): string
+    {
+        return 'اختر درس أو دورة لجدولة جلساتها على التقويم';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTabsLabel(): string
+    {
+        return 'أنواع الجلسات الأكاديمية';
+    }
+}

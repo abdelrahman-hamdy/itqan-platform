@@ -11,29 +11,26 @@
   $brandColorClass = "text-{$brandColor}-600";
 
   // Determine current route for active states
-  $currentRoute = request()->route()->getName();
+  $currentRoute = request()->route()?->getName() ?? '';
 
   // Student navigation items
   $studentNavItems = [];
 
-  // Add items only if routes exist
-  if (Route::has('student.quran-circles')) {
-    $studentNavItems[] = ['route' => 'student.quran-circles', 'label' => 'حلقات القرآن الجماعية', 'activeRoutes' => ['student.quran-circles', 'student.circles.show']];
+  // Add items only if routes exist (using unified route names)
+  if (Route::has('quran-circles.index')) {
+    $studentNavItems[] = ['route' => 'quran-circles.index', 'label' => 'حلقات القرآن الجماعية', 'activeRoutes' => ['quran-circles.index', 'quran-circles.show']];
   }
-  if (Route::has('student.quran-teachers')) {
-    $studentNavItems[] = ['route' => 'student.quran-teachers', 'label' => 'معلمو القرآن', 'activeRoutes' => ['student.quran-teachers', 'public.quran-teachers.index', 'public.quran-teachers.show', 'public.quran-teachers.trial', 'public.quran-teachers.subscribe']];
+  if (Route::has('quran-teachers.index')) {
+    $studentNavItems[] = ['route' => 'quran-teachers.index', 'label' => 'معلمو القرآن', 'activeRoutes' => ['quran-teachers.index', 'quran-teachers.show']];
   }
-  if (Route::has('student.interactive-courses')) {
-    $studentNavItems[] = ['route' => 'student.interactive-courses', 'label' => 'الكورسات التفاعلية', 'activeRoutes' => ['student.interactive-courses']];
+  if (Route::has('interactive-courses.index')) {
+    $studentNavItems[] = ['route' => 'interactive-courses.index', 'label' => 'الكورسات التفاعلية', 'activeRoutes' => ['interactive-courses.index', 'interactive-courses.show']];
   }
-  if (Route::has('student.academic-teachers')) {
-    $studentNavItems[] = ['route' => 'student.academic-teachers', 'label' => 'المعلمون الأكاديميون', 'activeRoutes' => ['student.academic-teachers']];
+  if (Route::has('academic-teachers.index')) {
+    $studentNavItems[] = ['route' => 'academic-teachers.index', 'label' => 'المعلمون الأكاديميون', 'activeRoutes' => ['academic-teachers.index', 'academic-teachers.show']];
   }
   if (Route::has('courses.index')) {
     $studentNavItems[] = ['route' => 'courses.index', 'label' => 'الكورسات المسجلة', 'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn', 'lessons.show']];
-  }
-  if (Route::has('student.homework.index')) {
-    $studentNavItems[] = ['route' => 'student.homework.index', 'label' => 'الواجبات', 'activeRoutes' => ['student.homework.index', 'student.homework.submit', 'student.homework.view']];
   }
 
   // If no routes exist, add fallback items without routes
@@ -44,7 +41,6 @@
       ['route' => 'student.profile', 'label' => 'الكورسات التفاعلية', 'activeRoutes' => []],
       ['route' => 'student.profile', 'label' => 'المعلمون الأكاديميون', 'activeRoutes' => []],
       ['route' => 'student.profile', 'label' => 'الكورسات المسجلة', 'activeRoutes' => []],
-      ['route' => 'student.profile', 'label' => 'الواجبات', 'activeRoutes' => []],
     ];
   }
 
@@ -71,7 +67,34 @@
     ];
   }
 
-  $navItems = $role === 'teacher' ? $teacherNavItems : $studentNavItems;
+  // Parent navigation items
+  $parentNavItems = [];
+
+  if (Route::has('parent.dashboard')) {
+    $parentNavItems[] = ['route' => 'parent.dashboard', 'label' => 'الرئيسية', 'icon' => 'ri-dashboard-line', 'activeRoutes' => ['parent.dashboard']];
+  }
+  if (Route::has('parent.sessions.upcoming')) {
+    $parentNavItems[] = ['route' => 'parent.sessions.upcoming', 'label' => 'الجلسات القادمة', 'icon' => 'ri-calendar-event-line', 'activeRoutes' => ['parent.sessions.*']];
+  }
+  if (Route::has('parent.subscriptions.index')) {
+    $parentNavItems[] = ['route' => 'parent.subscriptions.index', 'label' => 'الاشتراكات', 'icon' => 'ri-file-list-line', 'activeRoutes' => ['parent.subscriptions.*']];
+  }
+  if (Route::has('parent.reports.progress')) {
+    $parentNavItems[] = ['route' => 'parent.reports.progress', 'label' => 'التقارير', 'icon' => 'ri-bar-chart-line', 'activeRoutes' => ['parent.reports.*']];
+  }
+
+  // If no routes exist, add fallback items
+  if (empty($parentNavItems)) {
+    $parentNavItems = [
+      ['route' => 'parent.dashboard', 'label' => 'الرئيسية', 'icon' => 'ri-dashboard-line', 'activeRoutes' => []],
+    ];
+  }
+
+  $navItems = match($role) {
+    'teacher' => $teacherNavItems,
+    'parent' => $parentNavItems,
+    default => $studentNavItems,
+  };
 
   // Get user profile info
   if ($role === 'student') {
@@ -79,6 +102,12 @@
     $displayName = $profile ? ($profile->first_name ?? ($user ? $user->name : 'ضيف')) : ($user ? $user->name : 'ضيف');
     $roleLabel = 'طالب';
     $userAvatarType = 'student';
+    $userGender = $profile?->gender ?? $user?->gender ?? 'male';
+  } elseif ($role === 'parent') {
+    $profile = $user ? $user->parentProfile : null;
+    $displayName = $profile ? $profile->getFullNameAttribute() : ($user ? $user->name : 'ولي أمر');
+    $roleLabel = 'ولي أمر';
+    $userAvatarType = 'parent';
     $userGender = $profile?->gender ?? $user?->gender ?? 'male';
   } else {
     $profile = $user && $user->isQuranTeacher()
@@ -99,21 +128,11 @@
       <div class="flex items-center space-x-8 space-x-reverse">
         <!-- Logo -->
         <div class="flex items-center">
-          @if($academy && $academy->logo)
-            <img src="{{ Storage::url($academy->logo) }}"
-                 alt="{{ $academyName }}"
-                 class="h-12 w-auto">
-          @else
-            <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-{{ $brandColor }}-100">
-              <i class="ri-book-open-line text-2xl text-{{ $brandColor }}-600"></i>
-            </div>
-          @endif
-          <div class="mr-2">
-            <span class="text-xl font-bold {{ $brandColorClass }}">{{ $academyName }}</span>
-            @if($role === 'teacher')
-              <p class="text-xs text-gray-500">لوحة المعلم</p>
-            @endif
-          </div>
+          <x-academy-logo
+            :academy="$academy"
+            size="md"
+            :showName="true"
+            :href="route('academy.home', ['subdomain' => $subdomain])" />
         </div>
 
         <!-- Desktop Navigation -->
@@ -135,14 +154,27 @@
               }
               $itemRoute = Route::has($item['route']) ? route($item['route'], ['subdomain' => $subdomain]) : '#';
               $isCourseRoute = $item['route'] === 'courses.index';
-              $isQuranTeacherRoute = $item['route'] === 'student.quran-teachers';
-              $isAcademicTeacherRoute = $item['route'] === 'student.academic-teachers';
-              $activeColorClass = $isCourseRoute ? 'text-cyan-500' : ($isQuranTeacherRoute ? 'text-yellow-600' : ($isAcademicTeacherRoute ? 'text-violet-600' : $brandColorClass));
-              $hoverColorClass = $isCourseRoute ? 'hover:text-cyan-500' : ($isQuranTeacherRoute ? 'hover:text-yellow-600' : ($isAcademicTeacherRoute ? 'hover:text-violet-600' : 'hover:' . $brandColorClass));
+              $isQuranCircleRoute = $item['route'] === 'quran-circles.index';
+              $isQuranTeacherRoute = $item['route'] === 'quran-teachers.index';
+              $isInteractiveCourseRoute = $item['route'] === 'interactive-courses.index';
+              $isAcademicTeacherRoute = $item['route'] === 'academic-teachers.index';
+
+              // Determine primary color for each resource
+              $activeColorClass = $isCourseRoute ? 'text-cyan-600' :
+                                  ($isQuranCircleRoute ? 'text-green-600' :
+                                  ($isQuranTeacherRoute ? 'text-yellow-600' :
+                                  ($isInteractiveCourseRoute ? 'text-blue-600' :
+                                  ($isAcademicTeacherRoute ? 'text-violet-600' : $brandColorClass))));
+
+              $hoverColorClass = $isCourseRoute ? 'hover:text-cyan-600 hover:bg-gray-100' :
+                                 ($isQuranCircleRoute ? 'hover:text-green-600 hover:bg-gray-100' :
+                                 ($isQuranTeacherRoute ? 'hover:text-yellow-600 hover:bg-gray-100' :
+                                 ($isInteractiveCourseRoute ? 'hover:text-blue-600 hover:bg-gray-100' :
+                                 ($isAcademicTeacherRoute ? 'hover:text-violet-600 hover:bg-gray-100' : 'hover:' . $brandColorClass . ' hover:bg-gray-100'))));
             @endphp
             <a href="{{ $itemRoute }}"
-               class="flex items-center font-medium {{ $role === 'teacher' ? 'px-3 py-2 text-sm' : '' }} {{ $isActive ? $activeColorClass . ($role === 'teacher' ? ' border-b-2 border-' . $brandColor . '-600' : '') : 'text-gray-700' }} {{ $hoverColorClass }} transition-colors duration-200 focus:ring-2 focus:ring-{{ $brandColor }}-500">
-              @if(isset($item['icon']) && $role === 'teacher')
+               class="flex items-center font-medium px-3 py-2 {{ $isActive ? $activeColorClass : 'text-gray-700' }} {{ $hoverColorClass }} rounded-lg transition-all duration-200 focus:ring-2 focus:ring-{{ $brandColor }}-500">
+              @if(isset($item['icon']) && in_array($role, ['teacher', 'parent']))
                 <i class="{{ $item['icon'] }} ml-2"></i>
               @endif
               {{ $item['label'] }}
@@ -207,11 +239,127 @@
           @endif
         @endif
 
+        <!-- Child Selector (Parent only) -->
+        @if($role === 'parent' && isset($parentChildren) && $parentChildren->count() > 0)
+          <div class="relative hidden md:block" x-data="childSelector()" x-init="init()">
+            <button @click="open = !open"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-{{ $brandColor }}-50 border border-gray-200 transition-colors"
+                    :class="{ 'bg-{{ $brandColor }}-50 border-{{ $brandColor }}-200': open }">
+              @if(isset($selectedChild) && $selectedChild)
+                <x-avatar :user="$selectedChild->user" size="xs" userType="student" />
+                <span class="text-sm font-medium text-gray-700 max-w-[120px] truncate">{{ $selectedChild->user->name ?? $selectedChild->first_name }}</span>
+              @else
+                <div class="w-6 h-6 rounded-full bg-{{ $brandColor }}-100 flex items-center justify-center">
+                  <i class="ri-team-line text-{{ $brandColor }}-600 text-sm"></i>
+                </div>
+                <span class="text-sm font-medium text-gray-700">جميع الأبناء</span>
+              @endif
+              <i class="ri-arrow-down-s-line text-gray-400 transition-transform" :class="{ 'rotate-180': open }"></i>
+            </button>
+
+            <!-- Dropdown -->
+            <div x-show="open"
+                 x-cloak
+                 @click.away="open = false"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="transform opacity-0 scale-95"
+                 x-transition:enter-end="transform opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="transform opacity-100 scale-100"
+                 x-transition:leave-end="transform opacity-0 scale-95"
+                 class="absolute left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+
+              <div class="p-2 border-b border-gray-100 bg-gray-50">
+                <p class="text-xs font-medium text-gray-500 px-2">اختر الابن لعرض بياناته</p>
+              </div>
+
+              <div class="p-2 max-h-80 overflow-y-auto">
+                <!-- All Children Option -->
+                <button @click="selectChild('all')"
+                        class="w-full flex items-center gap-3 p-3 rounded-lg transition-colors {{ (!isset($selectedChild) || !$selectedChild) ? 'bg-' . $brandColor . '-50 border border-' . $brandColor . '-200' : 'hover:bg-gray-50' }}">
+                  <div class="w-10 h-10 rounded-full bg-{{ $brandColor }}-100 flex items-center justify-center flex-shrink-0">
+                    <i class="ri-team-line text-{{ $brandColor }}-600 text-lg"></i>
+                  </div>
+                  <div class="flex-1 text-right">
+                    <p class="text-sm font-medium text-gray-900">جميع الأبناء</p>
+                    <p class="text-xs text-gray-500">عرض بيانات {{ $parentChildren->count() }} {{ $parentChildren->count() > 2 ? 'أبناء' : ($parentChildren->count() == 2 ? 'ابنين' : 'ابن') }}</p>
+                  </div>
+                  @if(!isset($selectedChild) || !$selectedChild)
+                    <i class="ri-checkbox-circle-fill text-{{ $brandColor }}-600 text-lg"></i>
+                  @endif
+                </button>
+
+                <div class="my-2 border-t border-gray-100"></div>
+
+                <!-- Individual Children -->
+                @foreach($parentChildren as $child)
+                  <button @click="selectChild('{{ $child->id }}')"
+                          class="w-full flex items-center gap-3 p-3 rounded-lg transition-colors {{ (isset($selectedChild) && $selectedChild && $selectedChild->id == $child->id) ? 'bg-' . $brandColor . '-50 border border-' . $brandColor . '-200' : 'hover:bg-gray-50' }}">
+                    <x-avatar :user="$child->user" size="sm" userType="student" :gender="$child->gender ?? 'male'" />
+                    <div class="flex-1 text-right">
+                      <p class="text-sm font-medium text-gray-900">{{ $child->user->name ?? $child->first_name }}</p>
+                      <p class="text-xs text-gray-500">{{ $child->student_code ?? 'طالب' }}</p>
+                    </div>
+                    @if(isset($selectedChild) && $selectedChild && $selectedChild->id == $child->id)
+                      <i class="ri-checkbox-circle-fill text-{{ $brandColor }}-600 text-lg"></i>
+                    @endif
+                  </button>
+                @endforeach
+              </div>
+            </div>
+          </div>
+
+          <script>
+            function childSelector() {
+              return {
+                open: false,
+                init() {
+                  // Close on escape
+                  this.$watch('open', value => {
+                    if (value) {
+                      document.addEventListener('keydown', this.handleEscape.bind(this));
+                    } else {
+                      document.removeEventListener('keydown', this.handleEscape.bind(this));
+                    }
+                  });
+                },
+                handleEscape(e) {
+                  if (e.key === 'Escape') this.open = false;
+                },
+                selectChild(childId) {
+                  // Update session via AJAX
+                  fetch('{{ route("parent.select-child", ["subdomain" => $subdomain]) }}', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                      'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ child_id: childId })
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                    if (data.success) {
+                      // Reload current page to reflect changes
+                      window.location.reload();
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error selecting child:', error);
+                  });
+
+                  this.open = false;
+                }
+              };
+            }
+          </script>
+        @endif
+
         <!-- Notifications -->
         @livewire('notification-center')
 
         <!-- Messages -->
-        <a href="/chat"
+        <a href="/chats"
            class="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-all duration-200"
            aria-label="فتح الرسائل">
           <i class="ri-message-2-line text-xl"></i>
@@ -257,7 +405,9 @@
               @php
                 $profileRoute = Route::has($role . '.profile') ? route($role . '.profile', ['subdomain' => $subdomain]) : '#';
                 $logoutRoute = Route::has('logout') ? route('logout', ['subdomain' => $subdomain]) : '/logout';
+                $isAdminOrSuperAdmin = $user && ($user->isAdmin() || $user->isSuperAdmin());
               @endphp
+              @if(!$isAdminOrSuperAdmin)
               <a href="{{ $profileRoute }}"
                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                  role="menuitem">
@@ -265,6 +415,7 @@
                 الملف الشخصي
               </a>
               <div class="border-t border-gray-100"></div>
+              @endif
               <form method="POST" action="{{ $logoutRoute }}">
                 @csrf
                 <button type="submit"
@@ -310,13 +461,26 @@
             }
             $itemRoute = Route::has($item['route']) ? route($item['route'], ['subdomain' => $subdomain]) : '#';
             $isCourseRoute = $item['route'] === 'courses.index';
-            $isQuranTeacherRoute = $item['route'] === 'student.quran-teachers';
-            $isAcademicTeacherRoute = $item['route'] === 'student.academic-teachers';
-            $mobileActiveColorClass = $isCourseRoute ? 'text-cyan-500 bg-cyan-50' : ($isQuranTeacherRoute ? 'text-yellow-600 bg-yellow-50' : ($isAcademicTeacherRoute ? 'text-violet-600 bg-violet-50' : $brandColorClass . ' bg-gray-50'));
-            $mobileHoverColorClass = $isCourseRoute ? 'hover:text-cyan-500 hover:bg-cyan-50' : ($isQuranTeacherRoute ? 'hover:text-yellow-600 hover:bg-yellow-50' : ($isAcademicTeacherRoute ? 'hover:text-violet-600 hover:bg-violet-50' : 'hover:' . $brandColorClass . ' hover:bg-gray-50'));
+            $isQuranCircleRoute = $item['route'] === 'quran-circles.index';
+            $isQuranTeacherRoute = $item['route'] === 'quran-teachers.index';
+            $isInteractiveCourseRoute = $item['route'] === 'interactive-courses.index';
+            $isAcademicTeacherRoute = $item['route'] === 'academic-teachers.index';
+
+            // Determine primary color for mobile
+            $mobileActiveColorClass = $isCourseRoute ? 'text-cyan-600 bg-cyan-50' :
+                                      ($isQuranCircleRoute ? 'text-green-600 bg-green-50' :
+                                      ($isQuranTeacherRoute ? 'text-yellow-600 bg-yellow-50' :
+                                      ($isInteractiveCourseRoute ? 'text-blue-600 bg-blue-50' :
+                                      ($isAcademicTeacherRoute ? 'text-violet-600 bg-violet-50' : $brandColorClass . ' bg-gray-50'))));
+
+            $mobileHoverColorClass = $isCourseRoute ? 'hover:text-cyan-600 hover:bg-cyan-50' :
+                                     ($isQuranCircleRoute ? 'hover:text-green-600 hover:bg-green-50' :
+                                     ($isQuranTeacherRoute ? 'hover:text-yellow-600 hover:bg-yellow-50' :
+                                     ($isInteractiveCourseRoute ? 'hover:text-blue-600 hover:bg-blue-50' :
+                                     ($isAcademicTeacherRoute ? 'hover:text-violet-600 hover:bg-violet-50' : 'hover:' . $brandColorClass . ' hover:bg-gray-50'))));
           @endphp
           <a href="{{ $itemRoute }}"
-             class="flex items-center px-3 py-2 font-medium {{ $isActive ? $mobileActiveColorClass : 'text-gray-700' }} {{ $mobileHoverColorClass }} rounded-md focus:ring-2 focus:ring-{{ $brandColor }}-500">
+             class="flex items-center px-3 py-2 font-medium {{ $isActive ? $mobileActiveColorClass : 'text-gray-700' }} {{ $mobileHoverColorClass }} rounded-md transition-all duration-200 focus:ring-2 focus:ring-{{ $brandColor }}-500">
             @if(isset($item['icon']))
               <i class="{{ $item['icon'] }} ml-2"></i>
             @endif

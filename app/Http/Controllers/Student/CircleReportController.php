@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\HasDateRangeFilter;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
-use App\Services\QuranCircleReportService;
+use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
 
 class CircleReportController extends Controller
 {
-    protected QuranCircleReportService $reportService;
+    use HasDateRangeFilter;
 
-    public function __construct(QuranCircleReportService $reportService)
+    protected QuranReportService $reportService;
+
+    public function __construct(QuranReportService $reportService)
     {
         $this->reportService = $reportService;
     }
@@ -33,12 +36,14 @@ class CircleReportController extends Controller
         // Generate report data with date filter
         $reportData = $this->reportService->getIndividualCircleReport($circle, $dateRange);
 
-        return view('student.circle-report', array_merge($reportData, [
-            'circleType' => 'individual',
-            'filterPeriod' => $request->get('period', 'all'),
-            'customStartDate' => $request->get('start_date'),
-            'customEndDate' => $request->get('end_date'),
-        ]));
+        return view('reports.quran.circle-report', array_merge(
+            $reportData,
+            $this->getDateRangeViewData($request),
+            [
+                'layoutType' => 'student',
+                'circleType' => 'individual',
+            ]
+        ));
     }
 
     /**
@@ -56,50 +61,15 @@ class CircleReportController extends Controller
 
         // Generate student-specific report with date filter
         $reportData = $this->reportService->getStudentReportInGroupCircle($circle, auth()->user(), $dateRange);
-        $reportData['circle'] = $circle;
-        $reportData['circleType'] = 'group';
-        $reportData['filterPeriod'] = $request->get('period', 'all');
-        $reportData['customStartDate'] = $request->get('start_date');
-        $reportData['customEndDate'] = $request->get('end_date');
 
-        return view('student.circle-report', $reportData);
-    }
-
-    /**
-     * Get date range from request parameters
-     */
-    protected function getDateRangeFromRequest(Request $request): ?array
-    {
-        $period = $request->get('period', 'all');
-
-        switch ($period) {
-            case 'this_month':
-                return [
-                    'start' => now()->startOfMonth(),
-                    'end' => now()->endOfMonth(),
-                ];
-
-            case 'last_3_months':
-                return [
-                    'start' => now()->subMonths(3)->startOfMonth(),
-                    'end' => now()->endOfMonth(),
-                ];
-
-            case 'custom':
-                $startDate = $request->get('start_date');
-                $endDate = $request->get('end_date');
-
-                if ($startDate && $endDate) {
-                    return [
-                        'start' => \Carbon\Carbon::parse($startDate)->startOfDay(),
-                        'end' => \Carbon\Carbon::parse($endDate)->endOfDay(),
-                    ];
-                }
-                return null;
-
-            case 'all':
-            default:
-                return null; // No filtering
-        }
+        return view('reports.quran.circle-report', array_merge(
+            $reportData,
+            $this->getDateRangeViewData($request),
+            [
+                'layoutType' => 'student',
+                'circle' => $circle,
+                'circleType' => 'group',
+            ]
+        ));
     }
 }

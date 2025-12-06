@@ -1,3 +1,19 @@
+@php
+    // Get gradient palette colors
+    $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
+    $colors = $gradientPalette->getColors();
+    $gradientFrom = $colors['from'];
+    $gradientTo = $colors['to'];
+    
+    // Get hex values for tailwind config
+    [$toColorName, $toShade] = explode('-', $gradientTo);
+    try {
+        $toTailwindColor = \App\Enums\TailwindColor::from($toColorName);
+        $gradientToHex = $toTailwindColor->getHexValue((int)$toShade);
+    } catch (\ValueError $e) {
+        $gradientToHex = '#6366F1';
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
@@ -13,7 +29,8 @@
         extend: {
           colors: {
             primary: "{{ $academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ $academy->secondary_color ?? '#6495ED' }}",
+            gradientFrom: "{{ $gradientPalette->getPreviewHex() }}",
+            gradientTo: "{{ $gradientToHex }}",
           }
         }
       }
@@ -214,7 +231,7 @@
 
           @if($teachers->count() > 6)
             <div class="text-center mt-8">
-              <a href="{{ route('public.academic-teachers.index', ['subdomain' => $academy->subdomain]) }}" 
+              <a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain]) }}"
                  class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
                 <span>عرض جميع المعلمين</span>
                 <i class="ri-arrow-left-line"></i>

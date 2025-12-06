@@ -41,7 +41,7 @@ class QuranAcademyOverviewWidget extends BaseWidget
             ->count();
         
         $activeSubscriptions = QuranSubscription::where('academy_id', $academy->id)
-            ->where('subscription_status', 'active')
+            ->where('status', 'active')
             ->where('payment_status', 'current')
             ->count();
         
@@ -65,7 +65,7 @@ class QuranAcademyOverviewWidget extends BaseWidget
             round((($activeTeachers - $teachersLastMonth) / $teachersLastMonth) * 100, 1) : 0;
         
         $subscriptionsLastMonth = QuranSubscription::where('academy_id', $academy->id)
-            ->where('subscription_status', 'active')
+            ->where('status', 'active')
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();

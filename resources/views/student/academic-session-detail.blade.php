@@ -8,7 +8,7 @@
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
             <li><a href="{{ route('student.profile', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">الملف الشخصي</a></li>
             <li>/</li>
-            <li><a href="{{ route('student.academic-teachers', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">المعلمون الأكاديميون</a></li>
+            <li><a href="{{ route('academic-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">المعلمون الأكاديميون</a></li>
             <li>/</li>
             @if($session->academicSubscription)
             <li><a href="{{ route('student.academic-subscriptions.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'subscriptionId' => $session->academicSubscription->id]) }}" class="hover:text-primary">{{ $session->academicSubscription->subject_name ?? 'درس أكاديمي' }}</a></li>

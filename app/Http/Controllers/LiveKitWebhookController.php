@@ -12,6 +12,7 @@ use App\Services\SessionMeetingService;
 use App\Services\MeetingAttendanceService;
 use App\Services\SessionStatusService;
 use App\Services\AttendanceEventService;
+use App\Services\RecordingService;
 use App\Enums\SessionStatus;
 
 class LiveKitWebhookController extends Controller
@@ -20,17 +21,20 @@ class LiveKitWebhookController extends Controller
     private MeetingAttendanceService $attendanceService;
     private SessionStatusService $statusService;
     private AttendanceEventService $eventService;
+    private RecordingService $recordingService;
 
     public function __construct(
         SessionMeetingService $sessionMeetingService,
         MeetingAttendanceService $attendanceService,
         SessionStatusService $statusService,
-        AttendanceEventService $eventService
+        AttendanceEventService $eventService,
+        RecordingService $recordingService
     ) {
         $this->sessionMeetingService = $sessionMeetingService;
         $this->attendanceService = $attendanceService;
         $this->statusService = $statusService;
         $this->eventService = $eventService;
+        $this->recordingService = $recordingService;
     }
 
     /**
@@ -98,6 +102,10 @@ class LiveKitWebhookController extends Controller
 
                 case 'track_published':
                     $this->handleTrackPublished($data);
+                    break;
+
+                case 'egress_ended':
+                    $this->handleEgressEnded($data);
                     break;
 
                 default:
@@ -268,10 +276,12 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
-            // 🔥 NEW: Use LiveKit's exact join timestamp (source of truth)
-            $joinedAt = isset($participantData['joined_at'])
-                ? \Carbon\Carbon::createFromTimestamp($participantData['joined_at'])
-                : now();
+            // 🔥 FIXED: Use LiveKit's exact join timestamp (source of truth)
+            // LiveKit sends 'joinedAt' in camelCase, not 'joined_at'
+            // IMPORTANT: Always use UTC for storage, convert to academy timezone only for display
+            $joinedAt = isset($participantData['joinedAt'])
+                ? \Carbon\Carbon::createFromTimestamp($participantData['joinedAt'], 'UTC')
+                : now('UTC');
 
             // 🔥 NEW: Create immutable event log entry
             $event = \App\Models\MeetingAttendanceEvent::create([
@@ -365,9 +375,10 @@ class LiveKitWebhookController extends Controller
             }
 
             // 🔥 NEW: Use webhook creation time as leave timestamp (source of truth)
+            // IMPORTANT: Always use UTC for storage, convert to academy timezone only for display
             $leftAt = isset($data['createdAt'])
-                ? \Carbon\Carbon::createFromTimestamp($data['createdAt'])
-                : now();
+                ? \Carbon\Carbon::createFromTimestamp($data['createdAt'], 'UTC')
+                : now('UTC');
 
             // 🔥 NEW: Find the matching join event by participant_sid
             $joinEvent = \App\Models\MeetingAttendanceEvent::where('session_id', $session->id)
@@ -841,6 +852,31 @@ class LiveKitWebhookController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             return false;
+        }
+    }
+
+    /**
+     * Handle LiveKit Egress ended event (recording completed/failed)
+     *
+     * @param array $data Webhook payload
+     * @return void
+     */
+    private function handleEgressEnded(array $data): void
+    {
+        try {
+            Log::info('Processing egress_ended webhook', [
+                'egress_id' => $data['egressInfo']['egressId'] ?? null,
+                'status' => $data['egressInfo']['status'] ?? null,
+            ]);
+
+            // Delegate to RecordingService for processing
+            $this->recordingService->processEgressWebhook($data);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle egress_ended webhook', [
+                'error' => $e->getMessage(),
+                'data' => $data,
+            ]);
         }
     }
 }

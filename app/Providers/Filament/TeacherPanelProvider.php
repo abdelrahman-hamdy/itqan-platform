@@ -50,17 +50,20 @@ class TeacherPanelProvider extends PanelProvider
                 'الاختبارات',
                 'دوراتي',
                 'الشهادات',
+                'الأرباح',
                 'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')
             ->discoverPages(in: app_path('Filament/Teacher/Pages'), for: 'App\\Filament\\Teacher\\Pages')
             ->pages([
                 Pages\Dashboard::class,
+                \App\Filament\Shared\Pages\UnifiedTeacherCalendar::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
                 \App\Filament\Teacher\Widgets\QuranTeacherOverviewWidget::class,
+                \App\Filament\Teacher\Widgets\EarningsOverviewWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -85,11 +88,15 @@ class TeacherPanelProvider extends PanelProvider
             ->userMenuItems([
                 'profile-page' => \Filament\Navigation\MenuItem::make()
                     ->label('الملف الشخصي العام')
-                    ->url(fn (): string => route('teacher.profile', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'default'
-                    ]))
+                    ->url(fn (): string => auth()->user()->quranTeacherProfile && auth()->user()->academy
+                        ? route('quran-teachers.show', [
+                            'subdomain' => auth()->user()->academy->subdomain,
+                            'teacherId' => auth()->user()->quranTeacherProfile->id
+                        ])
+                        : '#')
                     ->icon('heroicon-o-user-circle')
-                    ->openUrlInNewTab(),
+                    ->openUrlInNewTab()
+                    ->visible(fn (): bool => auth()->user()->quranTeacherProfile !== null),
             ])
             ->plugins([
                 FilamentFullCalendarPlugin::make()

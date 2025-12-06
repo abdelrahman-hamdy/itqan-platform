@@ -164,5 +164,80 @@ class QuizAttempt extends Model
             'passed' => $passed,
             'submitted_at' => now(),
         ]);
+
+        // Send notification after submission
+        $this->notifyQuizCompleted();
+    }
+
+    /**
+     * Send notification when quiz is completed
+     */
+    public function notifyQuizCompleted(): void
+    {
+        try {
+            if (!$this->student || !$this->assignment || !$this->assignment->quiz) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+            $quiz = $this->assignment->quiz;
+            $student = $this->student;
+
+            // Get student user from student profile
+            if (!$student->user) {
+                return;
+            }
+
+            $notificationType = $this->passed
+                ? \App\Enums\NotificationType::QUIZ_PASSED
+                : \App\Enums\NotificationType::QUIZ_FAILED;
+
+            $notificationService->send(
+                $student->user,
+                $notificationType,
+                [
+                    'quiz_title' => $quiz->title,
+                    'score' => $this->score,
+                    'passing_score' => $quiz->passing_score,
+                    'passed' => $this->passed,
+                    'submitted_at' => $this->submitted_at->format('Y-m-d H:i'),
+                ],
+                $this->assignment->getReturnUrl(),
+                [
+                    'quiz_attempt_id' => $this->id,
+                    'quiz_assignment_id' => $this->quiz_assignment_id,
+                    'quiz_id' => $quiz->id,
+                ],
+                !$this->passed  // Mark as important if failed
+            );
+
+            // Also notify parent if exists
+            if ($student->parent && $student->parent->user) {
+                $notificationService->send(
+                    $student->parent->user,
+                    $notificationType,
+                    [
+                        'quiz_title' => $quiz->title,
+                        'student_name' => $student->user->full_name,
+                        'score' => $this->score,
+                        'passing_score' => $quiz->passing_score,
+                        'passed' => $this->passed,
+                        'submitted_at' => $this->submitted_at->format('Y-m-d H:i'),
+                    ],
+                    $this->assignment->getReturnUrl(),
+                    [
+                        'quiz_attempt_id' => $this->id,
+                        'quiz_assignment_id' => $this->quiz_assignment_id,
+                        'quiz_id' => $quiz->id,
+                    ],
+                    !$this->passed
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send quiz completion notification', [
+                'attempt_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

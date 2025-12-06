@@ -18,7 +18,7 @@
                 @if($session->circle_id && $session->circle)
                     <li>
                         @if($viewType === 'student')
-                            <a href="{{ route('student.quran-circles', ['subdomain' => request()->route('subdomain')]) }}"
+                            <a href="{{ route('quran-circles.index', ['subdomain' => request()->route('subdomain')]) }}"
                                class="hover:text-primary">حلقات القرآن</a>
                         @else
                             <a href="{{ route('teacher.group-circles.index', ['subdomain' => request()->route('subdomain')]) }}"
@@ -38,7 +38,7 @@
                 @elseif($session->individual_circle_id && $session->individualCircle)
                     <li>
                         @if($viewType === 'student')
-                            <a href="{{ route('student.quran-teachers', ['subdomain' => request()->route('subdomain')]) }}"
+                            <a href="{{ route('quran-teachers.index', ['subdomain' => request()->route('subdomain')]) }}"
                                class="hover:text-primary">معلمي القرآن</a>
                         @else
                             <a href="{{ route('teacher.individual-circles.index', ['subdomain' => request()->route('subdomain')]) }}"

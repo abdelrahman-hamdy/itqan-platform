@@ -158,4 +158,13 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             'urgent' => true,
         ];
     }
+
+    /**
+     * Get the maximum date that can be scheduled
+     * Trial sessions have no specific end date limit
+     */
+    public function getMaxScheduleDate(): ?Carbon
+    {
+        return null; // No end date for trial sessions
+    }
 }

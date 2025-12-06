@@ -20,70 +20,138 @@
             <!-- Circle Header -->
             <x-circle.individual-header :circle="$circle" view-type="teacher" />
 
-            <!-- Quran Sessions Section -->
-            <x-sessions.sessions-list
-                :sessions="$circle->sessions"
-                title="إدارة جلسات الحلقة الفردية"
-                view-type="teacher"
-                :circle="$circle"
-                :show-tabs="false"
-                empty-message="لا توجد جلسات مجدولة بعد" />
+            <!-- Tabs Component -->
+            <x-tabs id="individual-circle-tabs" default-tab="sessions" variant="default" color="primary">
+                <x-slot name="tabs">
+                    <x-tabs.tab
+                        id="sessions"
+                        label="الجلسات"
+                        icon="ri-calendar-line"
+                        :badge="$circle->sessions->count()"
+                    />
+                    <x-tabs.tab
+                        id="certificate"
+                        label="الشهادة"
+                        icon="ri-award-line"
+                    />
+                </x-slot>
+
+                <x-slot name="panels">
+                    <x-tabs.panel id="sessions">
+                        <x-sessions.sessions-list
+                            :sessions="$circle->sessions"
+                            view-type="teacher"
+                            :circle="$circle"
+                            :show-tabs="false"
+                            empty-message="لا توجد جلسات مجدولة بعد" />
+                    </x-tabs.panel>
+
+                    <x-tabs.panel id="certificate">
+                        <!-- Certificate Section -->
+                        @if(isset($circle->subscription))
+                            @if($circle->subscription->certificate_issued && $circle->subscription->certificate)
+                                @php
+                                    $certificate = $circle->subscription->certificate;
+                                    $previewImageUrl = $certificate->template_style?->previewImageUrl() ?? asset('certificates/templates/template_images/template_1.png');
+                                @endphp
+
+                                <div class="max-w-2xl mx-auto">
+                                    <!-- Certificate Card -->
+                                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                                        <!-- Template Preview -->
+                                        <div class="aspect-[297/210] relative overflow-hidden bg-gray-100">
+                                            <img src="{{ $previewImageUrl }}"
+                                                 alt="معاينة الشهادة"
+                                                 class="w-full h-full object-cover">
+                                            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-black/10 backdrop-blur-sm"></div>
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <span class="inline-flex items-center px-6 py-3 bg-white/95 backdrop-blur-sm rounded-xl text-lg font-bold text-gray-800 shadow-lg">
+                                                    <i class="ri-award-fill ml-2 text-2xl text-amber-600"></i>
+                                                    شهادة إتمام البرنامج
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Certificate Details -->
+                                        <div class="p-6">
+                                            <!-- Certificate Number -->
+                                            <div class="bg-amber-50 rounded-lg p-4 mb-4 border border-amber-200">
+                                                <p class="text-xs text-amber-600 mb-1">رقم الشهادة</p>
+                                                <p class="text-lg font-mono font-bold text-amber-900">
+                                                    {{ $certificate->certificate_number }}
+                                                </p>
+                                            </div>
+
+                                            <!-- Meta Information -->
+                                            <div class="space-y-3 mb-6">
+                                                <!-- Student -->
+                                                <div class="flex items-center text-sm">
+                                                    <i class="ri-user-line ml-2 text-gray-400 text-lg"></i>
+                                                    <span class="text-gray-600">الطالب:</span>
+                                                    <span class="font-medium text-gray-900 mr-2">{{ $circle->student->name }}</span>
+                                                </div>
+
+                                                <!-- Issue Date -->
+                                                <div class="flex items-center text-sm">
+                                                    <i class="ri-calendar-line ml-2 text-gray-400 text-lg"></i>
+                                                    <span class="text-gray-600">تاريخ الإصدار:</span>
+                                                    <span class="font-medium text-gray-900 mr-2">{{ $certificate->issued_at->locale('ar')->translatedFormat('d F Y') }}</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Action Buttons -->
+                                            <div class="flex gap-3">
+                                                <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
+                                                   target="_blank"
+                                                   class="flex-1 inline-flex items-center justify-center px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors shadow-sm hover:shadow-md">
+                                                    <i class="ri-eye-line ml-2 text-lg"></i>
+                                                    عرض الشهادة
+                                                </a>
+                                                <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
+                                                   class="flex-1 inline-flex items-center justify-center px-5 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors shadow-sm hover:shadow-md">
+                                                    <i class="ri-download-line ml-2 text-lg"></i>
+                                                    تحميل PDF
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <!-- Empty State -->
+                                <div class="text-center py-16">
+                                    <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="ri-award-line text-3xl text-amber-500"></i>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-gray-900 mb-2">لم يتم إصدار شهادة بعد</h3>
+                                    <p class="text-gray-600 text-sm mb-6">يمكنك إصدار شهادة للطالب عند إتمام البرنامج</p>
+                                    <p class="text-sm text-gray-500">استخدم القسم الجانبي لإصدار الشهادة</p>
+                                </div>
+                            @endif
+                        @endif
+                    </x-tabs.panel>
+                </x-slot>
+            </x-tabs>
         </div>
 
         <!-- Sidebar -->
         <div class="lg:col-span-1 space-y-6">
             <!-- Circle Info Sidebar -->
             <x-circle.info-sidebar :circle="$circle" view-type="teacher" context="individual" />
-            
+
             <!-- Quick Actions -->
-            <x-circle.individual-quick-actions :circle="$circle" view-type="teacher" />
+            <x-circle.quick-actions
+                :circle="$circle"
+                type="individual"
+                view-type="teacher"
+                context="quran"
+            />
 
             <!-- Subscription Details -->
             <x-circle.subscription-details :subscription="$circle->subscription" view-type="teacher" />
 
-            <!-- Certificate Section -->
+            <!-- Issue Certificate Widget -->
             @if(isset($circle->subscription))
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="ri-award-line text-amber-500"></i>
-                    الشهادات
-                </h3>
-
-                @if($circle->subscription->certificate_issued && $circle->subscription->certificate)
-                    <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border-2 border-amber-200 mb-4">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                                <i class="ri-award-fill text-xl text-amber-600"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold text-amber-800">تم إصدار الشهادة</p>
-                                <p class="text-xs text-amber-600">{{ $circle->subscription->certificate->certificate_number }}</p>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $circle->subscription->certificate->id]) }}"
-                               target="_blank"
-                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors">
-                                <i class="ri-eye-line ml-2"></i>
-                                عرض الشهادة
-                            </a>
-                            <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $circle->subscription->certificate->id]) }}"
-                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors">
-                                <i class="ri-download-line ml-2"></i>
-                                تحميل PDF
-                            </a>
-                        </div>
-                    </div>
-                @else
-                    <p class="text-sm text-gray-600 mb-4">يمكنك إصدار شهادة للطالب عند إتمام البرنامج أو تحقيق إنجاز معين</p>
-                    <button type="button"
-                            onclick="Livewire.dispatch('openModal', { subscriptionType: 'quran', subscriptionId: {{ $circle->subscription->id }}, circleId: null })"
-                            class="w-full inline-flex items-center justify-center px-5 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
-                        <i class="ri-award-line ml-2 text-lg"></i>
-                        إصدار شهادة
-                    </button>
-                @endif
-            </div>
+                <x-certificate.teacher-issue-widget type="quran_individual" :entity="$circle" />
             @endif
         </div>
     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Contracts\MeetingCapable;
 use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\LiveKitService;
 use App\Services\MeetingAttendanceService;
@@ -35,7 +36,7 @@ class UnifiedMeetingController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'session_type' => 'required|in:quran,academic',
+                'session_type' => 'required|in:quran,academic,interactive',
                 'session_id' => 'required|integer',
                 'max_participants' => 'sometimes|integer|min:2|max:50',
                 'recording_enabled' => 'sometimes|boolean',
@@ -141,7 +142,7 @@ class UnifiedMeetingController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'session_type' => 'required|in:quran,academic',
+                'session_type' => 'required|in:quran,academic,interactive',
                 'session_id' => 'required|integer',
                 'permissions' => 'sometimes|array',
             ]);
@@ -191,8 +192,8 @@ class UnifiedMeetingController extends Controller
             // 🔥 FIX: Only update session status, NOT attendance
             // Attendance will be recorded by LiveKit webhooks (source of truth)
             if ($session->status->value === 'ready' || $session->status->value === 'scheduled') {
-                $session->update(['status' => 'live']);
-                Log::info('Session status updated to live on participant join', [
+                $session->update(['status' => 'ongoing']);
+                Log::info('Session status updated to ongoing on participant join', [
                     'session_id' => $session->id,
                     'session_type' => $sessionType,
                 ]);
@@ -236,7 +237,7 @@ class UnifiedMeetingController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'session_type' => 'required|in:quran,academic',
+                'session_type' => 'required|in:quran,academic,interactive',
                 'session_id' => 'required|integer',
             ]);
 
@@ -308,7 +309,7 @@ class UnifiedMeetingController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'session_type' => 'required|in:quran,academic',
+                'session_type' => 'required|in:quran,academic,interactive',
                 'session_id' => 'required|integer',
             ]);
 
@@ -391,6 +392,8 @@ class UnifiedMeetingController extends Controller
                 return QuranSession::find($sessionId);
             case 'academic':
                 return AcademicSession::find($sessionId);
+            case 'interactive':
+                return InteractiveCourseSession::find($sessionId);
             default:
                 return null;
         }
@@ -404,7 +407,7 @@ class UnifiedMeetingController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'session_type' => 'required|in:quran,academic',
+                'session_type' => 'required|in:quran,academic,interactive',
                 'session_id' => 'required|integer',
             ]);
 

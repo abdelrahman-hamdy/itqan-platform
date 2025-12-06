@@ -29,8 +29,10 @@ class LiveKitService
         $this->apiSecret = config('livekit.api_secret', '');
         $this->serverUrl = config('livekit.server_url', 'wss://localhost'); // For frontend connections
 
-        // Use HTTPS URL for backend API calls
-        $apiUrl = config('livekit.api_url', str_replace('wss://', 'https://', $this->serverUrl));
+        // Use configured API URL for backend API calls
+        // Note: Use HTTP (not HTTPS) when using self-signed SSL certificates to avoid verification issues
+        // Browser WebSocket connections use wss:// through Nginx SSL proxy
+        $apiUrl = config('livekit.api_url', str_replace('wss://', 'http://', $this->serverUrl));
 
         // Only initialize RoomServiceClient if we have valid credentials
         if ($this->apiKey && $this->apiSecret && $apiUrl) {
@@ -71,73 +73,19 @@ class LiveKitService
             // Generate deterministic room name
             $roomName = $this->generateRoomName($academy, $sessionType, $sessionId);
 
-            // Check if room already exists
-            $existingRoom = $this->getRoomInfo($roomName);
-            if ($existingRoom) {
-                Log::info('LiveKit room already exists, returning existing room info', [
-                    'room_name' => $roomName,
-                    'session_id' => $sessionId,
-                    'academy_id' => $academy->id,
-                ]);
-
-                return [
-                    'platform' => 'livekit',
-                    'room_name' => $roomName,
-                    'room_sid' => $existingRoom['room_sid'],
-                    'server_url' => $this->serverUrl,
-                    'meeting_id' => $roomName,
-                    'meeting_url' => $this->generateMeetingUrl($roomName),
-                    'join_info' => [
-                        'server_url' => $this->serverUrl,
-                        'room_name' => $roomName,
-                        'access_method' => 'token_based',
-                    ],
-                    'settings' => [
-                        'max_participants' => $options['max_participants'] ?? 100,  // Updated from 50 to 100
-                        'recording_enabled' => $options['recording_enabled'] ?? false,
-                        'auto_record' => $options['auto_record'] ?? false,
-                        'empty_timeout' => $options['empty_timeout'] ?? 300,
-                        'max_duration' => $options['max_duration'] ?? 7200,
-                    ],
-                    'features' => [
-                        'video' => true,
-                        'audio' => true,
-                        'screen_sharing' => true,
-                        'chat' => true,
-                        'recording' => true,
-                        'breakout_rooms' => false,
-                        'whiteboard' => false,
-                    ],
-                    'created_at' => $existingRoom['created_at'],
-                    'scheduled_at' => $startTime,
-                    'expires_at' => $options['expires_at'] ?? $startTime->copy()->addHours(3),
-                ];
-            }
-
-            // Create new room with custom settings
-            $roomOptions = $this->createRoomOptionsObject($roomName, $options);
-
-            Log::info('Attempting to create new LiveKit room', [
+            // SIMPLIFIED APPROACH: Skip SDK room creation/checking
+            // LiveKit will automatically create rooms when first participant joins
+            // This avoids SDK compatibility issues with self-hosted LiveKit servers
+            Log::info('Generating LiveKit meeting (auto-create on join)', [
                 'room_name' => $roomName,
                 'session_id' => $sessionId,
                 'academy_id' => $academy->id,
-                'max_participants' => $roomOptions->getMaxParticipants(),
-                'empty_timeout' => $roomOptions->getEmptyTimeout(),
-            ]);
-
-            $room = $this->roomService->createRoom($roomOptions);
-
-            Log::info('LiveKit room created successfully', [
-                'room_name' => $roomName,
-                'session_id' => $sessionId,
-                'academy_id' => $academy->id,
-                'room_sid' => $room->getSid(),
             ]);
 
             return [
                 'platform' => 'livekit',
                 'room_name' => $roomName,
-                'room_sid' => $room->getSid(),
+                'room_sid' => null, // Will be assigned when room is created on first join
                 'server_url' => $this->serverUrl,
                 'meeting_id' => $roomName,
                 'meeting_url' => $this->generateMeetingUrl($roomName),
@@ -147,11 +95,11 @@ class LiveKitService
                     'access_method' => 'token_based',
                 ],
                 'settings' => [
-                    'max_participants' => $options['max_participants'] ?? 100,  // Updated from 50 to 100
+                    'max_participants' => $options['max_participants'] ?? 100,
                     'recording_enabled' => $options['recording_enabled'] ?? false,
                     'auto_record' => $options['auto_record'] ?? false,
-                    'empty_timeout' => $options['empty_timeout'] ?? 300, // 5 minutes
-                    'max_duration' => $options['max_duration'] ?? 7200, // 2 hours
+                    'empty_timeout' => $options['empty_timeout'] ?? 300,
+                    'max_duration' => $options['max_duration'] ?? 7200,
                 ],
                 'features' => [
                     'video' => true,
@@ -159,22 +107,58 @@ class LiveKitService
                     'screen_sharing' => true,
                     'chat' => true,
                     'recording' => true,
-                    'breakout_rooms' => false, // Can be enabled with custom implementation
-                    'whiteboard' => false, // Can be added with third-party integration
+                    'breakout_rooms' => false,
+                    'whiteboard' => false,
                 ],
                 'created_at' => now(),
                 'scheduled_at' => $startTime,
                 'expires_at' => $options['expires_at'] ?? $startTime->copy()->addHours(3),
+                'auto_create_on_join' => true,
             ];
 
         } catch (\Exception $e) {
-            Log::error('Failed to create LiveKit room', [
+            Log::warning('Could not pre-create LiveKit room via API (will auto-create on join)', [
                 'error' => $e->getMessage(),
                 'session_id' => $sessionId,
                 'academy_id' => $academy->id,
+                'room_name' => $roomName,
             ]);
 
-            throw new \Exception('Failed to create meeting room: '.$e->getMessage());
+            // Return meeting info without pre-creating room
+            // LiveKit will automatically create the room when first participant joins
+            return [
+                'platform' => 'livekit',
+                'room_name' => $roomName,
+                'room_sid' => null, // Will be assigned by LiveKit on first join
+                'server_url' => $this->serverUrl,
+                'meeting_id' => $roomName,
+                'meeting_url' => $this->generateMeetingUrl($roomName),
+                'join_info' => [
+                    'server_url' => $this->serverUrl,
+                    'room_name' => $roomName,
+                    'access_method' => 'token_based',
+                ],
+                'settings' => [
+                    'max_participants' => $options['max_participants'] ?? 100,
+                    'recording_enabled' => $options['recording_enabled'] ?? false,
+                    'auto_record' => $options['auto_record'] ?? false,
+                    'empty_timeout' => $options['empty_timeout'] ?? 300,
+                    'max_duration' => $options['max_duration'] ?? 7200,
+                ],
+                'features' => [
+                    'video' => true,
+                    'audio' => true,
+                    'screen_sharing' => true,
+                    'chat' => true,
+                    'recording' => true,
+                    'breakout_rooms' => false,
+                    'whiteboard' => false,
+                ],
+                'created_at' => now(),
+                'scheduled_at' => $startTime,
+                'expires_at' => $options['expires_at'] ?? $startTime->copy()->addHours(3),
+                'auto_create_on_join' => true, // Flag indicating room will be created on first join
+            ];
         }
     }
 
@@ -236,66 +220,153 @@ class LiveKitService
     }
 
     /**
-     * Start recording for a room
+     * Start recording for a room using LiveKit Egress
+     *
+     * @param string $roomName The LiveKit room name to record
+     * @param array $options Recording configuration options
+     * @return array Egress response with egress_id
+     * @throws \Exception If recording cannot be started
      */
     public function startRecording(string $roomName, array $options = []): array
     {
         try {
-            // Configure recording options
-            $recordingConfig = [
+            if (!$this->isConfigured()) {
+                throw new \Exception('LiveKit service not configured properly');
+            }
+
+            // Get API URL for backend calls
+            $apiUrl = config('livekit.api_url', str_replace('wss://', 'http://', $this->serverUrl));
+
+            // Build file path for local storage on LiveKit server
+            $filename = $options['filename'] ?? sprintf('recording-%s-%s', $roomName, now()->timestamp);
+            $filepath = sprintf('%s/%s.mp4',
+                rtrim($options['storage_path'] ?? '/recordings', '/'),
+                $filename
+            );
+
+            // Prepare Egress request payload for room composite recording
+            $payload = [
                 'room_name' => $roomName,
-                'layout' => $options['layout'] ?? 'grid',
-                'audio_only' => $options['audio_only'] ?? false,
-                'video_quality' => $options['video_quality'] ?? 'high',
-                'file_outputs' => [
-                    [
-                        'file_type' => 'MP4',
-                        'storage' => [
-                            'type' => 's3',
-                            'bucket' => config('livekit.recording.s3_bucket'),
-                            'region' => config('livekit.recording.s3_region'),
-                        ],
-                    ],
+                'file' => [
+                    'filepath' => $filepath,
+                ],
+                'options' => [
+                    'preset' => $options['preset'] ?? 'HD',
+                    'layout' => $options['layout'] ?? 'grid',
                 ],
             ];
 
-            // Recording functionality not yet implemented in this SDK version
-            Log::info('Recording requested for LiveKit room', [
+            // Add metadata if provided
+            if (!empty($options['metadata'])) {
+                $payload['metadata'] = json_encode($options['metadata']);
+            }
+
+            Log::info('Starting LiveKit Egress recording', [
                 'room_name' => $roomName,
-                'config' => $recordingConfig,
+                'filepath' => $filepath,
+                'api_url' => $apiUrl,
             ]);
 
-            throw new \Exception('Recording functionality not yet implemented. Please use LiveKit Dashboard or API directly.');
+            // Call LiveKit Egress API
+            $response = \Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->generateEgressToken(),
+            ])->post($apiUrl . '/egress/room', $payload);
+
+            if (!$response->successful()) {
+                throw new \Exception('Egress API error: ' . $response->body());
+            }
+
+            $responseData = $response->json();
+
+            Log::info('Recording started successfully', [
+                'room_name' => $roomName,
+                'egress_id' => $responseData['egressId'] ?? null,
+            ]);
+
+            return [
+                'egress_id' => $responseData['egressId'] ?? $responseData['egress_id'] ?? null,
+                'room_name' => $roomName,
+                'filepath' => $filepath,
+                'response' => $responseData,
+            ];
+
         } catch (\Exception $e) {
             Log::error('Failed to start recording', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
+                'options' => $options,
             ]);
 
-            throw new \Exception('Failed to start recording: '.$e->getMessage());
+            throw new \Exception('Failed to start recording: ' . $e->getMessage());
         }
     }
 
     /**
-     * Stop recording and get file location
+     * Stop an active recording
+     *
+     * @param string $egressId The LiveKit egress ID to stop
+     * @return bool Whether recording was stopped successfully
+     * @throws \Exception If recording cannot be stopped
      */
-    public function stopRecording(string $recordingId): array
+    public function stopRecording(string $egressId): bool
     {
         try {
-            // Recording functionality not yet implemented in this SDK version
-            Log::info('Recording stop requested', [
-                'recording_id' => $recordingId,
+            if (!$this->isConfigured()) {
+                throw new \Exception('LiveKit service not configured properly');
+            }
+
+            // Get API URL for backend calls
+            $apiUrl = config('livekit.api_url', str_replace('wss://', 'http://', $this->serverUrl));
+
+            Log::info('Stopping LiveKit Egress recording', [
+                'egress_id' => $egressId,
+                'api_url' => $apiUrl,
             ]);
 
-            throw new \Exception('Recording functionality not yet implemented. Please use LiveKit Dashboard or API directly.');
+            // Call LiveKit Egress API to stop recording
+            $response = \Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->generateEgressToken(),
+            ])->delete($apiUrl . '/egress/' . $egressId);
+
+            if (!$response->successful()) {
+                throw new \Exception('Egress API error: ' . $response->body());
+            }
+
+            Log::info('Recording stopped successfully', [
+                'egress_id' => $egressId,
+            ]);
+
+            return true;
+
         } catch (\Exception $e) {
             Log::error('Failed to stop recording', [
                 'error' => $e->getMessage(),
-                'recording_id' => $recordingId,
+                'egress_id' => $egressId,
             ]);
 
-            throw new \Exception('Failed to stop recording: '.$e->getMessage());
+            throw new \Exception('Failed to stop recording: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Generate JWT token for Egress API calls
+     *
+     * @return string JWT token
+     */
+    protected function generateEgressToken(): string
+    {
+        // For LiveKit Egress API, we can use the same API key/secret as access tokens
+        // Create a JWT with canCreateEgress grant
+        $token = new AccessToken($this->apiKey, $this->apiSecret);
+        $token->setIdentity('egress-service');
+        $token->setTtl(3600); // 1 hour
+
+        // Add video grant with egress permissions
+        $grant = new VideoGrant();
+        $grant->setCanCreateEgress(true);
+        $token->setGrant($grant);
+
+        return $token->toJwt();
     }
 
     /**

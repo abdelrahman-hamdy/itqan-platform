@@ -53,54 +53,20 @@ class StudentCalendarController extends Controller
     public function getEvents(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
+
         $request->validate([
             'start' => 'required|date',
             'end' => 'required|date',
-            'view' => 'in:day,week,month',
         ]);
 
         $startDate = Carbon::parse($request->start);
         $endDate = Carbon::parse($request->end);
-        
+
+        // Get events from CalendarService
         $events = $this->calendarService->getUserCalendar($user, $startDate, $endDate);
 
-        // Format events for FullCalendar
-        $formattedEvents = $events->map(function ($event) {
-            return [
-                'id' => $event['id'],
-                'title' => $event['title'],
-                'start' => $event['start_time'],
-                'end' => $event['end_time'],
-                'backgroundColor' => $this->getEventColor($event['status']),
-                'borderColor' => $this->getEventColor($event['status']),
-                'textColor' => '#ffffff',
-                'extendedProps' => [
-                    'type' => $event['type'],
-                    'status' => $event['status'],
-                    'teacher_name' => $event['teacher_name'] ?? null,
-                    'meeting_link' => $event['meeting_link'] ?? null,
-                    'description' => $event['description'] ?? null,
-                    'lesson_objectives' => $event['lesson_objectives'] ?? null,
-                ]
-            ];
-        });
-
-        return response()->json($formattedEvents);
-    }
-
-    /**
-     * Get event color based on status
-     */
-    private function getEventColor(string $status): string
-    {
-        return match ($status) {
-            'scheduled' => '#3B82F6', // Blue
-            'ongoing' => '#F59E0B',   // Yellow
-            'completed' => '#10B981', // Green
-            'cancelled' => '#EF4444', // Red
-            default => '#6B7280',     // Gray
-        };
+        // Return events as-is (CalendarService already provides the correct format)
+        return response()->json($events->values());
     }
 
     /**

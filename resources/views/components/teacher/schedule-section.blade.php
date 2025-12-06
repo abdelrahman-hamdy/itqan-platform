@@ -9,7 +9,12 @@
     مواعيد التدريس
   </h2>
 
-  @if($teacher->available_days && count($teacher->available_days) > 0)
+  @php
+    $availableDays = is_array($teacher->available_days) ? $teacher->available_days : (is_string($teacher->available_days) ? json_decode($teacher->available_days, true) : []);
+    $availableDays = $availableDays ?: [];
+  @endphp
+
+  @if(!empty($availableDays))
     <div class="mb-6">
       <div class="text-sm text-gray-500 mb-3 flex items-center gap-2">
         <i class="ri-calendar-check-line text-{{ $color }}-600"></i>
@@ -27,7 +32,7 @@
             'sunday' => 'الأحد'
           ];
         @endphp
-        @foreach($teacher->available_days as $day)
+        @foreach($availableDays as $day)
           <span class="px-4 py-2 bg-{{ $color }}-600 text-white rounded-xl text-sm font-medium">
             {{ $daysInArabic[$day] ?? $day }}
           </span>

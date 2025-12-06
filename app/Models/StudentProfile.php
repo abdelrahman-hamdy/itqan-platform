@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Traits\ScopedToAcademyViaRelationship;
 
 class StudentProfile extends Model
@@ -26,6 +27,9 @@ class StudentProfile extends Model
         'parent_id',
         'address',
         'emergency_contact',
+        'parent_phone', // International phone number in E.164 format
+        'parent_phone_country_code', // e.g., +966
+        'parent_phone_country', // ISO 3166-1 alpha-2 (e.g., SA)
         'enrollment_date',
         'notes',
     ];
@@ -84,6 +88,19 @@ class StudentProfile extends Model
     public function gradeLevel(): BelongsTo
     {
         return $this->belongsTo(AcademicGradeLevel::class, 'grade_level_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(ParentProfile::class, 'parent_id');
+    }
+
+    public function parentProfiles(): BelongsToMany
+    {
+        return $this->belongsToMany(ParentProfile::class, 'parent_student_relationships', 'student_id', 'parent_id')
+            ->using(ParentStudentRelationship::class)
+            ->withPivot('relationship_type')
+            ->withTimestamps();
     }
 
     /**

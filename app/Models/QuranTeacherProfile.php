@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Carbon\Carbon;
 use App\Traits\ScopedToAcademy;
+use App\Models\Traits\HasReviews;
 use Illuminate\Support\Facades\DB;
 
 class QuranTeacherProfile extends Model
 {
-    use HasFactory, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, HasReviews;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship
@@ -39,6 +41,7 @@ class QuranTeacherProfile extends Model
         'is_active',
         'offers_trial_sessions',
         'rating',
+        'total_reviews',
         'total_students',
         'total_sessions',
         'session_price_individual',
@@ -52,6 +55,7 @@ class QuranTeacherProfile extends Model
         'is_active' => 'boolean',
         'offers_trial_sessions' => 'boolean',
         'rating' => 'decimal:2',
+        'total_reviews' => 'integer',
         'total_students' => 'integer',
         'total_sessions' => 'integer',
         'session_price_individual' => 'decimal:2',
@@ -162,6 +166,14 @@ class QuranTeacherProfile extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(QuranSubscription::class, 'quran_teacher_id');
+    }
+
+    /**
+     * Get all reviews for this teacher
+     */
+    public function reviews(): MorphMany
+    {
+        return $this->morphMany(TeacherReview::class, 'reviewable');
     }
 
     /**

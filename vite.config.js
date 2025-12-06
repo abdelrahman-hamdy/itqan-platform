@@ -5,7 +5,13 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: true,
+            // Only refresh on specific file changes to prevent meeting interruptions
+            refresh: [
+                'resources/views/**',
+                'routes/**',
+                'resources/js/**',
+                'resources/css/**',
+            ],
         }),
     ],
     build: {
@@ -21,5 +27,15 @@ export default defineConfig({
     server: {
         host: '127.0.0.1',
         port: 5173,
+        // Prevent HMR from reloading on non-essential changes
+        watch: {
+            ignored: [
+                '**/storage/**',
+                '**/vendor/**',
+                '**/node_modules/**',
+                '**/.git/**',
+                '**/bootstrap/cache/**',
+            ],
+        },
     },
 });

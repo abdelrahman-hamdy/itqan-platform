@@ -43,7 +43,7 @@ class AcademyHomepageController extends Controller
 
         // Get interactive courses for this academy
         $interactiveCourses = InteractiveCourse::where('academy_id', $academy->id)
-            ->where('status', 'available')
+            ->where('is_published', true)
             ->take(4)
             ->get();
 

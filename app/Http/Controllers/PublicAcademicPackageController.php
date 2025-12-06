@@ -374,51 +374,110 @@ class PublicAcademicPackageController extends Controller
         $sessionsPerMonth = $package->sessions_per_month ?? 8;
         $sessionDuration = $package->session_duration_minutes ?? 60;
 
+        // Calculate total sessions based on billing cycle
+        // Monthly = 1x, Quarterly = 3x, Yearly = 12x
+        $billingCycleMultiplier = $subscription->billing_cycle->sessionMultiplier();
+        $totalSessions = $sessionsPerMonth * $billingCycleMultiplier;
+
+        \Log::info('Starting session creation', [
+            'subscription_id' => $subscription->id,
+            'sessions_per_month' => $sessionsPerMonth,
+            'billing_cycle' => $subscription->billing_cycle->value,
+            'billing_cycle_multiplier' => $billingCycleMultiplier,
+            'total_sessions_to_create' => $totalSessions,
+        ]);
+
+        $startTime = microtime(true);
+
         // Create sessions for the subscription
-        for ($i = 1; $i <= $sessionsPerMonth; $i++) {
+        for ($i = 1; $i <= $totalSessions; $i++) {
+            $loopStart = microtime(true);
+
             AcademicSession::create([
                 'academy_id' => $subscription->academy_id,
                 'academic_teacher_id' => $subscription->teacher_id,
                 'academic_subscription_id' => $subscription->id,
                 'student_id' => $subscription->student_id,
                 'session_code' => 'AS-' . $subscription->id . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                'session_sequence' => $i,
                 'session_type' => 'individual',
-                'is_template' => false,
-                'is_generated' => true,
                 'status' => \App\Enums\SessionStatus::UNSCHEDULED,
-                'is_scheduled' => false,
                 'title' => "جلسة {$i} - {$subscription->subject_name}",
                 'description' => "جلسة في مادة {$subscription->subject_name} - {$subscription->grade_level_name}",
-                'lesson_objectives' => json_encode(["أهداف الجلسة {$i}"]),
                 'duration_minutes' => $sessionDuration,
-                'location_type' => 'online',
-                'session_notes' => '',
-                'follow_up_required' => false,
-                'retry_count' => 0,
                 'created_by' => $subscription->student_id,
+            ]);
+
+            $loopEnd = microtime(true);
+            \Log::info("Session {$i} created", [
+                'elapsed_ms' => round(($loopEnd - $loopStart) * 1000, 2),
+                'total_elapsed_s' => round($loopEnd - $startTime, 2),
             ]);
         }
 
-        // Update subscription totals
-        $subscription->update([
-            'total_sessions_scheduled' => $sessionsPerMonth,
-            'sessions_completed' => 0,
-            'completion_rate' => 0,
+        \Log::info('All sessions created, updating subscription totals', [
+            'total_elapsed_s' => round(microtime(true) - $startTime, 2),
+        ]);
+
+        // Update subscription totals using direct DB query to avoid model events/observers
+        \DB::table('academic_subscriptions')
+            ->where('id', $subscription->id)
+            ->update([
+                'total_sessions_scheduled' => $totalSessions,
+                'total_sessions_completed' => 0,
+            ]);
+
+        \Log::info('Session creation complete', [
+            'total_sessions_created' => $totalSessions,
+            'total_elapsed_s' => round(microtime(true) - $startTime, 2),
         ]);
     }
 
     /**
      * Show teacher profile for academic packages
-     * Redirect to the proper academic teacher controller
      */
     public function showTeacher(Request $request, $subdomain, $teacherId)
     {
-        // Redirect to the proper academic teacher profile page
-        return redirect()->route('public.academic-teachers.show', [
-            'subdomain' => $subdomain,
-            'teacher' => $teacherId
-        ]);
+        $academy = Academy::where('subdomain', $subdomain)->first();
+
+        if (! $academy || ! $academy->is_active) {
+            abort(404, 'Academy not found or inactive');
+        }
+
+        $teacher = AcademicTeacherProfile::where('id', $teacherId)
+            ->where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->where('approval_status', 'approved')
+            ->with(['user', 'subjects', 'gradeLevels'])
+            ->first();
+
+        if (! $teacher) {
+            abort(404, 'Teacher not found');
+        }
+
+        // Get teacher's available packages
+        $packages = AcademicPackage::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('monthly_price')
+            ->get();
+
+        // Get teacher stats
+        $stats = [
+            'rating' => $teacher->rating ?? 0,
+            'total_students' => $teacher->total_students ?? 0,
+            'total_sessions' => $teacher->total_sessions ?? 0,
+            'years_experience' => $teacher->experience_years ?? 0,
+            'active_subscriptions' => \App\Models\AcademicSubscription::where('teacher_id', $teacher->id)
+                ->whereIn('status', ['active', 'pending'])
+                ->count(),
+        ];
+
+        return view('student.academic-teacher-detail', compact(
+            'academy',
+            'teacher',
+            'packages',
+            'stats'
+        ));
     }
 
     /**

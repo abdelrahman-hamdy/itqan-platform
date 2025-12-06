@@ -46,7 +46,11 @@
 function openCertificateModal(type, subscriptionId) {
     // Dispatch event to Livewire component
     if (typeof Livewire !== 'undefined') {
-        Livewire.dispatch('openCertificateModal', { type: type, subscriptionId: subscriptionId });
+        Livewire.dispatch('openModal', {
+            subscriptionType: type,
+            subscriptionId: subscriptionId,
+            circleId: null
+        });
     } else {
         // Fallback: redirect to Filament dashboard
         const baseUrl = type === 'quran'

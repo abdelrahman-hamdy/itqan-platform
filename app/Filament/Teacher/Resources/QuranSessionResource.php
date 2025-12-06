@@ -50,15 +50,10 @@ class QuranSessionResource extends Resource
             return parent::getEloquentQuery()->whereRaw('1 = 0'); // Return no results
         }
 
-        $teacherProfileId = $user->quranTeacherProfile->id;
         $userId = $user->id;
 
         return parent::getEloquentQuery()
-            ->where(function ($query) use ($teacherProfileId, $userId) {
-                // Include both teacher profile ID (group sessions) and user ID (individual sessions)
-                $query->where('quran_teacher_id', $teacherProfileId)
-                    ->orWhere('quran_teacher_id', $userId);
-            })
+            ->where('quran_teacher_id', $userId)
             ->where('academy_id', $user->academy_id)
             ->with(['student', 'subscription', 'circle', 'individualCircle', 'sessionHomework']);
     }
@@ -88,11 +83,13 @@ class QuranSessionResource extends Resource
                                     ->dehydrated()
                                     ->helperText('نوع الجلسة يُحدد تلقائياً'),
 
-                                DateTimePicker::make('scheduled_at')
+                                    DateTimePicker::make('scheduled_at')
                                     ->label('موعد الجلسة')
                                     ->required()
                                     ->native(false)
-                                    ->seconds(false),
+                                    ->seconds(false)
+                                    ->timezone(fn () => auth()->user()?->academy?->timezone?->value ?? 'UTC')
+                                    ->displayFormat('Y-m-d H:i'),
 
                                 TextInput::make('duration_minutes')
                                     ->label('مدة الجلسة (بالدقائق)')
@@ -241,6 +238,7 @@ class QuranSessionResource extends Resource
                 TextColumn::make('scheduled_at')
                     ->label('موعد الجلسة')
                     ->dateTime('Y-m-d H:i')
+                    ->timezone(fn ($record) => $record->academy->timezone->value)
                     ->sortable(),
 
                 TextColumn::make('duration_minutes')

@@ -92,6 +92,14 @@ return [
             'title' => 'انتهى الاشتراك',
             'message' => 'انتهى اشتراكك في :subscription_name',
         ],
+        'subscription_activated' => [
+            'title' => 'تم تفعيل الاشتراك',
+            'message' => 'تم تفعيل اشتراكك بنجاح',
+        ],
+        'subscription_renewed' => [
+            'title' => 'تم تجديد الاشتراك',
+            'message' => 'تم تجديد اشتراكك بنجاح',
+        ],
         'invoice_generated' => [
             'title' => 'فاتورة جديدة',
             'message' => 'تم إصدار فاتورة جديدة بمبلغ :amount :currency',
@@ -130,11 +138,39 @@ return [
         ],
         'certificate_earned' => [
             'title' => 'شهادة جديدة',
-            'message' => 'مبروك! لقد حصلت على شهادة :certificate_name',
+            'message' => 'مبروك! لقد حصلت على شهادة من :teacher_name',
         ],
         'course_completed' => [
             'title' => 'اكتمل المقرر',
             'message' => 'مبروك! لقد أكملت مقرر :course_name بنجاح',
+        ],
+
+        // Quiz Notifications
+        'quiz_assigned' => [
+            'title' => 'اختبار جديد',
+            'message' => 'تم تعيين اختبار جديد: :quiz_title',
+        ],
+        'quiz_completed' => [
+            'title' => 'تم إكمال الاختبار',
+            'message' => 'لقد أكملت اختبار :quiz_title',
+        ],
+        'quiz_passed' => [
+            'title' => 'نجحت في الاختبار!',
+            'message' => 'مبروك! لقد نجحت في اختبار :quiz_title بدرجة :score من :passing_score',
+        ],
+        'quiz_failed' => [
+            'title' => 'لم تنجح في الاختبار',
+            'message' => 'لم تحصل على الدرجة المطلوبة في اختبار :quiz_title. درجتك: :score من :passing_score',
+        ],
+
+        // Review Notifications
+        'review_received' => [
+            'title' => 'تقييم جديد',
+            'message' => 'لقد حصلت على تقييم جديد من :student_name - :rating نجوم',
+        ],
+        'review_approved' => [
+            'title' => 'تم قبول تقييمك',
+            'message' => 'تم قبول تقييمك ونشره بنجاح',
         ],
 
         // Chat Notifications

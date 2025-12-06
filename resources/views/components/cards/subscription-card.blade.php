@@ -7,34 +7,25 @@
 ])
 
 @php
+    use App\Enums\SubscriptionStatus;
+
     $user = $viewType === 'teacher' ? $subscription->student : $subscription->quranTeacher;
-    $userDisplayName = $viewType === 'teacher' ? 
-        ($subscription->student->name ?? 'طالب') : 
+    $userDisplayName = $viewType === 'teacher' ?
+        ($subscription->student->name ?? 'طالب') :
         ($subscription->quranTeacher?->full_name ?? 'معلم غير محدد');
-    
+
     $routeName = 'individual-circles.show'; // Unified route for both teachers and students
     $routeParam = 'circle'; // Unified parameter name
-    
-    $statusColors = [
-        'active' => 'bg-green-100 text-green-800',
-        'pending' => 'bg-yellow-100 text-yellow-800',
-        'expired' => 'bg-red-100 text-red-800',
-        'cancelled' => 'bg-gray-100 text-gray-800',
-        'completed' => 'bg-blue-100 text-blue-800'
-    ];
-    
-    $statusLabels = [
-        'active' => 'نشط',
-        'pending' => 'في الانتظار',
-        'expired' => 'منتهي الصلاحية',
-        'cancelled' => 'ملغي',
-        'completed' => 'مكتمل'
-    ];
-    
+
+    // Handle both enum and legacy string status
+    $statusEnum = $subscription->status instanceof SubscriptionStatus
+        ? $subscription->status
+        : SubscriptionStatus::tryFrom($subscription->status) ?? SubscriptionStatus::PENDING;
+
     $canAccess = $subscription->individualCircle && $subscription->individualCircle->id;
-    $href = $canAccess ? 
+    $href = $canAccess ?
         route($routeName, [
-            'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 
+            'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
             $routeParam => $subscription->individualCircle->id
         ]) : '#';
 @endphp
@@ -76,8 +67,8 @@
         
         <!-- Status Badge -->
         <div class="flex flex-col items-end space-y-2">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$subscription->subscription_status] ?? 'bg-gray-100 text-gray-800' }}">
-                {{ $statusLabels[$subscription->subscription_status] ?? $subscription->subscription_status }}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusEnum->badgeClasses() }}">
+                {{ $statusEnum->label() }}
             </span>
             
             @if($canAccess)

@@ -8,16 +8,15 @@ use App\Models\AcademicSubscription;
 use App\Models\Academy;
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
+use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\QuranSubscription;
 use App\Models\User;
 use App\Notifications\CertificateIssuedNotification;
 use Carbon\Carbon;
-use Mpdf\Mpdf;
-use Mpdf\Config\ConfigVariables;
-use Mpdf\Config\FontVariables;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use setasign\Fpdi\Tcpdf\Fpdi;
 
 class CertificateService
 {
@@ -61,7 +60,7 @@ class CertificateService
 
         // Get template style
         $templateStyle = $course->certificate_template_style
-            ?? $academy->settings->getSetting('certificates.default_template_style', 'modern');
+            ?? $academy->settings->getSetting('certificates.default_template_style', 'template_1');
 
         // Replace placeholders in template text
         $certificateText = $this->replacePlaceholders($templateText, [
@@ -97,8 +96,19 @@ class CertificateService
             'completion_certificate_url' => $certificate->download_url,
         ]);
 
-        // Send notification
+        // Send notification to student
         $subscription->student->notify(new CertificateIssuedNotification($certificate));
+
+        // Also notify parents
+        try {
+            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
+            $parentNotificationService->sendCertificateIssued($certificate);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send parent certificate notification', [
+                'certificate_id' => $certificate->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return $certificate;
     }
@@ -124,7 +134,7 @@ class CertificateService
 
         // Get template style and text
         $templateStyle = $course->certificate_template_style
-            ?? $academy->settings->getSetting('certificates.default_template_style', 'modern');
+            ?? $academy->settings->getSetting('certificates.default_template_style', 'template_1');
 
         $templateText = $this->getDefaultTemplateText($academy, CertificateType::INTERACTIVE_COURSE);
 
@@ -161,9 +171,20 @@ class CertificateService
             'certificate_issued' => true,
         ]);
 
-        // Send notification
+        // Send notification to student
         if ($enrollment->student->user) {
             $enrollment->student->user->notify(new CertificateIssuedNotification($certificate));
+        }
+
+        // Also notify parents
+        try {
+            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
+            $parentNotificationService->sendCertificateIssued($certificate);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send parent certificate notification', [
+                'certificate_id' => $certificate->id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return $certificate;
@@ -198,9 +219,6 @@ class CertificateService
             ? CertificateType::QURAN_SUBSCRIPTION
             : CertificateType::ACADEMIC_SUBSCRIPTION;
 
-        // Get template text
-        $templateText = $this->getDefaultTemplateText($academy, $certificateType);
-
         // Get teacher
         if (!$teacherId && $subscriptionable instanceof QuranSubscription) {
             $teacherId = $subscriptionable->quran_teacher_id;
@@ -210,14 +228,8 @@ class CertificateService
 
         $teacherUser = $teacherId ? User::find($teacherId) : null;
 
-        // Replace placeholders
-        $certificateText = $this->replacePlaceholders($templateText, [
-            'student_name' => $student->name,
-            'achievement' => $achievementText,
-            'teacher_name' => $teacherUser?->name ?? '',
-            'academy_name' => $academy->name_ar,
-            'completion_date' => now()->format('Y-m-d'),
-        ]);
+        // Use achievement text directly as certificate text (no template wrapping)
+        $certificateText = $achievementText;
 
         // Convert template style to enum if string
         if (is_string($templateStyle)) {
@@ -248,8 +260,27 @@ class CertificateService
             'certificate_issued_at' => now(),
         ]);
 
-        // Send notification
-        $student->notify(new CertificateIssuedNotification($certificate));
+        // Send notification to student (wrapped in try-catch to not fail certificate issuance)
+        try {
+            $student->notify(new CertificateIssuedNotification($certificate));
+        } catch (\Exception $e) {
+            \Log::warning('Certificate notification failed (certificate still issued)', [
+                'certificate_id' => $certificate->id,
+                'student_id' => $student->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Also notify parents
+        try {
+            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
+            $parentNotificationService->sendCertificateIssued($certificate);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send parent certificate notification', [
+                'certificate_id' => $certificate->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return $certificate;
     }
@@ -278,71 +309,157 @@ class CertificateService
     }
 
     /**
-     * Generate certificate PDF using mPDF
+     * Generate certificate PDF using FPDI + TCPDF
      */
-    public function generateCertificatePDF(Certificate $certificate): Mpdf
+    public function generateCertificatePDF(Certificate $certificate): Fpdi
     {
         $data = $this->getCertificateData($certificate);
-        $viewPath = $certificate->template_style->viewPath();
+        $data['template_style'] = $certificate->template_style;
 
-        // Create mPDF instance with Arabic support
-        $mpdf = $this->createMpdfInstance();
+        // Create FPDI instance (extends TCPDF with PDF import capability)
+        $pdf = $this->createFpdiInstance($data['template_style']);
 
-        // Render the view and write to PDF
-        $html = view($viewPath, $data)->render();
-        $mpdf->WriteHTML($html);
+        // Overlay text content at specific positions
+        $this->addCertificateText($pdf, $data);
 
-        return $mpdf;
+        return $pdf;
     }
 
     /**
-     * Create mPDF instance with proper Arabic font configuration
+     * Create FPDI instance with PDF template loaded
      */
-    protected function createMpdfInstance(): Mpdf
+    protected function createFpdiInstance(CertificateTemplateStyle $templateStyle): Fpdi
     {
-        $defaultConfig = (new ConfigVariables())->getDefaults();
-        $fontDirs = $defaultConfig['fontDir'];
+        // Create FPDI with landscape A4, RTL for Arabic
+        $pdf = new Fpdi('L', 'mm', 'A4', true, 'UTF-8', false);
 
-        $defaultFontConfig = (new FontVariables())->getDefaults();
-        $fontData = $defaultFontConfig['fontdata'];
+        // Set document information
+        $pdf->SetCreator('Itqan Platform');
+        $pdf->SetAuthor('Itqan Academy');
+        $pdf->SetTitle('Certificate');
 
-        // Create mPDF with landscape A4 and RTL support
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4-L', // Landscape
-            'default_font_size' => 12,
-            'default_font' => 'xbriyaz', // Arabic font
-            'margin_left' => 10,
-            'margin_right' => 10,
-            'margin_top' => 10,
-            'margin_bottom' => 10,
-            'tempDir' => storage_path('app/mpdf'),
-            // Add custom fonts directory if needed
-            'fontDir' => array_merge($fontDirs, [
-                public_path('fonts'),
-            ]),
-            'fontdata' => $fontData + [
-                'cairo' => [
-                    'R' => 'Cairo-Regular.ttf',
-                    'B' => 'Cairo-Bold.ttf',
-                ],
-                'tajawal' => [
-                    'R' => 'Tajawal-Regular.ttf',
-                    'B' => 'Tajawal-Bold.ttf',
-                ],
-                'amiri' => [
-                    'R' => 'Amiri-Regular.ttf',
-                    'B' => 'Amiri-Bold.ttf',
-                ],
-            ],
-            'autoArabic' => true,
-            'autoLangToFont' => true,
-        ]);
+        // Remove default header/footer
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
 
-        // Set RTL direction for Arabic
-        $mpdf->SetDirectionality('rtl');
+        // Set margins to 0 for full-page background
+        $pdf->SetMargins(0, 0, 0);
+        $pdf->SetAutoPageBreak(false, 0);
 
-        return $mpdf;
+        // Load the PDF template
+        $pdfTemplatePath = public_path('certificates/templates/' . $templateStyle->pdfFileName());
+        if (file_exists($pdfTemplatePath)) {
+            // Set source file
+            $pdf->setSourceFile($pdfTemplatePath);
+
+            // Import first page
+            $templateId = $pdf->importPage(1);
+
+            // Add a page with the template
+            $pdf->AddPage('L', 'A4');
+
+            // Use the imported page as template (full page)
+            $pdf->useTemplate($templateId, 0, 0, 297, 210);
+        } else {
+            // Fallback: just add a blank page
+            $pdf->AddPage('L', 'A4');
+        }
+
+        // Enable RTL mode for Arabic
+        $pdf->setRTL(true);
+
+        return $pdf;
+    }
+
+    /**
+     * Add text content to certificate at specific coordinates
+     */
+    protected function addCertificateText(Fpdi $pdf, array $data): void
+    {
+        $templateStyle = $data['template_style'];
+        $primaryColor = $this->hexToRgb($templateStyle->primaryColor());
+
+        // Use Amiri - elegant Arabic font designed for readability
+        // Certificate Title - "شهادة تقدير"
+        $pdf->SetTextColor($primaryColor['r'], $primaryColor['g'], $primaryColor['b']);
+        $pdf->SetFont('amirib', '', 40);
+        $pdf->SetXY(0, 35);
+        $pdf->Cell(297, 15, 'شهادة تقدير', 0, 1, 'C');
+
+        // Subtitle - "تُمنح هذه الشهادة إلى"
+        $pdf->SetTextColor(85, 85, 85);
+        $pdf->SetFont('amiri', '', 16);
+        $pdf->SetXY(0, 55);
+        $pdf->Cell(297, 10, 'تُمنح هذه الشهادة إلى', 0, 1, 'C');
+
+        // Student Name
+        $pdf->SetTextColor(26, 26, 26);
+        $pdf->SetFont('amirib', '', 30);
+        $pdf->SetXY(0, 70);
+        $pdf->Cell(297, 15, $data['student_name'], 0, 1, 'C');
+
+        // Certificate Text (font size 18, with increased line spacing)
+        $pdf->SetTextColor(68, 68, 68);
+        $pdf->SetFont('amiri', '', 18);
+        $pdf->setCellHeightRatio(2.0); // Double the line height
+        $pdf->SetXY(40, 95);
+        $pdf->MultiCell(217, 0, $data['certificate_text'], 0, 'C');
+        $pdf->setCellHeightRatio(1.25); // Reset to default
+
+        // Footer section - Three columns: Teacher, Date, Academy (no lines)
+        // Adjusted positions to avoid borders (moved closer to center)
+        $footerY = 155;
+
+        // Teacher column (moved left from X=220 to X=195)
+        $pdf->SetTextColor(136, 136, 136);
+        $pdf->SetFont('amiri', '', 11);
+        $pdf->SetXY(195, $footerY + 2);
+        $pdf->Cell(70, 6, 'المعلم', 0, 1, 'C');
+        $pdf->SetTextColor(51, 51, 51);
+        $pdf->SetFont('amirib', '', 13);
+        $pdf->SetXY(195, $footerY + 10);
+        $pdf->Cell(70, 6, $data['teacher_name'] ?: '—', 0, 1, 'C');
+
+        // Date column (center - unchanged)
+        $pdf->SetTextColor(136, 136, 136);
+        $pdf->SetFont('amiri', '', 11);
+        $pdf->SetXY(108, $footerY + 2);
+        $pdf->Cell(80, 6, 'التاريخ', 0, 1, 'C');
+        $pdf->SetTextColor(51, 51, 51);
+        $pdf->SetFont('amirib', '', 13);
+        $pdf->SetXY(108, $footerY + 10);
+        $pdf->Cell(80, 6, $data['issued_date_formatted'], 0, 1, 'C');
+
+        // Academy column (moved right from X=7 to X=32)
+        $pdf->SetTextColor(136, 136, 136);
+        $pdf->SetFont('amiri', '', 11);
+        $pdf->SetXY(32, $footerY + 2);
+        $pdf->Cell(70, 6, 'الأكاديمية', 0, 1, 'C');
+        $pdf->SetTextColor(51, 51, 51);
+        $pdf->SetFont('amirib', '', 13);
+        $pdf->SetXY(32, $footerY + 10);
+        $pdf->Cell(70, 6, $data['academy_name'] ?: '—', 0, 1, 'C');
+
+        // Certificate number at bottom
+        $pdf->SetTextColor(153, 153, 153);
+        $pdf->SetFont('amiri', '', 10);
+        $pdf->setRTL(false); // Certificate number in LTR
+        $pdf->SetXY(0, 190);
+        $pdf->Cell(297, 6, $data['certificate_number'], 0, 1, 'C');
+        $pdf->setRTL(true); // Back to RTL
+    }
+
+    /**
+     * Convert hex color to RGB array
+     */
+    protected function hexToRgb(string $hex): array
+    {
+        $hex = ltrim($hex, '#');
+        return [
+            'r' => hexdec(substr($hex, 0, 2)),
+            'g' => hexdec(substr($hex, 2, 2)),
+            'b' => hexdec(substr($hex, 4, 2)),
+        ];
     }
 
     /**
@@ -369,7 +486,7 @@ class CertificateService
             'issued_date' => $certificate->issued_at->format('Y-m-d'),
             'issued_date_formatted' => $certificate->issued_at->locale('ar')->translatedFormat('d F Y'),
             'academy_logo' => $academy->logo ?? null,
-            'academy_name' => $academy->name_ar,
+            'academy_name' => $academy->name,
             'student_name' => $student->name,
             'teacher_name' => $teacher?->name ?? '',
             'signature_name' => $signatureName,
@@ -382,7 +499,7 @@ class CertificateService
     /**
      * Store certificate PDF to storage
      */
-    protected function storeCertificatePDF(Mpdf $mpdf, Certificate $certificate): string
+    protected function storeCertificatePDF(Fpdi $pdf, Certificate $certificate): string
     {
         $academy = $certificate->academy;
         $year = now()->year;
@@ -393,8 +510,8 @@ class CertificateService
         $directory = "tenants/{$academy->id}/certificates/{$year}/{$type}";
         $filePath = "{$directory}/{$fileName}";
 
-        // Save PDF - mPDF uses Output() method
-        Storage::put($filePath, $mpdf->Output('', 'S'));
+        // Save PDF - TCPDF uses Output() method with 'S' for string
+        Storage::put($filePath, $pdf->Output('', 'S'));
 
         return $filePath;
     }
@@ -405,21 +522,20 @@ class CertificateService
     public function previewCertificate(
         array $data,
         CertificateTemplateStyle|string $templateStyle
-    ): Mpdf {
+    ): Fpdi {
         if (is_string($templateStyle)) {
             $templateStyle = CertificateTemplateStyle::from($templateStyle);
         }
 
-        $viewPath = $templateStyle->viewPath();
+        $data['template_style'] = $templateStyle;
 
-        // Create mPDF instance
-        $mpdf = $this->createMpdfInstance();
+        // Create FPDI instance with PDF template
+        $pdf = $this->createFpdiInstance($templateStyle);
 
-        // Render the view and write to PDF
-        $html = view($viewPath, $data)->render();
-        $mpdf->WriteHTML($html);
+        // Overlay text content at specific positions
+        $this->addCertificateText($pdf, $data);
 
-        return $mpdf;
+        return $pdf;
     }
 
     /**
@@ -447,9 +563,9 @@ class CertificateService
     {
         if (!$certificate->fileExists()) {
             // Regenerate if file doesn't exist
-            $mpdf = $this->generateCertificatePDF($certificate);
-            // mPDF Output: 'I' = inline (browser), 'D' = download, 'S' = string
-            return response($mpdf->Output('', 'S'), 200)
+            $pdf = $this->generateCertificatePDF($certificate);
+            // TCPDF Output: 'I' = inline (browser), 'D' = download, 'S' = string
+            return response($pdf->Output('', 'S'), 200)
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'inline; filename="' . $certificate->certificate_number . '.pdf"');
         }
@@ -534,18 +650,8 @@ class CertificateService
         $academy = $circle->academy;
         $teacher = $circle->teacher;
 
-        // Get template text
-        $templateText = $this->getDefaultTemplateText($academy, CertificateType::QURAN_SUBSCRIPTION);
-
-        // Replace placeholders
-        $certificateText = $this->replacePlaceholders($templateText, [
-            'student_name' => $student->name,
-            'achievement' => $achievementText,
-            'teacher_name' => $teacher?->name ?? '',
-            'academy_name' => $academy->name_ar,
-            'completion_date' => now()->format('Y-m-d'),
-            'circle_name' => $circle->name,
-        ]);
+        // Use achievement text directly as certificate text (no template wrapping)
+        $certificateText = $achievementText;
 
         // Convert template style to enum if string
         if (is_string($templateStyle)) {
@@ -569,6 +675,65 @@ class CertificateService
                 'circle_code' => $circle->circle_code ?? null,
                 'circle_name' => $circle->name,
                 'circle_type' => 'group',
+            ],
+        ]);
+
+        // Send notification (wrapped in try-catch to not fail certificate issuance)
+        try {
+            $student->notify(new CertificateIssuedNotification($certificate));
+        } catch (\Exception $e) {
+            \Log::warning('Certificate notification failed (certificate still issued)', [
+                'certificate_id' => $certificate->id,
+                'student_id' => $student->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $certificate;
+    }
+
+    /**
+     * Issue manual certificate for an interactive course student
+     * Similar to group circle certificates, allows multiple certificates
+     * with custom achievement text and template
+     */
+    public function issueInteractiveCourseCertificate(
+        InteractiveCourse $course,
+        User $student,
+        string $achievementText,
+        CertificateTemplateStyle|string $templateStyle,
+        ?int $issuedBy = null
+    ): Certificate {
+        // Allow multiple certificates - no restriction check
+
+        $academy = $course->academy;
+        $teacher = $course->assignedTeacher;
+
+        // Use achievement text directly as certificate text (no template wrapping)
+        $certificateText = $achievementText;
+
+        // Convert template style to enum if string
+        if (is_string($templateStyle)) {
+            $templateStyle = CertificateTemplateStyle::from($templateStyle);
+        }
+
+        // Create certificate (linked to InteractiveCourse)
+        $certificate = $this->createCertificate([
+            'academy_id' => $academy->id,
+            'student_id' => $student->id,
+            'teacher_id' => $teacher?->user_id ?? $teacher?->id,
+            'certificateable_type' => InteractiveCourse::class,
+            'certificateable_id' => $course->id,
+            'certificate_type' => CertificateType::INTERACTIVE_COURSE,
+            'template_style' => $templateStyle,
+            'certificate_text' => $certificateText,
+            'custom_achievement_text' => $achievementText,
+            'is_manual' => true,
+            'issued_by' => $issuedBy,
+            'metadata' => [
+                'course_code' => $course->course_code ?? null,
+                'course_title' => $course->title,
+                'course_type' => 'interactive',
             ],
         ]);
 

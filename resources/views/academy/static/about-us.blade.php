@@ -1,3 +1,11 @@
+@php
+    // Get gradient palette for this academy
+    $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
+    $colors = $gradientPalette->getColors();
+    $gradientFrom = $colors['from'];
+    $gradientTo = $colors['to'];
+@endphp
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -25,7 +33,7 @@
   @include('academy.components.topbar', ['academy' => $academy])
 
   <!-- Page Header -->
-  <div class="bg-gradient-to-r from-primary to-secondary text-white py-16">
+  <div class="bg-gradient-to-r from-{{ $gradientFrom }} to-{{ $gradientTo }} text-white py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center">
         <h1 class="text-4xl font-bold mb-4">من نحن</h1>
@@ -40,7 +48,7 @@
     <!-- Introduction -->
     <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12 mb-12">
       <div class="text-center mb-12">
-        <div class="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <div class="w-24 h-24 bg-gradient-to-br from-{{ $gradientFrom }} to-{{ $gradientTo }} rounded-2xl flex items-center justify-center mx-auto mb-6">
           <i class="ri-book-open-line text-4xl text-white"></i>
         </div>
         <h2 class="text-3xl font-bold text-gray-900 mb-4">{{ $academy->name ?? 'أكاديمية إتقان' }}</h2>
@@ -265,7 +273,7 @@
     </div>
 
     <!-- Contact CTA -->
-    <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl shadow-lg p-8 md:p-12 text-center text-white">
+    <div class="bg-gradient-to-r from-{{ $gradientFrom }} to-{{ $gradientTo }} rounded-2xl shadow-lg p-8 md:p-12 text-center text-white">
       <h3 class="text-3xl font-bold mb-4">انضم إلينا اليوم</h3>
       <p class="text-xl mb-8 opacity-90">
         ابدأ رحلتك التعليمية معنا وكن جزءاً من مجتمعنا التعليمي المتميز
@@ -285,7 +293,7 @@
   </div>
 
   <!-- Footer -->
-  @include('academy.components.footer', ['academy' => $academy])
+  <x-academy-footer :academy="$academy" />
 
 </body>
 </html>

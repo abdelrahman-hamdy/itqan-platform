@@ -526,8 +526,7 @@ class AcademicSessionController extends Controller
         $attendance = $reportService->calculateAttendance($subscription);
         $progress = $reportService->calculateProgress($subscription);
 
-        return view('teacher.circle-report', [
-            'reportType' => 'academic',
+        return view('reports.academic.subscription-report-teacher', [
             'subscription' => $subscription,
             'student' => $student->user ?? $student,
             'subject' => $subject,
@@ -578,7 +577,7 @@ class AcademicSessionController extends Controller
         $attendance = $reportService->calculateAttendance($subscription);
         $progress = $reportService->calculateProgress($subscription);
 
-        return view('student.circle-report', array_merge(compact(
+        return view('reports.academic.subscription-report-student', compact(
             'subscription',
             'student',
             'subject',
@@ -586,6 +585,6 @@ class AcademicSessionController extends Controller
             'performance',
             'attendance',
             'progress'
-        ), ['reportType' => 'academic']));
+        ));
     }
 }

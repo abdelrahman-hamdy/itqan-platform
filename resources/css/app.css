@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Scroll padding for fixed header navigation */
+html {
+    scroll-padding-top: 80px; /* Height of fixed navbar (h-20 = 80px) */
+}
+
+/* Alpine.js x-cloak directive - hides elements until Alpine initializes */
+[x-cloak] {
+    display: none !important;
+}
+
 /* RTL Support */
 [dir="rtl"] {
     direction: rtl;

@@ -14,7 +14,7 @@
                     ->whereMonth('scheduled_at', now()->month)
                     ->count();
                 $subscriptions = App\Models\QuranSubscription::where('quran_teacher_id', $teacher->id)
-                    ->where('subscription_status', 'active')
+                    ->where('status', 'active')
                     ->count();
             @endphp
 

@@ -32,10 +32,12 @@
         <h3 class="font-semibold text-gray-900 mb-1 line-clamp-2">{{ $course->title }}</h3>
       </div>
       @if($course->avg_rating)
-        <div class="flex items-center">
-          <i class="ri-star-fill text-yellow-400 text-sm"></i>
-          <span class="text-sm text-gray-600 mr-1">{{ number_format($course->avg_rating, 1) }}</span>
-        </div>
+        <x-reviews.star-rating
+          :rating="$course->avg_rating"
+          :total-reviews="$course->total_reviews ?? null"
+          size="sm"
+          :show-count="false"
+        />
       @endif
     </div>
 

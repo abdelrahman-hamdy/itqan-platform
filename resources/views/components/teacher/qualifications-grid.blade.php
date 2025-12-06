@@ -33,7 +33,7 @@
     </div>
   @endif
 
-  @if($teacher->certifications && count($teacher->certifications) > 0)
+  @if($teacher->certifications && is_array($teacher->certifications) && count($teacher->certifications) > 0)
     <div class="flex items-start gap-3">
       <i class="ri-medal-line text-{{ $color }}-600 text-xl mt-0.5"></i>
       <div class="flex-1">
@@ -50,7 +50,7 @@
     </div>
   @endif
 
-  @if($teacher->languages && count($teacher->languages) > 0)
+  @if($teacher->languages && is_array($teacher->languages) && count($teacher->languages) > 0)
     <div class="flex items-start gap-3">
       <i class="ri-global-line text-{{ $color }}-600 text-xl mt-0.5"></i>
       <div>

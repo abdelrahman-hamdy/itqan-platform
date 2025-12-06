@@ -2,18 +2,22 @@
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $previewImageUrl = $certificate->template_style?->previewImageUrl() ?? asset('certificates/templates/template_images/template_1.png');
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-    <!-- Certificate Preview Background -->
-    <div class="h-40 relative overflow-hidden bg-gradient-to-br from-amber-400 to-yellow-500">
-        <!-- Certificate Icon -->
-        <div class="absolute inset-0 flex items-center justify-center">
-            <i class="ri-award-fill text-6xl text-white/40"></i>
-        </div>
+    <!-- Certificate Template Preview -->
+    <div class="aspect-[297/210] relative overflow-hidden bg-gray-100">
+        <!-- Template Preview Image -->
+        <img src="{{ $previewImageUrl }}"
+             alt="معاينة الشهادة"
+             class="w-full h-full object-cover">
 
-        <!-- Certificate Type Badge -->
-        <div class="absolute top-4 right-4">
+        <!-- Blur Overlay -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-black/10 backdrop-blur-sm"></div>
+
+        <!-- Certificate Type Badge - Centered -->
+        <div class="absolute inset-0 flex items-center justify-center">
             @php
                 $typeIcon = match($certificate->certificate_type->value) {
                     'recorded_course' => 'ri-video-line',
@@ -23,8 +27,8 @@
                     default => 'ri-award-line',
                 };
             @endphp
-            <span class="inline-flex items-center px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-sm font-medium text-gray-800">
-                <i class="{{ $typeIcon }} ml-1.5 text-amber-600"></i>
+            <span class="inline-flex items-center px-5 py-2.5 bg-white/95 backdrop-blur-sm rounded-xl text-base font-bold text-gray-800 shadow-lg">
+                <i class="{{ $typeIcon }} ml-2 text-xl text-amber-600"></i>
                 {{ $certificate->certificate_type->label() }}
             </span>
         </div>
@@ -70,7 +74,7 @@
             <!-- View Button -->
             <a href="{{ route('student.certificate.view', ['subdomain' => $subdomain, 'certificate' => $certificate->id]) }}"
                target="_blank"
-               class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium">
+               class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-medium">
                 <i class="ri-eye-line ml-2"></i>
                 عرض
             </a>

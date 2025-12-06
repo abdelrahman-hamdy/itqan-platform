@@ -1085,6 +1085,49 @@ class QuranSession extends BaseSession
                 $session->individualCircle->updateSessionCounts();
             }
         });
+
+        // Handle homework assignment notifications
+        static::updated(function ($session) {
+            // Check if homework_assigned was just set to true
+            if ($session->isDirty('homework_assigned') && $session->homework_assigned) {
+                $session->notifyHomeworkAssigned();
+            }
+        });
+    }
+
+    /**
+     * Send homework assigned notification to student
+     * Called when homework is assigned to this session
+     */
+    public function notifyHomeworkAssigned(): void
+    {
+        try {
+            $student = $this->student;
+            if (!$student) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService->sendHomeworkAssignedNotification(
+                $this,
+                $student,
+                null  // No specific homework ID for Quran homework
+            );
+
+            // Also notify parent if exists
+            if ($student->studentProfile && $student->studentProfile->parent) {
+                $notificationService->sendHomeworkAssignedNotification(
+                    $this,
+                    $student->studentProfile->parent->user,
+                    null
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send homework notification for Quran session', [
+                'session_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public static function getTodaysSessions(int $academyId, array $filters = []): \Illuminate\Database\Eloquent\Collection

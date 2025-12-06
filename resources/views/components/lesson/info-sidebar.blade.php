@@ -7,14 +7,14 @@
 
 @php
     $isAcademic = $lessonType === 'academic';
-    
+
     if ($isAcademic) {
         $teacher = $lesson->academicTeacher ?? null;
-        $teacherRoute = $teacher ? route('public.academic-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) : '#';
+        $teacherRoute = $teacher ? route('academic-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) : '#';
         $package = $lesson->academicPackage ?? null;
     } else {
         $teacher = $lesson->quranTeacher ?? null;
-        $teacherRoute = $teacher ? route('public.quran-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacher' => $teacher->id]) : '#';
+        $teacherRoute = $teacher ? route('quran-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) : '#';
         $package = $lesson->subscription->package ?? null;
     }
 @endphp

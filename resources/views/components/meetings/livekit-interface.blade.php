@@ -10,9 +10,10 @@
 ])
 
 @php
-    // Detect session type - check if it's an AcademicSession or QuranSession
+    // Detect session type - check if it's an AcademicSession, InteractiveCourseSession, or QuranSession
     $isAcademicSession = $session instanceof \App\Models\AcademicSession;
-    
+    $isInteractiveCourseSession = $session instanceof \App\Models\InteractiveCourseSession;
+
     // Get configuration for meeting timing based on session type
     if ($isAcademicSession) {
         // Academic sessions have different configuration approach
@@ -20,17 +21,26 @@
         $endingBufferMinutes = 5;
         $graceMinutes = 15;
         $circle = null; // Academic sessions don't have circles
+    } elseif ($isInteractiveCourseSession) {
+        // Interactive course sessions use course configuration
+        $preparationMinutes = $session->course?->preparation_minutes ?? 15;
+        $endingBufferMinutes = $session->course?->buffer_minutes ?? 5;
+        $graceMinutes = $session->course?->late_tolerance_minutes ?? 15;
+        $circle = null; // Interactive sessions don't have circles
     } else {
         // Quran sessions use circle configuration
-        $circle = $session->session_type === 'individual' 
-            ? $session->individualCircle 
+        $circle = $session->session_type === 'individual'
+            ? $session->individualCircle
             : $session->circle;
-        
+
         $preparationMinutes = $circle?->preparation_minutes ?? 15;
         $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
         $graceMinutes = $circle?->late_join_grace_period_minutes ?? 15;
     }
-    
+
+    // Check if session has a meeting room (based on meeting_room_name or meeting_link)
+    $hasMeetingRoom = !empty($session->meeting_room_name) || !empty($session->meeting_link);
+
     // Anyone can join when session is READY or ONGOING (students and teachers)
     // Both can initiate the meeting if room doesn't exist
     $canJoinMeeting = in_array($session->status, [
@@ -44,7 +54,8 @@
         App\Enums\SessionStatus::SCHEDULED
     ]) && $hasMeetingRoom) {
         // Students can join during preparation time or if session hasn't ended
-        $now = now();
+        // Use academy timezone for "now" to ensure accurate comparisons
+        $now = nowInAcademyTimezone();
         $preparationStart = $session->scheduled_at?->copy()->subMinutes($preparationMinutes);
         $sessionEnd = $session->scheduled_at?->copy()->addMinutes(($session->duration_minutes ?? 30) + $endingBufferMinutes);
 
@@ -1277,7 +1288,7 @@
             
             // Store session configuration
             window.sessionId = '{{ $session->id }}';
-            window.sessionType = '{{ $isAcademicSession ? 'academic' : 'quran' }}';
+            window.sessionType = '{{ $isAcademicSession ? 'academic' : ($isInteractiveCourseSession ? 'interactive' : 'quran') }}';
             window.auth = {
                 user: {
                     id: '{{ auth()->id() }}',
@@ -1997,7 +2008,7 @@
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div class="info-item flex justify-between">
                             <span class="label text-gray-600">وقت الجلسة:</span>
-                            <span class="value font-medium text-gray-900">{{ $session->scheduled_at ? $session->scheduled_at->format('h:i A') : 'غير محدد' }}</span>
+                            <span class="value font-medium text-gray-900">{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : 'غير محدد' }}</span>
                         </div>
                         <div class="info-item flex justify-between">
                             <span class="label text-gray-600">المدة:</span>

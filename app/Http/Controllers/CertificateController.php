@@ -39,7 +39,7 @@ class CertificateController extends Controller
             $query->where('certificate_type', $request->type);
         }
 
-        $certificates = $query->get();
+        $certificates = $query->paginate(12)->withQueryString();
 
         return view('student.certificates', [
             'certificates' => $certificates,
@@ -96,23 +96,24 @@ class CertificateController extends Controller
             'certificate_text' => 'required|string',
             'teacher_name' => 'nullable|string',
             'academy_name' => 'required|string',
-            'template_style' => 'required|in:modern,classic,elegant',
-            'signature_name' => 'nullable|string',
-            'signature_title' => 'nullable|string',
+            'template_style' => 'required|string',
         ]);
 
         // Add default values
         $data['certificate_number'] = 'PREVIEW-' . now()->format('YmdHis');
         $data['issued_date'] = now()->format('Y-m-d');
         $data['issued_date_formatted'] = now()->locale('ar')->translatedFormat('d F Y');
-        $data['academy_logo'] = $request->academy_logo ?? null;
         $data['metadata'] = [];
 
         try {
             $pdf = $this->certificateService->previewCertificate($data, $data['template_style']);
-            return $pdf->stream('certificate-preview.pdf');
+            // TCPDF Output: 'I' = inline (browser display)
+            return response($pdf->Output('', 'S'), 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="certificate-preview.pdf"');
         } catch (\Exception $e) {
-            return back()->with('error', 'حدث خطأ أثناء معاينة الشهادة: ' . $e->getMessage());
+            \Log::error('Certificate preview error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => 'حدث خطأ أثناء معاينة الشهادة: ' . $e->getMessage()], 500);
         }
     }
 

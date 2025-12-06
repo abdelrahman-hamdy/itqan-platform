@@ -21,17 +21,19 @@ class ParentProfile extends Model
         'phone',
         'avatar',
         'parent_code',
-        'relationship_type',
         'occupation',
-        'workplace',
-        'national_id',
-        'passport_number',
+        'relationship_type',
         'address',
         'secondary_phone',
-        'emergency_contact_name',
-        'emergency_contact_phone',
         'preferred_contact_method',
-        'notes',
+        'admin_notes', // Visible to admin only
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     */
+    protected $casts = [
+        'relationship_type' => \App\Enums\RelationshipType::class,
     ];
 
     /**
@@ -45,10 +47,11 @@ class ParentProfile extends Model
             if (empty($model->parent_code)) {
                 // Use academy_id from the model, or fallback to 1 if not set
                 $academyId = $model->academy_id ?: 1;
-                
-                // Count existing profiles in the same academy for proper numbering
-                $count = static::where('academy_id', $academyId)->count() + 1;
-                $model->parent_code = 'PAR-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+
+                // Generate unique code with timestamp to avoid race conditions
+                $timestamp = now()->format('His'); // HHMMSS
+                $random = rand(100, 999);
+                $model->parent_code = 'PAR-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . $timestamp . $random;
             }
         });
     }
@@ -77,7 +80,8 @@ class ParentProfile extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(StudentProfile::class, 'parent_student_relationships', 'parent_id', 'student_id')
-            ->withPivot('relationship_type', 'is_primary_contact', 'can_view_grades', 'can_receive_notifications')
+            ->using(ParentStudentRelationship::class)
+            ->withPivot('relationship_type')
             ->withTimestamps();
     }
 
@@ -102,16 +106,6 @@ class ParentProfile extends Model
         return !is_null($this->user_id);
     }
 
-    public function getRelationshipTypeInArabicAttribute(): string
-    {
-        return match($this->relationship_type) {
-            'father' => 'الأب',
-            'mother' => 'الأم',
-            'guardian' => 'الوصي',
-            'relative' => 'قريب',
-            default => $this->relationship_type,
-        };
-    }
 
     public function getPreferredContactMethodInArabicAttribute(): string
     {

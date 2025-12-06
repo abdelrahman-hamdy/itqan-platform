@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ParentProfileResource\Pages;
+use App\Filament\Resources\ParentProfileResource\RelationManagers;
 use App\Models\ParentProfile;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -50,7 +51,38 @@ public static function form(Form $form): Form
                                     ->label('البريد الإلكتروني')
                                     ->email()
                                     ->required()
-                                    ->unique(ignoreRecord: true)
+                                    ->rule(function ($livewire) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($livewire) {
+                                            // Get current academy from tenant context (Filament multi-tenancy)
+                                            $academyId = \Filament\Facades\Filament::getTenant()?->id;
+
+                                            // Check if email exists in parent_profiles table for this academy (excluding current record if editing)
+                                            $parentProfileQuery = \App\Models\ParentProfile::where('email', $value)
+                                                ->where('academy_id', $academyId);
+
+                                            if ($livewire->record ?? null) {
+                                                $parentProfileQuery->where('id', '!=', $livewire->record->id);
+                                            }
+
+                                            if ($parentProfileQuery->exists()) {
+                                                $fail('البريد الإلكتروني مستخدم بالفعل في هذه الأكاديمية.');
+                                                return;
+                                            }
+
+                                            // Check if email exists in users table for this academy (excluding current record if editing)
+                                            // With composite unique constraint (email, academy_id), same email can exist in different academies
+                                            $userQuery = \App\Models\User::where('email', $value)
+                                                ->where('academy_id', $academyId);
+
+                                            if ($livewire->record ?? null) {
+                                                $userQuery->where('id', '!=', $livewire->record->user_id);
+                                            }
+
+                                            if ($userQuery->exists()) {
+                                                $fail('البريد الإلكتروني مستخدم بالفعل في هذه الأكاديمية.');
+                                            }
+                                        };
+                                    })
                                     ->maxLength(255)
                                     ->helperText('سيستخدم ولي الأمر هذا البريد للدخول إلى المنصة'),
                                 Forms\Components\TextInput::make('first_name')
@@ -83,29 +115,8 @@ public static function form(Form $form): Form
                                     ->label('رمز ولي الأمر')
                                     ->disabled()
                                     ->dehydrated(false),
-                                Forms\Components\Select::make('relationship_type')
-                                    ->label('نوع العلاقة')
-                                    ->options([
-                                        'father' => 'أب',
-                                        'mother' => 'أم',
-                                        'guardian' => 'وصي',
-                                        'other' => 'آخر',
-                                    ])
-                                    ->required(),
                                 Forms\Components\TextInput::make('occupation')
                                     ->label('المهنة')
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('workplace')
-                                    ->label('مكان العمل')
-                                    ->maxLength(255),
-                            ]),
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('national_id')
-                                    ->label('رقم الهوية الوطنية')
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('passport_number')
-                                    ->label('رقم جواز السفر')
                                     ->maxLength(255),
                             ]),
                         Forms\Components\Textarea::make('address')
@@ -131,21 +142,26 @@ public static function form(Form $form): Form
                                     ])
                                     ->default('phone'),
                             ]),
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('emergency_contact_name')
-                                    ->label('اسم جهة الاتصال في الطوارئ')
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('emergency_contact_phone')
-                                    ->label('رقم هاتف الطوارئ')
-                                    ->tel()
-                                    ->maxLength(255),
-                            ]),
-                        Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات')
+                        Forms\Components\Textarea::make('admin_notes')
+                            ->label('ملاحظات الإدارة')
                             ->rows(3)
-                            ->maxLength(1000),
+                            ->maxLength(1000)
+                            ->helperText('ملاحظات خاصة بالإدارة فقط')
+                            ->visible(fn () => auth()->user()?->hasRole(['super_admin', 'admin', 'supervisor'])),
                     ]),
+                Forms\Components\Section::make('حالة الحساب')
+                    ->schema([
+                        Forms\Components\Toggle::make('user.active_status')
+                            ->label('الحساب نشط')
+                            ->helperText('عند تعطيل الحساب، لن يتمكن ولي الأمر من تسجيل الدخول')
+                            ->default(true)
+                            ->afterStateUpdated(function ($state, $record) {
+                                if ($record && $record->user) {
+                                    $record->user->update(['active_status' => $state]);
+                                }
+                            }),
+                    ])
+                    ->visible(fn () => auth()->user()?->hasRole(['super_admin', 'admin', 'supervisor'])),
             ]);
     }
 
@@ -172,21 +188,18 @@ public static function form(Form $form): Form
                 Tables\Columns\TextColumn::make('phone')
                     ->label('رقم الهاتف')
                     ->searchable(),
-                Tables\Columns\BadgeColumn::make('relationship_type')
-                    ->label('نوع العلاقة')
-                    ->colors([
-                        'primary' => 'father',
-                        'success' => 'mother',
-                        'warning' => 'guardian',
-                        'info' => 'other',
-                    ]),
-                Tables\Columns\TextColumn::make('occupation')
-                    ->label('المهنة')
-                    ->searchable(),
-                Tables\Columns\IconColumn::make('is_linked')
-                    ->label('مرتبط بحساب')
+                Tables\Columns\IconColumn::make('has_students')
+                    ->label('مرتبط بطلاب')
                     ->boolean()
-                    ->getStateUsing(fn ($record) => $record->isLinked()),
+                    ->getStateUsing(fn ($record) => $record->students()->exists()),
+                Tables\Columns\IconColumn::make('user.active_status')
+                    ->label('نشط')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('academy.name')
                     ->label('الأكاديمية')
                     ->badge()
@@ -199,27 +212,58 @@ public static function form(Form $form): Form
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('relationship_type')
-                    ->label('نوع العلاقة')
-                    ->options([
-                        'father' => 'أب',
-                        'mother' => 'أم',
-                        'guardian' => 'وصي',
-                        'other' => 'آخر',
-                    ]),
-                Tables\Filters\TernaryFilter::make('is_linked')
-                    ->label('مرتبط بحساب')
+                Tables\Filters\TernaryFilter::make('has_students')
+                    ->label('مرتبط بطلاب')
                     ->placeholder('جميع أولياء الأمور')
-                    ->trueLabel('مرتبط بحساب')
-                    ->falseLabel('غير مرتبط'),
+                    ->trueLabel('لديه طلاب')
+                    ->falseLabel('بدون طلاب')
+                    ->queries(
+                        true: fn (Builder $query) => $query->has('students'),
+                        false: fn (Builder $query) => $query->doesntHave('students'),
+                    ),
+                Tables\Filters\TernaryFilter::make('active_status')
+                    ->label('حالة الحساب')
+                    ->placeholder('جميع الحسابات')
+                    ->trueLabel('نشط')
+                    ->falseLabel('غير نشط')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
+                        false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
+                    ),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('toggleActive')
+                    ->label(fn ($record) => $record->user?->active_status ? 'تعطيل' : 'تفعيل')
+                    ->icon(fn ($record) => $record->user?->active_status ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn ($record) => $record->user?->active_status ? 'danger' : 'success')
+                    ->requiresConfirmation()
+                    ->modalHeading(fn ($record) => $record->user?->active_status ? 'تعطيل الحساب' : 'تفعيل الحساب')
+                    ->modalDescription(fn ($record) => $record->user?->active_status
+                        ? 'هل أنت متأكد من تعطيل حساب ولي الأمر؟ لن يتمكن من تسجيل الدخول.'
+                        : 'هل أنت متأكد من تفعيل حساب ولي الأمر؟')
+                    ->action(function ($record) {
+                        if ($record->user) {
+                            $record->user->update(['active_status' => !$record->user->active_status]);
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('activate')
+                        ->label('تفعيل المحددين')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => true]))),
+                    Tables\Actions\BulkAction::make('deactivate')
+                        ->label('تعطيل المحددين')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false]))),
                 ]),
             ]);
     }
@@ -227,7 +271,7 @@ public static function form(Form $form): Form
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\StudentsRelationManager::class,
         ];
     }
 

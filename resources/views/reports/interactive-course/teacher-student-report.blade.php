@@ -1,0 +1,121 @@
+@props([
+    'course' => null,
+    'student' => null,
+    'enrollment' => null,
+    'attendance' => null,
+    'performance' => null,
+    'progress' => null,
+])
+
+@php
+$academySubdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+
+// Convert DTOs to arrays for backward compatibility
+if (is_object($attendance) && method_exists($attendance, 'toArray')) {
+    $attendance = $attendance->toArray();
+}
+if (is_object($performance) && method_exists($performance, 'toArray')) {
+    $performance = $performance->toArray();
+}
+if (is_object($progress) && method_exists($progress, 'toArray')) {
+    $progress = $progress->toArray();
+}
+
+// Build breadcrumbs
+$breadcrumbs = [
+    [
+        'label' => auth()->user()->name,
+        'url' => route('teacher.profile', ['subdomain' => $academySubdomain])
+    ],
+    [
+        'label' => $course?->title,
+        'url' => route('interactive-courses.show', ['subdomain' => $academySubdomain, 'courseId' => $course?->id])
+    ],
+    [
+        'label' => 'التقرير الشامل',
+        'url' => route('teacher.interactive-courses.report', ['subdomain' => $academySubdomain, 'course' => $course?->id])
+    ],
+    ['label' => 'تقرير ' . ($student->name ?? 'الطالب')]
+];
+
+// Header stats
+$headerStats = [];
+if (isset($enrollment)) {
+    $headerStats[] = [
+        'icon' => 'ri-calendar-line',
+        'label' => 'تاريخ الانضمام',
+        'value' => $enrollment->created_at?->format('Y-m-d') ?? '-'
+    ];
+}
+
+// Build stats grid data
+$statsGridData = [
+    [
+        'label' => 'نسبة الحضور',
+        'value' => ($attendance['attendance_rate'] ?? 0) . '%',
+        'color' => 'green',
+        'icon' => 'ri-user-star-line'
+    ],
+    [
+        'label' => 'الجلسات المكتملة',
+        'value' => $progress['sessions_completed'] ?? 0,
+        'color' => 'blue',
+        'icon' => 'ri-checkbox-circle-line'
+    ],
+    [
+        'label' => 'متوسط الأداء',
+        'value' => number_format($performance['average_overall_performance'] ?? 0, 1) . '/10',
+        'color' => 'purple',
+        'icon' => 'ri-star-line'
+    ],
+    [
+        'label' => 'نسبة التقدم',
+        'value' => ($progress['completion_rate'] ?? 0) . '%',
+        'color' => 'yellow',
+        'icon' => 'ri-pie-chart-line'
+    ],
+];
+
+// Add homework metrics if available
+if (isset($progress['homework_completion_rate'])) {
+    $statsGridData[] = [
+        'label' => 'نسبة إكمال الواجبات',
+        'value' => $progress['homework_completion_rate'] . '%',
+        'color' => 'indigo',
+        'icon' => 'ri-file-list-3-line'
+    ];
+}
+@endphp
+
+<x-reports.layouts.base-report
+    :title="'تقرير الطالب - ' . $course?->title . ' - ' . config('app.name', 'منصة إتقان')"
+    :description="'تقرير الطالب في الكورس التفاعلي'"
+    layoutType="teacher">
+
+<div>
+    <!-- Report Header with Breadcrumbs -->
+    <x-reports.report-header
+        title="تقرير الطالب"
+        :subtitle="($student->name ?? 'الطالب') . ' - ' . $course?->title"
+        :breadcrumbs="$breadcrumbs"
+        :stats="$headerStats" />
+
+    <!-- Stats Grid -->
+    <x-reports.stats-grid :stats="$statsGridData" />
+
+    <!-- Attendance and Performance Cards -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Attendance Summary -->
+        <x-reports.attendance-summary
+            :data="$attendance"
+            title="إحصائيات الحضور" />
+
+        <!-- Performance Summary -->
+        <x-reports.performance-summary
+            :data="$performance"
+            title="الأداء الأكاديمي"
+            type="interactive" />
+    </div>
+</div>
+
+</x-reports.layouts.base-report>

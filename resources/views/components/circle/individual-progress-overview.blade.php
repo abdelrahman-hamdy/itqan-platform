@@ -73,13 +73,13 @@
                     <span class="text-sm text-gray-700">حالة الاشتراك</span>
                 </div>
                 <span class="text-sm font-bold 
-                    @if(($isAcademic ? $subscription->status : $subscription->subscription_status) === 'active') text-green-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->subscription_status) === 'paused') text-yellow-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->subscription_status) === 'expired') text-blue-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->subscription_status) === 'cancelled') text-red-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->subscription_status) === 'suspended') text-orange-600
+                    @if(($isAcademic ? $subscription->status : $subscription->status) === 'active') text-green-600
+                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'paused') text-yellow-600
+                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'expired') text-blue-600
+                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'cancelled') text-red-600
+                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'suspended') text-orange-600
                     @else text-gray-600 @endif">
-                    @php $status = $isAcademic ? $subscription->status : $subscription->subscription_status; @endphp
+                    @php $status = $isAcademic ? $subscription->status : $subscription->status; @endphp
                     @if($status === 'active') نشط
                     @elseif($status === 'paused') متوقف
                     @elseif($status === 'expired') منتهي

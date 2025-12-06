@@ -200,4 +200,116 @@ class QuizAssignment extends Model
             default => route('student.dashboard', ['subdomain' => $subdomain]),
         };
     }
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Notify students when quiz is assigned
+        static::created(function ($assignment) {
+            $assignment->notifyQuizAssigned();
+        });
+    }
+
+    /**
+     * Send notification to students when quiz is assigned
+     */
+    public function notifyQuizAssigned(): void
+    {
+        try {
+            if (!$this->assignable || !$this->quiz) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+            $students = $this->getAffectedStudents();
+
+            foreach ($students as $student) {
+                try {
+                    $notificationService->send(
+                        $student,
+                        \App\Enums\NotificationType::QUIZ_ASSIGNED,
+                        [
+                            'quiz_title' => $this->quiz->title,
+                            'quiz_description' => $this->quiz->description,
+                            'duration_minutes' => $this->quiz->duration_minutes,
+                            'passing_score' => $this->quiz->passing_score,
+                            'max_attempts' => $this->max_attempts,
+                            'available_from' => $this->available_from?->format('Y-m-d H:i'),
+                            'available_until' => $this->available_until?->format('Y-m-d H:i'),
+                        ],
+                        $this->getReturnUrl(),
+                        [
+                            'quiz_assignment_id' => $this->id,
+                            'quiz_id' => $this->quiz_id,
+                            'assignable_type' => $this->assignable_type,
+                            'assignable_id' => $this->assignable_id,
+                        ],
+                        true  // Mark as important
+                    );
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to send quiz assigned notification to student', [
+                        'assignment_id' => $this->id,
+                        'student_id' => $student->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send quiz assigned notifications', [
+                'assignment_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Get all students affected by this quiz assignment
+     */
+    protected function getAffectedStudents(): \Illuminate\Support\Collection
+    {
+        $students = collect();
+
+        if (!$this->assignable) {
+            return $students;
+        }
+
+        if ($this->assignable instanceof \App\Models\QuranCircle) {
+            // Group circle - get all students with active subscriptions
+            $students = $this->assignable->activeSubscriptions()
+                ->with('student')
+                ->get()
+                ->pluck('student')
+                ->filter();
+        } elseif ($this->assignable instanceof \App\Models\QuranIndividualCircle) {
+            // Individual circle - get the student
+            if ($this->assignable->student) {
+                $students->push($this->assignable->student);
+            }
+        } elseif ($this->assignable instanceof \App\Models\InteractiveCourse) {
+            // Interactive course - get enrolled students
+            $students = $this->assignable->enrollments()
+                ->with('student')
+                ->get()
+                ->pluck('student')
+                ->filter();
+        } elseif ($this->assignable instanceof \App\Models\RecordedCourse) {
+            // Recorded course - get subscribed students
+            $students = $this->assignable->subscriptions()
+                ->with('student')
+                ->get()
+                ->pluck('student')
+                ->filter();
+        } elseif ($this->assignable instanceof \App\Models\AcademicIndividualLesson) {
+            // Individual lesson - get the student
+            if ($this->assignable->student) {
+                $students->push($this->assignable->student);
+            }
+        }
+
+        return $students->unique('id');
+    }
 }

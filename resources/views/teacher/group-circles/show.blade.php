@@ -30,74 +30,144 @@
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
             <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">{{ auth()->user()->name }}</a></li>
             <li>/</li>
-            <li><a href="{{ route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">الحلقات الجماعية</a></li>
-            <li>/</li>
             <li class="text-gray-900">{{ $circle->name }}</li>
         </ol>
     </nav>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-sticky-container>
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Circle Header -->
             <x-circle.group-header :circle="$circle" view-type="teacher" />
 
-            <!-- Sessions List -->
+            <!-- Tabs Component -->
             @php
                 // Get all sessions for the circle
                 $allSessions = $circle->sessions()->orderBy('scheduled_at', 'desc')->get();
+                $totalStudents = $circle->students()->count();
+                $studentsWithCertificates = $circle->students()->wherePivot('certificate_issued', true)->count();
             @endphp
 
-            <x-sessions.sessions-list
-                :sessions="$allSessions"
-                :show-tabs="false" />
+            <x-tabs id="circle-tabs" default-tab="sessions" variant="default" color="primary">
+                <x-slot name="tabs">
+                    <x-tabs.tab
+                        id="sessions"
+                        label="الجلسات"
+                        icon="ri-calendar-line"
+                        :badge="$allSessions->count()"
+                    />
+                    <x-tabs.tab
+                        id="students"
+                        label="الطلاب"
+                        icon="ri-user-3-line"
+                        :badge="$totalStudents"
+                    />
+                    <x-tabs.tab
+                        id="certificates"
+                        label="الشهادات"
+                        icon="ri-award-line"
+                        :badge="$studentsWithCertificates"
+                    />
+                </x-slot>
+
+                <x-slot name="panels">
+                    <x-tabs.panel id="sessions">
+                        <x-sessions.sessions-list
+                            :sessions="$allSessions"
+                            view-type="teacher"
+                            :circle="$circle"
+                            :show-tabs="false" />
+                    </x-tabs.panel>
+
+                    <x-tabs.panel id="students">
+                        <x-circle.group-students-list :circle="$circle" view-type="teacher" />
+                    </x-tabs.panel>
+
+                    <x-tabs.panel id="certificates">
+                        <!-- Certificates List Section -->
+                        @php
+                            // Get all certificates for students in this circle
+                            $certificates = \App\Models\Certificate::whereIn('student_id', $circle->students->pluck('id'))
+                                ->where('certificate_type', 'quran_subscription')
+                                ->latest('issued_at')
+                                ->get();
+                        @endphp
+
+                        @if($certificates->count() > 0)
+                            <div class="bg-green-50 rounded-lg p-4 mb-6 border border-green-200">
+                                <p class="text-sm text-green-800 font-medium">
+                                    <i class="ri-checkbox-circle-fill ml-1"></i>
+                                    تم إصدار {{ $certificates->count() }} شهادة للطلاب
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach($certificates as $certificate)
+                                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                                        <!-- Student Info Header -->
+                                        <div class="bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-3 border-b border-amber-100">
+                                            <div class="flex items-center gap-3">
+                                                <x-avatar :user="$certificate->student" size="sm" user-type="student" />
+                                                <div>
+                                                    <p class="font-bold text-gray-900 text-sm">{{ $certificate->student->name }}</p>
+                                                    <p class="text-xs text-gray-600">{{ $certificate->certificate_number }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Certificate Details -->
+                                        <div class="p-4 space-y-3">
+                                            <!-- Issue Date -->
+                                            <div class="flex items-center text-sm text-gray-600">
+                                                <i class="ri-calendar-line ml-2 text-amber-500"></i>
+                                                <span>{{ $certificate->issued_at->locale('ar')->translatedFormat('d F Y') }}</span>
+                                            </div>
+
+                                            <!-- Action Buttons -->
+                                            <div class="flex gap-2 pt-2">
+                                                <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
+                                                   target="_blank"
+                                                   class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                    <i class="ri-eye-line ml-1"></i>
+                                                    عرض
+                                                </a>
+                                                <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
+                                                   class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                    <i class="ri-download-line ml-1"></i>
+                                                    تحميل
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <!-- Empty State -->
+                            <div class="text-center py-12">
+                                <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="ri-award-line text-3xl text-amber-500"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900 mb-2">لا توجد شهادات</h3>
+                                <p class="text-gray-600 text-sm mb-6">لم يتم إصدار أي شهادات للطلاب بعد</p>
+                                <p class="text-sm text-gray-500">يمكنك إصدار الشهادات من خلال القسم الجانبي</p>
+                            </div>
+                        @endif
+                    </x-tabs.panel>
+                </x-slot>
+            </x-tabs>
         </div>
 
         <!-- Sidebar -->
-        <div class="lg:col-span-1 space-y-6">
-            <!-- Circle Info Sidebar -->
-            <x-circle.info-sidebar :circle="$circle" view-type="teacher" />
+        <div class="lg:col-span-1" data-sticky-sidebar>
+            <div class="space-y-6">
+                <!-- Circle Info Sidebar -->
+                <x-circle.info-sidebar :circle="$circle" view-type="teacher" />
 
-            <!-- Quick Actions -->
-            <x-circle.quick-actions :circle="$circle" view-type="teacher" />
+                <!-- Quick Actions -->
+                <x-circle.quick-actions :circle="$circle" view-type="teacher" />
 
-            <!-- Students List -->
-            <x-circle.group-students-list :circle="$circle" view-type="teacher" />
-
-            <!-- Certificate Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="ri-award-line text-amber-500"></i>
-                    الشهادات
-                </h3>
-
-                @php
-                    // Get total students in this group circle
-                    $totalStudents = $circle->students()->count();
-
-                    // Count certificates issued via the pivot table
-                    $studentsWithCertificates = $circle->students()
-                        ->wherePivot('certificate_issued', true)
-                        ->count();
-                @endphp
-
-                @if($studentsWithCertificates > 0)
-                    <div class="bg-green-50 rounded-lg p-3 mb-4 border border-green-200">
-                        <p class="text-sm text-green-800">
-                            <i class="ri-checkbox-circle-fill ml-1"></i>
-                            تم إصدار {{ $studentsWithCertificates }} من {{ $totalStudents }} شهادة
-                        </p>
-                    </div>
-                @endif
-
-                <p class="text-sm text-gray-600 mb-4">يمكنك إصدار شهادات للطلاب عند إتمام البرنامج أو تحقيق إنجاز معين</p>
-
-                <button type="button"
-                        onclick="Livewire.dispatch('openModal', { subscriptionType: 'group_quran', subscriptionId: null, circleId: {{ $circle->id }} })"
-                        class="w-full inline-flex items-center justify-center px-5 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
-                    <i class="ri-award-line ml-2 text-lg"></i>
-                    إصدار شهادات للطلاب
-                </button>
+                <!-- Issue Certificate Widget -->
+                <x-certificate.teacher-issue-widget type="quran_group" :entity="$circle" />
             </div>
         </div>
     </div>
@@ -108,10 +178,6 @@
 
 <script>
 // Student management functions
-function viewStudentProgress(studentId) {
-    window.location.href = '{{ route("teacher.group-circles.student-progress", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "circle" => $circle->id, "student" => "__STUDENT_ID__"]) }}'.replace('__STUDENT_ID__', studentId);
-}
-
 function contactStudent(studentId) {
     const subdomain = '{{ auth()->user()->academy->subdomain ?? "itqan-academy" }}';
     window.location.href = `/${subdomain}/teacher/students/${studentId}/contact`;

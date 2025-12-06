@@ -17,15 +17,12 @@
         </h3>
 
         <!-- Rating -->
-        @if($teacher->rating > 0)
-          <div class="flex items-center gap-1">
-            <div class="flex text-yellow-400">
-              @for($i = 1; $i <= 5; $i++)
-                <i class="ri-star-{{ $i <= $teacher->rating ? 'fill' : 'line' }} text-sm"></i>
-              @endfor
-            </div>
-            <span class="text-xs text-gray-600">({{ number_format($teacher->rating, 1) }})</span>
-          </div>
+        @if(($teacher->avg_rating ?? $teacher->rating ?? 0) > 0)
+          <x-reviews.star-rating
+            :rating="$teacher->avg_rating ?? $teacher->rating ?? 0"
+            :total-reviews="$teacher->total_reviews ?? null"
+            size="sm"
+          />
         @endif
       </div>
     </div>
@@ -103,7 +100,7 @@
 
   <!-- Action Button -->
   <div class="px-6 pb-6">
-    <a href="{{ route('public.academic-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}"
+    <a href="{{ route('academic-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}"
        class="group block w-full bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white px-4 py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md text-center transform hover:-translate-y-0.5 relative overflow-hidden">
       <span class="relative z-10 flex items-center justify-center gap-2">
         <span>عرض الملف الشخصي</span>

@@ -1,13 +1,24 @@
 @props([
-    'subscription', // QuranSubscription model instance
+    'subscription', // QuranSubscription, AcademicSubscription, or CourseSubscription model instance
     'viewType' => 'student', // 'student' or 'teacher'
 ])
 
 @php
     use App\Services\QuranSubscriptionDetailsService;
+    use App\Services\AcademicSubscriptionDetailsService;
+    use App\Services\CourseSubscriptionDetailsService;
 
     $isTeacher = $viewType === 'teacher';
-    $service = app(QuranSubscriptionDetailsService::class);
+
+    // Determine which service to use based on subscription type
+    $serviceClass = match (true) {
+        $subscription instanceof \App\Models\QuranSubscription => QuranSubscriptionDetailsService::class,
+        $subscription instanceof \App\Models\AcademicSubscription => AcademicSubscriptionDetailsService::class,
+        $subscription instanceof \App\Models\CourseSubscription => CourseSubscriptionDetailsService::class,
+        default => QuranSubscriptionDetailsService::class, // Fallback
+    };
+
+    $service = app($serviceClass);
 
     // Get subscription details from service
     $details = $subscription ? $service->getSubscriptionDetails($subscription) : null;
@@ -17,30 +28,85 @@
 
     // Formatted price
     $formattedPrice = $subscription ? $service->getFormattedPrice($subscription) : null;
+
+    // Determine subscription type for dynamic colors
+    $subscriptionType = null;
+    if ($subscription instanceof \App\Models\QuranSubscription) {
+        // Check if individual or group
+        $subscriptionType = $subscription->individualCircle ? 'quran_individual' : 'quran_group';
+    } elseif ($subscription instanceof \App\Models\AcademicSubscription) {
+        $subscriptionType = 'academic_individual';
+    }
+
+    // Set colors based on subscription type
+    $iconColor = match($subscriptionType) {
+        'quran_individual' => 'text-yellow-500',
+        'quran_group' => 'text-green-500',
+        'academic_individual' => 'text-purple-500',
+        default => 'text-purple-500',
+    };
+
+    $gradientFrom = match($subscriptionType) {
+        'quran_individual' => 'from-yellow-50',
+        'quran_group' => 'from-green-50',
+        'academic_individual' => 'from-purple-50',
+        default => 'from-blue-50',
+    };
+
+    $gradientTo = match($subscriptionType) {
+        'quran_individual' => 'to-yellow-100',
+        'quran_group' => 'to-green-100',
+        'academic_individual' => 'to-purple-100',
+        default => 'to-blue-100',
+    };
+
+    $borderColor = match($subscriptionType) {
+        'quran_individual' => 'border-yellow-200',
+        'quran_group' => 'border-green-200',
+        'academic_individual' => 'border-purple-200',
+        default => 'border-blue-200',
+    };
+
+    $textLightColor = match($subscriptionType) {
+        'quran_individual' => 'text-yellow-700',
+        'quran_group' => 'text-green-700',
+        'academic_individual' => 'text-purple-700',
+        default => 'text-blue-700',
+    };
+
+    $textDarkColor = match($subscriptionType) {
+        'quran_individual' => 'text-yellow-900',
+        'quran_group' => 'text-green-900',
+        'academic_individual' => 'text-purple-900',
+        default => 'text-blue-900',
+    };
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     @if($details)
-        <h3 class="font-bold text-gray-900 mb-4">تفاصيل الاشتراك</h3>
+        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <i class="ri-file-list-3-line {{ $iconColor }} text-lg" style="font-weight: 100;"></i>
+            تفاصيل الاشتراك
+        </h3>
 
         <!-- Subscription Status Badge -->
         <div class="mb-4 flex items-center justify-between">
             <span class="text-sm text-gray-600">حالة الاشتراك</span>
             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $details['status_badge_class'] }}">
-                {{ $service->getStatusTextArabic($details['subscription_status']) }}
+                {{ $service->getStatusTextArabic($details['status']) }}
             </span>
         </div>
 
         <!-- Billing Cycle -->
-        <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+        <div class="mb-6 p-4 bg-gradient-to-r {{ $gradientFrom }} {{ $gradientTo }} rounded-lg border {{ $borderColor }}">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs text-blue-700 mb-1">نوع الاشتراك</p>
-                    <p class="text-lg font-bold text-blue-900">{{ $details['billing_cycle_ar'] }}</p>
+                    <p class="text-xs {{ $textLightColor }} mb-1">نوع الاشتراك</p>
+                    <p class="text-lg font-bold {{ $textDarkColor }}">{{ $details['billing_cycle_ar'] }}</p>
                 </div>
                 <div class="text-left">
-                    <p class="text-xs text-blue-700 mb-1">المبلغ</p>
-                    <p class="text-lg font-bold text-blue-900">{{ $formattedPrice }}</p>
+                    <p class="text-xs {{ $textLightColor }} mb-1">المبلغ</p>
+                    <p class="text-lg font-bold {{ $textDarkColor }}">{{ $formattedPrice }}</p>
                 </div>
             </div>
         </div>
@@ -110,7 +176,7 @@
             @endif
 
             <!-- Next Payment Date -->
-            @if($details['next_payment_at'] && $details['subscription_status'] === 'active')
+            @if($details['next_payment_at'] && $details['status'] === 'active')
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
                         <i class="ri-time-line text-gray-600 ml-2"></i>
@@ -134,7 +200,7 @@
             @endif
 
             <!-- Auto-Renew Status -->
-            @if($details['subscription_status'] === 'active')
+            @if($details['status'] === 'active')
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
                         <i class="ri-refresh-line text-gray-600 ml-2"></i>
@@ -142,6 +208,21 @@
                     </div>
                     <span class="text-sm font-bold {{ $details['auto_renew'] ? 'text-green-600' : 'text-gray-600' }}">
                         {{ $details['auto_renew'] ? 'مفعّل' : 'معطّل' }}
+                    </span>
+                </div>
+            @endif
+
+            <!-- Next Billing Date / End Date -->
+            @if($subscription && ($subscription->next_billing_date ?? $subscription->expires_at ?? null))
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="ri-calendar-close-line text-gray-600 ml-2"></i>
+                        <span class="text-sm text-gray-700">
+                            {{ $subscription->next_billing_date ? 'موعد الدفع القادم' : 'تاريخ الانتهاء' }}
+                        </span>
+                    </div>
+                    <span class="text-sm font-bold text-gray-900">
+                        {{ ($subscription->next_billing_date ?? $subscription->expires_at)->format('Y/m/d') }}
                     </span>
                 </div>
             @endif

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\InteractiveCourseSession;
 use App\Models\CourseRecording;
+use App\Models\SessionRecording;
+use App\Services\RecordingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -12,9 +14,12 @@ use Illuminate\Support\Str;
 
 class InteractiveCourseRecordingController extends Controller
 {
-    public function __construct()
+    protected RecordingService $recordingService;
+
+    public function __construct(RecordingService $recordingService)
     {
         $this->middleware('auth');
+        $this->recordingService = $recordingService;
     }
 
     /**
@@ -24,55 +29,80 @@ class InteractiveCourseRecordingController extends Controller
     {
         $validated = $request->validate([
             'session_id' => 'required|exists:interactive_course_sessions,id',
-            'meeting_room' => 'required|string',
         ]);
 
         $user = Auth::user();
-        
+
         // Check if user is an academic teacher
         if (!$user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بالتسجيل'], 403);
         }
 
         $courseSession = InteractiveCourseSession::findOrFail($validated['session_id']);
-        
+
         // Check if teacher is assigned to this course
         $teacherProfile = $user->academicTeacherProfile;
         if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بتسجيل هذه الدورة'], 403);
         }
 
-        // Check if recording already exists for this session
-        $existingRecording = CourseRecording::where('session_id', $courseSession->id)
-            ->where('status', 'recording')
-            ->first();
-
-        if ($existingRecording) {
-            return response()->json(['error' => 'التسجيل جاري بالفعل'], 400);
+        // Use RecordingCapable trait method to check if recording is possible
+        if (!$courseSession->canBeRecorded()) {
+            return response()->json([
+                'error' => 'لا يمكن تسجيل هذه الجلسة حالياً',
+                'reasons' => $this->getRecordingBlockReasons($courseSession)
+            ], 400);
         }
 
-        // Create recording record
-        $recording = CourseRecording::create([
-            'session_id' => $courseSession->id,
-            'course_id' => $courseSession->course_id,
-            'teacher_id' => $teacherProfile->id,
-            'recording_id' => Str::uuid(),
-            'meeting_room' => $validated['meeting_room'],
-            'status' => 'recording',
-            'started_at' => now(),
-            'file_path' => null, // Will be set when recording is processed
-        ]);
+        try {
+            // Use RecordingService to start recording (creates SessionRecording)
+            $recording = $this->recordingService->startRecording($courseSession);
 
-        // In a real implementation, you would start the actual recording here
-        // For now, we'll simulate the recording process
-        $this->startLiveKitRecording($recording);
+            return response()->json([
+                'success' => true,
+                'message' => 'تم بدء التسجيل بنجاح',
+                'recording_id' => $recording->recording_id,
+                'recording' => $recording,
+                'session' => $courseSession->load('course'),
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم بدء التسجيل بنجاح',
-            'recording_id' => $recording->recording_id,
-            'session' => $courseSession->load('course'),
-        ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to start recording', [
+                'session_id' => $courseSession->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'فشل بدء التسجيل: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get reasons why recording is blocked
+     */
+    private function getRecordingBlockReasons(InteractiveCourseSession $session): array
+    {
+        $reasons = [];
+
+        if (!$session->isRecordingEnabled()) {
+            $reasons[] = 'التسجيل غير مفعل لهذه الدورة';
+        }
+
+        if (!$session->meeting_room_name) {
+            $reasons[] = 'لم يتم إنشاء غرفة الاجتماع بعد';
+        }
+
+        if (!in_array($session->status?->value, ['ready', 'ongoing'])) {
+            $reasons[] = 'الجلسة غير نشطة (الحالة: ' . ($session->status?->value ?? 'غير محددة') . ')';
+        }
+
+        if ($session->isRecording()) {
+            $reasons[] = 'التسجيل جاري بالفعل';
+        }
+
+        return $reasons;
     }
 
     /**
@@ -81,45 +111,57 @@ class InteractiveCourseRecordingController extends Controller
     public function stopRecording(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'recording_id' => 'required|string',
             'session_id' => 'required|exists:interactive_course_sessions,id',
         ]);
 
         $user = Auth::user();
-        
+
         if (!$user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بإيقاف التسجيل'], 403);
         }
 
-        $recording = CourseRecording::where('recording_id', $validated['recording_id'])
-            ->where('session_id', $validated['session_id'])
-            ->first();
+        $courseSession = InteractiveCourseSession::findOrFail($validated['session_id']);
 
-        if (!$recording) {
-            return response()->json(['error' => 'التسجيل غير موجود'], 404);
-        }
-
-        // Check permissions
+        // Check if teacher is assigned to this course
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || $recording->teacher_id !== $teacherProfile->id) {
+        if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بإيقاف هذا التسجيل'], 403);
         }
 
-        // Stop the recording
-        $recording->update([
-            'status' => 'processing',
-            'ended_at' => now(),
-            'duration' => now()->diffInSeconds($recording->started_at),
-        ]);
+        // Get active recording
+        $activeRecording = $courseSession->getActiveRecording();
 
-        // In a real implementation, you would stop the actual recording here
-        $this->stopLiveKitRecording($recording);
+        if (!$activeRecording) {
+            return response()->json(['error' => 'لا يوجد تسجيل نشط لهذه الجلسة'], 404);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إيقاف التسجيل وسيتم معالجته قريباً',
-            'recording' => $recording->fresh(),
-        ]);
+        try {
+            // Use RecordingService to stop recording
+            $success = $this->recordingService->stopRecording($activeRecording);
+
+            if ($success) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'تم إيقاف التسجيل وسيتم معالجته قريباً',
+                    'recording' => $activeRecording->fresh(),
+                ]);
+            } else {
+                return response()->json([
+                    'error' => 'فشل إيقاف التسجيل'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to stop recording', [
+                'session_id' => $courseSession->id,
+                'recording_id' => $activeRecording->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'فشل إيقاف التسجيل: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -128,26 +170,26 @@ class InteractiveCourseRecordingController extends Controller
     public function getSessionRecordings(Request $request, $sessionId): JsonResponse
     {
         $user = Auth::user();
-        
+
         if (!$user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
         }
 
         $courseSession = InteractiveCourseSession::findOrFail($sessionId);
-        
+
         // Check permissions
         $teacherProfile = $user->academicTeacherProfile;
         if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بالوصول لهذه التسجيلات'], 403);
         }
 
-        $recordings = CourseRecording::where('session_id', $sessionId)
-            ->orderBy('started_at', 'desc')
-            ->get();
+        // Use HasRecording trait method to get recordings (returns SessionRecording collection)
+        $recordings = $courseSession->getRecordings();
 
         return response()->json([
             'success' => true,
             'recordings' => $recordings,
+            'recording_stats' => $courseSession->getRecordingStats(),
             'session' => $courseSession->load('course'),
         ]);
     }
@@ -158,20 +200,27 @@ class InteractiveCourseRecordingController extends Controller
     public function deleteRecording(Request $request, $recordingId): JsonResponse
     {
         $user = Auth::user();
-        
+
         if (!$user->isAcademicTeacher()) {
             return response()->json(['error' => 'غير مسموح لك بالحذف'], 403);
         }
 
-        $recording = CourseRecording::where('recording_id', $recordingId)->first();
+        // Find SessionRecording by ID (not recording_id)
+        $recording = SessionRecording::find($recordingId);
 
         if (!$recording) {
             return response()->json(['error' => 'التسجيل غير موجود'], 404);
         }
 
-        // Check permissions
+        // Get the session and check permissions
+        $courseSession = $recording->recordable;
+
+        if (!$courseSession instanceof InteractiveCourseSession) {
+            return response()->json(['error' => 'نوع التسجيل غير صحيح'], 400);
+        }
+
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || $recording->teacher_id !== $teacherProfile->id) {
+        if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
             return response()->json(['error' => 'غير مسموح لك بحذف هذا التسجيل'], 403);
         }
 
@@ -180,8 +229,8 @@ class InteractiveCourseRecordingController extends Controller
             Storage::delete($recording->file_path);
         }
 
-        // Delete the recording record
-        $recording->delete();
+        // Mark as deleted (soft delete approach) instead of hard deleting
+        $recording->markAsDeleted();
 
         return response()->json([
             'success' => true,
@@ -195,24 +244,32 @@ class InteractiveCourseRecordingController extends Controller
     public function downloadRecording(Request $request, $recordingId)
     {
         $user = Auth::user();
-        
-        if (!$user->isAcademicTeacher()) {
-            abort(403, 'غير مسموح لك بالتحميل');
-        }
 
-        $recording = CourseRecording::where('recording_id', $recordingId)->first();
+        // Find SessionRecording
+        $recording = SessionRecording::find($recordingId);
 
         if (!$recording) {
             abort(404, 'التسجيل غير موجود');
         }
 
-        // Check permissions
-        $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || $recording->teacher_id !== $teacherProfile->id) {
+        // Get the session
+        $courseSession = $recording->recordable;
+
+        if (!$courseSession instanceof InteractiveCourseSession) {
+            abort(400, 'نوع التسجيل غير صحيح');
+        }
+
+        // Check permissions using RecordingCapable method
+        if (!$courseSession->canUserAccessRecordings($user)) {
             abort(403, 'غير مسموح لك بتحميل هذا التسجيل');
         }
 
-        if (!$recording->file_path || !Storage::exists($recording->file_path)) {
+        // Check recording is available
+        if (!$recording->isAvailable()) {
+            abort(404, 'ملف التسجيل غير متوفر بعد');
+        }
+
+        if (!Storage::exists($recording->file_path)) {
             abort(404, 'ملف التسجيل غير موجود');
         }
 
@@ -220,49 +277,44 @@ class InteractiveCourseRecordingController extends Controller
     }
 
     /**
-     * Start LiveKit recording (placeholder implementation)
+     * Stream a recording (for in-browser playback)
      */
-    private function startLiveKitRecording(CourseRecording $recording): void
+    public function streamRecording(Request $request, $recordingId)
     {
-        // TODO: Implement actual LiveKit recording start
-        // This would typically involve:
-        // 1. Calling LiveKit API to start recording
-        // 2. Setting up recording parameters (format, quality, etc.)
-        // 3. Handling any errors from the recording service
-        
-        \Log::info('Starting recording for session: ' . $recording->session_id, [
-            'recording_id' => $recording->recording_id,
-            'meeting_room' => $recording->meeting_room,
-        ]);
-    }
+        $user = Auth::user();
 
-    /**
-     * Stop LiveKit recording (placeholder implementation)
-     */
-    private function stopLiveKitRecording(CourseRecording $recording): void
-    {
-        // TODO: Implement actual LiveKit recording stop
-        // This would typically involve:
-        // 1. Calling LiveKit API to stop recording
-        // 2. Processing the recorded file
-        // 3. Saving the file to local storage
-        // 4. Updating recording status
-        
-        \Log::info('Stopping recording for session: ' . $recording->session_id, [
-            'recording_id' => $recording->recording_id,
-            'duration' => $recording->duration,
-        ]);
+        // Find SessionRecording
+        $recording = SessionRecording::find($recordingId);
 
-        // Simulate file processing - in real implementation this would be done by a job
-        $fileName = 'course_recording_' . $recording->session_id . '_' . date('Y-m-d_H-i-s') . '.mp4';
-        $filePath = 'recordings/interactive-courses/' . $fileName;
-        
-        // Update recording with file information
-        $recording->update([
-            'status' => 'completed',
-            'file_path' => $filePath,
-            'file_name' => $fileName,
-            'file_size' => 0, // Would be actual file size
+        if (!$recording) {
+            abort(404, 'التسجيل غير موجود');
+        }
+
+        // Get the session
+        $courseSession = $recording->recordable;
+
+        if (!$courseSession instanceof InteractiveCourseSession) {
+            abort(400, 'نوع التسجيل غير صحيح');
+        }
+
+        // Check permissions
+        if (!$courseSession->canUserAccessRecordings($user)) {
+            abort(403, 'غير مسموح لك بمشاهدة هذا التسجيل');
+        }
+
+        // Check recording is available
+        if (!$recording->isAvailable()) {
+            abort(404, 'ملف التسجيل غير متوفر بعد');
+        }
+
+        if (!Storage::exists($recording->file_path)) {
+            abort(404, 'ملف التسجيل غير موجود');
+        }
+
+        // Stream the file with proper headers for video playback
+        return Storage::response($recording->file_path, $recording->file_name ?? 'recording.mp4', [
+            'Content-Type' => 'video/mp4',
+            'Accept-Ranges' => 'bytes',
         ]);
     }
 }

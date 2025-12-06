@@ -26,11 +26,11 @@ class ViewQuranSubscription extends ViewRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->action(fn () => $this->record->update([
-                    'subscription_status' => 'active',
+                    'status' => 'active',
                     'payment_status' => 'paid',
                     'last_payment_at' => now(),
                 ]))
-                ->visible(fn () => $this->record->subscription_status === 'pending'),
+                ->visible(fn () => $this->record->status === 'pending'),
             Actions\Action::make('pause')
                 ->label('إيقاف مؤقت')
                 ->icon('heroicon-o-pause-circle')
@@ -42,12 +42,12 @@ class ViewQuranSubscription extends ViewRecord
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
-                        'subscription_status' => 'paused',
+                        'status' => 'paused',
                         'paused_at' => now(),
                         'pause_reason' => $data['pause_reason'],
                     ]);
                 })
-                ->visible(fn () => $this->record->subscription_status === 'active'),
+                ->visible(fn () => $this->record->status === 'active'),
             Actions\Action::make('resume')
                 ->label('استئناف الاشتراك')
                 ->icon('heroicon-o-play-circle')
@@ -59,13 +59,13 @@ class ViewQuranSubscription extends ViewRecord
                     $newExpiryDate = $this->record->expires_at->addDays($pausedDuration);
                     
                     $this->record->update([
-                        'subscription_status' => 'active',
+                        'status' => 'active',
                         'expires_at' => $newExpiryDate,
                         'paused_at' => null,
                         'pause_reason' => null,
                     ]);
                 })
-                ->visible(fn () => $this->record->subscription_status === 'paused'),
+                ->visible(fn () => $this->record->status === 'paused'),
             Actions\Action::make('cancel')
                 ->label('إلغاء الاشتراك')
                 ->icon('heroicon-o-x-circle')
@@ -78,7 +78,7 @@ class ViewQuranSubscription extends ViewRecord
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
-                        'subscription_status' => 'cancelled',
+                        'status' => 'cancelled',
                         'cancelled_at' => now(),
                         'cancellation_reason' => $data['cancellation_reason'],
                         'auto_renew' => false,
@@ -90,7 +90,7 @@ class ViewQuranSubscription extends ViewRecord
                         ->where('status', 'scheduled')
                         ->update(['status' => 'cancelled']);
                 })
-                ->visible(fn () => !in_array($this->record->subscription_status, ['cancelled', 'expired'])),
+                ->visible(fn () => !in_array($this->record->status, ['cancelled', 'expired'])),
             Actions\Action::make('renew')
                 ->label('تجديد الاشتراك')
                 ->icon('heroicon-o-arrow-path')
@@ -107,7 +107,7 @@ class ViewQuranSubscription extends ViewRecord
                     };
                     
                     $this->record->update([
-                        'subscription_status' => 'active',
+                        'status' => 'active',
                         'payment_status' => 'paid',
                         'expires_at' => $newExpiryDate,
                         'last_payment_at' => now(),
@@ -117,7 +117,7 @@ class ViewQuranSubscription extends ViewRecord
                         'is_trial_active' => false,
                     ]);
                 })
-                ->visible(fn () => in_array($this->record->subscription_status, ['expired', 'active'])),
+                ->visible(fn () => in_array($this->record->status, ['expired', 'active'])),
         ];
     }
 } 

@@ -21,9 +21,30 @@
 
     // Check if session is preparing meeting (READY/ONGOING but meeting room not created)
     $isPreparingMeeting = method_exists($session, 'isPreparingMeeting') ? $session->isPreparingMeeting() : false;
+
+    // Generate the correct session URL based on session type and view type
+    // Different session types have different routes to prevent ID collision issues
+    $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+
+    if ($session instanceof \App\Models\InteractiveCourseSession) {
+        // Interactive course sessions use 'session' parameter
+        $sessionUrl = $viewType === 'student'
+            ? route('student.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+            : route('teacher.interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
+    } elseif ($session instanceof \App\Models\AcademicSession) {
+        // Academic sessions use 'session' parameter
+        $sessionUrl = $viewType === 'student'
+            ? route('student.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id])
+            : route('teacher.academic-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
+    } else {
+        // Default: QuranSession - uses 'sessionId' parameter
+        $sessionUrl = $viewType === 'student'
+            ? route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id])
+            : route('teacher.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
+    }
 @endphp
 
-<div class="attendance-indicator rounded-xl p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer" onclick="openSessionDetail({{ $session->id }})">
+<a href="{{ $sessionUrl }}" class="attendance-indicator block rounded-xl p-6 border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer">
     <div class="flex items-center justify-between">
         <!-- Session Info -->
         <div class="flex items-center space-x-4 space-x-reverse">
@@ -74,7 +95,7 @@
                 <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-600">
                     <span class="flex items-center space-x-1 space-x-reverse">
                         <i class="ri-calendar-line"></i>
-                        <span>{{ $session->scheduled_at ? $session->scheduled_at->format('Y/m/d') : 'غير مجدولة' }}</span>
+                        <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : 'غير مجدولة' }}</span>
                     </span>
                     <span class="flex items-center space-x-1 space-x-reverse">
                         <i class="ri-time-line"></i>
@@ -121,4 +142,4 @@
             </div>
         </div>
     </div>
-</div>
+</a>

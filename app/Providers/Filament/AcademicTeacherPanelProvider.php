@@ -50,19 +50,21 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 'الاختبارات',
                 'التقييمات',
                 'الشهادات',
+                'الأرباح',
                 'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/AcademicTeacher/Resources'), for: 'App\\Filament\\AcademicTeacher\\Resources')
             ->discoverPages(in: app_path('Filament/AcademicTeacher/Pages'), for: 'App\\Filament\\AcademicTeacher\\Pages')
             ->pages([
                 \App\Filament\AcademicTeacher\Pages\Dashboard::class,
+                \App\Filament\Shared\Pages\UnifiedTeacherCalendar::class,
             ])
             ->discoverWidgets(in: app_path('Filament/AcademicTeacher/Widgets'), for: 'App\\Filament\\AcademicTeacher\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
                 \App\Filament\AcademicTeacher\Widgets\AcademicTeacherOverviewWidget::class,
-                \App\Filament\AcademicTeacher\Widgets\AcademicCalendarWidget::class,
                 \App\Filament\AcademicTeacher\Widgets\RecentAcademicSessionsWidget::class,
+                \App\Filament\AcademicTeacher\Widgets\EarningsOverviewWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -88,9 +90,9 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 'profile-page' => \Filament\Navigation\MenuItem::make()
                     ->label('الملف الشخصي العام')
                     ->url(fn (): string => auth()->user()->academicTeacherProfile && auth()->user()->academy
-                        ? route('public.academic-teachers.show', [
+                        ? route('academic-teachers.show', [
                             'subdomain' => auth()->user()->academy->subdomain,
-                            'teacher' => auth()->user()->academicTeacherProfile->id
+                            'teacherId' => auth()->user()->academicTeacherProfile->id
                         ])
                         : '#')
                     ->icon('heroicon-o-user-circle')

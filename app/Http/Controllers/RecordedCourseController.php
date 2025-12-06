@@ -99,7 +99,8 @@ class RecordedCourseController extends Controller
             ->filter()
             ->sort();
 
-        return view('courses.index', compact('courses', 'subjects', 'gradeLevels', 'levels', 'academy'));
+        // Use public view for unified public/authenticated experience
+        return view('public.recorded-courses.index', compact('courses', 'subjects', 'gradeLevels', 'levels', 'academy'));
     }
 
     /**

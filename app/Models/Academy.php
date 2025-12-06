@@ -11,6 +11,7 @@ use App\Enums\Country;
 use App\Enums\Currency;
 use App\Enums\Timezone;
 use App\Enums\TailwindColor;
+use App\Enums\GradientPalette;
 
 class Academy extends Model
 {
@@ -25,9 +26,9 @@ class Academy extends Model
         'phone',
         'website',
         'logo',
+        'favicon',
         'brand_color',
-        'secondary_color',
-        'theme',
+        'gradient_palette',
         'country',
         'timezone',
         'currency',
@@ -41,6 +42,15 @@ class Academy extends Model
         'pending_payments',
         'active_subscriptions',
         'growth_rate',
+        // Design Settings
+        'sections_order',
+        'hero_visible', 'hero_template', 'hero_heading', 'hero_subheading', 'hero_show_in_nav',
+        'stats_visible', 'stats_template', 'stats_heading', 'stats_subheading', 'stats_show_in_nav',
+        'reviews_visible', 'reviews_template', 'reviews_heading', 'reviews_subheading', 'reviews_show_in_nav',
+        'quran_visible', 'quran_template', 'quran_heading', 'quran_subheading', 'quran_show_in_nav',
+        'academic_visible', 'academic_template', 'academic_heading', 'academic_subheading', 'academic_show_in_nav',
+        'courses_visible', 'courses_template', 'courses_heading', 'courses_subheading', 'courses_show_in_nav',
+        'features_visible', 'features_template', 'features_heading', 'features_subheading', 'features_show_in_nav',
     ];
 
     protected $casts = [
@@ -56,14 +66,28 @@ class Academy extends Model
         'currency' => Currency::class,
         'timezone' => Timezone::class,
         'brand_color' => TailwindColor::class,
-        'secondary_color' => TailwindColor::class,
+        'gradient_palette' => GradientPalette::class,
         'academic_settings' => 'array',
+        // Design Settings Casts (sections_order uses custom accessor/mutator)
+        'hero_visible' => 'boolean',
+        'hero_show_in_nav' => 'boolean',
+        'stats_visible' => 'boolean',
+        'stats_show_in_nav' => 'boolean',
+        'reviews_visible' => 'boolean',
+        'reviews_show_in_nav' => 'boolean',
+        'quran_visible' => 'boolean',
+        'quran_show_in_nav' => 'boolean',
+        'academic_visible' => 'boolean',
+        'academic_show_in_nav' => 'boolean',
+        'courses_visible' => 'boolean',
+        'courses_show_in_nav' => 'boolean',
+        'features_visible' => 'boolean',
+        'features_show_in_nav' => 'boolean',
     ];
 
     protected $attributes = [
         'brand_color' => TailwindColor::SKY->value,
-        'secondary_color' => TailwindColor::EMERALD->value,
-        'theme' => 'light',
+        'gradient_palette' => GradientPalette::OCEAN_BREEZE->value,
         'country' => Country::SAUDI_ARABIA->value,
         'timezone' => Timezone::RIYADH->value,
         'currency' => Currency::SAR->value,
@@ -339,5 +363,101 @@ class Academy extends Model
     public function getTenantKey(): string|int
     {
         return $this->getKey();
+    }
+
+    /**
+     * Get sections order with default value if not set
+     */
+    public function getSectionsOrderAttribute($value): array
+    {
+        $defaultOrder = ['hero', 'stats', 'reviews', 'quran', 'academic', 'courses', 'features'];
+
+        // If value is null or empty, return default order
+        if ($value === null || $value === '' || $value === '[]') {
+            return $defaultOrder;
+        }
+
+        // If value is already an array (Laravel 11 casts it automatically)
+        if (is_array($value)) {
+            // Return default if empty array
+            if (empty($value)) {
+                return $defaultOrder;
+            }
+
+            // Check if it's in repeater format [['section' => 'hero'], ...]
+            // Convert to flat format if needed
+            if (isset($value[0]) && is_array($value[0]) && isset($value[0]['section'])) {
+                return array_column($value, 'section');
+            }
+
+            return $value;
+        }
+
+        // Otherwise decode JSON
+        $decoded = json_decode($value, true);
+
+        // Return default if decoding failed or resulted in empty array
+        if (!is_array($decoded) || empty($decoded)) {
+            return $defaultOrder;
+        }
+
+        // Check if decoded value is in repeater format and convert if needed
+        if (isset($decoded[0]) && is_array($decoded[0]) && isset($decoded[0]['section'])) {
+            return array_column($decoded, 'section');
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * Set sections order with proper JSON encoding
+     */
+    public function setSectionsOrderAttribute($value): void
+    {
+        // DEBUG: Log what mutator receives
+        \Log::info('Mutator Received:', [
+            'type' => gettype($value),
+            'value' => $value,
+            'is_empty' => is_array($value) && empty($value),
+        ]);
+
+        // If value is null or empty array, store as null (accessor will return default)
+        if ($value === null || (is_array($value) && empty($value))) {
+            \Log::info('Mutator: Storing NULL (empty or null value)');
+            $this->attributes['sections_order'] = null;
+            return;
+        }
+
+        // If value is string (JSON), try to decode it first
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : [];
+            \Log::info('Mutator: Decoded JSON string', ['decoded' => $value]);
+        }
+
+        // Ensure it's an array
+        if (!is_array($value)) {
+            \Log::info('Mutator: Not an array, storing NULL');
+            $this->attributes['sections_order'] = null;
+            return;
+        }
+
+        // Filter out empty values and reindex
+        $value = array_values(array_filter($value, fn($item) => !empty($item)));
+
+        // If filtering resulted in empty array, store as null
+        if (empty($value)) {
+            \Log::info('Mutator: Filtered array is empty, storing NULL');
+            $this->attributes['sections_order'] = null;
+            return;
+        }
+
+        // Store as JSON
+        $jsonEncoded = json_encode($value);
+        \Log::info('Mutator: Storing JSON', [
+            'array' => $value,
+            'json' => $jsonEncoded,
+        ]);
+        $this->attributes['sections_order'] = $jsonEncoded;
     }
 }

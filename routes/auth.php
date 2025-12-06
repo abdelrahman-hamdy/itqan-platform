@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\ParentRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -51,6 +52,17 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Parent Registration Routes
+    |--------------------------------------------------------------------------
+    */
+
+    // Parent registration with student code verification (public access)
+    Route::get('/parent/register', [ParentRegistrationController::class, 'showRegistrationForm'])->name('parent.register');
+    Route::post('/parent/register', [ParentRegistrationController::class, 'register'])->name('parent.register.post');
+    Route::post('/parent/verify-students', [ParentRegistrationController::class, 'verifyStudentCodes'])->name('parent.verify.students');
+
+    /*
+    |--------------------------------------------------------------------------
     | Protected Routes (Require Authentication)
     |--------------------------------------------------------------------------
     */
@@ -63,7 +75,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::put('/profile/update', [App\Http\Controllers\StudentProfileController::class, 'update'])->name('student.profile.update');
 
         Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
-        Route::get('/progress', [App\Http\Controllers\StudentProfileController::class, 'progress'])->name('student.progress');
         // Note: /certificates route moved to web.php CertificateController for unified handling
 
         // Interactive courses routes moved to web.php for proper ordering

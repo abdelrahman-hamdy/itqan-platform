@@ -1,7 +1,28 @@
-<div x-data="{}"
+<div x-data="{
+        showSuccessToast: false,
+        showErrorToast: false,
+        toastMessage: '',
+        handleSuccess(event) {
+            this.toastMessage = event.detail.message || 'تم إصدار الشهادة بنجاح!';
+            this.showSuccessToast = true;
+            // Hide toast and reload after delay
+            setTimeout(() => {
+                this.showSuccessToast = false;
+                setTimeout(() => window.location.reload(), 500);
+            }, 1500);
+        },
+        handleError(event) {
+            this.toastMessage = event.detail.message || 'حدث خطأ أثناء إصدار الشهادة';
+            this.showErrorToast = true;
+            // Auto-hide error toast after 5 seconds
+            setTimeout(() => {
+                this.showErrorToast = false;
+            }, 5000);
+        }
+     }"
      x-on:achievement-text-updated.window="document.getElementById('achievementTextarea').value = $event.detail.text"
-     x-on:certificates-issued.window="setTimeout(() => window.location.reload(), 100)"
-     x-on:certificate-issued.window="setTimeout(() => window.location.reload(), 100)">
+     x-on:certificate-issued-success.window="handleSuccess($event)"
+     x-on:certificate-issued-error.window="handleError($event)">
     @if($showModal)
     <!-- Modal Overlay -->
     <div class="fixed inset-0 z-50 overflow-y-auto" wire:key="certificate-modal-{{ $subscriptionId ?? $circleId }}">
@@ -26,7 +47,7 @@
 
                 <!-- Modal Body -->
                 <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
-                    @if($isGroup && $circle)
+                    @if($isGroup && ($circle || $course))
                         <!-- Group Mode: Student Selection -->
                         <div class="mb-6">
                             <label class="block text-sm font-bold text-gray-900 mb-3">
@@ -123,54 +144,39 @@
                     @endif
 
                     @if(!$previewMode && (($isGroup && count($students) > 0) || (!$isGroup && $subscription)))
-                        <!-- Template Style Selection -->
+                        <!-- Template Style Selection with Images -->
                         <div class="mb-6">
                             <label class="block text-sm font-bold text-gray-900 mb-3">
                                 <i class="ri-palette-line ml-1 text-amber-500"></i>
                                 اختر تصميم الشهادة
                             </label>
-                            <div class="grid grid-cols-3 gap-4">
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 @foreach($templateStyles as $style => $details)
-                                    <label class="relative cursor-pointer block">
+                                    <label class="relative cursor-pointer block group">
                                         <input type="radio"
                                                name="templateStyle"
                                                value="{{ $style }}"
                                                wire:model.live="templateStyle"
                                                class="peer sr-only">
-                                        <div class="border-2 rounded-xl p-4 transition-all
-                                            @if($templateStyle === $style)
-                                                @if($details['color'] === 'blue')
-                                                    border-blue-500 bg-blue-50
-                                                @elseif($details['color'] === 'gray')
-                                                    border-gray-600 bg-gray-100
-                                                @elseif($details['color'] === 'amber')
-                                                    border-amber-500 bg-amber-50
-                                                @endif
-                                            @else
-                                                border-gray-200 hover:border-gray-300
-                                            @endif
+                                        <div class="border-2 rounded-xl overflow-hidden transition-all
+                                            {{ $templateStyle === $style ? 'border-amber-500 ring-2 ring-amber-200' : 'border-gray-200 hover:border-gray-300' }}
                                         ">
-                                            <div class="flex flex-col items-center text-center">
-                                                @if($details['color'] === 'blue')
-                                                    <i class="{{ $details['icon'] }} text-4xl mb-2 text-blue-500"></i>
-                                                @elseif($details['color'] === 'gray')
-                                                    <i class="{{ $details['icon'] }} text-4xl mb-2 text-gray-600"></i>
-                                                @elseif($details['color'] === 'amber')
-                                                    <i class="{{ $details['icon'] }} text-4xl mb-2 text-amber-500"></i>
+                                            <!-- Template Preview Image -->
+                                            <div class="aspect-[297/210] bg-gray-100 relative">
+                                                <img src="{{ $details['previewImage'] }}"
+                                                     alt="{{ $details['label'] }}"
+                                                     class="w-full h-full object-cover">
+                                                @if($templateStyle === $style)
+                                                    <div class="absolute inset-0 bg-amber-500/20"></div>
+                                                    <div class="absolute top-2 left-2">
+                                                        <i class="ri-checkbox-circle-fill text-xl text-amber-500 drop-shadow-lg"></i>
+                                                    </div>
                                                 @endif
-                                                <p class="font-bold text-gray-900 mb-1">{{ $details['label'] }}</p>
-                                                <p class="text-xs text-gray-600">{{ $details['description'] }}</p>
                                             </div>
-                                            @if($templateStyle === $style)
-                                                <div class="absolute top-2 left-2">
-                                                    <i class="ri-checkbox-circle-fill text-xl
-                                                        @if($details['color'] === 'blue') text-blue-500
-                                                        @elseif($details['color'] === 'gray') text-gray-600
-                                                        @elseif($details['color'] === 'amber') text-amber-500
-                                                        @endif
-                                                    "></i>
-                                                </div>
-                                            @endif
+                                            <!-- Template Label -->
+                                            <div class="p-2 text-center bg-white">
+                                                <p class="font-bold text-gray-900 text-xs">{{ $details['label'] }}</p>
+                                            </div>
                                         </div>
                                     </label>
                                 @endforeach
@@ -257,15 +263,15 @@
                             </div>
                         </div>
                     @elseif($previewMode)
-                        <!-- Preview Mode -->
-                        <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                        <!-- Preview Mode - Template Image with Text Preview -->
+                        <div class="bg-gray-50 rounded-xl p-4 mb-6">
                             <div class="flex items-center justify-between mb-4">
                                 <h4 class="text-lg font-bold text-gray-900">
                                     <i class="ri-eye-line ml-2 text-blue-500"></i>
                                     معاينة الشهادة
                                 </h4>
-                                <span class="px-3 py-1 bg-{{ $templateStyles[$templateStyle]['color'] }}-100 text-{{ $templateStyles[$templateStyle]['color'] }}-700 rounded-full text-sm font-medium">
-                                    {{ $templateStyles[$templateStyle]['label'] }}
+                                <span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
+                                    {{ $templateStyles[$templateStyle]['label'] ?? 'القالب' }}
                                 </span>
                             </div>
 
@@ -278,43 +284,48 @@
                                 </div>
                             @endif
 
-                            <!-- Mock Certificate Preview -->
-                            <div class="bg-white rounded-lg p-8 shadow-lg border-4 border-{{ $templateStyles[$templateStyle]['color'] }}-200">
-                                <div class="text-center mb-6">
-                                    <h3 class="text-3xl font-bold text-{{ $templateStyles[$templateStyle]['color'] }}-600 mb-2">شهادة تقدير</h3>
-                                    <div class="w-32 h-1 bg-{{ $templateStyles[$templateStyle]['color'] }}-400 mx-auto mb-4"></div>
-                                </div>
+                            <!-- Template Image Preview -->
+                            <div class="bg-white rounded-lg shadow-lg border-2 border-amber-200 overflow-hidden">
+                                <img src="{{ $templateStyles[$templateStyle]['previewImage'] ?? '' }}"
+                                     alt="معاينة القالب"
+                                     class="w-full h-auto">
+                            </div>
 
-                                <div class="mb-6">
-                                    <p class="text-center text-gray-700 mb-2">تُمنح هذه الشهادة إلى</p>
-                                    <p class="text-center text-2xl font-bold text-gray-900 mb-4 border-b-2 border-{{ $templateStyles[$templateStyle]['color'] }}-300 pb-2">
-                                        @if($isGroup)
-                                            [اسم الطالب]
-                                        @else
-                                            {{ $studentName }}
-                                        @endif
-                                    </p>
-                                </div>
-
-                                <div class="mb-6">
-                                    <p class="text-center text-gray-700 leading-relaxed whitespace-pre-line">{{ $achievementText }}</p>
-                                </div>
-
-                                <div class="flex justify-between items-end mt-8">
-                                    <div class="text-center">
-                                        <div class="border-t-2 border-gray-300 w-32 mb-2"></div>
-                                        <p class="text-sm text-gray-600">{{ $academyName }}</p>
+                            <!-- Certificate Data Summary -->
+                            <div class="mt-4 bg-white rounded-lg border border-gray-200 p-4">
+                                <h5 class="font-bold text-gray-900 mb-3 text-sm">
+                                    <i class="ri-file-list-3-line ml-1 text-amber-500"></i>
+                                    بيانات الشهادة
+                                </h5>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">اسم الطالب:</span>
+                                        <span class="font-medium text-gray-900">
+                                            @if($isGroup)
+                                                [سيتم تعبئته لكل طالب]
+                                            @else
+                                                {{ $studentName }}
+                                            @endif
+                                        </span>
                                     </div>
-                                    <div class="text-center">
-                                        <div class="border-t-2 border-gray-300 w-32 mb-2"></div>
-                                        <p class="text-sm text-gray-600">{{ $teacherName }}</p>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">الأكاديمية:</span>
+                                        <span class="font-medium text-gray-900">{{ $academyName }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">المعلم:</span>
+                                        <span class="font-medium text-gray-900">{{ $teacherName }}</span>
+                                    </div>
+                                    <div class="border-t pt-2 mt-2">
+                                        <span class="text-gray-600 block mb-1">نص الإنجاز:</span>
+                                        <p class="font-medium text-gray-900 text-right leading-relaxed">{{ $achievementText }}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <p class="text-xs text-gray-500 text-center mt-4">
-                                <i class="ri-information-line ml-1"></i>
-                                هذه معاينة تقريبية، الشهادة النهائية ستكون بجودة أعلى مع الشعارات والختم الرسمي
+                            <p class="text-xs text-green-600 text-center mt-3">
+                                <i class="ri-checkbox-circle-line ml-1"></i>
+                                سيتم إنشاء الشهادة بهذه البيانات على القالب المختار
                             </p>
                         </div>
                     @endif
@@ -369,4 +380,43 @@
         </div>
     </div>
     @endif
+
+    <!-- Success Toast Notification -->
+    <div x-show="showSuccessToast"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform -translate-x-4"
+         x-transition:enter-end="opacity-100 transform translate-x-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-x-0"
+         x-transition:leave-end="opacity-0 transform -translate-x-4"
+         class="fixed top-4 right-4 z-[100] max-w-sm"
+         style="display: none;">
+        <div class="bg-green-500 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+            <i class="ri-checkbox-circle-fill text-2xl"></i>
+            <p class="font-bold" x-text="toastMessage"></p>
+        </div>
+    </div>
+
+    <!-- Error Toast Notification -->
+    <div x-show="showErrorToast"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform translate-y-2"
+         class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] w-full max-w-md"
+         style="display: none;">
+        <div class="bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
+            <div class="flex-shrink-0">
+                <i class="ri-error-warning-fill text-3xl"></i>
+            </div>
+            <div class="flex-1">
+                <p class="font-bold text-base" x-text="toastMessage"></p>
+            </div>
+            <button @click="showErrorToast = false" class="flex-shrink-0 hover:bg-red-600 rounded-lg p-1 transition">
+                <i class="ri-close-line text-xl"></i>
+            </button>
+        </div>
+    </div>
 </div>

@@ -92,6 +92,14 @@ return [
             'title' => 'Subscription Expired',
             'message' => 'Your subscription to :subscription_name has expired',
         ],
+        'subscription_activated' => [
+            'title' => 'Subscription Activated',
+            'message' => 'Your subscription has been activated successfully',
+        ],
+        'subscription_renewed' => [
+            'title' => 'Subscription Renewed',
+            'message' => 'Your subscription has been renewed successfully',
+        ],
         'invoice_generated' => [
             'title' => 'New Invoice',
             'message' => 'A new invoice for :amount :currency has been generated',
@@ -130,11 +138,39 @@ return [
         ],
         'certificate_earned' => [
             'title' => 'Certificate Earned',
-            'message' => 'Congratulations! You earned :certificate_name certificate',
+            'message' => 'Congratulations! You got a certificate from :teacher_name',
         ],
         'course_completed' => [
             'title' => 'Course Completed',
             'message' => 'Congratulations! You successfully completed :course_name',
+        ],
+
+        // Quiz Notifications
+        'quiz_assigned' => [
+            'title' => 'New Quiz',
+            'message' => 'A new quiz has been assigned: :quiz_title',
+        ],
+        'quiz_completed' => [
+            'title' => 'Quiz Completed',
+            'message' => 'You completed the quiz :quiz_title',
+        ],
+        'quiz_passed' => [
+            'title' => 'Quiz Passed!',
+            'message' => 'Congratulations! You passed :quiz_title with a score of :score out of :passing_score',
+        ],
+        'quiz_failed' => [
+            'title' => 'Quiz Not Passed',
+            'message' => 'You did not reach the passing score for :quiz_title. Your score: :score out of :passing_score',
+        ],
+
+        // Review Notifications
+        'review_received' => [
+            'title' => 'New Review',
+            'message' => 'You received a new review from :student_name - :rating stars',
+        ],
+        'review_approved' => [
+            'title' => 'Your Review Was Approved',
+            'message' => 'Your review has been approved and published successfully',
         ],
 
         // Chat Notifications

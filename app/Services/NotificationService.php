@@ -21,7 +21,9 @@ class NotificationService
         array $data = [],
         ?string $actionUrl = null,
         array $metadata = [],
-        bool $isImportant = false
+        bool $isImportant = false,
+        ?string $customIcon = null,
+        ?string $customColor = null
     ): void {
         if ($users instanceof User) {
             $users = collect([$users]);
@@ -29,7 +31,7 @@ class NotificationService
 
         foreach ($users as $user) {
             try {
-                $this->createNotification($user, $type, $data, $actionUrl, $metadata, $isImportant);
+                $this->createNotification($user, $type, $data, $actionUrl, $metadata, $isImportant, $customIcon, $customColor);
             } catch (\Exception $e) {
                 Log::error('Failed to send notification', [
                     'user_id' => $user->id,
@@ -49,18 +51,24 @@ class NotificationService
         array $data,
         ?string $actionUrl,
         array $metadata,
-        bool $isImportant
+        bool $isImportant,
+        ?string $customIcon = null,
+        ?string $customColor = null
     ): void {
         $category = $type->getCategory();
         $tenantId = $user->academy_id;
+
+        // Use custom icon/color if provided, otherwise use category defaults
+        $icon = $customIcon ?? $category->getIcon();
+        $color = $customColor ?? $category->getColor();
 
         // Prepare notification data
         $notificationData = [
             'type' => $type->value,
             'notification_type' => $type->value,
             'category' => $category->value,
-            'icon' => $category->getIcon(),
-            'icon_color' => $category->getColor(),
+            'icon' => $icon,
+            'icon_color' => $color,
             'action_url' => $actionUrl,
             'metadata' => $metadata,
             'is_important' => $isImportant,
@@ -69,8 +77,8 @@ class NotificationService
                 'title' => $this->getTitle($type, $data),
                 'message' => $this->getMessage($type, $data),
                 'category' => $category->value,
-                'icon' => $category->getIcon(),
-                'color' => $category->getColor(),
+                'icon' => $icon,
+                'color' => $color,
             ])
         ];
 
@@ -83,8 +91,8 @@ class NotificationService
             'data' => json_encode($notificationData['data']),
             'notification_type' => $type->value,
             'category' => $category->value,
-            'icon' => $category->getIcon(),
-            'icon_color' => $category->getColor(),
+            'icon' => $icon,
+            'icon_color' => $color,
             'action_url' => $actionUrl,
             'metadata' => json_encode($metadata),
             'is_important' => $isImportant,
@@ -282,9 +290,15 @@ class NotificationService
     /**
      * Send homework assigned notification
      */
-    public function sendHomeworkAssignedNotification(Model $session, User $student, array $homeworkData): void
+    public function sendHomeworkAssignedNotification(Model $session, User $student, ?int $homeworkId = null): void
     {
         $sessionType = class_basename($session);
+
+        // If homework ID is provided, link to specific homework view
+        // Otherwise, link to session page
+        $actionUrl = $homeworkId
+            ? "/homework/{$homeworkId}/view"
+            : $this->getSessionUrl($session, $student);
 
         $this->send(
             $student,
@@ -292,13 +306,13 @@ class NotificationService
             [
                 'session_title' => $session->title ?? $sessionType,
                 'teacher_name' => $session->teacher?->full_name ?? '',
-                'due_date' => $homeworkData['due_date'] ?? '',
+                'due_date' => $session->homework_due_date?->format('Y-m-d') ?? '',
             ],
-            $this->getSessionUrl($session, $student),
+            $actionUrl,
             [
                 'session_id' => $session->id,
                 'session_type' => get_class($session),
-                'homework_data' => $homeworkData,
+                'homework_id' => $homeworkId,
             ]
         );
     }
@@ -338,6 +352,18 @@ class NotificationService
      */
     public function sendPaymentSuccessNotification(User $user, array $paymentData): void
     {
+        // Determine the best URL based on what's available
+        $actionUrl = '/payments';
+
+        if (isset($paymentData['subscription_id']) && isset($paymentData['subscription_type'])) {
+            // Link to specific subscription page
+            $actionUrl = match($paymentData['subscription_type']) {
+                'quran' => "/circles/{$paymentData['circle_id']}",
+                'academic' => "/academic-subscriptions/{$paymentData['subscription_id']}",
+                default => '/subscriptions',
+            };
+        }
+
         $this->send(
             $user,
             NotificationType::PAYMENT_SUCCESS,
@@ -346,10 +372,12 @@ class NotificationService
                 'currency' => $paymentData['currency'] ?? 'SAR',
                 'description' => $paymentData['description'] ?? '',
             ],
-            '/payments',
+            $actionUrl,
             [
                 'payment_id' => $paymentData['payment_id'] ?? null,
                 'transaction_id' => $paymentData['transaction_id'] ?? null,
+                'subscription_id' => $paymentData['subscription_id'] ?? null,
+                'subscription_type' => $paymentData['subscription_type'] ?? null,
             ],
             true
         );
@@ -367,9 +395,8 @@ class NotificationService
             return match($sessionType) {
                 'quransession' => "/sessions/{$sessionId}",
                 'academicsession' => "/academic-sessions/{$sessionId}",
-                'interactivecoursesession' => "/interactive-sessions/{$sessionId}",
-                'quransessioninstance' => $this->getCircleUrlFromSession($session),
-                default => "/sessions",
+                'interactivecoursesession' => "/student/interactive-sessions/{$sessionId}",
+                default => "/sessions/{$sessionId}",
             };
         } elseif ($user->hasRole(['quran_teacher'])) {
             return $this->getTeacherCircleUrl($session);

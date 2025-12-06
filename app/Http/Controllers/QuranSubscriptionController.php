@@ -34,7 +34,7 @@ class QuranSubscriptionController extends Controller
 
         // Apply filters
         if ($request->filled('status')) {
-            $query->where('subscription_status', $request->status);
+            $query->where('status', $request->status);
         }
 
         if ($request->filled('payment_status')) {
@@ -59,7 +59,7 @@ class QuranSubscriptionController extends Controller
 
         if ($request->filled('expiring_soon')) {
             $query->where('expires_at', '<=', now()->addDays(7))
-                  ->where('subscription_status', 'active');
+                  ->where('status', 'active');
         }
 
         $subscriptions = $query->orderBy('created_at', 'desc')->paginate(20);
@@ -168,7 +168,7 @@ class QuranSubscriptionController extends Controller
                 'currency' => $currency,
                 'expires_at' => $expiresAt,
                 'payment_status' => 'pending',
-                'subscription_status' => 'pending',
+                'status' => 'pending',
                 'trial_used' => 0,
                 'is_trial_active' => ($validated['trial_sessions'] ?? 0) > 0,
                 'memorization_level' => 'beginner',
@@ -291,7 +291,7 @@ class QuranSubscriptionController extends Controller
             'billing_cycle' => 'required|in:weekly,monthly,quarterly,yearly',
             'auto_renew' => 'boolean',
             'notes' => 'nullable|string|max:500',
-            'subscription_status' => 'nullable|in:active,expired,paused,cancelled,pending,suspended',
+            'status' => 'nullable|in:active,expired,paused,cancelled,pending,suspended',
             'payment_status' => 'nullable|in:paid,pending,failed,refunded,cancelled',
         ]);
 
@@ -339,12 +339,12 @@ class QuranSubscriptionController extends Controller
         $this->ensureSubscriptionBelongsToAcademy($subscription);
         
         try {
-            if ($subscription->subscription_status !== 'pending') {
+            if ($subscription->status !== 'pending') {
                 throw new \Exception('لا يمكن تفعيل هذا الاشتراك في حالته الحالية');
             }
 
             $subscription->update([
-                'subscription_status' => 'active',
+                'status' => 'active',
                 'payment_status' => 'paid',
                 'last_payment_at' => now(),
                 'next_payment_at' => $this->calculateNextPaymentDate($subscription),
@@ -384,12 +384,12 @@ class QuranSubscriptionController extends Controller
         ]);
 
         try {
-            if ($subscription->subscription_status !== 'active') {
+            if ($subscription->status !== 'active') {
                 throw new \Exception('لا يمكن إيقاف هذا الاشتراك في حالته الحالية');
             }
 
             $subscription->update([
-                'subscription_status' => 'paused',
+                'status' => 'paused',
                 'paused_at' => now(),
                 'pause_reason' => $request->pause_reason,
             ]);
@@ -424,7 +424,7 @@ class QuranSubscriptionController extends Controller
         $this->ensureSubscriptionBelongsToAcademy($subscription);
         
         try {
-            if ($subscription->subscription_status !== 'paused') {
+            if ($subscription->status !== 'paused') {
                 throw new \Exception('الاشتراك غير متوقف');
             }
 
@@ -433,7 +433,7 @@ class QuranSubscriptionController extends Controller
             $newExpiryDate = $subscription->expires_at->addDays($pausedDuration);
 
             $subscription->update([
-                'subscription_status' => 'active',
+                'status' => 'active',
                 'expires_at' => $newExpiryDate,
                 'paused_at' => null,
                 'pause_reason' => null,
@@ -473,12 +473,12 @@ class QuranSubscriptionController extends Controller
         ]);
 
         try {
-            if (in_array($subscription->subscription_status, ['cancelled', 'expired'])) {
+            if (in_array($subscription->status, ['cancelled', 'expired'])) {
                 throw new \Exception('الاشتراك ملغي بالفعل أو منتهي الصلاحية');
             }
 
             $subscription->update([
-                'subscription_status' => 'cancelled',
+                'status' => 'cancelled',
                 'cancelled_at' => now(),
                 'cancellation_reason' => $request->cancellation_reason,
                 'auto_renew' => false,
@@ -520,7 +520,7 @@ class QuranSubscriptionController extends Controller
         $this->ensureSubscriptionBelongsToAcademy($subscription);
         
         try {
-            if (!in_array($subscription->subscription_status, ['expired', 'active'])) {
+            if (!in_array($subscription->status, ['expired', 'active'])) {
                 throw new \Exception('لا يمكن تجديد هذا الاشتراك في حالته الحالية');
             }
 
@@ -528,7 +528,7 @@ class QuranSubscriptionController extends Controller
             $newExpiryDate = $this->calculateNextPaymentDate($subscription);
             
             $subscription->update([
-                'subscription_status' => 'active',
+                'status' => 'active',
                 'payment_status' => 'paid',
                 'expires_at' => $newExpiryDate,
                 'last_payment_at' => now(),
@@ -571,7 +571,7 @@ class QuranSubscriptionController extends Controller
         $subscriptions = QuranSubscription::with(['quranTeacher.user'])
             ->where('academy_id', $academy->id)
             ->where('student_id', $student->id)
-            ->where('subscription_status', 'active')
+            ->where('status', 'active')
             ->get();
 
         return response()->json([
@@ -591,7 +591,7 @@ class QuranSubscriptionController extends Controller
         
         $subscriptions = QuranSubscription::with(['student', 'quranTeacher.user'])
             ->where('academy_id', $academy->id)
-            ->where('subscription_status', 'active')
+            ->where('status', 'active')
             ->where('expires_at', '<=', now()->addDays($days))
             ->orderBy('expires_at')
             ->get();

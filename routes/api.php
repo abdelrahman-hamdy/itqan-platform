@@ -98,6 +98,54 @@ Route::middleware(['web', 'auth', 'verified'])->prefix('sessions')->group(functi
             ]);
         })->name('api.sessions.meeting.join-dev');
 
+        // Production meeting leave endpoint (used by LiveKit integration)
+        Route::post('/meeting/leave', function (Request $request) {
+            $user = $request->user();
+            $sessionId = $request->input('session_id');
+
+            if (!$user || !$sessionId) {
+                return response()->json(['error' => 'Missing user or session_id'], 400);
+            }
+
+            // Find open event
+            $event = \App\Models\MeetingAttendanceEvent::where('session_id', $sessionId)
+                ->where('user_id', $user->id)
+                ->where('event_type', 'join')
+                ->whereNull('left_at')
+                ->latest('event_timestamp')
+                ->first();
+
+            if (!$event) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No open event to close',
+                    'is_currently_in_meeting' => false,
+                ]);
+            }
+
+            // Close event
+            $durationMinutes = $event->event_timestamp->diffInMinutes(now());
+            $event->update([
+                'left_at' => now(),
+                'duration_minutes' => $durationMinutes,
+                'leave_event_id' => 'LEAVE_' . uniqid(),
+            ]);
+
+            \Cache::forget("attendance_status_{$sessionId}_{$user->id}");
+
+            \Log::info('✅ Meeting leave recorded via API', [
+                'event_id' => $event->id,
+                'duration_minutes' => $durationMinutes,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Leave recorded',
+                'is_currently_in_meeting' => false,
+                'duration_minutes' => $durationMinutes,
+            ]);
+        })->name('api.sessions.meeting.leave');
+
         Route::post('/meeting/leave-dev', function (Request $request) {
             $user = $request->user();
             $sessionId = $request->input('session_id');

@@ -35,6 +35,19 @@ class AuthController extends Controller
             }
         }
 
+        // Store the intended redirect URL if provided
+        if ($request->has('redirect')) {
+            $redirectUrl = $request->input('redirect');
+
+            // Validate that the redirect URL is from the same host (security measure)
+            $requestHost = $request->getHost();
+            $redirectHost = parse_url($redirectUrl, PHP_URL_HOST);
+
+            if ($redirectHost === $requestHost) {
+                $request->session()->put('url.intended', $redirectUrl);
+            }
+        }
+
         return view('auth.login', compact('academy'));
     }
 
@@ -93,6 +106,12 @@ class AuthController extends Controller
 
             // Create session record
             $this->createUserSession($user, $request);
+
+            // Check for intended URL in session (set by middleware or showLoginForm)
+            if ($request->session()->has('url.intended')) {
+                $intendedUrl = $request->session()->pull('url.intended');
+                return redirect()->to($intendedUrl);
+            }
 
             // Redirect based on user type
             return $this->redirectBasedOnUserType($user, $academy);

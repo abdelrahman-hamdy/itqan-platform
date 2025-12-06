@@ -283,6 +283,71 @@ class MeetingAttendanceService
                             'attendance_percentage' => $attendance->attendance_percentage,
                             'total_duration' => $attendance->total_duration_minutes,
                         ];
+
+                        // Send attendance notification to student
+                        try {
+                            $user = User::find($attendance->user_id);
+                            if ($user && $attendance->user_type === 'student') {
+                                $notificationService = app(\App\Services\NotificationService::class);
+                                $notificationService->sendAttendanceMarkedNotification(
+                                    $attendance,
+                                    $user,
+                                    $attendance->attendance_status ?? 'present'
+                                );
+
+                                // Also notify parents using ParentNotificationService
+                                try {
+                                    $parentNotificationService = app(\App\Services\ParentNotificationService::class);
+                                    $parents = $parentNotificationService->getParentsForStudent($user);
+
+                                    foreach ($parents as $parent) {
+                                        $status = $attendance->attendance_status ?? 'present';
+                                        $notificationType = match($status) {
+                                            'present' => \App\Enums\NotificationType::ATTENDANCE_MARKED_PRESENT,
+                                            'absent' => \App\Enums\NotificationType::ATTENDANCE_MARKED_ABSENT,
+                                            'late' => \App\Enums\NotificationType::ATTENDANCE_MARKED_LATE,
+                                            default => \App\Enums\NotificationType::ATTENDANCE_MARKED_PRESENT,
+                                        };
+
+                                        $sessionType = $attendance->session->getMeetingType() ?? 'session';
+                                        $routeName = $sessionType === 'quran' ? 'parent.sessions.show' : 'parent.sessions.show';
+
+                                        $notificationService->send(
+                                            $parent->user,
+                                            $notificationType,
+                                            [
+                                                'child_name' => $user->name,
+                                                'session_title' => $attendance->session->title ?? 'الجلسة',
+                                                'date' => $attendance->session->scheduled_at?->format('Y-m-d') ?? now()->format('Y-m-d'),
+                                            ],
+                                            route($routeName, [
+                                                'sessionType' => $sessionType,
+                                                'session' => $attendance->session_id
+                                            ]),
+                                            [
+                                                'child_id' => $user->id,
+                                                'attendance_id' => $attendance->id,
+                                                'session_id' => $attendance->session_id,
+                                                'status' => $status,
+                                            ],
+                                            $status === 'absent' // Mark absent as important
+                                        );
+                                    }
+                                } catch (\Exception $e) {
+                                    Log::error('Failed to send parent attendance notification', [
+                                        'attendance_id' => $attendance->id,
+                                        'user_id' => $user->id,
+                                        'error' => $e->getMessage(),
+                                    ]);
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Failed to send attendance notification', [
+                                'attendance_id' => $attendance->id,
+                                'user_id' => $attendance->user_id,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
                     }
                 } catch (\Exception $e) {
                     $results['errors'][] = [

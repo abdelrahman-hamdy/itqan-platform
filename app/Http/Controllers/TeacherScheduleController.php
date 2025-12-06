@@ -44,7 +44,7 @@ class TeacherScheduleController extends Controller
         // Get active subscriptions requiring schedule setup
         $activeSubscriptions = QuranSubscription::where('quran_teacher_id', $teacherProfile->id)
             ->where('academy_id', $academy->id)
-            ->where('subscription_status', 'active')
+            ->where('status', 'active')
             ->where('payment_status', 'current')
             ->with(['student', 'package'])
             ->get();
@@ -217,7 +217,7 @@ class TeacherScheduleController extends Controller
         $subscription = QuranSubscription::where('id', $subscriptionId)
             ->where('quran_teacher_id', $teacherProfile->id)
             ->where('academy_id', $academy->id)
-            ->where('subscription_status', 'active')
+            ->where('status', 'active')
             ->where('payment_status', 'current')
             ->with(['student', 'package'])
             ->first();

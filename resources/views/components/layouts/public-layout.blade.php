@@ -59,21 +59,13 @@
   <!-- Main Content -->
   <main class="pt-8 min-h-screen" id="main-content">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {{ $slot ?? '' }}
       @yield('content')
     </div>
   </main>
 
   <!-- Footer -->
-  @include('components.footer.public-footer')
-
-  <!-- Mobile Sidebar Toggle (for authenticated students) -->
-  @auth
-    @if(auth()->user()->role === 'student')
-      <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-3 rounded-full shadow-lg z-50">
-        <i class="ri-menu-line text-xl"></i>
-      </button>
-    @endif
-  @endauth
+  <x-academy-footer :academy="$academy" />
 </body>
 
 </html>

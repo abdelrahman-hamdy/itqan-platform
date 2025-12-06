@@ -193,11 +193,11 @@ class SessionStatusService
                 /** @var QuranReportService $quranReportService */
                 $quranReportService = app(QuranReportService::class);
 
-                $reports = $quranReportService->generateSessionReportsFromEventLog($session);
+                $reportsCreated = $quranReportService->createReportsForSession($session);
 
                 Log::info('Synced Quran group attendance reports from event log', [
                     'session_id' => $session->id,
-                    'reports_count' => $reports->count(),
+                    'reports_count' => $reportsCreated,
                 ]);
             }
 
@@ -531,7 +531,7 @@ class SessionStatusService
             if (! $attendance) {
                 $student = $session->student;
                 if ($student) {
-                    MeetingAttendance::create([
+                    $attendance = MeetingAttendance::create([
                         'session_id' => $session->id,
                         'user_id' => $session->student_id,
                         'user_type' => 'student',
@@ -542,6 +542,51 @@ class SessionStatusService
                         'is_calculated' => true,
                         'attendance_calculated_at' => now(),
                     ]);
+
+                    // Send absent notification to student
+                    try {
+                        $notificationService = app(\App\Services\NotificationService::class);
+                        $notificationService->sendAttendanceMarkedNotification(
+                            $attendance,
+                            $student,
+                            'absent'
+                        );
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send absent notification', [
+                            'session_id' => $session->id,
+                            'student_id' => $session->student_id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+
+                    // Also notify parents about absence
+                    try {
+                        $parentNotificationService = app(\App\Services\ParentNotificationService::class);
+                        $parents = $parentNotificationService->getParentsForStudent($student);
+                        foreach ($parents as $parent) {
+                            $notificationService->send(
+                                $parent->user,
+                                \App\Enums\NotificationType::ATTENDANCE_MARKED_ABSENT,
+                                [
+                                    'child_name' => $student->name,
+                                    'session_title' => $session->title ?? 'جلسة قرآنية',
+                                    'date' => $session->scheduled_at->format('Y-m-d'),
+                                ],
+                                route('parent.sessions.show', ['sessionType' => 'quran', 'session' => $session->id]),
+                                [
+                                    'child_id' => $student->id,
+                                    'session_id' => $session->id,
+                                ],
+                                true // important
+                            );
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send parent absent notification', [
+                            'session_id' => $session->id,
+                            'student_id' => $session->student_id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
             } else {
                 $attendance->update([
@@ -549,6 +594,58 @@ class SessionStatusService
                     'is_calculated' => true,
                     'attendance_calculated_at' => now(),
                 ]);
+
+                // Send absent notification to student
+                try {
+                    $student = $session->student;
+                    if ($student) {
+                        $notificationService = app(\App\Services\NotificationService::class);
+                        $notificationService->sendAttendanceMarkedNotification(
+                            $attendance,
+                            $student,
+                            'absent'
+                        );
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to send absent notification', [
+                        'session_id' => $session->id,
+                        'student_id' => $session->student_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                // Also notify parents about absence
+                try {
+                    $student = $session->student;
+                    if ($student) {
+                        $notificationService = app(\App\Services\NotificationService::class);
+                        $parentNotificationService = app(\App\Services\ParentNotificationService::class);
+                        $parents = $parentNotificationService->getParentsForStudent($student);
+                        foreach ($parents as $parent) {
+                            $notificationService->send(
+                                $parent->user,
+                                \App\Enums\NotificationType::ATTENDANCE_MARKED_ABSENT,
+                                [
+                                    'child_name' => $student->name,
+                                    'session_title' => $session->title ?? 'جلسة قرآنية',
+                                    'date' => $session->scheduled_at->format('Y-m-d'),
+                                ],
+                                route('parent.sessions.show', ['sessionType' => 'quran', 'session' => $session->id]),
+                                [
+                                    'child_id' => $student->id,
+                                    'session_id' => $session->id,
+                                ],
+                                true // important
+                            );
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to send parent absent notification', [
+                        'session_id' => $session->id,
+                        'student_id' => $session->student_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         }
     }
@@ -560,15 +657,25 @@ class SessionStatusService
     {
         try {
             $notificationService = app(\App\Services\NotificationService::class);
+            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
 
             // Send reminder notification to students (30 min before)
             if ($session->session_type === 'individual' && $session->student) {
                 $notificationService->sendSessionReminderNotification($session, $session->student);
+                // Also notify parents
+                $parentNotificationService->sendSessionReminder($session);
             } elseif ($session->session_type === 'group' && $session->circle) {
                 foreach ($session->circle->students as $student) {
                     if ($student->user) {
                         $notificationService->sendSessionReminderNotification($session, $student->user);
                     }
+                }
+                // Notify all parents of group session students
+                foreach ($session->circle->students as $student) {
+                    // Create temporary session-like object for group students
+                    $tempSession = clone $session;
+                    $tempSession->student_id = $student->user_id;
+                    $parentNotificationService->sendSessionReminder($tempSession);
                 }
             }
 

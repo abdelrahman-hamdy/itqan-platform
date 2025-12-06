@@ -1,12 +1,23 @@
-<x-layouts.student
-    :title="'الإشعارات - ' . config('app.name', 'منصة إتقان')"
-    :description="'تتبع جميع إشعاراتك وتحديثاتك'">
+@php
+    // Determine layout based on user role
+    $isParent = auth()->user()->role === 'parent' || auth()->user()->user_type === 'parent';
+    $layoutComponent = $isParent ? 'layouts.parent-layout' : 'layouts.student';
+    $pageTitle = 'الإشعارات - ' . config('app.name', 'منصة إتقان');
+@endphp
+
+<x-dynamic-component :component="$layoutComponent" :title="$pageTitle">
 
 <div>
     <!-- Breadcrumb -->
     <nav class="mb-8">
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('student.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">الرئيسية</a></li>
+            @php
+                $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+                $dashboardRoute = $isParent
+                    ? route('parent.profile', ['subdomain' => $subdomain])
+                    : route('student.dashboard', ['subdomain' => $subdomain]);
+            @endphp
+            <li><a href="{{ $dashboardRoute }}" class="hover:text-primary">الرئيسية</a></li>
             <li>/</li>
             <li class="text-gray-900">الإشعارات</li>
         </ol>
@@ -78,7 +89,6 @@
                     'payment' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-600', 'border' => 'border-emerald-200'],
                     'meeting' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-600', 'border' => 'border-purple-200'],
                     'progress' => ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-600', 'border' => 'border-indigo-200'],
-                    'chat' => ['bg' => 'bg-pink-100', 'text' => 'text-pink-600', 'border' => 'border-pink-200'],
                     'system' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'border' => 'border-gray-200'],
                 ];
                 $colors = $categoryColors[$notification->category] ?? $categoryColors['system'];
@@ -233,4 +243,4 @@ function deleteNotification(notificationId) {
 </script>
 @endpush
 
-</x-layouts.student>
+</x-dynamic-component>

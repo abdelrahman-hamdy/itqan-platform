@@ -212,12 +212,6 @@ class QuranCircleResource extends BaseTeacherResource
                                     ->default(fn ($record) => $record ? $record->students()->count() : 0)
                                     ->dehydrated(false),
 
-                                Select::make('session_duration_minutes')
-                                    ->label('مدة الجلسة (بالدقائق)')
-                                    ->options(SessionDuration::options())
-                                    ->default(60)
-                                    ->required(),
-
                                 TextInput::make('monthly_fee')
                                     ->label('الرسوم الشهرية')
                                     ->numeric()

@@ -355,11 +355,11 @@
                                             <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-600">
                                                 <span class="flex items-center space-x-1 space-x-reverse">
                                                     <i class="ri-calendar-line"></i>
-                                                    <span>{{ $session->scheduled_at ? $session->scheduled_at->format('Y/m/d') : 'غير مجدولة' }}</span>
+                                                    <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : 'غير مجدولة' }}</span>
                                                 </span>
                                                 <span class="flex items-center space-x-1 space-x-reverse">
                                                     <i class="ri-time-line"></i>
-                                                    <span>{{ $session->scheduled_at ? $session->scheduled_at->format('H:i') : '--:--' }}</span>
+                                                    <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                                                 </span>
                                                 @if($session->actual_duration_minutes)
                                                     <span class="flex items-center space-x-1 space-x-reverse">
@@ -634,12 +634,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const sessionData = [
         @foreach($circle->sessions as $session)
             {
-                date: '{{ $session->scheduled_at ? $session->scheduled_at->format('Y-m-d') : '' }}',
+                date: '{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at, 'Y-m-d') : '' }}',
                 status: '{{ $session->status }}',
                 recitation_quality: {{ $session->recitation_quality ?? 0 }},
                 tajweed_accuracy: {{ $session->tajweed_accuracy ?? 0 }},
                 attendance_rate: {{ rand(70, 100) }}, // This should come from actual data
-                day_of_week: {{ $session->scheduled_at ? $session->scheduled_at->format('w') : 'null' }}
+                day_of_week: {{ $session->scheduled_at ? toAcademyTimezone($session->scheduled_at)->format('w') : 'null' }}
             }{{ !$loop->last ? ',' : '' }}
         @endforeach
     ];

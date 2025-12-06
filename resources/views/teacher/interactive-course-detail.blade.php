@@ -1,15 +1,13 @@
-<x-layouts.teacher 
-  title="إدارة الكورس - {{ $course->title }}" 
+<x-layouts.teacher
+  title="إدارة الكورس - {{ $course->title }}"
   description="إدارة الكورس التفاعلي {{ $course->title }} - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
 
   <!-- Breadcrumb -->
-  <nav class="mb-8">
-    <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-      <li><a href="{{ route('teacher.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">لوحة التحكم</a></li>
-      <li>/</li>
-      <li><a href="#" class="hover:text-primary">الكورسات التفاعلية</a></li>
-      <li>/</li>
-      <li class="text-gray-900">{{ $course->title }}</li>
+  <nav class="mb-6">
+    <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-500">
+      <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-blue-600 transition-colors">الملف الشخصي</a></li>
+      <li><i class="ri-arrow-left-s-line"></i></li>
+      <li class="text-gray-900 font-medium">{{ $course->title }}</li>
     </ol>
   </nav>
 
@@ -33,390 +31,409 @@
     </div>
   @endif
 
-  <!-- Course Header -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-    <div class="flex flex-col lg:flex-row items-start gap-8">
-      
-      <!-- Course Info -->
-      <div class="flex-1">
-        <div class="flex items-center gap-4 mb-4">
-          <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center">
-            <i class="ri-book-open-line text-2xl text-primary"></i>
-          </div>
-          <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ $course->title }}</h1>
-            <p class="text-lg text-gray-600">{{ $course->description }}</p>
-          </div>
-        </div>
+  @php
+    $now = now();
+    $isOngoing = $course->start_date && $course->start_date <= $now->toDateString() && $course->end_date && $course->end_date >= $now->toDateString();
+    $isFinished = $course->end_date && $course->end_date < $now->toDateString();
+    $isUpcoming = $course->start_date && $course->start_date > $now->toDateString();
 
-        <!-- Course Details Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          
+    if ($isFinished) {
+        $statusLabel = 'انتهى';
+        $statusBg = 'bg-gray-100';
+        $statusText = 'text-gray-700';
+        $statusIcon = 'ri-checkbox-circle-line';
+    } elseif ($isOngoing) {
+        $statusLabel = 'جاري الآن';
+        $statusBg = 'bg-green-100';
+        $statusText = 'text-green-700';
+        $statusIcon = 'ri-play-circle-fill';
+    } elseif ($isUpcoming) {
+        $statusLabel = 'قادم';
+        $statusBg = 'bg-blue-100';
+        $statusText = 'text-blue-700';
+        $statusIcon = 'ri-time-line';
+    } else {
+        $statusLabel = 'نشط';
+        $statusBg = 'bg-green-100';
+        $statusText = 'text-green-700';
+        $statusIcon = 'ri-check-circle-fill';
+    }
+  @endphp
+
+  <!-- Hero Section -->
+  <div class="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 md:p-10 mb-8 border border-blue-100">
+    <!-- Status Badge with Rating -->
+    <div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full {{ $statusBg }} {{ $statusText }} text-sm font-medium">
+        <i class="{{ $statusIcon }}"></i>
+        <span>{{ $statusLabel }}</span>
+      </div>
+
+      <!-- Rating Stars -->
+      @if($course->total_reviews > 0)
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1">
+          @for($i = 1; $i <= 5; $i++)
+            @if($i <= floor($course->avg_rating))
+              <i class="ri-star-fill text-yellow-400 text-lg"></i>
+            @elseif($i - 0.5 <= $course->avg_rating)
+              <i class="ri-star-half-fill text-yellow-400 text-lg"></i>
+            @else
+              <i class="ri-star-line text-gray-300 text-lg"></i>
+            @endif
+          @endfor
+        </div>
+        <span class="text-sm font-medium text-gray-700">{{ number_format($course->avg_rating, 1) }}</span>
+        <span class="text-sm text-gray-500">({{ $course->total_reviews }})</span>
+      </div>
+      @endif
+    </div>
+
+    <!-- Title -->
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">{{ $course->title }}</h1>
+
+    <!-- Description -->
+    @if($course->description)
+      <p class="text-lg text-gray-600 leading-relaxed">{{ $course->description }}</p>
+    @endif
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-sticky-container>
+
+    <!-- Main Content (Left Column - 2/3) -->
+    <div class="lg:col-span-2 space-y-8">
+
+      <!-- Tabs Component -->
+      @php
+        $studentsWithCertificates = $course->enrollments()->whereHas('certificate')->count();
+      @endphp
+
+      <x-tabs id="course-tabs" default-tab="sessions" variant="default" color="primary">
+        <x-slot name="tabs">
+          <x-tabs.tab
+            id="sessions"
+            label="الجلسات"
+            icon="ri-calendar-line"
+          />
+          <x-tabs.tab
+            id="students"
+            label="الطلاب المسجلين"
+            icon="ri-user-3-line"
+            :badge="$course->enrollments->count()"
+          />
+          <x-tabs.tab
+            id="quizzes"
+            label="الاختبارات"
+            icon="ri-file-list-3-line"
+          />
+          <x-tabs.tab
+            id="certificates"
+            label="الشهادات"
+            icon="ri-award-line"
+            :badge="$studentsWithCertificates"
+          />
+        </x-slot>
+
+        <x-slot name="panels">
+          <x-tabs.panel id="sessions">
+            @php
+              $allCourseSessions = collect($upcomingSessions ?? [])->merge($pastSessions ?? []);
+            @endphp
+
+            <x-sessions.sessions-list
+              :sessions="$allCourseSessions"
+              view-type="teacher"
+              :show-tabs="false"
+              empty-message="لا توجد جلسات مجدولة بعد" />
+          </x-tabs.panel>
+
+          <x-tabs.panel id="students">
+            @if($course->enrollments->count() > 0)
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الطالب</th>
+                      <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ التسجيل</th>
+                      <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الشهادة</th>
+                      <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach($course->enrollments as $enrollment)
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <x-avatar
+                              :user="$enrollment->student->user"
+                              size="md"
+                              userType="student"
+                              :gender="$enrollment->student->gender ?? 'male'" />
+                            <div class="mr-4">
+                              <div class="text-sm font-medium text-gray-900">{{ $enrollment->student->user->name }}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {{ $enrollment->created_at->format('Y/m/d') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          @if($enrollment->certificate)
+                            <div class="flex items-center gap-2">
+                              <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
+                                <i class="ri-award-fill ml-1"></i>
+                                صدرت
+                              </span>
+                              <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $enrollment->certificate->id]) }}"
+                                 target="_blank"
+                                 class="text-blue-600 hover:text-blue-800 text-xs">
+                                <i class="ri-eye-line"></i>
+                              </a>
+                            </div>
+                          @else
+                            <button type="button"
+                                    onclick="Livewire.dispatch('openModal', { subscriptionType: 'interactive', subscriptionId: {{ $enrollment->id }}, circleId: null })"
+                                    class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
+                              <i class="ri-award-line ml-1"></i>
+                              إصدار شهادة
+                            </button>
+                          @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          @php
+                            $studentUser = $enrollment->student->user;
+                            $conv = auth()->user()->getOrCreatePrivateConversation($studentUser);
+                            $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+
+                            // If conversation exists, link to it, otherwise link to chats list
+                            $chatUrl = $conv
+                              ? route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id])
+                              : route('chats', ['subdomain' => $subdomain]);
+                          @endphp
+                          <a href="{{ $chatUrl }}"
+                             class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
+                            <i class="ri-message-3-line"></i>
+                            مراسلة
+                          </a>
+                        </td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
+            @else
+              <div class="text-center py-12">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="ri-user-3-line text-4xl text-gray-400"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">لا يوجد طلاب مسجلين بعد</h3>
+                <p class="text-gray-600">سيظهر الطلاب المسجلين في الكورس هنا</p>
+              </div>
+            @endif
+          </x-tabs.panel>
+
+          <x-tabs.panel id="quizzes">
+            <livewire:quizzes-widget :assignable="$course" />
+          </x-tabs.panel>
+
+          <x-tabs.panel id="certificates">
+            <!-- Certificates List Section -->
+            @php
+              // Get all certificates for students enrolled in this course
+              $certificates = \App\Models\Certificate::whereIn('student_id', $course->enrollments->pluck('student_id'))
+                  ->where('certificate_type', 'interactive_course')
+                  ->latest('issued_at')
+                  ->get();
+            @endphp
+
+            @if($certificates->count() > 0)
+              <div class="bg-green-50 rounded-lg p-4 mb-6 border border-green-200">
+                <p class="text-sm text-green-800 font-medium">
+                  <i class="ri-checkbox-circle-fill ml-1"></i>
+                  تم إصدار {{ $certificates->count() }} شهادة للطلاب
+                </p>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @foreach($certificates as $certificate)
+                  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <!-- Student Info Header -->
+                    <div class="bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-3 border-b border-amber-100">
+                      <div class="flex items-center gap-3">
+                        <x-avatar :user="$certificate->student" size="sm" user-type="student" />
+                        <div>
+                          <p class="font-bold text-gray-900 text-sm">{{ $certificate->student->name }}</p>
+                          <p class="text-xs text-gray-600">{{ $certificate->certificate_number }}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Certificate Details -->
+                    <div class="p-4 space-y-3">
+                      <!-- Issue Date -->
+                      <div class="flex items-center text-sm text-gray-600">
+                        <i class="ri-calendar-line ml-2 text-amber-500"></i>
+                        <span>{{ $certificate->issued_at->locale('ar')->translatedFormat('d F Y') }}</span>
+                      </div>
+
+                      <!-- Action Buttons -->
+                      <div class="flex gap-2 pt-2">
+                        <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
+                           target="_blank"
+                           class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+                          <i class="ri-eye-line ml-1"></i>
+                          عرض
+                        </a>
+                        <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
+                           class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
+                          <i class="ri-download-line ml-1"></i>
+                          تحميل
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                @endforeach
+              </div>
+            @else
+              <!-- Empty State -->
+              <div class="text-center py-12">
+                <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="ri-award-line text-3xl text-amber-500"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">لا توجد شهادات</h3>
+                <p class="text-gray-600 text-sm mb-6">لم يتم إصدار أي شهادات للطلاب بعد</p>
+                <p class="text-sm text-gray-500">يمكنك إصدار الشهادات من خلال القسم الجانبي</p>
+              </div>
+            @endif
+          </x-tabs.panel>
+        </x-slot>
+      </x-tabs>
+
+    </div>
+
+    <!-- Sidebar (Right Column - 1/3) -->
+    <div data-sticky-sidebar>
+      <div class="space-y-6">
+        <!-- Course Information Widget -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <i class="ri-information-line text-primary"></i>
+          معلومات الكورس
+        </h3>
+
+        <div class="space-y-4">
           <!-- Subject -->
-          <div class="text-center p-4 bg-blue-50 rounded-lg">
-            <i class="ri-book-line text-2xl text-blue-600 mb-2"></i>
-            <h3 class="font-medium text-gray-900 mb-1">المادة</h3>
-            <p class="text-blue-600 font-medium">{{ $course->subject->name ?? 'غير محدد' }}</p>
-          </div>
+          @if($course->subject)
+            <div class="p-3 bg-blue-50 rounded-lg">
+              <p class="text-xs text-gray-500 mb-0.5">المادة</p>
+              <p class="font-bold text-gray-900">{{ $course->subject->name }}</p>
+            </div>
+          @endif
 
           <!-- Grade Level -->
-          <div class="text-center p-4 bg-green-50 rounded-lg">
-            <i class="ri-graduation-cap-line text-2xl text-green-600 mb-2"></i>
-            <h3 class="font-medium text-gray-900 mb-1">المرحلة</h3>
-            <p class="text-green-600 font-medium">{{ $course->gradeLevel->name ?? 'غير محدد' }}</p>
-          </div>
+          @if($course->gradeLevel)
+            <div class="p-3 bg-green-50 rounded-lg">
+              <p class="text-xs text-gray-500 mb-0.5">المرحلة</p>
+              <p class="font-bold text-gray-900">{{ $course->gradeLevel->name }}</p>
+            </div>
+          @endif
 
           <!-- Students Count -->
-          <div class="text-center p-4 bg-orange-50 rounded-lg">
-            <i class="ri-user-3-line text-2xl text-orange-600 mb-2"></i>
-            <h3 class="font-medium text-gray-900 mb-1">عدد الطلاب</h3>
-            <p class="text-orange-600 font-medium">{{ $teacherData['total_students'] ?? 0 }}/{{ $course->max_students }}</p>
+          <div class="p-3 bg-orange-50 rounded-lg">
+            <p class="text-xs text-gray-500 mb-0.5">عدد الطلاب</p>
+            <p class="font-bold text-gray-900">{{ $teacherData['total_students'] ?? 0 }}/{{ $course->max_students }}</p>
           </div>
 
           <!-- Sessions Count -->
-          <div class="text-center p-4 bg-purple-50 rounded-lg">
-            <i class="ri-calendar-line text-2xl text-purple-600 mb-2"></i>
-            <h3 class="font-medium text-gray-900 mb-1">عدد الجلسات</h3>
-            <p class="text-purple-600 font-medium">{{ $teacherData['total_sessions'] ?? 0 }}</p>
+          <div class="p-3 bg-purple-50 rounded-lg">
+            <p class="text-xs text-gray-500 mb-0.5">عدد الجلسات</p>
+            <p class="font-bold text-gray-900">{{ $teacherData['total_sessions'] ?? 0 }}</p>
           </div>
-        </div>
-      </div>
 
-      <!-- Course Status -->
-      <div class="lg:w-80">
-        <div class="bg-gray-50 rounded-lg p-6">
-          <h3 class="font-bold text-gray-900 mb-4">حالة الكورس</h3>
-          
-          <div class="space-y-3">
-            <!-- Course Status Badge -->
-            <div class="flex items-center justify-between">
-              <span class="text-gray-600">الحالة:</span>
-              @if($course->status === 'active')
-                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">نشط</span>
-              @elseif($course->status === 'upcoming')
-                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">قادم</span>
-              @elseif($course->status === 'completed')
-                <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">مكتمل</span>
-              @else
-                <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">{{ $course->status }}</span>
-              @endif
-            </div>
+          <!-- Divider -->
+          <div class="border-t border-gray-200 my-4"></div>
 
-            <!-- Progress -->
-            <div class="flex items-center justify-between">
-              <span class="text-gray-600">التقدم:</span>
-              <span class="font-medium text-gray-900">
-                {{ $teacherData['completed_sessions'] ?? 0 }}/{{ $teacherData['total_sessions'] ?? 0 }} جلسة
-              </span>
-            </div>
+          <!-- Course Status Badge -->
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600">الحالة:</span>
+            @php
+              // Handle both enum and string status
+              if ($course->status instanceof \App\Enums\InteractiveCourseStatus) {
+                $statusValue = $course->status->value;
+                $statusLabel = $course->status->label();
+                $colorMap = [
+                  'gray' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800'],
+                  'green' => ['bg' => 'bg-green-100', 'text' => 'text-green-800'],
+                  'blue' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800'],
+                  'purple' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-800'],
+                  'red' => ['bg' => 'bg-red-100', 'text' => 'text-red-800'],
+                ];
+                $colors = $colorMap[$course->status->color()] ?? $colorMap['gray'];
+                $config = ['label' => $statusLabel, 'bg' => $colors['bg'], 'text' => $colors['text']];
+              } else {
+                $statusConfig = [
+                  'published' => ['label' => 'منشور', 'bg' => 'bg-green-100', 'text' => 'text-green-800'],
+                  'draft' => ['label' => 'مسودة', 'bg' => 'bg-gray-100', 'text' => 'text-gray-800'],
+                  'active' => ['label' => 'نشط', 'bg' => 'bg-green-100', 'text' => 'text-green-800'],
+                  'upcoming' => ['label' => 'قادم', 'bg' => 'bg-blue-100', 'text' => 'text-blue-800'],
+                  'completed' => ['label' => 'مكتمل', 'bg' => 'bg-gray-100', 'text' => 'text-gray-800'],
+                ];
+                $config = $statusConfig[$course->status] ?? ['label' => $course->status, 'bg' => 'bg-yellow-100', 'text' => 'text-yellow-800'];
+              }
+            @endphp
+            <span class="{{ $config['bg'] }} {{ $config['text'] }} px-3 py-1 rounded-full text-sm font-medium">{{ $config['label'] }}</span>
+          </div>
 
-            <!-- Start Date -->
-            @if($course->start_date)
+          <!-- Progress -->
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600">التقدم:</span>
+            <span class="font-medium text-gray-900">
+              {{ $teacherData['completed_sessions'] ?? 0 }}/{{ $teacherData['total_sessions'] ?? 0 }} جلسة
+            </span>
+          </div>
+
+          <!-- Start Date -->
+          @if($course->start_date)
             <div class="flex items-center justify-between">
-              <span class="text-gray-600">تاريخ البدء:</span>
+              <span class="text-sm text-gray-600">تاريخ البدء:</span>
               <span class="font-medium text-gray-900">{{ $course->start_date->format('Y/m/d') }}</span>
             </div>
-            @endif
+          @endif
 
-            <!-- Duration -->
-            @if($course->duration_weeks)
+          <!-- End Date -->
+          @if($course->end_date)
             <div class="flex items-center justify-between">
-              <span class="text-gray-600">المدة:</span>
-              <span class="font-medium text-gray-900">{{ $course->duration_weeks }} أسبوع</span>
+              <span class="text-sm text-gray-600">تاريخ الانتهاء:</span>
+              <span class="font-medium text-gray-900">{{ $course->end_date->format('Y/m/d') }}</span>
             </div>
-            @endif
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Actions Sidebar -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 class="font-bold text-gray-900 mb-4">إجراءات سريعة</h3>
-      <div class="space-y-3">
-        <!-- View Course Report -->
-        <a href="{{ route('teacher.interactive-courses.report', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $course->id]) }}"
-           class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-            <i class="ri-file-chart-line ml-2"></i>
-            عرض التقرير التفصيلي
-        </a>
-
-        @php
-            // Get conversation with any enrolled student for messaging
-            $firstEnrollment = $course->enrollments->first();
-            $studentUser = $firstEnrollment?->student?->user;
-        @endphp
-        @if($studentUser)
-            @php
-                $conv = auth()->user()->getOrCreatePrivateConversation($studentUser);
-            @endphp
-            @if($conv)
-                <a href="{{ route('chat', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}"
-                   class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                    <i class="ri-message-3-line ml-2"></i>
-                    مراسلة الطلاب
-                </a>
-            @endif
-        @endif
-
-        <!-- Course Settings -->
-        <button onclick="document.querySelector('[data-tab=settings]').click()"
-           class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-            <i class="ri-settings-line ml-2"></i>
-            إعدادات الكورس
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tabs Navigation -->
-  <div class="mb-8">
-    <div class="border-b border-gray-200">
-      <nav class="-mb-px flex space-x-8 space-x-reverse">
-        <button class="tab-button active border-b-2 border-primary text-primary py-4 px-1 text-sm font-medium" data-tab="students">
-          الطلاب المسجلين
-        </button>
-        <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 text-sm font-medium" data-tab="sessions">
-          الجلسات
-        </button>
-        <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 text-sm font-medium" data-tab="materials">
-          المواد التعليمية
-        </button>
-        <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 text-sm font-medium" data-tab="settings">
-          إعدادات الكورس
-        </button>
-      </nav>
-    </div>
-  </div>
-
-  <!-- Tab Content -->
-  
-  <!-- Students Tab -->
-  <div id="students-tab" class="tab-content">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-bold text-gray-900">الطلاب المسجلين</h2>
-        <div class="flex items-center space-x-4 space-x-reverse">
-          <span class="text-sm text-gray-600">{{ $course->enrollments->count() }} من {{ $course->max_students }} طالب</span>
-        </div>
-      </div>
-
-      @if($course->enrollments->count() > 0)
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الطالب</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ التسجيل</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الشهادة</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              @foreach($course->enrollments as $enrollment)
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-10 w-10">
-                        <img class="h-10 w-10 rounded-full object-cover" src="{{ $enrollment->student->user->profile_image ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->student->user->name) . '&background=4169E1&color=fff' }}" alt="{{ $enrollment->student->user->name }}">
-                      </div>
-                      <div class="mr-4">
-                        <div class="text-sm font-medium text-gray-900">{{ $enrollment->student->user->name }}</div>
-                        <div class="text-sm text-gray-500">{{ $enrollment->student->user->email }}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {{ $enrollment->created_at->format('Y/m/d') }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                      مسجل
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    @if($enrollment->certificate)
-                      <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
-                          <i class="ri-award-fill ml-1"></i>
-                          صدرت
-                        </span>
-                        <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $enrollment->certificate->id]) }}"
-                           target="_blank"
-                           class="text-blue-600 hover:text-blue-800 text-xs">
-                          <i class="ri-eye-line"></i>
-                        </a>
-                      </div>
-                    @else
-                      <button type="button"
-                              onclick="Livewire.dispatch('openModal', { subscriptionType: 'interactive', subscriptionId: {{ $enrollment->id }}, circleId: null })"
-                              class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
-                        <i class="ri-award-line ml-1"></i>
-                        إصدار شهادة
-                      </button>
-                    @endif
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button class="text-primary hover:text-primary-dark">عرض الملف</button>
-                  </td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      @else
-        <div class="text-center py-8">
-          <i class="ri-user-3-line text-4xl text-gray-400 mb-4"></i>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">لا يوجد طلاب مسجلين بعد</h3>
-          <p class="text-gray-600">سيظهر الطلاب المسجلين في الكورس هنا</p>
-        </div>
-      @endif
-    </div>
-  </div>
-
-  <!-- Sessions Tab -->
-  <div id="sessions-tab" class="tab-content hidden">
-    @php
-      // Combine all sessions for the unified display
-      $allCourseSessions = collect($upcomingSessions ?? [])->merge($pastSessions ?? []);
-    @endphp
-
-    <x-sessions.sessions-list
-      :sessions="$allCourseSessions"
-      title="جلسات الكورس"
-      view-type="teacher"
-      :show-tabs="false"
-      empty-message="لا توجد جلسات مجدولة بعد" />
-  </div>
-
-  <!-- Materials Tab -->
-  <div id="materials-tab" class="tab-content hidden">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-bold text-gray-900">المواد التعليمية</h2>
-        <button class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg">
-          <i class="ri-upload-line ml-1"></i>
-          رفع مادة جديدة
-        </button>
-      </div>
-
-      <div class="text-center py-8">
-        <i class="ri-file-text-line text-4xl text-gray-400 mb-4"></i>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">لا توجد مواد تعليمية بعد</h3>
-        <p class="text-gray-600 mb-4">قم برفع المواد التعليمية والملفات المساعدة للطلاب</p>
-        <button class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg">
-          <i class="ri-upload-line ml-1"></i>
-          رفع مادة جديدة
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Settings Tab -->
-  <div id="settings-tab" class="tab-content hidden">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-      <h2 class="text-xl font-bold text-gray-900 mb-6">إعدادات الكورس</h2>
-      
-      <form class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          <!-- Course Title -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">عنوان الكورس</label>
-            <input type="text" value="{{ $course->title }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-          </div>
-
-          <!-- Max Students -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">الحد الأقصى للطلاب</label>
-            <input type="number" value="{{ $course->max_students }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-          </div>
+          @endif
 
           <!-- Duration -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">مدة الكورس (بالأسابيع)</label>
-            <input type="number" value="{{ $course->duration_weeks }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-          </div>
-
-          <!-- Status -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">حالة الكورس</label>
-            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-              <option value="upcoming" {{ $course->status === 'upcoming' ? 'selected' : '' }}>قادم</option>
-              <option value="active" {{ $course->status === 'active' ? 'selected' : '' }}>نشط</option>
-              <option value="completed" {{ $course->status === 'completed' ? 'selected' : '' }}>مكتمل</option>
-              <option value="cancelled" {{ $course->status === 'cancelled' ? 'selected' : '' }}>ملغي</option>
-            </select>
-          </div>
+          @if($course->duration_weeks)
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-600">المدة:</span>
+              <span class="font-medium text-gray-900">{{ $course->duration_weeks }} أسبوع</span>
+            </div>
+          @endif
         </div>
+      </div>
 
-        <!-- Course Description -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">وصف الكورس</label>
-          <textarea rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">{{ $course->description }}</textarea>
-        </div>
+      <!-- Quick Actions Widget -->
+      <x-circle.quick-actions
+        :circle="$course"
+        type="group"
+        view-type="teacher"
+        context="interactive"
+      />
 
-        <!-- Action Buttons -->
-        <div class="flex items-center justify-end space-x-4 space-x-reverse pt-6">
-          <button type="button" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-6 rounded-lg">
-            إلغاء
-          </button>
-          <button type="submit" class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-lg">
-            حفظ التغييرات
-          </button>
-        </div>
-      </form>
+      <!-- Certificates Widget -->
+      <x-certificate.teacher-issue-widget type="interactive" :entity="$course" />
+      </div>
     </div>
   </div>
 
   <!-- Certificate Modal -->
   @livewire('issue-certificate-modal')
-
-  <!-- Tab Switching Script -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const tabButtons = document.querySelectorAll('.tab-button');
-      const tabContents = document.querySelectorAll('.tab-content');
-
-      tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const targetTab = button.getAttribute('data-tab');
-
-          // Remove active class from all buttons
-          tabButtons.forEach(btn => {
-            btn.classList.remove('active', 'border-primary', 'text-primary');
-            btn.classList.add('border-transparent', 'text-gray-500');
-          });
-
-          // Add active class to clicked button
-          button.classList.add('active', 'border-primary', 'text-primary');
-          button.classList.remove('border-transparent', 'text-gray-500');
-
-          // Hide all tab contents
-          tabContents.forEach(content => {
-            content.classList.add('hidden');
-          });
-
-          // Show target tab content
-          document.getElementById(targetTab + '-tab').classList.remove('hidden');
-        });
-      });
-    });
-
-    // Function to handle session detail clicks
-    function openSessionDetail(sessionId) {
-      @if(auth()->check())
-          // Redirect to interactive course session detail page
-          const sessionUrl = '{{ route("teacher.interactive-sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => "SESSION_ID_PLACEHOLDER"]) }}';
-          const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
-
-          console.log('Interactive Course Session URL:', finalUrl);
-          window.location.href = finalUrl;
-      @else
-          console.error('User not authenticated');
-      @endif
-    }
-  </script>
 
 </x-layouts.teacher>

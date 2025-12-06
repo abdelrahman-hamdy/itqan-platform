@@ -18,48 +18,8 @@
                 @lang('wirechat::pages.chat.messages.welcome')
             </h2>
             <p class="text-gray-600 text-lg">
-                {{ __('wirechat::pages.chat.messages.select_conversation') }}
+                ابدأ محادثة جديدة أو اختر محادثة موجودة من القائمة
             </p>
-
-            {{-- Features List --}}
-            <div class="grid grid-cols-2 gap-4 pt-6 text-right">
-                <div class="flex items-start space-x-3 space-x-reverse">
-                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
-                        <i class="ri-check-double-line text-lg text-green-600"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">{{ __('wirechat::pages.chat.features.instant_messaging.title') }}</p>
-                        <p class="text-xs text-gray-500">{{ __('wirechat::pages.chat.features.instant_messaging.description') }}</p>
-                    </div>
-                </div>
-                <div class="flex items-start space-x-3 space-x-reverse">
-                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                        <i class="ri-file-line text-lg text-blue-600"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">{{ __('wirechat::pages.chat.features.file_sharing.title') }}</p>
-                        <p class="text-xs text-gray-500">{{ __('wirechat::pages.chat.features.file_sharing.description') }}</p>
-                    </div>
-                </div>
-                <div class="flex items-start space-x-3 space-x-reverse">
-                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
-                        <i class="ri-group-line text-lg text-purple-600"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">{{ __('wirechat::pages.chat.features.group_chats.title') }}</p>
-                        <p class="text-xs text-gray-500">{{ __('wirechat::pages.chat.features.group_chats.description') }}</p>
-                    </div>
-                </div>
-                <div class="flex items-start space-x-3 space-x-reverse">
-                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center shrink-0">
-                        <i class="ri-lock-line text-lg text-orange-600"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">{{ __('wirechat::pages.chat.features.secure.title') }}</p>
-                        <p class="text-xs text-gray-500">{{ __('wirechat::pages.chat.features.secure.description') }}</p>
-                    </div>
-                </div>
-            </div>
         </div>
     </main>
 </div>

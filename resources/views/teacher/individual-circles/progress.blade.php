@@ -371,11 +371,11 @@
                                             <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-600">
                                                 <span class="flex items-center space-x-1 space-x-reverse">
                                                     <i class="ri-calendar-line"></i>
-                                                    <span>{{ $session->scheduled_at ? $session->scheduled_at->format('Y/m/d') : 'غير مجدولة' }}</span>
+                                                    <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : 'غير مجدولة' }}</span>
                                                 </span>
                                                 <span class="flex items-center space-x-1 space-x-reverse">
                                                     <i class="ri-time-line"></i>
-                                                    <span>{{ $session->scheduled_at ? $session->scheduled_at->format('H:i') : '--:--' }}</span>
+                                                    <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                                                 </span>
                                                 @if($session->actual_duration_minutes)
                                                     <span class="flex items-center space-x-1 space-x-reverse">

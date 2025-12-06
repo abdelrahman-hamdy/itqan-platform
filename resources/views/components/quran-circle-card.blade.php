@@ -90,8 +90,8 @@
 
   <!-- Action Button -->
   <div class="mt-6">
-    <a href="{{ route('public.quran-circles.show', ['subdomain' => $academy->subdomain, 'circle' => $circle->id]) }}" 
-       class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center block">
+    <a href="{{ route('quran-circles.show', ['subdomain' => $academy->subdomain, 'circleId' => $circle->id]) }}"
+       class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors text-center block">
       عرض التفاصيل
     </a>
   </div>

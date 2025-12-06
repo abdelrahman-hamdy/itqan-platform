@@ -156,7 +156,7 @@ class QuranSubscriptionPaymentController extends Controller
                     // Update subscription
                     $subscription->update([
                         'payment_status' => 'current',
-                        'subscription_status' => 'active',
+                        'status' => 'active',
                         'last_payment_at' => now(),
                         'last_payment_amount' => $totalAmount,
                     ]);

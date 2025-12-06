@@ -19,15 +19,15 @@ class StudentProgressResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
-    protected static ?string $navigationLabel = 'تقدم الطلاب';
+    protected static ?string $navigationLabel = 'تقدم الدورات المسجلة';
 
-    protected static ?string $modelLabel = 'تقدم طالب';
+    protected static ?string $modelLabel = 'تقدم دورة مسجلة';
 
-    protected static ?string $pluralModelLabel = 'تقدم الطلاب';
+    protected static ?string $pluralModelLabel = 'تقدم الدورات المسجلة';
 
-    protected static ?string $navigationGroup = 'متابعة التقدم';
+    protected static ?string $navigationGroup = 'إدارة الدورات المسجلة';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {

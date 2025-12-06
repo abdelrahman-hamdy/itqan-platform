@@ -10,6 +10,7 @@ use App\Models\RecordedCourse;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use App\Enums\TailwindColor;
+use App\Enums\GradientPalette;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
@@ -120,12 +121,22 @@ class AcademyManagementResource extends BaseResource
 
                 Section::make('الهوية البصرية')
                     ->schema([
-                        FileUpload::make('logo')
-                            ->label('شعار الأكاديمية')
-                            ->image()
-                            ->directory('academy-logos')
-                            ->visibility('public')
-                            ->columnSpanFull(),
+                        Grid::make(2)
+                            ->schema([
+                                FileUpload::make('logo')
+                                    ->label('شعار الأكاديمية')
+                                    ->image()
+                                    ->directory('academy-logos')
+                                    ->visibility('public')
+                                    ->helperText('الحجم المثالي: 200×200 بكسل'),
+
+                                FileUpload::make('favicon')
+                                    ->label('أيقونة المتصفح (Favicon)')
+                                    ->image()
+                                    ->directory('academy-favicons')
+                                    ->visibility('public')
+                                    ->helperText('الحجم المثالي: 32×32 بكسل'),
+                            ]),
 
                         Radio::make('brand_color')
                             ->label('اللون الأساسي')
@@ -142,30 +153,20 @@ class AcademyManagementResource extends BaseResource
                                 'class' => 'color-radio-group',
                             ]),
 
-                        Radio::make('secondary_color')
-                            ->label('اللون الثانوي')
-                            ->options(static::getColorOptions())
-                            ->descriptions(static::getColorDescriptions())
-                            ->default(TailwindColor::EMERALD->value)
-                            ->helperText('اختر لون الواجهة الثانوي للأكاديمية')
+                        Radio::make('gradient_palette')
+                            ->label('لوحة التدرجات اللونية')
+                            ->options(static::getGradientPaletteOptions())
+                            ->descriptions(static::getGradientPaletteDescriptions())
+                            ->default(GradientPalette::OCEAN_BREEZE->value)
+                            ->helperText('اختر لوحة التدرجات المستخدمة في الصفحات العامة')
                             ->required()
-                            ->enum(TailwindColor::class)
+                            ->enum(GradientPalette::class)
                             ->inline()
                             ->inlineLabel(false)
                             ->columnSpanFull()
                             ->extraAttributes([
-                                'class' => 'color-radio-group',
+                                'class' => 'gradient-radio-group',
                             ]),
-
-                        Select::make('theme')
-                            ->label('المظهر')
-                            ->options([
-                                'light' => 'فاتح',
-                                'dark' => 'داكن',
-                                'auto' => 'تلقائي',
-                            ])
-                            ->default('light')
-                            ->columnSpanFull(),
 
                     ])
                     ->collapsible(),
@@ -411,6 +412,55 @@ class AcademyManagementResource extends BaseResource
                 '<div class="flex items-center gap-2 mt-1">
                     <div class="w-6 h-6 rounded-md border-2 border-gray-200 shadow-sm" style="background-color: ' . $hex . '"></div>
                     <span class="text-xs text-gray-600">' . $hex . '</span>
+                </div>'
+            );
+        }
+
+        return $descriptions;
+    }
+
+    /**
+     * Get gradient palette options - use non-breaking space for visual-only selection
+     */
+    protected static function getGradientPaletteOptions(): array
+    {
+        $options = [];
+        foreach (GradientPalette::cases() as $palette) {
+            $options[$palette->value] = ' '; // Non-breaking space to ensure rendering
+        }
+        return $options;
+    }
+
+    /**
+     * Get descriptions for gradient palette options showing gradient swatches
+     */
+    protected static function getGradientPaletteDescriptions(): array
+    {
+        $descriptions = [];
+
+        foreach (GradientPalette::cases() as $palette) {
+            $colors = $palette->getColors();
+            $fromColor = $colors['from'];
+            $toColor = $colors['to'];
+
+            // Parse color names to get proper Tailwind classes
+            [$fromColorName, $fromShade] = explode('-', $fromColor);
+            [$toColorName, $toShade] = explode('-', $toColor);
+
+            // Get hex values for inline styles (more reliable than Tailwind classes)
+            try {
+                $fromHex = TailwindColor::from($fromColorName)->getHexValue((int)$fromShade);
+                $toHex = TailwindColor::from($toColorName)->getHexValue((int)$toShade);
+            } catch (\ValueError $e) {
+                $fromHex = '#3B82F6';
+                $toHex = '#6366F1';
+            }
+
+            // Create HTML with gradient swatch using inline styles for reliability
+            $descriptions[$palette->value] = new \Illuminate\Support\HtmlString(
+                '<div style="padding: 8px 0; min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 140px; height: 50px; border-radius: 8px; border: 3px solid #d1d5db; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); background: linear-gradient(to right, ' . $fromHex . ', ' . $toHex . ');">
+                    </div>
                 </div>'
             );
         }

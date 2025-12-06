@@ -1,0 +1,273 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\NotificationType;
+use App\Models\AcademicSession;
+use App\Models\BaseSubscription;
+use App\Models\Certificate;
+use App\Models\HomeworkSubmission;
+use App\Models\ParentProfile;
+use App\Models\QuranSession;
+use App\Models\User;
+
+/**
+ * Parent Notification Service
+ *
+ * Handle parent-specific notifications about their children's activities.
+ * Integrates with existing NotificationService to send notifications.
+ */
+class ParentNotificationService
+{
+    protected NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
+    /**
+     * Send session reminder to parent
+     *
+     * @param QuranSession|AcademicSession $session
+     * @return void
+     */
+    public function sendSessionReminder(QuranSession|AcademicSession $session): void
+    {
+        // Get student
+        $student = User::find($session->student_id);
+        if (!$student) {
+            return;
+        }
+
+        // Get parent(s) linked to this student
+        $parents = $this->getParentsForStudent($student);
+
+        foreach ($parents as $parent) {
+            $sessionType = $session instanceof QuranSession ? 'قرآن' : 'أكاديمية';
+            $teacherName = $this->getTeacherName($session);
+
+            $this->notificationService->send(
+                $parent->user,
+                NotificationType::SESSION_REMINDER,
+                [
+                    'child_name' => $student->name,
+                    'session_type' => $sessionType,
+                    'teacher_name' => $teacherName,
+                    'scheduled_at' => $session->scheduled_at->format('Y-m-d H:i'),
+                ],
+                $this->getSessionUrl($session),
+                [
+                    'session_id' => $session->id,
+                    'child_id' => $student->id,
+                ],
+                false // not critical
+            );
+        }
+    }
+
+    /**
+     * Send homework assigned notification
+     *
+     * @param HomeworkSubmission $homework
+     * @return void
+     */
+    public function sendHomeworkAssigned(HomeworkSubmission $homework): void
+    {
+        // Get student
+        $student = User::find($homework->student_id);
+        if (!$student) {
+            return;
+        }
+
+        // Get parent(s)
+        $parents = $this->getParentsForStudent($student);
+
+        foreach ($parents as $parent) {
+            $this->notificationService->send(
+                $parent->user,
+                NotificationType::HOMEWORK_ASSIGNED,
+                [
+                    'child_name' => $student->name,
+                    'homework_title' => $homework->title ?? 'واجب جديد',
+                    'due_date' => $homework->due_date?->format('Y-m-d'),
+                ],
+                route('parent.child.detail'),
+                [
+                    'homework_id' => $homework->id,
+                    'child_id' => $student->id,
+                ],
+                false
+            );
+        }
+    }
+
+    /**
+     * Send certificate issued notification
+     *
+     * @param Certificate $certificate
+     * @return void
+     */
+    public function sendCertificateIssued(Certificate $certificate): void
+    {
+        // Get student
+        $student = User::find($certificate->student_id);
+        if (!$student) {
+            return;
+        }
+
+        // Get parent(s)
+        $parents = $this->getParentsForStudent($student);
+
+        foreach ($parents as $parent) {
+            $this->notificationService->send(
+                $parent->user,
+                NotificationType::CERTIFICATE_EARNED,
+                [
+                    'child_name' => $student->name,
+                    'certificate_type' => $certificate->certificate_type?->value ?? 'شهادة',
+                    'certificate_number' => $certificate->certificate_number,
+                ],
+                route('parent.certificates.show', $certificate->id),
+                [
+                    'certificate_id' => $certificate->id,
+                    'child_id' => $student->id,
+                ],
+                false
+            );
+        }
+    }
+
+    /**
+     * Send payment reminder
+     *
+     * @param BaseSubscription $subscription
+     * @return void
+     */
+    public function sendPaymentReminder(BaseSubscription $subscription): void
+    {
+        // Get student
+        $student = User::find($subscription->student_id);
+        if (!$student) {
+            return;
+        }
+
+        // Get parent(s)
+        $parents = $this->getParentsForStudent($student);
+
+        foreach ($parents as $parent) {
+            $this->notificationService->send(
+                $parent->user,
+                NotificationType::SUBSCRIPTION_EXPIRING,
+                [
+                    'child_name' => $student->name,
+                    'amount' => $subscription->final_price ?? $subscription->total_price,
+                    'currency' => $subscription->currency ?? 'SAR',
+                    'due_date' => $subscription->next_payment_at?->format('Y-m-d'),
+                ],
+                route('parent.payments.index'),
+                [
+                    'subscription_id' => $subscription->id,
+                    'child_id' => $student->id,
+                ],
+                true // critical
+            );
+        }
+    }
+
+    /**
+     * Send quiz graded notification
+     *
+     * @param \App\Models\QuizAttempt $quizAttempt
+     * @return void
+     */
+    public function sendQuizGraded(\App\Models\QuizAttempt $quizAttempt): void
+    {
+        // Get student
+        $studentProfile = $quizAttempt->studentProfile;
+        if (!$studentProfile) {
+            return;
+        }
+
+        $student = $studentProfile->user;
+        if (!$student) {
+            return;
+        }
+
+        // Get parent(s)
+        $parents = $this->getParentsForStudent($student);
+
+        foreach ($parents as $parent) {
+            $notificationType = $quizAttempt->passed
+                ? NotificationType::QUIZ_PASSED
+                : NotificationType::QUIZ_FAILED;
+
+            $this->notificationService->send(
+                $parent->user,
+                $notificationType,
+                [
+                    'child_name' => $student->name,
+                    'quiz_name' => $quizAttempt->quizAssignment->quiz->title ?? 'اختبار',
+                    'score' => $quizAttempt->score,
+                    'passed' => $quizAttempt->passed ? 'نجح' : 'لم ينجح',
+                ],
+                route('parent.child.detail'),
+                [
+                    'quiz_attempt_id' => $quizAttempt->id,
+                    'child_id' => $student->id,
+                ],
+                false
+            );
+        }
+    }
+
+    /**
+     * Get all parents linked to a student
+     *
+     * @param User $student
+     * @return \Illuminate\Support\Collection
+     */
+    public function getParentsForStudent(User $student): \Illuminate\Support\Collection
+    {
+        $studentProfile = $student->studentProfileUnscoped;
+        if (!$studentProfile) {
+            return collect();
+        }
+
+        // Get parents through the pivot table
+        return ParentProfile::whereHas('students', function ($query) use ($studentProfile) {
+            $query->where('student_id', $studentProfile->id);
+        })
+            ->where('academy_id', $student->academy_id)
+            ->whereNotNull('user_id') // Only parents with linked user accounts
+            ->with('user')
+            ->get();
+    }
+
+    /**
+     * Get teacher name from session
+     *
+     * @param QuranSession|AcademicSession $session
+     * @return string
+     */
+    private function getTeacherName(QuranSession|AcademicSession $session): string
+    {
+        if ($session instanceof QuranSession) {
+            return $session->quranTeacher?->user->name ?? 'المعلم';
+        }
+
+        return $session->academicTeacher?->user->name ?? 'المعلم';
+    }
+
+    /**
+     * Get session detail URL
+     *
+     * @param QuranSession|AcademicSession $session
+     * @return string
+     */
+    private function getSessionUrl(QuranSession|AcademicSession $session): string
+    {
+        $sessionType = $session instanceof QuranSession ? 'quran' : 'academic';
+        return route('parent.sessions.show', ['sessionType' => $sessionType, 'session' => $session->id]);
+    }
+}

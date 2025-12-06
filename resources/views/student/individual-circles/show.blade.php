@@ -6,7 +6,7 @@
     <!-- Breadcrumb -->
     <nav class="mb-8">
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('student.quran-circles', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">حلقات القرآن</a></li>
+            <li><a href="{{ route('quran-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">معلمو القرآن</a></li>
             <li>/</li>
             <li class="text-gray-900">{{ $individualCircle->subscription->package->name ?? 'حلقة فردية' }}</li>
         </ol>
@@ -18,39 +18,80 @@
             <!-- Circle Header -->
             <x-circle.circle-header :circle="$individualCircle" type="individual" view-type="student" context="quran" />
 
-            <!-- Quran Sessions Section -->
             @php
                 $allSessions = collect($upcomingSessions)->merge($pastSessions)->sortByDesc('scheduled_at');
+                $teacherProfile = $individualCircle->quranTeacher?->quranTeacherProfile;
+                $teacherReviews = $teacherProfile ? $teacherProfile->approvedReviews()->with('student')->latest()->get() : collect();
             @endphp
 
-            <x-sessions.sessions-list
-                :sessions="$allSessions"
-                title="جلسات الحلقة الفردية"
-                view-type="student"
-                :circle="$individualCircle"
-                :show-tabs="false"
-                empty-message="لا توجد جلسات مجدولة بعد" />
+            <!-- Tabs Component -->
+            <x-tabs id="individual-circle-tabs" default-tab="sessions" variant="default" color="primary">
+                <x-slot name="tabs">
+                    <x-tabs.tab
+                        id="sessions"
+                        label="الجلسات"
+                        icon="ri-calendar-line"
+                        :badge="$allSessions->count()"
+                    />
+                    <x-tabs.tab
+                        id="quizzes"
+                        label="الاختبارات"
+                        icon="ri-file-list-3-line"
+                    />
+                    @if($teacherProfile)
+                    <x-tabs.tab
+                        id="reviews"
+                        label="تقييمات المعلم"
+                        icon="ri-star-line"
+                        :badge="$teacherReviews->count()"
+                    />
+                    @endif
+                </x-slot>
 
-            <!-- Quizzes Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                    </svg>
-                    الاختبارات
-                </h3>
-                <livewire:quizzes-widget :assignable="$individualCircle" />
-            </div>
+                <x-slot name="panels">
+                    <x-tabs.panel id="sessions">
+                        <x-sessions.sessions-list
+                            :sessions="$allSessions"
+                            view-type="student"
+                            :circle="$individualCircle"
+                            :show-tabs="false"
+                            empty-message="لا توجد جلسات مجدولة بعد" />
+                    </x-tabs.panel>
+
+                    <x-tabs.panel id="quizzes">
+                        <livewire:quizzes-widget :assignable="$individualCircle" />
+                    </x-tabs.panel>
+
+                    @if($teacherProfile)
+                    <x-tabs.panel id="reviews">
+                        <x-reviews.section
+                            :reviewable-type="\App\Models\QuranTeacherProfile::class"
+                            :reviewable-id="$teacherProfile->id"
+                            review-type="teacher"
+                            :reviews="$teacherReviews"
+                            :rating="$teacherProfile->rating ?? 0"
+                            :total-reviews="$teacherProfile->total_reviews ?? 0"
+                            :show-summary="$teacherReviews->count() > 0"
+                            :show-breakdown="true"
+                            :show-review-form="true"
+                        />
+                    </x-tabs.panel>
+                    @endif
+                </x-slot>
+            </x-tabs>
         </div>
 
         <!-- Sidebar -->
         <div class="lg:col-span-1 space-y-6">
             <!-- Circle Info Sidebar -->
             <x-circle.info-sidebar :circle="$individualCircle" view-type="student" context="individual" />
-            
+
             <!-- Quick Actions -->
             <x-circle.quick-actions :circle="$individualCircle" type="individual" view-type="student" context="quran" />
-            
+
+            <!-- Certificate Section -->
+            <x-certificate.student-certificate-section :subscription="$individualCircle->subscription" type="quran" />
+
             <!-- Subscription Details -->
             <x-circle.subscription-details :subscription="$individualCircle->subscription" view-type="student" />
         </div>

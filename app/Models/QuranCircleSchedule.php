@@ -235,9 +235,8 @@ class QuranCircleSchedule extends Model
             $this->load('circle');
         }
 
-        // Get duration from circle, fallback to schedule default
-        // Group circles should ALWAYS use circle's session_duration_minutes
-        $duration = $this->circle->session_duration_minutes ?? $this->default_duration_minutes ?? 60;
+        // Get duration from schedule default (session duration is stored at schedule level)
+        $duration = $this->default_duration_minutes ?? 60;
 
         return QuranSession::create([
             'academy_id' => $this->academy_id,

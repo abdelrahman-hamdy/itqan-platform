@@ -11,7 +11,8 @@
     $statusValue = $session->status instanceof SessionStatus ? $session->status->value : $session->status;
     $cardClass = $statusColors[$statusValue] ?? 'border-gray-300';
 
-    $scheduledDateTime = $session->scheduled_at;
+    // Convert to academy timezone for display
+    $scheduledDateTime = toAcademyTimezone($session->scheduled_at);
 
     // Check if homework exists
     $hasHomework = $session->homework && $session->homework->count() > 0;

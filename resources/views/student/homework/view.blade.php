@@ -1,7 +1,7 @@
 <x-layouts.student-layout title="تفاصيل الواجب">
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
+    <div class="space-y-6">
         <!-- Back Button -->
-        <div class="mb-6">
+        <div>
             <a href="{{ route('student.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
                 <i class="ri-arrow-right-line ml-1"></i>
                 العودة إلى قائمة الواجبات

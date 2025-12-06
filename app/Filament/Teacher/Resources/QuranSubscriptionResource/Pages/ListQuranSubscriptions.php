@@ -24,15 +24,15 @@ class ListQuranSubscriptions extends ListRecords
         return [
             'all' => Tab::make('جميع الاشتراكات'),
             'active' => Tab::make('النشطة')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('subscription_status', 'active')),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'active')),
             'expiring_soon' => Tab::make('تنتهي قريباً')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('expires_at', '<=', now()->addDays(30))
-                    ->where('subscription_status', 'active')),
+                    ->where('status', 'active')),
             'low_sessions' => Tab::make('جلسات قليلة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('sessions_remaining', '<', 5)
-                    ->where('subscription_status', 'active')),
+                    ->where('status', 'active')),
             'paused' => Tab::make('متوقفة')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('subscription_status', 'paused')),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'paused')),
         ];
     }
 }

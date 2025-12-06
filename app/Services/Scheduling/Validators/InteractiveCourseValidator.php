@@ -29,8 +29,9 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         }
 
         // Calculate recommended days per week based on course duration
-        $totalSessions = $this->course->total_sessions ?? 16;
-        $durationWeeks = $this->course->duration_weeks ?? 12;
+        // Use actual course configuration (should always be set)
+        $totalSessions = $this->course->total_sessions;
+        $durationWeeks = $this->course->duration_weeks;
         $recommendedDaysPerWeek = ceil($totalSessions / $durationWeeks);
 
         if ($dayCount > $recommendedDaysPerWeek + 1) {
@@ -59,7 +60,8 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
             return ValidationResult::error('يجب أن يكون عدد الجلسات أكبر من صفر');
         }
 
-        $totalSessions = $this->course->total_sessions ?? 16;
+        // Use actual course configuration (should always be set)
+        $totalSessions = $this->course->total_sessions;
         $scheduledSessions = $this->course->sessions()
             ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
             ->count();
@@ -125,7 +127,8 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         }
 
         // Check if requested period is reasonable for course duration
-        $durationWeeks = $this->course->duration_weeks ?? 12;
+        // Use actual course configuration (should always be set)
+        $durationWeeks = $this->course->duration_weeks;
         if ($weeksAhead > $durationWeeks * 1.5) {
             return ValidationResult::warning(
                 "⚠️ فترة الجدولة ({$weeksAhead} أسبوع) أطول من مدة الدورة المتوقعة ({$durationWeeks} أسبوع)"
@@ -142,7 +145,8 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         $daysPerWeek = count($days);
         $totalSessionsToSchedule = $daysPerWeek * $weeksAhead;
 
-        $totalSessions = $this->course->total_sessions ?? 16;
+        // Use actual course configuration (should always be set)
+        $totalSessions = $this->course->total_sessions;
         $scheduledSessions = $this->course->sessions()
             ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
             ->count();
@@ -156,7 +160,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         }
 
         // Calculate optimal pacing
-        $durationWeeks = $this->course->duration_weeks ?? 12;
+        $durationWeeks = $this->course->duration_weeks;
         $recommendedPerWeek = ceil($totalSessions / $durationWeeks);
 
         if ($daysPerWeek > $recommendedPerWeek * 1.5) {
@@ -180,8 +184,9 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
     public function getRecommendations(): array
     {
-        $totalSessions = $this->course->total_sessions ?? 16;
-        $durationWeeks = $this->course->duration_weeks ?? 12;
+        // Use actual course configuration (should always be set)
+        $totalSessions = $this->course->total_sessions;
+        $durationWeeks = $this->course->duration_weeks;
         $scheduledSessions = $this->course->sessions()
             ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
             ->count();
@@ -261,5 +266,14 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
             'urgent' => false,
             'progress' => round($completionPercentage, 1),
         ];
+    }
+
+    /**
+     * Get the maximum date that can be scheduled
+     * Returns the course end date
+     */
+    public function getMaxScheduleDate(): ?Carbon
+    {
+        return $this->course->end_date;
     }
 }

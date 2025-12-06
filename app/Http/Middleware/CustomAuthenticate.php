@@ -31,6 +31,9 @@ class CustomAuthenticate extends Middleware
         // Default to itqan-academy if no subdomain found
         $subdomain = $subdomain ?: 'itqan-academy';
 
-        return route('login', ['subdomain' => $subdomain]);
+        // Get the current URL to redirect back after login
+        $intendedUrl = $request->url();
+
+        return route('login', ['subdomain' => $subdomain, 'redirect' => $intendedUrl]);
     }
 }

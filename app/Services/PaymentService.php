@@ -2,413 +2,452 @@
 
 namespace App\Services;
 
+use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Models\Payment;
+use App\Models\PaymentAuditLog;
+use App\Services\Payment\DTOs\PaymentIntent;
+use App\Services\Payment\DTOs\PaymentResult;
+use App\Services\Payment\Exceptions\PaymentException;
+use App\Services\Payment\PaymentGatewayManager;
+use App\Services\Payment\PaymentStateMachine;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 
+/**
+ * Orchestration service for payment operations.
+ *
+ * This service acts as the main entry point for payment processing,
+ * delegating to specific gateway implementations via the PaymentGatewayManager.
+ */
 class PaymentService
 {
+    public function __construct(
+        private PaymentGatewayManager $gatewayManager,
+        private PaymentStateMachine $stateMachine,
+    ) {}
+
     /**
-     * Process payment with the appropriate gateway
+     * Process payment with the appropriate gateway.
+     *
+     * This is the main entry point for initiating payments.
      */
-    public function processPayment(Payment $payment, array $paymentData): array
+    public function processPayment(Payment $payment, array $paymentData = []): array
     {
         try {
-            switch ($payment->payment_gateway) {
-                case 'paymob':
-                    return $this->processPaymobPayment($payment, $paymentData);
-                case 'tapay':
-                    return $this->processTapayPayment($payment, $paymentData);
-                case 'moyasar':
-                    return $this->processMoyasarPayment($payment, $paymentData);
-                case 'stc_pay':
-                    return $this->processStcPayPayment($payment, $paymentData);
-                default:
-                    return $this->processMockPayment($payment, $paymentData);
+            // Get the gateway
+            $gatewayName = $payment->payment_gateway ?? config('payments.default', 'paymob');
+            $gateway = $this->gatewayManager->driver($gatewayName);
+
+            // Check if gateway is configured
+            if (! $gateway->isConfigured()) {
+                throw PaymentException::notConfigured($gatewayName);
             }
-        } catch (\Exception $e) {
-            Log::error('Payment processing error: ' . $e->getMessage(), [
+
+            // Log the attempt
+            PaymentAuditLog::logAttempt($payment, $gatewayName);
+
+            // Create payment intent
+            $intent = PaymentIntent::fromPayment($payment, array_merge($paymentData, [
+                'success_url' => $paymentData['success_url'] ?? route('payments.callback', ['payment' => $payment->id]),
+                'cancel_url' => $paymentData['cancel_url'] ?? route('payments.failed', ['payment' => $payment->id]),
+                'webhook_url' => route('webhooks.paymob'),
+            ]));
+
+            // Process with gateway
+            $result = $gateway->createPaymentIntent($intent);
+
+            // Update payment record
+            $this->updatePaymentFromResult($payment, $result, $gatewayName);
+
+            // Return legacy format for backward compatibility
+            return $this->formatResultForLegacy($result, $gateway);
+        } catch (PaymentException $e) {
+            Log::channel('payments')->error('Payment processing error', [
                 'payment_id' => $payment->id,
                 'gateway' => $payment->payment_gateway,
-                'error' => $e->getMessage()
+                'error_code' => $e->getErrorCode(),
+                'error' => $e->getMessage(),
             ]);
-            
+
+            PaymentAuditLog::logAttempt($payment, $payment->payment_gateway ?? 'unknown', $e->getMessage());
+
             return [
                 'success' => false,
-                'error' => 'حدث خطأ أثناء معالجة الدفع: ' . $e->getMessage()
+                'error' => $e->getErrorMessageAr(),
+                'error_code' => $e->getErrorCode(),
             ];
-        }
-    }
-
-    /**
-     * Process payment with Paymob (MENA region)
-     */
-    private function processPaymobPayment(Payment $payment, array $paymentData): array
-    {
-        // Paymob integration placeholder
-        // This would be implemented with actual Paymob API calls
-        
-        $isSandbox = config('app.env') !== 'production';
-        
-        if ($isSandbox) {
-            // Simulate sandbox payment processing
-            $isSuccess = rand(1, 10) > 2; // 80% success rate for testing
-            
-            if ($isSuccess) {
-                return [
-                    'success' => true,
-                    'data' => [
-                        'transaction_id' => 'PMB_TXN_' . time() . '_' . rand(1000, 9999),
-                        'receipt_number' => 'PMB_REC_' . $payment->id . '_' . time(),
-                        'gateway_response' => 'Paymob sandbox payment processed successfully',
-                        'authorization_code' => 'AUTH_' . rand(100000, 999999),
-                        'amount_cents' => $payment->amount * 100, // Paymob uses cents
-                        'currency' => $payment->currency,
-                        'gateway_data' => [
-                            'gateway' => 'paymob',
-                            'environment' => 'sandbox',
-                            'payment_method' => $paymentData['payment_method'] ?? 'card'
-                        ]
-                    ]
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'error' => 'فشل في عملية الدفع - محاولة تجريبية'
-                ];
-            }
-        }
-        
-        // Real Paymob integration would go here
-        /*
-        $paymobApiKey = config('services.paymob.api_key');
-        $paymobIntegrationId = config('services.paymob.integration_id');
-        
-        // Step 1: Authentication
-        $authResponse = Http::post('https://accept.paymob.com/api/auth/tokens', [
-            'api_key' => $paymobApiKey
-        ]);
-        
-        if (!$authResponse->successful()) {
-            throw new \Exception('Paymob authentication failed');
-        }
-        
-        $authToken = $authResponse->json('token');
-        
-        // Step 2: Create order
-        $orderResponse = Http::withToken($authToken)->post('https://accept.paymob.com/api/ecommerce/orders', [
-            'delivery_needed' => false,
-            'amount_cents' => $payment->amount * 100,
-            'currency' => $payment->currency,
-            'merchant_order_id' => $payment->id,
-            'items' => []
-        ]);
-        
-        if (!$orderResponse->successful()) {
-            throw new \Exception('Failed to create Paymob order');
-        }
-        
-        $orderId = $orderResponse->json('id');
-        
-        // Step 3: Payment key
-        $paymentKeyResponse = Http::withToken($authToken)->post('https://accept.paymob.com/api/acceptance/payment_keys', [
-            'amount_cents' => $payment->amount * 100,
-            'expiration' => 3600,
-            'order_id' => $orderId,
-            'billing_data' => [
-                'email' => $payment->user->email,
-                'first_name' => $payment->user->first_name ?? 'Student',
-                'last_name' => $payment->user->last_name ?? 'User',
-                'phone_number' => $payment->user->phone ?? '+966500000000',
-                'country' => 'SA',
-                'city' => 'Riyadh',
-                'state' => 'Riyadh',
-                'apartment' => 'NA',
-                'floor' => 'NA',
-                'street' => 'NA',
-                'building' => 'NA',
-                'shipping_method' => 'NA',
-                'postal_code' => 'NA'
-            ],
-            'currency' => $payment->currency,
-            'integration_id' => $paymobIntegrationId
-        ]);
-        
-        if (!$paymentKeyResponse->successful()) {
-            throw new \Exception('Failed to create Paymob payment key');
-        }
-        
-        $paymentKey = $paymentKeyResponse->json('token');
-        
-        return [
-            'success' => true,
-            'requires_redirect' => true,
-            'redirect_url' => "https://accept.paymob.com/api/acceptance/iframes/{$iframeId}?payment_token={$paymentKey}",
-            'data' => [
-                'payment_key' => $paymentKey,
-                'order_id' => $orderId,
-                'transaction_id' => 'PMB_' . $orderId
-            ]
-        ];
-        */
-        
-        return [
-            'success' => false,
-            'error' => 'Paymob integration not yet implemented'
-        ];
-    }
-
-    /**
-     * Process payment with Tapay (GCC region)
-     */
-    private function processTapayPayment(Payment $payment, array $paymentData): array
-    {
-        // Tapay integration placeholder
-        // This would be implemented with actual Tapay API calls
-        
-        $isSandbox = config('app.env') !== 'production';
-        
-        if ($isSandbox) {
-            // Simulate sandbox payment processing
-            $isSuccess = rand(1, 10) > 2; // 80% success rate for testing
-            
-            if ($isSuccess) {
-                return [
-                    'success' => true,
-                    'data' => [
-                        'transaction_id' => 'TAP_TXN_' . time() . '_' . rand(1000, 9999),
-                        'receipt_number' => 'TAP_REC_' . $payment->id . '_' . time(),
-                        'gateway_response' => 'Tapay sandbox payment processed successfully',
-                        'reference_number' => 'REF_' . rand(100000, 999999),
-                        'amount' => $payment->amount,
-                        'currency' => $payment->currency,
-                        'gateway_data' => [
-                            'gateway' => 'tapay',
-                            'environment' => 'sandbox',
-                            'payment_method' => $paymentData['payment_method'] ?? 'card'
-                        ]
-                    ]
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'error' => 'فشل في عملية الدفع - محاولة تجريبية'
-                ];
-            }
-        }
-        
-        // Real Tapay integration would go here
-        /*
-        $tapayApiKey = config('services.tapay.api_key');
-        $tapayMerchantId = config('services.tapay.merchant_id');
-        
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $tapayApiKey,
-            'Content-Type' => 'application/json'
-        ])->post('https://api.tap.company/v2/charges', [
-            'amount' => $payment->amount,
-            'currency' => $payment->currency,
-            'threeDSecure' => true,
-            'save_card' => false,
-            'description' => 'Quran Subscription Payment',
-            'statement_descriptor' => 'Itqan Academy',
-            'metadata' => [
+        } catch (\Exception $e) {
+            Log::channel('payments')->error('Payment processing exception', [
                 'payment_id' => $payment->id,
-                'subscription_id' => $payment->subscription_id,
-                'user_id' => $payment->user_id
-            ],
-            'reference' => [
-                'transaction' => 'txn_' . $payment->id,
-                'order' => 'ord_' . $payment->subscription_id
-            ],
-            'receipt' => [
-                'email' => true,
-                'sms' => true
-            ],
-            'customer' => [
-                'first_name' => $payment->user->first_name ?? 'Student',
-                'last_name' => $payment->user->last_name ?? 'User',
-                'email' => $payment->user->email,
-                'phone' => [
-                    'country_code' => '966',
-                    'number' => ltrim($payment->user->phone ?? '500000000', '+966')
-                ]
-            ],
-            'source' => [
-                'id' => $paymentData['card_token'] ?? 'src_card'
-            ],
-            'redirect' => [
-                'url' => route('payment.callback', ['payment' => $payment->id])
-            ]
+                'gateway' => $payment->payment_gateway,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'حدث خطأ أثناء معالجة الدفع',
+            ];
+        }
+    }
+
+    /**
+     * Process subscription renewal payment.
+     *
+     * Called by SubscriptionRenewalService for automatic renewals.
+     */
+    public function processSubscriptionRenewal(Payment $payment): array
+    {
+        Log::channel('payments')->info('Processing subscription renewal', [
+            'payment_id' => $payment->id,
+            'amount' => $payment->amount,
+            'subscription_type' => $payment->payable_type,
         ]);
-        
-        if (!$response->successful()) {
-            throw new \Exception('Tapay payment request failed: ' . $response->body());
-        }
-        
-        $responseData = $response->json();
-        
-        return [
-            'success' => true,
-            'data' => [
-                'transaction_id' => $responseData['id'],
-                'receipt_number' => $responseData['reference']['receipt'] ?? null,
-                'gateway_response' => $responseData,
-                'redirect_url' => $responseData['transaction']['url'] ?? null
-            ]
-        ];
-        */
-        
-        return [
-            'success' => false,
-            'error' => 'Tapay integration not yet implemented'
-        ];
-    }
 
-    /**
-     * Process payment with Moyasar
-     */
-    private function processMoyasarPayment(Payment $payment, array $paymentData): array
-    {
-        // Mock Moyasar payment for development
-        $isSuccess = rand(1, 10) > 1; // 90% success rate
-        
-        if ($isSuccess) {
-            return [
-                'success' => true,
-                'data' => [
-                    'transaction_id' => 'MYS_TXN_' . time() . '_' . rand(1000, 9999),
-                    'receipt_number' => 'MYS_REC_' . $payment->id . '_' . time(),
-                    'gateway_response' => 'Moyasar payment processed successfully',
-                    'authorization_code' => 'AUTH_' . rand(100000, 999999),
-                    'gateway_data' => [
-                        'gateway' => 'moyasar',
-                        'payment_method' => $paymentData['payment_method'] ?? 'card'
-                    ]
-                ]
-            ];
-        } else {
+        try {
+            // For renewals, we typically use stored payment method or require re-authentication
+            // For now, create a new payment intent that requires user action
+            $result = $this->processPayment($payment, [
+                'is_renewal' => true,
+            ]);
+
+            // If successful or pending, the subscription service will handle activation
+            if ($result['success'] ?? false) {
+                $payment->update([
+                    'notes' => ($payment->notes ?? '') . "\nAuto-renewal processed",
+                ]);
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::channel('payments')->error('Subscription renewal failed', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+
             return [
                 'success' => false,
-                'error' => 'Payment declined by bank'
+                'error' => 'فشل في تجديد الاشتراك تلقائياً',
             ];
         }
     }
 
     /**
-     * Process STC Pay payment
+     * Verify a payment with the gateway.
      */
-    private function processStcPayPayment(Payment $payment, array $paymentData): array
+    public function verifyPayment(Payment $payment, array $data = []): PaymentResult
     {
-        // Mock STC Pay payment for development
-        $isSuccess = rand(1, 10) > 1; // 90% success rate
-        
-        if ($isSuccess) {
-            return [
-                'success' => true,
-                'data' => [
-                    'transaction_id' => 'STC_TXN_' . time() . '_' . rand(1000, 9999),
-                    'receipt_number' => 'STC_REC_' . $payment->id . '_' . time(),
-                    'gateway_response' => 'STC Pay payment processed successfully',
-                    'stc_reference' => 'STC_' . rand(100000, 999999),
-                    'gateway_data' => [
-                        'gateway' => 'stc_pay',
-                        'payment_method' => 'stc_pay'
-                    ]
-                ]
-            ];
-        } else {
-            return [
-                'success' => false,
-                'error' => 'STC Pay transaction failed'
-            ];
+        $gatewayName = $payment->payment_gateway ?? config('payments.default', 'paymob');
+        $gateway = $this->gatewayManager->driver($gatewayName);
+
+        $transactionId = $payment->transaction_id ?? $payment->gateway_intent_id;
+
+        if (! $transactionId) {
+            return PaymentResult::failed(
+                errorCode: 'NO_TRANSACTION_ID',
+                errorMessage: 'No transaction ID to verify',
+                errorMessageAr: 'لا يوجد رقم معاملة للتحقق',
+            );
         }
+
+        return $gateway->verifyPayment($transactionId, $data);
     }
 
     /**
-     * Process mock payment for testing
+     * Process a refund for a payment.
      */
-    private function processMockPayment(Payment $payment, array $paymentData): array
+    public function refund(Payment $payment, ?int $amountInCents = null, ?string $reason = null): PaymentResult
     {
-        // Always succeed for testing purposes
-        return [
-            'success' => true,
-            'data' => [
-                'transaction_id' => 'MOCK_TXN_' . time() . '_' . rand(1000, 9999),
-                'receipt_number' => 'MOCK_REC_' . $payment->id . '_' . time(),
-                'gateway_response' => 'Mock payment processed successfully for testing',
-                'gateway_data' => [
-                    'gateway' => 'mock',
-                    'payment_method' => $paymentData['payment_method'] ?? 'card',
-                    'environment' => 'testing'
-                ]
-            ]
-        ];
+        $gatewayName = $payment->payment_gateway ?? config('payments.default', 'paymob');
+        $gateway = $this->gatewayManager->driver($gatewayName);
+
+        // Check if refund is allowed
+        if (! $this->stateMachine->canRefund($payment->status)) {
+            return PaymentResult::failed(
+                errorCode: 'REFUND_NOT_ALLOWED',
+                errorMessage: 'Refund not allowed for this payment status',
+                errorMessageAr: 'لا يمكن الاسترداد لهذه الحالة',
+            );
+        }
+
+        // Check if gateway supports refunds
+        if (! $gateway instanceof \App\Contracts\Payment\SupportsRefunds) {
+            return PaymentResult::failed(
+                errorCode: 'REFUND_NOT_SUPPORTED',
+                errorMessage: 'Gateway does not support refunds',
+                errorMessageAr: 'بوابة الدفع لا تدعم الاسترداد',
+            );
+        }
+
+        $transactionId = $payment->transaction_id;
+        if (! $transactionId) {
+            return PaymentResult::failed(
+                errorCode: 'NO_TRANSACTION_ID',
+                errorMessage: 'No transaction ID for refund',
+                errorMessageAr: 'لا يوجد رقم معاملة للاسترداد',
+            );
+        }
+
+        $result = $gateway->refund($transactionId, $amountInCents, $reason);
+
+        if ($result->isSuccessful()) {
+            $refundAmount = $amountInCents ?? (int) ($payment->amount * 100);
+
+            DB::transaction(function () use ($payment, $refundAmount) {
+                $newRefundedTotal = ($payment->refunded_amount ?? 0) + $refundAmount;
+                $fullAmount = (int) ($payment->amount * 100);
+
+                $payment->update([
+                    'refunded_amount' => $newRefundedTotal,
+                    'refunded_at' => now(),
+                    'status' => $newRefundedTotal >= $fullAmount ? 'refunded' : 'partially_refunded',
+                ]);
+            });
+
+            PaymentAuditLog::logRefund(
+                payment: $payment,
+                refundAmountCents: $amountInCents ?? (int) ($payment->amount * 100),
+                transactionId: $result->transactionId ?? $transactionId,
+            );
+        }
+
+        return $result;
     }
 
     /**
-     * Get available payment methods for academy
+     * Get available payment methods for an academy.
      */
-    public function getAvailablePaymentMethods($academy): array
+    public function getAvailablePaymentMethods($academy = null): array
     {
-        $methods = [
-            'credit_card' => [
-                'name' => 'بطاقة ائتمانية',
-                'icon' => 'ri-bank-card-line',
-                'gateway' => 'moyasar'
-            ],
-            'mada' => [
-                'name' => 'مدى',
-                'icon' => 'ri-bank-card-2-line',
-                'gateway' => 'moyasar'
-            ],
-            'stc_pay' => [
-                'name' => 'STC Pay',
-                'icon' => 'ri-smartphone-line',
-                'gateway' => 'stc_pay'
-            ]
-        ];
+        $methods = [];
 
-        // Add regional gateways based on academy settings
-        if ($academy && $academy->region === 'mena') {
-            $methods['paymob'] = [
-                'name' => 'PayMob',
-                'icon' => 'ri-bank-line',
-                'gateway' => 'paymob'
-            ];
+        foreach ($this->gatewayManager->getConfiguredGateways() as $name => $gateway) {
+            foreach ($gateway->getSupportedMethods() as $method) {
+                $key = $name . '_' . $method;
+                $methods[$key] = [
+                    'name' => $this->getMethodDisplayName($method),
+                    'icon' => $this->getMethodIcon($method),
+                    'gateway' => $name,
+                    'method' => $method,
+                ];
+            }
         }
 
-        if ($academy && $academy->region === 'gcc') {
-            $methods['tapay'] = [
-                'name' => 'Tap Payments',
-                'icon' => 'ri-bank-line', 
-                'gateway' => 'tapay'
-            ];
+        // Add regional methods based on academy
+        if ($academy) {
+            // Filter or add methods based on academy region/settings
         }
 
         return $methods;
     }
 
     /**
-     * Calculate fees for payment method
+     * Calculate fees for a payment method.
      */
     public function calculateFees(float $amount, string $paymentMethod): array
     {
-        $fees = [
-            'credit_card' => 0.025, // 2.5%
-            'mada' => 0.015,       // 1.5%
-            'stc_pay' => 0.02,     // 2%
-            'paymob' => 0.028,     // 2.8%
-            'tapay' => 0.024       // 2.4%
-        ];
+        $fees = config('payments.fees', [
+            'card' => 0.025,
+            'wallet' => 0.02,
+            'bank_transfer' => 0.01,
+        ]);
 
         $feeRate = $fees[$paymentMethod] ?? 0.025;
         $feeAmount = round($amount * $feeRate, 2);
-        
+
         return [
             'fee_rate' => $feeRate,
             'fee_amount' => $feeAmount,
-            'total_with_fees' => $amount + $feeAmount
+            'total_with_fees' => $amount + $feeAmount,
         ];
+    }
+
+    /**
+     * Get a specific gateway instance.
+     */
+    public function gateway(?string $name = null): PaymentGatewayInterface
+    {
+        return $this->gatewayManager->driver($name);
+    }
+
+    /**
+     * Update payment record from gateway result.
+     */
+    private function updatePaymentFromResult(Payment $payment, PaymentResult $result, string $gateway): void
+    {
+        $updateData = [
+            'payment_gateway' => $gateway,
+        ];
+
+        if ($result->transactionId) {
+            $updateData['gateway_intent_id'] = $result->transactionId;
+        }
+
+        if ($result->gatewayOrderId) {
+            $updateData['gateway_order_id'] = $result->gatewayOrderId;
+        }
+
+        if ($result->clientSecret) {
+            $updateData['client_secret'] = $result->clientSecret;
+        }
+
+        if ($result->redirectUrl) {
+            $updateData['redirect_url'] = $result->redirectUrl;
+        }
+
+        if ($result->iframeUrl) {
+            $updateData['iframe_url'] = $result->iframeUrl;
+        }
+
+        // Update status if appropriate
+        if ($result->isSuccessful()) {
+            $updateData['status'] = 'success';
+            $updateData['paid_at'] = now();
+            $updateData['transaction_id'] = $result->transactionId;
+        } elseif ($result->isFailed()) {
+            $updateData['status'] = 'failed';
+        }
+
+        $payment->update($updateData);
+
+        // Send notifications after payment status is updated
+        $this->sendPaymentNotifications($payment, $result);
+    }
+
+    /**
+     * Send payment success/failure notifications to user
+     */
+    private function sendPaymentNotifications(Payment $payment, PaymentResult $result): void
+    {
+        try {
+            // Get the user from payment
+            $user = $payment->user;
+            if (!$user) {
+                return;
+            }
+
+            $notificationService = app(NotificationService::class);
+
+            if ($result->isSuccessful()) {
+                // Prepare notification data for successful payment
+                $notificationData = [
+                    'amount' => $payment->amount,
+                    'currency' => $payment->currency ?? 'SAR',
+                    'description' => $payment->description ?? 'الاشتراك',
+                    'payment_id' => $payment->id,
+                    'transaction_id' => $payment->transaction_id ?? null,
+                ];
+
+                // Add subscription context if available
+                if ($payment->payable) {
+                    $notificationData['subscription_id'] = $payment->payable_id;
+
+                    if ($payment->payable_type === 'App\\Models\\QuranSubscription') {
+                        $notificationData['subscription_type'] = 'quran';
+                        if ($payment->payable->quran_circle_id) {
+                            $notificationData['circle_id'] = $payment->payable->quran_circle_id;
+                        }
+                    } elseif ($payment->payable_type === 'App\\Models\\AcademicSubscription') {
+                        $notificationData['subscription_type'] = 'academic';
+                    } elseif ($payment->payable_type === 'App\\Models\\CourseSubscription') {
+                        $notificationData['subscription_type'] = 'course';
+                    }
+                }
+
+                $notificationService->sendPaymentSuccessNotification($user, $notificationData);
+            } elseif ($result->isFailed()) {
+                // Send failure notification
+                $notificationService->send(
+                    $user,
+                    \App\Enums\NotificationType::PAYMENT_FAILED,
+                    [
+                        'amount' => $payment->amount,
+                        'currency' => $payment->currency ?? 'SAR',
+                        'reason' => $result->errorMessage ?? 'فشل الدفع',
+                    ],
+                    '/payments',
+                    ['payment_id' => $payment->id],
+                    true  // Mark as important
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment notification', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Format PaymentResult for legacy array format.
+     */
+    private function formatResultForLegacy(PaymentResult $result, PaymentGatewayInterface $gateway): array
+    {
+        if ($result->isSuccessful()) {
+            return [
+                'success' => true,
+                'data' => [
+                    'transaction_id' => $result->transactionId,
+                    'gateway_order_id' => $result->gatewayOrderId,
+                    'gateway_response' => $result->rawResponse,
+                ],
+            ];
+        }
+
+        if ($result->isPending()) {
+            $response = [
+                'success' => true,
+                'pending' => true,
+                'data' => [
+                    'transaction_id' => $result->transactionId,
+                    'client_secret' => $result->clientSecret,
+                ],
+            ];
+
+            if ($result->hasRedirect()) {
+                $response['requires_redirect'] = true;
+                $response['redirect_url'] = $result->redirectUrl;
+            }
+
+            if ($result->hasIframe()) {
+                $response['requires_iframe'] = true;
+                $response['iframe_url'] = $result->iframeUrl;
+            }
+
+            return $response;
+        }
+
+        return [
+            'success' => false,
+            'error' => $result->getDisplayError(),
+            'error_code' => $result->errorCode,
+        ];
+    }
+
+    /**
+     * Get display name for payment method.
+     */
+    private function getMethodDisplayName(string $method): string
+    {
+        return match ($method) {
+            'card' => 'بطاقة ائتمانية',
+            'wallet' => 'محفظة إلكترونية',
+            'bank_transfer' => 'تحويل بنكي',
+            'bank_installments' => 'تقسيط بنكي',
+            default => $method,
+        };
+    }
+
+    /**
+     * Get icon for payment method.
+     */
+    private function getMethodIcon(string $method): string
+    {
+        return match ($method) {
+            'card' => 'ri-bank-card-line',
+            'wallet' => 'ri-wallet-3-line',
+            'bank_transfer' => 'ri-bank-line',
+            'bank_installments' => 'ri-funds-box-line',
+            default => 'ri-secure-payment-line',
+        };
     }
 }

@@ -29,6 +29,8 @@ enum NotificationType: string
     case PAYMENT_FAILED = 'payment_failed';
     case SUBSCRIPTION_EXPIRING = 'subscription_expiring';
     case SUBSCRIPTION_EXPIRED = 'subscription_expired';
+    case SUBSCRIPTION_ACTIVATED = 'subscription_activated';
+    case SUBSCRIPTION_RENEWED = 'subscription_renewed';
     case INVOICE_GENERATED = 'invoice_generated';
 
     // Meeting Notifications
@@ -44,10 +46,15 @@ enum NotificationType: string
     case CERTIFICATE_EARNED = 'certificate_earned';
     case COURSE_COMPLETED = 'course_completed';
 
-    // Chat Notifications
-    case CHAT_MESSAGE_RECEIVED = 'chat_message_received';
-    case CHAT_MENTIONED = 'chat_mentioned';
-    case CHAT_GROUP_ADDED = 'chat_group_added';
+    // Quiz Notifications
+    case QUIZ_ASSIGNED = 'quiz_assigned';
+    case QUIZ_COMPLETED = 'quiz_completed';
+    case QUIZ_PASSED = 'quiz_passed';
+    case QUIZ_FAILED = 'quiz_failed';
+
+    // Review Notifications
+    case REVIEW_RECEIVED = 'review_received';
+    case REVIEW_APPROVED = 'review_approved';
 
     // System Notifications
     case ACCOUNT_VERIFIED = 'account_verified';
@@ -82,6 +89,8 @@ enum NotificationType: string
             self::PAYMENT_FAILED,
             self::SUBSCRIPTION_EXPIRING,
             self::SUBSCRIPTION_EXPIRED,
+            self::SUBSCRIPTION_ACTIVATED,
+            self::SUBSCRIPTION_RENEWED,
             self::INVOICE_GENERATED => NotificationCategory::PAYMENT,
 
             self::MEETING_ROOM_READY,
@@ -93,11 +102,13 @@ enum NotificationType: string
             self::PROGRESS_REPORT_AVAILABLE,
             self::ACHIEVEMENT_UNLOCKED,
             self::CERTIFICATE_EARNED,
-            self::COURSE_COMPLETED => NotificationCategory::PROGRESS,
-
-            self::CHAT_MESSAGE_RECEIVED,
-            self::CHAT_MENTIONED,
-            self::CHAT_GROUP_ADDED => NotificationCategory::CHAT,
+            self::COURSE_COMPLETED,
+            self::QUIZ_ASSIGNED,
+            self::QUIZ_COMPLETED,
+            self::QUIZ_PASSED,
+            self::QUIZ_FAILED,
+            self::REVIEW_RECEIVED,
+            self::REVIEW_APPROVED => NotificationCategory::PROGRESS,
 
             self::ACCOUNT_VERIFIED,
             self::PASSWORD_CHANGED,

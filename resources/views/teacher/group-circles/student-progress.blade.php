@@ -240,11 +240,11 @@
                                         <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-600">
                                             <span class="flex items-center space-x-1 space-x-reverse">
                                                 <i class="ri-calendar-line"></i>
-                                                <span>{{ $session->scheduled_at ? $session->scheduled_at->format('Y/m/d') : 'غير مجدولة' }}</span>
+                                                <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : 'غير مجدولة' }}</span>
                                             </span>
                                             <span class="flex items-center space-x-1 space-x-reverse">
                                                 <i class="ri-time-line"></i>
-                                                <span>{{ $session->scheduled_at ? $session->scheduled_at->format('H:i') : '--:--' }}</span>
+                                                <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                                             </span>
                                         </div>
                                     </div>
@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 $attendance = $session->attendances->where('student_id', $student->id)->first();
             @endphp
             {
-                date: '{{ $session->scheduled_at ? $session->scheduled_at->format('Y-m-d') : '' }}',
+                date: '{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at, 'Y-m-d') : '' }}',
                 recitation_quality: {{ $attendance ? ($attendance->recitation_quality ?? 0) : 0 }},
                 tajweed_accuracy: {{ $attendance ? ($attendance->tajweed_accuracy ?? 0) : 0 }},
                 attended: {{ $attendance ? ($attendance->attendance_status === 'attended' ? 1 : 0) : 0 }}

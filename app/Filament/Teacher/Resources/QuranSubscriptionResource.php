@@ -129,7 +129,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
                                 ->disabled()
                                 ->dehydrated(false), // Don't save this field
                             
-                            Select::make('subscription_status')
+                            Select::make('status')
                                 ->label('حالة الاشتراك')
                                 ->options([
                                     'active' => 'نشط',
@@ -247,7 +247,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
                 ->searchable()
                 ->copyable(),
             
-            BadgeColumn::make('subscription_status')
+            BadgeColumn::make('status')
                 ->label('الحالة')
                 ->formatStateUsing(fn (string $state): string => match ($state) {
                     'active' => 'نشط',
@@ -292,7 +292,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
     protected static function getTeacherTableFilters(): array
     {
         return [
-            SelectFilter::make('subscription_status')
+            SelectFilter::make('status')
                 ->label('حالة الاشتراك')
                 ->options([
                     'active' => 'نشط',
@@ -310,7 +310,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
             Filter::make('needs_attention')
                 ->label('يحتاج متابعة')
                 ->query(fn (Builder $query): Builder => 
-                    $query->where('subscription_status', 'active')
+                    $query->where('status', 'active')
                           ->where('sessions_remaining', '<=', 3)
                 ),
         ];
@@ -333,7 +333,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
                     ->mutateFormDataUsing(function (array $data): array {
                         // Only allow teachers to update specific fields
                         return [
-                            'subscription_status' => $data['subscription_status'] ?? null,
+                            'status' => $data['status'] ?? null,
                             'next_session_date' => $data['next_session_date'] ?? null,
                             'notes' => $data['notes'] ?? null,
                         ];
@@ -351,7 +351,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
                     ->icon('heroicon-o-academic-cap')
                     ->color('warning')
                     ->visible(fn (QuranSubscription $record): bool =>
-                        !$record->certificate_issued && $record->subscription_status === 'active'
+                        !$record->certificate_issued && $record->status === 'active'
                     )
                     ->form([
                         Select::make('template_style')
@@ -427,7 +427,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
                 ->label('تحديث الحالة')
                 ->icon('heroicon-m-pencil-square')
                 ->form([
-                    Select::make('subscription_status')
+                    Select::make('status')
                         ->label('الحالة الجديدة')
                         ->options([
                             'active' => 'نشط',
@@ -438,7 +438,7 @@ class QuranSubscriptionResource extends BaseTeacherResource
                 ->action(function (array $data, $records) {
                     foreach ($records as $record) {
                         $record->update([
-                            'subscription_status' => $data['subscription_status'],
+                            'status' => $data['status'],
                         ]);
                     }
                 }),

@@ -100,7 +100,7 @@
                 Date
             </span>
             <span class="font-medium text-gray-900 text-right">
-                {{ $session->scheduled_at->format('M d, Y') }}
+                {{ formatDateArabic($session->scheduled_at, 'M d, Y') }}
             </span>
         </div>
 
@@ -110,7 +110,7 @@
                 Time
             </span>
             <span class="font-medium text-gray-900">
-                {{ $session->scheduled_at->format('g:i A') }}
+                {{ formatTimeArabic($session->scheduled_at) }}
             </span>
         </div>
 

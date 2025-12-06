@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\CertificateTemplateStyle;
+use App\Enums\InteractiveCourseStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class InteractiveCourse extends Model
 {
@@ -47,6 +49,8 @@ class InteractiveCourse extends Model
         'prerequisites',
         'course_outline',
         'status',
+        'avg_rating',
+        'total_reviews',
         'is_published',
         'publication_date',
         'certificate_enabled',
@@ -62,6 +66,7 @@ class InteractiveCourse extends Model
         'schedule' => 'array',
         'learning_outcomes' => 'array',
         'prerequisites' => 'array',
+        'status' => InteractiveCourseStatus::class,
         'is_published' => 'boolean',
         'is_enrollment_fee_required' => 'boolean',
         'student_price' => 'decimal:2',
@@ -78,6 +83,8 @@ class InteractiveCourse extends Model
         'certificate_enabled' => 'boolean',
         'certificate_template_style' => CertificateTemplateStyle::class,
         'recording_enabled' => 'boolean',
+        'avg_rating' => 'decimal:2',
+        'total_reviews' => 'integer',
     ];
 
     /**
@@ -158,6 +165,45 @@ class InteractiveCourse extends Model
     public function enrollments(): HasMany
     {
         return $this->hasMany(InteractiveCourseEnrollment::class, 'course_id');
+    }
+
+    /**
+     * Get all reviews for this course
+     */
+    public function reviews(): MorphMany
+    {
+        return $this->morphMany(CourseReview::class, 'reviewable');
+    }
+
+    /**
+     * Get only approved reviews
+     */
+    public function approvedReviews(): MorphMany
+    {
+        return $this->reviews()->where('is_approved', true);
+    }
+
+    /**
+     * Check if a user has already reviewed this course
+     */
+    public function hasReviewFrom(int $userId): bool
+    {
+        return $this->reviews()->where('user_id', $userId)->exists();
+    }
+
+    /**
+     * Update review statistics
+     */
+    public function updateReviewStats(): void
+    {
+        $stats = $this->approvedReviews()
+            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_reviews')
+            ->first();
+
+        $this->update([
+            'avg_rating' => round($stats->avg_rating ?? 0, 2),
+            'total_reviews' => $stats->total_reviews ?? 0,
+        ]);
     }
 
     public function sessions(): HasMany

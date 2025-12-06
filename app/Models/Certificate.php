@@ -204,9 +204,95 @@ class Certificate extends Model
     {
         parent::boot();
 
+        // Send notification when certificate is issued
+        static::created(function ($certificate) {
+            $certificate->notifyCertificateIssued();
+        });
+
         // Clean up file when certificate is deleted
         static::deleting(function ($certificate) {
             $certificate->deleteFile();
         });
+    }
+
+    /**
+     * Send notification to student when certificate is issued
+     */
+    public function notifyCertificateIssued(): void
+    {
+        try {
+            $student = $this->student;
+            if (!$student) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            // Determine certificate context for notification
+            $certificateContext = 'الشهادة';
+            $actionUrl = $this->view_url;
+
+            if ($this->certificateable) {
+                if ($this->certificateable instanceof \App\Models\QuranCircle) {
+                    $certificateContext = 'حلقة ' . $this->certificateable->name;
+                } elseif ($this->certificateable instanceof \App\Models\InteractiveCourse) {
+                    $certificateContext = 'دورة ' . $this->certificateable->title;
+                } elseif ($this->certificateable instanceof \App\Models\RecordedCourse) {
+                    $certificateContext = 'دورة ' . $this->certificateable->title;
+                }
+            }
+
+            // Get teacher name
+            $teacherName = $this->teacher?->full_name ?? 'المعلم';
+
+            $notificationService->send(
+                $student,
+                \App\Enums\NotificationType::CERTIFICATE_EARNED,
+                [
+                    'teacher_name' => $teacherName,
+                    'certificate_type' => $this->certificate_type->value ?? 'certificate',
+                    'certificate_context' => $certificateContext,
+                    'issued_at' => $this->issued_at?->format('Y-m-d'),
+                ],
+                $actionUrl,
+                [
+                    'certificate_id' => $this->id,
+                    'certificateable_type' => $this->certificateable_type,
+                    'certificateable_id' => $this->certificateable_id,
+                ],
+                true,  // Mark as important
+                'heroicon-o-trophy',  // Custom certificate icon (trophy)
+                'orange'  // Custom orange color
+            );
+
+            // Also notify parent if exists
+            if ($student->studentProfile && $student->studentProfile->parent) {
+                $notificationService->send(
+                    $student->studentProfile->parent->user,
+                    \App\Enums\NotificationType::CERTIFICATE_EARNED,
+                    [
+                        'teacher_name' => $teacherName,
+                        'certificate_type' => $this->certificate_type->value ?? 'certificate',
+                        'certificate_context' => $certificateContext,
+                        'student_name' => $student->full_name,
+                        'issued_at' => $this->issued_at?->format('Y-m-d'),
+                    ],
+                    $actionUrl,
+                    [
+                        'certificate_id' => $this->id,
+                        'certificateable_type' => $this->certificateable_type,
+                        'certificateable_id' => $this->certificateable_id,
+                    ],
+                    true,  // Mark as important
+                    'heroicon-o-trophy',  // Custom certificate icon (trophy)
+                    'orange'  // Custom orange color
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send certificate notification', [
+                'certificate_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

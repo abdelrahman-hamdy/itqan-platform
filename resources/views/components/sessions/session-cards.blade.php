@@ -62,11 +62,16 @@
                 </div>
             @else
                 <div class="text-center py-12">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="ri-calendar-line text-2xl text-gray-400"></i>
+                    <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <i class="ri-calendar-line text-3xl text-gray-500"></i>
                     </div>
-                    <p class="text-gray-500 font-medium">لا توجد جلسات مسجلة بعد</p>
-                    <p class="text-sm text-gray-400 mt-1">ستظهر جلساتك هنا عند إنشائها</p>
+                    <p class="text-lg font-bold text-gray-900 mb-2">لا توجد جلسات مسجلة بعد</p>
+                    <p class="text-sm text-gray-600 mb-6">ستظهر جلساتك هنا عند إنشائها</p>
+                    <div class="flex items-center justify-center gap-2">
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                    </div>
                 </div>
             @endif
         </div>
@@ -81,11 +86,16 @@
                 </div>
             @else
                 <div class="text-center py-12">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="ri-calendar-line text-2xl text-gray-400"></i>
+                    <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <i class="ri-calendar-check-line text-3xl text-blue-600"></i>
                     </div>
-                    <p class="text-gray-500 font-medium">لا توجد جلسات قادمة</p>
-                    <p class="text-sm text-gray-400 mt-1">ستظهر الجلسات القادمة هنا</p>
+                    <p class="text-lg font-bold text-gray-900 mb-2">لا توجد جلسات قادمة</p>
+                    <p class="text-sm text-gray-600 mb-6">ستظهر الجلسات القادمة هنا</p>
+                    <div class="flex items-center justify-center gap-2">
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                    </div>
                 </div>
             @endif
         </div>
@@ -100,11 +110,16 @@
                 </div>
             @else
                 <div class="text-center py-12">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="ri-calendar-line text-2xl text-gray-400"></i>
+                    <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <i class="ri-history-line text-3xl text-gray-500"></i>
                     </div>
-                    <p class="text-gray-500 font-medium">لا توجد جلسات منتهية</p>
-                    <p class="text-sm text-gray-400 mt-1">ستظهر الجلسات المكتملة والملغاة هنا</p>
+                    <p class="text-lg font-bold text-gray-900 mb-2">لا توجد جلسات منتهية</p>
+                    <p class="text-sm text-gray-600 mb-6">ستظهر الجلسات المكتملة والملغاة هنا</p>
+                    <div class="flex items-center justify-center gap-2">
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                    </div>
                 </div>
             @endif
         </div>
@@ -233,9 +248,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-// Session detail function
-function openSessionDetail(sessionId) {
-    console.log('Opening session details for ID:', sessionId);
-}
 </script> 

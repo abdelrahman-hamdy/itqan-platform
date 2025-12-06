@@ -2,163 +2,192 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\BillingCycle;
+use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\SubscriptionStatus;
+use App\Models\Traits\HandlesSubscriptionRenewal;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 
-class AcademicSubscription extends Model
+/**
+ * AcademicSubscription Model
+ *
+ * Handles subscriptions for academic tutoring (private lessons).
+ * Extends BaseSubscription for common functionality and uses HandlesSubscriptionRenewal
+ * for auto-renewal capabilities.
+ *
+ * KEY CONCEPTS:
+ * - Session-based: Subscriptions track scheduled/completed/missed sessions
+ * - Subject-specific: Each subscription is tied to a subject and grade level
+ * - Self-contained: Package data is snapshotted at creation
+ * - Auto-renewal: Enabled by default with NO grace period on payment failure
+ * - Weekly schedule: Stores preferred days/times for sessions
+ *
+ * @property int|null $teacher_id
+ * @property int|null $subject_id
+ * @property int|null $grade_level_id
+ * @property string|null $subject_name
+ * @property string|null $grade_level_name
+ * @property int|null $session_request_id
+ * @property int|null $academic_package_id
+ * @property string $subscription_type
+ * @property int|null $sessions_per_week
+ * @property float|null $hourly_rate
+ * @property array|null $weekly_schedule
+ * @property string|null $timezone
+ * @property bool $auto_create_google_meet
+ * @property bool $has_trial_session
+ * @property bool $trial_session_used
+ * @property \Carbon\Carbon|null $trial_session_date
+ * @property string|null $trial_session_status
+ * @property int $total_sessions_scheduled
+ * @property int $total_sessions_completed
+ * @property int $total_sessions_missed
+ */
+class AcademicSubscription extends BaseSubscription
 {
-    use HasFactory;
+    use HandlesSubscriptionRenewal;
 
+    /**
+     * The database table for this model
+     */
+    protected $table = 'academic_subscriptions';
+
+    /**
+     * Academic-specific fillable fields
+     * Merged with BaseSubscription::$baseFillable in constructor
+     */
     protected $fillable = [
-        'academy_id',
-        'student_id',
+        // Teacher reference (points to AcademicTeacherProfile)
         'teacher_id',
+
+        // Subject and grade level
         'subject_id',
         'grade_level_id',
-        'subject_name',
-        'grade_level_name',
+        'subject_name',      // Snapshotted from subject
+        'grade_level_name',  // Snapshotted from grade level
+
+        // Session request reference
         'session_request_id',
+
+        // Package reference (kept for backward compatibility)
         'academic_package_id',
-        'subscription_code',
+
+        // Subscription type
         'subscription_type',
+
+        // Session scheduling
         'sessions_per_week',
-        'session_duration_minutes',
         'hourly_rate',
-        'sessions_per_month',
-        'monthly_amount',
-        'discount_amount',
-        'final_monthly_amount',
-        'currency',
-        'billing_cycle',
-        'start_date',
-        'end_date',
-        'next_billing_date',
-        'last_payment_date',
-        'last_payment_amount',
         'weekly_schedule',
         'timezone',
         'auto_create_google_meet',
-        'status',
-        'payment_status',
+
+        // Trial session
         'has_trial_session',
         'trial_session_used',
         'trial_session_date',
         'trial_session_status',
-        'paused_at',
-        'resume_date',
-        'pause_reason',
-        'pause_days_remaining',
-        'auto_renewal',
-        'renewal_reminder_days',
-        'last_reminder_sent',
-        'notes',
-        'student_notes',
-        'teacher_notes',
 
+        // Session tracking
         'total_sessions_scheduled',
         'total_sessions_completed',
         'total_sessions_missed',
+
+        // Notes (for teacher/student communication)
+        'student_notes',
+        'teacher_notes',
+
+        // Legacy amount fields (for backward compatibility)
+        'monthly_amount',
+        'final_monthly_amount',
+
+        // Legacy date fields (controller uses these instead of starts_at/ends_at)
+        'start_date',
+        'end_date',
+
+        // Additional fields used by controller
+        'auto_renewal',
+        'renewal_reminder_days',
+        'pause_days_remaining',
         'completion_rate',
-        'certificate_issued',
-        'certificate_issued_at',
     ];
 
-    protected $casts = [
-        'hourly_rate' => 'decimal:2',
-        'sessions_per_month' => 'decimal:2',
-        'monthly_amount' => 'decimal:2',
-        'discount_amount' => 'decimal:2',
-        'final_monthly_amount' => 'decimal:2',
-        'last_payment_amount' => 'decimal:2',
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'next_billing_date' => 'date',
-        'last_payment_date' => 'date',
-        'weekly_schedule' => 'array',
-        'auto_create_google_meet' => 'boolean',
-        'has_trial_session' => 'boolean',
-        'trial_session_used' => 'boolean',
-        'trial_session_date' => 'datetime',
-        'paused_at' => 'datetime',
-        'resume_date' => 'datetime',
-        'auto_renewal' => 'boolean',
-        'last_reminder_sent' => 'datetime',
-        'completion_rate' => 'decimal:2',
-        'certificate_issued' => 'boolean',
-        'certificate_issued_at' => 'datetime',
-    ];
-
-    // Relationships
-    public function academicPackage(): BelongsTo
+    /**
+     * Constructor: Merge fillable with parent's baseFillable
+     */
+    public function __construct(array $attributes = [])
     {
-        return $this->belongsTo(AcademicPackage::class, 'academic_package_id');
+        // Merge Academic-specific fillable with base fillable
+        $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
+        parent::__construct($attributes);
     }
 
+    /**
+     * Get casts: Merge Academic-specific casts with parent casts
+     * IMPORTANT: Do NOT define protected $casts - it would override parent's casts
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), [
+            // Subscription dates (legacy fields - kept for backward compatibility)
+            'start_date' => 'datetime',
+            'end_date' => 'datetime',
+
+            // Session scheduling
+            'sessions_per_week' => 'integer',
+            'hourly_rate' => 'decimal:2',
+            'weekly_schedule' => 'array',
+            'auto_create_google_meet' => 'boolean',
+
+            // Trial session
+            'has_trial_session' => 'boolean',
+            'trial_session_used' => 'boolean',
+            'trial_session_date' => 'datetime',
+
+            // Session tracking
+            'total_sessions_scheduled' => 'integer',
+            'total_sessions_completed' => 'integer',
+            'total_sessions_missed' => 'integer',
+        ]);
+    }
+
+    /**
+     * Default attributes
+     */
     protected $attributes = [
-        'subscription_type' => 'private',
-        'session_duration_minutes' => 60,
+        'status' => 'pending',
+        'payment_status' => 'pending',
         'currency' => 'SAR',
         'billing_cycle' => 'monthly',
+        'auto_renew' => true,
+        'progress_percentage' => 0,
+        'certificate_issued' => false,
+        'subscription_type' => 'private',
+        'session_duration_minutes' => 60,
         'auto_create_google_meet' => true,
-        'status' => 'active',
-        'payment_status' => 'current',
         'has_trial_session' => false,
         'trial_session_used' => false,
-        'pause_days_remaining' => 0,
-        'auto_renewal' => true,
-        'renewal_reminder_days' => 7,
         'total_sessions_scheduled' => 0,
         'total_sessions_completed' => 0,
         'total_sessions_missed' => 0,
-        'completion_rate' => 0,
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
+    // ========================================
+    // CONSTANTS
+    // ========================================
 
-        static::creating(function ($model) {
-            if (empty($model->subscription_code)) {
-                $model->subscription_code = $model->generateSubscriptionCode();
-            }
+    const SUBSCRIPTION_TYPE_PRIVATE = 'private';
+    const SUBSCRIPTION_TYPE_GROUP = 'group'; // Reserved for future use
 
-            // Calculate sessions per month and amounts
-            if ($model->sessions_per_week && $model->hourly_rate) {
-                $model->sessions_per_month = $model->sessions_per_week * 4.33; // Average weeks per month
-                $model->monthly_amount = $model->sessions_per_month * $model->hourly_rate;
-                $model->final_monthly_amount = $model->monthly_amount - $model->discount_amount;
-            }
-
-            // Set next billing date if not set
-            if (empty($model->next_billing_date)) {
-                $model->next_billing_date = $model->calculateNextBillingDate($model->start_date);
-            }
-        });
-    }
+    // ========================================
+    // RELATIONSHIPS (Academic-specific)
+    // ========================================
 
     /**
-     * العلاقة مع الأكاديمية
-     */
-    public function academy(): BelongsTo
-    {
-        return $this->belongsTo(Academy::class);
-    }
-
-    /**
-     * العلاقة مع الطالب
-     */
-    public function student(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'student_id');
-    }
-
-    /**
-     * العلاقة مع المعلم الأكاديمي
+     * Get the academic teacher profile
      */
     public function teacher(): BelongsTo
     {
@@ -166,7 +195,7 @@ class AcademicSubscription extends Model
     }
 
     /**
-     * العلاقة مع بروفايل المعلم الأكاديمي (alternative name to avoid caching issues)
+     * Alias for teacher relationship
      */
     public function academicTeacher(): BelongsTo
     {
@@ -174,7 +203,7 @@ class AcademicSubscription extends Model
     }
 
     /**
-     * العلاقة مع المادة الدراسية
+     * Get the academic subject
      */
     public function subject(): BelongsTo
     {
@@ -182,7 +211,7 @@ class AcademicSubscription extends Model
     }
 
     /**
-     * العلاقة مع المرحلة الدراسية
+     * Get the grade level
      */
     public function gradeLevel(): BelongsTo
     {
@@ -190,19 +219,31 @@ class AcademicSubscription extends Model
     }
 
     /**
-     * العلاقة مع طلب الجلسة الأصلي
+     * Get the session request (if subscription was created from a request)
      */
     public function sessionRequest(): BelongsTo
     {
         return $this->belongsTo(SessionRequest::class);
     }
 
-    // Note: progress() relationship removed - Progress is now calculated
-    // dynamically from session reports using the AcademicReportService
-    // See migration: 2025_11_23_drop_progress_tables.php
+    /**
+     * Get the original package (for reference only - data is snapshotted)
+     */
+    public function academicPackage(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPackage::class, 'academic_package_id');
+    }
 
     /**
-     * العلاقة مع المدفوعات
+     * Get all academic sessions for this subscription
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(AcademicSession::class, 'academic_subscription_id');
+    }
+
+    /**
+     * Get payment records for this subscription
      */
     public function payments(): HasMany
     {
@@ -210,249 +251,166 @@ class AcademicSubscription extends Model
     }
 
     /**
-     * Get the academic sessions for this subscription
-     */
-    public function sessions(): HasMany
-    {
-        return $this->hasMany(\App\Models\AcademicSession::class, 'academic_subscription_id');
-    }
-
-    /**
-     * Get the certificate for this subscription
-     */
-    public function certificate(): MorphOne
-    {
-        return $this->morphOne(Certificate::class, 'certificateable');
-    }
-
-    /**
      * Get quiz assignments for this subscription
      */
-    public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function quizAssignments(): MorphMany
     {
         return $this->morphMany(QuizAssignment::class, 'assignable');
     }
 
+    // ========================================
+    // ABSTRACT METHOD IMPLEMENTATIONS
+    // ========================================
+
     /**
-     * نطاق الاشتراكات النشطة
+     * Get subscription type identifier
      */
-    public function scopeActive($query)
+    public function getSubscriptionType(): string
     {
-        return $query->where('status', 'active');
+        return 'academic';
     }
 
     /**
-     * نطاق الاشتراكات المعلقة
+     * Get subscription type label
      */
-    public function scopePaused($query)
+    public function getSubscriptionTypeLabel(): string
     {
-        return $query->where('status', 'paused');
+        return $this->subscription_type === self::SUBSCRIPTION_TYPE_PRIVATE
+            ? 'دروس أكاديمية خاصة'
+            : 'دروس أكاديمية جماعية';
     }
 
     /**
-     * نطاق الاشتراكات المتأخرة في الدفع
+     * Get subscription title for display
      */
-    public function scopeOverdue($query)
+    public function getSubscriptionTitle(): string
     {
-        return $query->where('payment_status', 'overdue');
-    }
-
-    /**
-     * نطاق الاشتراكات المستحقة للتجديد
-     */
-    public function scopeDueForRenewal($query, $days = 7)
-    {
-        return $query->where('next_billing_date', '<=', Carbon::now()->addDays($days))
-            ->where('status', 'active')
-            ->where('auto_renewal', true);
-    }
-
-    /**
-     * نطاق الاشتراكات حسب الأكاديمية
-     */
-    public function scopeByAcademy($query, $academyId)
-    {
-        return $query->where('academy_id', $academyId);
-    }
-
-    /**
-     * توليد رمز الاشتراك
-     */
-    private function generateSubscriptionCode(): string
-    {
-        $academyId = $this->academy_id;
-        $count = static::where('academy_id', $academyId)->count() + 1;
-
-        return 'SUB-'.$academyId.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * حساب تاريخ الفوترة التالي
-     */
-    private function calculateNextBillingDate(Carbon $startDate): Carbon
-    {
-        return match ($this->billing_cycle) {
-            'monthly' => $startDate->copy()->addMonth(),
-            'quarterly' => $startDate->copy()->addMonths(3),
-            'yearly' => $startDate->copy()->addYear(),
-            default => $startDate->copy()->addMonth(),
-        };
-    }
-
-    /**
-     * الحصول على حالة الاشتراك بالعربية
-     */
-    public function getStatusInArabicAttribute(): string
-    {
-        return match ($this->status) {
-            'active' => 'نشط',
-            'paused' => 'معلق',
-            'suspended' => 'موقوف',
-            'cancelled' => 'ملغي',
-            'expired' => 'منتهي',
-            'completed' => 'مكتمل',
-            default => $this->status,
-        };
-    }
-
-    /**
-     * الحصول على حالة الدفع بالعربية
-     */
-    public function getPaymentStatusInArabicAttribute(): string
-    {
-        return match ($this->payment_status) {
-            'current' => 'محدث',
-            'pending' => 'في الانتظار',
-            'overdue' => 'متأخر',
-            'failed' => 'فشل',
-            'refunded' => 'مسترد',
-            default => $this->payment_status,
-        };
-    }
-
-    /**
-     * تحديد ما إذا كان الاشتراك نشط
-     */
-    public function getIsActiveAttribute(): bool
-    {
-        return $this->status === 'active' && $this->payment_status === 'current';
-    }
-
-    /**
-     * تحديد ما إذا كان الاشتراك متأخر في الدفع
-     */
-    public function getIsOverdueAttribute(): bool
-    {
-        return $this->next_billing_date->isPast() && $this->payment_status !== 'current';
-    }
-
-    /**
-     * الحصول على عدد الأيام حتى الفوترة التالية
-     */
-    public function getDaysUntilNextBillingAttribute(): int
-    {
-        return max(0, Carbon::now()->diffInDays($this->next_billing_date, false));
-    }
-
-    /**
-     * إيقاف الاشتراك مؤقتاً
-     */
-    public function pause(?string $reason = null, ?Carbon $resumeDate = null): bool
-    {
-        if ($this->status !== 'active') {
-            return false;
+        if ($this->package_name_ar) {
+            return $this->package_name_ar;
         }
 
-        $this->update([
-            'status' => 'paused',
-            'paused_at' => Carbon::now(),
-            'resume_date' => $resumeDate,
-            'pause_reason' => $reason,
-        ]);
+        $subjectName = $this->subject_name ?? $this->subject?->name ?? 'مادة';
+        $gradeName = $this->grade_level_name ?? $this->gradeLevel?->name ?? '';
 
-        return true;
+        return "دروس {$subjectName}" . ($gradeName ? " - {$gradeName}" : '');
     }
 
     /**
-     * استئناف الاشتراك
+     * Get the teacher (User) for this subscription
      */
-    public function resume(): bool
+    public function getTeacher(): ?User
     {
-        if ($this->status !== 'paused') {
-            return false;
-        }
-
-        // Calculate new billing date based on pause duration
-        $pauseDuration = Carbon::now()->diffInDays($this->paused_at);
-        $newBillingDate = $this->next_billing_date->addDays($pauseDuration);
-
-        $this->update([
-            'status' => 'active',
-            'next_billing_date' => $newBillingDate,
-            'paused_at' => null,
-            'resume_date' => null,
-            'pause_reason' => null,
-        ]);
-
-        return true;
+        return $this->teacher?->user;
     }
 
     /**
-     * إلغاء الاشتراك
+     * Calculate renewal price based on billing cycle
      */
-    public function cancel(?string $reason = null): bool
+    public function calculateRenewalPrice(): float
     {
-        if (in_array($this->status, ['cancelled', 'expired'])) {
-            return false;
+        // Use stored prices if available
+        $price = $this->getPriceForBillingCycle();
+        if ($price > 0) {
+            return $price;
         }
 
-        $this->update([
-            'status' => 'cancelled',
-            'end_date' => Carbon::now(),
-            'notes' => $reason ? "ملغي: {$reason}" : 'ملغي',
-        ]);
-
-        return true;
+        // Fall back to calculated monthly amount
+        return $this->final_price ?? ($this->calculateMonthlyAmount() * ($this->billing_cycle?->months() ?? 1));
     }
 
     /**
-     * تجديد الاشتراك وتسجيل الدفع
+     * Snapshot package data to subscription (self-containment)
      */
-    public function renew(float $amount): bool
+    public function snapshotPackageData(): array
     {
-        if (! $this->is_active && $this->status !== 'paused') {
-            return false;
+        $package = $this->academicPackage;
+
+        if (!$package) {
+            // Create snapshot from current data
+            return [
+                'package_name_ar' => $this->subject_name ?? 'باقة أكاديمية',
+                'package_name_en' => 'Academic Package',
+                'sessions_per_month' => ($this->sessions_per_week ?? 2) * 4.33,
+                'session_duration_minutes' => $this->session_duration_minutes ?? 60,
+                'monthly_price' => $this->calculateMonthlyAmount(),
+            ];
         }
 
-        $nextBillingDate = $this->calculateNextBillingDate(Carbon::now());
-
-        $this->update([
-            'status' => 'active',
-            'payment_status' => 'current',
-            'last_payment_date' => Carbon::now(),
-            'last_payment_amount' => $amount,
-            'next_billing_date' => $nextBillingDate,
-            'last_reminder_sent' => null,
-        ]);
-
-        return true;
+        return [
+            'package_name_ar' => $package->name_ar ?? $package->name,
+            'package_name_en' => $package->name_en ?? $package->name,
+            'package_description_ar' => $package->description_ar ?? $package->description,
+            'package_description_en' => $package->description_en ?? $package->description,
+            'package_features' => $package->features ?? [],
+            'sessions_per_month' => $package->sessions_per_month ?? ($this->sessions_per_week * 4.33),
+            'session_duration_minutes' => $package->session_duration_minutes ?? $this->session_duration_minutes ?? 60,
+            'monthly_price' => $package->monthly_price ?? $this->calculateMonthlyAmount(),
+            'quarterly_price' => $package->quarterly_price ?? ($this->calculateMonthlyAmount() * 3 * 0.9),
+            'yearly_price' => $package->yearly_price ?? ($this->calculateMonthlyAmount() * 12 * 0.8),
+        ];
     }
 
     /**
-     * تحديث معدل الإنجاز
+     * Get sessions relationship for the subscription
      */
-    public function updateCompletionRate(): void
+    public function getSessions()
     {
-        if ($this->total_sessions_scheduled > 0) {
-            $this->completion_rate = ($this->total_sessions_completed / $this->total_sessions_scheduled) * 100;
-            $this->save();
-        }
+        return $this->sessions();
     }
+
+    // ========================================
+    // ACADEMIC-SPECIFIC SCOPES
+    // ========================================
+
+    /**
+     * Scope: Get private lesson subscriptions
+     */
+    public function scopePrivate($query)
+    {
+        return $query->where('subscription_type', self::SUBSCRIPTION_TYPE_PRIVATE);
+    }
+
+    /**
+     * Scope: Get subscriptions for a specific teacher
+     */
+    public function scopeForTeacher($query, int $teacherId)
+    {
+        return $query->where('teacher_id', $teacherId);
+    }
+
+    /**
+     * Scope: Get subscriptions for a specific subject
+     */
+    public function scopeForSubject($query, int $subjectId)
+    {
+        return $query->where('subject_id', $subjectId);
+    }
+
+    /**
+     * Scope: Get subscriptions for a specific grade level
+     */
+    public function scopeForGradeLevel($query, int $gradeLevelId)
+    {
+        return $query->where('grade_level_id', $gradeLevelId);
+    }
+
+    /**
+     * Scope: Get subscriptions with trial available
+     */
+    public function scopeWithTrialAvailable($query)
+    {
+        return $query->where('has_trial_session', true)
+            ->where('trial_session_used', false);
+    }
+
+    // ========================================
+    // ACADEMIC-SPECIFIC ACCESSORS
+    // ========================================
 
     /**
      * Get attendance rate based on completed and missed sessions
      */
-    public function getAttendanceRate(): float
+    public function getAttendanceRateAttribute(): float
     {
         $totalAttendable = $this->total_sessions_completed + $this->total_sessions_missed;
 
@@ -460,13 +418,55 @@ class AcademicSubscription extends Model
             return 0;
         }
 
-        return round(($this->total_sessions_completed / $totalAttendable) * 100, 1);
+        return round(($this->total_sessions_completed / $totalAttendable) * 100, 2);
     }
 
     /**
-     * تسجيل حضور جلسة
+     * Get completion rate (scheduled vs completed)
      */
-    public function recordSessionAttendance(bool $attended): void
+    public function getCompletionRateAttribute(): float
+    {
+        if ($this->total_sessions_scheduled <= 0) {
+            return 0;
+        }
+
+        return round(($this->total_sessions_completed / $this->total_sessions_scheduled) * 100, 2);
+    }
+
+    /**
+     * Check if trial session is available
+     */
+    public function getTrialAvailableAttribute(): bool
+    {
+        return $this->has_trial_session && !$this->trial_session_used;
+    }
+
+    /**
+     * Get teacher name for display
+     */
+    public function getTeacherNameAttribute(): ?string
+    {
+        return $this->teacher?->user?->name;
+    }
+
+    // ========================================
+    // SESSION MANAGEMENT METHODS
+    // ========================================
+
+    /**
+     * Schedule a new session (increment scheduled count)
+     */
+    public function scheduleSession(): self
+    {
+        $this->increment('total_sessions_scheduled');
+
+        return $this;
+    }
+
+    /**
+     * Record session attendance
+     */
+    public function recordSessionAttendance(bool $attended): self
     {
         if ($attended) {
             $this->increment('total_sessions_completed');
@@ -474,59 +474,434 @@ class AcademicSubscription extends Model
             $this->increment('total_sessions_missed');
         }
 
-        $this->updateCompletionRate();
+        // Update progress percentage based on completion
+        $this->updateProgress();
+
+        return $this;
     }
 
     /**
-     * إضافة جلسة مجدولة
+     * Update progress percentage
      */
-    public function scheduleSession(): void
+    public function updateProgress(): void
     {
-        $this->increment('total_sessions_scheduled');
-        $this->updateCompletionRate();
+        $this->update([
+            'progress_percentage' => $this->completion_rate,
+        ]);
     }
 
     /**
-     * تحديث الحصة التجريبية
+     * Use trial session
      */
-    public function updateTrialSession(Carbon $date, string $status): bool
+    public function useTrialSession(): self
     {
-        if (! $this->has_trial_session) {
-            return false;
+        if (!$this->trial_available) {
+            throw new \Exception('لا توجد جلسة تجريبية متاحة');
         }
 
         $this->update([
-            'trial_session_date' => $date,
-            'trial_session_status' => $status,
-            'trial_session_used' => in_array($status, ['completed', 'missed']),
+            'trial_session_used' => true,
+            'trial_session_date' => now(),
+            'trial_session_status' => 'completed',
         ]);
 
-        return true;
+        return $this;
     }
 
     /**
-     * الحصول على تفاصيل الاشتراك للعرض
+     * Extend sessions on renewal (called by HandlesSubscriptionRenewal trait)
+     */
+    protected function extendSessionsOnRenewal(): void
+    {
+        // Calculate how many new sessions to create for the new billing cycle
+        $sessionsPerMonth = $this->sessions_per_month ?? 8;
+        $billingCycleMultiplier = $this->billing_cycle->sessionMultiplier();
+        $totalNewSessions = $sessionsPerMonth * $billingCycleMultiplier;
+
+        // Get the current highest session number for this subscription
+        $lastSessionNumber = AcademicSession::where('academic_subscription_id', $this->id)
+            ->count();
+
+        \Log::info('Creating sessions for renewed subscription', [
+            'subscription_id' => $this->id,
+            'sessions_per_month' => $sessionsPerMonth,
+            'billing_cycle' => $this->billing_cycle->value,
+            'billing_cycle_multiplier' => $billingCycleMultiplier,
+            'total_new_sessions' => $totalNewSessions,
+            'starting_from_session' => $lastSessionNumber + 1,
+        ]);
+
+        // Create new unscheduled sessions for the renewed period
+        for ($i = 1; $i <= $totalNewSessions; $i++) {
+            $sessionNumber = $lastSessionNumber + $i;
+
+            AcademicSession::create([
+                'academy_id' => $this->academy_id,
+                'academic_teacher_id' => $this->teacher_id,
+                'academic_subscription_id' => $this->id,
+                'student_id' => $this->student_id,
+                'session_code' => 'AS-' . $this->id . '-' . str_pad($sessionNumber, 3, '0', STR_PAD_LEFT),
+                'session_type' => 'individual',
+                'status' => \App\Enums\SessionStatus::UNSCHEDULED,
+                'title' => "جلسة {$sessionNumber} - {$this->subject_name}",
+                'description' => "جلسة في مادة {$this->subject_name} - {$this->grade_level_name}",
+                'duration_minutes' => $this->session_duration_minutes ?? 60,
+                'created_by' => $this->student_id,
+            ]);
+        }
+
+        // Update subscription totals (add to existing scheduled count)
+        DB::table('academic_subscriptions')
+            ->where('id', $this->id)
+            ->increment('total_sessions_scheduled', $totalNewSessions);
+
+        \Log::info('Renewal session creation complete', [
+            'subscription_id' => $this->id,
+            'new_sessions_created' => $totalNewSessions,
+            'total_sessions_now' => $this->total_sessions_scheduled + $totalNewSessions,
+        ]);
+    }
+
+    // ========================================
+    // PRICING METHODS
+    // ========================================
+
+    /**
+     * Calculate monthly amount based on sessions and hourly rate
+     */
+    public function calculateMonthlyAmount(): float
+    {
+        $sessionsPerMonth = $this->sessions_per_month ?? (($this->sessions_per_week ?? 2) * 4.33);
+        $hourlyRate = $this->hourly_rate ?? 0;
+
+        return round($sessionsPerMonth * $hourlyRate, 2);
+    }
+
+    // ========================================
+    // STATIC FACTORY METHODS
+    // ========================================
+
+    /**
+     * Create a new subscription with package data snapshot
+     */
+    public static function createSubscription(array $data): self
+    {
+        // Generate subscription code
+        $data['subscription_code'] = static::generateSubscriptionCode(
+            $data['academy_id'],
+            'AS'
+        );
+
+        // Calculate sessions per month if not set
+        if (!isset($data['sessions_per_month']) && isset($data['sessions_per_week'])) {
+            $data['sessions_per_month'] = $data['sessions_per_week'] * 4.33;
+        }
+
+        // Set defaults
+        $data = array_merge([
+            'status' => SubscriptionStatus::PENDING,
+            'payment_status' => SubscriptionPaymentStatus::PENDING,
+            'progress_percentage' => 0,
+            'total_sessions_scheduled' => 0,
+            'total_sessions_completed' => 0,
+            'total_sessions_missed' => 0,
+        ], $data);
+
+        // Snapshot subject and grade level names
+        if (!empty($data['subject_id']) && empty($data['subject_name'])) {
+            $subject = AcademicSubject::find($data['subject_id']);
+            $data['subject_name'] = $subject?->name;
+        }
+
+        if (!empty($data['grade_level_id']) && empty($data['grade_level_name'])) {
+            $gradeLevel = AcademicGradeLevel::find($data['grade_level_id']);
+            $data['grade_level_name'] = $gradeLevel?->name;
+        }
+
+        $subscription = static::create($data);
+
+        // Snapshot package data if package_id provided
+        if (!empty($data['academic_package_id']) && empty($data['package_name_ar'])) {
+            $packageData = $subscription->snapshotPackageData();
+            if (!empty($packageData)) {
+                $subscription->update($packageData);
+            }
+        }
+
+        return $subscription;
+    }
+
+    /**
+     * Create a trial subscription
+     */
+    public static function createTrialSubscription(array $data): self
+    {
+        return static::createSubscription(array_merge($data, [
+            'has_trial_session' => true,
+            'trial_session_used' => false,
+            'status' => SubscriptionStatus::ACTIVE,
+            'payment_status' => SubscriptionPaymentStatus::PAID,
+            'final_price' => 0,
+        ]));
+    }
+
+    // ========================================
+    // BOOT METHOD
+    // ========================================
+
+    protected static function booted()
+    {
+        parent::boot();
+
+        // Auto-generate subscription code and calculate amounts on creation
+        static::creating(function ($subscription) {
+            // Sync legacy date fields with standardized fields
+            // Priority: starts_at/ends_at are the source of truth
+            if ($subscription->start_date && !$subscription->starts_at) {
+                $subscription->starts_at = $subscription->start_date;
+            } elseif ($subscription->starts_at && !$subscription->start_date) {
+                $subscription->start_date = $subscription->starts_at;
+            }
+
+            if ($subscription->end_date && !$subscription->ends_at) {
+                $subscription->ends_at = $subscription->end_date;
+            } elseif ($subscription->ends_at && !$subscription->end_date) {
+                $subscription->end_date = $subscription->ends_at;
+            }
+
+            // Calculate sessions per month and amounts if not set
+            if ($subscription->sessions_per_week && $subscription->hourly_rate) {
+                if (!$subscription->sessions_per_month) {
+                    $subscription->sessions_per_month = $subscription->sessions_per_week * 4.33;
+                }
+                if (!$subscription->monthly_price) {
+                    $subscription->monthly_price = $subscription->calculateMonthlyAmount();
+                }
+                if (!$subscription->final_price) {
+                    $subscription->final_price = $subscription->monthly_price - ($subscription->discount_amount ?? 0);
+                }
+            }
+
+            // Set next billing date if not set
+            if (!$subscription->next_billing_date && $subscription->starts_at) {
+                $subscription->next_billing_date = $subscription->calculateEndDate($subscription->starts_at);
+            }
+        });
+
+        // Send activation notification when created
+        static::created(function ($subscription) {
+            $subscription->notifySubscriptionActivated();
+        });
+
+        // Update progress when session counts change
+        static::updated(function ($subscription) {
+            if ($subscription->isDirty(['total_sessions_completed', 'total_sessions_scheduled'])) {
+                $subscription->updateProgress();
+            }
+
+            // Send notification when subscription expires
+            if ($subscription->isDirty('status') && $subscription->status === \App\Enums\SubscriptionStatus::EXPIRED) {
+                $subscription->notifySubscriptionExpired();
+            }
+        });
+    }
+
+    // ========================================
+    // DISPLAY HELPERS
+    // ========================================
+
+    /**
+     * Get subscription details for display
      */
     public function getSubscriptionDetailsAttribute(): array
     {
         return [
             'subscription_code' => $this->subscription_code,
-            'student_name' => $this->student->name,
-            'teacher_name' => $this->teacher->user->name,
-            'subject_name' => $this->subject->name,
-            'grade_level' => $this->gradeLevel->name,
+            'student_name' => $this->student?->name,
+            'teacher_name' => $this->teacher_name,
+            'subject_name' => $this->subject_name ?? $this->subject?->name,
+            'grade_level' => $this->grade_level_name ?? $this->gradeLevel?->name,
             'sessions_per_week' => $this->sessions_per_week,
             'session_duration' => $this->session_duration_minutes,
-            'monthly_amount' => $this->final_monthly_amount,
+            'monthly_amount' => $this->formatted_price,
             'currency' => $this->currency,
-            'status' => $this->status_in_arabic,
-            'payment_status' => $this->payment_status_in_arabic,
-            'next_billing_date' => $this->next_billing_date,
-            'days_until_billing' => $this->days_until_next_billing,
+            'status' => $this->status->label(),
+            'payment_status' => $this->payment_status->label(),
+            'next_billing_date' => $this->next_billing_date?->format('Y-m-d'),
+            'days_remaining' => $this->days_remaining,
             'completion_rate' => $this->completion_rate,
+            'attendance_rate' => $this->attendance_rate,
             'total_sessions' => $this->total_sessions_scheduled,
             'completed_sessions' => $this->total_sessions_completed,
             'missed_sessions' => $this->total_sessions_missed,
         ];
+    }
+
+    /**
+     * Send notification when subscription is activated
+     */
+    public function notifySubscriptionActivated(): void
+    {
+        try {
+            if (!$this->student) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            $subscriptionUrl = route('student.academic-subscriptions.show', [
+                'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                'subscriptionId' => $this->id,
+            ]);
+
+            $notificationService->send(
+                $this->student,
+                \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                [
+                    'subscription_type' => 'أكاديمي',
+                    'subject_name' => $this->subject_name ?? 'الموضوع',
+                    'sessions_per_week' => $this->sessions_per_week,
+                    'start_date' => $this->starts_at?->format('Y-m-d'),
+                    'end_date' => $this->ends_at?->format('Y-m-d'),
+                ],
+                $subscriptionUrl,
+                [
+                    'subscription_id' => $this->id,
+                    'subscription_type' => 'academic',
+                ],
+                false
+            );
+
+            // Also notify parent if exists
+            if ($this->student->studentProfile && $this->student->studentProfile->parent) {
+                $notificationService->send(
+                    $this->student->studentProfile->parent->user,
+                    \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                    [
+                        'student_name' => $this->student->full_name,
+                        'subscription_type' => 'أكاديمي',
+                        'subject_name' => $this->subject_name ?? 'الموضوع',
+                        'sessions_per_week' => $this->sessions_per_week,
+                        'start_date' => $this->starts_at?->format('Y-m-d'),
+                        'end_date' => $this->ends_at?->format('Y-m-d'),
+                    ],
+                    $subscriptionUrl,
+                    [
+                        'subscription_id' => $this->id,
+                        'subscription_type' => 'academic',
+                    ],
+                    false
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send academic subscription activated notification', [
+                'subscription_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Send notification when subscription expires
+     */
+    public function notifySubscriptionExpired(): void
+    {
+        try {
+            if (!$this->student) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            $subscriptionUrl = route('student.academic-subscriptions.show', [
+                'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                'subscriptionId' => $this->id,
+            ]);
+
+            $notificationService->send(
+                $this->student,
+                \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
+                [
+                    'subscription_type' => 'أكاديمي',
+                    'subject_name' => $this->subject_name ?? 'الموضوع',
+                    'end_date' => $this->ends_at?->format('Y-m-d'),
+                    'total_sessions_completed' => $this->total_sessions_completed,
+                    'total_sessions_scheduled' => $this->total_sessions_scheduled,
+                ],
+                $subscriptionUrl,
+                [
+                    'subscription_id' => $this->id,
+                    'subscription_type' => 'academic',
+                ],
+                true  // Mark as important
+            );
+
+            // Also notify parent if exists
+            if ($this->student->studentProfile && $this->student->studentProfile->parent) {
+                $notificationService->send(
+                    $this->student->studentProfile->parent->user,
+                    \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
+                    [
+                        'student_name' => $this->student->full_name,
+                        'subscription_type' => 'أكاديمي',
+                        'subject_name' => $this->subject_name ?? 'الموضوع',
+                        'end_date' => $this->ends_at?->format('Y-m-d'),
+                        'total_sessions_completed' => $this->total_sessions_completed,
+                        'total_sessions_scheduled' => $this->total_sessions_scheduled,
+                    ],
+                    $subscriptionUrl,
+                    [
+                        'subscription_id' => $this->id,
+                        'subscription_type' => 'academic',
+                    ],
+                    true
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send academic subscription expired notification', [
+                'subscription_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    // ========================================
+    // SESSION TRACKING METHODS (BaseSubscription Abstract Methods)
+    // ========================================
+
+    /**
+     * Get total number of sessions in subscription
+     * Uses total_sessions if available, falls back to total_sessions_scheduled
+     *
+     * @return int
+     */
+    public function getTotalSessions(): int
+    {
+        return $this->total_sessions ?? $this->total_sessions_scheduled ?? 0;
+    }
+
+    /**
+     * Get number of sessions used/completed
+     * Uses total_sessions_completed
+     *
+     * @return int
+     */
+    public function getSessionsUsed(): int
+    {
+        return $this->total_sessions_completed ?? 0;
+    }
+
+    /**
+     * Get number of sessions remaining
+     * Calculated as: total_sessions - total_sessions_completed
+     *
+     * @return int
+     */
+    public function getSessionsRemaining(): int
+    {
+        $total = $this->getTotalSessions();
+        $used = $this->getSessionsUsed();
+
+        return max(0, $total - $used);
     }
 }

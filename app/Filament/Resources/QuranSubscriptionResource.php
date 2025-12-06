@@ -199,7 +199,7 @@ public static function form(Form $form): Form
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Select::make('subscription_status')
+                                Select::make('status')
                                     ->label('حالة الاشتراك')
                                     ->options([
                                         'active' => 'نشط',
@@ -363,7 +363,7 @@ public static function form(Form $form): Form
                     ->weight(FontWeight::Bold)
                     ->color('success'),
 
-                BadgeColumn::make('subscription_status')
+                BadgeColumn::make('status')
                     ->label('حالة الاشتراك')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'active' => 'نشط',
@@ -423,7 +423,7 @@ public static function form(Form $form): Form
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('subscription_status')
+                SelectFilter::make('status')
                     ->label('حالة الاشتراك')
                     ->options([
                         'active' => 'نشط',
@@ -468,11 +468,11 @@ public static function form(Form $form): Form
                         ->color('success')
                         ->requiresConfirmation()
                         ->action(fn (QuranSubscription $record) => $record->update([
-                            'subscription_status' => 'active',
+                            'status' => 'active',
                             'payment_status' => 'paid',
                             'last_payment_at' => now(),
                         ]))
-                        ->visible(fn (QuranSubscription $record) => $record->subscription_status === 'pending'),
+                        ->visible(fn (QuranSubscription $record) => $record->status === 'pending'),
                     Tables\Actions\Action::make('pause')
                         ->label('إيقاف مؤقت')
                         ->icon('heroicon-o-pause-circle')
@@ -484,12 +484,12 @@ public static function form(Form $form): Form
                         ])
                         ->action(function (QuranSubscription $record, array $data) {
                             $record->update([
-                                'subscription_status' => 'paused',
+                                'status' => 'paused',
                                 'paused_at' => now(),
                                 'pause_reason' => $data['pause_reason'],
                             ]);
                         })
-                        ->visible(fn (QuranSubscription $record) => $record->subscription_status === 'active'),
+                        ->visible(fn (QuranSubscription $record) => $record->status === 'active'),
                     Tables\Actions\Action::make('cancel')
                         ->label('إلغاء')
                         ->icon('heroicon-o-x-circle')
@@ -502,7 +502,7 @@ public static function form(Form $form): Form
                         ])
                         ->action(function (QuranSubscription $record, array $data) {
                             $record->update([
-                                'subscription_status' => 'cancelled',
+                                'status' => 'cancelled',
                                 'cancelled_at' => now(),
                                 'cancellation_reason' => $data['cancellation_reason'],
                                 'auto_renew' => false,
@@ -598,7 +598,7 @@ public static function form(Form $form): Form
     public static function getNavigationBadge(): ?string
     {
         // Use the scoped query from trait for consistent academy filtering
-        $query = static::getEloquentQuery()->where('subscription_status', 'pending');
+        $query = static::getEloquentQuery()->where('status', 'pending');
         return $query->count() ?: null;
     }
 

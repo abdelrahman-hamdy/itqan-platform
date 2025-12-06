@@ -90,7 +90,6 @@
                         'payment' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-600'],
                         'meeting' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
                         'progress' => ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-600'],
-                        'chat' => ['bg' => 'bg-pink-100', 'text' => 'text-pink-600'],
                         'system' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
                     ];
                     $colors = $categoryColors[$notification->category] ?? $categoryColors['system'];

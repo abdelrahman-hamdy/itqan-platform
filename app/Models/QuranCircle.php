@@ -32,7 +32,6 @@ class QuranCircle extends Model
         'enrolled_students',
         'min_students_to_start',
         'monthly_sessions_count',
-        'session_duration_minutes',
         'monthly_fee',
         // 'teacher_monthly_revenue', // Teacher's monthly salary from this circle - moved to user settings
         'sessions_completed',
@@ -166,6 +165,7 @@ class QuranCircle extends Model
             'bio' => $teacherProfile->bio ?? null,
             'qualification' => $teacherProfile->educational_qualification ?? null,
             'avatar' => $user->avatar,
+            'quranTeacherProfile' => $teacherProfile,
         ];
     }
 

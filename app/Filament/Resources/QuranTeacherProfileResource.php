@@ -210,7 +210,7 @@ class QuranTeacherProfileResource extends BaseResource
                                     ->minValue(0)
                                     ->step(5)
                                     ->default(30)
-                                    ->helperText('سعر الحصة الواحدة للطالب في المجموعة'),
+                                    ->helperText('سعر الحصة الجماعية كاملة بغض النظر عن عدد الطلاب في الحلقة'),
                             ]),
                     ]),
 

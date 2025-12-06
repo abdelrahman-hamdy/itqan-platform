@@ -234,7 +234,10 @@
       }, 5000);
     };
   </script>
-  
+
+  <!-- Unified Confirmation Modal -->
+  <x-ui.confirmation-modal />
+
   {{ $scripts ?? '' }}
   @stack('scripts')
 </body>

@@ -49,18 +49,19 @@
       </div>
     @endif
     
-    @if($teacher->rating ?? 0)
-      <div class="flex items-center text-sm text-gray-600">
-        <i class="ri-star-fill text-yellow-400 ml-2"></i>
-        <span>{{ number_format($teacher->rating, 1) }} تقييم</span>
-      </div>
+    @if(($teacher->avg_rating ?? $teacher->rating ?? 0) > 0)
+      <x-reviews.star-rating
+        :rating="$teacher->avg_rating ?? $teacher->rating ?? 0"
+        :total-reviews="$teacher->total_reviews ?? null"
+        size="sm"
+      />
     @endif
   </div>
 
   <!-- Action Button -->
   <div class="mt-6">
-    <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" 
-       class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors text-center block">
+    <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}"
+       class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors text-center block">
       عرض التفاصيل
     </a>
   </div>

@@ -1,3 +1,21 @@
+@php
+    // Get gradient palette colors
+    $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
+    $colors = $gradientPalette->getColors();
+    $gradientFrom = $colors['from'];
+    $gradientTo = $colors['to'];
+
+    // Parse Tailwind color to get hex value (e.g., "cyan-500" -> hex color)
+    $gradientFromHex = $gradientPalette->getPreviewHex(); // Gets the 'from' color as hex
+    // For 'to' color, we need to extract and convert it
+    [$toColorName, $toShade] = explode('-', $gradientTo);
+    try {
+        $toTailwindColor = \App\Enums\TailwindColor::from($toColorName);
+        $gradientToHex = $toTailwindColor->getHexValue((int)$toShade);
+    } catch (\ValueError $e) {
+        $gradientToHex = '#6366F1'; // fallback to indigo-500
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
@@ -21,8 +39,9 @@
       theme: {
         extend: {
           colors: {
-            primary: "{{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ $academy->secondary_color ?? '#6495ED' }}",
+            primary: "{{ $academy->brand_color->getHexValue(500) ?? '#4169E1' }}",
+            gradientFrom: "{{ $gradientFromHex }}",
+            gradientTo: "{{ $gradientToHex }}",
           },
           borderRadius: {
             none: "0px",
@@ -46,10 +65,10 @@
     }
 
     .hero-bg {
-      background: linear-gradient(135deg, {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 0%, {{ $academy->secondary_color ?? '#6495ED' }} 50%, {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 100%);
+      background: linear-gradient(135deg, {{ $gradientFromHex }} 0%, {{ $gradientToHex }} 50%, {{ $gradientFromHex }} 100%);
       position: relative;
     }
-    
+
     .hero-bg::before {
       content: '';
       position: absolute;
@@ -57,12 +76,12 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(45deg, 
-        {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 0%, 
-        {{ $academy->secondary_color ?? '#6495ED' }} 25%, 
-        {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 50%, 
-        {{ $academy->secondary_color ?? '#6495ED' }} 75%, 
-        {{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }} 100%);
+      background: linear-gradient(45deg,
+        {{ $gradientFromHex }} 0%,
+        {{ $gradientToHex }} 25%,
+        {{ $gradientFromHex }} 50%,
+        {{ $gradientToHex }} 75%, 
+        {{ $gradientFromHex }} 100%);
       background-size: 400% 400%;
       animation: gradientShift 8s ease infinite;
       opacity: 0.9;
@@ -82,26 +101,6 @@
       background: linear-gradient(135deg, #fff8f0 0%, #fff0e6 50%, #ffe8d4 100%);
     }
 
-    .card-hover {
-      transition: all 0.3s ease;
-    }
-
-    .card-hover:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
-    }
-
-    /* See More Card Specific Styles */
-    .see-more-card {
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-
-    .see-more-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
-      background-color: rgba(65, 105, 225, 0.02);
-    }
 
     /* Arrow Animation for See More Cards */
     .see-more-arrow {
@@ -390,100 +389,7 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
     
-    /* Feature Cards */
-    .feature-card {
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 20px;
-      padding: 24px;
-      text-align: center;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
     
-    .feature-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    }
-    
-    .feature-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
-    }
-    
-    .feature-icon i {
-      font-size: 28px;
-    }
-    
-    .quran-icon {
-      background: rgba(16, 185, 129, 0.1);
-      color: #10B981;
-    }
-    
-    .individual-icon {
-      background: rgba(59, 130, 246, 0.1);
-      color: #3B82F6;
-    }
-    
-    .private-icon {
-      background: rgba(245, 158, 11, 0.1);
-      color: #F59E0B;
-    }
-    
-    .interactive-icon {
-      background: rgba(139, 92, 246, 0.1);
-      color: #8B5CF6;
-    }
-    
-    .feature-content {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    
-    .feature-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: #1f2937;
-      line-height: 1.3;
-    }
-    
-    .feature-subtitle {
-      font-size: 13px;
-      color: #6b7280;
-      line-height: 1.4;
-    }
-    
-    /* Statistics Section Styles */
-    .stat-number {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 4px;
-      margin-bottom: 8px;
-    }
-    
-    .stats-counter {
-      font-size: 3rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, {{ $academy->brand_color ?? '#3B82F6' }}, {{ $academy->secondary_color ?? '#8B5CF6' }});
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      line-height: 1;
-    }
-    
-    .stat-suffix {
-      font-size: 2rem;
-      font-weight: 600;
-      color: #6b7280;
-    }
     
     /* Testimonials Carousel Styles */
     .testimonials-carousel {
@@ -755,47 +661,73 @@
   
   <!-- Navigation -->
   @include('academy.components.topbar', ['academy' => $academy])
-  
-  <!-- Hero Section -->
-  @include('academy.components.hero-section', ['academy' => $academy])
-  
-  <!-- Statistics Section -->
-  @include('academy.components.statistics', ['academy' => $academy])
-  
-  <!-- Testimonials Section -->
-  @include('academy.components.testimonials', ['academy' => $academy])
-  
-  <!-- Quran Section -->
-  @if($academy->quran_enabled ?? true)
-    @include('academy.components.quran-section', [
-      'academy' => $academy,
-      'quranCircles' => $quranCircles ?? collect(),
-      'quranTeachers' => $quranTeachers ?? collect()
-    ])
-  @endif
-  
-  <!-- Academic Section -->
-  @if($academy->academic_enabled ?? true)
-    @include('academy.components.academic-section', [
-      'academy' => $academy,
-      'interactiveCourses' => $interactiveCourses ?? collect(),
-      'academicTeachers' => $academicTeachers ?? collect()
-    ])
-  @endif
-  
-  <!-- Recorded Courses Section -->
-  @if($academy->recorded_courses_enabled ?? true)
-    @include('academy.components.recorded-courses', [
-      'academy' => $academy,
-      'recordedCourses' => $recordedCourses ?? collect()
-    ])
-  @endif
-  
-  <!-- Features Section -->
-  @include('academy.components.features', ['academy' => $academy])
+
+  @php
+    // Get sections order from academy settings
+    $sectionsOrder = $academy->sections_order ?? ['hero', 'stats', 'reviews', 'quran', 'academic', 'courses', 'features'];
+
+    // Section template mapping
+    $sectionTemplates = [
+      'hero' => 'academy.components.templates.hero.',
+      'stats' => 'academy.components.templates.stats.',
+      'reviews' => 'academy.components.templates.reviews.',
+      'quran' => 'academy.components.templates.quran.',
+      'academic' => 'academy.components.templates.academic.',
+      'courses' => 'academy.components.templates.courses.',
+      'features' => 'academy.components.templates.features.',
+    ];
+
+    // Section data mapping
+    $sectionData = [
+      'hero' => ['academy' => $academy],
+      'stats' => ['academy' => $academy],
+      'reviews' => ['academy' => $academy],
+      'quran' => [
+        'academy' => $academy,
+        'quranCircles' => $quranCircles ?? collect(),
+        'quranTeachers' => $quranTeachers ?? collect()
+      ],
+      'academic' => [
+        'academy' => $academy,
+        'interactiveCourses' => $interactiveCourses ?? collect(),
+        'academicTeachers' => $academicTeachers ?? collect()
+      ],
+      'courses' => [
+        'academy' => $academy,
+        'recordedCourses' => $recordedCourses ?? collect()
+      ],
+      'features' => ['academy' => $academy],
+    ];
+  @endphp
+
+  @foreach($sectionsOrder as $section)
+    @php
+      // Get section settings
+      $isVisible = $academy->{$section . '_visible'} ?? true;
+      $template = $academy->{$section . '_template'} ?? 'template_1';
+      $heading = $academy->{$section . '_heading'} ?? null;
+      $subheading = $academy->{$section . '_subheading'} ?? null;
+
+      // Build template path
+      $templatePath = $sectionTemplates[$section] . $template;
+
+      // Add heading and subheading to section data if available
+      $data = $sectionData[$section];
+      if ($heading) {
+        $data['heading'] = $heading;
+      }
+      if ($subheading) {
+        $data['subheading'] = $subheading;
+      }
+    @endphp
+
+    @if($isVisible)
+      @include($templatePath, $data)
+    @endif
+  @endforeach
   
   <!-- Footer -->
-  @include('academy.components.footer', ['academy' => $academy])
+  <x-academy-footer :academy="$academy" />
 
   <!-- Scripts -->
   @include('academy.components.scripts')

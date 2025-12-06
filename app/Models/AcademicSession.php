@@ -135,7 +135,7 @@ class AcademicSession extends BaseSession
     }
 
     /**
-     * Boot method to auto-generate session code
+     * Boot method to auto-generate session code and handle homework notifications
      */
     protected static function boot()
     {
@@ -147,6 +147,49 @@ class AcademicSession extends BaseSession
                 $model->session_code = static::generateUniqueSessionCode($academyId);
             }
         });
+
+        // Handle homework assignment notifications
+        static::updated(function ($session) {
+            // Check if homework_assigned was just set to true
+            if ($session->isDirty('homework_assigned') && $session->homework_assigned) {
+                $session->notifyHomeworkAssigned();
+            }
+        });
+    }
+
+    /**
+     * Send homework assigned notification to student
+     * Called when homework is assigned to this session
+     */
+    public function notifyHomeworkAssigned(): void
+    {
+        try {
+            $student = $this->student;
+            if (!$student) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService->sendHomeworkAssignedNotification(
+                $this,
+                $student,
+                null  // No specific homework ID for Academic homework
+            );
+
+            // Also notify parent if exists
+            if ($student->studentProfile && $student->studentProfile->parent) {
+                $notificationService->sendHomeworkAssignedNotification(
+                    $this,
+                    $student->studentProfile->parent->user,
+                    null
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send homework notification for Academic session', [
+                'session_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -155,25 +198,17 @@ class AcademicSession extends BaseSession
     private static function generateUniqueSessionCode(int $academyId): string
     {
         return \DB::transaction(function () use ($academyId) {
-            // Get the maximum sequence number for this academy (including soft deleted)
             $prefix = 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
-            $maxNumber = static::withTrashed()
+            // Use efficient count-based approach instead of loading all records
+            $count = static::withTrashed()
                 ->where('academy_id', $academyId)
-                ->where('session_code', 'LIKE', "{$prefix}%")
-                ->lockForUpdate()
-                ->get()
-                ->map(function ($session) {
-                    // Extract the sequence number from session_code format: AS-{academyId}-{sequence}
-                    $parts = explode('-', $session->session_code);
-                    return isset($parts[2]) ? (int) $parts[2] : 0;
-                })
-                ->max();
+                ->count();
 
-            $nextNumber = ($maxNumber ?? 0) + 1;
+            $nextNumber = $count + 1;
             $sessionCode = $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
-            // Double-check uniqueness (should not be needed with proper locking, but adds safety)
+            // Check uniqueness and increment if needed
             $attempt = 0;
             while (static::withTrashed()->where('session_code', $sessionCode)->exists() && $attempt < 100) {
                 $nextNumber++;

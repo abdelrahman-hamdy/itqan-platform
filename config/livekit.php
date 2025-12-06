@@ -10,12 +10,11 @@ return [
     |
     */
 
-    'server_url' => env('LIVEKIT_SERVER_URL', 'wss://test-rn3dlic1.livekit.cloud'),
-
-    // Backend API URL (HTTPS for server-side API calls)
-    'api_url' => env('LIVEKIT_API_URL', str_replace('wss://', 'https://', env('LIVEKIT_SERVER_URL', 'https://test-rn3dlic1.livekit.cloud'))),
-    'api_key' => env('LIVEKIT_API_KEY', 'APIxdLnkvjeS3PV'),
-    'api_secret' => env('LIVEKIT_API_SECRET', 'coCkSrJcJmAKQcmODKd3qgCaa80YJSnrvGEDebrPAIJC'),
+    // Self-hosted LiveKit server
+    'server_url' => env('LIVEKIT_SERVER_URL', 'wss://conference.itqanway.com'),
+    'api_url' => env('LIVEKIT_API_URL', 'https://conference.itqanway.com'),
+    'api_key' => env('LIVEKIT_API_KEY'),
+    'api_secret' => env('LIVEKIT_API_SECRET'),
 
     /*
     |--------------------------------------------------------------------------

@@ -53,6 +53,7 @@ class SessionsRelationManager extends RelationManager
                 TextColumn::make('scheduled_at')
                     ->label('تاريخ الجلسة')
                     ->dateTime('Y-m-d H:i')
+                    ->timezone(fn ($record) => $record->academy->timezone->value)
                     ->sortable(),
 
                 BadgeColumn::make('status')

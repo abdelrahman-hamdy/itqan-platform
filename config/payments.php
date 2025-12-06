@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'default' => env('PAYMENT_DEFAULT_GATEWAY', 'moyasar'),
+    'default' => env('PAYMENT_DEFAULT_GATEWAY', 'paymob'),
 
     /*
     |--------------------------------------------------------------------------
@@ -28,13 +28,21 @@ return [
 
         'paymob' => [
             'driver' => 'paymob',
+            // Unified Intention API credentials
+            'secret_key' => env('PAYMOB_SECRET_KEY'),
+            'public_key' => env('PAYMOB_PUBLIC_KEY'),
+            // Legacy API credentials (for backward compatibility)
             'api_key' => env('PAYMOB_API_KEY'),
-            'integration_id' => env('PAYMOB_INTEGRATION_ID'),
+            // Integration IDs for different payment methods
+            'integration_ids' => [
+                'card' => env('PAYMOB_CARD_INTEGRATION_ID'),
+                'wallet' => env('PAYMOB_WALLET_INTEGRATION_ID'),
+            ],
             'iframe_id' => env('PAYMOB_IFRAME_ID'),
             'hmac_secret' => env('PAYMOB_HMAC_SECRET'),
             'sandbox' => env('PAYMOB_SANDBOX', true),
-            'base_url' => env('PAYMOB_BASE_URL', 'https://accept.paymob.com/api'),
-            'regions' => ['mena', 'egypt', 'jordan', 'uae'],
+            'base_url' => env('PAYMOB_BASE_URL', 'https://accept.paymob.com'),
+            'regions' => ['mena', 'egypt', 'jordan', 'uae', 'saudi_arabia'],
         ],
 
         'tapay' => [
@@ -79,12 +87,16 @@ return [
     */
 
     'fees' => [
+        'card' => 0.025,         // 2.5%
+        'wallet' => 0.02,        // 2.0%
+        'bank_transfer' => 0.0,  // 0%
+        'bank_installments' => 0.03, // 3.0%
+        // Legacy method names for backward compatibility
         'credit_card' => 0.025,  // 2.5%
         'mada' => 0.015,         // 1.5%
         'stc_pay' => 0.02,       // 2.0%
         'paymob' => 0.028,       // 2.8%
         'tapay' => 0.024,        // 2.4%
-        'bank_transfer' => 0.0,  // 0%
     ],
 
     /*
@@ -140,6 +152,7 @@ return [
         'enable_3d_secure' => env('PAYMENT_3D_SECURE', true),
         'timeout_seconds' => env('PAYMENT_TIMEOUT', 1800), // 30 minutes
         'max_retry_attempts' => env('PAYMENT_MAX_RETRIES', 3),
+        'intent_expiry_minutes' => env('PAYMENT_INTENT_EXPIRY', 60), // 1 hour
     ],
 
     /*
@@ -152,10 +165,31 @@ return [
     */
 
     'webhooks' => [
+        'paymob' => '/webhooks/paymob',
+        'tapay' => '/webhooks/tapay',
+        'moyasar' => '/webhooks/moyasar',
+        'stc_pay' => '/webhooks/stc-pay',
+        // Legacy routes for backward compatibility
         'paymob_callback' => '/payments/paymob/callback',
         'tapay_callback' => '/payments/tapay/callback',
         'moyasar_callback' => '/payments/moyasar/callback',
         'stc_pay_callback' => '/payments/stc-pay/callback',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logging Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure logging for payment operations.
+    |
+    */
+
+    'logging' => [
+        'channel' => env('PAYMENT_LOG_CHANNEL', 'payments'),
+        'log_requests' => env('PAYMENT_LOG_REQUESTS', true),
+        'log_responses' => env('PAYMENT_LOG_RESPONSES', true),
+        'redact_sensitive' => env('PAYMENT_REDACT_SENSITIVE', true),
     ],
 
 ];

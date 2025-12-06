@@ -1,8 +1,78 @@
-<x-layouts.teacher title="{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - لوحة المعلم">
-  <x-slot name="description">لوحة المعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</x-slot>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 
-  <div class="w-full">
-      
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - لوحة المعلم</title>
+  <meta name="description" content="لوحة التحكم للمعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "{{ auth()->user()->academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }}",
+            secondary: "{{ auth()->user()->academy->secondary_color?->getHexValue(500) ?? '#10B981' }}",
+          },
+          borderRadius: {
+            none: "0px",
+            sm: "4px",
+            DEFAULT: "8px",
+            md: "12px",
+            lg: "16px",
+            xl: "20px",
+            "2xl": "24px",
+            "3xl": "32px",
+            full: "9999px",
+            button: "8px",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :where([class^="ri-"])::before {
+      content: "\f3c2";
+    }
+
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    }
+
+    .stats-counter {
+      font-family: 'Tajawal', sans-serif;
+      font-weight: bold;
+    }
+
+    /* Focus indicators */
+    .focus\:ring-custom:focus {
+      outline: 2px solid {{ auth()->user()->academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }};
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900">
+  <!-- Navigation -->
+  <x-navigation.app-navigation role="teacher" />
+
+  <!-- Sidebar -->
+  @include('components.sidebar.teacher-sidebar')
+
+  <!-- Main Content -->
+  <main class="pt-20 min-h-screen transition-all duration-300" id="main-content" style="margin-right: 320px;">
+    <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
+
       <!-- Welcome Section -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">
@@ -11,7 +81,6 @@
         <p class="text-gray-600">
           إدارة جلساتك وطلابك ومتابعة أرباحك من خلال لوحة التحكم المخصصة للمعلمين
         </p>
-
       </div>
 
       <!-- Quick Stats -->
@@ -19,10 +88,10 @@
 
       <!-- Main Content Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
+
         @if($teacherType === 'quran')
           <!-- Quran Teacher Content -->
-          
+
           <!-- Assigned Group Circles -->
           <div id="group-quran-circles">
             @include('components.cards.learning-section-card', [
@@ -34,7 +103,7 @@
               'items' => $assignedCircles->take(3)->map(function($circle) {
                 return [
                   'title' => $circle->name,
-                  'description' => $circle->students->count() . ' طالب مسجل' . 
+                  'description' => $circle->students->count() . ' طالب مسجل' .
                                    ($circle->schedule_days_text ? ' - ' . $circle->schedule_days_text : ''),
                   'icon' => 'ri-group-line',
                   'iconBgColor' => 'bg-green-100',
@@ -70,7 +139,7 @@
                 if (!$subscription->individualCircle) {
                   return null;
                 }
-                
+
                 return [
                   'title' => $subscription->student->name ?? 'طالب',
                   'description' => 'باقة ' . ($subscription->package ? $subscription->package->getDisplayName() : 'مخصصة') .
@@ -79,7 +148,7 @@
                   'iconBgColor' => 'bg-purple-100',
                   'iconColor' => 'text-purple-600',
                   'progress' => $subscription->progress_percentage ?? 0,
-                  'status' => $subscription->subscription_status === 'active' ? 'active' : 'pending',
+                  'status' => $subscription->status === 'active' ? 'active' : 'pending',
                   'link' => route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id])
                 ];
               })->filter()->toArray(),
@@ -154,7 +223,7 @@
               'items' => $recentSessions->take(3)->map(function($session) {
                 return [
                   'title' => $session->student->name ?? 'طالب',
-                  'description' => ($session->scheduled_at ? $session->scheduled_at->format('d/m/Y H:i') : 'غير محدد') . 
+                  'description' => ($session->scheduled_at ? formatDateTimeArabic($session->scheduled_at) : 'غير محدد') .
                                    ' - ' . ($session->duration ?? 60) . ' دقيقة',
                   'icon' => 'ri-time-line',
                   'iconBgColor' => 'bg-blue-100',
@@ -179,7 +248,7 @@
 
         @else
           <!-- Academic Teacher Content -->
-          
+
           <!-- Private Academic Lessons -->
           <div id="academic-private-sessions">
             @include('components.cards.learning-section-card', [
@@ -191,8 +260,8 @@
               'items' => $privateLessons->take(3)->map(function($subscription) {
                 return [
                   'title' => $subscription->student->name ?? 'طالب',
-                  'description' => ($subscription->subject->name ?? $subscription->subject_name ?? 'مادة') . ' - ' . 
-                                   ($subscription->gradeLevel->name ?? $subscription->grade_level_name ?? 'مستوى') . 
+                  'description' => ($subscription->subject->name ?? $subscription->subject_name ?? 'مادة') . ' - ' .
+                                   ($subscription->gradeLevel->name ?? $subscription->grade_level_name ?? 'مستوى') .
                                    ' - ' . $subscription->sessions_per_week . ' جلسة/أسبوع',
                   'icon' => 'ri-user-3-line',
                   'iconBgColor' => 'bg-orange-100',
@@ -233,8 +302,8 @@
                     'icon' => 'ri-book-open-line',
                     'iconBgColor' => 'bg-blue-100',
                     'iconColor' => 'text-blue-600',
-                    'status' => $course->is_approved ? 'active' : 'pending',
-                    'link' => route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
+                    'status' => $course->status,
+                    'link' => route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'courseId' => $course->id])
                   ];
                 }))
                 ->merge($assignedInteractiveCourses->take(2)->map(function($course) {
@@ -245,8 +314,8 @@
                     'icon' => 'ri-graduation-cap-line',
                     'iconBgColor' => 'bg-blue-100',
                     'iconColor' => 'text-blue-600',
-                    'status' => $course->is_approved ? 'active' : 'pending',
-                    'link' => route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
+                    'status' => $course->status,
+                    'link' => route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'courseId' => $course->id])
                   ];
                 }))
                 ->toArray(),
@@ -265,12 +334,14 @@
           </div>
         @endif
 
-
-
-
-
       </div>
-  </div>
-</x-layouts.teacher>
+    </div>
+  </main>
 
+  <!-- Mobile Sidebar Toggle -->
+  <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-3 rounded-full shadow-lg z-50">
+    <i class="ri-menu-line text-xl"></i>
+  </button>
 
+</body>
+</html>

@@ -20,13 +20,13 @@
                 <h1 class="text-3xl font-bold text-gray-900">
                     @if($isAcademic)
                         @if($isTeacher)
-                            الدرس الخاص - {{ $student->name ?? 'طالب' }}
+                            {{ $circle->subject->name ?? $circle->subject_name ?? 'مادة دراسية' }}
                         @else
                             {{ $circle->subject->name ?? $circle->subject_name ?? 'الدرس الخاص' }}
                         @endif
                     @else
                         @if($isTeacher)
-                            الحلقة الفردية - {{ $student->name ?? 'طالب' }}
+                            الحلقة الفردية للطالب {{ $student->name ?? 'غير محدد' }}
                         @else
                             {{ $circle->subscription->package->name ?? 'الحلقة الفردية' }}
                         @endif
@@ -37,18 +37,14 @@
                     {{ $circle->status ? 'نشط' : 'غير نشط' }}
                 </span>
             </div>
-            
+
             <!-- Circle Description -->
             <p class="text-gray-600 mb-4 leading-relaxed">
                 @if($isAcademic)
-                    @if($isTeacher)
-                        درس خاص في {{ $circle->subject->name ?? $circle->subject_name ?? 'المادة' }} مع الطالب {{ $student->name ?? '' }}
-                    @else
-                        درس خاص في {{ $circle->subject->name ?? $circle->subject_name ?? 'المادة الأكاديمية' }}
-                    @endif
+                    درس خاص في {{ $circle->subject->name ?? $circle->subject_name ?? 'المادة الأكاديمية' }}
                 @else
                     @if($isTeacher)
-                        حلقة فردية لتعليم القرآن الكريم مع الطالب {{ $student->name ?? '' }}
+                        حلقة فردية لتعليم القرآن الكريم
                     @else
                         حلقة فردية لتعليم القرآن الكريم
                     @endif
@@ -66,36 +62,6 @@
             @endif
         </div>
     </div>
-
-    <!-- Student/Teacher Info Card (for teacher view) -->
-    @if($isTeacher && $student)
-        <div class="mt-6 pt-6 border-t border-gray-200">
-            <a href="{{ route('teacher.students.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}" 
-               class="flex items-center space-x-4 space-x-reverse p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
-                <x-avatar
-                    :user="$student"
-                    size="lg"
-                    userType="student"
-                    :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
-                <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-                        {{ $student->name ?? 'طالب' }}
-                    </h3>
-                    <p class="text-sm text-gray-500">{{ $circle->subscription->package->name ?? 'اشتراك مخصص' }}</p>
-                    <div class="flex items-center space-x-3 space-x-reverse mt-2">
-                        @if($student->email)
-                            <span class="text-xs text-gray-400">{{ $student->email }}</span>
-                        @endif
-                        @if($circle->subscription && $circle->subscription->expires_at)
-                            <span class="text-xs text-gray-400">ينتهي: {{ $circle->subscription->expires_at->format('Y-m-d') }}</span>
-                        @endif
-                    </div>
-                </div>
-                <i class="ri-external-link-line text-gray-400 group-hover:text-primary-600 transition-colors"></i>
-            </a>
-        </div>
-    @endif
-
 
     <!-- Admin Notes (Only for Teachers, Admins, and Super Admins) -->
     @if($circle->admin_notes && ($isTeacher || (auth()->user() && (auth()->user()->hasRole(['admin', 'super_admin']) || auth()->user()->isQuranTeacher()))))

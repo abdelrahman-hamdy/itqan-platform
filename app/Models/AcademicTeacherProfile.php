@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Traits\ScopedToAcademy;
+use App\Models\Traits\HasReviews;
 use Illuminate\Support\Facades\DB;
 use App\Models\AcademicSubject;
 
 class AcademicTeacherProfile extends Model
 {
-    use HasFactory, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, HasReviews;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship
@@ -46,6 +48,8 @@ class AcademicTeacherProfile extends Model
         'notes',
         'bio_arabic',
         'bio_english',
+        'rating',             // Review statistics
+        'total_reviews',      // Review statistics
     ];
 
     protected $casts = [
@@ -60,6 +64,7 @@ class AcademicTeacherProfile extends Model
         'approved_at' => 'datetime',
         'is_active' => 'boolean',
         'rating' => 'decimal:2',
+        'total_reviews' => 'integer',
         'teaching_experience_years' => 'integer',
         'session_price_individual' => 'decimal:2',
         'total_students' => 'integer',
@@ -147,6 +152,14 @@ class AcademicTeacherProfile extends Model
     public function interactiveCourses(): HasMany
     {
         return $this->hasMany(InteractiveCourse::class, 'assigned_teacher_id');
+    }
+
+    /**
+     * Get all reviews for this teacher
+     */
+    public function reviews(): MorphMany
+    {
+        return $this->morphMany(TeacherReview::class, 'reviewable');
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Filament\AcademicTeacher\Resources;
 
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages;
 use App\Models\InteractiveCourseSession;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
@@ -116,7 +117,9 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                             ->label('موعد الجلسة')
                             ->required()
                             ->native(false)
-                            ->seconds(false),
+                            ->seconds(false)
+                            ->timezone(fn () => AcademyContextService::getTimezone())
+                            ->displayFormat('Y-m-d H:i'),
 
                         Forms\Components\TextInput::make('duration_minutes')
                             ->label('مدة الجلسة (بالدقائق)')
@@ -199,6 +202,7 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                 Tables\Columns\TextColumn::make('scheduled_at')
                     ->label('موعد الجلسة')
                     ->dateTime()
+                    ->timezone(fn () => AcademyContextService::getTimezone())
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('duration_minutes')

@@ -1,7 +1,7 @@
 <x-layouts.teacher title="إدارة الواجبات">
-    <div class="container mx-auto px-4 py-8">
+    <div class="space-y-6">
         <!-- Page Header -->
-        <div class="mb-8">
+        <div class="mb-2">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">إدارة الواجبات</h1>
             <p class="text-gray-600">تصحيح ومتابعة واجبات الطلاب</p>
         </div>

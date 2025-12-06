@@ -38,7 +38,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
         $totalTrialRequests = QuranTrialRequest::where('teacher_id', $teacher->id)->count();
         
         $activeSubscriptions = QuranSubscription::where('quran_teacher_id', $teacher->id)
-            ->where('subscription_status', 'active')
+            ->where('status', 'active')
             ->where('payment_status', 'current')
             ->count();
         

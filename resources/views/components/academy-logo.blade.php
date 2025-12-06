@@ -1,0 +1,101 @@
+@props([
+    'academy',
+    'size' => 'md',
+    'showName' => false,
+    'href' => null,
+    'nameClass' => '',
+    'iconOnly' => false
+])
+
+@php
+    // Get academy details
+    $academyName = $academy->name ?? 'أكاديمية إتقان';
+    $brandColor = $academy && $academy->brand_color ? $academy->brand_color->value : 'sky';
+
+    // Get hex colors for inline styles
+    $brandColorHex = '#0ea5e9'; // sky-500 default
+    $brandColorLightHex = '#f0f9ff'; // sky-50 default
+
+    if ($academy && $academy->brand_color) {
+        try {
+            $brandColorHex = $academy->brand_color->getHexValue(600);
+            $brandColorLightHex = $academy->brand_color->getHexValue(100);
+        } catch (\Exception $e) {
+            // Fallback to defaults
+        }
+    }
+
+    // Determine logo URL - try different accessor methods
+    $logoUrl = null;
+    if ($academy) {
+        if (isset($academy->logo_url) && $academy->logo_url) {
+            $logoUrl = $academy->logo_url;
+        } elseif (isset($academy->logo) && $academy->logo) {
+            $logoUrl = Storage::url($academy->logo);
+        }
+    }
+
+    // Size mappings
+    $sizes = [
+        'sm' => [
+            'container' => 'w-8 h-8',
+            'image' => 'h-8 w-auto',
+            'icon' => 'text-lg',
+            'name' => 'text-base'
+        ],
+        'md' => [
+            'container' => 'w-10 h-10',
+            'image' => 'h-10 w-auto',
+            'icon' => 'text-xl',
+            'name' => 'text-xl'
+        ],
+        'lg' => [
+            'container' => 'w-12 h-12',
+            'image' => 'h-12 w-auto',
+            'icon' => 'text-2xl',
+            'name' => 'text-2xl'
+        ]
+    ];
+
+    $sizeClasses = $sizes[$size] ?? $sizes['md'];
+    $defaultNameClass = 'font-bold text-gray-900';
+    $finalNameClass = $nameClass ?: $defaultNameClass;
+@endphp
+
+@if($href)
+    <a href="{{ $href }}" class="flex items-center">
+        @if($logoUrl)
+            <img src="{{ $logoUrl }}"
+                 alt="{{ $academyName }}"
+                 class="{{ $sizeClasses['image'] }} {{ $iconOnly ? '' : 'ml-3' }}">
+        @else
+            <div class="{{ $sizeClasses['container'] }} flex items-center justify-center rounded-lg {{ $iconOnly ? '' : 'ml-3' }}"
+                 style="background-color: {{ $brandColorLightHex }};">
+                <i class="ri-book-open-line {{ $sizeClasses['icon'] }}"
+                   style="color: {{ $brandColorHex }};"></i>
+            </div>
+        @endif
+
+        @if($showName && !$iconOnly)
+            <span class="{{ $sizeClasses['name'] }} {{ $finalNameClass }} mr-2">{{ $academyName }}</span>
+        @endif
+    </a>
+@else
+    <div class="flex items-center">
+        @if($logoUrl)
+            <img src="{{ $logoUrl }}"
+                 alt="{{ $academyName }}"
+                 class="{{ $sizeClasses['image'] }} {{ $iconOnly ? '' : 'ml-3' }}">
+        @else
+            <div class="{{ $sizeClasses['container'] }} flex items-center justify-center rounded-lg {{ $iconOnly ? '' : 'ml-3' }}"
+                 style="background-color: {{ $brandColorLightHex }};">
+                <i class="ri-book-open-line {{ $sizeClasses['icon'] }}"
+                   style="color: {{ $brandColorHex }};"></i>
+            </div>
+        @endif
+
+        @if($showName && !$iconOnly)
+            <span class="{{ $sizeClasses['name'] }} {{ $finalNameClass }} mr-2">{{ $academyName }}</span>
+        @endif
+    </div>
+@endif

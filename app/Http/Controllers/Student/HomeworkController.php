@@ -4,22 +4,32 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Services\HomeworkService;
+use App\Services\UnifiedHomeworkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HomeworkController extends Controller
 {
     protected HomeworkService $homeworkService;
+    protected UnifiedHomeworkService $unifiedHomeworkService;
 
-    public function __construct(HomeworkService $homeworkService)
-    {
+    public function __construct(
+        HomeworkService $homeworkService,
+        UnifiedHomeworkService $unifiedHomeworkService
+    ) {
         $this->middleware('auth');
         $this->middleware('role:student');
         $this->homeworkService = $homeworkService;
+        $this->unifiedHomeworkService = $unifiedHomeworkService;
     }
 
     /**
      * Display a listing of homework for the student
+     *
+     * Uses UnifiedHomeworkService to aggregate ALL homework types:
+     * - Academic homework
+     * - Interactive course homework
+     * - Quran homework (view-only)
      */
     public function index(Request $request)
     {
@@ -27,14 +37,22 @@ class HomeworkController extends Controller
         $academyId = $student->academy_id;
 
         // Get filter parameters
-        $status = $request->get('status');
-        $type = $request->get('type');
+        $status = $request->get('status'); // pending, submitted, graded, overdue, late
+        $type = $request->get('type'); // academic, interactive, quran
 
-        // Get all homework for student
-        $homework = $this->homeworkService->getStudentHomework($student->id, $academyId, $status, $type);
+        // Get all homework for student using unified service
+        $homework = $this->unifiedHomeworkService->getStudentHomework(
+            $student->id,
+            $academyId,
+            $status,
+            $type
+        );
 
         // Get statistics
-        $statistics = $this->homeworkService->getStudentHomeworkStatistics($student->id, $academyId);
+        $statistics = $this->unifiedHomeworkService->getStudentHomeworkStatistics(
+            $student->id,
+            $academyId
+        );
 
         return view('student.homework.index', compact('homework', 'statistics'));
     }

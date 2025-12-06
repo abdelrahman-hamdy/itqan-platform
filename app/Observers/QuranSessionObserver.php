@@ -34,6 +34,71 @@ class QuranSessionObserver
         if ($quranSession->session_type === 'trial' && $quranSession->wasChanged('status')) {
             $this->trialSyncService->syncStatus($quranSession);
         }
+
+        // Send homework assigned notifications
+        $this->checkHomeworkAssigned($quranSession);
+    }
+
+    /**
+     * Check if homework was just assigned and send notifications
+     */
+    private function checkHomeworkAssigned(QuranSession $quranSession): void
+    {
+        // Check if any homework field was just assigned
+        $homeworkAssigned = false;
+        $homeworkType = null;
+
+        if ($quranSession->isDirty('homework_assigned') && $quranSession->homework_assigned === true) {
+            $homeworkAssigned = true;
+        }
+
+        if (!$homeworkAssigned) {
+            return;
+        }
+
+        try {
+            $notificationService = app(\App\Services\NotificationService::class);
+            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
+
+            // Get student(s)
+            if ($quranSession->session_type === 'individual' && $quranSession->student) {
+                $student = $quranSession->student;
+
+                // Send notification to student
+                $notificationService->send(
+                    $student,
+                    \App\Enums\NotificationType::HOMEWORK_ASSIGNED,
+                    [
+                        'session_title' => $quranSession->title ?? 'جلسة قرآنية',
+                        'teacher_name' => $quranSession->quranTeacher?->user->name ?? 'المعلم',
+                        'due_date' => '',
+                    ],
+                    route('student.homework.view', ['id' => $quranSession->id, 'type' => 'quran']),
+                    [
+                        'session_id' => $quranSession->id,
+                    ]
+                );
+
+                // Also notify parents
+                $parentNotificationService->sendHomeworkAssigned(
+                    new \App\Models\HomeworkSubmission([
+                        'student_id' => $student->id,
+                        'title' => 'واجب قرآني',
+                        'due_date' => null,
+                    ])
+                );
+            }
+
+            \Log::info('Quran homework assigned notifications sent', [
+                'session_id' => $quranSession->id,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to send Quran homework assigned notifications', [
+                'session_id' => $quranSession->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

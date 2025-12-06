@@ -2,336 +2,540 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\BillingCycle;
+use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\SubscriptionStatus;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class CourseSubscription extends Model
+/**
+ * CourseSubscription Model
+ *
+ * Unified model for both recorded courses and interactive courses.
+ * Handles one-time purchase subscriptions with lifetime or timed access.
+ *
+ * KEY CONCEPTS:
+ * - One-time purchase: No recurring billing (uses BillingCycle::LIFETIME)
+ * - Two course types: 'recorded' (self-paced) and 'interactive' (live sessions)
+ * - Self-contained: Course data is snapshotted at creation
+ * - Progress tracking differs by type:
+ *   - Recorded: lesson completion, watch time
+ *   - Interactive: session attendance, grades
+ * - NO auto-renewal: Courses are one-time purchases
+ *
+ * COURSE TYPES:
+ * - 'recorded': Pre-recorded video lessons, self-paced
+ * - 'interactive': Live sessions with teacher, fixed schedule
+ *
+ * @property int|null $recorded_course_id
+ * @property int|null $interactive_course_id
+ * @property string $course_type
+ * @property string|null $enrollment_type
+ * @property string|null $access_type
+ * @property int|null $access_duration_months
+ * @property bool $lifetime_access
+ * @property int $completed_lessons
+ * @property int $total_lessons
+ * @property int $watch_time_minutes
+ * @property int $total_duration_minutes
+ * @property int $attendance_count
+ * @property int $total_possible_attendance
+ * @property float|null $final_grade
+ * @property bool $quiz_passed
+ * @property int $quiz_attempts
+ * @property float|null $final_score
+ */
+class CourseSubscription extends BaseSubscription
 {
-    use HasFactory, SoftDeletes;
+    // Note: NO HandlesSubscriptionRenewal trait - courses don't auto-renew
 
+    /**
+     * The database table for this model
+     */
+    protected $table = 'course_subscriptions';
+
+    /**
+     * Course-specific fillable fields
+     * Merged with BaseSubscription::$baseFillable in constructor
+     */
     protected $fillable = [
-        'academy_id',
-        'student_id',
+        // Course references (one will be set based on course_type)
         'recorded_course_id',
-        'subscription_code',
+        'interactive_course_id',
+
+        // Course type
+        'course_type',
+
+        // Enrollment info
         'enrollment_type',
-        'payment_type',
-        'price_paid',
-        'original_price',
-        'discount_amount',
-        'discount_code',
-        'currency',
-        'payment_status',
+        'enrolled_at',
+        'enrolled_by',
+
+        // Access configuration
         'access_type',
         'access_duration_months',
         'lifetime_access',
-        'certificate_eligible',
-        'certificate_issued',
-        'certificate_issued_at',
-        'progress_percentage',
+
+        // Pricing
+        'price_paid',
+        'original_price',
+        'discount_code',
+
+        // Recorded course progress
         'completed_lessons',
         'total_lessons',
         'watch_time_minutes',
         'total_duration_minutes',
         'last_accessed_at',
         'completion_date',
-        'status',
-        'enrolled_at',
-        'expires_at',
-        'trial_ends_at',
-        'paused_at',
-        'pause_reason',
-        'cancelled_at',
-        'cancellation_reason',
+
+        // Interactive course progress
+        'attendance_count',
+        'total_possible_attendance',
+        'final_grade',
+
+        // Quiz tracking
+        'quiz_attempts',
+        'quiz_passed',
+        'final_score',
+
+        // Refund
         'refund_requested_at',
         'refund_reason',
         'refund_processed_at',
         'refund_amount',
+
+        // Engagement
         'notes_count',
         'bookmarks_count',
-        'quiz_attempts',
-        'quiz_passed',
-        'final_score',
-        'rating',
-        'review_text',
-        'reviewed_at',
         'completion_certificate_url',
-        'metadata',
-        'created_by',
-        'updated_by',
-        'notes'
     ];
 
-    protected $casts = [
-        'price_paid' => 'decimal:2',
-        'original_price' => 'decimal:2',
-        'discount_amount' => 'decimal:2',
-        'progress_percentage' => 'decimal:2',
-        'final_score' => 'decimal:2',
-        'lifetime_access' => 'boolean',
-        'certificate_eligible' => 'boolean',
-        'certificate_issued' => 'boolean',
-        'quiz_passed' => 'boolean',
-        'access_duration_months' => 'integer',
-        'completed_lessons' => 'integer',
-        'total_lessons' => 'integer',
-        'watch_time_minutes' => 'integer',
-        'total_duration_minutes' => 'integer',
-        'notes_count' => 'integer',
-        'bookmarks_count' => 'integer',
-        'quiz_attempts' => 'integer',
-        'rating' => 'integer',
-        'refund_amount' => 'decimal:2',
-        'enrolled_at' => 'datetime',
-        'expires_at' => 'datetime',
-        'trial_ends_at' => 'datetime',
-        'completion_date' => 'datetime',
-        'last_accessed_at' => 'datetime',
-        'paused_at' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'refund_requested_at' => 'datetime',
-        'refund_processed_at' => 'datetime',
-        'certificate_issued_at' => 'datetime',
-        'reviewed_at' => 'datetime',
-        'metadata' => 'array'
+    /**
+     * Constructor: Merge fillable with parent's baseFillable
+     */
+    public function __construct(array $attributes = [])
+    {
+        // Merge Course-specific fillable with base fillable
+        $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
+        parent::__construct($attributes);
+    }
+
+    /**
+     * Get casts: Merge Course-specific casts with parent casts
+     * IMPORTANT: Do NOT define protected $casts - it would override parent's casts
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), [
+            // Access
+            'access_duration_months' => 'integer',
+            'lifetime_access' => 'boolean',
+            'enrolled_at' => 'datetime',
+
+            // Pricing
+            'price_paid' => 'decimal:2',
+            'original_price' => 'decimal:2',
+
+            // Recorded course progress
+            'completed_lessons' => 'integer',
+            'total_lessons' => 'integer',
+            'watch_time_minutes' => 'integer',
+            'total_duration_minutes' => 'integer',
+            'last_accessed_at' => 'datetime',
+            'completion_date' => 'datetime',
+
+            // Interactive course progress
+            'attendance_count' => 'integer',
+            'total_possible_attendance' => 'integer',
+            'final_grade' => 'decimal:2',
+
+            // Quiz
+            'quiz_attempts' => 'integer',
+            'quiz_passed' => 'boolean',
+            'final_score' => 'decimal:2',
+
+            // Refund
+            'refund_requested_at' => 'datetime',
+            'refund_processed_at' => 'datetime',
+            'refund_amount' => 'decimal:2',
+
+            // Engagement
+            'notes_count' => 'integer',
+            'bookmarks_count' => 'integer',
+        ]);
+    }
+
+    /**
+     * Default attributes
+     */
+    protected $attributes = [
+        'status' => 'pending',
+        'payment_status' => 'pending',
+        'currency' => 'SAR',
+        'billing_cycle' => 'lifetime',  // Courses are one-time purchases
+        'auto_renew' => false,          // No auto-renewal for courses
+        'progress_percentage' => 0,
+        'certificate_issued' => false,
+        'course_type' => 'recorded',
+        'enrollment_type' => 'paid',
+        'lifetime_access' => true,
+        'completed_lessons' => 0,
+        'total_lessons' => 0,
+        'watch_time_minutes' => 0,
+        'total_duration_minutes' => 0,
+        'attendance_count' => 0,
+        'total_possible_attendance' => 0,
+        'quiz_attempts' => 0,
+        'quiz_passed' => false,
+        'notes_count' => 0,
+        'bookmarks_count' => 0,
     ];
 
-    // Relationships
-    public function academy(): BelongsTo
-    {
-        return $this->belongsTo(Academy::class);
-    }
+    // ========================================
+    // CONSTANTS
+    // ========================================
 
-    public function student(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'student_id');
-    }
+    const COURSE_TYPE_RECORDED = 'recorded';
+    const COURSE_TYPE_INTERACTIVE = 'interactive';
 
+    const ENROLLMENT_TYPE_FREE = 'free';
+    const ENROLLMENT_TYPE_PAID = 'paid';
+    const ENROLLMENT_TYPE_TRIAL = 'trial';
+    const ENROLLMENT_TYPE_GIFT = 'gift';
+
+    // ========================================
+    // RELATIONSHIPS (Course-specific)
+    // ========================================
+
+    /**
+     * Get the recorded course (for recorded course subscriptions)
+     */
     public function recordedCourse(): BelongsTo
     {
         return $this->belongsTo(RecordedCourse::class);
     }
 
+    /**
+     * Get the interactive course (for interactive course subscriptions)
+     */
+    public function interactiveCourse(): BelongsTo
+    {
+        return $this->belongsTo(InteractiveCourse::class);
+    }
+
+    /**
+     * Get the course (polymorphic helper)
+     */
+    public function getCourseAttribute()
+    {
+        return $this->course_type === self::COURSE_TYPE_INTERACTIVE
+            ? $this->interactiveCourse
+            : $this->recordedCourse;
+    }
+
+    /**
+     * Get the user who enrolled the student
+     */
+    public function enrolledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'enrolled_by');
+    }
+
+    /**
+     * Get progress records (for recorded courses)
+     */
     public function progress(): HasMany
     {
         return $this->hasMany(StudentProgress::class, 'recorded_course_id', 'recorded_course_id')
-                   ->where('user_id', $this->student_id);
+            ->where('user_id', $this->student_id);
     }
 
+    /**
+     * Get payment records
+     */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'subscription_id');
     }
 
-    public function certificate(): MorphOne
+    // ========================================
+    // ABSTRACT METHOD IMPLEMENTATIONS
+    // ========================================
+
+    /**
+     * Get subscription type identifier
+     */
+    public function getSubscriptionType(): string
     {
-        return $this->morphOne(Certificate::class, 'certificateable');
+        return 'course';
     }
 
-    // Scopes
-    public function scopeActive($query)
+    /**
+     * Get subscription type label
+     */
+    public function getSubscriptionTypeLabel(): string
     {
-        return $query->where('status', 'active')
-                    ->where(function($q) {
-                        $q->where('lifetime_access', true)
-                          ->orWhere('expires_at', '>', now());
-                    });
+        return $this->course_type === self::COURSE_TYPE_INTERACTIVE
+            ? 'دورة تفاعلية'
+            : 'دورة مسجلة';
     }
 
-    public function scopeCompleted($query)
+    /**
+     * Get subscription title for display
+     */
+    public function getSubscriptionTitle(): string
     {
-        return $query->where('status', 'completed');
+        if ($this->package_name_ar) {
+            return $this->package_name_ar;
+        }
+
+        $course = $this->course;
+
+        return $course?->name ?? $course?->title ?? 'دورة تدريبية';
     }
 
+    /**
+     * Get the teacher for this subscription (if applicable)
+     */
+    public function getTeacher(): ?User
+    {
+        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+            return $this->interactiveCourse?->assignedTeacher;
+        }
+
+        // Recorded courses may or may not have a teacher
+        return $this->recordedCourse?->instructor;
+    }
+
+    /**
+     * Calculate renewal price (not applicable for courses - one-time purchase)
+     */
+    public function calculateRenewalPrice(): float
+    {
+        // Courses don't renew - return 0 or the original price for reference
+        return $this->final_price ?? $this->price_paid ?? 0;
+    }
+
+    /**
+     * Snapshot course data to subscription (self-containment)
+     */
+    public function snapshotPackageData(): array
+    {
+        $course = $this->course;
+
+        if (!$course) {
+            return [];
+        }
+
+        return [
+            'package_name_ar' => $course->name ?? $course->title,
+            'package_name_en' => $course->name_en ?? $course->title_en ?? $course->title,
+            'package_description_ar' => $course->description ?? $course->short_description,
+            'package_description_en' => $course->description_en ?? $course->description,
+            'monthly_price' => $course->price ?? 0,  // For courses, this is the one-time price
+        ];
+    }
+
+    /**
+     * Get sessions relationship (for interactive courses)
+     */
+    public function getSessions()
+    {
+        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+            return $this->interactiveCourse?->sessions();
+        }
+
+        // For recorded courses, return lessons
+        return $this->recordedCourse?->lessons();
+    }
+
+    // ========================================
+    // COURSE-SPECIFIC SCOPES
+    // ========================================
+
+    /**
+     * Scope: Get recorded course subscriptions
+     */
+    public function scopeRecordedCourses($query)
+    {
+        return $query->where('course_type', self::COURSE_TYPE_RECORDED);
+    }
+
+    /**
+     * Scope: Get interactive course subscriptions
+     */
+    public function scopeInteractiveCourses($query)
+    {
+        return $query->where('course_type', self::COURSE_TYPE_INTERACTIVE);
+    }
+
+    /**
+     * Scope: Get subscriptions with lifetime access
+     */
+    public function scopeLifetimeAccess($query)
+    {
+        return $query->where('lifetime_access', true);
+    }
+
+    /**
+     * Scope: Get subscriptions in progress (started but not completed)
+     */
     public function scopeInProgress($query)
     {
-        return $query->where('status', 'active')
-                    ->where('progress_percentage', '>', 0)
-                    ->where('progress_percentage', '<', 100);
+        return $query->where('status', SubscriptionStatus::ACTIVE)
+            ->where('progress_percentage', '>', 0)
+            ->where('progress_percentage', '<', 100);
     }
 
+    /**
+     * Scope: Get not started subscriptions
+     */
     public function scopeNotStarted($query)
     {
-        return $query->where('status', 'active')
-                    ->where('progress_percentage', 0);
+        return $query->where('status', SubscriptionStatus::ACTIVE)
+            ->where('progress_percentage', 0);
     }
 
-    public function scopeExpired($query)
-    {
-        return $query->where('lifetime_access', false)
-                    ->where('expires_at', '<=', now());
-    }
-
-    public function scopePaid($query)
-    {
-        return $query->where('payment_status', 'paid');
-    }
-
+    /**
+     * Scope: Get free enrollments
+     */
     public function scopeFree($query)
     {
-        return $query->where('enrollment_type', 'free');
+        return $query->where('enrollment_type', self::ENROLLMENT_TYPE_FREE);
     }
 
-    public function scopeWithCertificate($query)
-    {
-        return $query->where('certificate_issued', true);
-    }
-
+    /**
+     * Scope: Get eligible for certificate
+     */
     public function scopeEligibleForCertificate($query)
     {
-        return $query->where('certificate_eligible', true)
-                    ->where('certificate_issued', false)
-                    ->where('progress_percentage', '>=', 90);
+        return $query->where('certificate_issued', false)
+            ->where('progress_percentage', '>=', 90);
     }
 
-    // Accessors
-    public function getEnrollmentTypeTextAttribute(): string
-    {
-        $types = [
-            'free' => 'مجاني',
-            'paid' => 'مدفوع',
-            'trial' => 'تجريبي',
-            'gift' => 'هدية'
-        ];
+    // ========================================
+    // COURSE-SPECIFIC ACCESSORS
+    // ========================================
 
-        return $types[$this->enrollment_type] ?? $this->enrollment_type;
-    }
-
-    public function getStatusTextAttribute(): string
-    {
-        $statuses = [
-            'active' => 'نشط',
-            'completed' => 'مكتمل',
-            'paused' => 'متوقف',
-            'expired' => 'منتهي الصلاحية',
-            'cancelled' => 'ملغي',
-            'refunded' => 'مسترد'
-        ];
-
-        return $statuses[$this->status] ?? $this->status;
-    }
-
-    public function getStatusBadgeColorAttribute(): string
-    {
-        $colors = [
-            'active' => 'success',
-            'completed' => 'primary',
-            'paused' => 'warning',
-            'expired' => 'danger',
-            'cancelled' => 'secondary',
-            'refunded' => 'info'
-        ];
-
-        return $colors[$this->status] ?? 'secondary';
-    }
-
+    /**
+     * Get access status display
+     */
     public function getAccessStatusAttribute(): string
     {
         if ($this->lifetime_access) {
             return 'وصول مدى الحياة';
         }
 
-        if ($this->expires_at && $this->expires_at->isFuture()) {
-            $days = now()->diffInDays($this->expires_at);
+        if ($this->ends_at && $this->ends_at->isFuture()) {
+            $days = now()->diffInDays($this->ends_at);
             return "باقي {$days} يوم";
         }
 
         return 'منتهي الصلاحية';
     }
 
-    public function getFormattedPriceAttribute(): string
+    /**
+     * Get enrollment type label
+     */
+    public function getEnrollmentTypeLabelAttribute(): string
     {
-        if ($this->enrollment_type === 'free') {
-            return 'مجاني';
-        }
-
-        $formatted = number_format($this->price_paid, 2) . ' ' . $this->currency;
-
-        if ($this->discount_amount > 0) {
-            $originalFormatted = number_format($this->original_price, 2) . ' ' . $this->currency;
-            return "{$formatted} (بدلاً من {$originalFormatted})";
-        }
-
-        return $formatted;
+        return match ($this->enrollment_type) {
+            self::ENROLLMENT_TYPE_FREE => 'مجاني',
+            self::ENROLLMENT_TYPE_PAID => 'مدفوع',
+            self::ENROLLMENT_TYPE_TRIAL => 'تجريبي',
+            self::ENROLLMENT_TYPE_GIFT => 'هدية',
+            default => $this->enrollment_type ?? 'مدفوع',
+        };
     }
 
-    public function getProgressStatusAttribute(): string
+    /**
+     * Get completion rate (lessons completed / total)
+     */
+    public function getCompletionRateAttribute(): float
     {
-        if ($this->progress_percentage == 0) {
-            return 'لم يبدأ';
+        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+            // For interactive courses, use attendance
+            if ($this->total_possible_attendance <= 0) {
+                return 0;
+            }
+            return round(($this->attendance_count / $this->total_possible_attendance) * 100, 2);
         }
 
-        if ($this->progress_percentage >= 100) {
-            return 'مكتمل';
+        // For recorded courses, use lesson completion
+        if ($this->total_lessons <= 0) {
+            return 0;
         }
-
-        return 'قيد المشاهدة';
+        return round(($this->completed_lessons / $this->total_lessons) * 100, 2);
     }
 
+    /**
+     * Get attendance percentage (for interactive courses)
+     */
+    public function getAttendancePercentageAttribute(): float
+    {
+        if ($this->total_possible_attendance <= 0) {
+            return 0;
+        }
+        return round(($this->attendance_count / $this->total_possible_attendance) * 100, 2);
+    }
+
+    /**
+     * Get watch time formatted
+     */
     public function getWatchTimeFormattedAttribute(): string
     {
         return $this->formatDuration($this->watch_time_minutes * 60);
     }
 
+    /**
+     * Get total duration formatted
+     */
     public function getTotalDurationFormattedAttribute(): string
     {
         return $this->formatDuration($this->total_duration_minutes * 60);
     }
 
-    public function getCompletionRateAttribute(): float
+    /**
+     * Check if student passed the course (for interactive courses)
+     */
+    public function getHasPassedAttribute(): bool
     {
-        if ($this->total_lessons == 0) {
-            return 0;
+        if ($this->final_grade !== null) {
+            return $this->final_grade >= 60; // 60% passing grade
         }
-
-        return ($this->completed_lessons / $this->total_lessons) * 100;
+        return $this->quiz_passed || $this->progress_percentage >= 100;
     }
 
-    public function getIsExpiredAttribute(): bool
-    {
-        return !$this->lifetime_access && 
-               $this->expires_at && 
-               $this->expires_at->isPast();
-    }
-
-    public function getCanAccessAttribute(): bool
-    {
-        return $this->status === 'active' && 
-               ($this->lifetime_access || ($this->expires_at && $this->expires_at->isFuture()));
-    }
-
-    public function getDaysRemainingAttribute(): int
-    {
-        if ($this->lifetime_access || !$this->expires_at) {
-            return -1; // Unlimited
-        }
-
-        return max(0, now()->diffInDays($this->expires_at, false));
-    }
-
+    /**
+     * Check if can earn certificate
+     */
     public function getCanEarnCertificateAttribute(): bool
     {
-        return $this->certificate_eligible && 
-               !$this->certificate_issued && 
-               $this->progress_percentage >= 90;
+        return !$this->certificate_issued && $this->progress_percentage >= 90;
     }
 
-    // Methods
-    public function updateProgress(): self
+    // ========================================
+    // PROGRESS MANAGEMENT METHODS
+    // ========================================
+
+    /**
+     * Update progress for recorded courses
+     */
+    public function updateRecordedCourseProgress(): self
     {
+        if ($this->course_type !== self::COURSE_TYPE_RECORDED) {
+            return $this;
+        }
+
         $courseProgress = $this->progress()->get();
-        
+
         $completedLessons = $courseProgress->where('is_completed', true)->count();
         $totalWatchTime = $courseProgress->sum('watch_time_seconds');
-        $totalDuration = $courseProgress->sum('total_time_seconds');
-        
+
         $progressPercentage = 0;
         if ($this->recordedCourse) {
-            $totalLessons = $this->recordedCourse->total_lessons;
+            $totalLessons = $this->recordedCourse->total_lessons ?? 0;
             if ($totalLessons > 0) {
                 $progressPercentage = ($completedLessons / $totalLessons) * 100;
             }
@@ -339,170 +543,267 @@ class CourseSubscription extends Model
 
         $this->update([
             'completed_lessons' => $completedLessons,
-            'total_lessons' => $this->recordedCourse->total_lessons ?? 0,
+            'total_lessons' => $this->recordedCourse?->total_lessons ?? $this->total_lessons,
             'progress_percentage' => $progressPercentage,
             'watch_time_minutes' => ceil($totalWatchTime / 60),
-            'total_duration_minutes' => ceil($totalDuration / 60),
-            'last_accessed_at' => now()
+            'last_accessed_at' => now(),
         ]);
 
         // Check for completion
-        if ($progressPercentage >= 100 && $this->status === 'active') {
+        if ($progressPercentage >= 100 && $this->isActive()) {
             $this->markAsCompleted();
         }
 
         return $this;
     }
 
+    /**
+     * Record attendance for interactive course
+     */
+    public function recordAttendance(bool $attended = true): self
+    {
+        if ($this->course_type !== self::COURSE_TYPE_INTERACTIVE) {
+            return $this;
+        }
+
+        if ($attended) {
+            $this->increment('attendance_count');
+        }
+
+        // Update progress percentage based on attendance
+        if ($this->total_possible_attendance > 0) {
+            $this->update([
+                'progress_percentage' => $this->attendance_percentage,
+            ]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Mark subscription as completed
+     */
     public function markAsCompleted(): self
     {
         $this->update([
-            'status' => 'completed',
+            'status' => SubscriptionStatus::COMPLETED,
             'completion_date' => now(),
-            'progress_percentage' => 100
+            'progress_percentage' => 100,
         ]);
 
         // Issue certificate if eligible
         if ($this->can_earn_certificate) {
-            $this->issueCertificate();
+            $this->issueCertificateForCourse();
         }
 
         return $this;
     }
 
-    public function issueCertificate(): self
+    /**
+     * Issue certificate for this subscription
+     */
+    public function issueCertificateForCourse(): self
     {
-        if (!$this->can_earn_certificate) {
+        if ($this->certificate_issued || !$this->can_earn_certificate) {
             return $this;
         }
 
         try {
-            // Use CertificateService to generate the certificate
             $certificateService = app(\App\Services\CertificateService::class);
-            $certificate = $certificateService->issueCertificateForRecordedCourse($this);
 
-            // The service already updates certificate_issued and certificate_issued_at
-            // Just refresh the model to get the updated values
+            if ($this->course_type === self::COURSE_TYPE_RECORDED) {
+                $certificateService->issueCertificateForRecordedCourse($this);
+            } else {
+                // For interactive courses
+                $certificateService->issueCertificateForInteractiveCourse($this);
+            }
+
             $this->refresh();
         } catch (\Exception $e) {
-            // Log the error but don't fail the completion
-            \Log::error('Failed to issue certificate for CourseSubscription ' . $this->id . ': ' . $e->getMessage());
+            \Log::error("Failed to issue certificate for CourseSubscription {$this->id}: " . $e->getMessage());
         }
 
         return $this;
     }
 
-    public function pause(string $reason = null): self
-    {
-        $this->update([
-            'status' => 'paused',
-            'paused_at' => now(),
-            'pause_reason' => $reason
-        ]);
+    // ========================================
+    // ACCESS MANAGEMENT METHODS
+    // ========================================
 
-        return $this;
-    }
-
-    public function resume(): self
-    {
-        $pausedDays = $this->paused_at ? now()->diffInDays($this->paused_at) : 0;
-
-        $this->update([
-            'status' => 'active',
-            'paused_at' => null,
-            'pause_reason' => null,
-            'expires_at' => !$this->lifetime_access && $this->expires_at ? 
-                $this->expires_at->addDays($pausedDays) : $this->expires_at
-        ]);
-
-        return $this;
-    }
-
-    public function cancel(string $reason = null): self
-    {
-        $this->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-            'cancellation_reason' => $reason
-        ]);
-
-        return $this;
-    }
-
-    public function requestRefund(string $reason): self
-    {
-        $this->update([
-            'refund_requested_at' => now(),
-            'refund_reason' => $reason
-        ]);
-
-        return $this;
-    }
-
-    public function processRefund(float $amount): self
-    {
-        $this->update([
-            'status' => 'refunded',
-            'refund_processed_at' => now(),
-            'refund_amount' => $amount
-        ]);
-
-        return $this;
-    }
-
-    public function extend(int $months): self
+    /**
+     * Extend access by months
+     */
+    public function extendAccess(int $months): self
     {
         if ($this->lifetime_access) {
-            return $this; // Already has lifetime access
+            return $this;
         }
 
-        $newExpiry = $this->expires_at && $this->expires_at->isFuture() 
-            ? $this->expires_at->addMonths($months)
+        $newExpiry = $this->ends_at && $this->ends_at->isFuture()
+            ? $this->ends_at->addMonths($months)
             : now()->addMonths($months);
 
         $this->update([
-            'expires_at' => $newExpiry,
-            'status' => 'active'
+            'ends_at' => $newExpiry,
+            'status' => SubscriptionStatus::ACTIVE,
         ]);
 
         return $this;
     }
 
+    /**
+     * Grant lifetime access
+     */
     public function grantLifetimeAccess(): self
     {
         $this->update([
             'lifetime_access' => true,
-            'expires_at' => null,
-            'status' => 'active'
+            'ends_at' => null,
+            'status' => SubscriptionStatus::ACTIVE,
         ]);
 
         return $this;
     }
 
-    public function addRating(int $rating, string $reviewText = null): self
+    /**
+     * Request refund
+     */
+    public function requestRefund(string $reason): self
     {
         $this->update([
-            'rating' => $rating,
-            'review_text' => $reviewText,
-            'reviewed_at' => now()
+            'refund_requested_at' => now(),
+            'refund_reason' => $reason,
         ]);
 
         return $this;
     }
 
-    public function getNextLesson(): ?Lesson
+    /**
+     * Process refund
+     */
+    public function processRefund(float $amount): self
     {
-        return $this->recordedCourse
-            ->lessons()
-            ->whereDoesntHave('progress', function($query) {
-                $query->where('user_id', $this->student_id)
-                      ->where('is_completed', true);
-            })
-            ->orderBy('order')
-            ->first();
+        $this->update([
+            'status' => SubscriptionStatus::CANCELLED,
+            'payment_status' => SubscriptionPaymentStatus::REFUNDED,
+            'refund_processed_at' => now(),
+            'refund_amount' => $amount,
+            'cancellation_reason' => 'استرداد المبلغ',
+        ]);
+
+        return $this;
     }
 
-    private function formatDuration(int $seconds): string
+    // ========================================
+    // STATIC FACTORY METHODS
+    // ========================================
+
+    /**
+     * Create a new course subscription with data snapshot
+     */
+    public static function createSubscription(array $data): self
+    {
+        // Generate subscription code
+        $data['subscription_code'] = static::generateSubscriptionCode(
+            $data['academy_id'],
+            'CS'
+        );
+
+        // Set defaults
+        $data = array_merge([
+            'status' => SubscriptionStatus::PENDING,
+            'payment_status' => SubscriptionPaymentStatus::PENDING,
+            'billing_cycle' => BillingCycle::LIFETIME,
+            'auto_renew' => false,
+            'progress_percentage' => 0,
+            'enrolled_at' => now(),
+        ], $data);
+
+        // Determine course type
+        if (!empty($data['interactive_course_id'])) {
+            $data['course_type'] = self::COURSE_TYPE_INTERACTIVE;
+        } else {
+            $data['course_type'] = self::COURSE_TYPE_RECORDED;
+        }
+
+        $subscription = static::create($data);
+
+        // Snapshot course data
+        $packageData = $subscription->snapshotPackageData();
+        if (!empty($packageData)) {
+            $subscription->update($packageData);
+        }
+
+        // Initialize course-specific data
+        $subscription->initializeCourseData();
+
+        return $subscription;
+    }
+
+    /**
+     * Create free enrollment
+     */
+    public static function createFreeEnrollment(array $data): self
+    {
+        return static::createSubscription(array_merge($data, [
+            'enrollment_type' => self::ENROLLMENT_TYPE_FREE,
+            'status' => SubscriptionStatus::ACTIVE,
+            'payment_status' => SubscriptionPaymentStatus::PAID,
+            'final_price' => 0,
+            'price_paid' => 0,
+            'lifetime_access' => true,
+        ]));
+    }
+
+    /**
+     * Initialize course data after creation
+     */
+    protected function initializeCourseData(): void
+    {
+        if ($this->course_type === self::COURSE_TYPE_RECORDED && $this->recordedCourse) {
+            $this->update([
+                'total_lessons' => $this->recordedCourse->total_lessons ?? 0,
+                'total_duration_minutes' => $this->recordedCourse->total_duration_minutes ?? 0,
+            ]);
+        } elseif ($this->course_type === self::COURSE_TYPE_INTERACTIVE && $this->interactiveCourse) {
+            $this->update([
+                'total_possible_attendance' => $this->interactiveCourse->sessions()->count(),
+            ]);
+        }
+    }
+
+    // ========================================
+    // BOOT METHOD
+    // ========================================
+
+    protected static function booted()
+    {
+        parent::boot();
+
+        // Set ends_at based on access duration on creation
+        static::creating(function ($subscription) {
+            if (!$subscription->lifetime_access && !$subscription->ends_at) {
+                $months = $subscription->access_duration_months ?? 12;
+                $subscription->ends_at = now()->addMonths($months);
+            }
+        });
+
+        // Update last accessed timestamp
+        static::updating(function ($subscription) {
+            if ($subscription->isDirty(['completed_lessons', 'watch_time_minutes', 'attendance_count'])) {
+                $subscription->last_accessed_at = now();
+            }
+        });
+    }
+
+    // ========================================
+    // HELPER METHODS
+    // ========================================
+
+    /**
+     * Format duration for display
+     */
+    protected function formatDuration(int $seconds): string
     {
         if ($seconds < 60) {
             return $seconds . ' ثانية';
@@ -518,31 +819,78 @@ class CourseSubscription extends Model
         $hours = floor($minutes / 60);
         $remainingMinutes = $minutes % 60;
 
-        return $hours . ' ساعة' . 
-               ($remainingMinutes > 0 ? ' و ' . $remainingMinutes . ' دقيقة' : '') .
-               ($remainingSeconds > 0 ? ' و ' . $remainingSeconds . ' ثانية' : '');
+        return $hours . ' ساعة' .
+            ($remainingMinutes > 0 ? ' و ' . $remainingMinutes . ' دقيقة' : '');
     }
 
-    private function generateCertificateUrl(): string
+    /**
+     * Get next lesson (for recorded courses)
+     */
+    public function getNextLesson(): ?Lesson
     {
-        // This would integrate with a certificate generation service
-        $certificateId = 'CERT-' . $this->academy_id . '-' . $this->id . '-' . time();
-        return config('app.url') . '/certificates/' . $certificateId . '.pdf';
-    }
-
-    // Static methods
-    public static function createEnrollment(array $data): self
-    {
-        $enrollment = self::create($data);
-        
-        // Initialize course data
-        if ($enrollment->recordedCourse) {
-            $enrollment->update([
-                'total_lessons' => $enrollment->recordedCourse->total_lessons,
-                'total_duration_minutes' => $enrollment->recordedCourse->total_duration_minutes
-            ]);
+        if ($this->course_type !== self::COURSE_TYPE_RECORDED || !$this->recordedCourse) {
+            return null;
         }
 
-        return $enrollment;
+        return $this->recordedCourse
+            ->lessons()
+            ->whereDoesntHave('progress', function ($query) {
+                $query->where('user_id', $this->student_id)
+                    ->where('is_completed', true);
+            })
+            ->orderBy('order')
+            ->first();
     }
-} 
+
+    // ========================================
+    // SESSION TRACKING METHODS (BaseSubscription Abstract Methods)
+    // ========================================
+
+    /**
+     * Get total number of sessions in subscription
+     * For interactive courses: uses total_possible_attendance
+     * For recorded courses: uses total_lessons
+     *
+     * @return int
+     */
+    public function getTotalSessions(): int
+    {
+        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+            return $this->total_possible_attendance ?? 0;
+        }
+
+        // Recorded courses
+        return $this->total_lessons ?? 0;
+    }
+
+    /**
+     * Get number of sessions used/completed
+     * For interactive courses: uses attendance_count
+     * For recorded courses: uses completed_lessons
+     *
+     * @return int
+     */
+    public function getSessionsUsed(): int
+    {
+        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+            return $this->attendance_count ?? 0;
+        }
+
+        // Recorded courses
+        return $this->completed_lessons ?? 0;
+    }
+
+    /**
+     * Get number of sessions remaining
+     * Calculated as: total_sessions - sessions_used
+     *
+     * @return int
+     */
+    public function getSessionsRemaining(): int
+    {
+        $total = $this->getTotalSessions();
+        $used = $this->getSessionsUsed();
+
+        return max(0, $total - $used);
+    }
+}

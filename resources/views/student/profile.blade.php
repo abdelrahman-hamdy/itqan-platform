@@ -88,16 +88,22 @@
 
       <!-- Learning Sections Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
+
         <!-- Quran Circles Section -->
-        <div id="quran-circles">
+        <div id="quran-circles" class="flex">
           @include('components.cards.learning-section-card', [
             'title' => 'حلقات القرآن الجماعية',
             'subtitle' => 'انضم إلى حلقات القرآن وشارك في حفظ وتلاوة القرآن الكريم',
             'icon' => 'ri-group-line',
             'iconBgColor' => 'bg-green-500',
+            'primaryColor' => 'green',
             'hideDots' => true,
             'items' => $quranCircles->take(3)->map(function($circle) {
+              // Determine actual status based on circle enrollment status
+              $status = $circle->enrollment_status === 'open' ? 'active' :
+                       ($circle->enrollment_status === 'full' ? 'active' :
+                       ($circle->enrollment_status === 'closed' ? 'cancelled' : 'active'));
+
               return [
                 'title' => $circle->name,
                 'description' => 'مع ' . ($circle->quranTeacher->user->name ?? 'معلم القرآن') .
@@ -105,58 +111,59 @@
                 'icon' => 'ri-group-line',
                 'iconBgColor' => 'bg-green-100',
                 'iconColor' => 'text-green-600',
-                'status' => 'active',
+                'status' => $status,
                 'link' => route('student.circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circleId' => $circle->id])
               ];
             })->toArray(),
+            'emptyActionLink' => route('quran-circles.index', ['subdomain' => auth()->user()->academy->subdomain]),
             'footer' => [
               'text' => 'عرض جميع الحلقات',
-              'link' => route('student.quran-circles', ['subdomain' => auth()->user()->academy->subdomain])
+              'link' => route('quran-circles.index', ['subdomain' => auth()->user()->academy->subdomain])
             ],
             'stats' => [
-              ['icon' => 'ri-group-line', 'value' => $stats['quranCirclesCount'] . ' دائرة نشطة'],
-              ['icon' => 'ri-book-line', 'value' => $stats['quranPages'] . ' آية محفوظة']
+              ['icon' => 'ri-group-line', 'value' => $stats['quranCirclesCount'] . ' دائرة نشطة', 'isActiveCount' => true]
             ]
           ])
         </div>
 
         <!-- Quran Private Sessions -->
-        <div id="quran-private">
+        <div id="quran-private" class="flex">
           @include('components.cards.learning-section-card', [
             'title' => 'حلقات القرآن الخاصة',
             'subtitle' => 'دروس فردية مع معلمي القرآن المؤهلين',
             'icon' => 'ri-user-star-line',
-            'iconBgColor' => 'bg-purple-500',
+            'iconBgColor' => 'bg-yellow-500',
+            'primaryColor' => 'yellow',
             'hideDots' => true,
             'items' => $quranPrivateSessions->take(3)->map(function($subscription) {
               $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
               return [
                 'title' => $subscription->package?->getDisplayName() ?? 'اشتراك مخصص',
                 'description' => 'مع ' . ($subscription->quranTeacher->full_name ?? 'معلم القرآن') .
-                                 ($nextSession ? ' - ' . $nextSession->scheduled_at->format('l، d F H:i') : ''),
+                                 ($nextSession ? ' - ' . formatDateTimeArabic($nextSession->scheduled_at) : ''),
                 'icon' => 'ri-user-star-line',
-                'iconBgColor' => 'bg-purple-100',
-                'iconColor' => 'text-purple-600',
+                'iconBgColor' => 'bg-yellow-100',
+                'iconColor' => 'text-yellow-600',
                 'progress' => $subscription->progress_percentage,
-                'status' => $subscription->subscription_status,
+                'status' => $subscription->status,
                 'link' => $subscription->individualCircle ?
                     route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circle' => $subscription->individualCircle->id]) :
                     '#'
               ];
             })->toArray(),
+            'emptyActionLink' => route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]),
             'footer' => [
-              'text' => 'عرض جميع الاشتراكات',
-              'link' => route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain])
+              'text' => 'عرض جميع معلمي القرآن',
+              'link' => route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain])
             ],
             'stats' => [
-              ['icon' => 'ri-user-star-line', 'value' => $stats['activeQuranSubscriptions'] . ' اشتراك نشط'],
-              ['icon' => 'ri-calendar-line', 'value' => $quranTrialRequests->where('status', 'scheduled')->count() . ' جلسة تجريبية']
+              ['icon' => 'ri-user-star-line', 'value' => $stats['activeQuranSubscriptions'] . ' اشتراك نشط', 'isActiveCount' => true]
             ]
           ])
         </div>
 
         <!-- Interactive Courses -->
-        <div id="interactive-courses">
+        <div id="interactive-courses" class="flex">
           @php
             // Calculate progress directly from sessions (replacing InteractiveCourseProgressService)
             $interactiveCourseItems = [];
@@ -175,6 +182,12 @@
                 $totalSessions += $courseTotal;
                 $completedSessions += $courseCompleted;
 
+                // Determine status based on enrollment
+                $enrollmentStatus = $enrollment->enrollment_status ?? 'enrolled';
+                $status = $enrollmentStatus === 'enrolled' ? 'active' :
+                         ($enrollmentStatus === 'completed' ? 'active' :
+                         ($enrollmentStatus === 'withdrawn' ? 'cancelled' : 'pending'));
+
                 $interactiveCourseItems[] = [
                   'title' => $course->title,
                   'description' => 'مع ' . ($course->assignedTeacher->user->name ?? 'المعلم') . ' - ' . $courseCompleted . ' جلسة مكتملة من ' . $courseTotal,
@@ -182,8 +195,8 @@
                   'iconBgColor' => 'bg-blue-100',
                   'iconColor' => 'text-blue-600',
                   'progress' => $completionPercentage,
-                  'status' => 'active',
-                  'link' => route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain, 'course' => $course->id])
+                  'status' => $status,
+                  'link' => route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'courseId' => $course->id])
                 ];
               }
             }
@@ -194,37 +207,39 @@
             'subtitle' => 'دورات أكاديمية تفاعلية في مختلف المواد الدراسية',
             'icon' => 'ri-book-open-line',
             'iconBgColor' => 'bg-blue-500',
+            'primaryColor' => 'blue',
             'hideDots' => true,
             'progressFullWidth' => true,
             'items' => $interactiveCourseItems,
+            'emptyActionLink' => route('interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain]),
             'footer' => [
               'text' => 'عرض جميع الكورسات',
-              'link' => route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain])
+              'link' => route('interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain])
             ],
             'stats' => [
-              ['icon' => 'ri-book-line', 'value' => count($interactiveCourses) . ' كورس' . (count($interactiveCourses) != 1 ? 'ات' : '') . ' نشط' . (count($interactiveCourses) != 1 ? 'ة' : '')],
-              ['icon' => 'ri-check-line', 'value' => $completedSessions . ' جلسة مكتملة']
+              ['icon' => 'ri-book-line', 'value' => count($interactiveCourses) . ' كورس' . (count($interactiveCourses) != 1 ? 'ات' : '') . ' نشط' . (count($interactiveCourses) != 1 ? 'ة' : ''), 'isActiveCount' => true]
             ]
           ])
         </div>
 
         <!-- Academic Private Sessions -->
-        <div id="academic-private-sessions">
+        <div id="academic-private-sessions" class="flex">
           @include('components.cards.learning-section-card', [
             'title' => 'دروس خاصة مع المعلمين الأكاديميين',
             'subtitle' => 'دروس فردية مع معلمي المواد الأكاديمية المؤهلين',
             'icon' => 'ri-user-3-line',
-            'iconBgColor' => 'bg-orange-500',
+            'iconBgColor' => 'bg-violet-500',
+            'primaryColor' => 'violet',
             'hideDots' => true,
             'items' => $academicPrivateSessions->count() > 0 ? $academicPrivateSessions->take(3)->map(function($subscription) {
               return [
                 'title' => $subscription->subject_name ?? 'درس أكاديمي',
-                'description' => 'مع ' . ($subscription->academicTeacher->full_name ?? 'معلم أكاديمي') . 
+                'description' => 'مع ' . ($subscription->academicTeacher->full_name ?? 'معلم أكاديمي') .
                                  ' - ' . ($subscription->grade_level_name ?? 'مرحلة دراسية') .
                                  ' - ' . number_format($subscription->monthly_amount) . ' ' . $subscription->currency . ' شهرياً',
                 'icon' => 'ri-user-3-line',
-                'iconBgColor' => 'bg-orange-100',
-                'iconColor' => 'text-orange-600',
+                'iconBgColor' => 'bg-violet-100',
+                'iconColor' => 'text-violet-600',
                 'progress' => $subscription->completion_rate ?? 0,
                 'status' => $subscription->status ?? 'active',
                 'link' => route('student.academic-subscriptions.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscriptionId' => $subscription->id])
@@ -233,13 +248,13 @@
             'emptyTitle' => 'لا توجد دروس خاصة بعد',
             'emptyDescription' => 'ابدأ رحلتك التعليمية من خلال الاشتراك مع أحد المعلمين الأكاديميين المؤهلين',
             'emptyActionText' => 'تصفح المعلمين الأكاديميين',
+            'emptyActionLink' => route('academic-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]),
             'footer' => [
-              'text' => $academicPrivateSessions->count() > 0 ? 'عرض جميع الدروس' : 'تصفح المعلمين',
-              'link' => route('student.academic-teachers', ['subdomain' => auth()->user()->academy->subdomain])
+              'text' => 'عرض جميع المعلمين الأكاديميين',
+              'link' => route('academic-teachers.index', ['subdomain' => auth()->user()->academy->subdomain])
             ],
             'stats' => $academicPrivateSessions->count() > 0 ? [
-              ['icon' => 'ri-user-3-line', 'value' => $academicPrivateSessions->count() . ' اشتراك نشط'],
-              ['icon' => 'ri-calendar-line', 'value' => $academicPrivateSessions->sum('sessions_per_month') . ' جلسة شهرياً']
+              ['icon' => 'ri-user-3-line', 'value' => $academicPrivateSessions->count() . ' اشتراك نشط', 'isActiveCount' => true]
             ] : []
           ])
         </div>
@@ -250,18 +265,18 @@
       <div class="mt-12">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-900">الكورسات المسجلة</h2>
-          <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
-             class="text-primary hover:text-secondary text-sm font-medium transition-colors">
+          <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
+             class="text-cyan-500 hover:text-cyan-600 text-sm font-medium transition-colors">
             عرض جميع الكورسات
             <i class="ri-arrow-left-s-line mr-1"></i>
           </a>
         </div>
-        
+
         @php
           $debugRecordedCourses = isset($recordedCourses) ? $recordedCourses : collect();
           $debugCount = $debugRecordedCourses->count();
         @endphp
-        
+
         @if($debugCount > 0)
           <!-- Courses Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -274,14 +289,14 @@
           <div class="text-center py-12 bg-white rounded-xl border border-gray-200">
             <div class="max-w-md mx-auto">
               <div class="mb-4">
-                <i class="ri-video-line text-4xl text-gray-400"></i>
+                <i class="ri-video-line text-4xl text-cyan-400"></i>
               </div>
               <h3 class="text-lg font-bold text-gray-900 mb-2">لا توجد كورسات مسجلة</h3>
               <p class="text-gray-600 mb-4">
                 لم يتم العثور على كورسات مسجلة. استكشف المزيد من الدورات المتاحة.
               </p>
               <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
-                 class="inline-block bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                 class="inline-block bg-cyan-500 text-white px-6 py-2 rounded-lg hover:bg-cyan-600 transition-colors">
                 <i class="ri-search-line ml-2"></i>
                 استكشاف الكورسات
               </a>
@@ -296,8 +311,8 @@
       <div class="mt-12">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-900">طلبات الجلسات التجريبية للقرآن</h2>
-          <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
-             class="text-primary hover:text-secondary text-sm font-medium transition-colors">
+          <a href="{{ route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
+             class="text-green-500 hover:text-green-600 text-sm font-medium transition-colors">
             عرض جميع المعلمين
             <i class="ri-arrow-left-s-line mr-1"></i>
           </a>
@@ -435,8 +450,8 @@
               <p class="text-gray-600 mb-4">
                 احجز جلسة تجريبية مجانية مع أحد معلمي القرآن المؤهلين وابدأ رحلة التعلم.
               </p>
-              <a href="{{ route('student.quran-teachers', ['subdomain' => auth()->user()->academy->subdomain]) }}"
-                 class="inline-block bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <a href="{{ route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
+                 class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
                 <i class="ri-add-circle-line ml-2"></i>
                 طلب جلسة تجريبية
               </a>

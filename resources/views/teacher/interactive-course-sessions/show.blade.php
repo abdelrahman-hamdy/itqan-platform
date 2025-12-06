@@ -8,7 +8,7 @@
         <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
             <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">الصفحة الرئيسية</a></li>
             <li>/</li>
-            <li><a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $session->course->id]) }}" class="hover:text-primary">{{ $session->course->title }}</a></li>
+            <li><a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary">{{ $session->course->title }}</a></li>
             <li>/</li>
             <li class="text-gray-900">جلسة رقم {{ $session->session_number }}</li>
         </ol>

@@ -11,18 +11,15 @@ Artisan::command('inspire', function () {
 $isLocal = config('app.env') === 'local';
 
 // LiveKit meeting management
-// Create meetings for upcoming sessions
+// Create meetings for upcoming sessions (backup for observer-based creation)
 $createMeetingsCommand = Schedule::command('meetings:create-scheduled')
     ->name('create-scheduled-meetings')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Create video meetings for scheduled sessions');
 
-if ($isLocal) {
-    $createMeetingsCommand->everyMinute();
-} else {
-    $createMeetingsCommand->everyFiveMinutes();
-}
+// Run every minute as backup (primary creation now happens via BaseSessionObserver)
+$createMeetingsCommand->everyMinute();
 
 // Cleanup expired meetings
 $cleanupMeetingsCommand = Schedule::command('meetings:cleanup-expired')
@@ -38,17 +35,15 @@ if ($isLocal) {
 }
 
 // Update session statuses based on time
+// CRITICAL: Run every minute for immediate status updates (triggers BaseSessionObserver for meeting creation)
 $updateStatusesCommand = Schedule::command('sessions:update-statuses')
     ->name('update-session-statuses')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Update session statuses based on current time and business rules');
 
-if ($isLocal) {
-    $updateStatusesCommand->everyTwoMinutes();
-} else {
-    $updateStatusesCommand->everyFiveMinutes();
-}
+// Run every minute for near-instant status updates
+$updateStatusesCommand->everyMinute();
 
 // Enhanced session meeting management (replaces individual commands above)
 $sessionMeetingCommand = Schedule::command('sessions:manage-meetings')
@@ -111,3 +106,38 @@ if ($isLocal) {
 } else {
     $calculateAttendanceJob->everyFiveMinutes(); // Every 5 minutes for production
 }
+
+// ════════════════════════════════════════════════════════════════
+// SUBSCRIPTION RENEWAL MANAGEMENT
+// ════════════════════════════════════════════════════════════════
+
+// Process automatic subscription renewals
+// Runs daily at 6:00 AM (before peak usage hours)
+// Handles Quran and Academic subscriptions with auto_renew enabled
+// NOTE: NO grace period - failed payments immediately expire subscription
+Schedule::command('subscriptions:process-renewals')
+    ->name('process-subscription-renewals')
+    ->dailyAt('06:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Process automatic subscription renewals for due subscriptions');
+
+// Send renewal reminder notifications
+// Runs daily at 9:00 AM (good time for users to see notifications)
+// Sends 7-day and 3-day reminders before renewal date
+Schedule::command('subscriptions:send-reminders')
+    ->name('send-renewal-reminders')
+    ->dailyAt('09:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Send renewal reminder notifications for upcoming renewals');
+
+// Check expiring subscriptions and send notifications
+// Runs daily at 9:00 AM (same time as renewal reminders)
+// Sends notifications for subscriptions expiring in 7, 3, and 1 days
+Schedule::command('subscriptions:check-expiring')
+    ->name('check-expiring-subscriptions')
+    ->dailyAt('09:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Send notifications for subscriptions expiring soon (7, 3, 1 days)');

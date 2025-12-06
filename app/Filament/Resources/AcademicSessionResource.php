@@ -108,7 +108,9 @@ class AcademicSessionResource extends Resource
                             ->label('موعد الجلسة')
                             ->required()
                             ->native(false)
-                            ->seconds(false),
+                            ->seconds(false)
+                            ->timezone(fn () => auth()->user()?->academy?->timezone?->value ?? 'UTC')
+                            ->displayFormat('Y-m-d H:i'),
 
                         Forms\Components\TextInput::make('duration_minutes')
                             ->label('مدة الجلسة (بالدقائق)')
@@ -189,6 +191,7 @@ class AcademicSessionResource extends Resource
                 Tables\Columns\TextColumn::make('scheduled_at')
                     ->label('موعد الجلسة')
                     ->dateTime()
+                    ->timezone(fn ($record) => $record->academy->timezone->value)
                     ->sortable(),
                 
                 Tables\Columns\TextColumn::make('duration_minutes')

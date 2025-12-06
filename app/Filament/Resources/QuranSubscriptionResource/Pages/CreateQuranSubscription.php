@@ -51,7 +51,7 @@ class CreateQuranSubscription extends CreateRecord
 
         // Set initial status
         $data['payment_status'] = 'pending';
-        $data['subscription_status'] = 'pending';
+        $data['status'] = 'pending';
 
         // Set initial progress fields
         $data['progress_percentage'] = 0;

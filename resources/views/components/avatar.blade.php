@@ -10,6 +10,10 @@
 ])
 
 @php
+    // Get academy branding for dynamic colors
+    $academy = auth()->check() ? auth()->user()->academy : null;
+    $brandColor = $academy && $academy->brand_color ? $academy->brand_color->value : 'sky';
+
     // Size classes for avatar container
     $sizeClasses = match($size) {
         'xs' => 'w-8 h-8',
@@ -53,11 +57,16 @@
 
     if ($user) {
         // Get user name from various possible properties
-        $userName = $user->full_name ??
-                   ($user->first_name && $user->last_name ? $user->first_name . ' ' . $user->last_name : null) ??
-                   $user->first_name ??
-                   $user->name ??
-                   'مستخدم';
+        // For parents, try to get from parentProfile first
+        if (isset($user->parentProfile) && $user->parentProfile) {
+            $userName = $user->parentProfile->getFullNameAttribute();
+        } else {
+            $userName = $user->full_name ??
+                       ($user->first_name && $user->last_name ? $user->first_name . ' ' . $user->last_name : null) ??
+                       $user->first_name ??
+                       $user->name ??
+                       'مستخدم';
+        }
 
         // Get avatar path from various possible properties
         $avatarPath = $user->avatar ??
@@ -123,13 +132,13 @@
             'defaultAvatar' => 'app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-academic-teacher-avatar.png',
         ],
         'parent' => [
-            'bgColor' => 'bg-purple-100',
-            'textColor' => 'text-purple-700',
-            'bgFallback' => 'bg-purple-100',
-            'borderColor' => 'border-purple-600',
+            'bgColor' => "bg-{$brandColor}-100",
+            'textColor' => "text-{$brandColor}-700",
+            'bgFallback' => "bg-{$brandColor}-100",
+            'borderColor' => "border-{$brandColor}-600",
             'icon' => 'ri-parent-line',
             'badge' => 'ولي أمر',
-            'badgeColor' => 'bg-purple-500',
+            'badgeColor' => "bg-{$brandColor}-500",
             'defaultAvatar' => null, // No default avatar for parents
         ],
         'supervisor' => [
@@ -168,7 +177,23 @@
     $finalBorderColor = $borderColor ? "border-{$borderColor}-600" : $config['borderColor'];
 
     // Get initials for fallback
-    $initials = mb_substr($userName, 0, 1, 'UTF-8');
+    // For parents, admins, and supervisors: show "أ.ح" format (first letter of first name + "." + first letter of last name)
+    // For students and teachers: show single initial (they use default avatars anyway)
+    $useFullInitials = in_array($finalUserType, ['parent', 'admin', 'academy_admin', 'supervisor', 'superadmin']);
+
+    if ($useFullInitials && $userName) {
+        // Split name into parts and get first letter of first and last name
+        $nameParts = preg_split('/\s+/', trim($userName));
+        if (count($nameParts) >= 2) {
+            $firstInitial = mb_substr($nameParts[0], 0, 1, 'UTF-8');
+            $lastInitial = mb_substr(end($nameParts), 0, 1, 'UTF-8');
+            $initials = $firstInitial . '.' . $lastInitial;
+        } else {
+            $initials = mb_substr($userName, 0, 1, 'UTF-8');
+        }
+    } else {
+        $initials = mb_substr($userName, 0, 1, 'UTF-8');
+    }
 @endphp
 
 <div {{ $attributes->merge(['class' => 'relative flex-shrink-0']) }}>

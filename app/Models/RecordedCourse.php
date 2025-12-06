@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -119,9 +120,33 @@ class RecordedCourse extends Model implements HasMedia
             ->withTimestamps();
     }
 
-    public function reviews(): HasMany
+    public function reviews(): MorphMany
     {
-        return $this->hasMany(CourseReview::class, 'course_id');
+        return $this->morphMany(CourseReview::class, 'reviewable');
+    }
+
+    /**
+     * Alias for updateStats - called by CourseReview observer
+     */
+    public function updateReviewStats(): void
+    {
+        $this->updateStats();
+    }
+
+    /**
+     * Check if a user has already reviewed this course
+     */
+    public function hasReviewFrom(int $userId): bool
+    {
+        return $this->reviews()->where('user_id', $userId)->exists();
+    }
+
+    /**
+     * Get only approved reviews
+     */
+    public function approvedReviews(): MorphMany
+    {
+        return $this->reviews()->where('is_approved', true);
     }
 
     public function progress(): HasMany

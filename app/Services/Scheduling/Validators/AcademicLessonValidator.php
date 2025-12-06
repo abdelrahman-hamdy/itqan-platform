@@ -91,50 +91,47 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
     public function validateDateRange(?Carbon $startDate, int $weeksAhead): ValidationResult
     {
+        // Use academy timezone for accurate time comparison
         $timezone = AcademyContextService::getTimezone();
-        $requestedStart = $startDate ?? Carbon::now($timezone);
-        $limits = $this->getSubscriptionLimits();
 
-        // Validate start date
-        $validStart = $limits['valid_start_date'];
-        $validEnd = $limits['valid_end_date'];
+        // Create single consistent 'now' reference to avoid microsecond differences
+        $now = Carbon::now($timezone)->startOfDay();
 
-        if ($requestedStart->isBefore($validStart)) {
+        // Parse requested start date or default to today
+        $requestedStart = $startDate ? Carbon::parse($startDate)->startOfDay() : $now;
+
+        // Get subscription dates with explicit parsing
+        // Use standardized field names (starts_at/ends_at) - same as Quran subscriptions
+        $subscriptionStart = $this->subscription->starts_at
+            ? Carbon::parse($this->subscription->starts_at)->startOfDay()
+            : $now;
+        $subscriptionEnd = $this->subscription->ends_at
+            ? Carbon::parse($this->subscription->ends_at)->startOfDay()
+            : null;
+
+        // Calculate earliest allowed date: max(subscription start, today)
+        $earliestAllowed = $subscriptionStart->isAfter($now) ? $subscriptionStart : $now;
+
+        // Validate: requested start >= earliest allowed
+        if ($requestedStart->isBefore($earliestAllowed)) {
             return ValidationResult::error(
-                "لا يمكن جدولة جلسات قبل تاريخ بدء الاشتراك ({$validStart->format('Y/m/d')})"
+                "لا يمكن جدولة جلسات قبل تاريخ بدء الاشتراك ({$earliestAllowed->format('Y/m/d')})"
             );
         }
 
-        // Allow scheduling from today onwards (actual time validation happens during scheduling)
-        $now = Carbon::now($timezone)->startOfDay();
-        if ($requestedStart->startOfDay()->lessThan($now)) {
+        // Validate: can't schedule in the past
+        if ($requestedStart->isBefore($now)) {
             return ValidationResult::error('لا يمكن جدولة جلسات في الماضي');
         }
 
         // Calculate end date of scheduling period
         $requestedEnd = $requestedStart->copy()->addWeeks($weeksAhead);
 
-        if ($requestedEnd->isAfter($validEnd)) {
-            $daysOver = $requestedEnd->diffInDays($validEnd);
+        // Validate: requested end doesn't exceed subscription end
+        if ($subscriptionEnd && $requestedEnd->isAfter($subscriptionEnd)) {
             return ValidationResult::warning(
-                "⚠️ بعض الجلسات ستتجاوز تاريخ انتهاء الاشتراك ({$validEnd->format('Y/m/d')}) بـ {$daysOver} يوم. " .
-                "قد تحتاج لتقليل عدد الأسابيع أو تجديد الاشتراك.",
-                ['overage_days' => $daysOver]
-            );
-        }
-
-        // Check if subscription is about to expire
-        $daysUntilExpiry = now()->diffInDays($validEnd, false);
-        if ($daysUntilExpiry < 7 && $daysUntilExpiry > 0) {
-            return ValidationResult::warning(
-                "⚠️ الاشتراك سينتهي خلال {$daysUntilExpiry} أيام ({$validEnd->format('Y/m/d')}). " .
-                "قد ترغب في تجديد الاشتراك قريباً."
-            );
-        }
-
-        if ($daysUntilExpiry <= 0) {
-            return ValidationResult::error(
-                "الاشتراك منتهي منذ {$validEnd->format('Y/m/d')}. يرجى تجديد الاشتراك."
+                "⚠️ بعض الجلسات قد تتجاوز تاريخ انتهاء الاشتراك ({$subscriptionEnd->format('Y/m/d')}). " .
+                "تأكد من توزيع الجلسات بشكل مناسب."
             );
         }
 
@@ -205,7 +202,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
     public function getSchedulingStatus(): array
     {
         // Check subscription status first
-        if (!$this->subscription || $this->subscription->subscription_status !== 'active') {
+        if (!$this->subscription || $this->subscription->status !== 'active') {
             return [
                 'status' => 'inactive',
                 'message' => 'الاشتراك غير نشط',
@@ -215,10 +212,10 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
             ];
         }
 
-        if ($this->subscription->end_date && $this->subscription->end_date->isPast()) {
+        if ($this->subscription->ends_at && $this->subscription->ends_at->isPast()) {
             return [
                 'status' => 'expired',
-                'message' => 'انتهى الاشتراك في ' . $this->subscription->end_date->format('Y/m/d'),
+                'message' => 'انتهى الاشتراك في ' . $this->subscription->ends_at->format('Y/m/d'),
                 'color' => 'red',
                 'can_schedule' => false,
                 'urgent' => false,
@@ -279,8 +276,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
      */
     private function getSubscriptionLimits(): array
     {
-        // Get total sessions from subscription package
-        $totalSessions = $this->subscription->total_sessions ?? 12;
+        // Get total sessions from subscription (should always be set from package)
+        $totalSessions = $this->subscription->total_sessions;
 
         // Calculate used sessions
         $usedSessions = $this->subscription->sessions()
@@ -290,8 +287,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         $remainingSessions = max(0, $totalSessions - $usedSessions);
 
         // Calculate subscription period
-        $startDate = $this->subscription->start_date ?? now();
-        $endDate = $this->subscription->end_date ?? now()->addMonths(1);
+        $startDate = $this->subscription->starts_at ?? now();
+        $endDate = $this->subscription->ends_at ?? now()->addMonths(1);
 
         // Calculate remaining time
         $now = now();
@@ -316,5 +313,14 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
             'days_remaining' => $daysRemaining,
             'weeks_remaining' => $weeksRemaining,
         ];
+    }
+
+    /**
+     * Get the maximum date that can be scheduled
+     * Returns the subscription end date
+     */
+    public function getMaxScheduleDate(): ?Carbon
+    {
+        return $this->subscription->ends_at;
     }
 }

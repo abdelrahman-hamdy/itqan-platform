@@ -5,9 +5,10 @@
     <div class="flex items-center justify-between">
       <!-- Logo and Academy Name -->
       <div class="flex items-center space-x-3 space-x-reverse">
-        @if($academy->logo)
-          <img src="{{ asset('storage/' . $academy->logo) }}" alt="{{ $academy->name }}" class="h-10 w-10 rounded-lg">
-        @endif
+        <x-academy-logo
+          :academy="$academy"
+          size="md"
+          :iconOnly="true" />
         <div>
           <h1 class="text-xl font-bold text-gray-900">{{ $academy->name ?? 'أكاديمية إتقان' }}</h1>
           <p class="text-sm text-gray-600">{{ $title }}</p>

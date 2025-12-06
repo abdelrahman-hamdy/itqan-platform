@@ -329,13 +329,32 @@ class InteractiveCourseResource extends BaseResource
                         Forms\Components\Toggle::make('is_published')
                             ->label('مفعل للنشر')
                             ->default(false)
-                            ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟'),
+                            ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟')
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                // When is_published is toggled ON, set status to 'published'
+                                // When is_published is toggled OFF, set status to 'draft'
+                                $set('status', $state ? 'published' : 'draft');
+                            }),
+
+                        Forms\Components\Select::make('status')
+                            ->label('حالة الدورة')
+                            ->options([
+                                'draft' => 'مسودة',
+                                'published' => 'منشور',
+                                'active' => 'نشط',
+                                'completed' => 'مكتمل',
+                                'cancelled' => 'ملغي',
+                            ])
+                            ->default('draft')
+                            ->required()
+                            ->helperText('حالة الدورة الحالية'),
 
                         Forms\Components\Toggle::make('recording_enabled')
                             ->label('تسجيل جلسات الدورة')
                             ->default(true)
                             ->helperText('تفعيل تسجيل جميع جلسات هذه الدورة'),
-                    ])->columns(2),
+                    ])->columns(3),
             ]);
     }
 

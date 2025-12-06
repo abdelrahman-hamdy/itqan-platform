@@ -49,9 +49,31 @@
             <!-- Session Quick Info -->
             <div class="flex flex-wrap items-center gap-4">
                 @if($session->scheduled_at)
-                <span class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full">
+                @php
+                    // Get academy timezone and convert scheduled_at
+                    $timezone = getAcademyTimezone();
+                    $scheduledInTz = toAcademyTimezone($session->scheduled_at);
+
+                    // Gregorian date - Arabic format (e.g., "15 يناير 2025")
+                    $gregorianDate = $scheduledInTz->locale('ar')->translatedFormat('d F Y');
+
+                    // Hijri date - Using IntlDateFormatter for accurate Islamic calendar conversion
+                    $hijriFormatter = new IntlDateFormatter(
+                        'ar@calendar=islamic-umalqura',
+                        IntlDateFormatter::LONG,
+                        IntlDateFormatter::NONE,
+                        $timezone,
+                        IntlDateFormatter::TRADITIONAL
+                    );
+                    $hijriDate = $hijriFormatter->format($scheduledInTz->timestamp);
+                @endphp
+                <span class="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-full">
                     <i class="ri-calendar-line ml-1"></i>
-                    {{ $session->scheduled_at->format('Y/m/d') }}
+                    <span class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                        <span>{{ $gregorianDate }}</span>
+                        <span class="hidden sm:inline text-blue-400">-</span>
+                        <span>{{ $hijriDate }}</span>
+                    </span>
                 </span>
                 @endif
                 

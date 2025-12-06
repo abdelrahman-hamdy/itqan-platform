@@ -1,7 +1,7 @@
 <x-layouts.teacher title="تقييم الواجب">
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <div class="space-y-6">
         <!-- Back Button -->
-        <div class="mb-6">
+        <div>
             <a href="{{ route('teacher.homework.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
                 <i class="ri-arrow-right-line ml-1"></i>
                 العودة إلى قائمة الواجبات

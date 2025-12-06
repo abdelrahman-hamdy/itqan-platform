@@ -28,7 +28,7 @@
   <x-booking.top-bar
     :academy="$academy"
     title="اشتراك جديد"
-    :backRoute="route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])" />
+    :backRoute="route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id])" />
 
 
   <!-- Main Content -->
@@ -119,7 +119,7 @@
           <p class="text-gray-600">املأ البيانات أدناه لإتمام عملية الاشتراك</p>
         </div>
 
-        <form action="{{ route('public.quran-teachers.subscribe.submit', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id]) }}" method="POST" class="space-y-6"
+        <form action="{{ route('quran-teachers.subscribe.submit', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id, 'packageId' => $package->id]) }}" method="POST" class="space-y-6"
               x-data="{
                 billingCycle: '{{ old('billing_cycle', $selectedPeriod ?? 'monthly') }}',
                 prices: {
@@ -384,7 +384,7 @@
               المتابعة للدفع
             </button>
             
-            <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" 
+            <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}" 
                class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               <i class="ri-arrow-left-line"></i>
               <span>إلغاء</span>

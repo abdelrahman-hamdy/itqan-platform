@@ -89,7 +89,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             return ValidationResult::error('لا يوجد اشتراك نشط لهذه الحلقة');
         }
 
-        if ($subscription->subscription_status !== 'active') {
+        if ($subscription->status !== 'active') {
             return ValidationResult::error('الاشتراك غير نشط. يجب تفعيل الاشتراك أولاً');
         }
 
@@ -168,7 +168,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
     {
         $subscription = $this->circle->subscription;
 
-        if (!$subscription || $subscription->subscription_status !== 'active') {
+        if (!$subscription || $subscription->status !== 'active') {
             return [
                 'status' => 'inactive',
                 'message' => 'الاشتراك غير نشط',
@@ -233,14 +233,27 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         $timezone = AcademyContextService::getTimezone();
 
+        // CRITICAL FIX: If subscription is null (deleted/not found), use circle's total_sessions directly
+        // This happens when subscription is soft-deleted but circle still has valid total_sessions
         if (!$subscription) {
+            // Calculate remaining based on circle's total_sessions field
+            $totalSessions = $this->circle->total_sessions ?? 0;
+            $usedSessions = $this->circle->sessions()
+                ->whereIn('status', ['completed', 'scheduled', 'in_progress'])
+                ->count();
+            $remainingSessions = max(0, $totalSessions - $usedSessions);
+
+            // Default scheduling window of 12 weeks (~3 months)
+            $weeksRemaining = $remainingSessions > 0 ? 12 : 0;
+            $recommendedPerWeek = $weeksRemaining > 0 ? $remainingSessions / $weeksRemaining : 0;
+
             return [
-                'remaining_sessions' => 0,
-                'recommended_per_week' => 0,
-                'max_per_week' => 0,
+                'remaining_sessions' => $remainingSessions,
+                'recommended_per_week' => round($recommendedPerWeek, 1),
+                'max_per_week' => $remainingSessions > 0 ? ceil($recommendedPerWeek * 1.5) : 0,
                 'valid_start_date' => Carbon::now($timezone),
-                'valid_end_date' => null,
-                'weeks_remaining' => 0,
+                'valid_end_date' => null, // No end date when subscription missing
+                'weeks_remaining' => $weeksRemaining,
             ];
         }
 
@@ -286,5 +299,25 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             'valid_end_date' => $endDate, // Based on billing cycle
             'weeks_remaining' => $weeksRemaining,
         ];
+    }
+
+    /**
+     * Get the maximum date that can be scheduled
+     * Returns the subscription end date based on billing cycle
+     */
+    public function getMaxScheduleDate(): ?Carbon
+    {
+        $subscription = $this->circle->individualSubscription;
+        if (!$subscription || !$subscription->starts_at || !$subscription->billing_cycle) {
+            return null;
+        }
+
+        return match ($subscription->billing_cycle) {
+            'weekly' => $subscription->starts_at->copy()->addWeek(),
+            'monthly' => $subscription->starts_at->copy()->addMonth(),
+            'quarterly' => $subscription->starts_at->copy()->addMonths(3),
+            'yearly' => $subscription->starts_at->copy()->addYear(),
+            default => null,
+        };
     }
 }

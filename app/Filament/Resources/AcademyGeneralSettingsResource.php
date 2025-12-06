@@ -300,6 +300,19 @@ class AcademyGeneralSettingsResource extends BaseResource
                                     ->helperText('المتغيرات المتاحة: {student_name}, {course_name}, {teacher_name}, {academy_name}, {completion_date}'),
                             ]),
                     ]),
+
+                // Review Settings
+                Section::make('إعدادات التقييمات')
+                    ->description('تخصيص إعدادات تقييمات المعلمين والدورات')
+                    ->icon('heroicon-o-star')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Toggle::make('academic_settings.auto_approve_reviews')
+                            ->label('الموافقة التلقائية على التقييمات')
+                            ->helperText('عند التفعيل، سيتم نشر التقييمات الجديدة تلقائياً دون الحاجة لمراجعة المشرف')
+                            ->default(true),
+                    ]),
             ]);
     }
 

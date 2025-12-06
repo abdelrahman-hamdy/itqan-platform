@@ -36,12 +36,7 @@
                         
                         @if($viewType === 'teacher')
                             <div class="flex items-center space-x-2 space-x-reverse">
-                                <button class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" 
-                                        onclick="viewStudentProgress({{ $student->id }})"
-                                        title="عرض التقدم">
-                                    <i class="ri-line-chart-line"></i>
-                                </button>
-                                <button class="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors" 
+                                <button class="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
                                         onclick="contactStudent({{ $student->id }})"
                                         title="التواصل">
                                     <i class="ri-message-line"></i>
@@ -76,26 +71,11 @@
             <!-- Empty state -->
             <div class="text-center py-12">
                 <div class="mx-auto w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-4">
-                    <i class="ri-user-add-line text-3xl text-gray-400"></i>
+                    <i class="ri-group-line text-3xl text-gray-400"></i>
                 </div>
-                <h4 class="text-lg font-semibold text-gray-900 mb-2">لا يوجد طلاب مسجلون بعد</h4>
-                <p class="text-gray-500 mb-4">ابدأ بدعوة الطلاب للانضمام إلى هذه الحلقة</p>
-                @if($viewType === 'teacher')
-                    <button class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors"
-                            onclick="inviteStudents()">
-                        <i class="ri-user-add-line ml-2"></i>
-                        دعوة طلاب
-                    </button>
-                @endif
+                <h4 class="text-lg font-semibold text-gray-900">لا يوجد طلاب مسجلون بعد</h4>
             </div>
         @endif
     </div>
 </div>
 
-@if($viewType === 'teacher')
-<script>
-    function inviteStudents() {
-        alert('سيتم تنفيذ دعوة الطلاب قريباً');
-    }
-</script>
-@endif

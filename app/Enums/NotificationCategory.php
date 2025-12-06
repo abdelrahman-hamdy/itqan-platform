@@ -10,7 +10,6 @@ enum NotificationCategory: string
     case PAYMENT = 'payment';
     case MEETING = 'meeting';
     case PROGRESS = 'progress';
-    case CHAT = 'chat';
     case SYSTEM = 'system';
 
     /**
@@ -25,7 +24,6 @@ enum NotificationCategory: string
             self::PAYMENT => 'heroicon-o-credit-card',
             self::MEETING => 'heroicon-o-video-camera',
             self::PROGRESS => 'heroicon-o-chart-bar',
-            self::CHAT => 'heroicon-o-chat-bubble-left-right',
             self::SYSTEM => 'heroicon-o-cog',
         };
     }
@@ -42,7 +40,6 @@ enum NotificationCategory: string
             self::PAYMENT => 'info',
             self::MEETING => 'purple',
             self::PROGRESS => 'indigo',
-            self::CHAT => 'cyan',
             self::SYSTEM => 'gray',
         };
     }
@@ -59,7 +56,6 @@ enum NotificationCategory: string
             self::PAYMENT => 'bg-cyan-100 text-cyan-800',
             self::MEETING => 'bg-purple-100 text-purple-800',
             self::PROGRESS => 'bg-indigo-100 text-indigo-800',
-            self::CHAT => 'bg-teal-100 text-teal-800',
             self::SYSTEM => 'bg-gray-100 text-gray-800',
         };
     }
@@ -76,7 +72,6 @@ enum NotificationCategory: string
             self::PAYMENT => __('notifications.categories.payment'),
             self::MEETING => __('notifications.categories.meeting'),
             self::PROGRESS => __('notifications.categories.progress'),
-            self::CHAT => __('notifications.categories.chat'),
             self::SYSTEM => __('notifications.categories.system'),
         };
     }

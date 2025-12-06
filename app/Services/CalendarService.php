@@ -258,11 +258,11 @@ class CalendarService
             $query = QuranSession::select([
                 'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
                 'quran_teacher_id', 'student_id', 'quran_subscription_id', 'circle_id', 'session_type',
-                'individual_circle_id', 'is_template', 'is_scheduled',
+                'individual_circle_id',
             ])
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
                 ->with([
-                    'quranTeacher:id,first_name,last_name',
+                    'quranTeacher:id,first_name,last_name,name,email,gender',
                     'student:id,name',
                     'subscription:id,package_id',
                     'circle:id,name_ar,circle_code',
@@ -288,7 +288,14 @@ class CalendarService
             $q->whereDate('scheduled_at', '>=', $startDate->toDateString())
               ->whereDate('scheduled_at', '<=', $endDate->toDateString());
         })
-            ->with(['course']);
+            ->with([
+                'course' => function ($query) {
+                    $query->with([
+                        'assignedTeacher:id,user_id,first_name,last_name',
+                        'assignedTeacher.user:id,name,email,gender'
+                    ]);
+                }
+            ]);
 
         if ($user->isAcademicTeacher()) {
             $query->whereHas('course', function ($q) use ($user) {
@@ -325,7 +332,10 @@ class CalendarService
                     ->whereBetween('scheduled_at', [$startDate, $endDate])
                     ->where('session_type', 'group')
                     ->where('quran_teacher_id', $user->id)
-                    ->with(['circle:id,name_ar,circle_code,enrolled_students'])
+                    ->with([
+                        'circle:id,name_ar,circle_code,enrolled_students',
+                        'quranTeacher:id,first_name,last_name,name,email,gender',
+                    ])
                     ->get();
             } else {
                 // Get sessions for circles the user is enrolled in
@@ -342,7 +352,7 @@ class CalendarService
                     ->whereIn('circle_id', $userCircles)
                     ->with([
                         'circle:id,name_ar,circle_code',
-                        'quranTeacher:id,first_name,last_name',
+                        'quranTeacher:id,first_name,last_name,name,email,gender',
                     ])
                     ->get();
             }
@@ -377,6 +387,17 @@ class CalendarService
                 'status' => $status,
                 'color' => $this->getSessionColor($session),
                 'url' => $this->getSessionUrl($session),
+                'teacher_name' => $session->quranTeacher ? ($session->quranTeacher->first_name . ' ' . $session->quranTeacher->last_name) : null,
+                'teacher_data' => $session->quranTeacher ? [
+                    'id' => $session->quranTeacher->id,
+                    'name' => $session->quranTeacher->first_name . ' ' . $session->quranTeacher->last_name,
+                    'gender' => $session->quranTeacher->gender ?? 'male',
+                    'user' => [
+                        'id' => $session->quranTeacher->id,
+                        'name' => $session->quranTeacher->name,
+                        'email' => $session->quranTeacher->email,
+                    ],
+                ] : null,
                 'meeting_url' => $session->google_meet_url ?? $session->meeting_link,
                 'can_reschedule' => $session->can_reschedule,
                 'can_cancel' => $session->can_cancel,
@@ -413,11 +434,12 @@ class CalendarService
                 $status = $status->name ?? 'unknown';
             }
 
-            // Try to generate URL safely
+            // Try to generate session URL safely (not course URL - we want session details, not course page)
             $sessionUrl = '#';
             try {
-                if (Route::has('courses.session')) {
-                    $sessionUrl = route('courses.session', $session->id);
+                if ($session->id && Route::has('interactive-sessions.show')) {
+                    $subdomain = auth()->user()?->academy?->subdomain ?? 'itqan-academy';
+                    $sessionUrl = route('interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
                 }
             } catch (\Exception $e) {
                 // Keep default '#' if route doesn't exist
@@ -435,6 +457,17 @@ class CalendarService
                 'status' => $status,
                 'color' => '#3B82F6', // Blue for courses
                 'url' => $sessionUrl,
+                'teacher_name' => $session->course?->assignedTeacher ? ($session->course->assignedTeacher->first_name . ' ' . $session->course->assignedTeacher->last_name) : null,
+                'teacher_data' => $session->course?->assignedTeacher ? [
+                    'id' => $session->course->assignedTeacher->id,
+                    'name' => $session->course->assignedTeacher->first_name . ' ' . $session->course->assignedTeacher->last_name,
+                    'gender' => $session->course->assignedTeacher->user?->gender ?? 'male',
+                    'user' => $session->course->assignedTeacher->user ? [
+                        'id' => $session->course->assignedTeacher->user->id,
+                        'name' => $session->course->assignedTeacher->user->name,
+                        'email' => $session->course->assignedTeacher->user->email,
+                    ] : null,
+                ] : null,
                 'meeting_url' => $session->meeting_link ?? null,
                 'participants' => $participantsCount,
                 'metadata' => [
@@ -464,11 +497,12 @@ class CalendarService
                 $status = $status->name ?? 'unknown';
             }
 
-            // Try to generate URL safely
-            $circleUrl = '#';
+            // Try to generate session URL safely (not circle URL - we want session details, not circle page)
+            $sessionUrl = '#';
             try {
-                if ($session->circle_id && Route::has('circles.show')) {
-                    $circleUrl = route('circles.show', $session->circle_id);
+                if ($session->id && Route::has('student.sessions.show')) {
+                    $subdomain = auth()->user()?->academy?->subdomain ?? 'itqan-academy';
+                    $sessionUrl = route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
                 }
             } catch (\Exception $e) {
                 // Keep default '#' if route doesn't exist or fails
@@ -485,7 +519,18 @@ class CalendarService
                 'duration_minutes' => $session->duration_minutes,
                 'status' => $status,
                 'color' => '#10B981', // Green for circles
-                'url' => $circleUrl,
+                'url' => $sessionUrl,
+                'teacher_name' => $session->quranTeacher ? ($session->quranTeacher->first_name . ' ' . $session->quranTeacher->last_name) : null,
+                'teacher_data' => $session->quranTeacher ? [
+                    'id' => $session->quranTeacher->id,
+                    'name' => $session->quranTeacher->first_name . ' ' . $session->quranTeacher->last_name,
+                    'gender' => $session->quranTeacher->gender ?? 'male',
+                    'user' => [
+                        'id' => $session->quranTeacher->id,
+                        'name' => $session->quranTeacher->name,
+                        'email' => $session->quranTeacher->email,
+                    ],
+                ] : null,
                 'meeting_url' => $session->google_meet_url ?? $session->meeting_link ?? null,
                 'participants' => $participantsCount,
                 'metadata' => [
@@ -671,17 +716,28 @@ class CalendarService
 
     private function getSessionUrl($session): string
     {
-        // Return URL based on session type
-        if ($session->session_type === 'group' && $session->circle_id) {
-            try {
-                return route('circles.show', $session->circle_id);
-            } catch (\Exception $e) {
+        try {
+            $subdomain = auth()->user()?->academy?->subdomain ?? 'itqan-academy';
+
+            // Group circle sessions
+            if ($session->session_type === 'group' && $session->circle_id) {
+                if (Route::has('quran-circles.show')) {
+                    return route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $session->circle_id]);
+                }
                 return '#';
             }
+
+            // Individual Quran sessions
+            if ($session->session_type === 'individual') {
+                if (Route::has('student.sessions.show')) {
+                    return route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
+                }
+                return '#';
+            }
+        } catch (\Exception $e) {
+            return '#';
         }
 
-        // For individual sessions, return placeholder
-        // Frontend teacher calendar has been removed - use Filament dashboard instead
         return '#';
     }
 
@@ -689,11 +745,11 @@ class CalendarService
     {
         $participants = [];
 
-        if ($session->quranTeacher && $session->quranTeacher->user) {
+        if ($session->quranTeacher) {
             $participants[] = [
-                'name' => $session->quranTeacher->user->name ?? 'معلم غير محدد',
+                'name' => $session->quranTeacher->name ?? 'معلم غير محدد',
                 'role' => 'teacher',
-                'email' => $session->quranTeacher->user->email ?? '',
+                'email' => $session->quranTeacher->email ?? '',
             ];
         }
 

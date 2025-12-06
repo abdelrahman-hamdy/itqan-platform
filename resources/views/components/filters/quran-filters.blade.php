@@ -11,11 +11,25 @@
 ])
 
 @php
-    $colorClasses = [
-        'focus' => "focus:ring-{$color}-500 focus:border-{$color}-500",
-        'button' => "bg-{$color}-600 hover:bg-{$color}-700",
-        'buttonHover' => "hover:border-{$color}-500 hover:text-{$color}-600"
+    // Map color names to actual Tailwind classes (fixes dynamic class issue)
+    $colorMap = [
+        'yellow' => [
+            'focus' => 'focus:ring-yellow-500 focus:border-yellow-500',
+            'button' => 'bg-yellow-600 hover:bg-yellow-700',
+            'checkbox' => 'text-yellow-600 focus:ring-yellow-500',
+        ],
+        'green' => [
+            'focus' => 'focus:ring-green-500 focus:border-green-500',
+            'button' => 'bg-green-600 hover:bg-green-700',
+            'checkbox' => 'text-green-600 focus:ring-green-500',
+        ],
+        'purple' => [
+            'focus' => 'focus:ring-purple-500 focus:border-purple-500',
+            'button' => 'bg-purple-600 hover:bg-purple-700',
+            'checkbox' => 'text-purple-600 focus:ring-purple-500',
+        ],
     ];
+    $colorClasses = $colorMap[$color] ?? $colorMap['purple'];
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
@@ -159,7 +173,7 @@
                             <input type="checkbox" name="schedule_days[]" value="{{ $weekDay->value }}"
                                    x-model="selected"
                                    {{ in_array($weekDay->value, request('schedule_days', [])) ? 'checked' : '' }}
-                                   class="ml-3 rounded border-gray-300 text-{{ $color }}-600 focus:ring-{{ $color }}-500">
+                                   class="ml-3 rounded border-gray-300 {{ $colorClasses['checkbox'] }}">
                             <span class="text-sm text-gray-700">{{ $weekDay->label() }}</span>
                         </label>
                         @endforeach

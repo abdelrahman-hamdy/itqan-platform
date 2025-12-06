@@ -107,7 +107,7 @@ class QuranHomeworkController extends Controller
 
         $subscriptions = QuranSubscription::with('student')
             ->where('academy_id', $academy->id)
-            ->where('subscription_status', 'active')
+            ->where('status', 'active')
             ->get();
 
         $circles = QuranCircle::where('academy_id', $academy->id)

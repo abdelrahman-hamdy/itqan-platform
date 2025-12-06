@@ -1,3 +1,11 @@
+@php
+    // Get gradient palette for this academy
+    $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
+    $colors = $gradientPalette->getColors();
+    $gradientFrom = $colors['from'];
+    $gradientTo = $colors['to'];
+@endphp
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -25,7 +33,7 @@
   @include('academy.components.topbar', ['academy' => $academy])
 
   <!-- Page Header -->
-  <div class="bg-gradient-to-r from-primary to-secondary text-white py-16">
+  <div class="bg-gradient-to-r from-{{ $gradientFrom }} to-{{ $gradientTo }} text-white py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center">
         <h1 class="text-4xl font-bold mb-4">الشروط والأحكام</h1>
@@ -166,7 +174,7 @@
   </div>
 
   <!-- Footer -->
-  @include('academy.components.footer', ['academy' => $academy])
+  <x-academy-footer :academy="$academy" />
 
 </body>
 </html>

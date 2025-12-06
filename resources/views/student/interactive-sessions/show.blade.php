@@ -3,13 +3,13 @@
     <nav class="mb-6 text-sm breadcrumbs">
         <ul class="flex items-center space-x-2 text-gray-600">
             <li>
-                <a href="{{ route('student.interactive-courses', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary-600 transition">
+                <a href="{{ route('interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary-600 transition">
                     <i class="ri-book-2-line"></i> My Courses
                 </a>
             </li>
             <li class="text-gray-400">/</li>
             <li>
-                <a href="{{ route('my.interactive-course.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $session->course->id]) }}" class="hover:text-primary-600 transition">
+                <a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary-600 transition">
                     {{ $session->course->title }}
                 </a>
             </li>
@@ -32,11 +32,11 @@
 
             {{-- LiveKit Meeting Interface (if session is active or joinable) --}}
             @php
-                $now = now();
-                $scheduledDateTime = $session->scheduled_at;
-                $tenMinutesBefore = $scheduledDateTime->copy()->subMinutes(10);
+                $now = nowInAcademyTimezone();
+                $scheduledDateTime = toAcademyTimezone($session->scheduled_at);
+                $tenMinutesBefore = $session->scheduled_at->copy()->subMinutes(10);
                 $canJoin = $session->status === \App\Enums\SessionStatus::ONGOING ||
-                           ($session->status === \App\Enums\SessionStatus::SCHEDULED && $now->gte($tenMinutesBefore) && $now->lte($scheduledDateTime->copy()->addMinutes($session->duration_minutes)));
+                           ($session->status === \App\Enums\SessionStatus::SCHEDULED && now()->gte($tenMinutesBefore) && now()->lte($session->scheduled_at->copy()->addMinutes($session->duration_minutes)));
             @endphp
 
             @if($canJoin && $session->meeting)
@@ -60,7 +60,7 @@
                         <div>
                             <h3 class="text-lg font-semibold text-blue-900 mb-2">Session Starting Soon</h3>
                             <p class="text-blue-700 mb-2">
-                                This session is scheduled for {{ $scheduledDateTime->format('F j, Y \a\t g:i A') }}
+                                This session is scheduled for {{ formatDateTimeArabic($session->scheduled_at) }}
                             </p>
                             <p class="text-blue-600 text-sm">
                                 You can join 10 minutes before the start time.
@@ -164,9 +164,12 @@
                 :attendance="$attendance"
             />
 
-            <x-interactive.session-quick-actions
-                :session="$session"
-                :canJoin="$canJoin ?? false"
+            <x-circle.quick-actions
+                :circle="$session->course"
+                type="group"
+                view-type="student"
+                context="interactive"
+                :is-enrolled="true"
             />
         </div>
     </div>

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Contracts\RecordingCapable;
+use App\Traits\HasRecording;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class InteractiveCourseSession extends BaseSession
+class InteractiveCourseSession extends BaseSession implements RecordingCapable
 {
+    use HasRecording;
 
     /**
      * Interactive-specific fillable fields (merged with parent in constructor)
@@ -412,16 +415,17 @@ class InteractiveCourseSession extends BaseSession
 
         // Add all enrolled students
         if ($this->course) {
-            $enrolledStudents = $this->course->enrollments()->with('student')->get();
+            $enrolledStudents = $this->course->enrollments()->with('student.user')->get();
             foreach ($enrolledStudents as $enrollment) {
-                if ($enrollment->student) {
+                if ($enrollment->student && $enrollment->student->user) {
+                    $user = $enrollment->student->user;
                     $participants[] = [
-                        'id' => $enrollment->student->id,
-                        'name' => trim($enrollment->student->first_name . ' ' . $enrollment->student->last_name),
-                        'email' => $enrollment->student->email,
+                        'id' => $user->id,
+                        'name' => trim($user->first_name . ' ' . $user->last_name),
+                        'email' => $user->email,
                         'role' => 'student',
                         'is_teacher' => false,
-                        'user' => $enrollment->student,
+                        'user' => $user,
                     ];
                 }
             }
@@ -488,8 +492,8 @@ class InteractiveCourseSession extends BaseSession
         }
 
         // Enrolled students are participants
-        if ($this->course && $user->user_type === 'student') {
-            return $this->course->enrollments()->where('student_id', $user->id)->exists();
+        if ($this->course && $user->user_type === 'student' && $user->studentProfile) {
+            return $this->course->enrollments()->where('student_id', $user->studentProfile->id)->exists();
         }
 
         return false;
@@ -507,10 +511,14 @@ class InteractiveCourseSession extends BaseSession
             $participants->push($this->course->academicTeacher->user);
         }
 
-        // Add all enrolled students
+        // Add all enrolled students (get User objects from StudentProfile)
         if ($this->course) {
-            $enrolledStudents = $this->course->enrollments()->with('student')->get()->pluck('student');
-            $participants = $participants->merge($enrolledStudents);
+            $enrolledUsers = $this->course->enrollments()
+                ->with('student.user')
+                ->get()
+                ->map(fn($enrollment) => $enrollment->student?->user)
+                ->filter();
+            $participants = $participants->merge($enrolledUsers);
         }
 
         // Remove duplicates and null values
@@ -558,5 +566,41 @@ class InteractiveCourseSession extends BaseSession
         }
 
         return 15; // Fallback default
+    }
+
+    // ========================================
+    // RECORDING CAPABILITY IMPLEMENTATION
+    // ========================================
+
+    /**
+     * Override: Check if recording is enabled for this session
+     *
+     * For InteractiveCourseSession, recording is controlled by course's recording_enabled field
+     */
+    public function isRecordingEnabled(): bool
+    {
+        return $this->course && (bool) $this->course->recording_enabled;
+    }
+
+    /**
+     * Provide extended metadata for recordings specific to Interactive Course sessions
+     * This is merged with base metadata from HasRecording trait
+     */
+    protected function getExtendedRecordingMetadata(): array
+    {
+        $metadata = [
+            'course_id' => $this->course_id,
+            'course_title' => $this->course?->title,
+            'session_number' => $this->session_number,
+            'teacher_id' => $this->course?->assigned_teacher_id,
+            'teacher_name' => $this->course?->assignedTeacher?->user?->full_name,
+        ];
+
+        // Add enrollment count
+        if ($this->course) {
+            $metadata['enrolled_students_count'] = $this->course->enrollments()->count();
+        }
+
+        return $metadata;
     }
 }

@@ -1,397 +1,369 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $academy ? $academy->name . ' - ' : '' }}تسجيل معلم جديد - الخطوة 2</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
-            <!-- Academy Logo and Title -->
-            <div class="text-center">
-                @if($academy && $academy->logo_url)
-                    <img class="mx-auto h-16 w-auto" src="{{ $academy->logo_url }}" alt="{{ $academy->name }}">
-                @else
-                    <div class="mx-auto h-16 w-16 bg-green-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-chalkboard-teacher text-white text-2xl"></i>
-                    </div>
-                @endif
-                <h2 class="mt-6 text-3xl font-bold text-gray-900">
-                    {{ $academy ? $academy->name : 'منصة إتقان' }}
-                </h2>
-                <p class="mt-2 text-sm text-gray-600">
-                    تسجيل حساب معلم جديد - الخطوة 2
-                </p>
-                <div class="mt-2">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
-                        {{ $teacherType === 'quran_teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
-                        <i class="fas {{ $teacherType === 'quran_teacher' ? 'fa-quran' : 'fa-graduation-cap' }} ml-1"></i>
-                        {{ $teacherType === 'quran_teacher' ? 'معلم القرآن الكريم' : 'معلم المواد الأكاديمية' }}
-                    </span>
-                </div>
-            </div>
-
-            <!-- Registration Form -->
-            <form class="mt-8 space-y-6" method="POST" action="{{ route('teacher.register.step2.post', ['subdomain' => request()->route('subdomain')]) }}">
-                @csrf
-                
-                <!-- Personal Information Section -->
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-user ml-2"></i>
-                        المعلومات الشخصية
-                    </h3>
-                    
-                    <!-- First Name -->
-                    <div class="mb-4">
-                        <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
-                            الاسم الأول *
-                        </label>
-                        <input id="first_name" name="first_name" type="text" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('first_name') border-red-500 @enderror"
-                               placeholder="أدخل الاسم الأول"
-                               value="{{ old('first_name') }}">
-                        @error('first_name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Last Name -->
-                    <div class="mb-4">
-                        <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
-                            اسم العائلة *
-                        </label>
-                        <input id="last_name" name="last_name" type="text" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('last_name') border-red-500 @enderror"
-                               placeholder="أدخل اسم العائلة"
-                               value="{{ old('last_name') }}">
-                        @error('last_name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Email -->
-                    <div class="mb-4">
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                            البريد الإلكتروني *
-                        </label>
-                        <input id="email" name="email" type="email" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('email') border-red-500 @enderror"
-                               placeholder="أدخل البريد الإلكتروني"
-                               value="{{ old('email') }}">
-                        @error('email')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Phone -->
-                    <div class="mb-4">
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-                            رقم الهاتف *
-                        </label>
-                        <input id="phone" name="phone" type="tel" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('phone') border-red-500 @enderror"
-                               placeholder="أدخل رقم الهاتف"
-                               value="{{ old('phone') }}">
-                        @error('phone')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <!-- Professional Information Section -->
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-briefcase ml-2"></i>
-                        المعلومات المهنية
-                    </h3>
-                    
-                    <!-- Qualification Degree -->
-                    <div class="mb-4">
-                        <label for="qualification_degree" class="block text-sm font-medium text-gray-700 mb-2">
-                            المؤهل التعليمي *
-                        </label>
-                        <select id="qualification_degree" name="qualification_degree" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('qualification_degree') border-red-500 @enderror">
-                            <option value="">اختر المؤهل التعليمي</option>
-                            <option value="bachelor" {{ old('qualification_degree') == 'bachelor' ? 'selected' : '' }}>بكالوريوس</option>
-                            <option value="master" {{ old('qualification_degree') == 'master' ? 'selected' : '' }}>ماجستير</option>
-                            <option value="phd" {{ old('qualification_degree') == 'phd' ? 'selected' : '' }}>دكتوراه</option>
-                            <option value="other" {{ old('qualification_degree') == 'other' ? 'selected' : '' }}>أخرى</option>
-                        </select>
-                        @error('qualification_degree')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- University -->
-                    <div class="mb-4">
-                        <label for="university" class="block text-sm font-medium text-gray-700 mb-2">
-                            الجامعة *
-                        </label>
-                        <input id="university" name="university" type="text" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('university') border-red-500 @enderror"
-                               placeholder="اسم الجامعة"
-                               value="{{ old('university') }}">
-                        @error('university')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Years Experience -->
-                    <div class="mb-4">
-                        <label for="years_experience" class="block text-sm font-medium text-gray-700 mb-2">
-                            سنوات الخبرة *
-                        </label>
-                        <input id="years_experience" name="years_experience" type="number" min="0" max="50" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('years_experience') border-red-500 @enderror"
-                               placeholder="عدد سنوات الخبرة"
-                               value="{{ old('years_experience') }}">
-                        @error('years_experience')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    @if($teacherType === 'quran_teacher')
-                        <!-- Quran Teacher Specific Fields -->
-                        <div class="mb-4">
-                            <label for="has_ijazah" class="block text-sm font-medium text-gray-700 mb-2">
-                                هل لديك إجازة في القرآن الكريم؟ *
-                            </label>
-                            <div class="space-y-2">
-                                <label class="flex items-center">
-                                    <input type="radio" name="has_ijazah" value="1" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300" {{ old('has_ijazah') == '1' ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">نعم</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="has_ijazah" value="0" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300" {{ old('has_ijazah') == '0' ? 'checked' : '' }}>
-                                    <span class="mr-2 text-sm text-gray-700">لا</span>
-                                </label>
-                            </div>
-                            @error('has_ijazah')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="mb-4" id="ijazah_details_div" style="display: none;">
-                            <label for="ijazah_details" class="block text-sm font-medium text-gray-700 mb-2">
-                                تفاصيل الإجازة *
-                            </label>
-                            <textarea id="ijazah_details" name="ijazah_details" rows="3"
-                                      class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('ijazah_details') border-red-500 @enderror"
-                                      placeholder="أدخل تفاصيل إجازتك في القرآن الكريم">{{ old('ijazah_details') }}</textarea>
-                            @error('ijazah_details')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    @else
-                        <!-- Academic Teacher Specific Fields -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                المواد التي يمكنك تدريسها *
-                            </label>
-                            <div class="space-y-2">
-                                @php
-                                    // Get available subjects for the academy
-                                    $subjects = \App\Models\Subject::where('academy_id', $academy->id)
-                                        ->where('is_active', true)
-                                        ->orderBy('name')
-                                        ->get();
-                                @endphp
-                                
-                                @foreach($subjects as $subject)
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="subjects[]" value="{{ $subject->id }}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array($subject->id, old('subjects', [])) ? 'checked' : '' }}>
-                                        <span class="mr-2 text-sm text-gray-700">{{ $subject->name }}</span>
-                                    </label>
-                                @endforeach
-                                
-                                @if($subjects->isEmpty())
-                                    <p class="text-sm text-gray-500">لا توجد مواد دراسية متاحة حالياً</p>
-                                @endif
-                            </div>
-                            @error('subjects')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                الصفوف الدراسية *
-                            </label>
-                            <div class="space-y-2">
-                                @php
-                                    // Get available grade levels for the academy
-                                    $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
-                                        ->where('is_active', true)
-                                        ->orderBy('name')
-                                        ->get();
-                                @endphp
-                                
-                                @foreach($gradeLevels as $gradeLevel)
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="grade_levels[]" value="{{ $gradeLevel->id }}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array($gradeLevel->id, old('grade_levels', [])) ? 'checked' : '' }}>
-                                        <span class="mr-2 text-sm text-gray-700">{{ $gradeLevel->name }}</span>
-                                    </label>
-                                @endforeach
-                                
-                                @if($gradeLevels->isEmpty())
-                                    <p class="text-sm text-gray-500">لا توجد صفوف دراسية متاحة حالياً</p>
-                                @endif
-                            </div>
-                            @error('grade_levels')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                الأيام المتاحة *
-                            </label>
-                            <div class="grid grid-cols-2 gap-2">
-                                @php
-                                    $days = [
-                                        'sunday' => 'الأحد',
-                                        'monday' => 'الاثنين', 
-                                        'tuesday' => 'الثلاثاء',
-                                        'wednesday' => 'الأربعاء',
-                                        'thursday' => 'الخميس',
-                                        'friday' => 'الجمعة',
-                                        'saturday' => 'السبت'
-                                    ];
-                                    $availableDays = old('available_days', []);
-                                @endphp
-                                
-                                @foreach($days as $key => $day)
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="available_days[]" value="{{ $key }}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {{ in_array($key, $availableDays) ? 'checked' : '' }}>
-                                        <span class="mr-2 text-sm text-gray-700">{{ $day }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                            @error('available_days')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Account Security Section -->
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-shield-alt ml-2"></i>
-                        أمان الحساب
-                    </h3>
-                    
-                    <!-- Password -->
-                    <div class="mb-4">
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                            كلمة المرور *
-                        </label>
-                        <input id="password" name="password" type="password" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm @error('password') border-red-500 @enderror"
-                               placeholder="أدخل كلمة المرور (8 أحرف على الأقل)">
-                        @error('password')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Password Confirmation -->
-                    <div class="mb-4">
-                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
-                            تأكيد كلمة المرور *
-                        </label>
-                        <input id="password_confirmation" name="password_confirmation" type="password" required 
-                               class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                               placeholder="أعد إدخال كلمة المرور">
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
-                <div>
-                    <button type="submit" 
-                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
-                        <span class="absolute left-0 inset-y-0 flex items-center pr-3">
-                            <i class="fas fa-user-plus text-green-500 group-hover:text-green-400"></i>
-                        </span>
-                        إرسال طلب التسجيل
-                    </button>
-                </div>
-
-                <!-- Login Link -->
-                <div class="text-center">
-                    <p class="text-sm text-gray-600">
-                        لديك حساب بالفعل؟
-                        <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}" class="font-medium text-green-600 hover:text-green-500">
-                            تسجيل الدخول
-                        </a>
-                    </p>
-                </div>
-            </form>
-
-            <!-- Back to Home -->
-            <div class="text-center">
-                <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}" class="text-sm text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-arrow-right ml-1"></i>
-                    العودة للصفحة الرئيسية
-                </a>
-            </div>
-        </div>
+<x-auth.layout title="تسجيل معلم جديد" subtitle="أكمل بياناتك لإنهاء التسجيل" maxWidth="lg" :academy="$academy">
+    <!-- Teacher Type Badge -->
+    <div class="mb-6 flex justify-center">
+        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium {{ $teacherType === 'quran_teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
+            <i class="ri-{{ $teacherType === 'quran_teacher' ? 'book-2' : 'graduation-cap' }}-line"></i>
+            {{ $teacherType === 'quran_teacher' ? 'معلم القرآن الكريم' : 'معلم المواد الأكاديمية' }}
+        </span>
     </div>
 
-    <!-- Success/Error Messages -->
-    @if(session('success'))
-        <div class="fixed top-4 left-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg z-50">
-            <div class="flex items-center">
-                <i class="fas fa-check-circle ml-2"></i>
-                <span>{{ session('success') }}</span>
+    <form method="POST"
+          action="{{ route('teacher.register.step2.post', ['subdomain' => request()->route('subdomain')]) }}"
+          x-data="{
+              loading: false,
+              hasIjazah: {{ old('has_ijazah', '0') }}
+          }"
+          @submit="loading = true">
+        @csrf
+
+        <!-- Personal Information Section -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <i class="ri-user-line text-primary text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">المعلومات الشخصية</h3>
             </div>
-        </div>
-    @endif
 
-    @if(session('error'))
-        <div class="fixed top-4 left-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50">
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-circle ml-2"></i>
-                <span>{{ session('error') }}</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <x-auth.input
+                    label="الاسم الأول"
+                    name="first_name"
+                    type="text"
+                    icon="ri-user-line"
+                    placeholder="أدخل الاسم الأول"
+                    :value="old('first_name')"
+                    :required="true"
+                />
+
+                <x-auth.input
+                    label="اسم العائلة"
+                    name="last_name"
+                    type="text"
+                    icon="ri-user-line"
+                    placeholder="أدخل اسم العائلة"
+                    :value="old('last_name')"
+                    :required="true"
+                />
             </div>
+
+            <x-auth.input
+                label="البريد الإلكتروني"
+                name="email"
+                type="email"
+                icon="ri-mail-line"
+                placeholder="example@domain.com"
+                :value="old('email')"
+                :required="true"
+                autocomplete="email"
+            />
+
+            <x-forms.phone-input
+                name="phone"
+                label="رقم الهاتف"
+                :required="true"
+                countryCodeField="phone_country_code"
+                initialCountry="sa"
+                placeholder="أدخل رقم الهاتف"
+                :value="old('phone')"
+                :error="$errors->first('phone')"
+            />
         </div>
-    @endif
 
-    @if($teacherType === 'quran_teacher')
-        <script>
-            // Show/hide ijazah details based on selection
-            document.addEventListener('DOMContentLoaded', function() {
-                const hasIjazahRadios = document.querySelectorAll('input[name="has_ijazah"]');
-                const ijazahDetailsDiv = document.getElementById('ijazah_details_div');
-                const ijazahDetailsInput = document.getElementById('ijazah_details');
+        <!-- Professional Information Section -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <i class="ri-briefcase-line text-primary text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">المعلومات المهنية</h3>
+            </div>
 
-                function toggleIjazahDetails() {
-                    const selectedValue = document.querySelector('input[name="has_ijazah"]:checked');
-                    if (selectedValue && selectedValue.value === '1') {
-                        ijazahDetailsDiv.style.display = 'block';
-                        ijazahDetailsInput.required = true;
-                    } else {
-                        ijazahDetailsDiv.style.display = 'none';
-                        ijazahDetailsInput.required = false;
-                    }
-                }
+            <!-- Qualification Degree -->
+            <div class="mb-4" x-data="{ focused: false }">
+                <label for="qualification_degree" class="block text-sm font-medium text-gray-700 mb-2">
+                    المؤهل التعليمي
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                         :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
+                        <i class="ri-medal-line text-lg transition-smooth"></i>
+                    </div>
+                    <select
+                        id="qualification_degree"
+                        name="qualification_degree"
+                        required
+                        @focus="focused = true"
+                        @blur="focused = false"
+                        class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('qualification_degree') border-red-500 ring-2 ring-red-200 @enderror"
+                    >
+                        <option value="">اختر المؤهل التعليمي</option>
+                        <option value="bachelor" {{ old('qualification_degree') == 'bachelor' ? 'selected' : '' }}>بكالوريوس</option>
+                        <option value="master" {{ old('qualification_degree') == 'master' ? 'selected' : '' }}>ماجستير</option>
+                        <option value="phd" {{ old('qualification_degree') == 'phd' ? 'selected' : '' }}>دكتوراه</option>
+                        <option value="other" {{ old('qualification_degree') == 'other' ? 'selected' : '' }}>أخرى</option>
+                    </select>
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="ri-arrow-down-s-line text-gray-400"></i>
+                    </div>
+                </div>
+                @error('qualification_degree')
+                    <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
+                        <i class="ri-error-warning-line ml-1"></i>
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
 
-                hasIjazahRadios.forEach(radio => {
-                    radio.addEventListener('change', toggleIjazahDetails);
-                });
+            <x-auth.input
+                label="الجامعة"
+                name="university"
+                type="text"
+                icon="ri-building-line"
+                placeholder="اسم الجامعة"
+                :value="old('university')"
+                :required="true"
+            />
 
-                // Initial state
-                toggleIjazahDetails();
-            });
-        </script>
-    @endif
-</body>
-</html> 
+            <x-auth.input
+                label="سنوات الخبرة"
+                name="years_experience"
+                type="number"
+                icon="ri-time-line"
+                placeholder="عدد سنوات الخبرة"
+                :value="old('years_experience')"
+                :required="true"
+            />
+
+            @if($teacherType === 'quran_teacher')
+                <!-- Quran Teacher Specific Fields -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        هل لديك إجازة في القرآن الكريم؟
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-3 border border-gray-200 rounded-button cursor-pointer hover:bg-gray-50 transition-smooth">
+                            <input
+                                type="radio"
+                                name="has_ijazah"
+                                value="1"
+                                x-model="hasIjazah"
+                                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                                {{ old('has_ijazah') == '1' ? 'checked' : '' }}
+                            >
+                            <span class="mr-3 text-sm text-gray-900">نعم، لدي إجازة في القرآن الكريم</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-button cursor-pointer hover:bg-gray-50 transition-smooth">
+                            <input
+                                type="radio"
+                                name="has_ijazah"
+                                value="0"
+                                x-model="hasIjazah"
+                                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                                {{ old('has_ijazah') == '0' ? 'checked' : '' }}
+                            >
+                            <span class="mr-3 text-sm text-gray-900">لا، ليس لدي إجازة</span>
+                        </label>
+                    </div>
+                    @error('has_ijazah')
+                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
+                            <i class="ri-error-warning-line ml-1"></i>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <!-- Ijazah Details (conditional) -->
+                <div x-show="hasIjazah == '1'" x-cloak class="mb-4">
+                    <label for="ijazah_details" class="block text-sm font-medium text-gray-700 mb-2">
+                        تفاصيل الإجازة
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <div class="absolute top-3 right-0 pr-3 flex items-start pointer-events-none text-gray-400">
+                            <i class="ri-file-text-line text-lg"></i>
+                        </div>
+                        <textarea
+                            id="ijazah_details"
+                            name="ijazah_details"
+                            rows="3"
+                            :required="hasIjazah == '1'"
+                            class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('ijazah_details') border-red-500 ring-2 ring-red-200 @enderror"
+                            placeholder="أدخل تفاصيل إجازتك في القرآن الكريم (الشيخ، السند، التاريخ...)"
+                        >{{ old('ijazah_details') }}</textarea>
+                    </div>
+                    @error('ijazah_details')
+                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
+                            <i class="ri-error-warning-line ml-1"></i>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            @else
+                <!-- Academic Teacher Specific Fields -->
+                @php
+                    $subjects = \App\Models\AcademicSubject::where('academy_id', $academy->id)
+                        ->where('is_active', true)
+                        ->orderBy('name')
+                        ->get();
+                    $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+                        ->where('is_active', true)
+                        ->orderBy('name')
+                        ->get();
+                    $days = [
+                        'sunday' => 'الأحد',
+                        'monday' => 'الاثنين',
+                        'tuesday' => 'الثلاثاء',
+                        'wednesday' => 'الأربعاء',
+                        'thursday' => 'الخميس',
+                        'friday' => 'الجمعة',
+                        'saturday' => 'السبت'
+                    ];
+                @endphp
+
+                <!-- Subjects -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        المواد التي يمكنك تدريسها
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        @forelse($subjects as $subject)
+                            <label class="flex items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-smooth">
+                                <input
+                                    type="checkbox"
+                                    name="subjects[]"
+                                    value="{{ $subject->id }}"
+                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    {{ in_array($subject->id, old('subjects', [])) ? 'checked' : '' }}
+                                >
+                                <span class="mr-2 text-sm text-gray-700">{{ $subject->name }}</span>
+                            </label>
+                        @empty
+                            <p class="col-span-2 text-sm text-gray-500 text-center py-2">لا توجد مواد دراسية متاحة حالياً</p>
+                        @endforelse
+                    </div>
+                    @error('subjects')
+                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
+                            <i class="ri-error-warning-line ml-1"></i>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <!-- Grade Levels -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        الصفوف الدراسية
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        @forelse($gradeLevels as $gradeLevel)
+                            <label class="flex items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-smooth">
+                                <input
+                                    type="checkbox"
+                                    name="grade_levels[]"
+                                    value="{{ $gradeLevel->id }}"
+                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    {{ in_array($gradeLevel->id, old('grade_levels', [])) ? 'checked' : '' }}
+                                >
+                                <span class="mr-2 text-sm text-gray-700">{{ $gradeLevel->name }}</span>
+                            </label>
+                        @empty
+                            <p class="col-span-2 text-sm text-gray-500 text-center py-2">لا توجد صفوف دراسية متاحة حالياً</p>
+                        @endforelse
+                    </div>
+                    @error('grade_levels')
+                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
+                            <i class="ri-error-warning-line ml-1"></i>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <!-- Available Days -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        الأيام المتاحة
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach($days as $key => $day)
+                            <label class="flex items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-smooth">
+                                <input
+                                    type="checkbox"
+                                    name="available_days[]"
+                                    value="{{ $key }}"
+                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    {{ in_array($key, old('available_days', [])) ? 'checked' : '' }}
+                                >
+                                <span class="mr-2 text-sm text-gray-700">{{ $day }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    @error('available_days')
+                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
+                            <i class="ri-error-warning-line ml-1"></i>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            @endif
+        </div>
+
+        <!-- Account Security Section -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <i class="ri-shield-check-line text-primary text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">أمان الحساب</h3>
+            </div>
+
+            <x-auth.input
+                label="كلمة المرور"
+                name="password"
+                type="password"
+                icon="ri-lock-line"
+                placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                :required="true"
+                autocomplete="new-password"
+                helperText="يجب أن تحتوي على 8 أحرف على الأقل"
+            />
+
+            <x-auth.input
+                label="تأكيد كلمة المرور"
+                name="password_confirmation"
+                type="password"
+                icon="ri-lock-check-line"
+                placeholder="أعد إدخال كلمة المرور"
+                :required="true"
+                autocomplete="new-password"
+            />
+        </div>
+
+        <!-- Submit Button -->
+        <button
+            type="submit"
+            :disabled="loading"
+            :class="{ 'btn-loading opacity-75': loading }"
+            class="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
+        >
+            <i class="ri-send-plane-line text-lg"></i>
+            <span>إرسال طلب التسجيل</span>
+        </button>
+
+        <!-- Login Link -->
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                لديك حساب بالفعل؟
+                <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
+                   class="font-medium text-primary hover:underline transition-smooth">
+                    تسجيل الدخول
+                </a>
+            </p>
+        </div>
+    </form>
+</x-auth.layout>

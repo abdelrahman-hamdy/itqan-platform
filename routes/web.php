@@ -482,12 +482,15 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
         $userType = 'student';
     }
 
-    // Smart session resolution - check both types and find the one that exists
+    // Smart session resolution - check all types and find the one that exists
     $academicSession = \App\Models\AcademicSession::find($session);
     $quranSession = \App\Models\QuranSession::find($session);
+    $interactiveSession = \App\Models\InteractiveCourseSession::find($session);
 
-    // Use whichever exists (prioritize the one that actually has this ID)
-    if ($academicSession && $quranSession) {
+    // Use whichever exists (prioritize based on user context)
+    if ($interactiveSession) {
+        $session = $interactiveSession;
+    } elseif ($academicSession && $quranSession) {
         // If both exist with same ID, determine by user context
         if ($user->hasRole('academic_teacher') || $academicSession->student_id === $user->id) {
             $session = $academicSession;
@@ -508,6 +511,11 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
         $circle = null;
         $preparationMinutes = 15; // Default for academic sessions
         $endingBufferMinutes = 5;
+    } elseif ($session instanceof \App\Models\InteractiveCourseSession) {
+        // Interactive course sessions use course configuration
+        $circle = null;
+        $preparationMinutes = $session->course?->preparation_minutes ?? 15;
+        $endingBufferMinutes = $session->course?->buffer_minutes ?? 5;
     } else {
         // Quran sessions use circle configuration
         $circle = $session->session_type === 'individual'
@@ -517,9 +525,53 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
         $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
     }
 
+    // AUTO-COMPLETE: Check if session time + buffer has expired for ongoing/ready sessions
+    $now = now();
+    $sessionEndTime = null;
+    $hasExpired = false;
+
+    if ($session->scheduled_at && in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
+        $sessionEndTime = $session->scheduled_at->copy()->addMinutes(($session->duration_minutes ?? 60) + $endingBufferMinutes);
+        $hasExpired = $now->gte($sessionEndTime);
+
+        if ($hasExpired) {
+            // Auto-complete the session
+            $session->update([
+                'status' => SessionStatus::COMPLETED,
+                'ended_at' => $sessionEndTime,
+                'actual_duration_minutes' => $session->duration_minutes ?? 60,
+            ]);
+
+            // Close the LiveKit room if it exists
+            if ($session->meeting_room_name) {
+                try {
+                    $liveKitService = app(\App\Services\LiveKitService::class);
+                    $liveKitService->endMeeting($session->meeting_room_name);
+                    \Log::info('LiveKit room closed on session auto-complete', [
+                        'session_id' => $session->id,
+                        'room_name' => $session->meeting_room_name,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to close LiveKit room on auto-complete', [
+                        'session_id' => $session->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            \Log::info('Session auto-completed due to time expiration', [
+                'session_id' => $session->id,
+                'session_type' => get_class($session),
+                'scheduled_at' => $session->scheduled_at,
+                'session_end_time' => $sessionEndTime,
+                'now' => $now,
+            ]);
+        }
+    }
+
     // Determine if user can join
-    // Anyone (students and teachers) can join when session is READY or ONGOING
-    $canJoinMeeting = in_array($session->status, [
+    // Anyone (students and teachers) can join when session is READY or ONGOING (and not expired)
+    $canJoinMeeting = !$hasExpired && in_array($session->status, [
         SessionStatus::READY,
         SessionStatus::ONGOING,
     ]);
@@ -650,7 +702,10 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
             'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes,
             'preparation_minutes' => $preparationMinutes,
+            'ending_buffer_minutes' => $endingBufferMinutes,
             'meeting_room_name' => $session->meeting_room_name,
+            'session_end_time' => $sessionEndTime?->toISOString(),
+            'has_expired' => $hasExpired,
         ],
     ]);
 })->name('api.sessions.status');
@@ -658,12 +713,15 @@ Route::get('/api/sessions/{session}/status', function (Request $request, $sessio
 Route::get('/api/sessions/{session}/attendance-status', function (Request $request, $session) {
     $user = $request->user();
 
-    // Smart session resolution - check both types and find the one that exists
+    // Smart session resolution - check all types and find the one that exists
     $academicSession = \App\Models\AcademicSession::find($session);
     $quranSession = \App\Models\QuranSession::find($session);
+    $interactiveSession = \App\Models\InteractiveCourseSession::find($session);
 
-    // Use whichever exists (prioritize the one that actually has this ID)
-    if ($academicSession && $quranSession) {
+    // Use whichever exists (prioritize based on user context)
+    if ($interactiveSession) {
+        $session = $interactiveSession;
+    } elseif ($academicSession && $quranSession) {
         // If both exist with same ID, determine by user context
         if ($user->hasRole('academic_teacher') || $academicSession->student_id === $user->id) {
             $session = $academicSession;
@@ -704,6 +762,10 @@ Route::get('/api/sessions/{session}/attendance-status', function (Request $reque
         // Get stored session report data based on session type
         if ($session instanceof \App\Models\AcademicSession) {
             $sessionReport = \App\Models\AcademicSessionReport::where('session_id', $session->id)
+                ->where('student_id', $user->id)
+                ->first();
+        } elseif ($session instanceof \App\Models\InteractiveCourseSession) {
+            $sessionReport = \App\Models\InteractiveSessionReport::where('session_id', $session->id)
                 ->where('student_id', $user->id)
                 ->first();
         } else {
@@ -765,6 +827,9 @@ Route::get('/api/sessions/{session}/attendance-status', function (Request $reque
         if ($session instanceof \App\Models\AcademicSession) {
             $academicService = app(\App\Services\AcademicAttendanceService::class);
             $status = $academicService->getCurrentAttendanceStatus($session, $user);
+        } elseif ($session instanceof \App\Models\InteractiveCourseSession) {
+            $unifiedService = app(\App\Services\UnifiedAttendanceService::class);
+            $status = $unifiedService->getCurrentAttendanceStatus($session, $user);
         } else {
             $unifiedService = app(\App\Services\UnifiedAttendanceService::class);
             $status = $unifiedService->getCurrentAttendanceStatus($session, $user);
@@ -1038,8 +1103,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/courses/create', [RecordedCourseController::class, 'create'])->name('courses.create');
         Route::post('/courses', [RecordedCourseController::class, 'store'])->name('courses.store');
 
-        // Certificate Preview (Teachers/Admins)
-        Route::post('/certificates/preview', [\App\Http\Controllers\CertificateController::class, 'preview'])->name('certificates.preview');
+        // Certificate Preview (Teachers/Admins) - accepts GET for iframe and POST for form
+        Route::match(['get', 'post'], '/certificates/preview', [\App\Http\Controllers\CertificateController::class, 'preview'])->name('certificates.preview');
     });
 
     /*
@@ -1124,6 +1189,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
     Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
 
+    // Payment Flow (new gateway system)
+    Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
+    Route::get('/payments/{payment}/callback', [\App\Http\Controllers\PaymobWebhookController::class, 'callback'])->name('payments.callback');
+
     // Payment Methods API
     Route::get('/api/payment-methods/{academy}', [PaymentController::class, 'getPaymentMethods'])->name('api.payment-methods');
 
@@ -1166,11 +1235,19 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // Missing student routes that weren't registering from auth.php
     Route::middleware(['auth', 'role:student'])->group(function () {
         Route::get('/profile', [App\Http\Controllers\StudentProfileController::class, 'index'])->name('student.profile');
-        Route::get('/my-quran-teachers', [App\Http\Controllers\StudentProfileController::class, 'quranTeachers'])->name('student.quran-teachers');
+        Route::get('/search', [App\Http\Controllers\StudentProfileController::class, 'search'])->name('student.search');
+
+        // 301 Permanent Redirects - OLD student routes to NEW unified routes
+        Route::permanentRedirect('/my-quran-teachers', '/quran-teachers');
+        Route::permanentRedirect('/my-quran-circles', '/quran-circles');
+        Route::permanentRedirect('/my-academic-teachers', '/academic-teachers');
+        Route::permanentRedirect('/my-interactive-courses', '/interactive-courses');
+
         Route::get('/payments', [App\Http\Controllers\StudentProfileController::class, 'payments'])->name('student.payments');
-        Route::get('/my-quran-circles', [App\Http\Controllers\StudentProfileController::class, 'quranCircles'])->name('student.quran-circles');
-        Route::get('/my-academic-teachers', [App\Http\Controllers\StudentProfileController::class, 'academicTeachers'])->name('student.academic-teachers');
-        Route::get('/my-courses', [RecordedCourseController::class, 'index'])->name('courses.index');
+        Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
+        Route::patch('/subscriptions/{type}/{id}/toggle-auto-renew', [App\Http\Controllers\StudentProfileController::class, 'toggleAutoRenew'])->name('student.subscriptions.toggle-auto-renew');
+        Route::patch('/subscriptions/{type}/{id}/cancel', [App\Http\Controllers\StudentProfileController::class, 'cancelSubscription'])->name('student.subscriptions.cancel');
+        // Note: /courses route moved to public section for unified public/authenticated access
 
         // Student session routes (moved from auth.php for subdomain compatibility)
         Route::get('/sessions/{sessionId}', [App\Http\Controllers\QuranSessionController::class, 'showForStudent'])->name('student.sessions.show');
@@ -1188,9 +1265,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Homework routes for students
         Route::prefix('homework')->name('student.homework.')->group(function () {
             Route::get('/', [App\Http\Controllers\Student\HomeworkController::class, 'index'])->name('index');
-            Route::get('/{id}/submit', [App\Http\Controllers\Student\HomeworkController::class, 'submit'])->name('submit');
-            Route::post('/{id}/submit', [App\Http\Controllers\Student\HomeworkController::class, 'submitProcess'])->name('submit.process');
-            Route::get('/{id}/view', [App\Http\Controllers\Student\HomeworkController::class, 'view'])->name('view');
+            Route::get('/{id}/{type}/submit', [App\Http\Controllers\Student\HomeworkController::class, 'submit'])->name('submit');
+            Route::post('/{id}/{type}/submit', [App\Http\Controllers\Student\HomeworkController::class, 'submitProcess'])->name('submit.process');
+            Route::get('/{id}/{type}/view', [App\Http\Controllers\Student\HomeworkController::class, 'view'])->name('view');
         });
 
         // Circle Report routes for students
@@ -1257,27 +1334,30 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Public Quran Teacher Profile Routes
+    | Unified Quran Teacher Routes (Public + Authenticated)
     |--------------------------------------------------------------------------
     */
 
-    // Public Quran Teachers Listing
-    Route::get('/quran-teachers', [App\Http\Controllers\PublicQuranTeacherController::class, 'index'])->name('public.quran-teachers.index');
+    // UNIFIED Quran Teachers Listing (works for both public and authenticated)
+    Route::get('/quran-teachers', [App\Http\Controllers\UnifiedQuranTeacherController::class, 'index'])->name('quran-teachers.index');
 
-    // Individual Teacher Profile Pages
-    Route::get('/quran-teachers/{teacher}', [App\Http\Controllers\PublicQuranTeacherController::class, 'show'])->name('public.quran-teachers.show');
+    // UNIFIED Individual Teacher Profile Pages
+    Route::get('/quran-teachers/{teacherId}', [App\Http\Controllers\UnifiedQuranTeacherController::class, 'show'])->name('quran-teachers.show');
+
+    // Backward compatibility: Redirect old public route names
+    // (The URL is the same, just route name changes for consistency)
 
     /*
     |--------------------------------------------------------------------------
-    | Public Academic Teacher Profile Routes
+    | Unified Academic Teacher Routes (Public + Authenticated)
     |--------------------------------------------------------------------------
     */
 
-    // Public Academic Teachers Listing
-    Route::get('/academic-teachers', [App\Http\Controllers\PublicAcademicTeacherController::class, 'index'])->name('public.academic-teachers.index');
+    // UNIFIED Academic Teachers Listing (works for both public and authenticated)
+    Route::get('/academic-teachers', [App\Http\Controllers\UnifiedAcademicTeacherController::class, 'index'])->name('academic-teachers.index');
 
-    // Individual Academic Teacher Profile Pages
-    Route::get('/academic-teachers/{teacher}', [App\Http\Controllers\PublicAcademicTeacherController::class, 'show'])->name('public.academic-teachers.show');
+    // UNIFIED Individual Academic Teacher Profile Pages
+    Route::get('/academic-teachers/{teacherId}', [App\Http\Controllers\UnifiedAcademicTeacherController::class, 'show'])->name('academic-teachers.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -1294,13 +1374,13 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // API: Get teachers for a specific package
     Route::get('/api/academic-packages/{packageId}/teachers', [App\Http\Controllers\PublicAcademicPackageController::class, 'getPackageTeachers'])->name('api.academic-packages.teachers');
 
-    // Trial Session Booking (requires auth)
+    // Trial Session Booking (requires auth) - UNIFIED
     Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/quran-teachers/{teacher}/trial', [App\Http\Controllers\PublicQuranTeacherController::class, 'showTrialBooking'])->name('public.quran-teachers.trial');
-        Route::post('/quran-teachers/{teacher}/trial', [App\Http\Controllers\PublicQuranTeacherController::class, 'submitTrialRequest'])->name('public.quran-teachers.trial.submit');
+        Route::post('/quran-teachers/{teacherId}/trial', [App\Http\Controllers\UnifiedQuranTeacherController::class, 'submitTrialRequest'])->name('quran-teachers.trial.submit');
 
-        Route::get('/quran-teachers/{teacher}/subscribe/{packageId}', [App\Http\Controllers\PublicQuranTeacherController::class, 'showSubscriptionBooking'])->name('public.quran-teachers.subscribe');
-        Route::post('/quran-teachers/{teacher}/subscribe/{packageId}', [App\Http\Controllers\PublicQuranTeacherController::class, 'submitSubscriptionRequest'])->name('public.quran-teachers.subscribe.submit');
+        // Quran Teacher Subscription Booking
+        Route::get('/quran-teachers/{teacherId}/subscribe/{packageId}', [App\Http\Controllers\UnifiedQuranTeacherController::class, 'showSubscriptionBooking'])->name('quran-teachers.subscribe');
+        Route::post('/quran-teachers/{teacherId}/subscribe/{packageId}', [App\Http\Controllers\UnifiedQuranTeacherController::class, 'submitSubscriptionRequest'])->name('quran-teachers.subscribe.submit');
 
         // Academic Package Subscription
         Route::get('/academic-packages/teachers/{teacher}/subscribe/{packageId}', [App\Http\Controllers\PublicAcademicPackageController::class, 'showSubscriptionForm'])->name('public.academic-packages.subscribe');
@@ -1315,56 +1395,46 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Public Quran Circle Routes
+    | Unified Quran Circle Routes (Public + Authenticated)
     |--------------------------------------------------------------------------
     */
 
-    // Public Quran Circles Listing
-    Route::get('/quran-circles', [App\Http\Controllers\PublicQuranCircleController::class, 'index'])->name('public.quran-circles.index');
+    // UNIFIED Quran Circles Listing (works for both public and authenticated)
+    Route::get('/quran-circles', [App\Http\Controllers\UnifiedQuranCircleController::class, 'index'])->name('quran-circles.index');
 
-    // Individual Circle Details Pages
-    Route::get('/quran-circles/{circle}', [App\Http\Controllers\PublicQuranCircleController::class, 'show'])->name('public.quran-circles.show');
+    // UNIFIED Individual Circle Details Pages
+    Route::get('/quran-circles/{circleId}', [App\Http\Controllers\UnifiedQuranCircleController::class, 'show'])->name('quran-circles.show');
 
-    // Circle Enrollment (requires auth)
+    // Circle Enrollment (requires auth) - UNIFIED
     Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/quran-circles/{circle}/enroll', [App\Http\Controllers\PublicQuranCircleController::class, 'showEnrollment'])->name('public.quran-circles.enroll');
-        Route::post('/quran-circles/{circle}/enroll', [App\Http\Controllers\PublicQuranCircleController::class, 'submitEnrollment'])->name('public.quran-circles.enroll.submit');
+        Route::post('/quran-circles/{circleId}/enroll', [App\Http\Controllers\UnifiedQuranCircleController::class, 'enroll'])->name('quran-circles.enroll');
     });
 
     /*
     |--------------------------------------------------------------------------
-    | Public Interactive Courses Routes
+    | Unified Interactive Courses Routes (Public + Authenticated)
     |--------------------------------------------------------------------------
-    | These routes are for PUBLIC (unauthenticated) users only.
-    | Authenticated students are automatically redirected to their enrolled view.
     */
 
-    // Public Interactive Courses Listing (with middleware to redirect authenticated users)
-    Route::get('/interactive-courses', [App\Http\Controllers\PublicInteractiveCourseController::class, 'index'])
-        ->middleware('redirect.authenticated.public:interactive-course')
-        ->name('interactive-courses.index');
+    // UNIFIED Interactive Courses Listing (works for both public and authenticated)
+    Route::get('/interactive-courses', [App\Http\Controllers\UnifiedInteractiveCourseController::class, 'index'])->name('interactive-courses.index');
 
-    // Individual Interactive Course Details (with middleware to redirect authenticated users)
-    Route::get('/interactive-courses/{course}', [App\Http\Controllers\PublicInteractiveCourseController::class, 'show'])
-        ->middleware('redirect.authenticated.public:interactive-course')
-        ->name('interactive-courses.show');
+    // UNIFIED Individual Interactive Course Details
+    Route::get('/interactive-courses/{courseId}', [App\Http\Controllers\UnifiedInteractiveCourseController::class, 'show'])->name('interactive-courses.show');
 
-    // Interactive Course Enrollment (requires authentication) - Direct enrollment bypassing payment
-    Route::get('/interactive-courses/{course}/enroll', [App\Http\Controllers\PublicInteractiveCourseController::class, 'enroll'])
-        ->middleware('auth')
-        ->name('interactive-courses.enroll');
+    // Interactive Course Enrollment (requires authentication) - UNIFIED
+    Route::middleware(['auth'])->group(function () {
+        Route::post('/interactive-courses/{courseId}/enroll', [App\Http\Controllers\UnifiedInteractiveCourseController::class, 'enroll'])->name('interactive-courses.enroll');
+    });
 
     /*
     |--------------------------------------------------------------------------
-    | Public Recorded Courses Routes
+    | Public Recorded Courses Routes (Unified)
     |--------------------------------------------------------------------------
     */
 
-    // Public Recorded Courses Listing
-    Route::get('/public/recorded-courses', [App\Http\Controllers\PublicRecordedCourseController::class, 'index'])->name('public.recorded-courses.index');
-
-    // Individual Recorded Course Details
-    Route::get('/public/recorded-courses/{course}', [App\Http\Controllers\PublicRecordedCourseController::class, 'show'])->name('public.recorded-courses.show');
+    // Unified Recorded Courses Listing (works for both public and authenticated users)
+    Route::get('/courses', [RecordedCourseController::class, 'index'])->name('courses.index');
 
     /*
     |--------------------------------------------------------------------------
@@ -1573,14 +1643,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     | Authenticated students accessing these routes will see their personalized views
     */
-    Route::middleware(['auth', 'role:student'])->group(function () {
-        Route::get('/my-interactive-courses', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourses'])->name('student.interactive-courses');
-    });
 
-    // Interactive course detail - accessible by enrolled students and teachers
-    Route::middleware(['auth', 'interactive.course'])->group(function () {
-        Route::get('/my-interactive-courses/{course}', [App\Http\Controllers\StudentProfileController::class, 'showInteractiveCourse'])->name('my.interactive-course.show');
-    });
+    // 301 Redirect - OLD interactive course detail to NEW unified route
+    Route::permanentRedirect('/my-interactive-courses/{course}', '/interactive-courses/{course}');
 
     // Interactive course session detail - for enrolled students
     Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
@@ -1598,6 +1663,90 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     //     // Disabled - using WireChat now
     // })->middleware('auth');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Parent Routes
+    |--------------------------------------------------------------------------
+    | Parent portal routes for viewing children's data (subscriptions,
+    | sessions, payments, certificates, reports). Uses child-switching pattern.
+    */
+
+    Route::middleware(['auth', 'role:parent', 'child.selection'])->prefix('parent')->name('parent.')->group(function () {
+
+        // Child Selection API (for top bar selector)
+        Route::post('/select-child', [\App\Http\Controllers\ParentDashboardController::class, 'selectChildSession'])->name('select-child');
+
+        // Profile (Main Dashboard - Profile is now the main page)
+        Route::get('/', [\App\Http\Controllers\ParentProfileController::class, 'index'])->name('dashboard');
+        Route::get('/profile', [\App\Http\Controllers\ParentProfileController::class, 'index'])->name('profile');
+        Route::get('/profile/edit', [\App\Http\Controllers\ParentProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [\App\Http\Controllers\ParentProfileController::class, 'update'])->name('profile.update');
+
+        // Children Management
+        Route::prefix('children')->name('children.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ParentChildrenController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\ParentChildrenController::class, 'store'])->name('store');
+            Route::delete('/{student}', [\App\Http\Controllers\ParentChildrenController::class, 'destroy'])->name('destroy');
+        });
+
+        // Sessions
+        Route::prefix('sessions')->name('sessions.')->group(function () {
+            Route::get('/upcoming', [\App\Http\Controllers\ParentSessionController::class, 'upcoming'])->name('upcoming');
+            Route::get('/history', [\App\Http\Controllers\ParentSessionController::class, 'history'])->name('history');
+            Route::get('/{sessionType}/{session}', [\App\Http\Controllers\ParentSessionController::class, 'show'])->name('show');
+        });
+
+        // Calendar
+        Route::prefix('calendar')->name('calendar.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ParentCalendarController::class, 'index'])->name('index');
+            Route::get('/events', [\App\Http\Controllers\ParentCalendarController::class, 'getEvents'])->name('events');
+        });
+
+        // Subscriptions
+        Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ParentSubscriptionController::class, 'index'])->name('index');
+            Route::get('/{type}/{subscription}', [\App\Http\Controllers\ParentSubscriptionController::class, 'show'])->name('show');
+        });
+
+        // Payments
+        Route::prefix('payments')->name('payments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ParentPaymentController::class, 'index'])->name('index');
+            Route::get('/{payment}', [\App\Http\Controllers\ParentPaymentController::class, 'show'])->name('show');
+            Route::get('/{payment}/receipt', [\App\Http\Controllers\ParentPaymentController::class, 'downloadReceipt'])->name('receipt');
+        });
+
+        // Certificates
+        Route::prefix('certificates')->name('certificates.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ParentCertificateController::class, 'index'])->name('index');
+            Route::get('/{certificate}', [\App\Http\Controllers\ParentCertificateController::class, 'show'])->name('show');
+            Route::get('/{certificate}/download', [\App\Http\Controllers\ParentCertificateController::class, 'download'])->name('download');
+        });
+
+        // Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/progress', [\App\Http\Controllers\ParentReportController::class, 'progressReport'])->name('progress');
+            // Redirect old attendance route to unified progress report
+            Route::get('/attendance', fn($subdomain) => redirect()->route('parent.reports.progress', ['subdomain' => $subdomain]))->name('attendance');
+
+            // Detailed reports for individual subscriptions
+            Route::get('/quran/individual/{circle}', [\App\Http\Controllers\ParentReportController::class, 'quranIndividualReport'])->name('quran.individual');
+            Route::get('/academic/{subscription}', [\App\Http\Controllers\ParentReportController::class, 'academicSubscriptionReport'])->name('academic.subscription');
+            Route::get('/interactive/{course}', [\App\Http\Controllers\ParentReportController::class, 'interactiveCourseReport'])->name('interactive.course');
+        });
+
+        // Homework (reuses student views with parent layout)
+        Route::prefix('homework')->name('homework.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ParentHomeworkController::class, 'index'])->name('index');
+            Route::get('/{id}/{type?}', [\App\Http\Controllers\ParentHomeworkController::class, 'view'])->name('view');
+        });
+
+        // Quizzes
+        Route::prefix('quizzes')->name('quizzes.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ParentQuizController::class, 'index'])->name('index');
+            Route::get('/{quiz}/result', [\App\Http\Controllers\ParentQuizController::class, 'result'])->name('result');
+        });
+    });
+
 });
 
 /*
@@ -1607,10 +1756,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 | These routes handle LiveKit webhooks and meeting management API
 */
 
-// LiveKit Webhooks (no authentication required for webhooks from LiveKit server)
+// Webhooks (no authentication required - validated via signatures)
 Route::prefix('webhooks')->group(function () {
+    // LiveKit webhooks
     Route::post('livekit', [\App\Http\Controllers\LiveKitWebhookController::class, 'handleWebhook'])->name('webhooks.livekit');
     Route::get('livekit/health', [\App\Http\Controllers\LiveKitWebhookController::class, 'health'])->name('webhooks.livekit.health');
+
+    // Payment gateway webhooks (validated via HMAC)
+    Route::post('paymob', [\App\Http\Controllers\PaymobWebhookController::class, 'handle'])->name('webhooks.paymob');
 });
 
 // Meeting API Routes (no separate UI routes)
@@ -1624,8 +1777,6 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->prefix('api/meetings')->group(function () {
     Route::post('create', [\App\Http\Controllers\LiveKitMeetingController::class, 'createMeeting'])->name('api.meetings.create');
     Route::get('{sessionId}/token', [\App\Http\Controllers\LiveKitMeetingController::class, 'getParticipantToken'])->name('api.meetings.token');
-    Route::post('{sessionId}/recording/start', [\App\Http\Controllers\LiveKitMeetingController::class, 'startRecording'])->name('api.meetings.recording.start');
-    Route::post('{sessionId}/recording/stop', [\App\Http\Controllers\LiveKitMeetingController::class, 'stopRecording'])->name('api.meetings.recording.stop');
     Route::get('{sessionId}/info', [\App\Http\Controllers\LiveKitMeetingController::class, 'getRoomInfo'])->name('api.meetings.info');
     Route::post('{sessionId}/end', [\App\Http\Controllers\LiveKitMeetingController::class, 'endMeeting'])->name('api.meetings.end');
 
@@ -1638,7 +1789,65 @@ Route::middleware(['auth'])->prefix('api/meetings')->group(function () {
     // Route::get('attendance/status', [\App\Http\Controllers\MeetingAttendanceController::class, 'getStatus'])->name('api.meetings.attendance.status');
 });
 
+// Interactive Course Recording API routes (requires authentication)
+Route::middleware(['auth'])->prefix('api/recordings')->group(function () {
+    // Recording control (start/stop)
+    Route::post('start', [\App\Http\Controllers\InteractiveCourseRecordingController::class, 'startRecording'])->name('api.recordings.start');
+    Route::post('stop', [\App\Http\Controllers\InteractiveCourseRecordingController::class, 'stopRecording'])->name('api.recordings.stop');
+
+    // Recording management
+    Route::get('session/{sessionId}', [\App\Http\Controllers\InteractiveCourseRecordingController::class, 'getSessionRecordings'])->name('api.recordings.session');
+    Route::delete('{recordingId}', [\App\Http\Controllers\InteractiveCourseRecordingController::class, 'deleteRecording'])->name('api.recordings.delete');
+
+    // Recording access (download/stream)
+    Route::get('{recordingId}/download', [\App\Http\Controllers\InteractiveCourseRecordingController::class, 'downloadRecording'])->name('recordings.download');
+    Route::get('{recordingId}/stream', [\App\Http\Controllers\InteractiveCourseRecordingController::class, 'streamRecording'])->name('recordings.stream');
+});
+
 // Custom file upload route for Filament components
 Route::post('/custom-file-upload', [App\Http\Controllers\CustomFileUploadController::class, 'upload'])->name('custom.file.upload');
 
 // Clean routes - no more test routes needed
+
+/*
+|--------------------------------------------------------------------------
+| Certificate Template Preview (Development Only)
+|--------------------------------------------------------------------------
+*/
+if (app()->environment('local')) {
+    // HTML preview (browser) - for layout testing
+    Route::get('/dev/certificate-preview', function () {
+        $data = [
+            'student_name' => 'اسم الطالب التجريبي',
+            'certificate_text' => 'لقد أتم الطالب حفظ الجزء الأول من القرآن الكريم بإتقان وتجويد ممتاز. نسأل الله أن يبارك فيه ويجعله من حفظة كتابه.',
+            'certificate_number' => 'CERT-2024-001',
+            'issued_date_formatted' => now()->format('Y/m/d'),
+            'teacher_name' => 'أ. محمد المعلم',
+            'academy_name' => 'أكاديمية إتقان',
+            'academy_logo' => null,
+            'template_style' => \App\Enums\CertificateTemplateStyle::TEMPLATE_1,
+        ];
+        return view('pdf.certificates.png-template', $data);
+    })->name('dev.certificate-preview');
+
+    // PDF preview (download/stream) - using TCPDF for Arabic support
+    Route::get('/dev/certificate-pdf-preview', function () {
+        $data = [
+            'student_name' => 'اسم الطالب التجريبي',
+            'certificate_text' => 'لقد أتم الطالب حفظ الجزء الأول من القرآن الكريم بإتقان وتجويد ممتاز. نسأل الله أن يبارك فيه ويجعله من حفظة كتابه.',
+            'certificate_number' => 'CERT-2024-001',
+            'issued_date_formatted' => now()->format('Y/m/d'),
+            'teacher_name' => 'أ. محمد المعلم',
+            'academy_name' => 'أكاديمية إتقان',
+            'academy_logo' => null,
+            'template_style' => \App\Enums\CertificateTemplateStyle::TEMPLATE_1,
+        ];
+
+        $certificateService = app(\App\Services\CertificateService::class);
+        $pdf = $certificateService->previewCertificate($data, $data['template_style']);
+
+        return response($pdf->Output('', 'S'), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="certificate-preview.pdf"');
+    })->name('dev.certificate-pdf-preview');
+}

@@ -3,6 +3,7 @@
 namespace App\Filament\AcademicTeacher\Resources;
 
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource;
 use App\Models\InteractiveCourse;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -237,7 +238,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                                 ->native(false)
                                 ->helperText('تاريخ نهاية الدورة'),
 
-                            Forms\Components\TextInput::make('enrollment_deadline')
+                            Forms\Components\DatePicker::make('enrollment_deadline')
                                 ->label('آخر موعد للتسجيل')
                                 ->required()
                                 ->native(false)
@@ -332,13 +333,13 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                     'warning' => 'completed',
                     'danger' => 'cancelled',
                 ])
-                ->formatStateUsing(fn (string $state): string => match ($state) {
+                ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\InteractiveCourseStatus ? $state->value : $state) {
                     'draft' => 'مسودة',
                     'published' => 'منشور',
                     'active' => 'نشط',
                     'completed' => 'مكتمل',
                     'cancelled' => 'ملغي',
-                    default => $state,
+                    default => is_string($state) ? $state : ($state instanceof \App\Enums\InteractiveCourseStatus ? $state->label() : ''),
                 }),
 
             Tables\Columns\TextColumn::make('start_date')
@@ -415,10 +416,11 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                 ->label('إدارة الجلسات')
                 ->icon('heroicon-m-calendar')
                 ->color('info')
-                ->url(fn (InteractiveCourse $record): string => 
-                    route('academic-teacher.interactive-course-sessions.index', [
-                        'subdomain' => Auth::user()->academy->subdomain,
-                        'course' => $record->id
+                ->url(fn (InteractiveCourse $record): string =>
+                    InteractiveCourseSessionResource::getUrl('index', [
+                        'tableFilters' => [
+                            'course_id' => ['value' => $record->id],
+                        ],
                     ])
                 ),
 
@@ -426,12 +428,21 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                 ->label('الطلاب المسجلين')
                 ->icon('heroicon-m-users')
                 ->color('success')
-                ->url(fn (InteractiveCourse $record): string => 
-                    route('academic-teacher.interactive-course-students.index', [
-                        'subdomain' => Auth::user()->academy->subdomain,
-                        'course' => $record->id
-                    ])
-                ),
+                ->modalHeading(fn (InteractiveCourse $record): string => 'الطلاب المسجلين في: ' . $record->title)
+                ->modalDescription(fn (InteractiveCourse $record): string =>
+                    'إجمالي الطلاب المسجلين: ' . $record->enrolledStudents()->count() . ' من أصل ' . $record->max_students
+                )
+                ->modalContent(fn (InteractiveCourse $record): \Illuminate\Support\HtmlString =>
+                    new \Illuminate\Support\HtmlString(
+                        '<div class="space-y-2">' .
+                        $record->enrolledStudents()->with('user')->get()
+                            ->map(fn ($student) => '<div class="flex items-center gap-2"><span class="text-gray-600">•</span><span>' . e($student->user->name) . '</span><span class="text-gray-500 text-sm">(' . e($student->user->email) . ')</span></div>')
+                            ->join('') .
+                        '</div>'
+                    )
+                )
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('إغلاق'),
         ];
     }
 
@@ -445,7 +456,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                 ->label('تحديث الحالة')
                 ->icon('heroicon-m-pencil-square')
                 ->form([
-                    Tables\Actions\BulkAction\Form\Action::make('status')
+                    Forms\Components\Select::make('status')
                         ->label('الحالة الجديدة')
                         ->options([
                             'published' => 'منشور',
@@ -462,6 +473,26 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                     }
                 }),
         ];
+    }
+
+    /**
+     * Get available subjects for the current teacher
+     */
+    protected static function getAvailableSubjects(): array
+    {
+        return \App\Models\AcademicSubject::query()
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
+    /**
+     * Get available grade levels
+     */
+    protected static function getAvailableGradeLevels(): array
+    {
+        return \App\Models\GradeLevel::query()
+            ->pluck('name', 'id')
+            ->toArray();
     }
 
     public static function getRelations(): array

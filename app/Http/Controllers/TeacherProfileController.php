@@ -8,6 +8,8 @@ use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranSession;
 use App\Models\QuranTeacherProfile;
+use App\Models\TeacherEarning;
+use App\Models\TeacherPayout;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -44,21 +46,73 @@ class TeacherProfileController extends Controller
         ]));
     }
 
-    public function earnings()
+    public function earnings(Request $request)
     {
         $user = Auth::user();
         $teacherProfile = $this->getTeacherProfile($user);
+        $academy = $user->academy;
 
         if (! $teacherProfile) {
             abort(404, 'Teacher profile not found');
         }
 
-        // Calculate earnings data
-        $earningsData = $this->calculateEarnings($user, $teacherProfile);
+        // Determine teacher type
+        $teacherType = $user->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
+        $teacherId = $teacherProfile->id;
+        $academyId = $user->academy_id;
+
+        // Get currency from academy settings or default
+        $currencyLabel = $academy->currency?->getLabel() ?? 'ريال سعودي (SAR)';
+
+        // Get timezone from academy settings or default
+        $timezone = $academy->timezone?->value ?? 'Asia/Riyadh';
+
+        // Get month filter (default to current month)
+        $selectedMonth = $request->get('month', now()->format('Y-m'));
+        $isAllTime = $selectedMonth === 'all';
+
+        // Parse selected month
+        if (!$isAllTime) {
+            [$year, $month] = explode('-', $selectedMonth);
+            $year = (int) $year;
+            $month = (int) $month;
+        } else {
+            $year = null;
+            $month = null;
+        }
+
+        // Get available months for filter
+        $availableMonths = $this->getAvailableMonths($teacherType, $teacherId, $academyId);
+
+        // Get real earnings data
+        $earningsStats = $this->getRealEarningsStats($teacherType, $teacherId, $academyId, $currencyLabel, $year, $month);
+
+        // Get earnings grouped by source (circle/course/class)
+        $earningsBySource = $this->getEarningsGroupedBySource($teacherType, $teacherId, $academyId, $user, $year, $month);
+
+        // Get payout history
+        $payoutHistory = $this->getPayoutHistory($teacherType, $teacherId, $academyId);
+
+        // Get current month payout
+        $currentMonthPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->whereYear('payout_month', now()->year)
+            ->whereMonth('payout_month', now()->month)
+            ->first();
 
         return view('teacher.earnings', [
             'teacherProfile' => $teacherProfile,
-            'earningsData' => $earningsData,
+            'teacherType' => $teacherType,
+            'academy' => $academy,
+            'currency' => $currencyLabel,
+            'timezone' => $timezone,
+            'stats' => $earningsStats,
+            'earningsBySource' => $earningsBySource,
+            'payoutHistory' => $payoutHistory,
+            'currentMonthPayout' => $currentMonthPayout,
+            'availableMonths' => $availableMonths,
+            'selectedMonth' => $selectedMonth,
+            'isAllTime' => $isAllTime,
         ]);
     }
 
@@ -340,7 +394,7 @@ class TeacherProfileController extends Controller
         // Get active subscriptions
         $activeSubscriptions = \App\Models\QuranSubscription::where('quran_teacher_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->whereIn('subscription_status', ['active', 'pending'])
+            ->whereIn('status', ['active', 'pending'])
             ->whereIn('payment_status', ['paid', 'pending'])
             ->with(['student', 'package', 'individualCircle'])
             ->orderBy('created_at', 'desc')
@@ -382,6 +436,7 @@ class TeacherProfileController extends Controller
         $assignedInteractiveCourses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
             ->where('academy_id', $academy->id)
             ->with(['enrollments', 'academy'])
+            ->orderBy('created_at', 'desc')
             ->get();
 
         // For now, recorded courses don't have assignment - only creation
@@ -483,92 +538,235 @@ class TeacherProfileController extends Controller
     }
 
     /**
-     * Calculate earnings for teacher
+     * Get real earnings statistics from TeacherEarning model
      */
-    private function calculateEarnings($user, $teacherProfile)
+    private function getRealEarningsStats(string $teacherType, int $teacherId, int $academyId, string $currency, ?int $year = null, ?int $month = null): array
     {
-        $currentMonth = Carbon::now()->format('Y-m');
-        $lastMonth = Carbon::now()->subMonth()->format('Y-m');
+        $baseQuery = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId);
 
-        // Get session price set by admin (from teacher profile or academy settings)
-        $sessionPrice = $this->getTeacherSessionPrice($teacherProfile);
+        // If year and month are provided, filter by them
+        if ($year && $month) {
+            $selectedMonthEarnings = (clone $baseQuery)->forMonth($year, $month)->sum('amount');
+            $selectedMonthSessions = (clone $baseQuery)->forMonth($year, $month)->count();
 
-        // Current month finished sessions
-        $currentMonthSessions = $this->getFinishedSessions($user, $currentMonth);
-        $currentMonthEarnings = $currentMonthSessions * $sessionPrice;
+            // Get previous month for comparison
+            $prevDate = Carbon::create($year, $month, 1)->subMonth();
+            $prevMonthEarnings = (clone $baseQuery)->forMonth($prevDate->year, $prevDate->month)->sum('amount');
 
-        // Last month for comparison
-        $lastMonthSessions = $this->getFinishedSessions($user, $lastMonth);
-        $lastMonthEarnings = $lastMonthSessions * $sessionPrice;
+            $changePercent = 0;
+            if ($prevMonthEarnings > 0) {
+                $changePercent = (($selectedMonthEarnings - $prevMonthEarnings) / $prevMonthEarnings) * 100;
+            }
+        } else {
+            // All time
+            $selectedMonthEarnings = $baseQuery->sum('amount');
+            $selectedMonthSessions = $baseQuery->count();
+            $changePercent = 0;
+        }
 
-        // Calculate growth
-        $earningsGrowth = $lastMonthEarnings > 0 ?
-            (($currentMonthEarnings - $lastMonthEarnings) / $lastMonthEarnings) * 100 : 0;
+        // All-time earnings (always show total)
+        $allTimeEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->sum('amount');
 
-        // Total earnings (all time)
-        $totalEarnings = $this->getTotalEarnings($user, $sessionPrice);
+        // Unpaid earnings (always show all unpaid, not filtered by month)
+        $unpaidEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->unpaid()
+            ->sum('amount');
+
+        // Total paid earnings
+        $paidEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->whereNotNull('payout_id')
+            ->sum('amount');
+
+        // Last payout status
+        $lastPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->latest('payout_month')
+            ->first();
 
         return [
-            'sessionPrice' => $sessionPrice,
-            'currentMonthSessions' => $currentMonthSessions,
-            'currentMonthEarnings' => $currentMonthEarnings,
-            'lastMonthEarnings' => $lastMonthEarnings,
-            'earningsGrowth' => round($earningsGrowth, 1),
-            'totalEarnings' => $totalEarnings,
-            'currency' => 'ر.س', // Default to SAR, could be configurable
+            'selectedMonth' => $selectedMonthEarnings,
+            'changePercent' => round($changePercent, 1),
+            'allTimeEarnings' => $allTimeEarnings,
+            'sessionsCount' => $selectedMonthSessions,
+            'unpaidEarnings' => $unpaidEarnings,
+            'paidEarnings' => $paidEarnings,
+            'lastPayout' => $lastPayout,
         ];
     }
 
     /**
-     * Get teacher session price (set by admin)
+     * Get earnings grouped by source (circle/course/class)
      */
-    private function getTeacherSessionPrice($teacherProfile)
+    private function getEarningsGroupedBySource(string $teacherType, int $teacherId, int $academyId, $user, ?int $year = null, ?int $month = null)
     {
-        // Price could be stored in teacher profile or academy settings
-        // For now, return a default price - this should be configurable by admin
-        if (isset($teacherProfile->session_price_individual)) {
-            return $teacherProfile->session_price_individual;
+        $query = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->with(['session']);
+
+        // Apply month filter if provided
+        if ($year && $month) {
+            $query->forMonth($year, $month);
         }
 
-        // Default prices if not set
-        return 100; // 100 SAR per session as default
+        $earnings = $query->get();
+
+        $grouped = [];
+
+        foreach ($earnings as $earning) {
+            $source = $this->determineEarningSource($earning, $user);
+
+            if (!isset($grouped[$source['key']])) {
+                $grouped[$source['key']] = [
+                    'name' => $source['name'],
+                    'type' => $source['type'],
+                    'total' => 0,
+                    'sessions_count' => 0,
+                    'earnings' => collect([]),
+                ];
+            }
+
+            $grouped[$source['key']]['total'] += $earning->amount;
+            $grouped[$source['key']]['sessions_count']++;
+            $grouped[$source['key']]['earnings']->push($earning);
+        }
+
+        return collect($grouped)->sortByDesc('total');
     }
 
     /**
-     * Get finished sessions count for a specific month
+     * Get available months for filtering
      */
-    private function getFinishedSessions($user, $month)
+    private function getAvailableMonths(string $teacherType, int $teacherId, int $academyId): array
     {
-        // TODO: Implement when session tracking models are ready
-        // This would query QuranSession or AcademicSession tables
-        // for sessions where teacher_id = $user->id AND status = 'completed'
-        // AND created_at LIKE '$month%'
+        // Get all unique months where teacher has earnings
+        $months = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->selectRaw('YEAR(session_completed_at) as year, MONTH(session_completed_at) as month')
+            ->groupBy('year', 'month')
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->get();
 
-        // For now return sample data
-        return rand(15, 30);
+        $availableMonths = [];
+
+        foreach ($months as $monthData) {
+            if ($monthData->year && $monthData->month) {
+                $date = Carbon::create($monthData->year, $monthData->month, 1);
+                $availableMonths[] = [
+                    'value' => $date->format('Y-m'),
+                    'label' => $date->locale('ar')->translatedFormat('F Y'),
+                ];
+            }
+        }
+
+        return $availableMonths;
     }
 
     /**
-     * Calculate monthly earnings
+     * Determine the source of an earning (which circle/course/class)
+     */
+    private function determineEarningSource($earning, $user)
+    {
+        $session = $earning->session;
+
+        if (!$session) {
+            return [
+                'key' => 'unknown',
+                'name' => 'مصدر غير معروف',
+                'type' => 'unknown',
+            ];
+        }
+
+        // Quran Session
+        if ($session instanceof \App\Models\QuranSession) {
+            if ($session->individualCircle) {
+                return [
+                    'key' => 'individual_circle_' . $session->individualCircle->id,
+                    'name' => $session->individualCircle->name ?? 'حلقة فردية - ' . $session->student?->name,
+                    'type' => 'individual_circle',
+                ];
+            } elseif ($session->circle) {
+                return [
+                    'key' => 'group_circle_' . $session->circle->id,
+                    'name' => $session->circle->name,
+                    'type' => 'group_circle',
+                ];
+            }
+        }
+
+        // Academic Session
+        if ($session instanceof \App\Models\AcademicSession) {
+            $lessonName = $session->academicIndividualLesson
+                ? ($session->academicIndividualLesson->subject?->name . ' - ' . $session->student?->name)
+                : 'درس أكاديمي - ' . $session->student?->name;
+
+            return [
+                'key' => 'academic_lesson_' . ($session->academic_individual_lesson_id ?? $session->id),
+                'name' => $lessonName,
+                'type' => 'academic_lesson',
+            ];
+        }
+
+        // Interactive Course Session
+        if ($session instanceof \App\Models\InteractiveCourseSession) {
+            return [
+                'key' => 'interactive_course_' . $session->course->id,
+                'name' => $session->course->title,
+                'type' => 'interactive_course',
+            ];
+        }
+
+        return [
+            'key' => 'other_' . $session->id,
+            'name' => 'جلسة - ' . $session->id,
+            'type' => 'other',
+        ];
+    }
+
+    /**
+     * Get all earnings with full details
+     */
+    private function getAllEarningsWithDetails(string $teacherType, int $teacherId, int $academyId)
+    {
+        return TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->with(['session', 'payout'])
+            ->latest('session_completed_at')
+            ->get();
+    }
+
+    /**
+     * Get payout history
+     */
+    private function getPayoutHistory(string $teacherType, int $teacherId, int $academyId)
+    {
+        return TeacherPayout::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->latest('payout_month')
+            ->limit(12)
+            ->get();
+    }
+
+    /**
+     * Calculate monthly earnings (legacy - kept for backward compatibility)
      */
     private function calculateMonthlyEarnings($user, $teacherProfile, $month)
     {
-        $sessionPrice = $this->getTeacherSessionPrice($teacherProfile);
-        $finishedSessions = $this->getFinishedSessions($user, $month);
+        $teacherType = $user->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
+        $teacherId = $teacherProfile->id;
+        $academyId = $user->academy_id;
 
-        return $finishedSessions * $sessionPrice;
-    }
+        [$year, $monthNum] = explode('-', $month);
 
-    /**
-     * Get total earnings (all time)
-     */
-    private function getTotalEarnings($user, $sessionPrice)
-    {
-        // TODO: Implement when session tracking is ready
-        // This would sum all completed sessions for this teacher
-
-        // For now return sample data
-        return $sessionPrice * rand(100, 300);
+        return TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->forMonth((int) $year, (int) $monthNum)
+            ->sum('amount');
     }
 
     /**

@@ -298,7 +298,8 @@ class QuranTrialRequestResource extends BaseTeacherResource
             TextColumn::make('scheduled_at')
                 ->label('موعد الجلسة')
                 ->dateTime('d/m/Y H:i')
-                ->sortable()
+                ->timezone(fn ($record) => $record->academy->timezone->value)
+                    ->sortable()
                 ->placeholder('غير مجدول'),
 
             TextColumn::make('created_at')

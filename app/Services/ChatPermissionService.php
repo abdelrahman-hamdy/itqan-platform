@@ -200,7 +200,7 @@ class ChatPermissionService
                         ->where('student_id', $student->id)
                         ->where('quran_teacher_id', $teacher->id)
                         ->where('academy_id', $academyId)
-                        ->where('subscription_status', 'active')
+                        ->where('status', 'active')
                 )
 
                 // Group Quran circle memberships

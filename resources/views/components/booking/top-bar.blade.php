@@ -13,13 +13,10 @@
     <div class="flex items-center justify-between">
       <!-- Academy Logo and Name -->
       <div class="flex items-center space-x-3 space-x-reverse">
-        @if($academy && $academy->logo)
-          <img src="{{ asset('storage/' . $academy->logo) }}" alt="{{ $academyName }}" class="h-10 w-auto rounded-lg">
-        @else
-          <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-{{ $brandColor }}-100">
-            <i class="ri-book-open-line text-2xl text-{{ $brandColor }}-600"></i>
-          </div>
-        @endif
+        <x-academy-logo
+          :academy="$academy"
+          size="md"
+          :iconOnly="true" />
         <div>
           <h1 class="text-xl font-bold {{ $brandColorClass }}">{{ $academyName }}</h1>
         </div>

@@ -2,8 +2,7 @@
 
 namespace App\Filament\Teacher\Widgets;
 
-use App\Filament\Shared\Traits\FormatsCalendarData;
-use App\Filament\Shared\Traits\ValidatesConflicts;
+use App\Filament\Shared\Widgets\BaseFullCalendarWidget;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -16,140 +15,25 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Saade\FilamentFullCalendar\Actions;
 use Saade\FilamentFullCalendar\Data\EventData;
-use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
-class TeacherCalendarWidget extends FullCalendarWidget
+/**
+ * Quran Teacher Calendar Widget
+ *
+ * Extends BaseFullCalendarWidget to provide calendar functionality for Quran teachers.
+ * Handles Quran sessions (individual, group, trial) and optionally academic sessions
+ * for teachers who have both roles.
+ */
+class TeacherCalendarWidget extends BaseFullCalendarWidget
 {
-    use FormatsCalendarData;
-    use ValidatesConflicts;
+    // Note: FormatsCalendarData and ValidatesConflicts traits are inherited from BaseFullCalendarWidget
 
-    // Default model for widget initialization (overridden by resolveEventRecord for Academic sessions)
+    // Default model for widget initialization
     public Model|string|null $model = QuranSession::class;
 
-    protected int|string|array $columnSpan = 'full';
-
-    protected static ?int $sort = 1;
-
-    // Properties for circle filtering
+    // Properties for circle filtering (Quran-specific)
     public ?int $selectedCircleId = null;
 
     public ?string $selectedCircleType = null;
-
-    // Properties for day sessions modal
-    public ?string $selectedDate = null;
-    public $daySessions = [];
-
-    // Event listeners
-    protected $listeners = [
-        'refresh-calendar' => 'refreshCalendar',
-    ];
-
-    public function config(): array
-    {
-        return [
-            'firstDay' => 6, // Saturday start
-            'headerToolbar' => [
-                'left' => 'prev,next today',
-                'center' => 'title',
-                'right' => 'dayGridMonth,timeGridWeek,timeGridDay',
-            ],
-            'slotMinTime' => '00:00:00',
-            'slotMaxTime' => '24:00:00',
-            'scrollTime' => '08:00:00', // Initial scroll position
-            'height' => 'auto',
-            'expandRows' => true,
-            'nowIndicator' => true,
-            'slotDuration' => '00:30:00',
-            'businessHours' => [
-                'daysOfWeek' => [6, 0, 1, 2, 3, 4, 5], // Sunday to Saturday
-                'startTime' => '08:00',
-                'endTime' => '22:00',
-            ],
-            'eventColor' => '#10b981',
-            'eventTextColor' => '#ffffff',
-            'weekends' => true,
-            'allDaySlot' => false,
-            'selectMirror' => true,
-            'unselectAuto' => false,
-            'editable' => true,
-            'eventStartEditable' => true,
-            'eventDurationEditable' => true,
-            'eventOverlap' => false,
-        ];
-    }
-
-    /**
-     * Override eventClassNames to add custom class for passed sessions
-     */
-    public function eventClassNames(): string
-    {
-        return <<<'JS'
-            function(arg) {
-                if (arg.event.extendedProps && arg.event.extendedProps.isPassed) {
-                    return ["event-passed"];
-                }
-                return [];
-            }
-        JS;
-    }
-
-    /**
-     * Override eventDidMount to add click handler for day numbers (initialized only once)
-     */
-    public function eventDidMount(): string
-    {
-        $widgetId = $this->getId();
-
-        return <<<JS
-            function(info) {
-                // Get the calendar container element
-                const calendarEl = info.el.closest('.filament-fullcalendar');
-
-                // Only initialize once using data attribute
-                if (calendarEl && !calendarEl.hasAttribute('data-click-initialized')) {
-                    calendarEl.setAttribute('data-click-initialized', 'true');
-
-                    // Style day numbers as clickable links
-                    const dayNumbers = calendarEl.querySelectorAll('.fc-daygrid-day-number');
-                    dayNumbers.forEach(dayNum => {
-                        dayNum.style.cursor = 'pointer';
-                        dayNum.style.color = '#3b82f6';
-                        dayNum.style.textDecoration = 'none';
-                        dayNum.addEventListener('mouseenter', function() {
-                            this.style.textDecoration = 'underline';
-                        });
-                        dayNum.addEventListener('mouseleave', function() {
-                            this.style.textDecoration = 'none';
-                        });
-                    });
-
-                    // Add click handler for day cells
-                    calendarEl.addEventListener('click', function(e) {
-                        // Check if click is on an event - if so, skip day modal handling
-                        if (e.target.closest('.fc-event')) return;
-
-                        // Find the date cell (works for both day grid and time grid, including other months)
-                        const dateCell = e.target.closest('.fc-daygrid-day, .fc-timegrid-col, .fc-timegrid-slot');
-                        if (!dateCell) return;
-
-                        // Get date from data attribute
-                        let dateStr = dateCell.dataset.date;
-
-                        // For time grid, we might need to look at parent col
-                        if (!dateStr && dateCell.classList.contains('fc-timegrid-slot')) {
-                            const col = dateCell.closest('.fc-timegrid-col');
-                            if (col) dateStr = col.dataset.date;
-                        }
-
-                        if (!dateStr) return;
-
-                        // Single-click: Open day sessions modal immediately
-                        window.Livewire.find('{$widgetId}').call('showDaySessionsModal', dateStr);
-                    });
-                }
-            }
-        JS;
-    }
 
     /**
      * Fetch events for the calendar
@@ -289,10 +173,10 @@ class TeacherCalendarWidget extends FullCalendarWidget
             $classNames = 'event-passed';
         }
 
-        // Format times
+        // Convert from UTC storage to academy timezone for display
         $scheduledAt = $session->scheduled_at instanceof \Carbon\Carbon
             ? $session->scheduled_at->copy()->timezone($timezone)
-            : \Carbon\Carbon::parse($session->scheduled_at, $timezone);
+            : \Carbon\Carbon::parse($session->scheduled_at)->timezone($timezone);
 
         $startString = $scheduledAt->format('Y-m-d\TH:i:s');
         $endString = $scheduledAt->copy()->addMinutes($session->duration_minutes ?? 60)->format('Y-m-d\TH:i:s');
@@ -355,10 +239,10 @@ class TeacherCalendarWidget extends FullCalendarWidget
             $classNames = 'event-passed';
         }
 
-        // Format times
+        // Convert from UTC storage to academy timezone for display
         $scheduledAt = $session->scheduled_at instanceof \Carbon\Carbon
             ? $session->scheduled_at->copy()->timezone($timezone)
-            : \Carbon\Carbon::parse($session->scheduled_at, $timezone);
+            : \Carbon\Carbon::parse($session->scheduled_at)->timezone($timezone);
 
         $startString = $scheduledAt->format('Y-m-d\TH:i:s');
         $endString = $scheduledAt->copy()->addMinutes($session->duration_minutes ?? 60)->format('Y-m-d\TH:i:s');
@@ -413,10 +297,10 @@ class TeacherCalendarWidget extends FullCalendarWidget
             $classNames = 'event-passed';
         }
 
-        // Format times
+        // Convert from UTC storage to academy timezone for display
         $scheduledAtTz = $scheduledAt instanceof \Carbon\Carbon
             ? $scheduledAt->copy()->timezone($timezone)
-            : \Carbon\Carbon::parse($scheduledAt, $timezone);
+            : \Carbon\Carbon::parse($scheduledAt)->timezone($timezone);
 
         $startString = $scheduledAtTz->format('Y-m-d\TH:i:s');
         $endString = $scheduledAtTz->copy()->addMinutes($session->duration_minutes ?? 60)->format('Y-m-d\TH:i:s');
@@ -436,7 +320,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 'courseId' => $session->course_id,
                 'sessionNumber' => $session->session_number,
                 'duration' => $session->duration_minutes,
-                'isMovable' => false, // Course sessions cannot be moved
+                'isMovable' => true, // Course sessions can be moved within course date range
                 'isPassed' => $isPassed,
             ]);
 
@@ -587,15 +471,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
         ];
     }
 
-    /**
-     * Header actions for creating sessions - removed as scheduling is now done via circles section
-     */
-    protected function headerActions(): array
-    {
-        return [
-            // No actions - scheduling is handled by the circles management section
-        ];
-    }
+    // headerActions(), modalActions(), and viewAction() are inherited from BaseFullCalendarWidget
 
     /**
      * Override resolveRecord to handle prefixed event IDs
@@ -644,458 +520,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
         return parent::resolveRecord($key);
     }
 
-    /**
-     * Helper method for resolving event records in modal actions
-     * Delegates to resolveRecord for consistency
-     */
-    protected function resolveEventRecord(string $eventId): ?Model
-    {
-        try {
-            return $this->resolveRecord($eventId);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return null;
-        }
-    }
-
-    /**
-     * Modal actions for event management
-     */
-    protected function modalActions(): array
-    {
-        return [
-            Actions\EditAction::make('editSession')
-                ->label('تعديل')
-                ->icon('heroicon-o-pencil-square')
-                ->visible(function (array $arguments): bool {
-                    // Show edit action for all session types (Quran, Academic, Course)
-                    $eventId = $arguments['event']['id'] ?? null;
-                    if (!$eventId) {
-                        return false;
-                    }
-
-                    // Allow editing for all session types
-                    return str_starts_with($eventId, 'quran-')
-                        || str_starts_with($eventId, 'academic-')
-                        || str_starts_with($eventId, 'course-');
-                })
-                ->modalHeading(function (array $arguments) {
-                    $eventId = $arguments['event']['id'] ?? null;
-                    $record = $eventId ? $this->resolveEventRecord($eventId) : null;
-
-                    if (!$record) {
-                        return 'تعديل الجلسة';
-                    }
-
-                    // Determine heading based on session type
-                    if ($record instanceof \App\Models\QuranSession) {
-                        return $record->session_type === 'trial'
-                            ? 'تعديل موعد الجلسة التجريبية'
-                            : 'تعديل بيانات الجلسة';
-                    } elseif ($record instanceof \App\Models\InteractiveCourseSession) {
-                        return 'تعديل جلسة الدورة التفاعلية';
-                    } else {
-                        return 'تعديل الدرس الأكاديمي';
-                    }
-                })
-                ->modalSubmitActionLabel('حفظ التغييرات')
-                ->modalCancelActionLabel('إلغاء')
-                ->fillForm(function (array $arguments): array {
-                    $eventId = $arguments['event']['id'] ?? null;
-                    $record = $eventId ? $this->resolveEventRecord($eventId) : null;
-
-                    if (!$record) {
-                        return [];
-                    }
-
-                    return [
-                        'scheduled_at' => $record->scheduled_at,
-                        'description' => $record->description,
-                    ];
-                })
-                ->form([
-                    Forms\Components\DateTimePicker::make('scheduled_at')
-                        ->label('موعد الجلسة')
-                        ->required()
-                        ->seconds(false)
-                        ->minutesStep(15)
-                        ->minDate(fn () => Carbon::now()->toDateString())
-                        ->maxDate(fn () => Carbon::now()->addMonths(6)->toDateString())
-                        ->native(false)
-                        ->displayFormat('Y-m-d H:i')
-                        ->timezone(AcademyContextService::getTimezone())
-                        ->helperText('اختر التاريخ والوقت الجديد للجلسة'),
-
-                    Forms\Components\Textarea::make('description')
-                        ->label('ملاحظات الجلسة')
-                        ->rows(3)
-                        ->maxLength(500)
-                        ->placeholder('اكتب أي ملاحظات حول الجلسة...'),
-                ])
-                ->action(function (array $arguments, array $data): void {
-                    $eventId = $arguments['event']['id'] ?? null;
-                    $record = $eventId ? $this->resolveEventRecord($eventId) : null;
-
-                    if (!$record) {
-                        Notification::make()
-                            ->title('خطأ')
-                            ->body('لم يتم العثور على الجلسة')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
-
-                    $scheduledAt = Carbon::parse($data['scheduled_at']);
-
-                    // All session types now use scheduled_at
-                    $record->update([
-                        'scheduled_at' => $scheduledAt,
-                        'description' => $data['description'] ?? $record->description,
-                    ]);
-
-                    // Also update the linked trial request if it exists (for trial sessions)
-                    if ($record instanceof \App\Models\QuranSession && $record->session_type === 'trial' && $record->trial_request_id) {
-                        $trialRequest = \App\Models\QuranTrialRequest::find($record->trial_request_id);
-                        if ($trialRequest) {
-                            $trialRequest->update([
-                                'scheduled_at' => $scheduledAt,
-                                'teacher_response' => $data['description'] ?? $trialRequest->teacher_response,
-                            ]);
-                        }
-                    }
-
-                    Notification::make()
-                        ->title('تم تحديث الجلسة بنجاح')
-                        ->success()
-                        ->send();
-
-                    // Refresh calendar to show updated data
-                    $this->dispatch('refresh');
-                })
-                ->extraModalFooterActions([
-                    Action::make('view_full_edit')
-                        ->label('عرض الصفحة الكاملة للتعديل')
-                        ->icon('heroicon-o-arrow-top-right-on-square')
-                        ->color('gray')
-                        ->size('sm')
-                        ->url(function (array $arguments) {
-                            $eventId = $arguments['event']['id'] ?? null;
-                            $record = $eventId ? $this->resolveEventRecord($eventId) : null;
-
-                            if (!$record) {
-                                return '#';
-                            }
-
-                            $panelId = filament()->getCurrentPanel()->getId();
-
-                            // Quran sessions
-                            if ($record instanceof \App\Models\QuranSession) {
-                                if ($record->session_type === 'trial') {
-                                    return route('filament.teacher.resources.quran-trial-requests.edit', [
-                                        'tenant' => filament()->getTenant(),
-                                        'record' => $record->trial_request_id,
-                                    ]);
-                                } else {
-                                    return route('filament.teacher.resources.quran-sessions.edit', [
-                                        'tenant' => filament()->getTenant(),
-                                        'record' => $record,
-                                    ]);
-                                }
-                            }
-
-                            // Interactive Course sessions
-                            if ($record instanceof \App\Models\InteractiveCourseSession) {
-                                return route("filament.{$panelId}.resources.interactive-course-sessions.edit", [
-                                    'tenant' => filament()->getTenant(),
-                                    'record' => $record,
-                                ]);
-                            }
-
-                            // Academic sessions
-                            return route("filament.{$panelId}.resources.academic-sessions.edit", [
-                                'tenant' => filament()->getTenant(),
-                                'record' => $record,
-                            ]);
-                        })
-                        ->openUrlInNewTab()
-                        ->visible(function (array $arguments) {
-                            $eventId = $arguments['event']['id'] ?? null;
-                            $record = $eventId ? $this->resolveEventRecord($eventId) : null;
-
-                            if (!$record) {
-                                return false;
-                            }
-
-                            // Check permissions for different session types
-                            if ($record instanceof \App\Models\QuranSession) {
-                                return Auth::id() === $record->quran_teacher_id;
-                            }
-
-                            if ($record instanceof \App\Models\InteractiveCourseSession) {
-                                $user = Auth::user();
-                                return $user->academicTeacherProfile
-                                    && $record->course
-                                    && $record->course->assigned_teacher_id === $user->academicTeacherProfile->id;
-                            }
-
-                            // Academic sessions
-                            $user = Auth::user();
-                            return $user->academicTeacherProfile
-                                && $record->academic_teacher_id === $user->academicTeacherProfile->id;
-                        }),
-                ]),
-
-            Actions\DeleteAction::make('deleteSession')
-                ->label('حذف')
-                ->icon('heroicon-o-trash')
-                ->requiresConfirmation()
-                ->modalDescription('هل أنت متأكد من حذف هذه الجلسة؟ لن يمكن التراجع عن هذا الإجراء.')
-                ->successNotificationTitle('تم حذف الجلسة بنجاح')
-                ->visible(function (array $arguments): bool {
-                    // Only show delete action for Quran sessions
-                    $eventId = $arguments['event']['id'] ?? null;
-                    if (!$eventId || !str_starts_with($eventId, 'quran-')) {
-                        return false;
-                    }
-
-                    $record = $this->resolveEventRecord($eventId);
-                    if (!$record) {
-                        return false;
-                    }
-
-                    return in_array($record->session_type, ['individual', 'group']) && Auth::id() === $record->quran_teacher_id;
-                })
-                ->before(function (array $arguments) {
-                    $eventId = $arguments['event']['id'] ?? null;
-                    $record = $eventId ? $this->resolveEventRecord($eventId) : null;
-
-                    if (!$record) {
-                        return;
-                    }
-
-                    // Update the circle to recalculate available sessions
-                    if ($record->individualCircle) {
-                        $record->individualCircle->updateSessionCounts();
-                    }
-                    // For group sessions, we don't need to update counts as they're tracked differently
-                    // Group circles use the schedule-based system for session management
-                }),
-
-            // Action for viewing all sessions for a specific day
-            Action::make('viewDaySessions')
-                ->label('جلسات اليوم')
-                ->icon('heroicon-o-calendar-days')
-                ->modalHeading(fn () => 'جلسات يوم ' . ($this->selectedDate ? Carbon::parse($this->selectedDate)->locale('ar')->translatedFormat('l، j F Y') : ''))
-                ->modalContent(fn () => view('filament.widgets.day-sessions-list', [
-                    'sessions' => $this->daySessions
-                ]))
-                ->modalSubmitAction(false)
-                ->modalCancelActionLabel('إغلاق')
-                ->closeModalByClickingAway(true),
-        ];
-    }
-
-    /**
-     * View action for displaying session details
-     * This is called when clicking on a calendar event
-     */
-    protected function viewAction(): Action
-    {
-        return Actions\ViewAction::make()
-            ->label('عرض التفاصيل')
-            ->icon('heroicon-o-eye')
-            ->modalHeading(function (array $arguments) {
-                $eventId = $arguments['event']['id'] ?? null;
-                $record = $eventId ? $this->resolveEventRecord($eventId) : null;
-
-                if (!$record) {
-                    return 'تفاصيل الجلسة';
-                }
-
-                if ($record instanceof QuranSession && $record->session_type === 'trial') {
-                    $studentName = $record->student->name ??
-                                 $record->trialRequest->student_name ??
-                                 'طالب تجريبي';
-                    return "تفاصيل الجلسة التجريبية: {$studentName}";
-                }
-
-                return "تفاصيل الجلسة: {$record->title}";
-            })
-            ->infolist(function (array $arguments) {
-                $eventId = $arguments['event']['id'] ?? null;
-                $record = $eventId ? $this->resolveEventRecord($eventId) : null;
-
-                if (!$record) {
-                    return [];
-                }
-
-            $isQuranSession = $record instanceof QuranSession;
-            $isTrial = $isQuranSession && $record->session_type === 'trial';
-
-                if ($isTrial) {
-                    return [
-                        \Filament\Infolists\Components\TextEntry::make('scheduled_at')
-                            ->label('موعد الجلسة')
-                            ->state($record->scheduled_at)
-                            ->dateTime()
-                            ->timezone(AcademyContextService::getTimezone()),
-                        \Filament\Infolists\Components\TextEntry::make('description')
-                            ->label('ملاحظات إضافية')
-                            ->state($record->description)
-                            ->placeholder('لا توجد ملاحظات'),
-                    ];
-                } else {
-                    return [
-                        \Filament\Infolists\Components\TextEntry::make('title')
-                            ->label('عنوان الجلسة')
-                            ->state($record->title),
-                        \Filament\Infolists\Components\TextEntry::make('description')
-                            ->label('وصف الجلسة')
-                            ->state($record->description)
-                            ->placeholder('لا يوجد وصف'),
-                        \Filament\Infolists\Components\TextEntry::make('scheduled_at')
-                            ->label('موعد الجلسة')
-                            ->state($record->scheduled_at)
-                            ->dateTime()
-                            ->timezone(AcademyContextService::getTimezone()),
-                        \Filament\Infolists\Components\TextEntry::make('duration_minutes')
-                            ->label('مدة الجلسة')
-                            ->state(($record->duration_minutes ?? 60).' دقيقة'),
-                        \Filament\Infolists\Components\TextEntry::make('status')
-                            ->label('حالة الجلسة')
-                            ->state($record->status)
-                            ->badge()
-                            ->color(fn ($state): string => match ($state instanceof \App\Enums\SessionStatus ? $state->value : $state) {
-                                'unscheduled' => 'gray',
-                                'scheduled' => 'warning',
-                                'ready' => 'info',
-                                'ongoing' => 'primary',
-                                'completed' => 'success',
-                                'cancelled' => 'danger',
-                                'absent' => 'warning',
-                                'teacher_absent' => 'danger',
-                                default => 'gray',
-                            })
-                            ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SessionStatus ? $state->value : $state) {
-                                'unscheduled' => 'غير مجدولة',
-                                'scheduled' => 'مجدولة',
-                                'ready' => 'جاهزة للبدء',
-                                'ongoing' => 'جارية',
-                                'completed' => 'مكتملة',
-                                'cancelled' => 'ملغية',
-                                'absent' => 'غياب الطالب',
-                                'teacher_absent' => 'غياب المعلم',
-                                default => $state instanceof \App\Enums\SessionStatus ? $state->value : $state,
-                            }),
-                    ];
-                }
-            })
-            ->modalFooterActions(function (Action $action): array {
-                // Get the record that was already resolved by the ViewAction
-                $record = $this->record;
-
-                if (!$record) {
-                    return [$action->getModalCancelAction()];
-                }
-
-                $isQuranSession = $record instanceof QuranSession;
-                $isCourseSession = $record instanceof InteractiveCourseSession;
-
-                // Build URL for view full page
-                if ($isQuranSession) {
-                    if ($record->session_type === 'trial') {
-                        $viewFullUrl = route('filament.teacher.resources.quran-trial-requests.view', [
-                            'tenant' => filament()->getTenant(),
-                            'record' => $record->trial_request_id,
-                        ]);
-                    } else {
-                        $viewFullUrl = route('filament.teacher.resources.quran-sessions.view', [
-                            'tenant' => filament()->getTenant(),
-                            'record' => $record,
-                        ]);
-                    }
-                } elseif ($isCourseSession) {
-                    // Interactive Course sessions - link to parent course view
-                    $panelId = filament()->getCurrentPanel()->getId();
-                    $viewFullUrl = route("filament.{$panelId}.resources.interactive-courses.view", [
-                        'tenant' => filament()->getTenant(),
-                        'record' => $record->course_id,
-                    ]);
-                } else {
-                    // Academic sessions
-                    $panelId = filament()->getCurrentPanel()->getId();
-                    $viewFullUrl = route("filament.{$panelId}.resources.academic-sessions.view", [
-                        'tenant' => filament()->getTenant(),
-                        'record' => $record,
-                    ]);
-                }
-
-                // Build event ID with prefix for editSession action
-                if ($isQuranSession) {
-                    $eventId = 'quran-' . $record->id;
-                } elseif ($isCourseSession) {
-                    $eventId = 'course-' . $record->id;
-                } else {
-                    $eventId = 'academic-' . $record->id;
-                }
-
-                $editButton = Action::make('edit')
-                    ->label('تعديل')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('primary')
-                    ->action(function () use ($eventId) {
-                        // Replace current view modal with edit modal
-                        $this->replaceMountedAction('editSession', ['event' => ['id' => $eventId]]);
-                    })
-                    ->visible(function () use ($record, $isQuranSession, $isCourseSession) {
-                        // Don't show edit button for passed sessions
-                        $scheduledAt = $isCourseSession ? $record->scheduled_at : $record->scheduled_at;
-                        if ($scheduledAt && $scheduledAt < Carbon::now()) {
-                            return false;
-                        }
-
-                        // Show edit for Quran sessions
-                        if ($isQuranSession) {
-                            return Auth::id() === $record->quran_teacher_id;
-                        }
-
-                        // Show edit for Interactive Course sessions
-                        if ($isCourseSession) {
-                            $user = Auth::user();
-                            if (!$user->academicTeacherProfile) {
-                                return false;
-                            }
-                            // Check if teacher is assigned to this course
-                            return $record->course && $record->course->assigned_teacher_id === $user->academicTeacherProfile->id;
-                        }
-
-                        // Show edit for Academic individual sessions
-                        $user = Auth::user();
-                        if (!$user->academicTeacherProfile) {
-                            return false;
-                        }
-
-                        // Don't allow editing AcademicSession records linked to courses
-                        if ($record->interactive_course_id) {
-                            return false;
-                        }
-
-                        return $record->academic_teacher_id === $user->academicTeacherProfile->id;
-                    });
-
-                $viewFullButton = Action::make('view_full')
-                    ->label('فتح الصفحة الكاملة')
-                    ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->color('gray')
-                    ->url($viewFullUrl)
-                    ->openUrlInNewTab();
-
-                return [
-                    $editButton,
-                    $viewFullButton,
-                    $action->getModalCancelAction(),
-                ];
-            });
-    }
+    // resolveEventRecord() is inherited from BaseFullCalendarWidget
 
     /**
      * Handle date click - disabled (we use double-click instead)
@@ -1156,24 +581,28 @@ class TeacherCalendarWidget extends FullCalendarWidget
         // Set the selected date
         $this->selectedDate = $dateStr;
 
+        // Get academy timezone for proper display
+        $timezone = AcademyContextService::getTimezone();
+
         // Prepare sessions array for the view
-        $this->daySessions = $allSessions->map(function ($session) use ($user) {
+        $this->daySessions = $allSessions->map(function ($session) use ($user, $timezone) {
             $isQuran = $session instanceof QuranSession;
             $isCourse = $session instanceof InteractiveCourseSession;
 
-            // Get scheduled_at for different session types
-            if ($isCourse) {
-                $scheduledAt = $session->scheduled_at;
-            } else {
-                $scheduledAt = $session->scheduled_at;
-            }
+            // Get scheduled_at (all session types now use scheduled_at consistently)
+            $scheduledAt = $session->scheduled_at;
+
+            // Convert to academy timezone for display
+            $scheduledAtInTz = $scheduledAt instanceof Carbon
+                ? $scheduledAt->copy()->timezone($timezone)
+                : Carbon::parse($scheduledAt, 'UTC')->timezone($timezone);
 
             $isPassed = $scheduledAt < Carbon::now();
 
             $sessionData = [
                 'type' => $isQuran ? 'quran' : ($isCourse ? 'course' : 'academic'),
                 'isPassed' => $isPassed,
-                'time' => $scheduledAt->format('h:i A'),
+                'time' => $scheduledAtInTz->format('h:i A'),
                 'duration' => $session->duration_minutes ?? 60,
                 'studentName' => $session->student?->name ?? ($isCourse ? $session->course?->title : 'طالب'),
                 'subject' => '',
@@ -1272,7 +701,97 @@ class TeacherCalendarWidget extends FullCalendarWidget
         $eventId = $event['id'];
         $modelType = $event['extendedProps']['modelType'] ?? 'quran';
 
-        // Extract numeric ID
+        // Parse times with academy timezone context to prevent offset issues
+        $timezone = AcademyContextService::getTimezone();
+        $newStart = Carbon::parse($event['start'], $timezone);
+        $newEnd = Carbon::parse($event['end'], $timezone);
+        $duration = $newStart->diffInMinutes($newEnd);
+
+        // Validate the new date is not in the past
+        if ($newStart->isPast()) {
+            Notification::make()
+                ->title('غير مسموح')
+                ->body('لا يمكن جدولة الجلسات في الماضي. يرجى اختيار تاريخ ووقت مستقبلي.')
+                ->warning()
+                ->send();
+
+            return true; // Revert - past date not allowed
+        }
+
+        // Handle interactive course sessions
+        if ($modelType === 'course') {
+            $numericId = (int) str_replace('course-', '', $eventId);
+            $record = InteractiveCourseSession::with('course')->find($numericId);
+
+            if (!$record) {
+                return true; // Revert - record not found
+            }
+
+            // Validate new date is not before the course start date
+            if ($record->course && $record->course->start_date) {
+                $courseStartDate = Carbon::parse($record->course->start_date)->startOfDay();
+                if ($newStart->startOfDay()->lt($courseStartDate)) {
+                    Notification::make()
+                        ->title('غير مسموح')
+                        ->body('لا يمكن جدولة الجلسة قبل تاريخ بداية الدورة (' . $courseStartDate->format('Y-m-d') . ')')
+                        ->warning()
+                        ->send();
+
+                    return true; // Revert - validation failed
+                }
+            }
+
+            // Validate new date is not after course end date (if set)
+            if ($record->course && $record->course->end_date) {
+                $courseEndDate = Carbon::parse($record->course->end_date)->endOfDay();
+                if ($newStart->gt($courseEndDate)) {
+                    Notification::make()
+                        ->title('غير مسموح')
+                        ->body('لا يمكن جدولة الجلسة بعد تاريخ نهاية الدورة (' . $courseEndDate->format('Y-m-d') . ')')
+                        ->warning()
+                        ->send();
+
+                    return true; // Revert - validation failed
+                }
+            }
+
+            // Validate no conflicts
+            try {
+                $user = Auth::user();
+                $teacherId = $user->academicTeacherProfile->id;
+
+                $conflictData = [
+                    'scheduled_at' => $newStart,
+                    'duration_minutes' => $duration,
+                    'teacher_id' => $teacherId,
+                ];
+
+                $this->validateSessionConflicts($conflictData, $numericId, 'course');
+            } catch (\Exception $e) {
+                Notification::make()
+                    ->title('خطأ في تحديث الجلسة')
+                    ->body($e->getMessage())
+                    ->danger()
+                    ->send();
+
+                return true; // Revert - conflict found
+            }
+
+            $record->update([
+                'scheduled_at' => $newStart,
+                'duration_minutes' => $duration,
+            ]);
+
+            Notification::make()
+                ->title('تم تحديث موعد جلسة الدورة بنجاح')
+                ->success()
+                ->send();
+
+            // Return FALSE to tell FullCalendar to KEEP the new position
+            return false;
+        }
+
+        // Extract numeric ID for quran/academic sessions
         $numericId = (int) str_replace(['quran-', 'academic-'], '', $eventId);
 
         // Find the appropriate record
@@ -1285,7 +804,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
         }
 
         if (! $record) {
-            return false;
+            return true; // Revert - record not found
         }
 
         // Check if session is movable
@@ -1298,49 +817,30 @@ class TeacherCalendarWidget extends FullCalendarWidget
                     ->warning()
                     ->send();
 
-                $this->dispatch('refresh');
-                return false;
+                return true; // Revert - session type not movable
             }
         } else {
-            // For academic sessions, only private lessons can be moved (not interactive courses)
+            // For academic sessions linked to interactive courses, don't allow moving from here
+            // (they should be managed via the course's session management)
             if ($record->interactive_course_id) {
                 Notification::make()
                     ->title('غير مسموح')
-                    ->body('لا يمكن تحريك جلسات الدورات التفاعلية.')
+                    ->body('لا يمكن تحريك جلسات الدورات التفاعلية من هنا.')
                     ->warning()
                     ->send();
 
-                $this->dispatch('refresh');
-                return false;
+                return true; // Revert - interactive course sessions managed elsewhere
             }
-        }
-
-        $newStart = Carbon::parse($event['start']);
-        $newEnd = Carbon::parse($event['end']);
-        $duration = $newStart->diffInMinutes($newEnd);
-
-        // Validate the new date is not in the past
-        if ($newStart->isPast()) {
-            Notification::make()
-                ->title('غير مسموح')
-                ->body('لا يمكن جدولة الجلسات في الماضي. يرجى اختيار تاريخ ووقت مستقبلي.')
-                ->warning()
-                ->send();
-
-            $this->dispatch('refresh');
-            return false;
         }
 
         // Validate subscription constraints for individual sessions
         if ($modelType === 'quran' && $record->session_type === 'individual' && $record->individual_circle_id) {
             if (! $this->validateQuranSubscriptionConstraints($record, $newStart)) {
-                $this->dispatch('refresh');
-                return false;
+                return true; // Revert - subscription validation failed
             }
         } elseif ($modelType === 'academic' && $record->subscription_id) {
             if (! $this->validateAcademicSubscriptionConstraints($record, $newStart)) {
-                $this->dispatch('refresh');
-                return false;
+                return true; // Revert - subscription validation failed
             }
         }
 
@@ -1365,8 +865,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 ->danger()
                 ->send();
 
-            $this->dispatch('refresh');
-            return false;
+            return true; // Revert - conflict found
         }
 
         // If we reach here, all validations passed
@@ -1377,16 +876,14 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 'duration_minutes' => $duration,
             ]);
 
-            // Call parent to allow the visual change
-            $result = parent::onEventDrop($event, $oldEvent, $relatedEvents, $delta, $oldResource, $newResource);
-
             Notification::make()
                 ->title('تم تحديث موعد الجلسة بنجاح')
                 ->body($modelType === 'academic' ? 'تم تحديث موعد الدرس بنجاح' : 'تم تحديث موعد الجلسة بنجاح')
                 ->success()
                 ->send();
 
-            return $result;
+            // Return FALSE to tell FullCalendar to KEEP the new position
+            return false;
 
         } catch (\Exception $e) {
             Notification::make()
@@ -1395,8 +892,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 ->danger()
                 ->send();
 
-            $this->dispatch('refresh');
-            return false;
+            return true; // Revert - update failed
         }
     }
 
@@ -1414,7 +910,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
         $subscription = $circle->subscription;
 
         // Check if subscription is active
-        if ($subscription->subscription_status !== 'active') {
+        if ($subscription->status !== 'active') {
             Notification::make()
                 ->title('غير مسموح')
                 ->body('الاشتراك غير نشط. لا يمكن تحريك الجلسة.')
@@ -1480,7 +976,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
         }
 
         // Check if subscription is active
-        if ($subscription->subscription_status !== 'active') {
+        if ($subscription->status !== 'active') {
             Notification::make()
                 ->title('غير مسموح')
                 ->body('الاشتراك غير نشط. لا يمكن تحريك الجلسة.')
@@ -1531,7 +1027,79 @@ class TeacherCalendarWidget extends FullCalendarWidget
         $eventId = $event['id'];
         $modelType = $event['extendedProps']['modelType'] ?? 'quran';
 
-        // Extract numeric ID
+        // Parse times with academy timezone context to prevent offset issues
+        $timezone = AcademyContextService::getTimezone();
+        $newStart = Carbon::parse($event['start'], $timezone);
+        $newEnd = Carbon::parse($event['end'], $timezone);
+        $newDuration = $newStart->diffInMinutes($newEnd);
+
+        // Validate duration is acceptable
+        if (! in_array($newDuration, [30, 45, 60, 90, 120])) {
+            Notification::make()
+                ->title('خطأ في المدة')
+                ->body('مدة الجلسة يجب أن تكون 30، 45، 60، 90، أو 120 دقيقة')
+                ->danger()
+                ->send();
+
+            return true; // Revert - invalid duration
+        }
+
+        // Validate the new date is not in the past
+        if ($newStart->isPast()) {
+            Notification::make()
+                ->title('غير مسموح')
+                ->body('لا يمكن تغيير مدة الجلسات في الماضي.')
+                ->warning()
+                ->send();
+
+            return true; // Revert - past date not allowed
+        }
+
+        // Handle interactive course sessions
+        if ($modelType === 'course') {
+            $numericId = (int) str_replace('course-', '', $eventId);
+            $record = InteractiveCourseSession::with('course')->find($numericId);
+
+            if (!$record) {
+                return true; // Revert - record not found
+            }
+
+            // Validate no conflicts with new duration
+            try {
+                $user = Auth::user();
+                $teacherId = $user->academicTeacherProfile->id;
+
+                $conflictData = [
+                    'scheduled_at' => $newStart,
+                    'duration_minutes' => $newDuration,
+                    'teacher_id' => $teacherId,
+                ];
+
+                $this->validateSessionConflicts($conflictData, $numericId, 'course');
+            } catch (\Exception $e) {
+                Notification::make()
+                    ->title('خطأ في تحديث الجلسة')
+                    ->body($e->getMessage())
+                    ->danger()
+                    ->send();
+
+                return true; // Revert - conflict found
+            }
+
+            $record->update([
+                'duration_minutes' => $newDuration,
+            ]);
+
+            Notification::make()
+                ->title('تم تحديث مدة جلسة الدورة بنجاح')
+                ->success()
+                ->send();
+
+            // Return FALSE to tell FullCalendar to KEEP the new size
+            return false;
+        }
+
+        // Extract numeric ID for quran/academic sessions
         $numericId = (int) str_replace(['quran-', 'academic-'], '', $eventId);
 
         // Find the appropriate record
@@ -1544,7 +1112,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
         }
 
         if (! $record) {
-            return false;
+            return true; // Revert - record not found
         }
 
         // Check if session is resizable
@@ -1557,8 +1125,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                     ->warning()
                     ->send();
 
-                $this->dispatch('refresh');
-                return false;
+                return true; // Revert - group sessions not resizable
             }
 
             // Only individual sessions can be resized
@@ -1569,49 +1136,19 @@ class TeacherCalendarWidget extends FullCalendarWidget
                     ->warning()
                     ->send();
 
-                $this->dispatch('refresh');
-                return false;
+                return true; // Revert - only individual sessions resizable
             }
         } else {
-            // For academic sessions, interactive course sessions cannot be resized
+            // For academic sessions, interactive course sessions cannot be resized from AcademicSession model
             if ($record->interactive_course_id) {
                 Notification::make()
                     ->title('غير مسموح')
-                    ->body('لا يمكن تغيير مدة جلسات الدورات التفاعلية.')
+                    ->body('لا يمكن تغيير مدة جلسات الدورات التفاعلية من هنا.')
                     ->warning()
                     ->send();
 
-                $this->dispatch('refresh');
-                return false;
+                return true; // Revert - interactive course sessions managed elsewhere
             }
-        }
-
-        $newStart = Carbon::parse($event['start']);
-        $newEnd = Carbon::parse($event['end']);
-        $newDuration = $newStart->diffInMinutes($newEnd);
-
-        // Validate the new date is not in the past
-        if ($newStart->isPast()) {
-            Notification::make()
-                ->title('غير مسموح')
-                ->body('لا يمكن تغيير مدة الجلسات في الماضي.')
-                ->warning()
-                ->send();
-
-            $this->dispatch('refresh');
-            return false;
-        }
-
-        // Validate duration is acceptable
-        if (! in_array($newDuration, [30, 45, 60, 90, 120])) {
-            Notification::make()
-                ->title('خطأ في المدة')
-                ->body('مدة الجلسة يجب أن تكون 30، 45، 60، 90، أو 120 دقيقة')
-                ->danger()
-                ->send();
-
-            $this->dispatch('refresh');
-            return false;
         }
 
         // Validate no conflicts with new duration using shared trait
@@ -1635,8 +1172,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 ->danger()
                 ->send();
 
-            $this->dispatch('refresh');
-            return false;
+            return true; // Revert - conflict found
         }
 
         // If we reach here, all validations passed
@@ -1646,16 +1182,14 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 'duration_minutes' => $newDuration,
             ]);
 
-            // Call parent to allow the visual change
-            $result = parent::onEventResize($event, $oldEvent, $relatedEvents, $endDelta, $startDelta);
-
             Notification::make()
                 ->title('تم تحديث مدة الجلسة بنجاح')
                 ->body($modelType === 'academic' ? 'تم تحديث مدة الدرس بنجاح' : 'تم تحديث مدة الجلسة بنجاح')
                 ->success()
                 ->send();
 
-            return $result;
+            // Return FALSE to tell FullCalendar to KEEP the new size
+            return false;
 
         } catch (\Exception $e) {
             Notification::make()
@@ -1664,8 +1198,7 @@ class TeacherCalendarWidget extends FullCalendarWidget
                 ->danger()
                 ->send();
 
-            $this->dispatch('refresh');
-            return false;
+            return true; // Revert - update failed
         }
     }
 

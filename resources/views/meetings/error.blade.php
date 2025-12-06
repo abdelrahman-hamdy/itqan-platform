@@ -35,7 +35,7 @@
                     <p class="text-sm text-gray-600">{{ $session->title ?? 'جلسة قرآنية' }}</p>
                     @if($session->scheduled_at)
                         <p class="text-sm text-gray-500 mt-1">
-                            الموعد: {{ $session->scheduled_at->format('Y/m/d - h:i A') }}
+                            الموعد: {{ formatDateTimeArabic($session->scheduled_at) }}
                         </p>
                     @endif
                 </div>

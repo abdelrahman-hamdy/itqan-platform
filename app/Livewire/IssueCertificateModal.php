@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\CertificateTemplateStyle;
 use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
@@ -23,13 +24,17 @@ class IssueCertificateModal extends Component
     // Group circle context
     public $circleId;
     public $circle;
+
+    // Interactive course context
+    public $course;
+
     public $students = [];
     public $selectedStudents = [];
     public $selectAll = false;
 
     // Form fields
     public $achievementText = '';
-    public $templateStyle = 'modern';
+    public $templateStyle = 'template_1';
     public $previewMode = false;
 
     // Validation rules
@@ -37,10 +42,10 @@ class IssueCertificateModal extends Component
     {
         $rules = [
             'achievementText' => 'required|string|min:10|max:1000',
-            'templateStyle' => 'required|in:modern,classic,elegant',
+            'templateStyle' => 'required|string',
         ];
 
-        if ($this->subscriptionType === 'group_quran') {
+        if ($this->subscriptionType === 'group_quran' || $this->subscriptionType === 'interactive') {
             $rules['selectedStudents'] = 'required|array|min:1';
         }
 
@@ -79,12 +84,14 @@ class IssueCertificateModal extends Component
         $this->showModal = true;
         $this->previewMode = false;
         $this->achievementText = '';
-        $this->templateStyle = 'modern';
+        $this->templateStyle = 'template_1';
         $this->selectedStudents = [];
         $this->selectAll = false;
 
         if ($subscriptionType === 'group_quran' && $circleId) {
             $this->loadCircle();
+        } elseif ($subscriptionType === 'interactive' && $circleId) {
+            $this->loadInteractiveCourse();
         } elseif ($subscriptionId) {
             $this->loadSubscription();
         }
@@ -124,6 +131,38 @@ class IssueCertificateModal extends Component
         // Check authorization
         $user = Auth::user();
         if (!$user->hasRole(['super_admin', 'admin', 'quran_teacher'])) {
+            abort(403, 'غير مصرح لك بإصدار شهادات');
+        }
+    }
+
+    protected function loadInteractiveCourse()
+    {
+        $this->course = InteractiveCourse::with(['academy', 'enrollments.student'])->findOrFail($this->circleId);
+
+        // Get all enrolled students with their certificate count for this course
+        $this->students = $this->course->enrollments()
+            ->with('student')
+            ->get()
+            ->map(function($enrollment) {
+                // Count certificates issued to this student for this course
+                $certificateCount = \App\Models\Certificate::where('student_id', $enrollment->student_id)
+                    ->where('certificateable_type', InteractiveCourse::class)
+                    ->where('certificateable_id', $this->circleId)
+                    ->count();
+
+                return [
+                    'id' => $enrollment->student_id,
+                    'enrollment_id' => $enrollment->id,
+                    'subscription_id' => (string) $enrollment->student_id, // Cast to string for checkbox compatibility
+                    'name' => $enrollment->student->name ?? 'طالب',
+                    'email' => $enrollment->student->email ?? '',
+                    'certificate_count' => $certificateCount,
+                ];
+            })->values()->toArray();
+
+        // Check authorization
+        $user = Auth::user();
+        if (!$user->hasRole(['super_admin', 'admin', 'academic_teacher'])) {
             abort(403, 'غير مصرح لك بإصدار شهادات');
         }
     }
@@ -234,14 +273,86 @@ class IssueCertificateModal extends Component
                 }
 
                 if ($issuedCount > 0) {
-                    session()->flash('success', "تم إصدار {$issuedCount} شهادة بنجاح!");
+                    // Close modal first
                     $this->showModal = false;
                     $this->reset(['achievementText', 'templateStyle', 'selectedStudents', 'selectAll', 'previewMode']);
-                    // Dispatch event to trigger page reload
-                    $this->dispatch('certificates-issued');
+
+                    // Set flash message for after reload
+                    session()->flash('success', "تم إصدار {$issuedCount} شهادة بنجاح!");
+
+                    // Dispatch success event with notification data
+                    $this->dispatch('certificate-issued-success', [
+                        'message' => "تم إصدار {$issuedCount} شهادة بنجاح!",
+                        'count' => $issuedCount
+                    ]);
+
                     return;
                 } elseif (!empty($errors)) {
                     session()->flash('error', 'فشل إصدار الشهادات: ' . implode('، ', array_slice($errors, 0, 3)));
+                    $this->dispatch('certificate-issued-error', [
+                        'message' => 'فشل إصدار الشهادات: ' . implode('، ', array_slice($errors, 0, 3))
+                    ]);
+                    return;
+                } else {
+                    session()->flash('error', 'لم يتم اختيار أي طالب');
+                    return;
+                }
+            } elseif ($this->subscriptionType === 'interactive') {
+                // Issue certificates to selected students in interactive course
+                $errors = [];
+
+                \Log::info('Starting interactive course certificate issuance', [
+                    'course_id' => $this->circleId,
+                    'selected_students' => $this->selectedStudents,
+                    'achievement_text' => $this->achievementText,
+                ]);
+
+                foreach ($this->selectedStudents as $studentId) {
+                    $student = User::find($studentId);
+                    if ($student) {
+                        try {
+                            $certificateService->issueInteractiveCourseCertificate(
+                                $this->course,
+                                $student,
+                                $this->achievementText,
+                                CertificateTemplateStyle::from($this->templateStyle),
+                                Auth::id()
+                            );
+                            $issuedCount++;
+                            \Log::info('Certificate issued successfully', ['student_id' => $studentId]);
+                        } catch (\Exception $e) {
+                            \Log::error('Certificate issuance failed', [
+                                'student_id' => $studentId,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString()
+                            ]);
+                            $errors[] = ($student->name ?? 'طالب') . ': ' . $e->getMessage();
+                        }
+                    } else {
+                        \Log::warning('Student not found', ['student_id' => $studentId]);
+                    }
+                }
+
+                if ($issuedCount > 0) {
+                    // Close modal first
+                    $this->showModal = false;
+                    $this->reset(['achievementText', 'templateStyle', 'selectedStudents', 'selectAll', 'previewMode']);
+
+                    // Set flash message for after reload
+                    session()->flash('success', "تم إصدار {$issuedCount} شهادة بنجاح!");
+
+                    // Dispatch success event with notification data
+                    $this->dispatch('certificate-issued-success', [
+                        'message' => "تم إصدار {$issuedCount} شهادة بنجاح!",
+                        'count' => $issuedCount
+                    ]);
+
+                    return;
+                } elseif (!empty($errors)) {
+                    session()->flash('error', 'فشل إصدار الشهادات: ' . implode('، ', array_slice($errors, 0, 3)));
+                    $this->dispatch('certificate-issued-error', [
+                        'message' => 'فشل إصدار الشهادات: ' . implode('، ', array_slice($errors, 0, 3))
+                    ]);
                     return;
                 } else {
                     session()->flash('error', 'لم يتم اختيار أي طالب');
@@ -266,46 +377,50 @@ class IssueCertificateModal extends Component
                     $teacherId
                 );
 
-                session()->flash('success', 'تم إصدار الشهادة بنجاح!');
+                // Close modal first
                 $this->showModal = false;
                 $this->reset(['achievementText', 'templateStyle', 'selectedStudents', 'selectAll', 'previewMode']);
-                $this->dispatch('certificate-issued', certificateId: $certificate->id);
+
+                // Set flash message for after reload
+                session()->flash('success', 'تم إصدار الشهادة بنجاح!');
+
+                // Dispatch success event with notification data
+                $this->dispatch('certificate-issued-success', [
+                    'message' => 'تم إصدار الشهادة بنجاح!',
+                    'certificateId' => $certificate->id
+                ]);
+
                 return;
             }
 
         } catch (\Exception $e) {
             \Log::error('Certificate issuance error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            session()->flash('error', 'حدث خطأ أثناء إصدار الشهادة: ' . $e->getMessage());
+            $errorMessage = 'حدث خطأ أثناء إصدار الشهادة: ' . $e->getMessage();
+            session()->flash('error', $errorMessage);
+            $this->dispatch('certificate-issued-error', [
+                'message' => $errorMessage
+            ]);
         }
     }
 
     public function getTemplateStylesProperty()
     {
-        return [
-            'modern' => [
-                'label' => 'عصري',
-                'description' => 'تصميم حديث بألوان زرقاء وخضراء',
-                'icon' => 'ri-contrast-2-line',
-                'color' => 'blue',
-            ],
-            'classic' => [
-                'label' => 'كلاسيكي',
-                'description' => 'تصميم تقليدي رسمي',
-                'icon' => 'ri-layout-line',
-                'color' => 'gray',
-            ],
-            'elegant' => [
-                'label' => 'أنيق',
-                'description' => 'تصميم فاخر بألوان ذهبية',
-                'icon' => 'ri-vip-crown-line',
-                'color' => 'amber',
-            ],
-        ];
+        return collect(CertificateTemplateStyle::cases())->mapWithKeys(function ($style) {
+            return [
+                $style->value => [
+                    'label' => $style->label(),
+                    'description' => $style->description(),
+                    'icon' => $style->icon(),
+                    'color' => 'blue',
+                    'previewImage' => $style->previewImageUrl(),
+                ],
+            ];
+        })->toArray();
     }
 
     public function getIsGroupProperty()
     {
-        return $this->subscriptionType === 'group_quran';
+        return $this->subscriptionType === 'group_quran' || $this->subscriptionType === 'interactive';
     }
 
     public function getStudentNameProperty()
@@ -330,6 +445,9 @@ class IssueCertificateModal extends Component
         if ($this->circle) {
             return $this->circle->academy->name ?? 'الأكاديمية';
         }
+        if ($this->course) {
+            return $this->course->academy->name ?? 'الأكاديمية';
+        }
         return 'الأكاديمية';
     }
 
@@ -346,6 +464,9 @@ class IssueCertificateModal extends Component
         }
         if ($this->circle) {
             return $this->circle->teacher->name ?? 'المعلم';
+        }
+        if ($this->course) {
+            return $this->course->assignedTeacher->full_name ?? 'المعلم';
         }
         return 'المعلم';
     }

@@ -1,7 +1,15 @@
 @props(['academy', 'title', 'subtitle', 'icon', 'stats' => []])
 
+@php
+    // Get gradient palette colors
+    $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
+    $colors = $gradientPalette->getColors();
+    $gradientFrom = $colors['from'];
+    $gradientTo = $colors['to'];
+@endphp
+
 <!-- Hero Section -->
-<section class="bg-gradient-to-l from-primary to-secondary text-white py-16 relative overflow-hidden">
+<section class="bg-gradient-to-l from-{{ $gradientFrom }} to-{{ $gradientTo }} text-white py-16 relative overflow-hidden">
   
   <div class="container mx-auto px-4 text-center relative z-10">
     <!-- Big White Icon -->

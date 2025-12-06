@@ -28,7 +28,8 @@ class GroupCircleValidator implements ScheduleValidatorInterface
             return ValidationResult::error('لا يمكن اختيار أكثر من 7 أيام في الأسبوع');
         }
 
-        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        // Use actual monthly_sessions_count from circle (database has default of 8)
+        $monthlyTarget = $this->circle->monthly_sessions_count;
         $recommendedDaysPerWeek = ceil($monthlyTarget / 4); // 4 weeks in a month
         $maxDaysPerWeek = $recommendedDaysPerWeek + 2; // Allow flexibility
 
@@ -60,7 +61,8 @@ class GroupCircleValidator implements ScheduleValidatorInterface
             return ValidationResult::error('لا يمكن جدولة أكثر من 100 جلسة دفعة واحدة لتجنب الأخطاء');
         }
 
-        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        // Use actual monthly_sessions_count from circle (database has default of 8)
+        $monthlyTarget = $this->circle->monthly_sessions_count;
         $recommendedCount = $monthlyTarget; // Default to one month
 
         if ($count < $monthlyTarget / 2) {
@@ -110,7 +112,8 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         $daysPerWeek = count($days);
         $totalSessions = $daysPerWeek * $weeksAhead;
 
-        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        // Use actual monthly_sessions_count from circle (database has default of 8)
+        $monthlyTarget = $this->circle->monthly_sessions_count;
         $expectedMonths = ceil($weeksAhead / 4);
         $expectedTotal = $monthlyTarget * $expectedMonths;
 
@@ -131,7 +134,8 @@ class GroupCircleValidator implements ScheduleValidatorInterface
 
     public function getRecommendations(): array
     {
-        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        // Use actual monthly_sessions_count from circle (database has default of 8)
+        $monthlyTarget = $this->circle->monthly_sessions_count;
         $recommendedDaysPerWeek = ceil($monthlyTarget / 4);
 
         return [
@@ -153,7 +157,8 @@ class GroupCircleValidator implements ScheduleValidatorInterface
             ->where('scheduled_at', '<=', $oneMonthAhead)
             ->count();
 
-        $monthlyTarget = $this->circle->monthly_sessions_count ?? 12;
+        // Use actual monthly_sessions_count from circle (database has default of 8)
+        $monthlyTarget = $this->circle->monthly_sessions_count;
 
         if ($futureSessionsCount === 0) {
             return [
@@ -180,5 +185,14 @@ class GroupCircleValidator implements ScheduleValidatorInterface
                 'urgent' => false,
             ];
         }
+    }
+
+    /**
+     * Get the maximum date that can be scheduled
+     * Group circles are continuous, so return null (no limit)
+     */
+    public function getMaxScheduleDate(): ?Carbon
+    {
+        return null; // No end date for group circles
     }
 }

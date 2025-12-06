@@ -30,7 +30,7 @@ class QuranOverviewWidget extends BaseWidget
         $totalTrialRequests = QuranTrialRequest::count();
         $pendingTrials = QuranTrialRequest::where('status', 'pending')->count();
         
-        $activeSubscriptions = QuranSubscription::where('subscription_status', 'active')
+        $activeSubscriptions = QuranSubscription::where('status', 'active')
             ->where('payment_status', 'current')
             ->count();
         
@@ -46,7 +46,7 @@ class QuranOverviewWidget extends BaseWidget
         $teacherGrowth = $teachersLastMonth > 0 ? 
             round((($totalTeachers - $teachersLastMonth) / $teachersLastMonth) * 100, 1) : 0;
         
-        $subscriptionsLastMonth = QuranSubscription::where('subscription_status', 'active')
+        $subscriptionsLastMonth = QuranSubscription::where('status', 'active')
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();

@@ -30,12 +30,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'interactive.course' => \App\Http\Middleware\InteractiveCourseMiddleware::class,
             'control-participants' => \App\Http\Middleware\CanControlParticipants::class,
             'redirect.authenticated.public' => \App\Http\Middleware\RedirectAuthenticatedPublicViews::class,
+            'child.selection' => \App\Http\Middleware\ChildSelectionMiddleware::class,
         ]);
 
-        // CRITICAL: Exclude LiveKit webhook endpoint from CSRF protection
-        // LiveKit Cloud sends webhooks without CSRF tokens
+        // CRITICAL: Exclude webhook endpoints from CSRF protection
+        // External services send webhooks without CSRF tokens
         $middleware->validateCsrfTokens(except: [
             'webhooks/livekit',  // LiveKit webhook endpoint
+            'webhooks/paymob',   // Paymob payment webhook
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {

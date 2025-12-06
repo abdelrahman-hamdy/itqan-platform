@@ -13,11 +13,16 @@
     // Get current academy and colors
     $academy = auth()->user()?->academy ?? \App\Models\Academy::first();
     $primaryColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
-    $secondaryColor = $academy?->secondary_color ?? \App\Enums\TailwindColor::EMERALD;
+    $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
+    $favicon = $academy?->favicon ?? null;
 
     // Generate CSS variables for all shades
     $primaryVars = $primaryColor->generateCssVariables('primary');
-    $secondaryVars = $secondaryColor->generateCssVariables('secondary');
+
+    // Get gradient colors for CSS variables
+    $gradientColors = $gradientPalette->getColors();
+    $gradientFrom = $gradientColors['from'];
+    $gradientTo = $gradientColors['to'];
 @endphp
 
 <meta charset="utf-8">
@@ -29,8 +34,12 @@
 <meta name="description" content="{{ $pageDescription }}">
 
 <!-- Favicon -->
+@if($favicon)
+<link rel="icon" type="image/png" href="{{ Storage::url($favicon) }}">
+@else
 <link rel="icon" type="image/svg+xml" href="{{ asset('images/itqan-logo.svg') }}">
 <link rel="icon" type="image/png" href="{{ asset('favicon.ico') }}">
+@endif
 
 <!-- Fonts - Primary: Tajawal, Fallbacks: Cairo, Amiri -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,9 +58,10 @@
         @foreach($primaryVars as $varName => $varValue)
         {{ $varName }}: {{ $varValue }};
         @endforeach
-        @foreach($secondaryVars as $varName => $varValue)
-        {{ $varName }}: {{ $varValue }};
-        @endforeach
+
+        /* Gradient palette variables */
+        --gradient-from: {{ $gradientFrom }};
+        --gradient-to: {{ $gradientTo }};
     }
 </style>
 

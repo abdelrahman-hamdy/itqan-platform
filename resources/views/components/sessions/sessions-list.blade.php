@@ -122,16 +122,33 @@
             @endphp
             <x-sessions.session-cards :sessions="$sortedSessions" :view-type="$viewType" :circle="$circle" />
         @else
-            <div class="text-center py-12">
-                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="ri-calendar-line text-2xl text-gray-400"></i>
+            <!-- Empty State Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-8 text-center">
+                    <!-- Icon with gradient background -->
+                    <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <i class="ri-calendar-line text-3xl text-gray-500"></i>
+                    </div>
+
+                    <!-- Main message -->
+                    <h4 class="text-lg font-bold text-gray-900 mb-2">{{ $emptyMessage }}</h4>
+
+                    <!-- Context-aware subtitle -->
+                    @if($viewType === 'student' && $circle)
+                        <p class="text-gray-600 text-sm mb-6">سيتم إضافة الجلسات قريباً من قبل المعلم</p>
+                    @elseif($viewType === 'teacher' && $circle)
+                        <p class="text-gray-600 text-sm mb-6">يمكنك إضافة جلسات جديدة من لوحة إدارة الحلقة</p>
+                    @else
+                        <p class="text-gray-600 text-sm mb-6">ستظهر جلساتك هنا عند إنشائها</p>
+                    @endif
+
+                    <!-- Decorative element -->
+                    <div class="flex items-center justify-center gap-2 text-xs text-gray-400">
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                    </div>
                 </div>
-                <h4 class="text-lg font-medium text-gray-900 mb-2">{{ $emptyMessage }}</h4>
-                @if($viewType === 'student' && $circle)
-                    <p class="text-gray-600">سيتم إضافة الجلسات قريباً من قبل المعلم</p>
-                @elseif($viewType === 'teacher' && $circle)
-                    <p class="text-gray-600">يمكنك إضافة جلسات جديدة من لوحة إدارة الحلقة</p>
-                @endif
             </div>
         @endif
     @endif

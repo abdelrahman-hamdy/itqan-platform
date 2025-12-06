@@ -22,16 +22,22 @@
     $teacher = null;
 
     if ($isGroup) {
-        // Get User model from QuranTeacherProfile
-        $teacher = $circle->quranTeacher?->user ?? null;
+        if ($isInteractiveCourse) {
+            // Interactive course - get User from assignedTeacher (AcademicTeacherProfile)
+            $academicTeacher = $circle->assignedTeacher ?? null;
+            $teacher = $academicTeacher?->user ?? null;
+        } else {
+            // Quran group circle - quranTeacher is already a User model
+            $teacher = $circle->quranTeacher ?? null;
+        }
     } elseif ($isIndividual || $isTrial) {
         if ($isAcademic) {
-            // Academic teacher - get User from AcademicTeacherProfile
+            // Academic individual - teacher is AcademicTeacherProfile, get User
             $academicTeacher = $circle->teacher ?? null;
             $teacher = $academicTeacher?->user ?? null;
         } else {
-            // Get User model from QuranTeacherProfile
-            $teacher = $circle->quranTeacher?->user ?? null;
+            // Quran individual - quranTeacher is already a User model
+            $teacher = $circle->quranTeacher ?? null;
         }
     }
 
@@ -50,7 +56,10 @@
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h3 class="font-bold text-gray-900 mb-4">إجراءات سريعة</h3>
+    <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <i class="ri-flashlight-line text-blue-500 text-lg" style="font-weight: 100;"></i>
+        إجراءات سريعة
+    </h3>
 
     <div class="space-y-3">
         @if($isTeacher)
@@ -100,15 +109,6 @@
                 @endif
             @endif
 
-            {{-- Circle Settings (Group and Individual Quran only) --}}
-            @if(($isGroup || ($isIndividual && !$isAcademic)))
-                <button type="button" onclick="updateCircleSettings()"
-                    class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                    <i class="ri-settings-line ml-2"></i>
-                    إعدادات الحلقة
-                </button>
-            @endif
-
         @else
             {{-- STUDENT ACTIONS --}}
 
@@ -130,15 +130,9 @@
                 </a>
             @endif
 
-            {{-- Enroll/Leave Actions (Group circles only) --}}
-            @if($isGroup)
-                @if($isEnrolled)
-                    <button onclick="showLeaveModal({{ $circle->id }})"
-                            class="w-full flex items-center justify-center px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors">
-                        <i class="ri-user-unfollow-line ml-2"></i>
-                        إلغاء التسجيل
-                    </button>
-                @elseif($canEnroll)
+            {{-- Enroll/Leave Actions (Group circles only, excluding interactive courses) --}}
+            @if($isGroup && !$isInteractiveCourse)
+                @if($canEnroll)
                     <button onclick="showEnrollModal({{ $circle->id }})"
                             class="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
                         <i class="ri-user-add-line ml-2"></i>
@@ -147,27 +141,17 @@
                 @endif
             @endif
 
-            {{-- Message Teacher (Group circles: only for enrolled students) --}}
+            {{-- Message Teacher --}}
             @if($teacher && (!$isGroup || $isEnrolled))
                 @php
                     $teacherUser = ($teacher instanceof \App\Models\User) ? $teacher : ($teacher->user ?? null);
                     $conv = $teacherUser ? auth()->user()->getOrCreatePrivateConversation($teacherUser) : null;
                 @endphp
-                @if($conv)
-                    <a href="{{ route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id]) }}"
-                       class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                        <i class="ri-message-3-line ml-2"></i>
-                        مراسلة المعلم
-                    </a>
-                @endif
-            @endif
-
-            {{-- Teacher Profile (Individual Quran only) --}}
-            @if($isIndividual && !$isAcademic && $teacher)
-                <a href="{{ route('public.quran-teachers.show', ['subdomain' => $subdomain, 'teacher' => $teacher->quranTeacherProfile->id ?? $teacher->id]) }}"
-                   class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                    <i class="ri-user-line ml-2"></i>
-                    ملف المعلم
+                <a href="{{ $conv ? route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id]) : '#' }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                   @if(!$conv) onclick="alert('حدث خطأ في إنشاء المحادثة. يرجى المحاولة لاحقاً.'); return false;" @endif>
+                    <i class="ri-message-3-line ml-2"></i>
+                    مراسلة المعلم
                 </a>
             @endif
 
@@ -197,24 +181,6 @@
                     عرض تقريري
                 </a>
             @endif
-
-            {{-- Back to All Teachers Link (Individual Academic only) --}}
-            @if($isIndividual && $isAcademic)
-                <a href="{{ route('student.academic-teachers', ['subdomain' => $subdomain]) }}"
-                   class="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                    <i class="ri-group-line ml-2"></i>
-                    جميع المعلمين الأكاديميين
-                </a>
-            @endif
         @endif
     </div>
 </div>
-
-@if($isTeacher)
-<script>
-    function updateCircleSettings() {
-        // This will be implemented when we create the settings functionality
-        alert('سيتم تنفيذ إعدادات الحلقة قريباً');
-    }
-</script>
-@endif

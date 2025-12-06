@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentProfileResource\Pages;
 use App\Models\StudentProfile;
+use App\Models\ParentProfile;
 use App\Models\AcademicGradeLevel;
 use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
@@ -14,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use App\Enums\Country;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class StudentProfileResource extends BaseResource
 {
@@ -40,6 +42,38 @@ class StudentProfileResource extends BaseResource
 
     // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
 
+    /**
+     * Determine if the user can view any records
+     */
+    public static function canViewAny(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Determine if the user can view a record
+     */
+    public static function canView($record): bool
+    {
+        return true;
+    }
+
+    /**
+     * Determine if the user can edit a record
+     */
+    public static function canEdit($record): bool
+    {
+        return true;
+    }
+
+    /**
+     * Determine if the user can delete a record
+     */
+    public static function canDelete($record): bool
+    {
+        return true;
+    }
+
 
 
     public static function form(Form $form): Form
@@ -65,10 +99,15 @@ class StudentProfileResource extends BaseResource
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255)
                                     ->helperText('سيستخدم الطالب هذا البريد للدخول إلى المنصة'),
-                                Forms\Components\TextInput::make('phone')
+                                PhoneInput::make('phone')
                                     ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->maxLength(20),
+                                    ->defaultCountry('SA')
+                                    ->initialCountry('sa')
+                                    ->onlyCountries(['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb'])
+                                    ->separateDialCode(true)
+                                    ->formatAsYouType(true)
+                                    ->showFlags(true)
+                                    ->helperText('رقم الهاتف مع رمز الدولة'),
                             ]),
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
@@ -120,14 +159,31 @@ class StudentProfileResource extends BaseResource
                             ->maxLength(500)
                             ->rows(3)
                             ->columnSpanFull(),
-                        Forms\Components\TextInput::make('emergency_contact')
-                            ->label('رقم الطوارئ')
-                            ->tel()
-                            ->maxLength(20),
-                        Forms\Components\TextInput::make('parent_id')
-                            ->label('معرف ولي الأمر')
-                            ->numeric()
-                            ->helperText('سيتم ربطه لاحقاً بملف ولي الأمر'),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                PhoneInput::make('parent_phone')
+                                    ->label('رقم هاتف ولي الأمر')
+                                    ->required()
+                                    ->defaultCountry('SA')
+                                    ->initialCountry('sa')
+                                    ->onlyCountries(['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb'])
+                                    ->separateDialCode(true)
+                                    ->formatAsYouType(true)
+                                    ->showFlags(true)
+                                    ->helperText('رقم الهاتف مع رمز الدولة (مطلوب للربط مع حساب ولي الأمر)'),
+                                Forms\Components\TextInput::make('emergency_contact')
+                                    ->label('رقم الطوارئ (اختياري)')
+                                    ->tel()
+                                    ->maxLength(20),
+                            ]),
+                        Forms\Components\Select::make('parent_id')
+                            ->label('ولي الأمر')
+                            ->relationship('parent', 'first_name')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name . ' (' . $record->parent_code . ')')
+                            ->searchable(['first_name', 'last_name', 'parent_code', 'email'])
+                            ->preload()
+                            ->nullable()
+                            ->helperText('اختر ولي الأمر المسؤول عن هذا الطالب (أو سيتم الربط تلقائياً عند تسجيل ولي الأمر)'),
                     ]),
 
                 Forms\Components\Section::make('ملاحظات إضافية')
@@ -172,6 +228,12 @@ class StudentProfileResource extends BaseResource
                 Tables\Columns\TextColumn::make('gradeLevel.name')
                     ->label('المرحلة الدراسية')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('parent.full_name')
+                    ->label('ولي الأمر')
+                    ->searchable(['first_name', 'last_name'])
+                    ->sortable()
+                    ->default('—')
+                    ->description(fn ($record) => $record->parent?->parent_code),
                 Tables\Columns\TextColumn::make('nationality')
                     ->label('الجنسية')
                     ->formatStateUsing(function (?string $state): string {
@@ -201,6 +263,12 @@ class StudentProfileResource extends BaseResource
                     ->label('المرحلة الدراسية')
                     ->relationship('gradeLevel', 'name')
                     ->preload(),
+                Tables\Filters\SelectFilter::make('parent_id')
+                    ->label('ولي الأمر')
+                    ->relationship('parent', 'first_name')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name . ' (' . $record->parent_code . ')')
+                    ->searchable(['first_name', 'last_name', 'parent_code'])
+                    ->preload(),
                 Tables\Filters\SelectFilter::make('nationality')
                     ->label('الجنسية')
                     ->options(\App\Enums\Country::toArray())
@@ -220,6 +288,7 @@ class StudentProfileResource extends BaseResource
                     ->falseLabel('غير مربوط'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -235,6 +304,7 @@ class StudentProfileResource extends BaseResource
         return [
             'index' => Pages\ListStudentProfiles::route('/'),
             'create' => Pages\CreateStudentProfile::route('/create'),
+            'view' => Pages\ViewStudentProfile::route('/{record}'),
             'edit' => Pages\EditStudentProfile::route('/{record}/edit'),
         ];
     }

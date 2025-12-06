@@ -25,13 +25,16 @@
         "nesbot/carbon": "^3.10",
         "predis/predis": "^3.2",
         "saade/filament-fullcalendar": "^3.0",
+        "setasign/fpdi": "^2.6",
         "spatie/laravel-activitylog": "^4.8",
         "spatie/laravel-medialibrary": "^11.14",
         "spatie/laravel-multitenancy": "^3.2",
         "spatie/laravel-permission": "^6.0",
         "spatie/laravel-settings": "^3.3",
         "spatie/laravel-translatable": "^6.5",
-        "usecroft/laravel": "^0.6.0"
+        "tecnickcom/tcpdf": "^6.10",
+        "usecroft/laravel": "^0.6.0",
+        "ysfkaya/filament-phone-input": "^3.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

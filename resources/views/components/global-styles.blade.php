@@ -4,14 +4,22 @@
   html, body {
     overscroll-behavior: none;
   }
-  
-  /* Additional global styles can be added here */
+
+  /* Card Hover Effects - Using Tailwind-compatible approach */
   .card-hover {
-    transition: all 0.3s ease;
+    @apply transition-all duration-300 ease-in-out;
   }
-  
+
   .card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
+    @apply -translate-y-1 shadow-xl;
+  }
+
+  /* See More Card Effects */
+  .see-more-card {
+    @apply transition-all duration-300 cursor-pointer;
+  }
+
+  .see-more-card:hover {
+    @apply -translate-y-1 shadow-xl bg-primary/5;
   }
 </style>

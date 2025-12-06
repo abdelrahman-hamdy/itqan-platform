@@ -95,16 +95,13 @@ class ViewQuranCircle extends ViewRecord
 
                 Infolists\Components\Section::make('إعدادات الحلقة')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Infolists\Components\Grid::make(2)
                             ->schema([
                                 Infolists\Components\TextEntry::make('max_students')
                                     ->label('الحد الأقصى للطلاب'),
                                 Infolists\Components\TextEntry::make('current_students')
                                     ->label('عدد الطلاب الحالي')
                                     ->formatStateUsing(fn ($record) => $record->students()->count()),
-                                Infolists\Components\TextEntry::make('session_duration_minutes')
-                                    ->label('مدة الجلسة')
-                                    ->suffix(' دقيقة'),
                             ]),
 
                         Infolists\Components\TextEntry::make('schedule_days')
