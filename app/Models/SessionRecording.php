@@ -337,7 +337,7 @@ class SessionRecording extends Model
         }
 
         // URL will be routed through Laravel controller for authentication
-        return route('recordings.download', ['recording' => $this->id]);
+        return route('recordings.download', ['recordingId' => $this->id]);
     }
 
     /**
@@ -350,6 +350,71 @@ class SessionRecording extends Model
         }
 
         // URL will be routed through Laravel controller for authentication
-        return route('recordings.stream', ['recording' => $this->id]);
+        return route('recordings.stream', ['recordingId' => $this->id]);
+    }
+
+    // ========================================
+    // REMOTE FILE METHODS
+    // ========================================
+
+    /**
+     * Check if this recording is stored on a remote server (LiveKit server)
+     * Remote files have paths starting with / (server-local path)
+     * Local files are stored in Laravel's storage system
+     */
+    public function isRemoteFile(): bool
+    {
+        if (empty($this->file_path)) {
+            return false;
+        }
+
+        // Remote files have paths starting with /recordings (LiveKit server path)
+        // Local files would use storage paths or full URLs
+        return str_starts_with($this->file_path, '/recordings') ||
+               str_starts_with($this->file_path, '/');
+    }
+
+    /**
+     * Get the full remote URL for this recording
+     * Combines the base URL from config with the file path
+     */
+    public function getRemoteUrl(): ?string
+    {
+        if (empty($this->file_path)) {
+            return null;
+        }
+
+        $baseUrl = config('livekit.recordings.base_url', 'https://conference.itqanway.com/recordings');
+
+        // If file_path already starts with /recordings, remove it to avoid duplication
+        $relativePath = $this->file_path;
+        if (str_starts_with($relativePath, '/recordings')) {
+            $relativePath = substr($relativePath, strlen('/recordings'));
+        }
+
+        // Ensure path starts with /
+        if (!str_starts_with($relativePath, '/')) {
+            $relativePath = '/' . $relativePath;
+        }
+
+        return rtrim($baseUrl, '/') . $relativePath;
+    }
+
+    /**
+     * Get the direct access URL for this recording
+     * This is the URL that can be used for direct playback/download
+     */
+    public function getDirectUrl(): ?string
+    {
+        if (!$this->isAvailable()) {
+            return null;
+        }
+
+        if ($this->isRemoteFile()) {
+            return $this->getRemoteUrl();
+        }
+
+        // For local files, return null (should use stream/download routes)
+        return null;
     }
 }

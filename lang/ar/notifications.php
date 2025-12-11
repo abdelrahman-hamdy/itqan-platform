@@ -105,6 +105,20 @@ return [
             'message' => 'تم إصدار فاتورة جديدة بمبلغ :amount :currency',
         ],
 
+        // Teacher Payout Notifications
+        'payout_approved' => [
+            'title' => 'تمت الموافقة على المستحقات',
+            'message' => 'تمت الموافقة على مستحقاتك لشهر :month بمبلغ :amount :currency',
+        ],
+        'payout_rejected' => [
+            'title' => 'تم رفض المستحقات',
+            'message' => 'تم رفض مستحقاتك لشهر :month - السبب: :reason',
+        ],
+        'payout_paid' => [
+            'title' => 'تم صرف المستحقات',
+            'message' => 'تم صرف مستحقاتك لشهر :month بمبلغ :amount :currency - رقم العملية: :reference',
+        ],
+
         // Meeting Notifications
         'meeting_room_ready' => [
             'title' => 'غرفة الاجتماع جاهزة',

@@ -68,7 +68,7 @@
                                                 </svg>
                                             </button>
                                             <img class="h-full w-full  rounded-lg object-scale-down"
-                                                src="{{ $mediaItem->temporaryUrl() }}" alt="mediaItem">
+                                                src="{{ $mediaItem->temporaryUrl() }}" alt="{{ __('معاينة الوسائط') }}">
 
                                         </div>
                                     @endif

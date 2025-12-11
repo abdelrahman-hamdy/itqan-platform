@@ -1,16 +1,16 @@
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-8">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('quran-circles.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">حلقات القرآن الجماعية</a></li>
+    <nav class="mb-4 md:mb-8 overflow-x-auto">
+        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
+            <li><a href="{{ route('quran-circles.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">حلقات القرآن الجماعية</a></li>
             <li>/</li>
-            <li class="text-gray-900">{{ $circle->name }}</li>
+            <li class="text-gray-900 font-medium truncate max-w-[200px]">{{ $circle->name }}</li>
         </ol>
     </nav>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-sticky-container>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8" data-sticky-container>
         <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-4 md:space-y-6">
             <!-- Circle Header -->
             <x-circle.circle-header :circle="$circle" type="group" view-type="student" />
 
@@ -80,8 +80,8 @@
 
             <!-- Requirements Section (shown for all users) -->
             @if($circle->requirements)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                     <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
@@ -111,7 +111,7 @@
 
         <!-- Sidebar -->
         <div class="lg:col-span-1" data-sticky-sidebar>
-            <div class="space-y-6">
+            <div class="space-y-4 md:space-y-6">
                 <!-- Circle Info Sidebar -->
                 <x-circle.info-sidebar :circle="$circle" view-type="student" />
 
@@ -129,14 +129,14 @@
                 @if(!isset($subscription) || !$subscription)
                     @if($canEnroll)
                         <!-- Enrollment Card - Show for students who can enroll -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                            <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                                 <i class="ri-user-add-line text-purple-500 text-lg" style="font-weight: 100;"></i>
                                 الانضمام للحلقة
                             </h3>
                             <button onclick="showEnrollModal({{ $circle->id }})"
-                                    class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                                <i class="ri-user-add-line text-2xl"></i>
+                                    class="min-h-[48px] w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl font-bold text-base md:text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                                <i class="ri-user-add-line text-xl md:text-2xl"></i>
                                 سجل الآن في الحلقة
                             </button>
                         </div>

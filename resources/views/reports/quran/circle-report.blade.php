@@ -33,7 +33,7 @@ $breadcrumbs = [];
 if ($isStudent) {
     $breadcrumbs[] = [
         'label' => 'لوحة التحكم',
-        'url' => route('student.dashboard', ['subdomain' => $academySubdomain])
+        'url' => route('student.profile', ['subdomain' => $academySubdomain])
     ];
 
     if ($isIndividual) {

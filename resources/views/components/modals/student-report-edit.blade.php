@@ -3,128 +3,165 @@
 ])
 
 <!-- Student Report Edit Modal -->
-<div id="reportEditModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-lg bg-white">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between pb-4 border-b">
-            <h3 class="text-xl font-bold text-gray-900">
-                <i class="ri-edit-line text-primary ml-2"></i>
-                <span id="modalTitle">تعديل تقرير الطالب</span>
-            </h3>
-            <button onclick="closeReportModal()" class="text-gray-400 hover:text-gray-600 transition">
-                <i class="ri-close-line text-2xl"></i>
-            </button>
-        </div>
+<div id="reportEditModal"
+     x-data="{ open: false }"
+     x-show="open"
+     x-cloak
+     @open-report-modal.window="open = true"
+     @close-report-modal.window="open = false"
+     @keydown.escape.window="if(open) { open = false; closeReportModal(); }"
+     class="fixed inset-0 z-50 overflow-y-auto"
+     role="dialog"
+     aria-modal="true">
 
-        <!-- Modal Body -->
-        <form id="reportEditForm" class="mt-6 space-y-6">
-            @csrf
-            <input type="hidden" id="report_id" name="report_id">
-            <input type="hidden" id="session_id" name="session_id">
-            <input type="hidden" id="student_id" name="student_id">
-            <input type="hidden" id="report_type" name="report_type" value="{{ $sessionType }}">
+    <!-- Background overlay -->
+    <div x-show="open"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="open = false; closeReportModal()"
+         class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-            <!-- Student Info Display (Quran modal style with unified x-avatar component) -->
-            <div id="studentInfoDisplay" class="bg-gray-50 rounded-lg p-4">
-                <div class="flex items-center gap-3">
-                    <!-- Student Avatar Container (will be populated with cloned x-avatar) -->
-                    <div id="modal_avatar_container" class="flex-shrink-0">
-                        <!-- Pre-rendered avatars will be cloned here -->
-                    </div>
-                    <!-- Student Details -->
-                    <div>
-                        <h4 id="student_name" class="font-semibold text-gray-900">-</h4>
-                        <p id="student_info_extra" class="text-sm text-gray-600">-</p>
-                    </div>
-                </div>
+    <!-- Modal Container - Bottom sheet on mobile, centered on desktop -->
+    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+        <!-- Modal panel -->
+        <div x-show="open"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 md:scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 md:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
+             @click.stop
+             class="relative bg-white w-full md:max-w-3xl rounded-t-2xl md:rounded-2xl shadow-xl max-h-[90vh] md:max-h-[85vh] flex flex-col overflow-hidden">
+
+            <!-- Mobile drag handle -->
+            <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-100 flex-shrink-0 pt-6 md:pt-5">
+                <h3 class="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="ri-edit-line text-primary"></i>
+                    <span id="modalTitle">تعديل تقرير الطالب</span>
+                </h3>
+                <button @click="open = false; closeReportModal()"
+                        class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
             </div>
 
-            <!-- Attendance Status -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-user-check-line ml-1"></i>
-                    حالة الحضور
-                </label>
+            <!-- Modal Body - Scrollable -->
+            <form id="reportEditForm" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
+                @csrf
+                <input type="hidden" id="report_id" name="report_id">
+                <input type="hidden" id="session_id" name="session_id">
+                <input type="hidden" id="student_id" name="student_id">
+                <input type="hidden" id="report_type" name="report_type" value="{{ $sessionType }}">
 
-                <!-- Auto-calculated attendance info display -->
-                <div id="auto_attendance_info" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden">
-                    <div class="flex items-center gap-2 text-blue-700 text-sm mb-2">
-                        <i class="ri-information-line"></i>
-                        <span class="font-medium">معلومات الحضور التلقائي:</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <span class="text-gray-600">الحالة:</span>
-                            <span id="auto_status_display" class="font-medium text-gray-900"></span>
+                <!-- Student Info Display -->
+                <div id="studentInfoDisplay" class="bg-gray-50 rounded-xl p-4">
+                    <div class="flex items-center gap-3">
+                        <!-- Student Avatar Container -->
+                        <div id="modal_avatar_container" class="flex-shrink-0">
+                            <!-- Pre-rendered avatars will be cloned here -->
                         </div>
-                        <div>
-                            <span class="text-gray-600">النسبة:</span>
-                            <span id="auto_percentage_display" class="font-medium text-gray-900"></span>
-                        </div>
-                        <div>
-                            <span class="text-gray-600">المدة:</span>
-                            <span id="auto_duration_display" class="font-medium text-gray-900"></span>
+                        <!-- Student Details -->
+                        <div class="min-w-0 flex-1">
+                            <h4 id="student_name" class="font-semibold text-gray-900 truncate">-</h4>
+                            <p id="student_info_extra" class="text-sm text-gray-600 truncate">-</p>
                         </div>
                     </div>
                 </div>
 
-                <select id="attendance_status" name="attendance_status" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary">
-                    <option value="">إبقاء الحالة المحسوبة تلقائياً</option>
-                    @php
-                        use App\Enums\AttendanceStatus;
-                        $statusOptions = AttendanceStatus::options();
-                    @endphp
-                    @foreach($statusOptions as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-                <p class="text-xs text-gray-500 mt-1">اتركها فارغة للاحتفاظ بالحالة المحسوبة تلقائياً من نظام الحضور الآلي</p>
-            </div>
-
-            <!-- Quran-specific fields -->
-            <div id="quran_fields" class="space-y-4" style="display: none;">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="ri-book-line ml-1"></i>
-                            درجة الحفظ الجديد (0-10)
-                        </label>
-                        <input type="number" id="new_memorization_degree" name="new_memorization_degree"
-                               min="0" max="10" step="0.5"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
-                               placeholder="0.0">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="ri-refresh-line ml-1"></i>
-                            درجة المراجعة (0-10)
-                        </label>
-                        <input type="number" id="reservation_degree" name="reservation_degree"
-                               min="0" max="10" step="0.5"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
-                               placeholder="0.0">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Academic-specific fields - Simplified to only homework_degree -->
-            <div id="academic_fields" class="space-y-4" style="display: none;">
+                <!-- Attendance Status -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="ri-file-list-line ml-1"></i>
-                        درجة الواجب (0-10)
+                        <i class="ri-user-check-line ml-1"></i>
+                        حالة الحضور
                     </label>
-                    <input type="number" id="homework_degree" name="homework_degree"
-                           min="0" max="10" step="0.5"
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
-                           placeholder="0.0">
-                    <p class="text-xs text-gray-500 mt-1">تقييم جودة وإنجاز الواجب المنزلي</p>
-                </div>
-            </div>
 
-            <!-- Interactive-specific fields - Unified with Academic (only homework_degree) -->
-            <div id="interactive_fields" class="space-y-4" style="display: none;">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Auto-calculated attendance info display -->
+                    <div id="auto_attendance_info" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl hidden">
+                        <div class="flex items-center gap-2 text-blue-700 text-sm mb-2">
+                            <i class="ri-information-line"></i>
+                            <span class="font-medium">معلومات الحضور التلقائي:</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                            <div class="flex items-center gap-1">
+                                <span class="text-gray-600">الحالة:</span>
+                                <span id="auto_status_display" class="font-medium text-gray-900"></span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-gray-600">النسبة:</span>
+                                <span id="auto_percentage_display" class="font-medium text-gray-900"></span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-gray-600">المدة:</span>
+                                <span id="auto_duration_display" class="font-medium text-gray-900"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <select id="attendance_status" name="attendance_status"
+                            class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary">
+                        <option value="">إبقاء الحالة المحسوبة تلقائياً</option>
+                        @php
+                            use App\Enums\AttendanceStatus;
+                            $statusOptions = AttendanceStatus::options();
+                        @endphp
+                        @foreach($statusOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">اتركها فارغة للاحتفاظ بالحالة المحسوبة تلقائياً</p>
+                </div>
+
+                <!-- Quran-specific fields -->
+                <div id="quran_fields" class="space-y-4" style="display: none;">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="ri-book-line ml-1"></i>
+                                درجة الحفظ الجديد (0-10)
+                            </label>
+                            <input type="number" id="new_memorization_degree" name="new_memorization_degree"
+                                   min="0" max="10" step="0.5"
+                                   class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary"
+                                   placeholder="0.0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="ri-refresh-line ml-1"></i>
+                                درجة المراجعة (0-10)
+                            </label>
+                            <input type="number" id="reservation_degree" name="reservation_degree"
+                                   min="0" max="10" step="0.5"
+                                   class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary"
+                                   placeholder="0.0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic-specific fields -->
+                <div id="academic_fields" class="space-y-4" style="display: none;">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="ri-file-list-line ml-1"></i>
+                            درجة الواجب (0-10)
+                        </label>
+                        <input type="number" id="homework_degree" name="homework_degree"
+                               min="0" max="10" step="0.5"
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary"
+                               placeholder="0.0">
+                        <p class="text-xs text-gray-500 mt-1">تقييم جودة وإنجاز الواجب المنزلي</p>
+                    </div>
+                </div>
+
+                <!-- Interactive-specific fields -->
+                <div id="interactive_fields" class="space-y-4" style="display: none;">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="ri-file-list-line ml-1"></i>
@@ -132,46 +169,50 @@
                         </label>
                         <input type="number" id="interactive_homework_degree" name="homework_degree"
                                min="0" max="10" step="0.5"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary"
                                placeholder="0.0">
                         <p class="text-xs text-gray-500 mt-1">تقييم جودة وإنجاز الواجب المنزلي</p>
                     </div>
                 </div>
-            </div>
 
-            <!-- Notes (Common for all types) -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-sticky-note-line ml-1"></i>
-                    ملاحظات المعلم
-                </label>
-                <textarea id="notes" name="notes" rows="4"
-                          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary"
-                          placeholder="أضف ملاحظاتك على أداء الطالب..."></textarea>
-            </div>
+                <!-- Notes (Common for all types) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="ri-sticky-note-line ml-1"></i>
+                        ملاحظات المعلم
+                    </label>
+                    <textarea id="notes" name="notes" rows="4"
+                              class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[120px] text-base focus:ring-primary focus:border-primary"
+                              placeholder="أضف ملاحظاتك على أداء الطالب..."></textarea>
+                </div>
 
-            <!-- Success/Error Messages -->
-            <div id="modal_message" class="hidden"></div>
+                <!-- Success/Error Messages -->
+                <div id="modal_message" class="hidden"></div>
+            </form>
 
-            <!-- Modal Footer -->
-            <div class="flex items-center justify-end gap-3 pt-4 border-t">
-                <button type="button" onclick="closeReportModal()"
-                        class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+            <!-- Modal Footer - Fixed at bottom -->
+            <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 p-4 md:p-5 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+                <button type="button" @click="open = false; closeReportModal()"
+                        class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-gray-100 text-gray-700 rounded-xl sm:rounded-lg hover:bg-gray-200 transition-colors">
                     <i class="ri-close-line ml-1"></i>
                     إلغاء
                 </button>
-                <button type="submit" id="save_report_btn"
-                        class="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-secondary transition-colors">
+                <button type="submit" form="reportEditForm" id="save_report_btn"
+                        class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-primary text-white rounded-xl sm:rounded-lg hover:bg-secondary transition-colors">
                     <i class="ri-save-line ml-1"></i>
                     حفظ التقرير
                 </button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+
 <script>
-// Global functions for modal management
+// Global functions for modal management - Compatible with Alpine.js
 function openReportModal(sessionId, studentId, studentName, reportData = null, reportType = '{{ $sessionType }}', studentData = null) {
     const modal = document.getElementById('reportEditModal');
     const form = document.getElementById('reportEditForm');
@@ -180,6 +221,9 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
     // Reset form
     form.reset();
     document.getElementById('modal_message').classList.add('hidden');
+
+    // Dispatch Alpine.js event to open modal
+    window.dispatchEvent(new CustomEvent('open-report-modal'));
 
     // Set session and student data
     document.getElementById('session_id').value = sessionId;
@@ -291,30 +335,17 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
         document.getElementById('auto_attendance_info').classList.add('hidden');
     }
 
-    // Show modal
-    modal.classList.remove('hidden');
+    // Body overflow handled by Alpine.js open state
     document.body.style.overflow = 'hidden';
 }
 
 function closeReportModal() {
-    const modal = document.getElementById('reportEditModal');
-    modal.classList.add('hidden');
+    // Dispatch Alpine.js event to close modal
+    window.dispatchEvent(new CustomEvent('close-report-modal'));
     document.body.style.overflow = 'auto';
 }
 
-// Close modal on ESC key
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        closeReportModal();
-    }
-});
-
-// Close modal when clicking outside
-document.getElementById('reportEditModal')?.addEventListener('click', function(event) {
-    if (event.target === this) {
-        closeReportModal();
-    }
-});
+// Note: ESC key and click outside are handled by Alpine.js
 
 // Form submission handler
 document.getElementById('reportEditForm')?.addEventListener('submit', function(e) {

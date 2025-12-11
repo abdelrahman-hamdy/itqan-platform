@@ -1,10 +1,10 @@
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-0">
     <!-- Breadcrumb -->
-    <nav class="mb-6">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-500">
-            <li><a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-blue-600 transition-colors">الكورسات التفاعلية</a></li>
+    <nav class="mb-4 md:mb-6 overflow-x-auto">
+        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-500 whitespace-nowrap">
+            <li><a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-blue-600 transition-colors min-h-[44px] inline-flex items-center">الكورسات التفاعلية</a></li>
             <li><i class="ri-arrow-left-s-line"></i></li>
-            <li class="text-gray-900 font-medium">{{ $course->title }}</li>
+            <li class="text-gray-900 font-medium truncate max-w-[200px]">{{ $course->title }}</li>
         </ol>
     </nav>
 
@@ -39,7 +39,7 @@
     @endphp
 
     <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 md:p-10 mb-8 border border-blue-100">
+    <div class="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 mb-6 md:mb-8 border border-blue-100">
         <!-- Status Badge with Rating -->
         <div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full {{ $statusBg }} {{ $statusText }} text-sm font-medium">
@@ -68,33 +68,33 @@
         </div>
 
         <!-- Title -->
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">{{ $course->title }}</h1>
+        <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4 leading-tight">{{ $course->title }}</h1>
 
         <!-- Description -->
         @if($course->description)
-        <p class="text-lg text-gray-600 leading-relaxed mb-6">{{ $course->description }}</p>
+        <p class="text-sm md:text-base lg:text-lg text-gray-600 leading-relaxed mb-4 md:mb-6">{{ $course->description }}</p>
         @endif
 
         <!-- Quick Info Pills -->
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-2 md:gap-3">
             @if($course->subject)
-            <div class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-200 shadow-sm">
-                <i class="ri-bookmark-line text-blue-500"></i>
-                <span class="text-sm font-medium text-gray-700">{{ $course->subject->name }}</span>
+            <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
+                <i class="ri-bookmark-line text-blue-500 text-sm md:text-base"></i>
+                <span class="text-xs md:text-sm font-medium text-gray-700">{{ $course->subject->name }}</span>
             </div>
             @endif
 
             @if($course->gradeLevel)
-            <div class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-200 shadow-sm">
-                <i class="ri-graduation-cap-line text-blue-500"></i>
-                <span class="text-sm font-medium text-gray-700">{{ $course->gradeLevel->name }}</span>
+            <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
+                <i class="ri-graduation-cap-line text-blue-500 text-sm md:text-base"></i>
+                <span class="text-xs md:text-sm font-medium text-gray-700">{{ $course->gradeLevel->name }}</span>
             </div>
             @endif
 
             @if($course->difficulty_level)
-            <div class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-200 shadow-sm">
-                <i class="ri-bar-chart-line text-blue-500"></i>
-                <span class="text-sm font-medium text-gray-700">
+            <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
+                <i class="ri-bar-chart-line text-blue-500 text-sm md:text-base"></i>
+                <span class="text-xs md:text-sm font-medium text-gray-700">
                     @if($course->difficulty_level === 'beginner') مبتدئ
                     @elseif($course->difficulty_level === 'intermediate') متوسط
                     @elseif($course->difficulty_level === 'advanced') متقدم
@@ -107,20 +107,20 @@
     </div>
 
     <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-sticky-container>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8" data-sticky-container>
         <!-- Main Content (Left Column - 2/3) -->
-        <div class="lg:col-span-2 space-y-8">
+        <div class="lg:col-span-2 space-y-4 md:space-y-6 lg:space-y-8">
 
             <!-- About Course Section (Teacher, Learning Outcomes, Prerequisites) -->
-            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+            <div class="bg-white rounded-2xl p-4 md:p-6 lg:p-8 shadow-sm border border-gray-200">
                 <!-- Teacher Information -->
                 @if($course->assignedTeacher)
-                <div class="mb-10">
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <div class="mb-6 md:mb-10">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-user-star-line text-blue-500"></i>
                         المدرس
                     </h2>
-                    <div class="flex flex-col md:flex-row items-start gap-6">
+                    <div class="flex flex-col md:flex-row items-start gap-4 md:gap-6">
                         <!-- Teacher Avatar -->
                         <x-avatar
                             :user="$course->assignedTeacher->user"
@@ -131,8 +131,8 @@
                         <!-- Teacher Info -->
                         <div class="flex-1">
                             <!-- Name with Rating -->
-                            <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-xl font-bold text-gray-900">{{ $course->assignedTeacher->full_name }}</h3>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                                <h3 class="text-lg md:text-xl font-bold text-gray-900">{{ $course->assignedTeacher->full_name }}</h3>
                                 @if($course->assignedTeacher->rating)
                                 <div class="inline-flex items-center gap-1">
                                     <i class="ri-star-fill text-yellow-500"></i>
@@ -223,17 +223,17 @@
                             </div>
                             @endif
 
-                            <!-- Action Buttons - Floated to Left -->
-                            <div class="flex items-center justify-end gap-3">
+                            <!-- Action Buttons -->
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3 mt-4">
                                 <a href="{{ route('academic-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacherId' => $course->assignedTeacher->id]) }}"
-                                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-medium transition-colors">
+                                   class="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-medium transition-colors text-sm md:text-base">
                                     <i class="ri-user-line"></i>
                                     <span>عرض الملف الشخصي</span>
                                 </a>
 
                                 @if($isEnrolled)
                                 <a href="#"
-                                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
+                                   class="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors text-sm md:text-base">
                                     <i class="ri-chat-3-line"></i>
                                     <span>تواصل مع المعلم</span>
                                 </a>
@@ -251,12 +251,12 @@
 
                 <!-- Learning Outcomes -->
                 @if($course->learning_outcomes && count($course->learning_outcomes) > 0)
-                <div class="mb-10">
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <div class="mb-6 md:mb-10">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-lightbulb-flash-line text-green-600"></i>
                         ما ستتعلمه
                     </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                         @foreach($course->learning_outcomes as $outcome)
                         <div class="flex items-start gap-3 p-3 rounded-lg">
                             <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -276,12 +276,12 @@
 
                 <!-- Prerequisites -->
                 @if($course->prerequisites && count($course->prerequisites) > 0)
-                <div class="mb-10">
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <div class="mb-6 md:mb-10">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-file-list-3-line text-blue-600"></i>
                         المتطلبات الأساسية
                     </h2>
-                    <div class="space-y-3">
+                    <div class="space-y-2 md:space-y-3">
                         @foreach($course->prerequisites as $prerequisite)
                         <div class="flex items-start gap-3 p-3 rounded-lg">
                             <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -304,11 +304,11 @@
                 <!-- Course Schedule -->
                 @if($course->schedule && is_array($course->schedule) && count($course->schedule) > 0)
                 <div>
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-calendar-2-line text-purple-600"></i>
                         الجدول الأسبوعي
                     </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                         @foreach($course->schedule as $day => $time)
                         <div class="flex items-center justify-between p-4 bg-gradient-to-l from-purple-50 to-white rounded-xl border border-purple-100">
                             <span class="font-semibold text-gray-900">{{ $day }}</span>
@@ -386,7 +386,7 @@
             @php
                 $courseReviews = $course->approvedReviews()->with('user')->latest()->get();
             @endphp
-            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+            <div class="bg-white rounded-2xl p-4 md:p-6 lg:p-8 shadow-sm border border-gray-200">
                 <x-reviews.section
                     :reviewable-type="\App\Models\InteractiveCourse::class"
                     :reviewable-id="$course->id"
@@ -406,11 +406,11 @@
         <!-- Sidebar (Right Column - 1/3) -->
         <div data-sticky-sidebar>
             <!-- Inner wrapper for proper spacing -->
-            <div class="space-y-6">
+            <div class="space-y-4 md:space-y-6">
                 @if($isEnrolled && isset($enrollment))
                     <!-- Enrollment Status - Show for enrolled students -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
+                        <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                             <i class="ri-file-list-3-line text-purple-500 text-lg" style="font-weight: 100;"></i>
                             حالة التسجيل
                         </h3>
@@ -460,8 +460,8 @@
                     </div>
                 @elseif(!$isEnrolled && $course->is_published && (!$course->enrollment_deadline || $course->enrollment_deadline >= now()->toDateString()) && ($enrollmentStats['available_spots'] ?? 0) > 0)
                     <!-- Enrollment Card - Show for non-enrolled students who can enroll -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
+                        <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                             <i class="ri-shopping-cart-line text-purple-500 text-lg" style="font-weight: 100;"></i>
                             التسجيل في الدورة
                         </h3>
@@ -478,7 +478,7 @@
                                         document.getElementById('enrollForm').submit();
                                     }
                                 })"
-                                class="group w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 relative overflow-hidden">
+                                class="group w-full min-h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 relative overflow-hidden">
                                 <span class="relative z-10 flex items-center justify-center gap-2">
                                     <i class="ri-shopping-cart-line text-xl"></i>
                                     <span>سجل الآن</span>
@@ -490,12 +490,12 @@
                 @endif
 
                 <!-- Course Information Widget (معلومات الدورة) -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-200 mb-4 md:mb-6">
+                    <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                         <i class="ri-information-line text-blue-500" style="font-weight: 100;"></i>
                         معلومات الدورة
                     </h3>
-                    <div class="space-y-3">
+                    <div class="space-y-2 md:space-y-3">
                         <!-- Start Date -->
                         <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                             <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -608,7 +608,7 @@
 
                 <!-- Quick Actions (only for enrolled students) -->
                 @if($isEnrolled)
-                    <div class="mb-6">
+                    <div class="mb-4 md:mb-6">
                         <x-circle.quick-actions
                             :circle="$course"
                             type="group"

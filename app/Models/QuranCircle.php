@@ -109,64 +109,20 @@ class QuranCircle extends Model
         return $this->belongsTo(Academy::class);
     }
 
+    /**
+     * Get the teacher (User model) for this circle
+     */
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(\App\Models\User::class, 'quran_teacher_id');
     }
 
-    public function teacherUser(): BelongsTo
+    /**
+     * Alias for teacher() - for backward compatibility
+     */
+    public function quranTeacher(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'quran_teacher_id');
-    }
-
-    // Fixed relationship pointing to User model
-    public function quranTeacher()
-    {
-        return $this->belongsTo('\App\Models\User', 'quran_teacher_id', 'id');
-    }
-
-    // Test new relationship name
-    public function circleTeacher()
-    {
-        return $this->belongsTo('\App\Models\User', 'quran_teacher_id', 'id');
-    }
-
-    public function teacherProfile(): BelongsTo
-    {
-        return $this->belongsTo(\App\Models\User::class, 'quran_teacher_id');
-    }
-
-    // Temporary workaround for quranTeacher relationship
-    public function getQuranTeacherAttribute()
-    {
-        if (! $this->quran_teacher_id) {
-            return null;
-        }
-
-        // Create a mock object that matches the expected structure
-        $user = \App\Models\User::find($this->quran_teacher_id);
-        if (! $user) {
-            return null;
-        }
-
-        // Get teacher profile if exists
-        $teacherProfile = $user->quranTeacherProfile;
-
-        // Return an object that has both user properties and the user relationship
-        return (object) [
-            'id' => $teacherProfile ? $teacherProfile->id : $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'user_type' => $user->user_type,
-            'full_name' => $user->name,
-            'user' => $user,
-            // Add other properties that views might expect
-            'teaching_experience_years' => $teacherProfile->teaching_experience_years ?? null,
-            'bio' => $teacherProfile->bio ?? null,
-            'qualification' => $teacherProfile->educational_qualification ?? null,
-            'avatar' => $user->avatar,
-            'quranTeacherProfile' => $teacherProfile,
-        ];
+        return $this->teacher();
     }
 
     public function students(): BelongsToMany
@@ -851,12 +807,6 @@ class QuranCircle extends Model
 
             // Clean up pivot table entries (students)
             $circle->students()->detach();
-
-            // Delete related homework
-            $circle->homework()->delete();
-
-            // Delete related progress records
-            $circle->progress()->delete();
         });
 
         // Clean up when force deleting (hard delete)
@@ -871,12 +821,6 @@ class QuranCircle extends Model
 
             // Clean up pivot table entries (students)
             $circle->students()->detach();
-
-            // Force delete related homework
-            $circle->homework()->forceDelete();
-
-            // Force delete related progress records
-            $circle->progress()->forceDelete();
         });
     }
 
@@ -884,7 +828,7 @@ class QuranCircle extends Model
     {
         $query = self::where('academy_id', $academyId)
             ->openForEnrollment()
-            ->with(['quranTeacher.user', 'academy']);
+            ->with(['quranTeacher', 'academy']);
 
         if (isset($filters['specialization'])) {
             $query->where('specialization', $filters['specialization']);
@@ -915,7 +859,7 @@ class QuranCircle extends Model
     {
         return self::where('academy_id', $academyId)
             ->startingSoon($days)
-            ->with(['quranTeacher.user', 'students'])
+            ->with(['quranTeacher', 'students'])
             ->get();
     }
 }

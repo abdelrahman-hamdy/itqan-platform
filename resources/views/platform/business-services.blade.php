@@ -153,44 +153,44 @@
                 </p>
             </div>
             
-            <div class="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200" data-aos="fade-up" data-aos-delay="200">
-                <form id="service-request-form" class="space-y-6">
+            <div class="bg-white rounded-xl md:rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 border border-gray-200" data-aos="fade-up" data-aos-delay="200">
+                <form id="service-request-form" class="space-y-4 md:space-y-6">
                     @csrf
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <div>
-                            <label for="client_name" class="block text-sm font-medium text-gray-700 mb-2">الاسم الكامل *</label>
-                            <input type="text" id="client_name" name="client_name" required 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <label for="client_name" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">الاسم الكامل *</label>
+                            <input type="text" id="client_name" name="client_name" required
+                                   class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         </div>
                         <div>
-                            <label for="client_phone" class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف *</label>
-                            <input type="tel" id="client_phone" name="client_phone" required 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <label for="client_phone" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">رقم الهاتف *</label>
+                            <input type="tel" id="client_phone" name="client_phone" required
+                                   class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         </div>
                     </div>
-                    
+
                     <div>
-                        <label for="client_email" class="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني *</label>
-                        <input type="email" id="client_email" name="client_email" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <label for="client_email" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">البريد الإلكتروني *</label>
+                        <input type="email" id="client_email" name="client_email" required
+                               class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     </div>
-                    
+
                     <div>
-                        <label for="service_category_id" class="block text-sm font-medium text-gray-700 mb-2">نوع الخدمة *</label>
-                        <select id="service_category_id" name="service_category_id" required 
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <label for="service_category_id" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">نوع الخدمة *</label>
+                        <select id="service_category_id" name="service_category_id" required
+                                class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                             <option value="">اختر نوع الخدمة</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <div>
-                            <label for="project_budget" class="block text-sm font-medium text-gray-700 mb-2">الميزانية المتوقعة</label>
-                            <select id="project_budget" name="project_budget" 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <label for="project_budget" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">الميزانية المتوقعة</label>
+                            <select id="project_budget" name="project_budget"
+                                    class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 <option value="">اختر الميزانية</option>
                                 <option value="500-1000">500 - 1000 ر.س</option>
                                 <option value="1000-3000">1000 - 3000 ر.س</option>
@@ -200,9 +200,9 @@
                             </select>
                         </div>
                         <div>
-                            <label for="project_deadline" class="block text-sm font-medium text-gray-700 mb-2">الموعد المطلوب</label>
-                            <select id="project_deadline" name="project_deadline" 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <label for="project_deadline" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">الموعد المطلوب</label>
+                            <select id="project_deadline" name="project_deadline"
+                                    class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 <option value="">اختر الموعد</option>
                                 <option value="urgent">عاجل (أسبوع)</option>
                                 <option value="normal">عادي (أسبوعين)</option>
@@ -210,11 +210,11 @@
                             </select>
                         </div>
                     </div>
-                    
+
                     <div>
-                        <label for="project_description" class="block text-sm font-medium text-gray-700 mb-2">وصف المشروع *</label>
-                        <textarea id="project_description" name="project_description" rows="6" required 
-                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        <label for="project_description" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">وصف المشروع *</label>
+                        <textarea id="project_description" name="project_description" rows="5" required
+                                  class="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                   placeholder="اكتب تفاصيل مشروعك والمتطلبات المحددة..."></textarea>
                     </div>
                     

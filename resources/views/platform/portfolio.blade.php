@@ -192,43 +192,43 @@
     </section>
 
     <!-- Project Details Modal -->
-    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
-            <div class="p-6">
+    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-3 md:p-4">
+        <div class="bg-white rounded-xl md:rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
+            <div class="p-4 md:p-6">
                 <!-- Modal Header -->
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2" id="modal-project-name">اسم المشروع</h3>
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold text-white shadow-lg" id="modal-project-category">
+                <div class="flex justify-between items-start gap-3 mb-4 md:mb-6">
+                    <div class="min-w-0">
+                        <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1.5 md:mb-2" id="modal-project-name">اسم المشروع</h3>
+                        <span class="inline-block px-2.5 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-semibold text-white shadow-lg" id="modal-project-category">
                             التصنيف
                         </span>
                     </div>
-                    <button onclick="closeProjectModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="closeProjectModal()" class="min-h-[44px] min-w-[44px] text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
-                
+
                 <!-- Modal Content -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                     <!-- Left Column - Project Image -->
                     <div class="relative">
-                        <img id="modal-project-image" src="" alt="" class="w-full h-auto object-contain rounded-xl border border-gray-200 shadow-lg">
+                        <img id="modal-project-image" src="" alt="صورة المشروع" class="w-full h-auto object-contain rounded-lg md:rounded-xl border border-gray-200 shadow-lg">
                     </div>
-                    
+
                     <!-- Right Column - Text Content -->
-                    <div class="space-y-6">
+                    <div class="space-y-4 md:space-y-6">
                         <!-- Description -->
                         <div>
-                            <h4 class="text-lg font-semibold text-gray-900 mb-3">وصف المشروع</h4>
-                            <p class="text-gray-600 leading-relaxed" id="modal-project-description">وصف المشروع</p>
+                            <h4 class="text-base md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">وصف المشروع</h4>
+                            <p class="text-sm md:text-base text-gray-600 leading-relaxed" id="modal-project-description">وصف المشروع</p>
                         </div>
-                        
+
                         <!-- Features -->
                         <div id="modal-project-features">
-                            <h4 class="text-lg font-semibold text-gray-900 mb-3">المميزات</h4>
-                            <ul class="space-y-2">
+                            <h4 class="text-base md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">المميزات</h4>
+                            <ul class="space-y-1.5 md:space-y-2">
                                 <!-- Features will be populated by JavaScript -->
                             </ul>
                         </div>

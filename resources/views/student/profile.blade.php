@@ -70,15 +70,15 @@
   @include('components.sidebar.student-sidebar')
 
   <!-- Main Content -->
-  <main class="pt-20 min-h-screen transition-all duration-300" id="main-content" style="margin-right: 320px;">
-    <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
-      
+  <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+
       <!-- Welcome Section -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+      <div class="mb-6 md:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
           مرحباً، {{ auth()->user()->studentProfile->first_name ?? auth()->user()->name }}! 👋
         </h1>
-        <p class="text-gray-600">
+        <p class="text-sm sm:text-base text-gray-600">
           استمر في رحلة التعلم واكتشف المزيد من المحتوى التعليمي المميز
         </p>
       </div>
@@ -464,8 +464,10 @@
   </main>
 
   <!-- Mobile Sidebar Toggle -->
-  <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-3 rounded-full shadow-lg z-50">
-    <i class="ri-menu-line text-xl"></i>
+  <button id="sidebar-toggle-mobile"
+          @click="$dispatch('toggle-sidebar')"
+          class="fixed bottom-6 right-6 md:hidden bg-primary text-white min-h-[56px] min-w-[56px] p-4 rounded-full shadow-lg z-50 flex items-center justify-center">
+    <i class="ri-menu-line text-2xl"></i>
   </button>
 
 

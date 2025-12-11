@@ -3,18 +3,18 @@
 namespace App\Services;
 
 use App\Enums\SessionStatus;
+use App\Events\SessionCompletedEvent;
 use App\Models\AcademySettings;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\User;
-use App\Services\Attendance\QuranReportService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class SessionStatusService
 {
-    // CRITICAL FIX: Don't inject services in constructor to avoid circular dependency
-    // MeetingAttendanceService depends on SessionStatusService, so we resolve them dynamically when needed
+    // ARCHITECTURAL FIX: Circular dependency broken using Laravel Events
+    // SessionCompletedEvent dispatched when session completes -> FinalizeAttendanceListener handles attendance
 
     /**
      * Transition session from SCHEDULED to READY
@@ -169,45 +169,14 @@ class SessionStatusService
             'actual_duration_minutes' => $this->calculateActualDuration($session),
         ]);
 
-        // CRITICAL FIX: Finalize attendance for all participants
-        try {
-            Log::info('Finalizing attendance for completed session', [
-                'session_id' => $session->id,
-            ]);
+        // ARCHITECTURAL FIX: Dispatch event to finalize attendance (decoupled from MeetingAttendanceService)
+        // FinalizeAttendanceListener handles the attendance calculation and report syncing
+        SessionCompletedEvent::dispatch($session, 'quran');
 
-            // CRITICAL FIX: Resolve services dynamically to avoid circular dependency
-            $meetingAttendanceService = app(MeetingAttendanceService::class);
-
-            // Calculate final attendance for all participants
-            $attendanceResults = $meetingAttendanceService->calculateFinalAttendance($session);
-
-            Log::info('Attendance finalized', [
-                'session_id' => $session->id,
-                'calculated_count' => $attendanceResults['calculated_count'],
-                'errors' => $attendanceResults['errors'],
-            ]);
-
-            // CRITICAL FIX: Sync attendance to student session reports for Quran GROUP sessions
-            // Use event-log-based aggregation via QuranReportService (server-authoritative from LiveKit webhooks)
-            if ($session->session_type === 'group') {
-                /** @var QuranReportService $quranReportService */
-                $quranReportService = app(QuranReportService::class);
-
-                $reportsCreated = $quranReportService->createReportsForSession($session);
-
-                Log::info('Synced Quran group attendance reports from event log', [
-                    'session_id' => $session->id,
-                    'reports_count' => $reportsCreated,
-                ]);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Failed to finalize attendance on session completion', [
-                'session_id' => $session->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-        }
+        Log::info('SessionCompletedEvent dispatched for attendance finalization', [
+            'session_id' => $session->id,
+            'session_type' => 'quran',
+        ]);
 
         // CRITICAL FIX: Close the LiveKit meeting room to prevent new joins
         if ($session->meeting_room_name) {

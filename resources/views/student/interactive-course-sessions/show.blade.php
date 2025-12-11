@@ -4,24 +4,24 @@
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-8">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('student.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">لوحة التحكم</a></li>
+    <nav class="mb-4 md:mb-8 overflow-x-auto">
+        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap min-w-max">
+            <li><a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">الملف الشخصي</a></li>
             <li>/</li>
-            <li><a href="{{ route('interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">كورساتي التفاعلية</a></li>
-            <li>/</li>
-            <li><a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary">{{ $session->course->title }}</a></li>
-            <li>/</li>
-            <li class="text-gray-900">جلسة رقم {{ $session->session_number }}</li>
+            <li class="hidden sm:inline"><a href="{{ route('interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">كورساتي التفاعلية</a></li>
+            <li class="hidden sm:inline">/</li>
+            <li class="hidden md:inline"><a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary truncate max-w-[200px]">{{ $session->course->title }}</a></li>
+            <li class="hidden md:inline">/</li>
+            <li class="text-gray-900 font-medium">جلسة رقم {{ $session->session_number }}</li>
         </ol>
     </nav>
 
-    <div class="space-y-6">
+    <div class="space-y-4 md:space-y-6">
         <!-- Session Header -->
         <x-sessions.session-header :session="$session" view-type="student" />
 
         <!-- Enhanced LiveKit Meeting Interface -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <x-meetings.livekit-interface
                 :session="$session"
                 user-type="student"
@@ -30,16 +30,24 @@
 
         {{-- Session Content Section --}}
         @if($session->lesson_content)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
                     <i class="ri-file-text-line text-primary ml-2"></i>
                     محتوى الجلسة
                 </h3>
 
-                <div class="prose max-w-none text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4">
+                <div class="prose prose-sm md:prose max-w-none text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-3 md:p-4">
                     {!! nl2br(e($session->lesson_content)) !!}
                 </div>
             </div>
+        @endif
+
+        {{-- Session Recordings (for completed sessions with recordings) --}}
+        @if($session instanceof \App\Contracts\RecordingCapable && $session->status === \App\Enums\SessionStatus::COMPLETED)
+            <x-recordings.session-recordings
+                :session="$session"
+                view-type="student"
+            />
         @endif
 
         {{-- Homework Display (for completed sessions) --}}
@@ -52,20 +60,20 @@
 
         <!-- Student Feedback Section (for completed sessions) -->
         @if($session->status === \App\Enums\SessionStatus::COMPLETED)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
                     <i class="ri-message-line text-primary ml-2"></i>
                     تقييمك للجلسة
                 </h3>
 
                 @if($session->student_feedback)
                     <!-- Display Existing Feedback -->
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-3 md:p-4">
                         <div class="flex items-start gap-3">
-                            <i class="ri-checkbox-circle-line text-green-600 text-xl mt-1"></i>
-                            <div>
-                                <h4 class="font-semibold text-green-900 mb-2">تم إرسال التقييم</h4>
-                                <p class="text-green-800">{{ $session->student_feedback }}</p>
+                            <i class="ri-checkbox-circle-line text-green-600 text-lg md:text-xl mt-1 flex-shrink-0"></i>
+                            <div class="min-w-0">
+                                <h4 class="font-semibold text-green-900 mb-1 md:mb-2">تم إرسال التقييم</h4>
+                                <p class="text-sm md:text-base text-green-800">{{ $session->student_feedback }}</p>
                             </div>
                         </div>
                     </div>
@@ -81,13 +89,13 @@
                                 id="feedback_text"
                                 name="feedback"
                                 rows="4"
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
+                                class="w-full border border-gray-300 rounded-xl px-3 py-3 focus:ring-primary focus:border-primary text-sm md:text-base"
                                 placeholder="شاركنا رأيك في الجلسة..."
                                 required></textarea>
                         </div>
                         <button
                             type="submit"
-                            class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
+                            class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto bg-primary text-white px-6 py-3 rounded-xl hover:bg-secondary transition-colors">
                             <i class="ri-send-plane-line ml-2"></i>
                             إرسال التقييم
                         </button>

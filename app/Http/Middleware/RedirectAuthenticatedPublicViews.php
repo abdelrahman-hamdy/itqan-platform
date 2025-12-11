@@ -59,8 +59,8 @@ class RedirectAuthenticatedPublicViews
                     return $next($request);
                 }
 
-                // For listing, redirect to teacher dashboard
-                return redirect()->route('student.dashboard', ['subdomain' => $subdomain]);
+                // For listing, redirect to student profile
+                return redirect()->route('student.profile', ['subdomain' => $subdomain]);
             }
         }
 
@@ -93,12 +93,12 @@ class RedirectAuthenticatedPublicViews
         if ($type === 'academic-session') {
             // Similar logic for academic sessions
             if ($user->isStudent() || $user->isAcademicTeacher()) {
-                return redirect()->route('student.dashboard', ['subdomain' => $subdomain])
-                    ->with('info', 'يمكنك الوصول إلى جلساتك من لوحة التحكم');
+                return redirect()->route('student.profile', ['subdomain' => $subdomain])
+                    ->with('info', 'يمكنك الوصول إلى جلساتك من الملف الشخصي');
             }
         }
 
-        // Default: redirect authenticated users to their dashboard
-        return redirect()->route('student.dashboard', ['subdomain' => $subdomain]);
+        // Default: redirect authenticated users to their profile
+        return redirect()->route('student.profile', ['subdomain' => $subdomain]);
     }
 }

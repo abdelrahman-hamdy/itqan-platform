@@ -31,6 +31,17 @@ return Application::configure(basePath: dirname(__DIR__))
             'control-participants' => \App\Http\Middleware\CanControlParticipants::class,
             'redirect.authenticated.public' => \App\Http\Middleware\RedirectAuthenticatedPublicViews::class,
             'child.selection' => \App\Http\Middleware\ChildSelectionMiddleware::class,
+
+            // API Middleware
+            'api.resolve.academy' => \App\Http\Middleware\Api\ResolveAcademy::class,
+            'api.academy.active' => \App\Http\Middleware\Api\EnsureAcademyActive::class,
+            'api.academy.registration' => \App\Http\Middleware\Api\EnsureAcademyAllowsRegistration::class,
+            'api.user.academy' => \App\Http\Middleware\Api\EnsureUserBelongsToAcademy::class,
+            'api.is.student' => \App\Http\Middleware\Api\EnsureUserIsStudent::class,
+            'api.is.parent' => \App\Http\Middleware\Api\EnsureUserIsParent::class,
+            'api.is.teacher' => \App\Http\Middleware\Api\EnsureUserIsTeacher::class,
+            'api.is.quran-teacher' => \App\Http\Middleware\Api\EnsureUserIsQuranTeacher::class,
+            'api.is.academic-teacher' => \App\Http\Middleware\Api\EnsureUserIsAcademicTeacher::class,
         ]);
 
         // CRITICAL: Exclude webhook endpoints from CSRF protection

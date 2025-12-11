@@ -346,13 +346,14 @@ class AcademicSessionMeetingService
             $minutesUntilEnd = Carbon::now($timezone)->diffInMinutes($sessionEnd, false);
 
             if ($minutesUntilEnd > 0) {
-                // Keep room alive for session duration + 30 minutes
-                return ($minutesUntilEnd + 30) * 60; // Convert to seconds
+                // Keep room alive for session duration + buffer
+                $bufferMinutes = config('livekit.session_settings.timeout_buffer_minutes', 30);
+                return ($minutesUntilEnd + $bufferMinutes) * 60; // Convert to seconds
             }
         }
 
-        // Default: 30 minutes empty timeout
-        return 30 * 60;
+        // Default: use empty timeout from config
+        return config('livekit.default_room_settings.empty_timeout', 1800);
     }
 
     /**
@@ -360,10 +361,12 @@ class AcademicSessionMeetingService
      */
     private function calculateMaxDuration(AcademicSession $session): int
     {
-        $baseDuration = $session->duration_minutes ?? 60;
+        $defaultDuration = config('livekit.session_settings.default_duration_minutes', 60);
+        $baseDuration = $session->duration_minutes ?? $defaultDuration;
 
-        // Add 1 hour buffer for late starts and overtime
-        return ($baseDuration + 60) * 60; // Convert to seconds
+        // Add buffer for late starts and overtime
+        $overtimeBuffer = config('livekit.session_settings.overtime_buffer_minutes', 60);
+        return ($baseDuration + $overtimeBuffer) * 60; // Convert to seconds
     }
 
     /**

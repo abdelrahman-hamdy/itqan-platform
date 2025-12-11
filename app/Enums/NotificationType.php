@@ -56,6 +56,11 @@ enum NotificationType: string
     case REVIEW_RECEIVED = 'review_received';
     case REVIEW_APPROVED = 'review_approved';
 
+    // Teacher Payout Notifications
+    case PAYOUT_APPROVED = 'payout_approved';
+    case PAYOUT_REJECTED = 'payout_rejected';
+    case PAYOUT_PAID = 'payout_paid';
+
     // System Notifications
     case ACCOUNT_VERIFIED = 'account_verified';
     case PASSWORD_CHANGED = 'password_changed';
@@ -91,7 +96,10 @@ enum NotificationType: string
             self::SUBSCRIPTION_EXPIRED,
             self::SUBSCRIPTION_ACTIVATED,
             self::SUBSCRIPTION_RENEWED,
-            self::INVOICE_GENERATED => NotificationCategory::PAYMENT,
+            self::INVOICE_GENERATED,
+            self::PAYOUT_APPROVED,
+            self::PAYOUT_REJECTED,
+            self::PAYOUT_PAID => NotificationCategory::PAYMENT,
 
             self::MEETING_ROOM_READY,
             self::MEETING_PARTICIPANT_JOINED,

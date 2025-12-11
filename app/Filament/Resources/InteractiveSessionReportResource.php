@@ -250,6 +250,7 @@ class InteractiveSessionReportResource extends Resource
         return [
             'index' => Pages\ListInteractiveSessionReports::route('/'),
             'create' => Pages\CreateInteractiveSessionReport::route('/create'),
+            'view' => Pages\ViewInteractiveSessionReport::route('/{record}'),
             'edit' => Pages\EditInteractiveSessionReport::route('/{record}/edit'),
         ];
     }

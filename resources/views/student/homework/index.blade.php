@@ -11,13 +11,13 @@
     <div class="space-y-6">
         <!-- Page Header -->
         <div>
-            <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-                        <i class="ri-book-2-line text-blue-600 ml-3"></i>
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
+                        <i class="ri-book-2-line text-blue-600 ml-2 md:ml-3"></i>
                         {{ $pageTitle }}
                     </h1>
-                    <p class="text-gray-600 mt-2">{{ $pageDescription }}</p>
+                    <p class="text-sm md:text-base text-gray-600 mt-1 md:mt-2">{{ $pageDescription }}</p>
                 </div>
             </div>
         </div>
@@ -58,68 +58,68 @@
 
         <!-- Statistics Cards -->
         @if(isset($statistics))
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md p-6 text-white">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md p-4 md:p-6 text-white">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-blue-100 text-sm font-medium">إجمالي الواجبات</p>
-                        <p class="text-4xl font-bold mt-2">{{ $statistics['total'] }}</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-blue-100 text-xs md:text-sm font-medium">إجمالي الواجبات</p>
+                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $statistics['total'] }}</p>
                         @if(isset($statistics['type_breakdown']))
-                        <p class="text-xs text-blue-100 mt-1">
+                        <p class="text-xs text-blue-100 mt-1 hidden md:block">
                             {{ $statistics['type_breakdown']['academic'] }} أكاديمي •
                             {{ $statistics['type_breakdown']['quran'] }} قرآن •
                             {{ $statistics['type_breakdown']['interactive'] }} تفاعلي
                         </p>
                         @endif
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-4">
-                        <i class="ri-file-list-line text-3xl"></i>
+                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
+                        <i class="ri-file-list-line text-xl md:text-3xl"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl shadow-md p-6 text-white">
+            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl shadow-md p-4 md:p-6 text-white">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-yellow-100 text-sm font-medium">قيد الانتظار</p>
-                        <p class="text-4xl font-bold mt-2">{{ $statistics['pending'] }}</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-yellow-100 text-xs md:text-sm font-medium">قيد الانتظار</p>
+                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $statistics['pending'] }}</p>
                         @if(isset($statistics['overdue']) && $statistics['overdue'] > 0)
-                        <p class="text-sm text-yellow-100 mt-1">
+                        <p class="text-xs md:text-sm text-yellow-100 mt-1">
                             <i class="ri-error-warning-line"></i>
                             {{ $statistics['overdue'] }} متأخر
                         </p>
                         @endif
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-4">
-                        <i class="ri-time-line text-3xl"></i>
+                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
+                        <i class="ri-time-line text-xl md:text-3xl"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-md p-6 text-white">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-md p-4 md:p-6 text-white">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-green-100 text-sm font-medium">تم التسليم</p>
-                        <p class="text-4xl font-bold mt-2">{{ $statistics['submitted'] + $statistics['graded'] }}</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-green-100 text-xs md:text-sm font-medium">تم التسليم</p>
+                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ $statistics['submitted'] + $statistics['graded'] }}</p>
                         @if(isset($statistics['completion_rate']))
-                        <p class="text-sm text-green-100 mt-1">{{ $statistics['completion_rate'] }}% نسبة الإنجاز</p>
+                        <p class="text-xs md:text-sm text-green-100 mt-1 hidden sm:block">{{ $statistics['completion_rate'] }}% نسبة الإنجاز</p>
                         @endif
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-4">
-                        <i class="ri-check-double-line text-3xl"></i>
+                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
+                        <i class="ri-check-double-line text-xl md:text-3xl"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl shadow-md p-6 text-white">
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl shadow-md p-4 md:p-6 text-white">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-purple-100 text-sm font-medium">المعدل</p>
-                        <p class="text-4xl font-bold mt-2">{{ isset($statistics['average_score']) ? number_format($statistics['average_score'], 1) : '0' }}%</p>
-                        <p class="text-sm text-purple-100 mt-1">{{ $statistics['graded'] }} مقيّم</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-purple-100 text-xs md:text-sm font-medium">المعدل</p>
+                        <p class="text-2xl md:text-4xl font-bold mt-1 md:mt-2">{{ isset($statistics['average_score']) ? number_format($statistics['average_score'], 1) : '0' }}%</p>
+                        <p class="text-xs md:text-sm text-purple-100 mt-1 hidden sm:block">{{ $statistics['graded'] }} مقيّم</p>
                     </div>
-                    <div class="bg-white bg-opacity-20 rounded-full p-4">
-                        <i class="ri-star-line text-3xl"></i>
+                    <div class="bg-white bg-opacity-20 rounded-full p-2 md:p-4 flex-shrink-0">
+                        <i class="ri-star-line text-xl md:text-3xl"></i>
                     </div>
                 </div>
             </div>
@@ -127,43 +127,45 @@
         @endif
 
         <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
             @php
                 $filterRoute = $isParentView
                     ? route('parent.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
                     : route('student.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']);
             @endphp
-            <form method="GET" action="{{ $filterRoute }}" class="flex flex-wrap gap-4 items-end">
-                <div class="flex-1 min-w-[200px]">
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">الحالة</label>
-                    <select name="status" id="status" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
-                        <option value="">جميع الحالات</option>
-                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
-                        <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>تم التسليم</option>
-                        <option value="graded" {{ request('status') === 'graded' ? 'selected' : '' }}>تم التصحيح</option>
-                        <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>متأخر</option>
-                        <option value="late" {{ request('status') === 'late' ? 'selected' : '' }}>تسليم متأخر</option>
-                    </select>
+            <form method="GET" action="{{ $filterRoute }}" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">الحالة</label>
+                        <select name="status" id="status" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 min-h-[44px] focus:ring-2 focus:ring-blue-500">
+                            <option value="">جميع الحالات</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
+                            <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>تم التسليم</option>
+                            <option value="graded" {{ request('status') === 'graded' ? 'selected' : '' }}>تم التصحيح</option>
+                            <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>متأخر</option>
+                            <option value="late" {{ request('status') === 'late' ? 'selected' : '' }}>تسليم متأخر</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="type" class="block text-sm font-medium text-gray-700 mb-2">نوع الواجب</label>
+                        <select name="type" id="type" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 min-h-[44px] focus:ring-2 focus:ring-blue-500">
+                            <option value="">جميع الأنواع</option>
+                            <option value="academic" {{ request('type') === 'academic' ? 'selected' : '' }}>أكاديمي</option>
+                            <option value="quran" {{ request('type') === 'quran' ? 'selected' : '' }}>قرآن</option>
+                            <option value="interactive" {{ request('type') === 'interactive' ? 'selected' : '' }}>دورة تفاعلية</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="flex-1 min-w-[200px]">
-                    <label for="type" class="block text-sm font-medium text-gray-700 mb-2">نوع الواجب</label>
-                    <select name="type" id="type" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
-                        <option value="">جميع الأنواع</option>
-                        <option value="academic" {{ request('type') === 'academic' ? 'selected' : '' }}>أكاديمي</option>
-                        <option value="quran" {{ request('type') === 'quran' ? 'selected' : '' }}>قرآن</option>
-                        <option value="interactive" {{ request('type') === 'interactive' ? 'selected' : '' }}>دورة تفاعلية</option>
-                    </select>
-                </div>
-
-                <div class="flex gap-2">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                    <button type="submit" class="inline-flex items-center justify-center min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl md:rounded-lg transition-colors">
                         <i class="ri-filter-line ml-1"></i>
                         تصفية
                     </button>
                     @if(request()->hasAny(['status', 'type']))
                     <a href="{{ $filterRoute }}"
-                       class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg transition-colors inline-block">
+                       class="inline-flex items-center justify-center min-h-[44px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-xl md:rounded-lg transition-colors">
                         <i class="ri-close-line ml-1"></i>
                         إلغاء الفلاتر
                     </a>
@@ -177,8 +179,8 @@
         <div class="space-y-4">
             @foreach($homework as $hw)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div class="p-6">
-                    <div class="flex items-start justify-between">
+                <div class="p-4 md:p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div class="flex-1">
                             <!-- Type & Status Badges -->
                             <div class="flex items-center gap-3 mb-3 flex-wrap">
@@ -345,18 +347,18 @@
                         </div>
 
                         <!-- Actions -->
-                        <div class="flex flex-col gap-2 mr-4">
+                        <div class="flex flex-row sm:flex-col gap-2 sm:mr-4 flex-shrink-0">
                             @if(isset($hw['is_view_only']) && $hw['is_view_only'])
                                 <!-- Quran homework: View session only -->
                                 <a href="{{ $hw['view_url'] ?? '#' }}"
-                                   class="inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap">
+                                   class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-xl md:rounded-lg transition-colors whitespace-nowrap flex-1 sm:flex-initial">
                                     <i class="ri-eye-line ml-1"></i>
                                     عرض الجلسة
                                 </a>
                             @elseif(isset($hw['can_submit']) && $hw['can_submit'] && !$isParentView)
                                 <!-- Can submit (students only, not parents) -->
                                 <a href="{{ $hw['submit_url'] ?? route('student.homework.submit', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $hw['id'], 'type' => $hw['type']]) }}"
-                                   class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap">
+                                   class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl md:rounded-lg transition-colors whitespace-nowrap flex-1 sm:flex-initial">
                                     <i class="ri-send-plane-line ml-1"></i>
                                     @if($status === 'draft')
                                         استكمال التسليم
@@ -372,7 +374,7 @@
                                         : route('student.homework.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $hw['id'], 'type' => $hw['type']]);
                                 @endphp
                                 <a href="{{ $hw['view_url'] ?? $viewRoute }}"
-                                   class="inline-flex items-center justify-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors whitespace-nowrap">
+                                   class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-xl md:rounded-lg transition-colors whitespace-nowrap flex-1 sm:flex-initial">
                                     <i class="ri-eye-line ml-1"></i>
                                     عرض التفاصيل
                                 </a>
@@ -393,12 +395,12 @@
         </div>
         @else
         <!-- Empty State -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="ri-inbox-line text-gray-400 text-4xl"></i>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 md:p-12 text-center">
+            <div class="w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="ri-inbox-line text-gray-400 text-3xl md:text-4xl"></i>
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">لا توجد واجبات</h3>
-            <p class="text-gray-600">
+            <h3 class="text-lg md:text-xl font-semibold text-gray-900 mb-2">لا توجد واجبات</h3>
+            <p class="text-sm md:text-base text-gray-600">
                 @if(request('status') || request('type'))
                     لم يتم العثور على واجبات تطابق المعايير المحددة.
                 @elseif($isParentView)

@@ -23,16 +23,16 @@
     />
 
     <!-- Filters Section -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
         <form method="GET" action="{{ route($isParent ? 'parent.payments.index' : 'student.payments', ['subdomain' => $subdomain]) }}" class="space-y-4">
             <div class="mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">
+                <h3 class="text-base md:text-lg font-semibold text-gray-900">
                     <i class="ri-filter-3-line ml-2"></i>
                     تصفية النتائج
                 </h3>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Status Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -88,16 +88,16 @@
             </div>
 
             <!-- Buttons Row -->
-            <div class="flex items-center gap-3 pt-2">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button type="submit"
-                        class="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                        class="inline-flex items-center justify-center min-h-[44px] bg-blue-600 text-white px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                     <i class="ri-search-line ml-1"></i>
                     تطبيق الفلاتر
                 </button>
 
                 @if(request()->hasAny(['status', 'date_from', 'date_to']))
                 <a href="{{ route($isParent ? 'parent.payments.index' : 'student.payments', ['subdomain' => $subdomain]) }}"
-                   class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                   class="inline-flex items-center justify-center min-h-[44px] bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                     <i class="ri-close-circle-line ml-1"></i>
                     إعادة تعيين
                 </a>
@@ -110,7 +110,7 @@
     <div class="space-y-4">
         @forelse($payments as $payment)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all">
-                <div class="p-6">
+                <div class="p-4 md:p-6">
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <!-- Payment Info -->
                         <div class="flex-1">
@@ -184,14 +184,14 @@
                             </div>
 
                             <!-- Actions -->
-                            <div class="flex gap-2">
+                            <div class="flex flex-wrap gap-2">
                                 @if($payment->receipt_url)
                                     <a
                                         href="{{ $payment->receipt_url }}"
                                         target="_blank"
-                                        class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                                        class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-blue-50 text-blue-600 rounded-xl md:rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                                     >
-                                        <i class="ri-download-line"></i>
+                                        <i class="ri-download-line ml-1"></i>
                                         تحميل الإيصال
                                     </a>
                                 @endif
@@ -199,9 +199,9 @@
                                 @if($payment->subscription)
                                     <a
                                         href="{{ route($isParent ? 'parent.subscriptions.index' : 'student.subscriptions', ['subdomain' => $subdomain]) }}"
-                                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                                        class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-gray-100 text-gray-700 rounded-xl md:rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
                                     >
-                                        <i class="ri-eye-line"></i>
+                                        <i class="ri-eye-line ml-1"></i>
                                         عرض الاشتراك
                                     </a>
                                 @endif

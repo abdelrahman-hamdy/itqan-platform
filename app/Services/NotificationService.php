@@ -447,4 +447,150 @@ class NotificationService
         // For now, all notifications are enabled
         return true;
     }
+
+    // ========================================
+    // TEACHER PAYOUT NOTIFICATIONS
+    // ========================================
+
+    /**
+     * Send payout approved notification to teacher
+     */
+    public function sendPayoutApprovedNotification(User $teacher, array $payoutData): void
+    {
+        $this->send(
+            $teacher,
+            NotificationType::PAYOUT_APPROVED,
+            [
+                'month' => $payoutData['month'] ?? '',
+                'amount' => $payoutData['amount'] ?? 0,
+                'currency' => $payoutData['currency'] ?? 'SAR',
+                'payout_code' => $payoutData['payout_code'] ?? '',
+            ],
+            '/teacher/earnings',
+            [
+                'payout_id' => $payoutData['payout_id'] ?? null,
+                'payout_code' => $payoutData['payout_code'] ?? null,
+            ],
+            true
+        );
+    }
+
+    /**
+     * Send payout rejected notification to teacher
+     */
+    public function sendPayoutRejectedNotification(User $teacher, array $payoutData): void
+    {
+        $this->send(
+            $teacher,
+            NotificationType::PAYOUT_REJECTED,
+            [
+                'month' => $payoutData['month'] ?? '',
+                'reason' => $payoutData['reason'] ?? '',
+            ],
+            '/teacher/earnings',
+            [
+                'payout_id' => $payoutData['payout_id'] ?? null,
+                'payout_code' => $payoutData['payout_code'] ?? null,
+            ],
+            true
+        );
+    }
+
+    /**
+     * Send payout paid notification to teacher
+     */
+    public function sendPayoutPaidNotification(User $teacher, array $payoutData): void
+    {
+        $this->send(
+            $teacher,
+            NotificationType::PAYOUT_PAID,
+            [
+                'month' => $payoutData['month'] ?? '',
+                'amount' => $payoutData['amount'] ?? 0,
+                'currency' => $payoutData['currency'] ?? 'SAR',
+                'reference' => $payoutData['reference'] ?? '',
+            ],
+            '/teacher/earnings',
+            [
+                'payout_id' => $payoutData['payout_id'] ?? null,
+                'payout_code' => $payoutData['payout_code'] ?? null,
+                'payment_reference' => $payoutData['reference'] ?? null,
+            ],
+            true
+        );
+    }
+
+    // ========================================
+    // SUBSCRIPTION RENEWAL NOTIFICATIONS
+    // ========================================
+
+    /**
+     * Send subscription renewal success notification
+     */
+    public function sendSubscriptionRenewedNotification(User $student, array $subscriptionData): void
+    {
+        $this->send(
+            $student,
+            NotificationType::SUBSCRIPTION_RENEWED,
+            [
+                'subscription_name' => $subscriptionData['name'] ?? '',
+                'amount' => $subscriptionData['amount'] ?? 0,
+                'currency' => $subscriptionData['currency'] ?? 'SAR',
+                'next_billing_date' => $subscriptionData['next_billing_date'] ?? '',
+            ],
+            $subscriptionData['url'] ?? '/subscriptions',
+            [
+                'subscription_id' => $subscriptionData['subscription_id'] ?? null,
+                'subscription_type' => $subscriptionData['subscription_type'] ?? null,
+            ],
+            true
+        );
+    }
+
+    /**
+     * Send subscription expiring reminder notification
+     */
+    public function sendSubscriptionExpiringNotification(User $student, array $subscriptionData): void
+    {
+        $this->send(
+            $student,
+            NotificationType::SUBSCRIPTION_EXPIRING,
+            [
+                'subscription_name' => $subscriptionData['name'] ?? '',
+                'expiry_date' => $subscriptionData['expiry_date'] ?? '',
+                'days_remaining' => $subscriptionData['days_remaining'] ?? 0,
+                'renewal_amount' => $subscriptionData['renewal_amount'] ?? 0,
+                'currency' => $subscriptionData['currency'] ?? 'SAR',
+            ],
+            $subscriptionData['url'] ?? '/subscriptions',
+            [
+                'subscription_id' => $subscriptionData['subscription_id'] ?? null,
+                'subscription_type' => $subscriptionData['subscription_type'] ?? null,
+            ],
+            true
+        );
+    }
+
+    /**
+     * Send payment failed notification for subscription
+     */
+    public function sendPaymentFailedNotification(User $user, array $paymentData): void
+    {
+        $this->send(
+            $user,
+            NotificationType::PAYMENT_FAILED,
+            [
+                'amount' => $paymentData['amount'] ?? 0,
+                'currency' => $paymentData['currency'] ?? 'SAR',
+                'reason' => $paymentData['reason'] ?? '',
+                'subscription_name' => $paymentData['subscription_name'] ?? '',
+            ],
+            $paymentData['url'] ?? '/payments',
+            [
+                'subscription_id' => $paymentData['subscription_id'] ?? null,
+                'subscription_type' => $paymentData['subscription_type'] ?? null,
+            ],
+            true
+        );
+    }
 }

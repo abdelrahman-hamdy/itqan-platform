@@ -3,7 +3,7 @@
     'columns' => 4,
 ])
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-{{ $columns }} gap-6 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-{{ $columns }} gap-3 md:gap-4 lg:gap-6 mb-4 md:mb-6">
     @foreach($stats as $stat)
         @php
             // Support both DTO objects and arrays

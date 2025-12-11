@@ -118,5 +118,7 @@ return [
         \Namu\WireChat\Events\MessageCreated::class,
         \Namu\WireChat\Events\MessageDeleted::class,
         \Namu\WireChat\Jobs\NotifyParticipants::class,
+        // Session attendance calculation runs across all tenants
+        \App\Jobs\CalculateSessionAttendance::class,
     ],
 ];

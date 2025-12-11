@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\QuranTeacherProfile;
+use App\Models\AcademicTeacherProfile;
 use App\Models\TeacherEarning;
 use App\Models\TeacherPayout;
 use App\Models\User;
@@ -12,6 +14,13 @@ use Illuminate\Support\Facades\Log;
 
 class PayoutService
 {
+    protected NotificationService $notificationService;
+
+    public function __construct(?NotificationService $notificationService = null)
+    {
+        $this->notificationService = $notificationService ?? app(NotificationService::class);
+    }
+
     /**
      * Generate monthly payout for a specific teacher
      *
@@ -190,7 +199,8 @@ class PayoutService
                 'approved_by' => $approvedBy->id,
             ]);
 
-            // TODO: Send notification to teacher
+            // Send notification to teacher
+            $this->sendPayoutNotification($payout, 'approved');
 
             return true;
         });
@@ -232,7 +242,8 @@ class PayoutService
                 'reason' => $reason,
             ]);
 
-            // TODO: Send notification to teacher
+            // Send notification to teacher
+            $this->sendPayoutNotification($payout, 'rejected', $reason);
 
             return true;
         });
@@ -271,7 +282,8 @@ class PayoutService
                 'payment_method' => $paymentDetails['method'] ?? null,
             ]);
 
-            // TODO: Send notification to teacher
+            // Send notification to teacher
+            $this->sendPayoutNotification($payout, 'paid', null, $paymentDetails['reference'] ?? null);
 
             return true;
         });
@@ -363,5 +375,81 @@ class PayoutService
             'total_approved' => $payouts->where('status', 'approved')->sum('total_amount'),
             'last_payout' => $payouts->sortByDesc('payout_month')->first(),
         ];
+    }
+
+    /**
+     * Send payout notification to teacher
+     *
+     * @param TeacherPayout $payout
+     * @param string $type 'approved' | 'rejected' | 'paid'
+     * @param string|null $reason Rejection reason (for rejected type)
+     * @param string|null $reference Payment reference (for paid type)
+     */
+    protected function sendPayoutNotification(
+        TeacherPayout $payout,
+        string $type,
+        ?string $reason = null,
+        ?string $reference = null
+    ): void {
+        try {
+            $teacher = $this->getTeacherUser($payout);
+            if (!$teacher) {
+                Log::warning("Could not find teacher user for payout notification", [
+                    'payout_id' => $payout->id,
+                    'teacher_type' => $payout->teacher_type,
+                    'teacher_id' => $payout->teacher_id,
+                ]);
+                return;
+            }
+
+            $monthName = Carbon::parse($payout->payout_month)->translatedFormat('F Y');
+            $payoutData = [
+                'payout_id' => $payout->id,
+                'payout_code' => $payout->payout_code,
+                'month' => $monthName,
+                'amount' => number_format($payout->total_amount, 2),
+                'currency' => 'SAR',
+            ];
+
+            switch ($type) {
+                case 'approved':
+                    $this->notificationService->sendPayoutApprovedNotification($teacher, $payoutData);
+                    break;
+
+                case 'rejected':
+                    $payoutData['reason'] = $reason ?? '';
+                    $this->notificationService->sendPayoutRejectedNotification($teacher, $payoutData);
+                    break;
+
+                case 'paid':
+                    $payoutData['reference'] = $reference ?? $payout->payment_reference ?? '';
+                    $this->notificationService->sendPayoutPaidNotification($teacher, $payoutData);
+                    break;
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to send payout notification", [
+                'payout_id' => $payout->id,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Get the User model for a teacher based on payout type
+     */
+    protected function getTeacherUser(TeacherPayout $payout): ?User
+    {
+        if ($payout->teacher_type === 'quran_teacher') {
+            $profile = QuranTeacherProfile::find($payout->teacher_id);
+            return $profile?->user;
+        }
+
+        if ($payout->teacher_type === 'academic_teacher') {
+            $profile = AcademicTeacherProfile::find($payout->teacher_id);
+            return $profile?->user;
+        }
+
+        return null;
     }
 }

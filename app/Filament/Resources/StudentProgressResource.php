@@ -142,6 +142,7 @@ class StudentProgressResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -163,6 +164,7 @@ class StudentProgressResource extends Resource
         return [
             'index' => Pages\ListStudentProgress::route('/'),
             'create' => Pages\CreateStudentProgress::route('/create'),
+            'view' => Pages\ViewStudentProgress::route('/{record}'),
             'edit' => Pages\EditStudentProgress::route('/{record}/edit'),
         ];
     }

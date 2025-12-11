@@ -56,13 +56,24 @@ Diagnostic scripts for troubleshooting production issues:
 
 Laravel PHPUnit tests (standard Laravel test directory):
 
+**Middleware Tests**:
 - `MaintenanceModeTest.php` - Tests maintenance mode feature
+
+**Service Tests** (`/Unit/Services`):
+- `SessionStatusServiceTest.php` - Tests session lifecycle management
+- `NotificationServiceTest.php` - Tests notification dispatch system
+- `CalendarServiceTest.php` - Tests calendar and scheduling
+
+**Policy Tests** (`/Unit/Policies`):
+- `SessionPolicyTest.php` - Tests session authorization rules
 
 **Run PHPUnit tests**:
 ```bash
 php artisan test
 # or
 php artisan test --filter MaintenanceModeTest
+php artisan test --filter SessionStatusServiceTest
+php artisan test --testsuite=Unit
 ```
 
 ---

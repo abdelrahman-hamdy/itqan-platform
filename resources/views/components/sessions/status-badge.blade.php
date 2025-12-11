@@ -17,9 +17,9 @@
 
     // Define size classes
     $sizeClasses = match($size) {
-        'sm' => 'px-2 py-1 text-xs',
-        'lg' => 'px-4 py-2 text-sm',
-        default => 'px-3 py-1.5 text-xs' // md
+        'sm' => 'px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs',
+        'lg' => 'px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm',
+        default => 'px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs' // md
     };
 
     // If in preparation, override with amber styling
@@ -79,6 +79,6 @@
 @endphp
 
 <span {{ $attributes->merge(['class' => $finalClasses]) }}>
-    <i class="{{ $statusConfig['icon'] }} ml-1"></i>
-    {{ $statusConfig['label'] }}
+    <i class="{{ $statusConfig['icon'] }} ml-0.5 md:ml-1"></i>
+    <span class="whitespace-nowrap">{{ $statusConfig['label'] }}</span>
 </span>

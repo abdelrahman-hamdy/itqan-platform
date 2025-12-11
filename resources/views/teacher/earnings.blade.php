@@ -4,21 +4,21 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ activeTab: 'earnings' }">
 
       <!-- Header -->
-      <div class="mb-8">
-        <div class="flex items-center justify-between flex-wrap gap-4">
+      <div class="mb-6 md:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
               {{ __('earnings.my_earnings_and_payouts') }}
             </h1>
-            <p class="text-gray-600">
+            <p class="text-sm md:text-base text-gray-600">
               {{ __('earnings.track_your_earnings_description') }}
             </p>
           </div>
 
           <!-- Month Filter -->
-          <div class="min-w-[200px]">
+          <div class="w-full sm:w-auto sm:min-w-[200px]">
             <form method="GET" action="{{ route('teacher.earnings', ['subdomain' => $academy->subdomain]) }}" class="w-full">
-              <select name="month" onchange="this.form.submit()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white">
+              <select name="month" onchange="this.form.submit()" class="w-full min-h-[44px] px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-sm md:text-base">
                 <option value="all" {{ $isAllTime ? 'selected' : '' }}>{{ __('earnings.all_time') }}</option>
                 @foreach($availableMonths as $monthOption)
                   <option value="{{ $monthOption['value'] }}" {{ $selectedMonth === $monthOption['value'] ? 'selected' : '' }}>
@@ -32,20 +32,20 @@
       </div>
 
       <!-- Tab Navigation -->
-      <div class="mb-8">
-        <div class="border-b border-gray-200">
-          <nav class="flex -mb-px space-x-8 space-x-reverse" aria-label="Tabs">
+      <div class="mb-6 md:mb-8">
+        <div class="border-b border-gray-200 overflow-x-auto">
+          <nav class="flex -mb-px gap-4 md:gap-8 min-w-max" aria-label="Tabs">
             <button
               @click="activeTab = 'earnings'"
               :class="activeTab === 'earnings' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-              class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+              class="whitespace-nowrap min-h-[48px] py-3 px-1 border-b-2 font-medium text-sm md:text-base transition-colors flex items-center">
               <i class="ri-wallet-3-line ml-2"></i>
               {{ __('earnings.earnings') }}
             </button>
             <button
               @click="activeTab = 'payouts'"
               :class="activeTab === 'payouts' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-              class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+              class="whitespace-nowrap min-h-[48px] py-3 px-1 border-b-2 font-medium text-sm md:text-base transition-colors flex items-center">
               <i class="ri-hand-coin-line ml-2"></i>
               {{ __('earnings.payouts') }}
             </button>
@@ -57,13 +57,13 @@
       <div x-show="activeTab === 'earnings'" x-transition>
 
         <!-- Overall Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
 
           <!-- Selected Period Earnings -->
-          <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                <i class="ri-money-dollar-circle-line text-2xl"></i>
+          <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-4 md:p-6 text-white">
+            <div class="flex items-center justify-between mb-3 md:mb-4">
+              <div class="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                <i class="ri-money-dollar-circle-line text-xl md:text-2xl"></i>
               </div>
               @if($stats['changePercent'] != 0 && !$isAllTime)
                 <div class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-lg">
@@ -78,102 +78,102 @@
               @endif
             </div>
             <div>
-              <p class="text-sm font-medium opacity-90 mb-1">
+              <p class="text-xs md:text-sm font-medium opacity-90 mb-1">
                 @if($isAllTime)
                   {{ __('earnings.all_time_earnings') }}
                 @else
                   {{ __('earnings.selected_period_earnings') }}
                 @endif
               </p>
-              <p class="text-3xl font-bold">{{ number_format($stats['selectedMonth'], 2) }}</p>
-              <p class="text-sm opacity-75">{{ $currency }}</p>
+              <p class="text-2xl md:text-3xl font-bold">{{ number_format($stats['selectedMonth'], 2) }}</p>
+              <p class="text-xs md:text-sm opacity-75">{{ $currency }}</p>
             </div>
           </div>
 
           <!-- Sessions Count -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i class="ri-calendar-check-line text-2xl text-blue-600"></i>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-3 md:mb-4">
+              <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="ri-calendar-check-line text-xl md:text-2xl text-blue-600"></i>
               </div>
             </div>
             <div>
-              <p class="text-sm font-medium text-gray-500 mb-1">{{ __('earnings.sessions_count') }}</p>
-              <p class="text-3xl font-bold text-gray-900">{{ $stats['sessionsCount'] }}</p>
-              <p class="text-sm text-gray-600">{{ __('earnings.counted_session') }}</p>
+              <p class="text-xs md:text-sm font-medium text-gray-500 mb-1">{{ __('earnings.sessions_count') }}</p>
+              <p class="text-2xl md:text-3xl font-bold text-gray-900">{{ $stats['sessionsCount'] }}</p>
+              <p class="text-xs md:text-sm text-gray-600">{{ __('earnings.counted_session') }}</p>
             </div>
           </div>
 
           <!-- All Time Earnings -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i class="ri-wallet-3-line text-2xl text-purple-600"></i>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-3 md:mb-4">
+              <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="ri-wallet-3-line text-xl md:text-2xl text-purple-600"></i>
               </div>
             </div>
             <div>
-              <p class="text-sm font-medium text-gray-500 mb-1">{{ __('earnings.total_earnings') }}</p>
-              <p class="text-3xl font-bold text-gray-900">{{ number_format($stats['allTimeEarnings'], 2) }}</p>
-              <p class="text-sm text-gray-600">{{ $currency }}</p>
+              <p class="text-xs md:text-sm font-medium text-gray-500 mb-1">{{ __('earnings.total_earnings') }}</p>
+              <p class="text-2xl md:text-3xl font-bold text-gray-900">{{ number_format($stats['allTimeEarnings'], 2) }}</p>
+              <p class="text-xs md:text-sm text-gray-600">{{ $currency }}</p>
             </div>
           </div>
 
           <!-- Unpaid Earnings -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <i class="ri-time-line text-2xl text-yellow-600"></i>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-3 md:mb-4">
+              <div class="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <i class="ri-time-line text-xl md:text-2xl text-yellow-600"></i>
               </div>
             </div>
             <div>
-              <p class="text-sm font-medium text-gray-500 mb-1">{{ __('earnings.pending_earnings') }}</p>
-              <p class="text-3xl font-bold text-gray-900">{{ number_format($stats['unpaidEarnings'], 2) }}</p>
-              <p class="text-sm text-gray-600">{{ $currency }} - {{ __('earnings.awaiting_payment') }}</p>
+              <p class="text-xs md:text-sm font-medium text-gray-500 mb-1">{{ __('earnings.pending_earnings') }}</p>
+              <p class="text-2xl md:text-3xl font-bold text-gray-900">{{ number_format($stats['unpaidEarnings'], 2) }}</p>
+              <p class="text-xs md:text-sm text-gray-600">{{ $currency }} - {{ __('earnings.awaiting_payment') }}</p>
             </div>
           </div>
 
         </div>
 
         <!-- Earnings by Source -->
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <div class="mb-6 md:mb-8">
+          <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4 md:mb-6">
             <i class="ri-list-check text-blue-600 ml-2"></i>
             {{ __('earnings.earnings_by_source') }}
           </h2>
 
           @forelse($earningsBySource as $source)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden" x-data="{ expanded: false }">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 md:mb-4 overflow-hidden" x-data="{ expanded: false }">
 
               <!-- Source Header -->
-              <div @click="expanded = !expanded" class="p-6 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div class="flex items-center justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-3">
-                      <!-- Source Icon -->
-                      <div class="w-12 h-12 rounded-lg flex items-center justify-center
-                        {{ $source['type'] === 'individual_circle' ? 'bg-blue-100' : '' }}
-                        {{ $source['type'] === 'group_circle' ? 'bg-green-100' : '' }}
-                        {{ $source['type'] === 'academic_lesson' ? 'bg-purple-100' : '' }}
-                        {{ $source['type'] === 'interactive_course' ? 'bg-orange-100' : '' }}
-                        {{ $source['type'] === 'other' ? 'bg-gray-100' : '' }}">
-                        @if($source['type'] === 'individual_circle')
-                          <i class="ri-user-line text-2xl text-blue-600"></i>
-                        @elseif($source['type'] === 'group_circle')
-                          <i class="ri-group-line text-2xl text-green-600"></i>
-                        @elseif($source['type'] === 'academic_lesson')
-                          <i class="ri-book-open-line text-2xl text-purple-600"></i>
-                        @elseif($source['type'] === 'interactive_course')
-                          <i class="ri-presentation-line text-2xl text-orange-600"></i>
-                        @else
-                          <i class="ri-file-list-line text-2xl text-gray-600"></i>
-                        @endif
-                      </div>
+              <div @click="expanded = !expanded" class="p-4 md:p-6 cursor-pointer hover:bg-gray-50 transition-colors min-h-[72px]">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                  <div class="flex items-center gap-3 flex-1">
+                    <!-- Source Icon -->
+                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center flex-shrink-0
+                      {{ $source['type'] === 'individual_circle' ? 'bg-blue-100' : '' }}
+                      {{ $source['type'] === 'group_circle' ? 'bg-green-100' : '' }}
+                      {{ $source['type'] === 'academic_lesson' ? 'bg-purple-100' : '' }}
+                      {{ $source['type'] === 'interactive_course' ? 'bg-orange-100' : '' }}
+                      {{ $source['type'] === 'other' ? 'bg-gray-100' : '' }}">
+                      @if($source['type'] === 'individual_circle')
+                        <i class="ri-user-line text-xl md:text-2xl text-blue-600"></i>
+                      @elseif($source['type'] === 'group_circle')
+                        <i class="ri-group-line text-xl md:text-2xl text-green-600"></i>
+                      @elseif($source['type'] === 'academic_lesson')
+                        <i class="ri-book-open-line text-xl md:text-2xl text-purple-600"></i>
+                      @elseif($source['type'] === 'interactive_course')
+                        <i class="ri-presentation-line text-xl md:text-2xl text-orange-600"></i>
+                      @else
+                        <i class="ri-file-list-line text-xl md:text-2xl text-gray-600"></i>
+                      @endif
+                    </div>
 
-                      <!-- Source Info -->
-                      <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $source['name'] }}</h3>
-                        <p class="text-sm text-gray-500 mt-1">
-                          {{ $source['sessions_count'] }} {{ __('earnings.session') }}
+                    <!-- Source Info -->
+                    <div class="flex-1 min-w-0">
+                      <h3 class="text-base md:text-lg font-semibold text-gray-900 truncate">{{ $source['name'] }}</h3>
+                      <p class="text-xs md:text-sm text-gray-500 mt-0.5 md:mt-1">
+                        {{ $source['sessions_count'] }} {{ __('earnings.session') }}
+                        <span class="hidden sm:inline">
                           @if($source['type'] === 'individual_circle')
                             · {{ __('earnings.source_types.individual_circle') }}
                           @elseif($source['type'] === 'group_circle')
@@ -183,36 +183,38 @@
                           @elseif($source['type'] === 'interactive_course')
                             · {{ __('earnings.source_types.interactive_course') }}
                           @endif
-                        </p>
-                      </div>
+                        </span>
+                      </p>
                     </div>
                   </div>
 
-                  <!-- Total Amount -->
-                  <div class="text-left mr-4">
-                    <p class="text-sm text-gray-500 mb-1">{{ __('earnings.total_earnings') }}</p>
-                    <p class="text-2xl font-bold text-green-600">{{ number_format($source['total'], 2) }}</p>
-                    <p class="text-sm text-gray-600">{{ $currency }}</p>
-                  </div>
+                  <div class="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                    <!-- Total Amount -->
+                    <div class="text-right sm:text-left">
+                      <p class="text-xs md:text-sm text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.total_earnings') }}</p>
+                      <p class="text-lg md:text-2xl font-bold text-green-600">{{ number_format($source['total'], 2) }}</p>
+                      <p class="text-xs md:text-sm text-gray-600">{{ $currency }}</p>
+                    </div>
 
-                  <!-- Expand Icon -->
-                  <div class="mr-4">
-                    <i :class="expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'" class="text-2xl text-gray-400 transition-transform"></i>
+                    <!-- Expand Icon -->
+                    <div class="flex-shrink-0">
+                      <i :class="expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'" class="text-xl md:text-2xl text-gray-400 transition-transform"></i>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <!-- Earnings Details (Expandable) -->
               <div x-show="expanded" x-collapse>
-                <div class="border-t border-gray-200 bg-gray-50 p-6">
-                  <h4 class="text-sm font-semibold text-gray-700 mb-4">{{ __('earnings.session_details') }}</h4>
+                <div class="border-t border-gray-200 bg-gray-50 p-4 md:p-6">
+                  <h4 class="text-xs md:text-sm font-semibold text-gray-700 mb-3 md:mb-4">{{ __('earnings.session_details') }}</h4>
 
-                  <div class="space-y-3">
+                  <div class="space-y-2 md:space-y-3">
                     @foreach($source['earnings'] as $earning)
-                      <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                        <div class="flex-1">
-                          <div class="flex items-center gap-2">
-                            <span class="text-sm font-medium text-gray-900">
+                      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 p-3 md:p-4 bg-white rounded-lg border border-gray-200">
+                        <div class="flex-1 min-w-0">
+                          <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-xs md:text-sm font-medium text-gray-900">
                               {{ $earning->calculation_method_label }}
                             </span>
                             @if($earning->payout_id)
@@ -232,8 +234,8 @@
                             {{ $earning->session_completed_at ? $earning->session_completed_at->setTimezone($timezone)->format('d/m/Y - h:i A') : __('earnings.date_not_specified') }}
                           </p>
                         </div>
-                        <div class="text-left">
-                          <p class="text-lg font-bold text-green-600">{{ number_format($earning->amount, 2) }}</p>
+                        <div class="text-right sm:text-left flex-shrink-0">
+                          <p class="text-base md:text-lg font-bold text-green-600">{{ number_format($earning->amount, 2) }}</p>
                           <p class="text-xs text-gray-500">{{ $currency }}</p>
                         </div>
                       </div>
@@ -244,10 +246,10 @@
 
             </div>
           @empty
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-              <i class="ri-inbox-line text-6xl text-gray-300 mb-4"></i>
-              <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('earnings.no_earnings_yet') }}</h3>
-              <p class="text-gray-500">{{ __('earnings.earnings_will_appear_after_sessions') }}</p>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 md:p-12 text-center">
+              <i class="ri-inbox-line text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4"></i>
+              <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">{{ __('earnings.no_earnings_yet') }}</h3>
+              <p class="text-sm md:text-base text-gray-500">{{ __('earnings.earnings_will_appear_after_sessions') }}</p>
             </div>
           @endforelse
         </div>
@@ -259,31 +261,33 @@
 
         <!-- Current Month Payout -->
         @if($currentMonthPayout)
-        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-8 mb-8 text-white">
-          <div class="flex items-center justify-between flex-wrap gap-6">
-            <div class="flex items-center gap-6">
-              <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
-                <i class="ri-calendar-event-line text-3xl"></i>
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mb-6 md:mb-8 text-white">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <div class="flex items-center gap-3 sm:gap-6 flex-1">
+              <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="ri-calendar-event-line text-2xl sm:text-3xl"></i>
               </div>
-              <div>
-                <p class="text-sm opacity-90 mb-1">{{ __('earnings.current_month_payout') }}</p>
-                <h3 class="text-2xl font-bold">{{ $currentMonthPayout->payout_code }}</h3>
-                <p class="text-sm opacity-75 mt-1">{{ $currentMonthPayout->month_name }}</p>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.current_month_payout') }}</p>
+                <h3 class="text-lg sm:text-xl md:text-2xl font-bold truncate">{{ $currentMonthPayout->payout_code }}</h3>
+                <p class="text-xs sm:text-sm opacity-75 mt-0.5 sm:mt-1">{{ $currentMonthPayout->month_name }}</p>
               </div>
             </div>
-            <div class="text-left">
-              <p class="text-sm opacity-90 mb-1">{{ __('earnings.amount_label') }}</p>
-              <p class="text-3xl font-bold">{{ number_format($currentMonthPayout->total_amount, 2) }}</p>
-              <p class="text-sm opacity-75">{{ $currency }}</p>
-            </div>
-            <div>
-              <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold
-                {{ $currentMonthPayout->status === 'paid' ? 'bg-white/30' : '' }}
-                {{ $currentMonthPayout->status === 'approved' ? 'bg-blue-500/30' : '' }}
-                {{ $currentMonthPayout->status === 'pending' ? 'bg-yellow-500/30' : '' }}
-                {{ $currentMonthPayout->status === 'rejected' ? 'bg-red-500/30' : '' }}">
-                {{ __('earnings.status.' . $currentMonthPayout->status) }}
-              </span>
+            <div class="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/20">
+              <div class="text-right sm:text-left">
+                <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.amount_label') }}</p>
+                <p class="text-xl sm:text-2xl md:text-3xl font-bold">{{ number_format($currentMonthPayout->total_amount, 2) }}</p>
+                <p class="text-xs sm:text-sm opacity-75">{{ $currency }}</p>
+              </div>
+              <div class="flex-shrink-0">
+                <span class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold
+                  {{ $currentMonthPayout->status === 'paid' ? 'bg-white/30' : '' }}
+                  {{ $currentMonthPayout->status === 'approved' ? 'bg-blue-500/30' : '' }}
+                  {{ $currentMonthPayout->status === 'pending' ? 'bg-yellow-500/30' : '' }}
+                  {{ $currentMonthPayout->status === 'rejected' ? 'bg-red-500/30' : '' }}">
+                  {{ __('earnings.status.' . $currentMonthPayout->status) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -291,48 +295,50 @@
 
         <!-- Last Payout Highlight (if no current month payout) -->
         @if(!$currentMonthPayout && $stats['lastPayout'])
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-8 mb-8 text-white">
-          <div class="flex items-center justify-between flex-wrap gap-6">
-            <div class="flex items-center gap-6">
-              <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
-                <i class="ri-hand-coin-line text-3xl"></i>
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mb-6 md:mb-8 text-white">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <div class="flex items-center gap-3 sm:gap-6 flex-1">
+              <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="ri-hand-coin-line text-2xl sm:text-3xl"></i>
               </div>
-              <div>
-                <p class="text-sm opacity-90 mb-1">{{ __('earnings.last_payout') }}</p>
-                <h3 class="text-2xl font-bold">{{ $stats['lastPayout']->payout_code }}</h3>
-                <p class="text-sm opacity-75 mt-1">{{ $stats['lastPayout']->month_name }}</p>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.last_payout') }}</p>
+                <h3 class="text-lg sm:text-xl md:text-2xl font-bold truncate">{{ $stats['lastPayout']->payout_code }}</h3>
+                <p class="text-xs sm:text-sm opacity-75 mt-0.5 sm:mt-1">{{ $stats['lastPayout']->month_name }}</p>
               </div>
             </div>
-            <div class="text-left">
-              <p class="text-sm opacity-90 mb-1">{{ __('earnings.amount_label') }}</p>
-              <p class="text-3xl font-bold">{{ number_format($stats['lastPayout']->total_amount, 2) }}</p>
-              <p class="text-sm opacity-75">{{ $currency }}</p>
-            </div>
-            <div>
-              <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-white/20">
-                {{ __('earnings.status.' . $stats['lastPayout']->status) }}
-              </span>
+            <div class="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/20">
+              <div class="text-right sm:text-left">
+                <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.amount_label') }}</p>
+                <p class="text-xl sm:text-2xl md:text-3xl font-bold">{{ number_format($stats['lastPayout']->total_amount, 2) }}</p>
+                <p class="text-xs sm:text-sm opacity-75">{{ $currency }}</p>
+              </div>
+              <div class="flex-shrink-0">
+                <span class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold bg-white/20">
+                  {{ __('earnings.status.' . $stats['lastPayout']->status) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
         @endif
 
         <!-- Payout History -->
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <div class="mb-6 md:mb-8">
+          <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4 md:mb-6">
             <i class="ri-history-line text-green-600 ml-2"></i>
             {{ __('earnings.payout_history') }}
           </h2>
 
-          <div class="space-y-4">
+          <div class="space-y-3 md:space-y-4">
             @forelse($payoutHistory as $payout)
               <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                <div class="p-6">
-                  <div class="flex items-start justify-between mb-4">
-                    <div class="flex-1">
-                      <div class="flex items-center gap-3 mb-2">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $payout->payout_code }}</h3>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                <div class="p-4 md:p-6">
+                  <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3 md:mb-4">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex flex-wrap items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                        <h3 class="text-base md:text-lg font-semibold text-gray-900">{{ $payout->payout_code }}</h3>
+                        <span class="inline-flex items-center px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs font-medium
                           {{ $payout->status === 'paid' ? 'bg-green-100 text-green-800' : '' }}
                           {{ $payout->status === 'approved' ? 'bg-blue-100 text-blue-800' : '' }}
                           {{ $payout->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
@@ -340,59 +346,59 @@
                           {{ __('earnings.status.' . $payout->status) }}
                         </span>
                       </div>
-                      <p class="text-sm text-gray-500">
+                      <p class="text-xs md:text-sm text-gray-500">
                         <i class="ri-calendar-line ml-1"></i>
                         {{ $payout->month_name }}
                       </p>
                     </div>
-                    <div class="text-left">
-                      <p class="text-sm text-gray-500 mb-1">{{ __('earnings.total_amount') }}</p>
-                      <p class="text-2xl font-bold text-green-600">{{ number_format($payout->total_amount, 2) }}</p>
-                      <p class="text-sm text-gray-600">{{ $currency }}</p>
+                    <div class="text-right sm:text-left flex-shrink-0">
+                      <p class="text-xs md:text-sm text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.total_amount') }}</p>
+                      <p class="text-xl md:text-2xl font-bold text-green-600">{{ number_format($payout->total_amount, 2) }}</p>
+                      <p class="text-xs md:text-sm text-gray-600">{{ $currency }}</p>
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-3 md:pt-4 border-t border-gray-100">
                     <div>
-                      <p class="text-xs text-gray-500 mb-1">{{ __('earnings.sessions_count') }}</p>
-                      <p class="text-sm font-semibold text-gray-900">{{ $payout->sessions_count }}</p>
+                      <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.sessions_count') }}</p>
+                      <p class="text-xs md:text-sm font-semibold text-gray-900">{{ $payout->sessions_count }}</p>
                     </div>
 
                     @if($payout->paid_at)
                     <div>
-                      <p class="text-xs text-gray-500 mb-1">{{ __('earnings.payout_date') }}</p>
-                      <p class="text-sm font-semibold text-gray-900">{{ $payout->paid_at->setTimezone($timezone)->format('d/m/Y') }}</p>
+                      <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.payout_date') }}</p>
+                      <p class="text-xs md:text-sm font-semibold text-gray-900">{{ $payout->paid_at->setTimezone($timezone)->format('d/m/Y') }}</p>
                     </div>
                     @endif
 
                     @if($payout->payment_method)
                     <div>
-                      <p class="text-xs text-gray-500 mb-1">{{ __('earnings.payment_method') }}</p>
-                      <p class="text-sm font-semibold text-gray-900">{{ __('earnings.payment_methods.' . $payout->payment_method) }}</p>
+                      <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.payment_method') }}</p>
+                      <p class="text-xs md:text-sm font-semibold text-gray-900">{{ __('earnings.payment_methods.' . $payout->payment_method) }}</p>
                     </div>
                     @endif
 
                     @if($payout->payment_reference)
                     <div>
-                      <p class="text-xs text-gray-500 mb-1">{{ __('earnings.payment_reference') }}</p>
-                      <p class="text-sm font-semibold text-gray-900">{{ $payout->payment_reference }}</p>
+                      <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.payment_reference') }}</p>
+                      <p class="text-xs md:text-sm font-semibold text-gray-900 truncate">{{ $payout->payment_reference }}</p>
                     </div>
                     @endif
                   </div>
 
                   @if($payout->notes)
-                  <div class="mt-4 pt-4 border-t border-gray-100">
-                    <p class="text-xs text-gray-500 mb-1">{{ __('earnings.notes_label') }}</p>
-                    <p class="text-sm text-gray-700">{{ $payout->notes }}</p>
+                  <div class="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-100">
+                    <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.notes_label') }}</p>
+                    <p class="text-xs md:text-sm text-gray-700">{{ $payout->notes }}</p>
                   </div>
                   @endif
                 </div>
               </div>
             @empty
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                <i class="ri-inbox-line text-6xl text-gray-300 mb-4"></i>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('earnings.no_payouts_yet') }}</h3>
-                <p class="text-gray-500">{{ __('earnings.payouts_will_appear_when_issued') }}</p>
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 md:p-12 text-center">
+                <i class="ri-inbox-line text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4"></i>
+                <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">{{ __('earnings.no_payouts_yet') }}</h3>
+                <p class="text-sm md:text-base text-gray-500">{{ __('earnings.payouts_will_appear_when_issued') }}</p>
               </div>
             @endforelse
           </div>

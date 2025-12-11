@@ -166,6 +166,20 @@ class AcademicSessionResource extends Resource
             ]);
     }
 
+    /**
+     * Eager load relationships to prevent N+1 queries.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'academy',
+                'academicTeacher.user',
+                'academicSubscription',
+                'student',
+            ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table

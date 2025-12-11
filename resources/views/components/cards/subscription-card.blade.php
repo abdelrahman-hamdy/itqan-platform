@@ -30,49 +30,49 @@
         ]) : '#';
 @endphp
 
-<div class="subscription-card {{ $compact ? 'p-4' : 'p-6' }} bg-white rounded-lg border border-gray-200 hover:border-primary-300 transition-all duration-200 {{ $canAccess ? 'hover:shadow-md cursor-pointer' : 'opacity-60 cursor-not-allowed' }}">
+<div class="subscription-card {{ $compact ? 'p-3 md:p-4' : 'p-4 md:p-6' }} bg-white rounded-lg md:rounded-xl border border-gray-200 hover:border-primary-300 transition-all duration-200 {{ $canAccess ? 'hover:shadow-md cursor-pointer' : 'opacity-60 cursor-not-allowed' }}">
     @if($canAccess)
-        <a href="{{ $href }}" class="block h-full">
+        <a href="{{ $href }}" class="block h-full min-h-[44px]">
     @endif
-    
-    <div class="flex items-start justify-between {{ $compact ? 'mb-3' : 'mb-4' }}">
-        <div class="flex items-center space-x-3 space-x-reverse flex-1">
+
+    <div class="flex items-start justify-between gap-2 md:gap-3 {{ $compact ? 'mb-2 md:mb-3' : 'mb-3 md:mb-4' }}">
+        <div class="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
             <!-- User Avatar -->
             @if($user && $user->avatar)
-                <img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $userDisplayName }}" 
-                     class="{{ $compact ? 'w-10 h-10' : 'w-12 h-12' }} rounded-full object-cover">
+                <img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $userDisplayName }}"
+                     class="{{ $compact ? 'w-9 h-9 md:w-10 md:h-10' : 'w-10 h-10 md:w-12 md:h-12' }} rounded-full object-cover flex-shrink-0">
             @else
-                <div class="{{ $compact ? 'w-10 h-10' : 'w-12 h-12' }} rounded-full bg-primary-100 flex items-center justify-center">
-                    <span class="{{ $compact ? 'text-sm' : 'text-lg' }} font-bold text-primary-600">
+                <div class="{{ $compact ? 'w-9 h-9 md:w-10 md:h-10' : 'w-10 h-10 md:w-12 md:h-12' }} rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                    <span class="{{ $compact ? 'text-xs md:text-sm' : 'text-sm md:text-lg' }} font-bold text-primary-600">
                         {{ substr($userDisplayName, 0, 1) }}
                     </span>
                 </div>
             @endif
-            
+
             <!-- User Info -->
             <div class="flex-1 min-w-0">
-                <h4 class="{{ $compact ? 'text-sm' : 'text-base' }} font-medium text-gray-900 truncate">
+                <h4 class="{{ $compact ? 'text-xs md:text-sm' : 'text-sm md:text-base' }} font-medium text-gray-900 truncate">
                     {{ $userDisplayName }}
                 </h4>
-                <p class="{{ $compact ? 'text-xs' : 'text-sm' }} text-gray-600 truncate">
+                <p class="{{ $compact ? 'text-[10px] md:text-xs' : 'text-xs md:text-sm' }} text-gray-600 truncate">
                     {{ $subscription->package->name ?? 'اشتراك مخصص' }}
                 </p>
                 @if(!$compact)
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1">
                         {{ $subscription->created_at->diffForHumans() }}
                     </p>
                 @endif
             </div>
         </div>
-        
+
         <!-- Status Badge -->
-        <div class="flex flex-col items-end space-y-2">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusEnum->badgeClasses() }}">
+        <div class="flex flex-col items-end gap-1.5 md:gap-2 flex-shrink-0">
+            <span class="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ $statusEnum->badgeClasses() }}">
                 {{ $statusEnum->label() }}
             </span>
-            
+
             @if($canAccess)
-                <i class="ri-arrow-left-s-line text-gray-400 {{ $compact ? 'text-sm' : '' }}"></i>
+                <i class="ri-arrow-left-s-line text-gray-400 {{ $compact ? 'text-xs md:text-sm' : 'text-sm' }}"></i>
             @endif
         </div>
     </div>
@@ -126,13 +126,13 @@
 
     <!-- Quick Actions (for non-compact view) -->
     @if($showActions && !$compact && $canAccess)
-        <div class="mt-4 pt-3 border-t border-gray-100">
-            <div class="flex items-center space-x-2 space-x-reverse">
+        <div class="mt-3 md:mt-4 pt-2 md:pt-3 border-t border-gray-100">
+            <div class="flex items-center gap-2">
                 @if($viewType === 'teacher')
                     <!-- Teacher Actions -->
-                    <button type="button" 
+                    <button type="button"
                             onclick="event.preventDefault(); event.stopPropagation(); openProgress({{ $subscription->individualCircle->id ?? 0 }})"
-                            class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded hover:bg-gray-200 transition-colors">
+                            class="min-h-[36px] md:min-h-[32px] inline-flex items-center px-2.5 md:px-2 py-1.5 md:py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded hover:bg-gray-200 transition-colors">
                         <i class="ri-line-chart-line ml-1"></i>
                         التقدم
                     </button>
@@ -145,11 +145,11 @@
                             ->orderBy('scheduled_at')
                             ->first();
                     @endphp
-                    
+
                     @if($nextSession && $nextSession->scheduled_at->diffInMinutes(now()) <= 30)
                         <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $nextSession->id]) }}"
                            onclick="event.stopPropagation()"
-                           class="inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
+                           class="min-h-[36px] md:min-h-[32px] inline-flex items-center px-2.5 md:px-2 py-1.5 md:py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
                             <i class="ri-video-line ml-1"></i>
                             انضمام للجلسة
                         </a>

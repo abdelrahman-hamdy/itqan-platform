@@ -24,7 +24,14 @@ use App\Observers\MediaObserver;
 use App\Observers\QuranSessionObserver;
 use App\Observers\StudentProfileObserver;
 use App\Observers\StudentSessionReportObserver;
+use App\Models\AcademicTeacherProfile;
+use App\Models\QuranTeacherProfile;
 use App\Policies\ParentPolicy;
+use App\Policies\PaymentPolicy;
+use App\Policies\SessionPolicy;
+use App\Policies\StudentProfilePolicy;
+use App\Policies\SubscriptionPolicy;
+use App\Policies\TeacherProfilePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
@@ -96,10 +103,27 @@ class AppServiceProvider extends ServiceProvider
         // Override WireChat Info component with custom implementation
         Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);
 
-        // Register ParentPolicy for parent access control
-        Gate::policy(StudentProfile::class, ParentPolicy::class);
+        // Register policies for authorization
+        // Session policies - use SessionPolicy for all session types
+        Gate::policy(QuranSession::class, SessionPolicy::class);
+        Gate::policy(AcademicSession::class, SessionPolicy::class);
+        Gate::policy(InteractiveCourseSession::class, SessionPolicy::class);
+
+        // Subscription policies - use SubscriptionPolicy for all subscription types
+        Gate::policy(QuranSubscription::class, SubscriptionPolicy::class);
+        Gate::policy(AcademicSubscription::class, SubscriptionPolicy::class);
+        Gate::policy(CourseSubscription::class, SubscriptionPolicy::class);
+
+        // Profile policies
+        Gate::policy(StudentProfile::class, StudentProfilePolicy::class);
+        Gate::policy(QuranTeacherProfile::class, TeacherProfilePolicy::class);
+        Gate::policy(AcademicTeacherProfile::class, TeacherProfilePolicy::class);
+
+        // Payment policy
+        Gate::policy(Payment::class, PaymentPolicy::class);
+
+        // Certificate policy - keep ParentPolicy for parent-specific checks
         Gate::policy(Certificate::class, ParentPolicy::class);
-        Gate::policy(Payment::class, ParentPolicy::class);
 
         // Render hooks can be added here if needed
     }

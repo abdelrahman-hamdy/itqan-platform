@@ -366,6 +366,7 @@ class AcademicSubscriptionResource extends Resource
         return [
             'index' => Pages\ListAcademicSubscriptions::route('/'),
             'create' => Pages\CreateAcademicSubscription::route('/create'),
+            'view' => Pages\ViewAcademicSubscription::route('/{record}'),
             'edit' => Pages\EditAcademicSubscription::route('/{record}/edit'),
         ];
     }

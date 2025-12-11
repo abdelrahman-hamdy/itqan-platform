@@ -3,16 +3,16 @@
     'label' => '',
     'color' => 'blue',
     'showPercentage' => true,
-    'height' => 'h-2',
+    'height' => 'h-1.5 md:h-2',
     'showLabel' => true,
 ])
 
 <div {{ $attributes->merge(['class' => 'w-full']) }}>
     @if($showLabel && $label)
-        <div class="flex justify-between items-center mb-2">
-            <span class="text-sm text-gray-600">{{ $label }}</span>
+        <div class="flex justify-between items-center gap-2 mb-1.5 md:mb-2">
+            <span class="text-xs md:text-sm text-gray-600 truncate">{{ $label }}</span>
             @if($showPercentage)
-                <span class="text-sm font-medium text-gray-900">{{ number_format($percentage, 0) }}%</span>
+                <span class="text-xs md:text-sm font-medium text-gray-900 flex-shrink-0">{{ number_format($percentage, 0) }}%</span>
             @endif
         </div>
     @endif

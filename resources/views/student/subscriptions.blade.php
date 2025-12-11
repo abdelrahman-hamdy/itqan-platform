@@ -202,10 +202,10 @@
     @endif
 
     <!-- Filters Section (Same style as quran-circles) -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
         <form method="GET" action="{{ route($isParent ? 'parent.subscriptions.index' : 'student.subscriptions', ['subdomain' => $subdomain]) }}" class="space-y-4">
             <div class="mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">
+                <h3 class="text-base md:text-lg font-semibold text-gray-900">
                     <i class="ri-filter-3-line ml-2"></i>
                     تصفية النتائج
                 </h3>
@@ -259,16 +259,16 @@
             </div>
 
             <!-- Buttons Row (Same style as quran-circles - separate row) -->
-            <div class="flex items-center gap-3 pt-2">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button type="submit"
-                        class="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                        class="inline-flex items-center justify-center min-h-[44px] bg-blue-600 text-white px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                     <i class="ri-search-line ml-1"></i>
                     تطبيق الفلاتر
                 </button>
 
                 @if(request()->hasAny(['status', 'type']))
                 <a href="{{ route($isParent ? 'parent.subscriptions.index' : 'student.subscriptions', ['subdomain' => $subdomain]) }}"
-                   class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                   class="inline-flex items-center justify-center min-h-[44px] bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                     <i class="ri-close-circle-line ml-1"></i>
                     إعادة تعيين
                 </a>
@@ -305,7 +305,7 @@
                     }
                 @endphp
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
-                    <div class="p-5 lg:p-6">
+                    <div class="p-4 md:p-5 lg:p-6">
                         <!-- Row 1: Icon + Title on Right, Actions on Left -->
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                             <!-- Right Side: Icon + Title -->
@@ -331,7 +331,7 @@
                             <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
                                 @if($subscription['href'])
                                     <a href="{{ $subscription['href'] }}"
-                                       class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors">
+                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-white border border-gray-300 rounded-xl md:rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors">
                                         <i class="ri-eye-line ml-2"></i>
                                         عرض التفاصيل
                                     </a>
@@ -340,7 +340,7 @@
                                 @if(!$isParent && $subscription['auto_renew'] !== null && $subscription['is_active'])
                                     <button type="button"
                                             onclick="toggleAutoRenew('{{ $subscription['model_type'] }}', {{ $subscription['id'] }}, {{ $subscription['auto_renew'] ? 'true' : 'false' }})"
-                                            class="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                                            class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 rounded-xl md:rounded-lg text-sm font-medium transition-colors
                                                    {{ $subscription['auto_renew']
                                                        ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
                                                        : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100' }}">
@@ -352,7 +352,7 @@
                                 @if(!$isParent && $subscription['can_cancel'])
                                     <button type="button"
                                             onclick="cancelSubscription('{{ $subscription['model_type'] }}', {{ $subscription['id'] }})"
-                                            class="inline-flex items-center justify-center px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+                                            class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl md:rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
                                         <i class="ri-close-circle-line ml-2"></i>
                                         إلغاء
                                     </button>
@@ -521,21 +521,45 @@
     </div>
     @endif
 
-    <!-- Confirmation Modal -->
-    <div id="confirmModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div class="text-center mb-6">
-                <div id="modalIcon" class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"></div>
-                <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
-                <p id="modalMessage" class="text-gray-600"></p>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="closeModal()" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                    إلغاء
-                </button>
-                <button id="modalConfirmBtn" class="flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors">
-                    تأكيد
-                </button>
+    <!-- Confirmation Modal - Bottom sheet on mobile, centered on desktop -->
+    <div id="confirmModal"
+         x-data="{ open: false }"
+         x-show="open"
+         x-cloak
+         @open-confirm-modal.window="open = true"
+         @close-confirm-modal.window="open = false"
+         @keydown.escape.window="if(open) { open = false; closeModal(); }"
+         class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto"
+         style="display: none;">
+
+        <!-- Modal Container - Bottom sheet on mobile, centered on desktop -->
+        <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 md:scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0 md:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
+                 @click.stop
+                 class="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden">
+
+                <!-- Mobile drag handle -->
+                <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+
+                <div class="p-6 pt-8 md:pt-6 text-center">
+                    <div id="modalIcon" class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"></div>
+                    <h3 id="modalTitle" class="text-lg md:text-xl font-bold text-gray-900 mb-2"></h3>
+                    <p id="modalMessage" class="text-gray-600 text-sm md:text-base"></p>
+                </div>
+                <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-center">
+                    <button onclick="closeModal()" class="min-h-[48px] md:min-h-[44px] flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl md:rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                        إلغاء
+                    </button>
+                    <button id="modalConfirmBtn" class="min-h-[48px] md:min-h-[44px] flex-1 px-4 py-2.5 rounded-xl md:rounded-lg font-medium transition-colors">
+                        تأكيد
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -600,25 +624,26 @@
             iconEl.innerHTML = `<i class="${iconClass}"></i>`;
             titleEl.textContent = title;
             messageEl.textContent = message;
-            confirmBtn.className = `flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors ${confirmBtnClass}`;
+            confirmBtn.className = `min-h-[48px] md:min-h-[44px] flex-1 px-4 py-2.5 rounded-xl md:rounded-lg font-medium transition-colors ${confirmBtnClass}`;
             confirmBtn.onclick = () => {
                 closeModal();
                 onConfirm();
             };
 
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            // Show modal using Alpine.js
+            modal.style.display = 'block';
+            window.dispatchEvent(new CustomEvent('open-confirm-modal'));
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
             const modal = document.getElementById('confirmModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            window.dispatchEvent(new CustomEvent('close-confirm-modal'));
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 200);
         }
-
-        document.getElementById('confirmModal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
     </script>
     @endpush
 

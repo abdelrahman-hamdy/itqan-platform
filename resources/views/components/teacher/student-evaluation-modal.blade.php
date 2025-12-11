@@ -1,105 +1,150 @@
 @props(['session'])
 
 <!-- Student Evaluation Modal -->
-<div id="studentEvaluationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 id="evaluationModalTitle" class="text-xl font-bold text-gray-900">تقييم الطالب</h3>
-                <button id="closeEvaluationModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i class="ri-close-line text-2xl"></i>
+<div id="studentEvaluationModal"
+     x-data="{ open: false }"
+     x-show="open"
+     x-cloak
+     @open-evaluation-modal.window="open = true"
+     @close-evaluation-modal.window="open = false"
+     @keydown.escape.window="if(open) { open = false; }"
+     class="fixed inset-0 z-50 overflow-y-auto"
+     role="dialog"
+     aria-modal="true">
+
+    <!-- Background overlay -->
+    <div x-show="open"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="open = false"
+         class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+    <!-- Modal Container - Bottom sheet on mobile, centered on desktop -->
+    <div class="fixed inset-0 flex items-end md:items-center justify-center p-0 md:p-4">
+        <!-- Modal panel -->
+        <div x-show="open"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 md:scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 md:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-full md:translate-y-0 md:scale-95"
+             @click.stop
+             class="relative bg-white w-full md:max-w-2xl rounded-t-2xl md:rounded-2xl shadow-xl max-h-[90vh] md:max-h-[85vh] flex flex-col overflow-hidden">
+
+            <!-- Mobile drag handle -->
+            <div class="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 z-10"></div>
+
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 flex-shrink-0 pt-6 md:pt-6">
+                <h3 id="evaluationModalTitle" class="text-lg md:text-xl font-bold text-gray-900">تقييم الطالب</h3>
+                <button @click="open = false"
+                        id="closeEvaluationModalBtn"
+                        class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Form Body -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6">
+                <form id="studentEvaluationForm" class="space-y-5">
+                    @csrf
+                    <input type="hidden" id="evalStudentId" name="student_id">
+                    <input type="hidden" id="evalReportId" name="report_id">
+
+                    <!-- Student Info Display -->
+                    <div id="studentInfoDisplay" class="bg-gray-50 rounded-xl p-4">
+                        <div class="flex items-center gap-3">
+                            <div id="studentAvatarDisplay" class="flex-shrink-0"></div>
+                            <div class="min-w-0 flex-1">
+                                <h4 id="studentNameDisplay" class="font-semibold text-gray-900 truncate"></h4>
+                                <p id="attendanceInfoDisplay" class="text-sm text-gray-600 truncate"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Degrees -->
+                    <div id="homeworkDegreeFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div id="newMemorizationDegreeField" class="hidden">
+                            <label for="newMemorizationDegree" class="block text-sm font-medium text-gray-700 mb-2">
+                                درجة الحفظ الجديد (0-10)
+                            </label>
+                            <input type="number"
+                                   id="newMemorizationDegree"
+                                   name="new_memorization_degree"
+                                   min="0"
+                                   max="10"
+                                   step="0.5"
+                                   class="w-full px-4 py-3 min-h-[48px] text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div id="reviewDegreeField" class="hidden">
+                            <label for="reservationDegree" class="block text-sm font-medium text-gray-700 mb-2">
+                                درجة المراجعة (0-10)
+                            </label>
+                            <input type="number"
+                                   id="reservationDegree"
+                                   name="reservation_degree"
+                                   min="0"
+                                   max="10"
+                                   step="0.5"
+                                   class="w-full px-4 py-3 min-h-[48px] text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Attendance Status Override -->
+                    <div>
+                        <label for="attendanceStatus" class="block text-sm font-medium text-gray-700 mb-2">
+                            حالة الحضور (يدوي)
+                        </label>
+                        <select id="attendanceStatus"
+                                name="attendance_status"
+                                class="w-full px-4 py-3 min-h-[48px] text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">إبقاء الحالة المحسوبة تلقائياً</option>
+                            @foreach(\App\Enums\AttendanceStatus::cases() as $status)
+                                <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">اتركها فارغة للاحتفاظ بالحالة المحسوبة تلقائياً</p>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label for="evaluationNotes" class="block text-sm font-medium text-gray-700 mb-2">
+                            ملاحظات التقييم
+                        </label>
+                        <textarea id="evaluationNotes"
+                                  name="notes"
+                                  rows="4"
+                                  class="w-full px-4 py-3 min-h-[120px] text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="أضف ملاحظاتك حول أداء الطالب..."></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Fixed Footer -->
+            <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+                <button type="button" id="cancelEvaluationBtn"
+                        @click="open = false"
+                        class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-xl sm:rounded-lg transition-colors">
+                    إلغاء
+                </button>
+                <button type="submit" form="studentEvaluationForm"
+                        class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl sm:rounded-lg transition-colors">
+                    حفظ التقييم
                 </button>
             </div>
         </div>
-
-        <div class="p-6">
-            <form id="studentEvaluationForm" class="space-y-6">
-                @csrf
-                <input type="hidden" id="evalStudentId" name="student_id">
-                <input type="hidden" id="evalReportId" name="report_id">
-
-                <!-- Student Info Display -->
-                <div id="studentInfoDisplay" class="bg-gray-50 rounded-lg p-4">
-                    <div class="flex items-center gap-3">
-                        <div id="studentAvatarDisplay"></div>
-                        <div>
-                            <h4 id="studentNameDisplay" class="font-semibold text-gray-900"></h4>
-                            <p id="attendanceInfoDisplay" class="text-sm text-gray-600"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Performance Degrees -->
-                <div id="homeworkDegreeFields" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div id="newMemorizationDegreeField" class="hidden">
-                        <label for="newMemorizationDegree" class="block text-sm font-medium text-gray-700 mb-2">
-                            درجة الحفظ الجديد (0-10)
-                        </label>
-                        <input type="number"
-                               id="newMemorizationDegree"
-                               name="new_memorization_degree"
-                               min="0"
-                               max="10"
-                               step="0.5"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-
-                    <div id="reviewDegreeField" class="hidden">
-                        <label for="reservationDegree" class="block text-sm font-medium text-gray-700 mb-2">
-                            درجة المراجعة (0-10)
-                        </label>
-                        <input type="number"
-                               id="reservationDegree"
-                               name="reservation_degree"
-                               min="0"
-                               max="10"
-                               step="0.5"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                </div>
-
-                <!-- Attendance Status Override -->
-                <div>
-                    <label for="attendanceStatus" class="block text-sm font-medium text-gray-700 mb-2">
-                        حالة الحضور (يدوي)
-                    </label>
-                    <select id="attendanceStatus"
-                            name="attendance_status"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">إبقاء الحالة المحسوبة تلقائياً</option>
-                        @foreach(\App\Enums\AttendanceStatus::cases() as $status)
-                            <option value="{{ $status->value }}">{{ $status->label() }}</option>
-                        @endforeach
-                    </select>
-                    <p class="text-xs text-gray-500 mt-1">اتركها فارغة للاحتفاظ بالحالة المحسوبة تلقائياً</p>
-                </div>
-
-                <!-- Notes -->
-                <div>
-                    <label for="evaluationNotes" class="block text-sm font-medium text-gray-700 mb-2">
-                        ملاحظات التقييم
-                    </label>
-                    <textarea id="evaluationNotes"
-                              name="notes"
-                              rows="4"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="أضف ملاحظاتك حول أداء الطالب..."></textarea>
-                </div>
-
-                <div class="flex items-center justify-end space-x-3 space-x-reverse pt-6 border-t border-gray-200">
-                    <button type="button" id="cancelEvaluationBtn"
-                            class="px-6 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors font-medium">
-                        إلغاء
-                    </button>
-                    <button type="submit"
-                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
-                        حفظ التقييم
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>
+
+<style>
+    [x-cloak] { display: none !important; }
+</style>
 
 <script>
     // Student management functions
@@ -108,9 +153,8 @@
         console.log('Change status for student:', studentId);
     }
 
-    // Student evaluation modal functions
+    // Student evaluation modal functions - Compatible with Alpine.js
     function editStudentReport(studentId, reportId) {
-        const modal = document.getElementById('studentEvaluationModal');
         const form = document.getElementById('studentEvaluationForm');
 
         // Set hidden fields
@@ -130,8 +174,9 @@
             loadStudentBasicInfo(studentId);
         }
 
-        // Show modal
-        modal.classList.remove('hidden');
+        // Dispatch Alpine.js event to open modal
+        window.dispatchEvent(new CustomEvent('open-evaluation-modal'));
+        document.body.style.overflow = 'hidden';
     }
 
     function loadExistingReportData(reportId) {
@@ -275,28 +320,11 @@
         return statusMap[status] || 'غير محدد';
     }
 
-    // Modal event handlers
+    // Modal event handlers - Using Alpine.js for open/close
     document.addEventListener('DOMContentLoaded', function() {
-        const modal = document.getElementById('studentEvaluationModal');
-        const closeBtn = document.getElementById('closeEvaluationModalBtn');
-        const cancelBtn = document.getElementById('cancelEvaluationBtn');
         const form = document.getElementById('studentEvaluationForm');
 
-        // Close modal events
-        closeBtn?.addEventListener('click', function() {
-            modal.classList.add('hidden');
-        });
-
-        cancelBtn?.addEventListener('click', function() {
-            modal.classList.add('hidden');
-        });
-
-        // Close on backdrop click
-        modal?.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
+        // Note: Close button and backdrop click are now handled by Alpine.js
 
         // Attendance status change listener
         const attendanceStatusSelect = document.getElementById('attendanceStatus');
@@ -345,7 +373,8 @@
 
                 if (result.success) {
                     showNotification('تم حفظ التقييم بنجاح', 'success');
-                    modal.classList.add('hidden');
+                    window.dispatchEvent(new CustomEvent('close-evaluation-modal'));
+                    document.body.style.overflow = '';
 
                     // Reload page to show updated data
                     setTimeout(() => {

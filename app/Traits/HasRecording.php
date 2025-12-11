@@ -305,16 +305,62 @@ trait HasRecording
     public function getRecordingStats(): array
     {
         $allRecordings = $this->getRecordings();
+        $completedRecordings = $allRecordings->where('status', 'completed');
+
+        $totalSizeBytes = $completedRecordings->sum('file_size');
+        $totalDurationSeconds = $completedRecordings->sum('duration');
 
         return [
             'total_recordings' => $allRecordings->count(),
-            'completed_recordings' => $allRecordings->where('status', 'completed')->count(),
+            'completed_recordings' => $completedRecordings->count(),
             'failed_recordings' => $allRecordings->where('status', 'failed')->count(),
+            'processing_recordings' => $allRecordings->where('status', 'processing')->count(),
             'is_recording' => $this->isRecording(),
             'active_recording' => $this->getActiveRecording(),
             'latest_completed' => $this->getLatestCompletedRecording(),
-            'total_size_bytes' => $allRecordings->where('status', 'completed')->sum('file_size'),
-            'total_duration_minutes' => $allRecordings->where('status', 'completed')->sum('duration'),
+            'total_size_bytes' => $totalSizeBytes,
+            'total_size_formatted' => $this->formatBytes($totalSizeBytes),
+            'total_duration_seconds' => $totalDurationSeconds,
+            'total_duration_formatted' => $this->formatDuration($totalDurationSeconds),
         ];
+    }
+
+    /**
+     * Format bytes to human-readable size
+     */
+    protected function formatBytes(?int $bytes): string
+    {
+        if (!$bytes) {
+            return '0 B';
+        }
+
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $value = $bytes;
+
+        for ($i = 0; $value > 1024 && $i < count($units) - 1; $i++) {
+            $value /= 1024;
+        }
+
+        return round($value, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Format duration in seconds to HH:MM:SS or MM:SS
+     */
+    protected function formatDuration(?int $seconds): string
+    {
+        if (!$seconds) {
+            return '00:00';
+        }
+
+        $hours = intval($seconds / 3600);
+        $minutes = intval(($seconds % 3600) / 60);
+        $secs = $seconds % 60;
+
+        if ($hours > 0) {
+            return sprintf('%02d:%02d:%02d', $hours, $minutes, $secs);
+        }
+
+        return sprintf('%02d:%02d', $minutes, $secs);
     }
 }

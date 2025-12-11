@@ -142,18 +142,59 @@ class LiveKitWebhookController extends Controller
     private function handleRoomStarted(array $data): void
     {
         $roomName = $data['room']['name'] ?? null;
-        if (!$roomName) return;
+
+        Log::info('🚀 handleRoomStarted called', [
+            'room_name' => $roomName,
+            'has_room_data' => isset($data['room']),
+        ]);
+
+        if (!$roomName) {
+            Log::warning('🚀 handleRoomStarted: No room name in data');
+            return;
+        }
 
         $session = $this->findSessionByRoomName($roomName);
+
+        Log::info('🚀 handleRoomStarted: Session lookup result', [
+            'room_name' => $roomName,
+            'session_found' => $session !== null,
+            'session_id' => $session?->id,
+            'session_class' => $session ? get_class($session) : null,
+            'session_status' => $session?->status?->value,
+        ]);
+
         if (!$session) return;
 
         try {
-            // CRITICAL FIX: Only transition to ONGOING if session is READY
-            // This prevents premature status changes for sessions that haven't reached preparation time
-            if ($session->status !== SessionStatus::READY) {
-                Log::warning('Room started but session not READY - skipping status transition', [
+            // Handle status transition based on current status
+            if ($session->status === SessionStatus::READY) {
+                // Transition from READY to ONGOING
+                $session->update([
+                    'status' => SessionStatus::ONGOING,
+                    'meeting_started_at' => now(),
+                ]);
+
+                // Ensure session persistence
+                $this->sessionMeetingService->markSessionPersistent($session);
+
+                Log::info('Session meeting started', [
                     'session_id' => $session->id,
-                    'session_type' => $session->session_type,
+                    'session_type' => $session->session_type ?? get_class($session),
+                    'room_name' => $roomName,
+                    'started_at' => now(),
+                ]);
+            } elseif ($session->status === SessionStatus::ONGOING) {
+                // Session already ONGOING - just log and continue to auto-recording
+                Log::info('Room started for already ONGOING session', [
+                    'session_id' => $session->id,
+                    'session_type' => $session->session_type ?? get_class($session),
+                    'room_name' => $roomName,
+                ]);
+            } else {
+                // Session not READY or ONGOING - skip all processing
+                Log::warning('Room started but session not READY/ONGOING - skipping', [
+                    'session_id' => $session->id,
+                    'session_type' => $session->session_type ?? get_class($session),
                     'current_status' => $session->status->value,
                     'room_name' => $roomName,
                     'scheduled_at' => $session->scheduled_at,
@@ -162,27 +203,109 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
-            // Update session status to ongoing
-            $session->update([
-                'status' => SessionStatus::ONGOING,
-                'meeting_started_at' => now(),
-            ]);
-
-            // Ensure session persistence
-            $this->sessionMeetingService->markSessionPersistent($session);
-
-            Log::info('Session meeting started', [
-                'session_id' => $session->id,
-                'session_type' => $session->session_type,
-                'room_name' => $roomName,
-                'started_at' => now(),
-            ]);
+            // 🎥 AUTO-RECORDING: Start recording automatically if enabled
+            // This runs for both READY->ONGOING transitions AND already ONGOING sessions
+            $this->tryStartAutoRecording($session, $roomName);
 
         } catch (\Exception $e) {
             Log::error('Failed to handle room started event', [
                 'session_id' => $session->id,
                 'room_name' => $roomName,
                 'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Try to start auto-recording if session supports it and has it enabled
+     *
+     * @param \App\Models\BaseSession $session
+     * @param string $roomName
+     */
+    private function tryStartAutoRecording(\App\Models\BaseSession $session, string $roomName): void
+    {
+        // 🔍 DEBUG: Log entry point
+        Log::info('🎬 AUTO-RECORDING CHECK starting', [
+            'session_id' => $session->id,
+            'session_class' => get_class($session),
+            'room_name' => $roomName,
+        ]);
+
+        try {
+            // Check if session implements RecordingCapable interface
+            if (!($session instanceof \App\Contracts\RecordingCapable)) {
+                Log::info('🎬 AUTO-RECORDING: Session does not implement RecordingCapable', [
+                    'session_id' => $session->id,
+                    'session_class' => get_class($session),
+                ]);
+                return;
+            }
+
+            // Check if recording is enabled for this session
+            $isEnabled = $session->isRecordingEnabled();
+            Log::info('🎬 AUTO-RECORDING: isRecordingEnabled check', [
+                'session_id' => $session->id,
+                'is_enabled' => $isEnabled,
+            ]);
+
+            if (!$isEnabled) {
+                Log::info('🎬 AUTO-RECORDING: Recording not enabled for this session/course', [
+                    'session_id' => $session->id,
+                ]);
+                return;
+            }
+
+            // Check if session can be recorded (status, permissions, etc.)
+            $canBeRecorded = $session->canBeRecorded();
+            Log::info('🎬 AUTO-RECORDING: canBeRecorded check', [
+                'session_id' => $session->id,
+                'can_be_recorded' => $canBeRecorded,
+            ]);
+
+            if (!$canBeRecorded) {
+                Log::info('🎬 AUTO-RECORDING: Session cannot be recorded at this time', [
+                    'session_id' => $session->id,
+                ]);
+                return;
+            }
+
+            // Check if already recording
+            $isRecording = $session->isRecording();
+            Log::info('🎬 AUTO-RECORDING: isRecording check', [
+                'session_id' => $session->id,
+                'is_recording' => $isRecording,
+            ]);
+
+            if ($isRecording) {
+                Log::info('🎬 AUTO-RECORDING: Session is already being recorded', [
+                    'session_id' => $session->id,
+                ]);
+                return;
+            }
+
+            // Start auto-recording
+            Log::info('🎥 Starting AUTO-RECORDING for session', [
+                'session_id' => $session->id,
+                'session_class' => get_class($session),
+                'room_name' => $roomName,
+            ]);
+
+            $recording = $this->recordingService->startRecording($session);
+
+            Log::info('✅ AUTO-RECORDING started successfully', [
+                'session_id' => $session->id,
+                'recording_id' => $recording->id,
+                'egress_id' => $recording->recording_id,
+                'room_name' => $roomName,
+            ]);
+
+        } catch (\Exception $e) {
+            // Log error but don't fail the webhook - recording is optional
+            Log::error('❌ Failed to start AUTO-RECORDING', [
+                'session_id' => $session->id,
+                'room_name' => $roomName,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -595,7 +718,7 @@ class LiveKitWebhookController extends Controller
     /**
      * Handle empty room scenario
      */
-    private function handleEmptyRoom(QuranSession $session, string $roomName): void
+    private function handleEmptyRoom(\App\Models\BaseSession $session, string $roomName): void
     {
         try {
             // Check if session should persist even when empty
@@ -738,11 +861,33 @@ class LiveKitWebhookController extends Controller
     }
 
     /**
-     * Find session by room name
+     * Find session by room name across all session types
+     *
+     * @param string $roomName LiveKit room name
+     * @return \App\Models\BaseSession|null The session model (QuranSession, InteractiveCourseSession, or AcademicSession)
      */
-    private function findSessionByRoomName(string $roomName): ?QuranSession
+    private function findSessionByRoomName(string $roomName): ?\App\Models\BaseSession
     {
-        return QuranSession::where('meeting_room_name', $roomName)->first();
+        // Search QuranSession first (most common)
+        $session = QuranSession::where('meeting_room_name', $roomName)->first();
+        if ($session) {
+            return $session;
+        }
+
+        // Search InteractiveCourseSession
+        $session = \App\Models\InteractiveCourseSession::where('meeting_room_name', $roomName)->first();
+        if ($session) {
+            return $session;
+        }
+
+        // Search AcademicSession
+        $session = \App\Models\AcademicSession::where('meeting_room_name', $roomName)->first();
+        if ($session) {
+            return $session;
+        }
+
+        Log::warning('Session not found for room name', ['room_name' => $roomName]);
+        return null;
     }
 
     /**

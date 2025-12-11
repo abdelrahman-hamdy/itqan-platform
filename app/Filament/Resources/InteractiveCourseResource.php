@@ -358,6 +358,21 @@ class InteractiveCourseResource extends BaseResource
             ]);
     }
 
+    /**
+     * Eager load relationships to prevent N+1 queries.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'academy',
+                'subject',
+                'gradeLevel',
+                'assignedTeacher.user',
+            ])
+            ->withCount('enrollments');
+    }
+
     public static function table(Table $table): Table
     {
         return $table

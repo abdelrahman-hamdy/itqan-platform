@@ -53,8 +53,8 @@
                 @else
                     <li>
                         @if($viewType === 'student')
-                            <a href="{{ route('student.dashboard', ['subdomain' => request()->route('subdomain')]) }}"
-                               class="hover:text-primary">لوحة التحكم</a>
+                            <a href="{{ route('student.profile', ['subdomain' => request()->route('subdomain')]) }}"
+                               class="hover:text-primary">الملف الشخصي</a>
                         @else
                             <a href="{{ route('teacher.schedule.dashboard', ['subdomain' => request()->route('subdomain')]) }}"
                                class="hover:text-primary">

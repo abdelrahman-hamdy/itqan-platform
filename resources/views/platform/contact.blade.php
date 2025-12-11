@@ -75,106 +75,106 @@
                         </span>
                     </h2>
                     
-                    <div class="space-y-8">
-                        <div class="flex items-start space-x-4 space-x-reverse">
-                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="ri-mail-line text-xl text-blue-600"></i>
+                    <div class="space-y-6 md:space-y-8">
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-mail-line text-lg md:text-xl text-blue-600"></i>
                             </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">البريد الإلكتروني</h3>
-                                <p class="text-gray-600">info@itqan.com</p>
-                                <p class="text-gray-600">support@itqan.com</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-start space-x-4 space-x-reverse">
-                            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="ri-phone-line text-xl text-indigo-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">الهاتف</h3>
-                                <p class="text-gray-600">+966 50 123 4567</p>
-                                <p class="text-gray-600">+966 11 234 5678</p>
+                            <div class="min-w-0">
+                                <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">البريد الإلكتروني</h3>
+                                <p class="text-sm md:text-base text-gray-600 break-all">info@itqan.com</p>
+                                <p class="text-sm md:text-base text-gray-600 break-all">support@itqan.com</p>
                             </div>
                         </div>
-                        
-                        <div class="flex items-start space-x-4 space-x-reverse">
-                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="ri-map-pin-line text-xl text-purple-600"></i>
+
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-phone-line text-lg md:text-xl text-indigo-600"></i>
                             </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">العنوان</h3>
-                                <p class="text-gray-600">الرياض، المملكة العربية السعودية</p>
-                                <p class="text-gray-600">برج المملكة، الطابق 15</p>
+                            <div class="min-w-0">
+                                <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">الهاتف</h3>
+                                <p class="text-sm md:text-base text-gray-600">+966 50 123 4567</p>
+                                <p class="text-sm md:text-base text-gray-600">+966 11 234 5678</p>
                             </div>
                         </div>
-                        
-                        <div class="flex items-start space-x-4 space-x-reverse">
-                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="ri-time-line text-xl text-blue-600"></i>
+
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-map-pin-line text-lg md:text-xl text-purple-600"></i>
                             </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">ساعات العمل</h3>
-                                <p class="text-gray-600">الأحد - الخميس: 8:00 ص - 6:00 م</p>
-                                <p class="text-gray-600">الجمعة - السبت: 9:00 ص - 2:00 م</p>
+                            <div class="min-w-0">
+                                <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">العنوان</h3>
+                                <p class="text-sm md:text-base text-gray-600">الرياض، المملكة العربية السعودية</p>
+                                <p class="text-sm md:text-base text-gray-600">برج المملكة، الطابق 15</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-time-line text-lg md:text-xl text-blue-600"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">ساعات العمل</h3>
+                                <p class="text-sm md:text-base text-gray-600">الأحد - الخميس: 8:00 ص - 6:00 م</p>
+                                <p class="text-sm md:text-base text-gray-600">الجمعة - السبت: 9:00 ص - 2:00 م</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="mt-12">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-4">تابعنا على وسائل التواصل الاجتماعي</h3>
-                        <div class="flex space-x-4 space-x-reverse">
-                            <a href="#" class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors">
-                                <i class="ri-twitter-x-line text-xl text-blue-600"></i>
+
+                    <div class="mt-8 md:mt-12">
+                        <h3 class="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">تابعنا على وسائل التواصل الاجتماعي</h3>
+                        <div class="flex gap-3 md:gap-4">
+                            <a href="#" class="min-h-[44px] min-w-[44px] w-11 h-11 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors">
+                                <i class="ri-twitter-x-line text-lg md:text-xl text-blue-600"></i>
                             </a>
-                            <a href="#" class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center hover:bg-indigo-200 transition-colors">
-                                <i class="ri-facebook-line text-xl text-indigo-600"></i>
+                            <a href="#" class="min-h-[44px] min-w-[44px] w-11 h-11 md:w-12 md:h-12 bg-indigo-100 rounded-lg flex items-center justify-center hover:bg-indigo-200 transition-colors">
+                                <i class="ri-facebook-line text-lg md:text-xl text-indigo-600"></i>
                             </a>
-                            <a href="#" class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center hover:bg-purple-200 transition-colors">
-                                <i class="ri-linkedin-line text-xl text-purple-600"></i>
+                            <a href="#" class="min-h-[44px] min-w-[44px] w-11 h-11 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center hover:bg-purple-200 transition-colors">
+                                <i class="ri-linkedin-line text-lg md:text-xl text-purple-600"></i>
                             </a>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 rounded-2xl p-8 border border-gray-200 shadow-xl" data-aos="fade-left">
-                    <h3 class="text-3xl font-bold text-gray-900 mb-6">
-                        <span class="flex items-center gap-3">
-                            <i class="ri-message-line text-3xl text-blue-600"></i>
+                <div class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 rounded-xl md:rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-200 shadow-xl" data-aos="fade-left">
+                    <h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">
+                        <span class="flex items-center gap-2 md:gap-3">
+                            <i class="ri-message-line text-2xl md:text-3xl text-blue-600"></i>
                             أرسل لنا رسالة
                         </span>
                     </h3>
-                    
-                    <form class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <form class="space-y-4 md:space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                             <div>
-                                <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">الاسم الأول *</label>
-                                <input type="text" id="first_name" name="first_name" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">الاسم الأول *</label>
+                                <input type="text" id="first_name" name="first_name" required
+                                       class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                             <div>
-                                <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">الاسم الأخير *</label>
-                                <input type="text" id="last_name" name="last_name" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">الاسم الأخير *</label>
+                                <input type="text" id="last_name" name="last_name" required
+                                       class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                         </div>
-                        
+
                         <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني *</label>
-                            <input type="email" id="email" name="email" required 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">البريد الإلكتروني *</label>
+                            <input type="email" id="email" name="email" required
+                                   class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
-                        
+
                         <div>
-                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
-                            <input type="tel" id="phone" name="phone" 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">رقم الهاتف</label>
+                            <input type="tel" id="phone" name="phone"
+                                   class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
-                        
+
                         <div>
-                            <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">الموضوع *</label>
-                            <select id="subject" name="subject" required 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <label for="subject" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">الموضوع *</label>
+                            <select id="subject" name="subject" required
+                                    class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">اختر الموضوع</option>
                                 <option value="general">استفسار عام</option>
                                 <option value="business">خدمات الأعمال</option>
@@ -183,17 +183,17 @@
                                 <option value="other">أخرى</option>
                             </select>
                         </div>
-                        
+
                         <div>
-                            <label for="message" class="block text-sm font-medium text-gray-700 mb-2">الرسالة *</label>
-                            <textarea id="message" name="message" rows="6" required 
-                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            <label for="message" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">الرسالة *</label>
+                            <textarea id="message" name="message" rows="5" required
+                                      class="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                       placeholder="اكتب رسالتك هنا..."></textarea>
                         </div>
-                        
-                        <button type="submit" 
-                                class="w-full py-4 px-6 bg-blue-600 text-white rounded-2xl font-semibold hover:bg-blue-700 transition-all transform hover:scale-105">
-                            <i class="ri-send-plane-line ml-2"></i>
+
+                        <button type="submit"
+                                class="min-h-[44px] w-full py-3 md:py-4 px-4 md:px-6 bg-blue-600 text-white text-sm md:text-base rounded-xl md:rounded-2xl font-semibold hover:bg-blue-700 transition-all transform hover:scale-105">
+                            <i class="ri-send-plane-line ml-1.5 md:ml-2"></i>
                             إرسال الرسالة
                         </button>
                     </form>

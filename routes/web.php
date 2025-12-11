@@ -848,64 +848,50 @@ Route::get('/api/sessions/{session}/attendance-status', function (Request $reque
     return response()->json($status);
 })->name('api.sessions.attendance-status');
 
-// TEMPORARY: Test API endpoints accessibility
-Route::get('/debug-api-test', function () {
-    return response()->json([
-        'success' => true,
-        'message' => 'API endpoints are working!',
-        'time' => now(),
-        'routes_exist' => [
-            'status' => \Illuminate\Support\Facades\Route::has('api.sessions.status'),
-            'attendance' => \Illuminate\Support\Facades\Route::has('api.sessions.attendance-status'),
-        ],
-    ]);
-});
+// Debug routes - ONLY available in local/testing environments
+if (app()->environment('local', 'testing')) {
+    Route::get('/debug-api-test', function () {
+        return response()->json([
+            'success' => true,
+            'message' => 'API endpoints are working!',
+            'time' => now(),
+            'routes_exist' => [
+                'status' => \Illuminate\Support\Facades\Route::has('api.sessions.status'),
+                'attendance' => \Illuminate\Support\Facades\Route::has('api.sessions.attendance-status'),
+            ],
+        ]);
+    });
 
-// Test route WITHOUT authentication from subdomain
-Route::get('/api/test-no-auth', function (Request $request) {
-    return response()->json([
-        'success' => true,
-        'message' => 'No auth test working!',
-        'subdomain' => $request->route('subdomain') ?? 'none',
-        'host' => $request->getHost(),
-        'url' => $request->url(),
-        'headers' => [
-            'origin' => $request->header('Origin'),
-            'referer' => $request->header('Referer'),
-            'user-agent' => $request->header('User-Agent'),
-        ],
-    ]);
-});
+    Route::get('/api/test-no-auth', function (Request $request) {
+        return response()->json([
+            'success' => true,
+            'message' => 'No auth test working!',
+            'subdomain' => $request->route('subdomain') ?? 'none',
+            'host' => $request->getHost(),
+            'url' => $request->url(),
+        ]);
+    });
 
-// Test route WITH authentication from subdomain
-Route::middleware(['auth'])->get('/api/test-with-auth', function (Request $request) {
-    return response()->json([
-        'success' => true,
-        'message' => 'Auth test working!',
-        'user_id' => auth()->id(),
-        'user_type' => auth()->user()->user_type ?? null,
-        'authenticated' => auth()->check(),
-        'subdomain' => $request->route('subdomain') ?? 'none',
-        'host' => $request->getHost(),
-        'session_id' => session()->getId(),
-    ]);
-});
+    Route::middleware(['auth'])->get('/api/test-with-auth', function (Request $request) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Auth test working!',
+            'user_id' => auth()->id(),
+            'authenticated' => auth()->check(),
+        ]);
+    });
 
-// DEBUG: Catch-all route to see what requests are coming in
-Route::get('/api/debug-requests/{path?}', function (Request $request, $path = null) {
-    return response()->json([
-        'message' => 'Debug: Request received',
-        'path' => $path,
-        'full_url' => $request->fullUrl(),
-        'method' => $request->method(),
-        'headers' => $request->headers->all(),
-        'route_params' => $request->route()->parameters ?? [],
-        'query_params' => $request->query(),
-        'authenticated' => auth()->check(),
-        'user_id' => auth()->id(),
-        'timestamp' => now(),
-    ]);
-})->where('path', '.*');
+    Route::get('/api/debug-requests/{path?}', function (Request $request, $path = null) {
+        return response()->json([
+            'message' => 'Debug: Request received',
+            'path' => $path,
+            'full_url' => $request->fullUrl(),
+            'method' => $request->method(),
+            'authenticated' => auth()->check(),
+            'timestamp' => now(),
+        ]);
+    })->where('path', '.*');
+}
 
 // Test routes for academy styling verification
 Route::get('/test-academy', function () {
@@ -1198,31 +1184,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Student Dashboard Routes
+    | Student Certificate Routes
     |--------------------------------------------------------------------------
     */
 
     Route::middleware(['auth'])->group(function () {
-        // Main Dashboard
-        Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
-        // Note: student.courses functionality is now handled by courses.index route (unified for both public and students)
-        // Route::get('/my-courses', function () {
-        //     return redirect()->route('courses.index', ['subdomain' => request()->route('subdomain')]);
-        // })->name('student.courses');
-        Route::get('/enrollments/{enrollment}/progress', [StudentDashboardController::class, 'courseProgress'])->name('student.course-progress');
-
         // Certificates
         Route::get('/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('student.certificates');
         Route::get('/certificates/{certificate}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('student.certificate.download');
         Route::get('/certificates/{certificate}/view', [\App\Http\Controllers\CertificateController::class, 'view'])->name('student.certificate.view');
         Route::post('/certificates/request-interactive', [\App\Http\Controllers\CertificateController::class, 'requestForInteractiveCourse'])->name('student.certificate.request-interactive');
-
-        // Learning Resources
-        Route::get('/bookmarks', [StudentDashboardController::class, 'bookmarks'])->name('student.bookmarks');
-        Route::get('/notes', [StudentDashboardController::class, 'notes'])->name('student.notes');
-
-        // Learning Analytics
-        Route::get('/analytics', [StudentDashboardController::class, 'analytics'])->name('student.analytics');
     });
 
     /*
@@ -1757,7 +1728,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 */
 
 // Webhooks (no authentication required - validated via signatures)
-Route::prefix('webhooks')->group(function () {
+// Rate limited to prevent abuse, CSRF excluded since webhooks use signature validation
+Route::prefix('webhooks')->middleware(['throttle:60,1'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
     // LiveKit webhooks
     Route::post('livekit', [\App\Http\Controllers\LiveKitWebhookController::class, 'handleWebhook'])->name('webhooks.livekit');
     Route::get('livekit/health', [\App\Http\Controllers\LiveKitWebhookController::class, 'health'])->name('webhooks.livekit.health');
@@ -1804,8 +1776,8 @@ Route::middleware(['auth'])->prefix('api/recordings')->group(function () {
     Route::get('{recordingId}/stream', [\App\Http\Controllers\InteractiveCourseRecordingController::class, 'streamRecording'])->name('recordings.stream');
 });
 
-// Custom file upload route for Filament components
-Route::post('/custom-file-upload', [App\Http\Controllers\CustomFileUploadController::class, 'upload'])->name('custom.file.upload');
+// Custom file upload route for Filament components (requires authentication)
+Route::middleware(['auth'])->post('/custom-file-upload', [App\Http\Controllers\CustomFileUploadController::class, 'upload'])->name('custom.file.upload');
 
 // Clean routes - no more test routes needed
 

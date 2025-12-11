@@ -4,22 +4,22 @@
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-8">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">الصفحة الرئيسية</a></li>
+    <nav class="mb-4 md:mb-8 overflow-x-auto">
+        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
+            <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">الصفحة الرئيسية</a></li>
             <li>/</li>
-            <li><a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary">{{ $session->course->title }}</a></li>
+            <li><a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary min-h-[44px] inline-flex items-center truncate max-w-[120px] md:max-w-none">{{ $session->course->title }}</a></li>
             <li>/</li>
             <li class="text-gray-900">جلسة رقم {{ $session->session_number }}</li>
         </ol>
     </nav>
 
-    <div class="space-y-6">
+    <div class="space-y-4 md:space-y-6">
         <!-- Session Header -->
         <x-sessions.session-header :session="$session" view-type="teacher" />
 
         <!-- Enhanced LiveKit Meeting Interface -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <x-meetings.livekit-interface
                 :session="$session"
                 user-type="teacher"
@@ -27,39 +27,47 @@
         </div>
 
         <!-- Session Content Management -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
                 <i class="ri-file-text-line text-primary ml-2"></i>
                 محتوى الجلسة
             </h3>
 
-            <form id="sessionContentForm" class="space-y-4">
+            <form id="sessionContentForm" class="space-y-3 md:space-y-4">
                 @csrf
                 <div>
-                    <label for="lesson_content" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="lesson_content" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
                         محتوى الدرس
                     </label>
                     <textarea
                         id="lesson_content"
                         name="lesson_content"
                         rows="4"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm md:text-base focus:ring-primary focus:border-primary"
                         placeholder="ما هي المواضيع التي تم تغطيتها في هذه الجلسة؟">{{ $session->lesson_content ?? '' }}</textarea>
                 </div>
 
-                <p class="text-sm text-gray-500">
+                <p class="text-xs md:text-sm text-gray-500">
                     <i class="ri-information-line ml-1"></i>
                     لإضافة ملاحظات على أداء الطلاب، استخدم تقارير الجلسة المنفصلة
                 </p>
 
                 <button
                     type="submit"
-                    class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
+                    class="min-h-[44px] bg-primary text-white px-4 md:px-6 py-2.5 rounded-lg hover:bg-secondary transition-colors text-sm md:text-base">
                     <i class="ri-save-line ml-2"></i>
                     حفظ محتوى الدرس
                 </button>
             </form>
         </div>
+
+            <!-- Session Recordings Section -->
+            @if($session instanceof \App\Contracts\RecordingCapable)
+                <x-recordings.session-recordings
+                    :session="$session"
+                    view-type="teacher"
+                />
+            @endif
 
             <!-- Homework Management Component -->
             <x-sessions.academic-homework-management
@@ -75,13 +83,13 @@
             @endphp
 
             @if($studentCount > 0)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
                     <i class="ri-group-line text-primary ml-2"></i>
                     قائمة الطلاب ({{ $studentCount }} طالب)
                 </h3>
 
-                <div class="grid grid-cols-1 gap-4">
+                <div class="grid grid-cols-1 gap-3 md:gap-4">
                     @foreach($enrolledStudents as $studentData)
                         @php
                             // Handle enrollment structure - enrolledStudents returns InteractiveCourseEnrollment
@@ -250,10 +258,9 @@ function editStudentReport(studentId, reportId) {
 
 // Message Student Function
 function messageStudent(studentId) {
-    // Open chat with student - this would integrate with your chat system
-    console.log('Opening chat with student:', studentId);
-    alert('ميزة المراسلة قيد التطوير');
-    // TODO: Integrate with WireChat or your chat system
+    // Navigate to WireChat - opens chats page where teacher can search for and message the student
+    // The user's name will be searchable in the chat interface
+    window.open('/chats', '_blank');
 }
 </script>
 </x-slot>

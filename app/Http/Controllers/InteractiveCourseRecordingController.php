@@ -269,6 +269,19 @@ class InteractiveCourseRecordingController extends Controller
             abort(404, 'ملف التسجيل غير متوفر بعد');
         }
 
+        // Handle remote recordings (stored on LiveKit server)
+        if ($recording->isRemoteFile()) {
+            $remoteUrl = $recording->getRemoteUrl();
+
+            if (!$remoteUrl) {
+                abort(404, 'رابط التسجيل غير متوفر');
+            }
+
+            // Redirect to remote URL with download disposition
+            return redirect()->away($remoteUrl . '?download=1');
+        }
+
+        // Handle local recordings (legacy/fallback)
         if (!Storage::exists($recording->file_path)) {
             abort(404, 'ملف التسجيل غير موجود');
         }
@@ -307,6 +320,48 @@ class InteractiveCourseRecordingController extends Controller
             abort(404, 'ملف التسجيل غير متوفر بعد');
         }
 
+        // Handle remote recordings (stored on LiveKit server)
+        if ($recording->isRemoteFile()) {
+            $remoteUrl = $recording->getRemoteUrl();
+
+            if (!$remoteUrl) {
+                abort(404, 'رابط التسجيل غير متوفر');
+            }
+
+            $accessMode = config('livekit.recordings.access_mode', 'redirect');
+
+            if ($accessMode === 'redirect') {
+                // Redirect directly to the remote file (faster, uses LiveKit server bandwidth)
+                return redirect()->away($remoteUrl);
+            }
+
+            // Proxy mode: fetch from remote and stream through Laravel
+            // This provides more control but uses Laravel server bandwidth
+            try {
+                $response = \Http::withOptions(['stream' => true])->get($remoteUrl);
+
+                if (!$response->successful()) {
+                    abort(404, 'فشل في تحميل ملف التسجيل من الخادم');
+                }
+
+                return response()->stream(function () use ($response) {
+                    echo $response->body();
+                }, 200, [
+                    'Content-Type' => 'video/mp4',
+                    'Content-Disposition' => 'inline; filename="' . ($recording->file_name ?? 'recording.mp4') . '"',
+                    'Accept-Ranges' => 'bytes',
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to proxy remote recording', [
+                    'recording_id' => $recording->id,
+                    'remote_url' => $remoteUrl,
+                    'error' => $e->getMessage(),
+                ]);
+                abort(500, 'فشل في تحميل ملف التسجيل');
+            }
+        }
+
+        // Handle local recordings (legacy/fallback)
         if (!Storage::exists($recording->file_path)) {
             abort(404, 'ملف التسجيل غير موجود');
         }

@@ -21,52 +21,52 @@
     });
 @endphp
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+<div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200">
     <!-- Header -->
-    <div class="flex items-center justify-between p-6 border-b border-gray-200">
-        <h3 class="text-xl font-bold text-gray-900">{{ $title }}</h3>
-        <div class="flex items-center gap-2 text-sm text-gray-500">
-            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 md:p-6 border-b border-gray-200">
+        <h3 class="text-base md:text-xl font-bold text-gray-900">{{ $title }}</h3>
+        <div class="flex items-center gap-2 text-xs md:text-sm text-gray-500">
+            <span class="bg-blue-100 text-blue-700 px-2.5 md:px-3 py-1 rounded-full font-medium">
                 المجموع: {{ $totalSessions }}
             </span>
         </div>
     </div>
 
     <!-- Tabs -->
-    <div class="border-b border-gray-200">
-        <nav class="flex gap-8 px-6" id="sessionTabs">
-            <button class="session-tab active py-4 px-1 border-b-2 border-blue-500 font-medium text-blue-600 text-sm" data-tab="all">
+    <div class="border-b border-gray-200 overflow-x-auto">
+        <nav class="flex gap-4 md:gap-8 px-4 md:px-6 min-w-max" id="sessionTabs">
+            <button class="session-tab active min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-blue-500 font-medium text-blue-600 text-xs md:text-sm whitespace-nowrap" data-tab="all">
                 الكل ({{ $totalSessions }})
             </button>
-            <button class="session-tab py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-sm" data-tab="coming">
+            <button class="session-tab min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-xs md:text-sm whitespace-nowrap" data-tab="coming">
                 القادمة ({{ $comingSessions->count() }})
             </button>
-            <button class="session-tab py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-sm" data-tab="passed">
+            <button class="session-tab min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-xs md:text-sm whitespace-nowrap" data-tab="passed">
                 المنتهية ({{ $passedSessions->count() }})
             </button>
-            <button class="session-tab py-4 px-1 border-b-2 border-transparent font-medium text-purple-500 hover:text-purple-700 text-sm" data-tab="testing">
+            <button class="session-tab min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-purple-500 hover:text-purple-700 text-xs md:text-sm whitespace-nowrap" data-tab="testing">
                 اختبار الحالات (8)
             </button>
         </nav>
     </div>
     
     <!-- Sessions Content -->
-    <div class="p-6">
+    <div class="p-4 md:p-6">
         <!-- All Sessions Tab -->
         <div id="all-sessions" class="session-tab-content block">
             @if($sessions->count() > 0)
-                <div class="space-y-4">
+                <div class="space-y-3 md:space-y-4">
                     @foreach($sessions as $session)
                         <x-sessions.session-item :session="$session" :circle="$circle" :view-type="$viewType" />
                     @endforeach
                 </div>
             @else
-                <div class="text-center py-12">
-                    <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                        <i class="ri-calendar-line text-3xl text-gray-500"></i>
+                <div class="text-center py-8 md:py-12">
+                    <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
+                        <i class="ri-calendar-line text-2xl md:text-3xl text-gray-500"></i>
                     </div>
-                    <p class="text-lg font-bold text-gray-900 mb-2">لا توجد جلسات مسجلة بعد</p>
-                    <p class="text-sm text-gray-600 mb-6">ستظهر جلساتك هنا عند إنشائها</p>
+                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">لا توجد جلسات مسجلة بعد</p>
+                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">ستظهر جلساتك هنا عند إنشائها</p>
                     <div class="flex items-center justify-center gap-2">
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -79,18 +79,18 @@
         <!-- Coming Sessions Tab -->
         <div id="coming-sessions" class="session-tab-content hidden">
             @if($comingSessions->count() > 0)
-                <div class="space-y-4">
+                <div class="space-y-3 md:space-y-4">
                     @foreach($comingSessions as $session)
                         <x-sessions.session-item :session="$session" :circle="$circle" :view-type="$viewType" />
                     @endforeach
                 </div>
             @else
-                <div class="text-center py-12">
-                    <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                        <i class="ri-calendar-check-line text-3xl text-blue-600"></i>
+                <div class="text-center py-8 md:py-12">
+                    <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
+                        <i class="ri-calendar-check-line text-2xl md:text-3xl text-blue-600"></i>
                     </div>
-                    <p class="text-lg font-bold text-gray-900 mb-2">لا توجد جلسات قادمة</p>
-                    <p class="text-sm text-gray-600 mb-6">ستظهر الجلسات القادمة هنا</p>
+                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">لا توجد جلسات قادمة</p>
+                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">ستظهر الجلسات القادمة هنا</p>
                     <div class="flex items-center justify-center gap-2">
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -103,18 +103,18 @@
         <!-- Passed Sessions Tab -->
         <div id="passed-sessions" class="session-tab-content hidden">
             @if($passedSessions->count() > 0)
-                <div class="space-y-4">
+                <div class="space-y-3 md:space-y-4">
                     @foreach($passedSessions as $session)
                         <x-sessions.session-item :session="$session" :circle="$circle" :view-type="$viewType" />
                     @endforeach
                 </div>
             @else
-                <div class="text-center py-12">
-                    <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                        <i class="ri-history-line text-3xl text-gray-500"></i>
+                <div class="text-center py-8 md:py-12">
+                    <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
+                        <i class="ri-history-line text-2xl md:text-3xl text-gray-500"></i>
                     </div>
-                    <p class="text-lg font-bold text-gray-900 mb-2">لا توجد جلسات منتهية</p>
-                    <p class="text-sm text-gray-600 mb-6">ستظهر الجلسات المكتملة والملغاة هنا</p>
+                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">لا توجد جلسات منتهية</p>
+                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">ستظهر الجلسات المكتملة والملغاة هنا</p>
                     <div class="flex items-center justify-center gap-2">
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -126,14 +126,14 @@
 
         <!-- Testing Tab - Shows all possible session statuses -->
         <div id="testing-sessions" class="session-tab-content hidden">
-            <div class="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                <h4 class="text-sm font-bold text-purple-800 mb-1">
+            <div class="mb-3 md:mb-4 p-3 md:p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <h4 class="text-xs md:text-sm font-bold text-purple-800 mb-0.5 md:mb-1">
                     <i class="ri-test-tube-line"></i> قسم اختبار جميع حالات الجلسات
                 </h4>
-                <p class="text-xs text-purple-600">يعرض هذا القسم مثالاً لكل حالة ممكنة من حالات الجلسات</p>
+                <p class="text-[10px] md:text-xs text-purple-600">يعرض هذا القسم مثالاً لكل حالة ممكنة من حالات الجلسات</p>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-3 md:space-y-4">
                 @php
                     // Create mock sessions for testing all statuses
                     $testingSessions = collect([

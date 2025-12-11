@@ -204,85 +204,85 @@
     <x-dynamic-component :component="$sidebarComponent" />
 
     <!-- Main Content -->
-    <main id="main-content" class="pt-20 transition-all duration-300" style="margin-right: 320px;">
-        <div class="container mx-auto px-4 py-8">
+    <main id="main-content" class="pt-20 transition-all duration-300 mr-0 md:mr-80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
 
             <!-- Page Header -->
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ $isParent ? 'تقويم جلسات الأبناء' : 'التقويم والجلسات' }}</h1>
-                <p class="text-gray-600">{{ $isParent ? 'عرض جميع جلسات الأبناء وحلقاتهم ودوراتهم التعليمية' : 'عرض جميع جلساتك وحلقاتك ودوراتك التعليمية' }}</p>
+            <div class="mb-6 md:mb-8">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">{{ $isParent ? 'تقويم جلسات الأبناء' : 'التقويم والجلسات' }}</h1>
+                <p class="text-sm md:text-base text-gray-600">{{ $isParent ? 'عرض جميع جلسات الأبناء وحلقاتهم ودوراتهم التعليمية' : 'عرض جميع جلساتك وحلقاتك ودوراتك التعليمية' }}</p>
             </div>
 
             <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
                 <div class="stat-card">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">إجمالي الجلسات</p>
-                            <p id="stat-total" class="text-2xl font-bold text-purple-600">0</p>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs md:text-sm text-gray-600 mb-1">إجمالي الجلسات</p>
+                            <p id="stat-total" class="text-xl md:text-2xl font-bold text-purple-600">0</p>
                         </div>
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <i class="ri-calendar-line text-2xl text-purple-600"></i>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="ri-calendar-line text-xl md:text-2xl text-purple-600"></i>
                         </div>
                     </div>
                 </div>
 
                 <div class="stat-card">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">جلسات مجدولة</p>
-                            <p id="stat-scheduled" class="text-2xl font-bold text-blue-600">0</p>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs md:text-sm text-gray-600 mb-1">جلسات مجدولة</p>
+                            <p id="stat-scheduled" class="text-xl md:text-2xl font-bold text-blue-600">0</p>
                         </div>
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="ri-calendar-check-line text-2xl text-blue-600"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">جلسات مكتملة</p>
-                            <p id="stat-completed" class="text-2xl font-bold text-green-600">0</p>
-                        </div>
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="ri-checkbox-circle-line text-2xl text-green-600"></i>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="ri-calendar-check-line text-xl md:text-2xl text-blue-600"></i>
                         </div>
                     </div>
                 </div>
 
                 <div class="stat-card">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">جلسات ملغاة</p>
-                            <p id="stat-cancelled" class="text-2xl font-bold text-red-600">0</p>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs md:text-sm text-gray-600 mb-1">جلسات مكتملة</p>
+                            <p id="stat-completed" class="text-xl md:text-2xl font-bold text-green-600">0</p>
                         </div>
-                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                            <i class="ri-close-circle-line text-2xl text-red-600"></i>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="ri-checkbox-circle-line text-xl md:text-2xl text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="flex items-center justify-between">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs md:text-sm text-gray-600 mb-1">جلسات ملغاة</p>
+                            <p id="stat-cancelled" class="text-xl md:text-2xl font-bold text-red-600">0</p>
+                        </div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="ri-close-circle-line text-xl md:text-2xl text-red-600"></i>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Calendar Navigation -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-3">
-                        <button onclick="changeMonth(-1)" class="nav-button">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
+                    <div class="flex items-center gap-2 md:gap-3 order-2 md:order-1">
+                        <button onclick="changeMonth(-1)" class="nav-button min-h-[44px]">
                             <i class="ri-arrow-right-s-line text-xl"></i>
                             <span class="hidden sm:inline">الشهر السابق</span>
                         </button>
-                        <button onclick="goToToday()" class="nav-button bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
+                        <button onclick="goToToday()" class="nav-button min-h-[44px] bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
                             <i class="ri-calendar-check-line"></i>
                             <span>اليوم</span>
                         </button>
-                        <button onclick="changeMonth(1)" class="nav-button">
+                        <button onclick="changeMonth(1)" class="nav-button min-h-[44px]">
                             <span class="hidden sm:inline">الشهر التالي</span>
                             <i class="ri-arrow-left-s-line text-xl"></i>
                         </button>
                     </div>
-                    <div class="text-center">
-                        <h2 id="current-month" class="text-2xl font-bold text-gray-900"></h2>
+                    <div class="text-center order-1 md:order-2">
+                        <h2 id="current-month" class="text-xl md:text-2xl font-bold text-gray-900"></h2>
                     </div>
                     <div class="flex items-center gap-2">
                         <!-- Legend -->

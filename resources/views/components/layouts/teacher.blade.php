@@ -76,7 +76,7 @@
   @include('components.sidebar.teacher-sidebar')
 
   <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
+  <main class="mr-0 md:mr-80 pt-20 min-h-screen transition-all duration-300" id="main-content">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       @isset($slot)
         {{ $slot }}

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
 use App\Traits\ScopedToAcademy;
 use App\Models\Traits\HasReviews;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class QuranTeacherProfile extends Model
 {
-    use HasFactory, ScopedToAcademy, HasReviews;
+    use HasFactory, ScopedToAcademy, HasReviews, SoftDeletes;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship

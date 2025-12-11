@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\ScopedToAcademy;
 use App\Models\Traits\HasReviews;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,7 @@ use App\Models\AcademicSubject;
 
 class AcademicTeacherProfile extends Model
 {
-    use HasFactory, ScopedToAcademy, HasReviews;
+    use HasFactory, ScopedToAcademy, HasReviews, SoftDeletes;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship

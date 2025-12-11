@@ -49,9 +49,15 @@ class EnhancedChatSystem {
         window.Pusher = Pusher;
 
         // Configure Echo with Reverb
+        // SECURITY: REVERB_APP_KEY must be set via environment, no fallback
+        if (!window.REVERB_APP_KEY) {
+            console.error('REVERB_APP_KEY is not configured. Real-time features will not work.');
+            return;
+        }
+
         window.Echo = new Echo({
             broadcaster: 'reverb',
-            key: window.REVERB_APP_KEY || 'vil71wafgpp6do1miwn1',
+            key: window.REVERB_APP_KEY,
             wsHost: window.REVERB_HOST || window.location.hostname,
             wsPort: window.REVERB_PORT || 8085,
             wssPort: window.REVERB_PORT || 8085,
@@ -95,7 +101,6 @@ class EnhancedChatSystem {
      * Handle successful connection
      */
     onConnected() {
-        console.log('✅ WebSocket connected');
         this.reconnectAttempts = 0;
         this.updateConnectionStatus('online');
 
@@ -110,7 +115,6 @@ class EnhancedChatSystem {
      * Handle disconnection
      */
     onDisconnected() {
-        console.log('❌ WebSocket disconnected');
         this.updateConnectionStatus('offline');
 
         // Attempt reconnection
@@ -132,8 +136,6 @@ class EnhancedChatSystem {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-
-            console.log(`Reconnecting in ${delay}ms... (Attempt ${this.reconnectAttempts})`);
 
             setTimeout(() => {
                 window.Echo.connector.pusher.connect();
@@ -585,16 +587,11 @@ class EnhancedChatSystem {
      */
     requestNotificationPermission() {
         if (!('Notification' in window)) {
-            console.log('This browser does not support notifications');
             return;
         }
 
         if (Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    console.log('Notification permission granted');
-                }
-            });
+            Notification.requestPermission();
         }
     }
 
@@ -604,7 +601,7 @@ class EnhancedChatSystem {
     playNotificationSound() {
         const audio = new Audio('/sounds/chat/new-message-sound.mp3');
         audio.volume = 0.5;
-        audio.play().catch(e => console.log('Could not play sound:', e));
+        audio.play().catch(() => { /* Audio playback failed silently */ });
     }
 
     /**
@@ -613,12 +610,7 @@ class EnhancedChatSystem {
     initializeServiceWorker() {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw-chat.js')
-                .then(registration => {
-                    console.log('Service Worker registered:', registration);
-                })
-                .catch(error => {
-                    console.error('Service Worker registration failed:', error);
-                });
+                .catch(() => { /* Service Worker registration failed silently */ });
         }
     }
 
@@ -639,13 +631,11 @@ class EnhancedChatSystem {
 
         if (queue.length === 0) return;
 
-        console.log(`Syncing ${queue.length} offline messages...`);
-
         for (const message of queue) {
             try {
                 await this.sendMessage(message.body, message.attachment, message.reply_to);
-            } catch (error) {
-                console.error('Error syncing offline message:', error);
+            } catch {
+                // Silently handle sync errors - messages will be retried
             }
         }
 
@@ -1137,7 +1127,6 @@ class EnhancedChatSystem {
     }
 
     handleNotification(notification) {
-        console.log('Notification received:', notification);
         // Handle different notification types
         switch (notification.type) {
             case 'App\\Notifications\\NewMessage':
@@ -1147,7 +1136,8 @@ class EnhancedChatSystem {
                 this.handleMentionNotification(notification);
                 break;
             default:
-                console.log('Unknown notification type:', notification.type);
+                // Unknown notification type - ignore
+                break;
         }
     }
 

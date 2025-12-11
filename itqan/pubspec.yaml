@@ -1,0 +1,61 @@
+name: itqan
+description: "Itqan Platform - Quran & Academic Learning Mobile App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Localization
+  intl: ^0.20.2
+
+  # UI Components
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.10+1
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  flutter_screenutil: ^5.9.3
+
+  # Utilities
+  get_it: ^8.0.2
+
+  # Icons
+  cupertino_icons: ^1.0.8
+  remixicon: ^1.2.0
+
+  # Calendar
+  table_calendar: ^3.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+  # fonts:
+  #   - family: Tajawal
+  #     fonts:
+  #       - asset: assets/fonts/Tajawal-Regular.ttf
+  #       - asset: assets/fonts/Tajawal-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Tajawal-Bold.ttf
+  #         weight: 700

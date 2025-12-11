@@ -15,7 +15,7 @@
                 $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
                 $dashboardRoute = $isParent
                     ? route('parent.profile', ['subdomain' => $subdomain])
-                    : route('student.dashboard', ['subdomain' => $subdomain]);
+                    : route('student.profile', ['subdomain' => $subdomain]);
             @endphp
             <li><a href="{{ $dashboardRoute }}" class="hover:text-primary">الرئيسية</a></li>
             <li>/</li>

@@ -203,3 +203,14 @@ Route::get('/server-time', function () {
         'timezone' => \App\Services\AcademyContextService::getTimezone(),
     ]);
 })->name('api.server-time');
+
+/*
+|--------------------------------------------------------------------------
+| Mobile API V1 Routes
+|--------------------------------------------------------------------------
+|
+| Include the versioned API routes for mobile app integration.
+| All routes are prefixed with /api/v1
+|
+*/
+require __DIR__ . '/api/v1.php';

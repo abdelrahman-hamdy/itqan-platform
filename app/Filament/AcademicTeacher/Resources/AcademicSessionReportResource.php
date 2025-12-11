@@ -186,6 +186,7 @@ class AcademicSessionReportResource extends Resource
         return [
             'index' => Pages\ListAcademicSessionReports::route('/'),
             'create' => Pages\CreateAcademicSessionReport::route('/create'),
+            'view' => Pages\ViewAcademicSessionReport::route('/{record}'),
             'edit' => Pages\EditAcademicSessionReport::route('/{record}/edit'),
         ];
     }

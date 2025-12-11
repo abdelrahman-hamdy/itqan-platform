@@ -1,20 +1,20 @@
-<x-layouts.student 
+<x-layouts.student
     :title="($individualCircle->subscription->package->name ?? 'حلقة فردية') . ' - ' . config('app.name', 'منصة إتقان')"
     :description="'تفاصيل الحلقة الفردية للقرآن الكريم'">
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-8">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('quran-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">معلمو القرآن</a></li>
+    <nav class="mb-4 md:mb-8 overflow-x-auto">
+        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
+            <li><a href="{{ route('quran-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">معلمو القرآن</a></li>
             <li>/</li>
-            <li class="text-gray-900">{{ $individualCircle->subscription->package->name ?? 'حلقة فردية' }}</li>
+            <li class="text-gray-900 font-medium truncate max-w-[200px]">{{ $individualCircle->subscription->package->name ?? 'حلقة فردية' }}</li>
         </ol>
     </nav>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
         <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-4 md:space-y-6">
             <!-- Circle Header -->
             <x-circle.circle-header :circle="$individualCircle" type="individual" view-type="student" context="quran" />
 
@@ -82,7 +82,7 @@
         </div>
 
         <!-- Sidebar -->
-        <div class="lg:col-span-1 space-y-6">
+        <div class="lg:col-span-1 space-y-4 md:space-y-6">
             <!-- Circle Info Sidebar -->
             <x-circle.info-sidebar :circle="$individualCircle" view-type="student" context="individual" />
 

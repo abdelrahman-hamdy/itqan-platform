@@ -55,7 +55,7 @@
     @endif
 
     <!-- Main Content -->
-    <main class="pt-20 min-h-screen transition-all duration-300" id="main-content" style="margin-right: 320px;">
+    <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Flash Messages -->
             @if (session('success'))
@@ -74,11 +74,6 @@
             {{ $slot }}
         </div>
     </main>
-
-    <!-- Mobile Sidebar Toggle -->
-    <button id="sidebar-toggle-mobile" class="fixed bottom-6 right-6 md:hidden bg-{{ $isParent ? 'purple' : 'primary' }}-600 text-white p-3 rounded-full shadow-lg z-50">
-        <i class="ri-menu-line text-xl"></i>
-    </button>
 
     @stack('scripts')
 </body>

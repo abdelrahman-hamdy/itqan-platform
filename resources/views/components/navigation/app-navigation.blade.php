@@ -120,9 +120,13 @@
   }
 @endphp
 
-<nav id="navigation" class="bg-white shadow-lg fixed top-0 left-0 right-0 z-40" role="navigation" aria-label="التنقل الرئيسي">
+<nav id="navigation"
+     x-data="{ mobileMenuOpen: false }"
+     class="bg-white shadow-lg fixed top-0 left-0 right-0 z-40"
+     role="navigation"
+     aria-label="التنقل الرئيسي">
   <div class="w-full px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-20">
+    <div class="flex justify-between items-center h-16 md:h-20">
 
       <!-- Logo and Navigation -->
       <div class="flex items-center space-x-8 space-x-reverse">
@@ -368,8 +372,8 @@
           </span>
         </a>
 
-        <!-- User Dropdown -->
-        <div class="relative" x-data="{ open: false }">
+        <!-- User Dropdown (hidden on mobile - sidebar has user widget) -->
+        <div class="relative hidden md:block" x-data="{ open: false }">
           <button @click="open = !open"
                   class="flex items-center px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-{{ $brandColor }}-500"
                   aria-expanded="false"
@@ -429,21 +433,66 @@
           </div>
         </div>
 
+        <!-- Mobile Sidebar Toggle Button -->
+        <button @click="$dispatch('toggle-mobile-sidebar')"
+                class="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="فتح القائمة الجانبية">
+          <i class="ri-layout-right-2-line text-xl text-gray-700"></i>
+        </button>
+
         <!-- Mobile Menu Button -->
-        <button class="md:hidden focus:ring-custom"
+        <button @click="mobileMenuOpen = !mobileMenuOpen"
+                class="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label="فتح قائمة التنقل"
-                aria-expanded="false"
-                id="mobile-menu-button">
-          <div class="w-6 h-6 flex items-center justify-center">
-            <i class="ri-menu-line text-xl"></i>
-          </div>
+                :aria-expanded="mobileMenuOpen">
+          <i x-show="!mobileMenuOpen" class="ri-menu-line text-xl text-gray-700"></i>
+          <i x-show="mobileMenuOpen" x-cloak class="ri-close-line text-xl text-gray-700"></i>
         </button>
       </div>
     </div>
+  </div>
 
-    <!-- Mobile Navigation Menu -->
-    <div class="md:hidden hidden" id="mobile-menu">
-      <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+  <!-- Mobile Navigation Drawer -->
+  <div x-show="mobileMenuOpen"
+       x-cloak
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       @click="mobileMenuOpen = false"
+       class="md:hidden fixed inset-0 z-30 bg-black/50"></div>
+
+  <div x-show="mobileMenuOpen"
+       x-cloak
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="translate-x-full"
+       x-transition:enter-end="translate-x-0"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="translate-x-0"
+       x-transition:leave-end="translate-x-full"
+       @click.stop
+       class="md:hidden fixed top-0 right-0 bottom-0 w-[300px] max-w-[85vw] bg-white shadow-xl z-50 overflow-y-auto">
+
+    <!-- Mobile Menu Header -->
+    <div class="flex items-center justify-between p-4 border-b bg-gray-50">
+      <div class="flex items-center gap-3">
+        <x-avatar :user="$user" size="sm" :userType="$userAvatarType" :gender="$userGender" />
+        <div>
+          <p class="text-sm font-bold text-gray-900">{{ $displayName }}</p>
+          <p class="text-xs text-gray-500">{{ $roleLabel }}</p>
+        </div>
+      </div>
+      <button @click="mobileMenuOpen = false"
+              class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600">
+        <i class="ri-close-line text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Links -->
+    <nav class="p-4">
+      <div class="space-y-1">
         @foreach($navItems as $item)
           @php
             $isActive = false;
@@ -466,6 +515,14 @@
             $isInteractiveCourseRoute = $item['route'] === 'interactive-courses.index';
             $isAcademicTeacherRoute = $item['route'] === 'academic-teachers.index';
 
+            // Determine icon for nav items
+            $navIcon = isset($item['icon']) ? $item['icon'] :
+                       ($isCourseRoute ? 'ri-play-circle-line' :
+                       ($isQuranCircleRoute ? 'ri-quill-pen-line' :
+                       ($isQuranTeacherRoute ? 'ri-user-star-line' :
+                       ($isInteractiveCourseRoute ? 'ri-live-line' :
+                       ($isAcademicTeacherRoute ? 'ri-user-settings-line' : 'ri-arrow-left-line')))));
+
             // Determine primary color for mobile
             $mobileActiveColorClass = $isCourseRoute ? 'text-cyan-600 bg-cyan-50' :
                                       ($isQuranCircleRoute ? 'text-green-600 bg-green-50' :
@@ -480,14 +537,65 @@
                                      ($isAcademicTeacherRoute ? 'hover:text-violet-600 hover:bg-violet-50' : 'hover:' . $brandColorClass . ' hover:bg-gray-50'))));
           @endphp
           <a href="{{ $itemRoute }}"
-             class="flex items-center px-3 py-2 font-medium {{ $isActive ? $mobileActiveColorClass : 'text-gray-700' }} {{ $mobileHoverColorClass }} rounded-md transition-all duration-200 focus:ring-2 focus:ring-{{ $brandColor }}-500">
-            @if(isset($item['icon']))
-              <i class="{{ $item['icon'] }} ml-2"></i>
-            @endif
-            {{ $item['label'] }}
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] font-medium {{ $isActive ? $mobileActiveColorClass : 'text-gray-700' }} {{ $mobileHoverColorClass }} rounded-lg transition-all duration-200">
+            <i class="{{ $navIcon }} text-xl"></i>
+            <span>{{ $item['label'] }}</span>
           </a>
         @endforeach
       </div>
+
+      <!-- Divider -->
+      <div class="my-4 border-t border-gray-200"></div>
+
+      <!-- Quick Actions -->
+      <div class="space-y-1">
+        @php
+          $profileRoute = Route::has($role . '.profile') ? route($role . '.profile', ['subdomain' => $subdomain]) : '#';
+        @endphp
+
+        @if($role === 'teacher')
+          @if($user && $user->isQuranTeacher())
+            <a href="/teacher-panel" target="_blank"
+               class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <i class="ri-apps-2-line text-xl"></i>
+              <span>لوحة التحكم</span>
+            </a>
+          @elseif($user && $user->isAcademicTeacher())
+            <a href="/academic-teacher-panel" target="_blank"
+               class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <i class="ri-apps-2-line text-xl"></i>
+              <span>لوحة التحكم</span>
+            </a>
+          @endif
+        @endif
+
+        <a href="{{ $profileRoute }}"
+           class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="ri-user-line text-xl"></i>
+          <span>الملف الشخصي</span>
+        </a>
+
+        <a href="/chats"
+           class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="ri-message-2-line text-xl"></i>
+          <span>الرسائل</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Mobile Menu Footer -->
+    <div class="absolute bottom-0 left-0 right-0 p-4 border-t bg-white">
+      @php
+        $logoutRoute = Route::has('logout') ? route('logout', ['subdomain' => $subdomain]) : '/logout';
+      @endphp
+      <form method="POST" action="{{ $logoutRoute }}">
+        @csrf
+        <button type="submit"
+                class="flex items-center justify-center gap-2 w-full px-4 py-3 min-h-[48px] bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors">
+          <i class="ri-logout-box-line text-xl"></i>
+          <span>تسجيل الخروج</span>
+        </button>
+      </form>
     </div>
   </div>
 </nav>
@@ -510,21 +618,10 @@ function handleNavSearch(event) {
     return false;
   }
 
-  // Let the form submit naturally
   return true;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Mobile menu toggle
-  const mobileMenuButton = document.getElementById('mobile-menu-button');
-  const mobileMenu = document.getElementById('mobile-menu');
-
-  mobileMenuButton?.addEventListener('click', function() {
-    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-    this.setAttribute('aria-expanded', !isExpanded);
-    mobileMenu.classList.toggle('hidden');
-  });
-
   // Navigation search - handle Enter key
   const navSearchInput = document.getElementById('nav-search-input');
   if (navSearchInput) {
@@ -538,7 +635,5 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-
-  // WireChat will handle unread counts internally
 });
 </script>

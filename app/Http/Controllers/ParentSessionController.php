@@ -73,7 +73,7 @@ class ParentSessionController extends Controller
         $childUserIds = $children->pluck('user_id')->toArray();
 
         if ($sessionType === 'quran') {
-            $session = QuranSession::with(['quranTeacher.user', 'student', 'individualCircle', 'circle', 'attendances'])
+            $session = QuranSession::with(['quranTeacher', 'student', 'individualCircle', 'circle', 'attendances'])
                 ->findOrFail($sessionId);
         } elseif ($sessionType === 'academic') {
             $session = AcademicSession::with(['academicTeacher.user', 'student', 'academicIndividualLesson', 'attendances'])

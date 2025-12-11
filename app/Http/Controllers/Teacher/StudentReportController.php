@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
-use App\Services\QuranAttendanceService;
 use App\Services\StudentReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,14 +17,9 @@ class StudentReportController extends Controller
 {
     protected StudentReportService $studentReportService;
 
-    protected QuranAttendanceService $attendanceService;
-
-    public function __construct(
-        StudentReportService $studentReportService,
-        QuranAttendanceService $attendanceService
-    ) {
+    public function __construct(StudentReportService $studentReportService)
+    {
         $this->studentReportService = $studentReportService;
-        $this->attendanceService = $attendanceService;
     }
 
     /**
@@ -172,7 +166,7 @@ class StudentReportController extends Controller
 
             // Update teacher evaluation
             if ($request->new_memorization_degree !== null || $request->reservation_degree !== null || $request->notes) {
-                $this->attendanceService->updateStudentEvaluation(
+                $this->studentReportService->updateTeacherEvaluation(
                     $report,
                     $request->new_memorization_degree ?? 0,
                     $request->reservation_degree ?? 0,
@@ -250,7 +244,7 @@ class StudentReportController extends Controller
                 ], 403);
             }
 
-            $reports = $this->attendanceService->generateSessionReports($session);
+            $reports = $this->studentReportService->generateSessionReports($session);
 
             return response()->json([
                 'success' => true,
@@ -288,7 +282,7 @@ class StudentReportController extends Controller
                 ], 404);
             }
 
-            $stats = $this->attendanceService->getSessionAttendanceStats($session);
+            $stats = $this->studentReportService->getSessionStats($session);
 
             return response()->json([
                 'success' => true,

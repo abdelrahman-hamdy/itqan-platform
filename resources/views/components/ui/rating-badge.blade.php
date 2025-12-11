@@ -20,9 +20,9 @@ $color = match(true) {
 };
 
 $sizeClasses = [
-    'sm' => 'text-xs px-2 py-1',
-    'md' => 'text-sm px-3 py-1',
-    'lg' => 'text-base px-4 py-2',
+    'sm' => 'text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1',
+    'md' => 'text-xs md:text-sm px-2 md:px-3 py-1',
+    'lg' => 'text-sm md:text-base px-3 md:px-4 py-1.5 md:py-2',
 ];
 @endphp
 

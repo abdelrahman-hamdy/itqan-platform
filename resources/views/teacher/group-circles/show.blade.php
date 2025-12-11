@@ -4,39 +4,39 @@
 
 <!-- Flash Messages -->
 @if(session('success'))
-    <div class="mb-6 bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-center gap-3">
-        <i class="ri-checkbox-circle-fill text-green-500 text-xl"></i>
-        <span>{{ session('success') }}</span>
+    <div class="mb-4 md:mb-6 bg-green-50 border border-green-200 text-green-800 rounded-lg md:rounded-xl p-3 md:p-4 flex items-start gap-2 md:gap-3">
+        <i class="ri-checkbox-circle-fill text-green-500 text-lg md:text-xl mt-0.5 flex-shrink-0"></i>
+        <span class="text-sm md:text-base">{{ session('success') }}</span>
     </div>
 @endif
 
 @if(session('error'))
-    <div class="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-center gap-3">
-        <i class="ri-error-warning-fill text-red-500 text-xl"></i>
-        <span>{{ session('error') }}</span>
+    <div class="mb-4 md:mb-6 bg-red-50 border border-red-200 text-red-800 rounded-lg md:rounded-xl p-3 md:p-4 flex items-start gap-2 md:gap-3">
+        <i class="ri-error-warning-fill text-red-500 text-lg md:text-xl mt-0.5 flex-shrink-0"></i>
+        <span class="text-sm md:text-base">{{ session('error') }}</span>
     </div>
 @endif
 
 @if(session('warning'))
-    <div class="mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl p-4 flex items-center gap-3">
-        <i class="ri-alert-fill text-yellow-500 text-xl"></i>
-        <span>{{ session('warning') }}</span>
+    <div class="mb-4 md:mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg md:rounded-xl p-3 md:p-4 flex items-start gap-2 md:gap-3">
+        <i class="ri-alert-fill text-yellow-500 text-lg md:text-xl mt-0.5 flex-shrink-0"></i>
+        <span class="text-sm md:text-base">{{ session('warning') }}</span>
     </div>
 @endif
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-8">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">{{ auth()->user()->name }}</a></li>
+    <nav class="mb-4 md:mb-8 overflow-x-auto">
+        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
+            <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="min-h-[44px] inline-flex items-center hover:text-primary">{{ auth()->user()->name }}</a></li>
             <li>/</li>
-            <li class="text-gray-900">{{ $circle->name }}</li>
+            <li class="text-gray-900 font-medium truncate max-w-[150px] md:max-w-none">{{ $circle->name }}</li>
         </ol>
     </nav>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-sticky-container>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8" data-sticky-container>
         <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-4 md:space-y-6">
             <!-- Circle Header -->
             <x-circle.group-header :circle="$circle" view-type="teacher" />
 
@@ -94,45 +94,45 @@
                         @endphp
 
                         @if($certificates->count() > 0)
-                            <div class="bg-green-50 rounded-lg p-4 mb-6 border border-green-200">
-                                <p class="text-sm text-green-800 font-medium">
-                                    <i class="ri-checkbox-circle-fill ml-1"></i>
-                                    تم إصدار {{ $certificates->count() }} شهادة للطلاب
+                            <div class="bg-green-50 rounded-lg p-3 md:p-4 mb-4 md:mb-6 border border-green-200">
+                                <p class="text-xs md:text-sm text-green-800 font-medium flex items-center gap-1">
+                                    <i class="ri-checkbox-circle-fill flex-shrink-0"></i>
+                                    <span>تم إصدار {{ $certificates->count() }} شهادة للطلاب</span>
                                 </p>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6">
                                 @foreach($certificates as $certificate)
-                                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                                    <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                                         <!-- Student Info Header -->
-                                        <div class="bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-3 border-b border-amber-100">
-                                            <div class="flex items-center gap-3">
+                                        <div class="bg-gradient-to-r from-amber-50 to-yellow-50 px-3 md:px-4 py-2.5 md:py-3 border-b border-amber-100">
+                                            <div class="flex items-center gap-2 md:gap-3">
                                                 <x-avatar :user="$certificate->student" size="sm" user-type="student" />
-                                                <div>
-                                                    <p class="font-bold text-gray-900 text-sm">{{ $certificate->student->name }}</p>
-                                                    <p class="text-xs text-gray-600">{{ $certificate->certificate_number }}</p>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="font-bold text-gray-900 text-sm truncate">{{ $certificate->student->name }}</p>
+                                                    <p class="text-xs text-gray-600 truncate">{{ $certificate->certificate_number }}</p>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <!-- Certificate Details -->
-                                        <div class="p-4 space-y-3">
+                                        <div class="p-3 md:p-4 space-y-2 md:space-y-3">
                                             <!-- Issue Date -->
-                                            <div class="flex items-center text-sm text-gray-600">
-                                                <i class="ri-calendar-line ml-2 text-amber-500"></i>
+                                            <div class="flex items-center text-xs md:text-sm text-gray-600">
+                                                <i class="ri-calendar-line ml-1.5 md:ml-2 text-amber-500"></i>
                                                 <span>{{ $certificate->issued_at->locale('ar')->translatedFormat('d F Y') }}</span>
                                             </div>
 
                                             <!-- Action Buttons -->
-                                            <div class="flex gap-2 pt-2">
+                                            <div class="flex gap-2 pt-1 md:pt-2">
                                                 <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                                                    target="_blank"
-                                                   class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                   class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
                                                     <i class="ri-eye-line ml-1"></i>
                                                     عرض
                                                 </a>
                                                 <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
-                                                   class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                   class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
                                                     <i class="ri-download-line ml-1"></i>
                                                     تحميل
                                                 </a>
@@ -143,13 +143,13 @@
                             </div>
                         @else
                             <!-- Empty State -->
-                            <div class="text-center py-12">
-                                <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <i class="ri-award-line text-3xl text-amber-500"></i>
+                            <div class="text-center py-8 md:py-12">
+                                <div class="w-16 h-16 md:w-20 md:h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                                    <i class="ri-award-line text-2xl md:text-3xl text-amber-500"></i>
                                 </div>
-                                <h3 class="text-lg font-bold text-gray-900 mb-2">لا توجد شهادات</h3>
-                                <p class="text-gray-600 text-sm mb-6">لم يتم إصدار أي شهادات للطلاب بعد</p>
-                                <p class="text-sm text-gray-500">يمكنك إصدار الشهادات من خلال القسم الجانبي</p>
+                                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2">لا توجد شهادات</h3>
+                                <p class="text-gray-600 text-xs md:text-sm mb-4 md:mb-6">لم يتم إصدار أي شهادات للطلاب بعد</p>
+                                <p class="text-xs md:text-sm text-gray-500">يمكنك إصدار الشهادات من خلال القسم الجانبي</p>
                             </div>
                         @endif
                     </x-tabs.panel>
@@ -159,7 +159,7 @@
 
         <!-- Sidebar -->
         <div class="lg:col-span-1" data-sticky-sidebar>
-            <div class="space-y-6">
+            <div class="space-y-4 md:space-y-6">
                 <!-- Circle Info Sidebar -->
                 <x-circle.info-sidebar :circle="$circle" view-type="teacher" />
 

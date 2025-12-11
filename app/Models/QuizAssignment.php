@@ -173,7 +173,7 @@ class QuizAssignment extends Model
         $assignable = $this->assignable;
 
         if (!$assignable) {
-            return route('student.dashboard', ['subdomain' => $subdomain]);
+            return route('student.profile', ['subdomain' => $subdomain]);
         }
 
         return match ($this->assignable_type) {
@@ -197,7 +197,7 @@ class QuizAssignment extends Model
                 'subdomain' => $subdomain,
                 'course' => $assignable->id,
             ]),
-            default => route('student.dashboard', ['subdomain' => $subdomain]),
+            default => route('student.profile', ['subdomain' => $subdomain]),
         };
     }
 

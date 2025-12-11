@@ -405,12 +405,22 @@ class SubscriptionRenewalService
                 return;
             }
 
-            // TODO: Implement via NotificationService
-            Log::info("Renewal reminder would be sent", [
+            // Send via NotificationService
+            $this->notificationService->sendSubscriptionExpiringNotification($student, [
+                'subscription_id' => $subscription->id,
+                'subscription_type' => class_basename($subscription),
+                'name' => $subscription->subscription_code ?? class_basename($subscription),
+                'expiry_date' => $subscription->next_billing_date?->format('Y-m-d') ?? '',
+                'days_remaining' => $daysUntilRenewal,
+                'renewal_amount' => $subscription->calculateRenewalPrice(),
+                'currency' => 'SAR',
+                'url' => '/subscriptions',
+            ]);
+
+            Log::info("Renewal reminder sent", [
                 'subscription_id' => $subscription->id,
                 'student_id' => $student->id,
                 'days_until_renewal' => $daysUntilRenewal,
-                'renewal_amount' => $subscription->calculateRenewalPrice(),
             ]);
         } catch (\Exception $e) {
             Log::warning("Failed to send renewal reminder", [
@@ -431,8 +441,18 @@ class SubscriptionRenewalService
         }
 
         try {
-            // TODO: Implement via NotificationService
-            Log::info("Renewal success notification would be sent", [
+            // Send via NotificationService
+            $this->notificationService->sendSubscriptionRenewedNotification($student, [
+                'subscription_id' => $subscription->id,
+                'subscription_type' => class_basename($subscription),
+                'name' => $subscription->subscription_code ?? class_basename($subscription),
+                'amount' => $amount,
+                'currency' => 'SAR',
+                'next_billing_date' => $subscription->next_billing_date?->format('Y-m-d') ?? '',
+                'url' => '/subscriptions',
+            ]);
+
+            Log::info("Renewal success notification sent", [
                 'subscription_id' => $subscription->id,
                 'student_id' => $student->id,
                 'amount' => $amount,
@@ -456,8 +476,18 @@ class SubscriptionRenewalService
         }
 
         try {
-            // TODO: Implement via NotificationService
-            Log::info("Payment failed notification would be sent", [
+            // Send via NotificationService
+            $this->notificationService->sendPaymentFailedNotification($student, [
+                'subscription_id' => $subscription->id,
+                'subscription_type' => class_basename($subscription),
+                'subscription_name' => $subscription->subscription_code ?? class_basename($subscription),
+                'amount' => $subscription->final_price ?? 0,
+                'currency' => 'SAR',
+                'reason' => $reason,
+                'url' => '/subscriptions',
+            ]);
+
+            Log::info("Payment failed notification sent", [
                 'subscription_id' => $subscription->id,
                 'student_id' => $student->id,
                 'reason' => $reason,

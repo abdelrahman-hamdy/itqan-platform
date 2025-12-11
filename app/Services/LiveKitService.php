@@ -36,7 +36,7 @@ class LiveKitService
 
         // Only initialize RoomServiceClient if we have valid credentials
         if ($this->apiKey && $this->apiSecret && $apiUrl) {
-            Log::info('Initializing LiveKit RoomServiceClient', [
+            Log::debug('Initializing LiveKit RoomServiceClient', [
                 'api_url' => $apiUrl,
                 'api_key' => $this->apiKey,
             ]);

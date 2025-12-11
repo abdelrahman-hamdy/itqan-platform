@@ -297,6 +297,19 @@ class QuranCircleResource extends BaseResource
             ]);
     }
 
+    /**
+     * Eager load relationships to prevent N+1 queries.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'academy',
+                'quranTeacher', // QuranCircle::quranTeacher returns User directly
+            ])
+            ->withCount('students');
+    }
+
     public static function table(Table $table): Table
     {
         return $table

@@ -20,10 +20,10 @@
           :userName="($teacherProfile->first_name ?? '') . ' ' . ($teacherProfile->last_name ?? '')" />
 
       <!-- Personal Information Section -->
-      <div class="mb-8">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">المعلومات الشخصية</h3>
+      <div class="mb-6 md:mb-8">
+        <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4 pb-2 border-b border-gray-200">المعلومات الشخصية</h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <!-- First Name -->
           <x-profile.text-input
               label="الاسم الأول"
@@ -56,10 +56,10 @@
       </div>
 
       <!-- Qualifications Section -->
-      <div class="mb-8">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">المؤهلات والخبرة</h3>
+      <div class="mb-6 md:mb-8">
+        <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4 pb-2 border-b border-gray-200">المؤهلات والخبرة</h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <!-- Educational Qualification (Quran Teacher) -->
           @if($isQuranTeacher)
             <x-profile.select-input
@@ -112,7 +112,7 @@
         </div>
 
         <!-- Certifications -->
-        <div class="mt-6">
+        <div class="mt-4 md:mt-6">
           <x-profile.tags-input
               label="الشهادات والإجازات"
               name="certifications"
@@ -121,7 +121,7 @@
         </div>
 
         <!-- Languages -->
-        <div class="mt-6">
+        <div class="mt-4 md:mt-6">
           @php
             $languageOptions = [
               'arabic' => 'العربية',
@@ -146,11 +146,11 @@
       </div>
 
       <!-- Availability Section -->
-      <div class="mb-8">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">أوقات التدريس</h3>
+      <div class="mb-6 md:mb-8">
+        <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4 pb-2 border-b border-gray-200">أوقات التدريس</h3>
 
         <!-- Available Days -->
-        <div class="mb-6">
+        <div class="mb-4 md:mb-6">
           @php
             $daysOptions = [
               'sunday' => 'الأحد',
@@ -173,7 +173,7 @@
         </div>
 
         <!-- Available Hours -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <x-profile.text-input
               label="من الساعة"
               name="available_time_start"
@@ -189,10 +189,10 @@
       </div>
 
       <!-- Bio Section -->
-      <div class="mb-8">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">السيرة الذاتية</h3>
+      <div class="mb-6 md:mb-8">
+        <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4 pb-2 border-b border-gray-200">السيرة الذاتية</h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <!-- Bio Arabic -->
           <x-profile.textarea-input
               label="السيرة الذاتية (عربي)"

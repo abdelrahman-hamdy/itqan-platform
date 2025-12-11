@@ -26,7 +26,7 @@ if (is_object($progress) && method_exists($progress, 'toArray')) {
 $breadcrumbs = [
     [
         'label' => 'لوحة التحكم',
-        'url' => route('student.dashboard', ['subdomain' => $academySubdomain])
+        'url' => route('student.profile', ['subdomain' => $academySubdomain])
     ],
     ['label' => 'تقريري']
 ];

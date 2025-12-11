@@ -202,7 +202,7 @@ class UnifiedHomeworkService
             ->where('homework_assigned', true) // Use the correct column
             ->whereNotNull('homework_details') // Ensure homework details exist
             ->with([
-                'quranTeacher.user',
+                'quranTeacher',
                 'studentReport',
                 'sessionHomework', // Load the homework details relationship
             ])

@@ -28,7 +28,7 @@ class QuranCircleController extends Controller
     {
         $academy = $this->getCurrentAcademy();
 
-        $query = QuranCircle::with(['quranTeacher.user', 'academy'])
+        $query = QuranCircle::with(['quranTeacher', 'academy'])
             ->withCount('enrollments')
             ->where('academy_id', $academy->id);
 
@@ -181,7 +181,7 @@ class QuranCircleController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
-                    'data' => $circle->load('quranTeacher.user'),
+                    'data' => $circle->load('quranTeacher'),
                     'message' => 'تم إنشاء دائرة القرآن بنجاح',
                 ], 201);
             }
@@ -214,7 +214,7 @@ class QuranCircleController extends Controller
         $this->ensureCircleBelongsToAcademy($circle);
 
         $circle->load([
-            'quranTeacher.user',
+            'quranTeacher',
             'academy',
             'enrollments.student',
             'quranSessions' => function ($q) {
@@ -268,7 +268,7 @@ class QuranCircleController extends Controller
             ->where('approval_status', 'approved')
             ->get();
 
-        $circle->load('quranTeacher.user');
+        $circle->load('quranTeacher');
 
         return view('quran.circles.edit', compact('circle', 'teachers', 'academy'));
     }
@@ -318,7 +318,7 @@ class QuranCircleController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
-                    'data' => $circle->fresh(['quranTeacher.user']),
+                    'data' => $circle->fresh(['quranTeacher']),
                     'message' => 'تم تحديث دائرة القرآن بنجاح',
                 ]);
             }
@@ -619,7 +619,7 @@ class QuranCircleController extends Controller
     {
         $academy = $this->getCurrentAcademy();
 
-        $query = QuranCircle::with('quranTeacher.user')
+        $query = QuranCircle::with('quranTeacher')
             ->where('academy_id', $academy->id)
             ->where('status', 'pending')
             ->where('enrollment_status', 'open')

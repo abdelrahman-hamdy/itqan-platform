@@ -1,0 +1,166 @@
+<?php
+
+namespace App\Http\Resources\Api\V1\User;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class UserResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
+            'full_name' => $this->name,
+            'phone' => $this->phone,
+            'avatar_url' => $this->getAvatarUrl(),
+            'user_type' => $this->user_type,
+            'user_type_label' => $this->getUserTypeLabel(),
+            'is_active' => $this->isActive(),
+            'email_verified' => $this->hasVerifiedEmail(),
+            'phone_verified' => $this->hasVerifiedPhone(),
+            'profile_completed' => $this->hasCompletedProfile(),
+            'last_login_at' => $this->last_login_at?->toISOString(),
+            'created_at' => $this->created_at->toISOString(),
+
+            // Academy info
+            'academy' => [
+                'id' => $this->academy_id,
+                'name' => $this->academy?->name,
+                'subdomain' => $this->academy?->subdomain,
+            ],
+
+            // Profile based on user type
+            'profile' => $this->getProfileData(),
+        ];
+    }
+
+    /**
+     * Get avatar URL
+     */
+    protected function getAvatarUrl(): ?string
+    {
+        if ($this->avatar) {
+            if (str_starts_with($this->avatar, 'http')) {
+                return $this->avatar;
+            }
+            return asset('storage/' . $this->avatar);
+        }
+
+        // Check profile for avatar
+        $profile = $this->resource->getProfile();
+        if ($profile && isset($profile->avatar) && $profile->avatar) {
+            return asset('storage/' . $profile->avatar);
+        }
+
+        // Generate default avatar
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=0ea5e9&color=fff';
+    }
+
+    /**
+     * Get profile data based on user type
+     */
+    protected function getProfileData(): ?array
+    {
+        $profile = $this->resource->getProfile();
+
+        if (!$profile) {
+            return null;
+        }
+
+        return match ($this->user_type) {
+            'student' => $this->formatStudentProfile($profile),
+            'parent' => $this->formatParentProfile($profile),
+            'quran_teacher' => $this->formatQuranTeacherProfile($profile),
+            'academic_teacher' => $this->formatAcademicTeacherProfile($profile),
+            default => null,
+        };
+    }
+
+    /**
+     * Format student profile
+     */
+    protected function formatStudentProfile($profile): array
+    {
+        return [
+            'id' => $profile->id,
+            'student_code' => $profile->student_code,
+            'grade_level' => [
+                'id' => $profile->grade_level_id,
+                'name' => $profile->gradeLevel?->name,
+            ],
+            'birth_date' => $profile->birth_date?->format('Y-m-d'),
+            'age' => $profile->birth_date?->age,
+            'gender' => $profile->gender,
+            'nationality' => $profile->nationality,
+            'enrollment_date' => $profile->enrollment_date?->format('Y-m-d'),
+        ];
+    }
+
+    /**
+     * Format parent profile
+     */
+    protected function formatParentProfile($profile): array
+    {
+        return [
+            'id' => $profile->id,
+            'parent_code' => $profile->parent_code ?? null,
+            'relationship_type' => $profile->relationship_type,
+            'occupation' => $profile->occupation,
+            'preferred_contact_method' => $profile->preferred_contact_method,
+            'children_count' => $profile->children?->count() ?? 0,
+        ];
+    }
+
+    /**
+     * Format Quran teacher profile
+     */
+    protected function formatQuranTeacherProfile($profile): array
+    {
+        return [
+            'id' => $profile->id,
+            'teacher_code' => $profile->teacher_code,
+            'is_active' => $profile->is_active,
+            'approval_status' => $profile->approval_status,
+            'teaching_experience_years' => $profile->teaching_experience_years,
+            'educational_qualification' => $profile->educational_qualification,
+            'session_price_individual' => (float) $profile->session_price_individual,
+            'session_price_group' => (float) $profile->session_price_group,
+            'rating' => (float) $profile->rating,
+            'total_reviews' => $profile->total_reviews,
+            'total_students' => $profile->total_students,
+            'total_sessions' => $profile->total_sessions,
+            'bio' => $profile->bio_arabic,
+        ];
+    }
+
+    /**
+     * Format Academic teacher profile
+     */
+    protected function formatAcademicTeacherProfile($profile): array
+    {
+        return [
+            'id' => $profile->id,
+            'teacher_code' => $profile->teacher_code,
+            'is_active' => $profile->is_active,
+            'approval_status' => $profile->approval_status,
+            'education_level' => $profile->education_level,
+            'qualification_degree' => $profile->qualification_degree,
+            'teaching_experience_years' => $profile->teaching_experience_years,
+            'session_price_individual' => (float) $profile->session_price_individual,
+            'rating' => (float) $profile->rating,
+            'total_reviews' => $profile->total_reviews,
+            'subject_ids' => $profile->subject_ids ?? [],
+            'grade_level_ids' => $profile->grade_level_ids ?? [],
+            'bio' => $profile->bio_arabic,
+        ];
+    }
+}

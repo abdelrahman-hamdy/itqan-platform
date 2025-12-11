@@ -6,12 +6,12 @@
     <div class="space-y-6">
 
         <!-- Welcome Section -->
-        <div class="mb-8">
+        <div class="mb-4 md:mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
                     مرحباً، {{ $parent->first_name ?? $user->name }}! 👋
                 </h1>
-                <p class="text-gray-600">
+                <p class="text-sm md:text-base text-gray-600">
                     @if($selectedChild ?? false)
                         تتابع الآن بيانات {{ $selectedChild->user->name ?? $selectedChild->first_name }}
                     @else
@@ -26,15 +26,15 @@
 
         <!-- Children Overview Cards -->
         @if($children->count() > 0)
-            <div class="mb-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">
-                        <i class="ri-team-line text-purple-600 ml-2"></i>
+            <div class="mb-4 md:mb-8">
+                <div class="flex items-center justify-between mb-4 md:mb-6">
+                    <h2 class="text-lg md:text-2xl font-bold text-gray-900">
+                        <i class="ri-team-line text-purple-600 ml-1.5 md:ml-2"></i>
                         أبنائك المسجلون
                     </h2>
-                    <span class="text-sm text-gray-500">{{ $children->count() }} {{ $children->count() > 1 ? 'أبناء' : 'ابن' }}</span>
+                    <span class="text-xs md:text-sm text-gray-500">{{ $children->count() }} {{ $children->count() > 1 ? 'أبناء' : 'ابن' }}</span>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     @foreach($children as $child)
                         <x-parent.child-overview-card :child="$child" />
                     @endforeach
@@ -43,19 +43,19 @@
         @endif
 
         <!-- Upcoming Sessions Section -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">
-                    <i class="ri-calendar-event-line text-blue-600 ml-2"></i>
+        <div class="mb-4 md:mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 md:mb-6">
+                <h2 class="text-lg md:text-2xl font-bold text-gray-900">
+                    <i class="ri-calendar-event-line text-blue-600 ml-1.5 md:ml-2"></i>
                     الجلسات القادمة
                 </h2>
                 <a href="{{ route('parent.calendar.index', ['subdomain' => $subdomain]) }}"
-                   class="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
+                   class="min-h-[44px] inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
                     عرض التقويم الكامل
                     <i class="ri-arrow-left-s-line mr-1"></i>
                 </a>
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 @if(!empty($upcomingSessions) && count($upcomingSessions) > 0)
                     <div class="divide-y divide-gray-100">
                         @foreach(collect($upcomingSessions)->take(5) as $session)
@@ -77,24 +77,26 @@
                                     default => 'bg-gray-100 text-gray-700'
                                 };
                             @endphp
-                            <div class="flex items-center gap-4 p-4">
-                                <div class="flex-shrink-0 w-12 h-12 rounded-xl {{ $session['type'] === 'quran' ? 'bg-green-100' : 'bg-violet-100' }} flex items-center justify-center">
-                                    <i class="{{ $session['type'] === 'quran' ? 'ri-book-read-line text-green-600' : 'ri-book-line text-violet-600' }} text-xl"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <p class="font-medium text-gray-900">{{ $session['title'] }}</p>
-                                        <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">{{ $statusText }}</span>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 md:p-4">
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                    <div class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl {{ $session['type'] === 'quran' ? 'bg-green-100' : 'bg-violet-100' }} flex items-center justify-center">
+                                        <i class="{{ $session['type'] === 'quran' ? 'ri-book-read-line text-green-600' : 'ri-book-line text-violet-600' }} text-lg md:text-xl"></i>
                                     </div>
-                                    <p class="text-sm text-gray-500">
-                                        <i class="ri-user-line ml-1"></i>{{ $session['teacher_name'] }}
-                                        •
-                                        <i class="ri-team-line ml-1"></i>{{ $session['child_name'] }}
-                                    </p>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
+                                            <p class="font-medium text-gray-900 text-sm md:text-base truncate">{{ $session['title'] }}</p>
+                                            <span class="px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ $statusColor }}">{{ $statusText }}</span>
+                                        </div>
+                                        <p class="text-xs md:text-sm text-gray-500 truncate">
+                                            <i class="ri-user-line ml-1"></i>{{ $session['teacher_name'] }}
+                                            <span class="hidden sm:inline">•</span>
+                                            <span class="block sm:inline"><i class="ri-team-line ml-1"></i>{{ $session['child_name'] }}</span>
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="text-left flex-shrink-0">
-                                    <p class="text-sm font-medium text-gray-600">{{ $session['scheduled_at']->format('d/m/Y') }}</p>
-                                    <p class="text-xs text-gray-500">
+                                <div class="text-right sm:text-left flex-shrink-0 pr-12 sm:pr-0">
+                                    <p class="text-xs md:text-sm font-medium text-gray-600">{{ $session['scheduled_at']->format('d/m/Y') }}</p>
+                                    <p class="text-[10px] md:text-xs text-gray-500">
                                         <i class="ri-time-line ml-1"></i>{{ $session['scheduled_at']->format('h:i A') }}
                                     </p>
                                 </div>
@@ -102,12 +104,12 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="p-8 text-center">
-                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="ri-calendar-line text-gray-400 text-2xl"></i>
+                    <div class="p-6 md:p-8 text-center">
+                        <div class="w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                            <i class="ri-calendar-line text-gray-400 text-xl md:text-2xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-900 mb-1">لا توجد جلسات قادمة</h3>
-                        <p class="text-sm text-gray-500">عندما يتم جدولة جلسات للأبناء ستظهر هنا</p>
+                        <h3 class="font-semibold text-gray-900 mb-1 text-sm md:text-base">لا توجد جلسات قادمة</h3>
+                        <p class="text-xs md:text-sm text-gray-500">عندما يتم جدولة جلسات للأبناء ستظهر هنا</p>
                     </div>
                 @endif
             </div>

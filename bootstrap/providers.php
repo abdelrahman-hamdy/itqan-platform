@@ -2,6 +2,7 @@
 
 return [
     App\Providers\AppServiceProvider::class,
+    App\Providers\EventServiceProvider::class,
     App\Providers\PaymentServiceProvider::class,
     App\Providers\Filament\AcademicTeacherPanelProvider::class,
     App\Providers\Filament\AcademyPanelProvider::class,

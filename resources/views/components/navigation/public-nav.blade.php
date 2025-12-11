@@ -94,7 +94,7 @@
         @auth
           @php
             $dashboardRoute = match(auth()->user()->role ?? auth()->user()->user_type) {
-              'student' => route('student.dashboard', ['subdomain' => $academy->subdomain]),
+              'student' => route('student.profile', ['subdomain' => $academy->subdomain]),
               'teacher', 'quran_teacher' => route('teacher.dashboard', ['subdomain' => $academy->subdomain]),
               'academic_teacher' => route('teacher.dashboard', ['subdomain' => $academy->subdomain]),
               default => route('filament.admin.pages.dashboard')
@@ -155,7 +155,7 @@
         @auth
           @php
             $dashboardRoute = match(auth()->user()->role ?? auth()->user()->user_type) {
-              'student' => route('student.dashboard', ['subdomain' => $academy->subdomain]),
+              'student' => route('student.profile', ['subdomain' => $academy->subdomain]),
               'teacher', 'quran_teacher' => route('teacher.dashboard', ['subdomain' => $academy->subdomain]),
               'academic_teacher' => route('teacher.dashboard', ['subdomain' => $academy->subdomain]),
               default => route('filament.admin.pages.dashboard')

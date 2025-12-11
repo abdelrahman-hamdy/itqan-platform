@@ -105,6 +105,20 @@ return [
             'message' => 'A new invoice for :amount :currency has been generated',
         ],
 
+        // Teacher Payout Notifications
+        'payout_approved' => [
+            'title' => 'Payout Approved',
+            'message' => 'Your payout for :month has been approved for :amount :currency',
+        ],
+        'payout_rejected' => [
+            'title' => 'Payout Rejected',
+            'message' => 'Your payout for :month has been rejected - Reason: :reason',
+        ],
+        'payout_paid' => [
+            'title' => 'Payout Completed',
+            'message' => 'Your payout for :month of :amount :currency has been paid - Reference: :reference',
+        ],
+
         // Meeting Notifications
         'meeting_room_ready' => [
             'title' => 'Meeting Room Ready',

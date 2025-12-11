@@ -1,5 +1,4 @@
 export default function tabsComponent(config) {
-    console.log('[Tabs] Creating component with config:', config);
     return {
         id: config.id,
         activeTab: null,
@@ -11,14 +10,11 @@ export default function tabsComponent(config) {
         rootElement: null, // Store reference to root element
 
         init() {
-            console.log('[Tabs] Initializing component:', this.id);
             // Store root element reference
             this.rootElement = this.$el;
-            console.log('[Tabs] Stored root element:', this.rootElement);
 
             // Determine initial active tab
             this.activeTab = this.getInitialTab();
-            console.log('[Tabs] Initial active tab:', this.activeTab);
 
             // Load initial tab if lazy loading
             if (this.lazy && this.activeTab) {
@@ -72,37 +68,18 @@ export default function tabsComponent(config) {
         isValidTab(tabId) {
             // Use stored rootElement to get the component's root element
             const root = this.rootElement || this.$root || this.$el;
-            console.log('[Tabs] root element:', root);
-            console.log('[Tabs] root.tagName:', root?.tagName);
-
-            const allTabs = root.querySelectorAll('[data-tab]');
-            console.log('[Tabs] All elements with data-tab:', allTabs);
-            console.log('[Tabs] Number of tabs found:', allTabs.length);
-
             const tab = root.querySelector(`[data-tab="${tabId}"]`);
-            console.log(`[Tabs] Checking if tab "${tabId}" is valid:`, !!tab);
-            if (!tab) {
-                console.log('[Tabs] Available tabs:', Array.from(allTabs).map(t => t.dataset.tab));
-            }
             return !!tab;
         },
 
         switchTab(tabId) {
-            console.log('[Tabs] switchTab called with:', tabId);
-            console.log('[Tabs] Current activeTab:', this.activeTab);
-            console.log('[Tabs] isValidTab result:', this.isValidTab(tabId));
-
             if (this.activeTab === tabId) {
-                console.log('[Tabs] Switch cancelled - already on this tab');
                 return;
             }
 
             if (!this.isValidTab(tabId)) {
-                console.log('[Tabs] Switch cancelled - invalid tab ID');
                 return;
             }
-
-            console.log('[Tabs] Switching to tab:', tabId);
 
             // Preserve scroll position before switching
             const scrollY = window.scrollY;

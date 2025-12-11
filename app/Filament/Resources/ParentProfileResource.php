@@ -165,6 +165,19 @@ public static function form(Form $form): Form
             ]);
     }
 
+    /**
+     * Eager load relationships to prevent N+1 queries.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'academy',
+                'user',
+                'students',
+            ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table

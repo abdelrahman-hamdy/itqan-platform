@@ -155,11 +155,6 @@ class QuranSession extends BaseSession
         return $this->belongsTo(QuranIndividualCircle::class, 'individual_circle_id');
     }
 
-    public function generatedFromSchedule(): BelongsTo
-    {
-        return $this->belongsTo(QuranCircleSchedule::class, 'generated_from_schedule_id');
-    }
-
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
@@ -589,17 +584,6 @@ class QuranSession extends BaseSession
         return $statuses[$this->attendance_status] ?? $this->attendance_status;
     }
 
-    public function getLocationTypeTextAttribute(): string
-    {
-        $types = [
-            'online' => 'عبر الإنترنت',
-            'physical' => 'حضوري',
-            'hybrid' => 'مختلط',
-        ];
-
-        return $types[$this->location_type] ?? $this->location_type;
-    }
-
     public function getFormattedScheduledTimeAttribute(): string
     {
         return $this->scheduled_at ? $this->scheduled_at->format('Y-m-d H:i') : 'غير محدد';
@@ -676,67 +660,22 @@ class QuranSession extends BaseSession
 
     public function getProgressSummaryAttribute(): string
     {
-        // Use paper-based progress if available
-        if ($this->current_page && $this->current_face) {
-            $faceName = $this->current_face == 1 ? 'الوجه الأول' : 'الوجه الثاني';
-            $papersMemorized = $this->papers_memorized_today ?? 0;
-
-            $summary = "الصفحة {$this->current_page} - {$faceName}";
-
-            if ($papersMemorized > 0) {
-                $summary .= " (حُفظ {$papersMemorized} وجه)";
-            }
-
-            return $summary;
+        // Use simplified page-based progress
+        if ($this->current_page && $this->current_surah) {
+            $surahName = $this->getSurahName($this->current_surah);
+            return "سورة {$surahName} - الصفحة {$this->current_page}";
         }
 
-        // Fallback to verse-based progress
-        if (! $this->current_surah || ! $this->current_verse) {
-            return 'لم يتم تحديد التقدم';
+        if ($this->current_surah) {
+            $surahName = $this->getSurahName($this->current_surah);
+            return "سورة {$surahName}";
         }
 
-        $surahName = $this->getSurahName($this->current_surah);
-        $versesMemorized = $this->verses_memorized_today ?? 0;
-
-        $summary = "سورة {$surahName} - آية {$this->current_verse}";
-
-        if ($versesMemorized > 0) {
-            $summary .= " (حُفظت {$versesMemorized} آيات)";
+        if ($this->current_page) {
+            return "الصفحة {$this->current_page}";
         }
 
-        return $summary;
-    }
-
-    /**
-     * Convert verses to papers (وجه)
-     * Each paper (وجه) = approximately 15 verses
-     */
-    public function convertVersesToPapers(int $verses): float
-    {
-        return round($verses / 15, 2);
-    }
-
-    /**
-     * Convert papers to verses
-     * Each paper (وجه) = approximately 15 verses
-     */
-    public function convertPapersToVerses(float $papers): int
-    {
-        return (int) round($papers * 15);
-    }
-
-    /**
-     * Update session progress using papers
-     */
-    public function updateProgressByPapers(int $page, int $face, float $papersMemorized, float $papersCovered = 0): void
-    {
-        $this->update([
-            'current_page' => $page,
-            'current_face' => $face,
-            'papers_memorized_today' => $papersMemorized,
-            'papers_covered_today' => $papersCovered,
-            'verses_memorized_today' => $this->convertPapersToVerses($papersMemorized),
-        ]);
+        return 'لم يتم تحديد التقدم';
     }
 
     public function getPerformanceSummaryAttribute(): array
@@ -746,7 +685,6 @@ class QuranSession extends BaseSession
             'tajweed_accuracy' => $this->tajweed_accuracy,
             'mistakes_count' => $this->mistakes_count,
             'overall_rating' => $this->overall_rating,
-            'verses_memorized' => $this->verses_memorized_today,
         ];
     }
 
@@ -869,7 +807,6 @@ class QuranSession extends BaseSession
             'title' => 'جلسة تعويضية - '.$this->title,
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => $this->duration_minutes,
-            'location_type' => $this->location_type,
             'is_makeup_session' => true,
             'makeup_session_for' => $this->id,
         ], $additionalData);
@@ -1058,28 +995,8 @@ class QuranSession extends BaseSession
     // Boot method to handle model events
     protected static function booted()
     {
-        // Handle session deletion - check if group circle needs re-scheduling
+        // Handle session deletion - update circle counts if needed
         static::deleted(function ($session) {
-            if ($session->circle_id && $session->generatedFromSchedule) {
-                // This was a group circle session generated from a schedule
-                $schedule = $session->generatedFromSchedule;
-
-                if ($schedule && $schedule->is_active) {
-                    // Check if we need to generate more sessions for this month
-                    $currentMonth = now()->format('Y-m');
-                    $currentMonthSessions = self::where('circle_id', $session->circle_id)
-                        ->whereRaw("DATE_FORMAT(scheduled_at, '%Y-%m') = ?", [$currentMonth])
-                        ->count();
-
-                    $monthlyLimit = $schedule->circle->monthly_sessions_count ?? 4;
-
-                    if ($currentMonthSessions < $monthlyLimit) {
-                        // Try to generate replacement sessions
-                        $schedule->generateUpcomingSessions();
-                    }
-                }
-            }
-
             // Update individual circle counts if needed
             if ($session->individual_circle_id && $session->individualCircle) {
                 $session->individualCircle->updateSessionCounts();
@@ -1134,7 +1051,7 @@ class QuranSession extends BaseSession
     {
         $query = self::where('academy_id', $academyId)
             ->today()
-            ->with(['quranTeacher.user', 'student', 'subscription', 'circle']);
+            ->with(['quranTeacher', 'student', 'subscription', 'circle']);
 
         if (isset($filters['teacher_id'])) {
             $query->where('quran_teacher_id', $filters['teacher_id']);
@@ -1180,7 +1097,7 @@ class QuranSession extends BaseSession
         return self::where('academy_id', $academyId)
             ->completed()
             ->where('follow_up_required', true)
-            ->with(['quranTeacher.user', 'student'])
+            ->with(['quranTeacher', 'student'])
             ->get();
     }
 
@@ -1327,7 +1244,7 @@ class QuranSession extends BaseSession
             'ending_buffer_minutes' => $this->getEndingBufferMinutes(),
             'grace_period_minutes' => $this->getGracePeriodMinutes(),
             'current_surah' => $this->current_surah,
-            'current_verse' => $this->current_verse,
+            'current_page' => $this->current_page,
             'lesson_objectives' => $this->lesson_objectives,
             'teacher_id' => $this->quran_teacher_id,
             'student_id' => $this->student_id,

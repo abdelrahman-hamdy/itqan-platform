@@ -37,25 +37,9 @@ class PaymentGatewayManager extends Manager
     }
 
     /**
-     * Create Tap gateway driver (placeholder for future).
-     */
-    protected function createTapDriver(): PaymentGatewayInterface
-    {
-        // TODO: Implement TapGateway when needed
-        throw new InvalidArgumentException('Tap gateway is not yet implemented');
-    }
-
-    /**
-     * Create Moyasar gateway driver (placeholder for future).
-     */
-    protected function createMoyasarDriver(): PaymentGatewayInterface
-    {
-        // TODO: Implement MoyasarGateway when needed
-        throw new InvalidArgumentException('Moyasar gateway is not yet implemented');
-    }
-
-    /**
      * Get all available gateway names.
+     *
+     * Note: Paymob is currently the only supported payment gateway.
      *
      * @return array<string>
      */

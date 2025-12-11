@@ -70,15 +70,15 @@
   @include('components.sidebar.teacher-sidebar')
 
   <!-- Main Content -->
-  <main class="pt-20 min-h-screen transition-all duration-300" id="main-content" style="margin-right: 320px;">
-    <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
+  <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
+    <div class="w-full px-4 sm:px-6 lg:px-8 py-6 md:py-8">
 
       <!-- Welcome Section -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+      <div class="mb-6 md:mb-8">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
           مرحباً، {{ $teacherProfile->first_name ?? auth()->user()->name }}! 👨‍🏫
         </h1>
-        <p class="text-gray-600">
+        <p class="text-sm md:text-base text-gray-600">
           إدارة جلساتك وطلابك ومتابعة أرباحك من خلال لوحة التحكم المخصصة للمعلمين
         </p>
       </div>
@@ -87,7 +87,7 @@
       @include('components.stats.teacher-stats', ['stats' => $stats])
 
       <!-- Main Content Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
 
         @if($teacherType === 'quran')
           <!-- Quran Teacher Content -->
@@ -339,8 +339,8 @@
   </main>
 
   <!-- Mobile Sidebar Toggle -->
-  <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-3 rounded-full shadow-lg z-50">
-    <i class="ri-menu-line text-xl"></i>
+  <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-4 rounded-full shadow-lg z-50 min-w-[56px] min-h-[56px] flex items-center justify-center">
+    <i class="ri-menu-line text-2xl"></i>
   </button>
 
 </body>
