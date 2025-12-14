@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\SessionStatus;
 use App\Models\Academy;
 use App\Models\QuranSession;
-use App\Models\TeacherVideoSettings;
 use App\Models\VideoSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -204,14 +203,8 @@ class AutoMeetingCreationService
         DB::beginTransaction();
 
         try {
-            // Get teacher settings to merge with academy settings
-            $teacherSettings = null;
-            if ($session->teacher) {
-                $teacherSettings = TeacherVideoSettings::forTeacher($session->teacher, $session->academy);
-            }
-
-            // Build meeting options
-            $meetingOptions = $this->buildMeetingOptions($session, $videoSettings, $teacherSettings);
+            // Build meeting options from academy settings
+            $meetingOptions = $this->buildMeetingOptions($session, $videoSettings);
 
             // Create the meeting using the session's existing method
             $meetingUrl = $session->generateMeetingLink($meetingOptions);
@@ -244,38 +237,21 @@ class AutoMeetingCreationService
     }
 
     /**
-     * Build meeting options combining academy and teacher settings
+     * Build meeting options from academy settings
      */
-    private function buildMeetingOptions(
-        QuranSession $session,
-        VideoSettings $videoSettings,
-        ?TeacherVideoSettings $teacherSettings
-    ): array {
-        $options = [
+    private function buildMeetingOptions(QuranSession $session, VideoSettings $videoSettings): array
+    {
+        return [
             'max_participants' => $videoSettings->default_max_participants,
             'recording_enabled' => $videoSettings->enable_recording_by_default,
             'session_type' => $session->session_type ?? 'quran',
             'max_duration' => $session->duration_minutes ?? 120,
+            'video_quality' => $videoSettings->default_video_quality ?? 'medium',
+            'audio_quality' => $videoSettings->default_audio_quality ?? 'medium',
+            'enable_screen_sharing' => $videoSettings->enable_screen_sharing ?? true,
+            'enable_chat' => $videoSettings->enable_chat ?? true,
+            'mute_on_join' => $videoSettings->mute_on_join ?? false,
         ];
-
-        // Apply teacher preferences if available
-        if ($teacherSettings) {
-            $meetingConfig = $teacherSettings->getMeetingConfiguration($videoSettings);
-
-            // Override academy settings with teacher preferences
-            $options = array_merge($options, [
-                'max_participants' => $meetingConfig['max_participants'],
-                'recording_enabled' => $meetingConfig['recording_enabled'],
-                'video_quality' => $meetingConfig['video_quality'],
-                'audio_quality' => $meetingConfig['audio_quality'],
-                'enable_screen_sharing' => $meetingConfig['enable_screen_sharing'],
-                'enable_chat' => $meetingConfig['enable_chat'],
-                'mute_on_join' => $meetingConfig['mute_on_join'],
-                'theme' => $meetingConfig['theme'],
-            ]);
-        }
-
-        return $options;
     }
 
     /**
@@ -396,12 +372,7 @@ class AutoMeetingCreationService
                 throw new \Exception('Auto meeting creation is disabled for this academy');
             }
 
-            $teacherSettings = null;
-            if ($session->teacher) {
-                $teacherSettings = TeacherVideoSettings::forTeacher($session->teacher, $session->academy);
-            }
-
-            // Create the meeting
+            // Create the meeting using academy settings
             $this->createMeetingForSession($session, $videoSettings);
 
             return [

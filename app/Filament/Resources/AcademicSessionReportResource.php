@@ -134,7 +134,7 @@ class AcademicSessionReportResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('academicSession.title')
+                Tables\Columns\TextColumn::make('session.title')
                     ->label('Session')
                     ->searchable()
                     ->sortable(),

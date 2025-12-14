@@ -85,7 +85,6 @@ class AcademicTeacherPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
             ->login()
-            ->profile()
             ->userMenuItems([
                 'profile-page' => \Filament\Navigation\MenuItem::make()
                     ->label('الملف الشخصي العام')

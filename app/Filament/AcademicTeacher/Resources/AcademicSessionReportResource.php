@@ -33,8 +33,8 @@ class AcademicSessionReportResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Session Information')
                     ->schema([
-                        Forms\Components\Select::make('academic_session_id')
-                            ->relationship('academicSession', 'title', fn (Builder $query) => 
+                        Forms\Components\Select::make('session_id')
+                            ->relationship('session', 'title', fn (Builder $query) =>
                                 $query->whereHas('academicTeacher', fn ($q) => $q->where('user_id', auth()->id()))
                             )
                             ->required()
@@ -96,7 +96,7 @@ class AcademicSessionReportResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('academicSession.title')
+                Tables\Columns\TextColumn::make('session.title')
                     ->label('Session')
                     ->searchable()
                     ->sortable(),
@@ -169,8 +169,8 @@ class AcademicSessionReportResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => 
-                $query->whereHas('academicSession.academicTeacher', fn ($q) => $q->where('user_id', auth()->id()))
+            ->modifyQueryUsing(fn (Builder $query) =>
+                $query->whereHas('session.academicTeacher', fn ($q) => $q->where('user_id', auth()->id()))
             );
     }
 

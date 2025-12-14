@@ -13,7 +13,7 @@ class ViewAcademicSessionReport extends ViewRecord
     public function getTitle(): string
     {
         $studentName = $this->record->student?->name ?? 'طالب';
-        $sessionTitle = $this->record->academicSession?->title ?? 'جلسة';
+        $sessionTitle = $this->record->session?->title ?? 'جلسة';
         return "تقرير: {$studentName} - {$sessionTitle}";
     }
 

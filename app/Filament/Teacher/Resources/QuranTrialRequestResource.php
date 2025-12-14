@@ -256,7 +256,7 @@ class QuranTrialRequestResource extends BaseTeacherResource
                 ->label('رقم الطلب')
                 ->searchable()
                 ->copyable()
-                ->fontWeight(FontWeight::Bold),
+                ->weight(FontWeight::Bold),
 
             TextColumn::make('student_name')
                 ->label('اسم الطالب')

@@ -286,7 +286,7 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                 Tables\Actions\Action::make('calendar')
                     ->label('فتح التقويم')
                     ->icon('heroicon-o-calendar-days')
-                    ->url(fn (QuranIndividualCircle $record): string => route('teacher.calendar', ['subdomain' => Auth::user()->academy->subdomain ?? 'itqan-academy']).'?circle='.$record->id)
+                    ->url(fn (QuranIndividualCircle $record): string => \App\Filament\Shared\Pages\UnifiedTeacherCalendar::getUrl(['circle' => $record->id]))
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([
