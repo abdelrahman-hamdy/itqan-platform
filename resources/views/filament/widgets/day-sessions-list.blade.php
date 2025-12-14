@@ -36,21 +36,9 @@
 
                     @if(!empty($session['status']))
                         <div class="mt-2">
-                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
-                                {{ match($session['status']) {
-                                    'scheduled' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-                                    'ongoing' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-                                    'completed' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-                                    'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-                                    default => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-                                } }}">
-                                {{ match($session['status']) {
-                                    'scheduled' => 'مجدولة',
-                                    'ongoing' => 'جارية',
-                                    'completed' => 'مكتملة',
-                                    'cancelled' => 'ملغية',
-                                    default => $session['status'],
-                                } }}
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                                  style="background-color: {{ $session['statusColor'] ?? '#6B7280' }}20; color: {{ $session['statusColor'] ?? '#6B7280' }};">
+                                {{ $session['statusLabel'] ?? $session['status'] }}
                             </span>
                         </div>
                     @endif

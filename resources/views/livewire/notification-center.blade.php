@@ -27,7 +27,7 @@
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
          @click.away="open = false"
-         class="absolute right-auto left-0 z-[100] mt-4 w-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
+         class="fixed sm:absolute left-4 right-4 sm:left-0 sm:right-auto top-16 sm:top-auto z-[100] sm:mt-4 w-auto sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
          style="transform-origin: top left;">
 
         {{-- Header --}}
@@ -68,7 +68,7 @@
         </div>
 
         {{-- Notifications List --}}
-        <div class="max-h-96 overflow-y-auto"
+        <div class="max-h-[60vh] sm:max-h-96 overflow-y-auto"
              x-data="{ loading: false }"
              @scroll.debounce.150ms="
                 if (($el.scrollHeight - $el.scrollTop - $el.clientHeight) < 100 && !loading && {{ $hasMore ? 'true' : 'false' }}) {
@@ -190,17 +190,21 @@
     }
 
     /* Scrollbar styles for notifications list */
-    .max-h-96::-webkit-scrollbar {
+    .max-h-\[60vh\]::-webkit-scrollbar,
+    .sm\:max-h-96::-webkit-scrollbar {
         width: 6px;
     }
-    .max-h-96::-webkit-scrollbar-track {
+    .max-h-\[60vh\]::-webkit-scrollbar-track,
+    .sm\:max-h-96::-webkit-scrollbar-track {
         background: #f9fafb;
     }
-    .max-h-96::-webkit-scrollbar-thumb {
+    .max-h-\[60vh\]::-webkit-scrollbar-thumb,
+    .sm\:max-h-96::-webkit-scrollbar-thumb {
         background: #d1d5db;
         border-radius: 3px;
     }
-    .max-h-96::-webkit-scrollbar-thumb:hover {
+    .max-h-\[60vh\]::-webkit-scrollbar-thumb:hover,
+    .sm\:max-h-96::-webkit-scrollbar-thumb:hover {
         background: #9ca3af;
     }
 </style>

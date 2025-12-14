@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - لوحة المعلم</title>
   <meta name="description" content="لوحة التحكم للمعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
+  <!-- Alpine.js for interactive components -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="https://cdn.tailwindcss.com/3.4.16"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,7 +73,7 @@
 
   <!-- Main Content -->
   <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
-    <div class="w-full px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+    <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
 
       <!-- Welcome Section -->
       <div class="mb-6 md:mb-8">
@@ -166,86 +168,6 @@
             ])
           </div>
 
-          <!-- Trial Requests for Quran Teachers -->
-          <div id="trial-requests">
-            @include('components.cards.learning-section-card', [
-              'title' => 'طلبات الجلسات التجريبية',
-              'subtitle' => 'مراجعة والموافقة على طلبات الجلسات التجريبية الجديدة',
-              'icon' => 'ri-user-add-line',
-              'iconBgColor' => 'bg-orange-500',
-              'hideDots' => true,
-              'items' => $pendingTrialRequests->take(3)->map(function($request) use ($academy) {
-                // Determine status and appropriate link
-                $statusText = match($request->status) {
-                  'scheduled' => 'مجدولة',
-                  'approved' => 'معتمدة',
-                  'pending' => 'معلقة',
-                  default => $request->status
-                };
-
-                // If session is scheduled, link to session page. Otherwise, link to calendar
-                $link = $request->status === 'scheduled' && $request->trialSession
-                  ? route('teacher.sessions.show', ['subdomain' => $academy->subdomain, 'sessionId' => $request->trialSession->id])
-                  : route('teacher.schedule.dashboard', ['subdomain' => $academy->subdomain ?? 'itqan-academy']);
-
-                return [
-                  'title' => $request->student_name ?? ($request->student->name ?? 'طالب جديد'),
-                  'description' => 'المستوى: ' . $request->current_level . ' - ' . $statusText,
-                  'icon' => $request->status === 'scheduled' ? 'ri-video-line' : 'ri-user-add-line',
-                  'iconBgColor' => $request->status === 'scheduled' ? 'bg-green-100' : 'bg-orange-100',
-                  'iconColor' => $request->status === 'scheduled' ? 'text-green-600' : 'text-orange-600',
-                  'status' => $request->status === 'scheduled' ? 'active' : 'pending',
-                  'link' => $link
-                ];
-              })->toArray(),
-              'footer' => [
-                'text' => 'عرض جميع الطلبات',
-                'link' => route('teacher.schedule.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
-              ],
-              'stats' => [
-                ['icon' => 'ri-user-add-line', 'value' => $pendingTrialRequests->where('status', 'pending')->count() . ' طلب معلق'],
-                ['icon' => 'ri-check-line', 'value' => $pendingTrialRequests->where('status', 'scheduled')->count() . ' طلب مجدول']
-              ],
-              'emptyTitle' => 'لا توجد طلبات جلسات تجريبية',
-              'emptyDescription' => 'ستظهر الطلبات الجديدة هنا عند تقديمها',
-              'emptyActionText' => 'تحديث الإعدادات'
-            ])
-          </div>
-
-          <!-- Recent Sessions for Quran Teachers -->
-          <div id="recent-sessions">
-            @include('components.cards.learning-section-card', [
-              'title' => 'الجلسات الأخيرة',
-              'subtitle' => 'مراجعة الجلسات المكتملة والقادمة',
-              'icon' => 'ri-time-line',
-              'iconBgColor' => 'bg-blue-500',
-              'hideDots' => true,
-              'items' => $recentSessions->take(3)->map(function($session) {
-                return [
-                  'title' => $session->student->name ?? 'طالب',
-                  'description' => ($session->scheduled_at ? formatDateTimeArabic($session->scheduled_at) : 'غير محدد') .
-                                   ' - ' . ($session->duration ?? 60) . ' دقيقة',
-                  'icon' => 'ri-time-line',
-                  'iconBgColor' => 'bg-blue-100',
-                  'iconColor' => 'text-blue-600',
-                  'status' => $session->status === App\Enums\SessionStatus::COMPLETED ? 'active' : 'pending',
-                  'link' => '/teacher-panel/quran-sessions'
-                ];
-              })->toArray(),
-              'footer' => [
-                'text' => 'عرض جميع الجلسات',
-                'link' => '/teacher-panel/quran-sessions'
-              ],
-              'stats' => [
-                ['icon' => 'ri-time-line', 'value' => $recentSessions->count() . ' جلسة حديثة'],
-                ['icon' => 'ri-check-line', 'value' => $recentSessions->where('status', 'completed')->count() . ' جلسة مكتملة']
-              ],
-              'emptyTitle' => 'لا توجد جلسات حديثة',
-              'emptyDescription' => 'ستظهر الجلسات المجدولة والمكتملة هنا',
-              'emptyActionText' => 'عرض التقويم'
-            ])
-          </div>
-
         @else
           <!-- Academic Teacher Content -->
 
@@ -335,13 +257,52 @@
         @endif
 
       </div>
+
+      @if($teacherType === 'quran')
+        <!-- Trial Requests Section - Full Width -->
+        <div class="mt-6 md:mt-8" id="trial-requests">
+          @include('components.cards.learning-section-card', [
+            'title' => 'طلبات التجريب',
+            'subtitle' => 'طلبات الجلسات التجريبية المعلقة والمجدولة',
+            'icon' => 'ri-user-add-line',
+            'iconBgColor' => 'bg-amber-500',
+            'hideDots' => true,
+            'items' => $pendingTrialRequests->map(function($request) {
+              $statusColors = [
+                'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'label' => 'معلق'],
+                'approved' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'label' => 'موافق عليه'],
+                'scheduled' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'label' => 'مجدول'],
+              ];
+              $status = $statusColors[$request->status] ?? $statusColors['pending'];
+
+              return [
+                'title' => $request->student->name ?? 'طالب جديد',
+                'description' => 'طلب تجريبي - ' . $status['label'] .
+                                 ($request->preferred_time ? ' - الوقت المفضل: ' . $request->preferred_time : '') .
+                                 ($request->trialSession?->scheduled_at ? ' - موعد: ' . $request->trialSession->scheduled_at->format('Y-m-d H:i') : ''),
+                'icon' => 'ri-user-add-line',
+                'iconBgColor' => $status['bg'],
+                'iconColor' => $status['text'],
+                'status' => $request->status === 'scheduled' ? 'active' : ($request->status === 'approved' ? 'pending' : 'warning'),
+                'link' => '#'
+              ];
+            })->toArray(),
+            'footer' => [
+              'text' => 'عرض جميع طلبات التجريب',
+              'link' => '#'
+            ],
+            'stats' => [
+              ['icon' => 'ri-time-line', 'value' => $pendingTrialRequests->where('status', 'pending')->count() . ' طلب معلق'],
+              ['icon' => 'ri-calendar-check-line', 'value' => $pendingTrialRequests->where('status', 'scheduled')->count() . ' جلسة مجدولة']
+            ],
+            'emptyTitle' => 'لا توجد طلبات تجريب حالياً',
+            'emptyDescription' => 'ستظهر طلبات الجلسات التجريبية الجديدة هنا عند تقديمها',
+            'emptyActionText' => ''
+          ])
+        </div>
+      @endif
     </div>
   </main>
-
-  <!-- Mobile Sidebar Toggle -->
-  <button id="sidebar-toggle" class="fixed bottom-6 right-6 md:hidden bg-primary text-white p-4 rounded-full shadow-lg z-50 min-w-[56px] min-h-[56px] flex items-center justify-center">
-    <i class="ri-menu-line text-2xl"></i>
-  </button>
 
 </body>
 </html>

@@ -412,7 +412,7 @@ class ReportController extends Controller
                 ->pluck('course_id');
 
             $sessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
-                ->whereBetween('scheduled_date', [$startDate, $endDate])
+                ->whereBetween('scheduled_at', [$startDate, $endDate])
                 ->whereIn('status', ['completed', 'cancelled'])
                 ->get();
         }

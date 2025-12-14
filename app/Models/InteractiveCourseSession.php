@@ -165,13 +165,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function getStatusInArabicAttribute(): string
     {
-        return match($this->status) {
-            'scheduled' => 'مجدولة',
-            'ongoing' => 'جارية',
-            'completed' => 'مكتملة',
-            'cancelled' => 'ملغاة',
-            default => 'غير معروفة'
-        };
+        return $this->status->label();
     }
 
     /**

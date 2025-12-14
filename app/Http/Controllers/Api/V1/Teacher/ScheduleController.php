@@ -160,24 +160,19 @@ class ScheduleController extends Controller
                     ->pluck('id');
 
                 $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $courseIds)
-                    ->whereBetween('scheduled_date', [$startDate->toDateString(), $endDate->toDateString()])
+                    ->whereBetween('scheduled_at', [$startDate, $endDate])
                     ->whereNotIn('status', ['cancelled'])
                     ->with(['course'])
                     ->get();
 
                 foreach ($interactiveSessions as $session) {
-                    $scheduledAt = $session->scheduled_date;
-                    if ($session->scheduled_time) {
-                        $scheduledAt = Carbon::parse($session->scheduled_date->format('Y-m-d') . ' ' . $session->scheduled_time);
-                    }
-
                     $sessions[] = [
                         'id' => $session->id,
                         'type' => 'interactive',
                         'title' => $session->title ?? $session->course?->title,
                         'course_name' => $session->course?->title,
                         'session_number' => $session->session_number,
-                        'scheduled_at' => $scheduledAt->toISOString(),
+                        'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'duration_minutes' => $session->duration_minutes ?? 60,
                         'status' => $session->status->value ?? $session->status,
                         'meeting_link' => $session->meeting_link,

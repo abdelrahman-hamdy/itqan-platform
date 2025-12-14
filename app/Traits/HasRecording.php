@@ -89,7 +89,7 @@ trait HasRecording
             'filename' => $this->getRecordingFilename(),
             'storage_path' => $this->getRecordingStoragePath(),
             'metadata' => $metadata,
-            'layout' => 'grid', // Layout type for composite recording
+            'layout' => 'grid-dark', // Dark theme grid layout for composite recording
             'audio_only' => false,
             'video_only' => false,
             'preset' => 'HD',

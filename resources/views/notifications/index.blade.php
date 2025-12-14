@@ -156,18 +156,6 @@
                 @else
                     </div>
                 @endif
-
-                {{-- Delete button (positioned absolutely) --}}
-                <div class="absolute left-4 top-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="deleteNotification('{{ $notification->id }}'); event.preventDefault(); event.stopPropagation();"
-                            type="button"
-                            class="p-2 bg-white hover:bg-red-50 text-red-600 hover:text-red-700 rounded-lg shadow-md border border-gray-200 hover:border-red-300 transition-all"
-                            title="حذف الإشعار">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                    </button>
-                </div>
             </div>
         @empty
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
@@ -204,28 +192,6 @@ function markAsRead(notificationId) {
 function markAllAsRead() {
     fetch('/api/notifications/mark-all-as-read', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.reload();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function deleteNotification(notificationId) {
-    if (!confirm('هل أنت متأكد من حذف هذا الإشعار؟')) {
-        return;
-    }
-
-    fetch(`/api/notifications/${notificationId}`, {
-        method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

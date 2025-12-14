@@ -131,13 +131,7 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
 
                         Forms\Components\Select::make('status')
                             ->label('حالة الجلسة')
-                            ->options([
-                                'scheduled' => 'مجدولة',
-                                'ready' => 'جاهزة للبدء',
-                                'ongoing' => 'جارية',
-                                'completed' => 'مكتملة',
-                                'cancelled' => 'ملغية',
-                            ])
+                            ->options(\App\Enums\SessionStatus::options())
                             ->default('scheduled')
                             ->required(),
                     ])->columns(2),
@@ -212,24 +206,14 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
-                    ->colors([
-                        'warning' => 'scheduled',
-                        'info' => 'ready',
-                        'primary' => 'ongoing',
-                        'success' => 'completed',
-                        'danger' => 'cancelled',
-                    ])
-                    ->formatStateUsing(fn ($state): string => $state instanceof \App\Enums\SessionStatus
-                        ? $state->label()
-                        : match ($state) {
-                            'scheduled' => 'مجدولة',
-                            'ready' => 'جاهزة',
-                            'ongoing' => 'جارية',
-                            'completed' => 'مكتملة',
-                            'cancelled' => 'ملغية',
-                            default => (string) $state,
+                    ->colors(\App\Enums\SessionStatus::colorOptions())
+                    ->formatStateUsing(function ($state): string {
+                        if ($state instanceof \App\Enums\SessionStatus) {
+                            return $state->label();
                         }
-                    ),
+                        $statusEnum = \App\Enums\SessionStatus::tryFrom($state);
+                        return $statusEnum?->label() ?? $state;
+                    }),
 
                 Tables\Columns\TextColumn::make('attendance_count')
                     ->label('عدد الحضور')
@@ -250,13 +234,7 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options([
-                        'scheduled' => 'مجدولة',
-                        'ready' => 'جاهزة',
-                        'ongoing' => 'جارية',
-                        'completed' => 'مكتملة',
-                        'cancelled' => 'ملغية',
-                    ]),
+                    ->options(\App\Enums\SessionStatus::options()),
 
                 Tables\Filters\SelectFilter::make('course_id')
                     ->label('الدورة')

@@ -44,28 +44,8 @@
     ];
   }
 
-  // Teacher navigation items
+  // Teacher navigation items - empty (removed nav links from topbar)
   $teacherNavItems = [];
-
-  if (Route::has('teacher.profile')) {
-    $teacherNavItems[] = ['route' => 'teacher.profile', 'label' => 'الرئيسية', 'icon' => 'ri-dashboard-line', 'activeRoutes' => ['teacher.profile']];
-  }
-  if (Route::has('teacher.students')) {
-    $teacherNavItems[] = ['route' => 'teacher.students', 'label' => 'الطلاب', 'icon' => 'ri-group-line', 'activeRoutes' => ['teacher.students']];
-  }
-  if (Route::has('teacher.earnings')) {
-    $teacherNavItems[] = ['route' => 'teacher.earnings', 'label' => 'الأرباح', 'icon' => 'ri-money-dollar-circle-line', 'activeRoutes' => ['teacher.earnings']];
-  }
-  if (Route::has('teacher.schedule.dashboard')) {
-    $teacherNavItems[] = ['route' => 'teacher.schedule.dashboard', 'label' => 'الجدول والمواعيد', 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => ['teacher.schedule.*']];
-  }
-
-  // If no routes exist, add fallback items
-  if (empty($teacherNavItems)) {
-    $teacherNavItems = [
-      ['route' => 'teacher.profile', 'label' => 'الرئيسية', 'icon' => 'ri-dashboard-line', 'activeRoutes' => []],
-    ];
-  }
 
   // Parent navigation items
   $parentNavItems = [];
@@ -177,7 +157,7 @@
                                  ($isAcademicTeacherRoute ? 'hover:text-violet-600 hover:bg-gray-100' : 'hover:' . $brandColorClass . ' hover:bg-gray-100'))));
             @endphp
             <a href="{{ $itemRoute }}"
-               class="flex items-center font-medium px-3 py-2 {{ $isActive ? $activeColorClass : 'text-gray-700' }} {{ $hoverColorClass }} rounded-lg transition-all duration-200 focus:ring-2 focus:ring-{{ $brandColor }}-500">
+               class="flex items-center font-medium px-3 py-2 {{ $isActive ? $activeColorClass : 'text-gray-700' }} {{ $hoverColorClass }} rounded-lg transition-all duration-200 focus:outline-none">
               @if(isset($item['icon']) && in_array($role, ['teacher', 'parent']))
                 <i class="{{ $item['icon'] }} ml-2"></i>
               @endif
@@ -210,7 +190,7 @@
               name="q"
               id="nav-search-input"
               value="{{ request('q') }}"
-              placeholder="البحث في الكورسات والدروس..."
+              placeholder="بحث..."
               class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-{{ $brandColor }}-500 focus:border-transparent"
               aria-label="البحث في المحتوى"
               required
@@ -433,13 +413,6 @@
           </div>
         </div>
 
-        <!-- Mobile Sidebar Toggle Button -->
-        <button @click="$dispatch('toggle-mobile-sidebar')"
-                class="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="فتح القائمة الجانبية">
-          <i class="ri-layout-right-2-line text-xl text-gray-700"></i>
-        </button>
-
         <!-- Mobile Menu Button -->
         <button @click="mobileMenuOpen = !mobileMenuOpen"
                 class="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
@@ -473,10 +446,10 @@
        x-transition:leave-start="translate-x-0"
        x-transition:leave-end="translate-x-full"
        @click.stop
-       class="md:hidden fixed top-0 right-0 bottom-0 w-[300px] max-w-[85vw] bg-white shadow-xl z-50 overflow-y-auto">
+       class="md:hidden fixed top-0 right-0 bottom-0 w-[300px] max-w-[85vw] bg-white shadow-xl z-50 flex flex-col">
 
     <!-- Mobile Menu Header -->
-    <div class="flex items-center justify-between p-4 border-b bg-gray-50">
+    <div class="flex items-center justify-between p-4 border-b bg-gray-50 flex-shrink-0">
       <div class="flex items-center gap-3">
         <x-avatar :user="$user" size="sm" :userType="$userAvatarType" :gender="$userGender" />
         <div>
@@ -491,7 +464,7 @@
     </div>
 
     <!-- Mobile Navigation Links -->
-    <nav class="p-4">
+    <nav class="p-4 flex-1 overflow-y-auto">
       <div class="space-y-1">
         @foreach($navItems as $item)
           @php
@@ -553,6 +526,12 @@
           $profileRoute = Route::has($role . '.profile') ? route($role . '.profile', ['subdomain' => $subdomain]) : '#';
         @endphp
 
+        <a href="{{ $profileRoute }}"
+           class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="ri-user-line text-xl"></i>
+          <span>الملف الشخصي</span>
+        </a>
+
         @if($role === 'teacher')
           @if($user && $user->isQuranTeacher())
             <a href="/teacher-panel" target="_blank"
@@ -568,23 +547,70 @@
             </a>
           @endif
         @endif
-
-        <a href="{{ $profileRoute }}"
-           class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="ri-user-line text-xl"></i>
-          <span>الملف الشخصي</span>
-        </a>
-
-        <a href="/chats"
-           class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="ri-message-2-line text-xl"></i>
-          <span>الرسائل</span>
-        </a>
       </div>
+
+      @if($role === 'student')
+        <!-- Divider -->
+        <div class="my-4 border-t border-gray-200"></div>
+
+        <!-- Student Sidebar Items -->
+        <div class="space-y-1">
+          <!-- Section: Profile Management -->
+          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">إدارة الملف الشخصي</p>
+
+          <a href="{{ route('student.profile.edit', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.profile.edit') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-edit-line text-xl"></i>
+            <span>تعديل الملف الشخصي</span>
+          </a>
+
+          <!-- Section: Learning Progress -->
+          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase mt-4">التقدم الدراسي</p>
+
+          <a href="{{ route('student.calendar', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.calendar') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-calendar-line text-xl"></i>
+            <span>التقويم والجلسات</span>
+          </a>
+
+          <a href="{{ route('student.homework.index', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.homework.*') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-file-list-3-line text-xl"></i>
+            <span>الواجبات</span>
+          </a>
+
+          <a href="{{ route('student.quizzes', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.quizzes') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-questionnaire-line text-xl"></i>
+            <span>الاختبارات</span>
+          </a>
+
+          <a href="{{ route('student.certificates', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.certificates') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-medal-line text-xl"></i>
+            <span>الشهادات</span>
+          </a>
+
+          <!-- Section: Subscriptions & Payments -->
+          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase mt-4">الاشتراكات والمدفوعات</p>
+
+          <a href="{{ route('student.subscriptions', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.subscriptions') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-wallet-3-line text-xl"></i>
+            <span>الاشتراكات</span>
+          </a>
+
+          <a href="{{ route('student.payments', ['subdomain' => $subdomain]) }}"
+             class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.payments') ? 'bg-gray-100 text-primary' : '' }}">
+            <i class="ri-bill-line text-xl"></i>
+            <span>سجل المدفوعات</span>
+          </a>
+        </div>
+      @endif
     </nav>
 
     <!-- Mobile Menu Footer -->
-    <div class="absolute bottom-0 left-0 right-0 p-4 border-t bg-white">
+    <div class="p-4 border-t bg-white flex-shrink-0">
       @php
         $logoutRoute = Route::has('logout') ? route('logout', ['subdomain' => $subdomain]) : '/logout';
       @endphp

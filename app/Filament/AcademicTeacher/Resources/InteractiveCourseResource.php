@@ -117,13 +117,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
 
                             Forms\Components\Select::make('status')
                                 ->label('حالة الدورة')
-                                ->options([
-                                    'draft' => 'مسودة',
-                                    'published' => 'منشور',
-                                    'active' => 'نشط',
-                                    'completed' => 'مكتمل',
-                                    'cancelled' => 'ملغي',
-                                ])
+                                ->options(\App\Enums\InteractiveCourseStatus::options())
                                 ->required()
                                 ->helperText('يمكن للمعلم تعديل حالة الدورة'),
                         ]),
@@ -326,20 +320,13 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
 
             Tables\Columns\BadgeColumn::make('status')
                 ->label('الحالة')
-                ->colors([
-                    'gray' => 'draft',
-                    'primary' => 'published',
-                    'success' => 'active',
-                    'warning' => 'completed',
-                    'danger' => 'cancelled',
-                ])
-                ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\InteractiveCourseStatus ? $state->value : $state) {
-                    'draft' => 'مسودة',
-                    'published' => 'منشور',
-                    'active' => 'نشط',
-                    'completed' => 'مكتمل',
-                    'cancelled' => 'ملغي',
-                    default => is_string($state) ? $state : ($state instanceof \App\Enums\InteractiveCourseStatus ? $state->label() : ''),
+                ->colors(\App\Enums\InteractiveCourseStatus::colorOptions())
+                ->formatStateUsing(function ($state): string {
+                    if ($state instanceof \App\Enums\InteractiveCourseStatus) {
+                        return $state->label();
+                    }
+                    $statusEnum = \App\Enums\InteractiveCourseStatus::tryFrom($state);
+                    return $statusEnum?->label() ?? $state;
                 }),
 
             Tables\Columns\TextColumn::make('start_date')
@@ -366,13 +353,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
         return [
             Tables\Filters\SelectFilter::make('status')
                 ->label('حالة الدورة')
-                ->options([
-                    'draft' => 'مسودة',
-                    'published' => 'منشور',
-                    'active' => 'نشط',
-                    'completed' => 'مكتمل',
-                    'cancelled' => 'ملغي',
-                ]),
+                ->options(\App\Enums\InteractiveCourseStatus::options()),
 
             Tables\Filters\SelectFilter::make('subject_id')
                 ->label('المادة')
@@ -459,9 +440,9 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                     Forms\Components\Select::make('status')
                         ->label('الحالة الجديدة')
                         ->options([
-                            'published' => 'منشور',
-                            'active' => 'نشط',
-                            'completed' => 'مكتمل',
+                            \App\Enums\InteractiveCourseStatus::PUBLISHED->value => \App\Enums\InteractiveCourseStatus::PUBLISHED->label(),
+                            \App\Enums\InteractiveCourseStatus::ACTIVE->value => \App\Enums\InteractiveCourseStatus::ACTIVE->label(),
+                            \App\Enums\InteractiveCourseStatus::COMPLETED->value => \App\Enums\InteractiveCourseStatus::COMPLETED->label(),
                         ])
                         ->required(),
                 ])

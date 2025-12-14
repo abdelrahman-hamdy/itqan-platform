@@ -136,8 +136,9 @@ class AcademicSessionStrategy implements SessionStrategyInterface
                     'type' => 'interactive_course',
                     'title' => $course->title,
                     'name' => $course->title, // For consistency
-                    'status' => $course->status,
-                    'status_arabic' => $course->getStatusInArabicAttribute(),
+                    'status' => $course->status->value,
+                    'status_arabic' => $course->status->label(),
+                    'status_color' => $course->status->hexColor(),
                     'total_sessions' => $totalSessions,
                     'sessions_scheduled' => $scheduledSessions,
                     'sessions_remaining' => $remainingSessions,

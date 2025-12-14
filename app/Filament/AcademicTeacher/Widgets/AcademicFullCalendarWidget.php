@@ -259,6 +259,10 @@ class AcademicFullCalendarWidget extends BaseFullCalendarWidget
                 : Carbon::parse($scheduledAt, 'UTC')->timezone($timezone);
             $isPassed = $scheduledAt < Carbon::now();
 
+            $statusEnum = $session->status instanceof \App\Enums\SessionStatus
+                ? $session->status
+                : \App\Enums\SessionStatus::tryFrom($session->status ?? 'scheduled');
+
             $sessionData = [
                 'type' => $isCourse ? 'course' : 'academic',
                 'isPassed' => $isPassed,
@@ -270,7 +274,9 @@ class AcademicFullCalendarWidget extends BaseFullCalendarWidget
                 'color' => '',
                 'eventId' => '',
                 'canEdit' => false,
-                'status' => $session->status instanceof \App\Enums\SessionStatus ? $session->status->value : ($session->status ?? 'scheduled'),
+                'status' => $statusEnum?->value ?? 'scheduled',
+                'statusLabel' => $statusEnum?->label() ?? 'مجدولة',
+                'statusColor' => $statusEnum?->hexColor() ?? '#3B82F6',
             ];
 
             if ($isCourse) {

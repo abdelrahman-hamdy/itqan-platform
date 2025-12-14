@@ -14,14 +14,14 @@ class AcademicSessionMeetingService
 {
     private LiveKitService $livekitService;
 
-    private SessionStatusService $sessionStatusService;
+    private UnifiedSessionStatusService $statusService;
 
     public function __construct(
         LiveKitService $livekitService,
-        SessionStatusService $sessionStatusService
+        UnifiedSessionStatusService $statusService
     ) {
         $this->livekitService = $livekitService;
-        $this->sessionStatusService = $sessionStatusService;
+        $this->statusService = $statusService;
     }
 
     /**
@@ -167,7 +167,10 @@ class AcademicSessionMeetingService
     }
 
     /**
-     * Auto-start academic sessions that are scheduled to begin
+     * Process academic sessions - create meetings for sessions in preparation window
+     *
+     * NOTE: Status transitions are handled by UnifiedSessionStatusService.
+     * This method only handles meeting creation and cleanup.
      */
     public function processScheduledSessions(): array
     {
@@ -181,26 +184,19 @@ class AcademicSessionMeetingService
         $timezone = AcademyContextService::getTimezone();
         $now = Carbon::now($timezone);
 
-        // Get academic sessions that should be starting within the preparation window
-        $upcomingSessions = AcademicSession::where('scheduled_at', '>=', $now)
-            ->where('scheduled_at', '<=', $now->copy()->addMinutes(30)) // Max window to check
-            ->where('status', '!=', SessionStatus::COMPLETED)
+        // Get academic sessions in READY status without meetings yet
+        // Note: UnifiedSessionStatusService handles SCHEDULED -> READY transitions
+        $readySessions = AcademicSession::where('status', SessionStatus::READY)
             ->whereNull('meeting_room_name') // Sessions without meetings yet
             ->with(['academy'])
-            ->get()
-            ->filter(function ($session) use ($now) {
-                // Check if session is within the academy's preparation window
-                $academySettings = AcademySettings::where('academy_id', $session->academy_id)->first();
-                $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
-                return $session->scheduled_at <= $now->copy()->addMinutes($preparationMinutes);
-            });
+            ->get();
 
-        foreach ($upcomingSessions as $session) {
+        foreach ($readySessions as $session) {
             try {
                 $this->ensureMeetingAvailable($session, true);
                 $results['started']++;
 
-                Log::info('Auto-created meeting for upcoming academic session', [
+                Log::info('Auto-created meeting for ready academic session', [
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at,
                     'room_name' => $session->meeting_room_name,
@@ -215,28 +211,14 @@ class AcademicSessionMeetingService
             }
         }
 
-        // Update status of active academic sessions
-        $activeSessions = AcademicSession::where('scheduled_at', '<=', $now)
-            ->where('scheduled_at', '>', $now->copy()->subMinutes(60))
-            ->where('status', SessionStatus::SCHEDULED)
-            ->get();
+        // Note: Status transitions to ONGOING are handled by UnifiedSessionStatusService
+        // when participant joins (via LiveKit webhook) or via scheduled command.
 
-        foreach ($activeSessions as $session) {
-            try {
-                $session->update(['status' => SessionStatus::ONGOING]);
-                $results['updated']++;
-            } catch (\Exception $e) {
-                Log::error('Failed to update academic session status', [
-                    'session_id' => $session->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        // Clean up expired academic sessions
+        // Clean up expired academic sessions (get cleanup hours from academy settings)
+        $defaultCleanupHours = 2;
         $expiredSessions = AcademicSession::whereNotNull('meeting_room_name')
             ->whereNotNull('scheduled_at')
-            ->where('scheduled_at', '<', $now->copy()->subHours(2)) // Sessions that ended 2+ hours ago
+            ->where('scheduled_at', '<', $now->copy()->subHours($defaultCleanupHours))
             ->where('status', '!=', SessionStatus::COMPLETED)
             ->get();
 
@@ -523,6 +505,9 @@ class AcademicSessionMeetingService
 
     /**
      * Terminate meetings for expired academic sessions
+     *
+     * NOTE: Status transitions (ONGOING -> COMPLETED) are handled by UnifiedSessionStatusService.
+     * This method only terminates the LiveKit rooms for cleanup.
      */
     public function terminateExpiredMeetings(): array
     {
@@ -535,42 +520,23 @@ class AcademicSessionMeetingService
         $timezone = AcademyContextService::getTimezone();
         $now = Carbon::now($timezone);
 
-        // Get academic sessions that should have meetings terminated
-        $expiredSessions = AcademicSession::whereNotNull('meeting_room_name')
-            ->whereIn('status', [SessionStatus::ONGOING, SessionStatus::READY])
-            ->with(['academy', 'academicSubscription'])
-            ->get()
-            ->filter(function ($session) use ($now) {
-                // For academic sessions, check if they should be auto-completed
-                // (e.g., if they're more than duration + buffer past their scheduled end)
-                if (! $session->scheduled_at) {
-                    return false;
-                }
+        // Get COMPLETED sessions that still have meeting rooms active
+        // Note: UnifiedSessionStatusService handles the ONGOING -> COMPLETED transition
+        $completedWithMeetings = AcademicSession::whereNotNull('meeting_room_name')
+            ->where('status', SessionStatus::COMPLETED)
+            ->get();
 
-                $sessionEnd = $session->scheduled_at->copy()
-                    ->addMinutes($session->duration_minutes ?? 60);
-                $bufferEnd = $sessionEnd->copy()->addMinutes(30); // 30 minute buffer
-
-                return $now->gt($bufferEnd);
-            });
-
-        foreach ($expiredSessions as $session) {
+        foreach ($completedWithMeetings as $session) {
             try {
-                // End the meeting
+                // End the meeting room on LiveKit
                 if ($session->meeting_room_name) {
                     $this->livekitService->endMeeting($session->meeting_room_name);
                     $results['meetings_terminated']++;
                 }
 
-                // Transition session to completed
-                $timezone = AcademyContextService::getTimezone();
-                $session->update([
-                    'status' => SessionStatus::COMPLETED,
-                    'ended_at' => Carbon::now($timezone),
-                ]);
                 $results['sessions_processed']++;
 
-                Log::info('Meeting terminated for expired academic session', [
+                Log::info('Meeting terminated for completed academic session', [
                     'session_id' => $session->id,
                     'status' => $session->status->value,
                 ]);
@@ -581,7 +547,7 @@ class AcademicSessionMeetingService
                     'error' => $e->getMessage(),
                 ];
 
-                Log::error('Failed to terminate meeting for expired academic session', [
+                Log::error('Failed to terminate meeting for completed academic session', [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
                 ]);
@@ -593,6 +559,10 @@ class AcademicSessionMeetingService
 
     /**
      * Enhanced processing method for academic session meetings
+     *
+     * NOTE: Status transitions are now handled by UnifiedSessionStatusService
+     * via the sessions:update-statuses command. This method only handles
+     * meeting creation and cleanup.
      */
     public function processSessionMeetings(): array
     {
@@ -604,61 +574,16 @@ class AcademicSessionMeetingService
         ];
 
         try {
-            // CRITICAL FIX: Process status transitions FIRST
-            // This ensures sessions transition to READY before we try to create meetings
-            $transitionSessions = AcademicSession::whereIn('status', [
-                SessionStatus::SCHEDULED,
-                SessionStatus::READY,
-                SessionStatus::ONGOING,
-            ])->with(['academy', 'academicSubscription'])->get();
+            // Status transitions are now handled by UnifiedSessionStatusService
+            // via the sessions:update-statuses command. We don't duplicate that logic here.
+            // This separation ensures consistent behavior across all session types.
 
-            // Simple status transitions for academic sessions
-            $transitionsCount = 0;
-            foreach ($transitionSessions as $session) {
-                try {
-                    $oldStatus = $session->status;
-
-                    // Check if session should transition to READY
-                    if ($session->status === SessionStatus::SCHEDULED && $session->scheduled_at) {
-                        $timezone = AcademyContextService::getTimezone();
-                        $now = Carbon::now($timezone);
-                        $preparationTime = $session->scheduled_at->copy()->subMinutes(15);
-                        if ($now->gte($preparationTime)) {
-                            $session->update(['status' => SessionStatus::READY]);
-                            $transitionsCount++;
-                        }
-                    }
-
-                    // Check if session should transition to ONGOING
-                    if ($session->status === SessionStatus::READY && $session->scheduled_at) {
-                        $timezone = AcademyContextService::getTimezone();
-                        $now = Carbon::now($timezone);
-                        if ($now->gte($session->scheduled_at)) {
-                            $session->update(['status' => SessionStatus::ONGOING]);
-                            $transitionsCount++;
-                        }
-                    }
-
-                } catch (\Exception $e) {
-                    Log::error('Failed to process academic session status transition', [
-                        'session_id' => $session->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
-
-            $results['status_transitions'] = $transitionsCount;
-
-            Log::info('Academic status transitions processed', [
-                'transitions_count' => $transitionsCount,
-            ]);
-
-            // THEN create meetings for ready academic sessions (including newly transitioned ones)
+            // Create meetings for ready academic sessions
             $createResults = $this->createMeetingsForReadySessions();
             $results['meetings_created'] = $createResults['meetings_created'];
             $results['errors'] = array_merge($results['errors'], $createResults['errors']);
 
-            // Finally, terminate expired meetings
+            // Terminate expired meetings
             $terminateResults = $this->terminateExpiredMeetings();
             $results['meetings_terminated'] = $terminateResults['meetings_terminated'];
             $results['errors'] = array_merge($results['errors'], $terminateResults['errors']);

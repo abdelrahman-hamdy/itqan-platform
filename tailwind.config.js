@@ -15,9 +15,13 @@ export default {
 
     // Safelist commonly used gradient combinations to prevent purging
     safelist: [
+        // Sidebar margin classes (dynamically applied via JavaScript)
+        'md:mr-80',
+        'md:mr-20',
+
         // Education section gradients
         'from-indigo-600',
-        'via-blue-600', 
+        'via-blue-600',
         'to-indigo-700',
         'bg-gradient-to-br',
         

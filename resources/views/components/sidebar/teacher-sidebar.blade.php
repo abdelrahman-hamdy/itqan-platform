@@ -40,29 +40,11 @@
 
       <!-- Teaching Management -->
       <x-sidebar.nav-section title="إدارة التدريس">
-        <x-sidebar.nav-item
-          :href="route('teacher.students', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
-          :label="$isQuran ? 'طلاب الحلقات' : 'طلاب الدورات'"
-          icon="ri-group-line"
-          :active="request()->routeIs('teacher.students')" />
-
-        <x-sidebar.nav-item
-          :href="route('teacher.schedule.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
-          :label="$isQuran ? 'الجدول والمواعيد' : 'جدول المواعيد'"
-          icon="ri-calendar-schedule-line"
-          :active="request()->routeIs('teacher.schedule.*')" />
-
         @if($isQuran)
           <x-sidebar.nav-item
             href="/teacher-panel/quran-trial-requests"
             label="طلبات الجلسات التجريبية"
             icon="ri-user-add-line"
-            :external="true" />
-
-          <x-sidebar.nav-item
-            href="/teacher-panel/quran-subscriptions"
-            label="اشتراكات طلابي"
-            icon="ri-book-open-line"
             :external="true" />
 
           <x-sidebar.nav-item
@@ -90,24 +72,6 @@
           label="الأرباح الشهرية"
           icon="ri-money-dollar-circle-line"
           :active="request()->routeIs('teacher.earnings')" />
-      </x-sidebar.nav-section>
-
-      <!-- Reports & Analytics -->
-      <x-sidebar.nav-section title="التقارير والتحليلات">
-        <x-sidebar.nav-item
-          href="#"
-          label="تقرير الأداء"
-          icon="ri-bar-chart-line" />
-
-        <x-sidebar.nav-item
-          href="#"
-          :label="$isQuran ? 'تقدم الطلاب في الحفظ' : 'تقدم الطلاب الأكاديمي'"
-          icon="ri-line-chart-line" />
-
-        <x-sidebar.nav-item
-          href="#"
-          label="التقييمات والمراجعات"
-          icon="ri-star-line" />
       </x-sidebar.nav-section>
 
     </div>

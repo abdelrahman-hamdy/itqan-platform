@@ -15,25 +15,33 @@
                         <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">
                             {{ $item['name'] ?? $item['title'] ?? 'عنصر' }}
                         </h4>
-                        <x-filament::badge
-                            :color="match($item['status']) {
-                                'scheduled', 'active', 'fully_scheduled' => 'success',
-                                'partially_scheduled', 'published' => 'info',
-                                'not_scheduled', 'pending' => 'warning',
-                                default => 'gray',
-                            }"
-                        >
-                            {{ match($item['status']) {
-                                'scheduled' => 'مجدولة',
-                                'not_scheduled' => 'غير مجدولة',
-                                'partially_scheduled' => 'مجدولة جزئياً',
-                                'fully_scheduled' => 'مكتملة الجدولة',
-                                'active' => 'نشط',
-                                'published' => 'منشور',
-                                'pending' => 'قيد الانتظار',
-                                default => $item['status'],
-                            } }}
-                        </x-filament::badge>
+                        @if(isset($item['status_color']))
+                            {{-- Use custom color from status_color when provided --}}
+                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium"
+                                  style="background-color: {{ $item['status_color'] }}20; color: {{ $item['status_color'] }};">
+                                {{ $item['status_arabic'] ?? $item['status'] }}
+                            </span>
+                        @else
+                            <x-filament::badge
+                                :color="match($item['status']) {
+                                    'scheduled', 'active', 'fully_scheduled' => 'success',
+                                    'partially_scheduled', 'published' => 'info',
+                                    'not_scheduled', 'pending' => 'warning',
+                                    default => 'gray',
+                                }"
+                            >
+                                {{ $item['status_arabic'] ?? match($item['status']) {
+                                    'scheduled' => 'مجدولة',
+                                    'not_scheduled' => 'غير مجدولة',
+                                    'partially_scheduled' => 'مجدولة جزئياً',
+                                    'fully_scheduled' => 'مكتملة الجدولة',
+                                    'active' => 'نشط',
+                                    'published' => 'منشور',
+                                    'pending' => 'قيد الانتظار',
+                                    default => $item['status'],
+                                } }}
+                            </x-filament::badge>
+                        @endif
                     </div>
 
                     {{-- Item Details --}}

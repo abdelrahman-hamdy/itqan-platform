@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 class MeetingAttendanceService
 {
-    private SessionStatusService $sessionStatusService;
+    private UnifiedSessionStatusService $statusService;
 
-    public function __construct(SessionStatusService $sessionStatusService)
+    public function __construct(UnifiedSessionStatusService $statusService)
     {
-        $this->sessionStatusService = $sessionStatusService;
+        $this->statusService = $statusService;
     }
 
     /**
@@ -36,7 +36,7 @@ class MeetingAttendanceService
 
             // If this is the first participant and session is READY, transition to ONGOING
             if ($session->status === SessionStatus::READY) {
-                $this->sessionStatusService->transitionToOngoing($session);
+                $this->statusService->transitionToOngoing($session);
             }
 
             Log::info('User joined meeting successfully', [
@@ -170,7 +170,7 @@ class MeetingAttendanceService
             } else {
                 // Existing Quran session logic
                 if ($session->status === SessionStatus::READY) {
-                    $this->sessionStatusService->transitionToOngoing($session);
+                    $this->statusService->transitionToOngoing($session);
                 }
             }
 

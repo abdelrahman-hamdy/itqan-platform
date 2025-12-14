@@ -62,7 +62,7 @@ class HomeworkController extends Controller
                     ->whereNotNull('homework')
                     ->where('homework', '!=', '')
                     ->with(['course', 'submissions'])
-                    ->orderBy('scheduled_date', 'desc')
+                    ->orderBy('scheduled_at', 'desc')
                     ->limit(50)
                     ->get();
 
@@ -74,7 +74,7 @@ class HomeworkController extends Controller
                         'description' => $session->homework,
                         'course_name' => $session->course?->title,
                         'session_number' => $session->session_number,
-                        'session_date' => $session->scheduled_date?->toDateString(),
+                        'session_date' => $session->scheduled_at?->toDateString(),
                         'due_date' => $session->homework_due_date?->toDateString(),
                         'submissions_count' => $session->submissions?->count() ?? 0,
                         'pending_submissions' => $session->submissions?->where('status', 'submitted')->count() ?? 0,
@@ -183,7 +183,7 @@ class HomeworkController extends Controller
                     'title' => $session->course->title,
                 ] : null,
                 'session_number' => $session->session_number,
-                'session_date' => $session->scheduled_date?->toDateString(),
+                'session_date' => $session->scheduled_at?->toDateString(),
                 'due_date' => $session->homework_due_date?->toDateString(),
                 'submissions' => $session->submissions->map(fn($sub) => [
                     'id' => $sub->id,

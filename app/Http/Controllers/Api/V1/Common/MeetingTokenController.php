@@ -235,13 +235,7 @@ class MeetingTokenController extends Controller
      */
     protected function getScheduledAt($session, string $type)
     {
-        if ($type === 'interactive') {
-            if ($session->scheduled_date && $session->scheduled_time) {
-                return \Carbon\Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time);
-            }
-            return null;
-        }
-
+        // All session types now use scheduled_at
         return $session->scheduled_at;
     }
 

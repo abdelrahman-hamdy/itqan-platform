@@ -87,7 +87,7 @@ class CalendarController extends Controller
         $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
             $q->where('user_id', $userId);
         })
-            ->whereBetween('scheduled_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+            ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
             ->with(['course.assignedTeacher.user'])
             ->get();
 
@@ -127,9 +127,8 @@ class CalendarController extends Controller
      */
     protected function formatEvent($session, string $type): array
     {
-        $start = $type === 'interactive'
-            ? Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time)
-            : $session->scheduled_at;
+        // All session types now use scheduled_at
+        $start = $session->scheduled_at;
 
         $duration = $session->duration_minutes ?? 45;
         $end = $start?->copy()->addMinutes($duration);

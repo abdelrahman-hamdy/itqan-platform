@@ -188,7 +188,7 @@ class SubscriptionController extends Controller
                 }
 
                 $sessions = $subscription->course->sessions()
-                    ->orderBy('scheduled_date', 'desc')
+                    ->orderBy('scheduled_at', 'desc')
                     ->get()
                     ->map(fn($s) => $this->formatSessionBrief($s, 'interactive'))
                     ->toArray();
@@ -452,16 +452,13 @@ class SubscriptionController extends Controller
      */
     protected function formatSessionBrief($session, string $type): array
     {
-        $scheduledAt = $type === 'interactive'
-            ? \Carbon\Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time)->toISOString()
-            : $session->scheduled_at?->toISOString();
-
+        // All session types now use scheduled_at
         return [
             'id' => $session->id,
             'type' => $type,
             'title' => $session->title,
             'status' => $session->status->value ?? $session->status,
-            'scheduled_at' => $scheduledAt,
+            'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes ?? 45,
         ];
     }

@@ -3,33 +3,22 @@
     'storageKey' => 'sidebarCollapsed',
 ])
 
-<!-- Sidebar Container -->
+<!-- Sidebar Container - Hidden on mobile, visible on md+ screens -->
 <aside id="{{ $sidebarId }}"
        x-data="sidebarState('{{ $storageKey }}')"
        :class="{
            'w-80': !collapsed,
-           'w-20': collapsed,
-           'translate-x-full': !mobileOpen,
-           'translate-x-0': mobileOpen
+           'w-20': collapsed
        }"
-       class="fixed right-0 top-20 h-[calc(100vh-5rem)] bg-white shadow-lg border-l border-t border-gray-200 z-40 transition-all duration-300 ease-in-out md:translate-x-0"
+       class="hidden md:block fixed right-0 top-20 h-[calc(100vh-5rem)] bg-white shadow-lg border-l border-t border-gray-200 z-40 transition-all duration-300 ease-in-out"
        role="complementary"
-       aria-label="قائمة جانبية"
-       @toggle-mobile-sidebar.window="mobileOpen = !mobileOpen"
-       @close-mobile-sidebar.window="mobileOpen = false">
+       aria-label="قائمة جانبية">
 
     <!-- Collapse Toggle Button (Desktop Only) -->
     <button @click="toggleCollapse()"
-            class="hidden md:flex absolute top-4 -left-10 z-50 p-2 bg-white opacity-70 hover:opacity-100 rounded-r-lg transition-all duration-300 border border-r-0 border-gray-200 items-center justify-center min-h-[40px] min-w-[40px]"
+            class="hidden md:flex absolute top-4 -left-10 z-50 p-2 bg-white opacity-70 hover:opacity-100 rounded-l-lg transition-all duration-300 border border-l-0 border-gray-200 items-center justify-center min-h-[40px] min-w-[40px]"
             aria-label="طي/فتح القائمة الجانبية">
-        <i :class="collapsed ? 'ri-menu-unfold-line' : 'ri-menu-fold-line'" class="text-lg text-gray-600"></i>
-    </button>
-
-    <!-- Close Button (Mobile Only) -->
-    <button @click="mobileOpen = false"
-            class="md:hidden absolute top-4 left-4 z-50 p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label="إغلاق القائمة">
-        <i class="ri-close-line text-xl text-gray-600"></i>
+        <i :class="collapsed ? 'ri-menu-fold-line' : 'ri-menu-unfold-line'" class="text-lg text-gray-600"></i>
     </button>
 
     <!-- Scrollable Content Container -->
@@ -40,19 +29,6 @@
     </div>
 
 </aside>
-
-<!-- Mobile Sidebar Overlay -->
-<div x-data
-     x-show="$store.sidebar?.mobileOpen"
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0"
-     x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-200"
-     x-transition:leave-start="opacity-100"
-     x-transition:leave-end="opacity-0"
-     @click="$dispatch('close-mobile-sidebar')"
-     class="fixed inset-0 bg-black/50 z-30 md:hidden"
-     id="{{ $sidebarId }}-overlay"></div>
 
 <!-- Tooltip Container (Desktop Collapsed Mode) -->
 <div id="{{ $sidebarId }}-tooltip"
@@ -65,6 +41,39 @@
 </div>
 
 <style>
+    /* Dynamic Content Wrapper - responds to sidebar state */
+    .dynamic-content-wrapper {
+        transition: max-width 0.3s ease-in-out;
+    }
+
+    /* When sidebar is expanded (default) - constrained width */
+    body:not(.sidebar-collapsed) .dynamic-content-wrapper {
+        max-width: 80rem; /* max-w-7xl */
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* When sidebar is collapsed - fluid width */
+    body.sidebar-collapsed .dynamic-content-wrapper {
+        max-width: 100%;
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    @media (min-width: 640px) {
+        body.sidebar-collapsed .dynamic-content-wrapper {
+            margin-left: 1.5rem;
+            margin-right: 1.5rem;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        body.sidebar-collapsed .dynamic-content-wrapper {
+            margin-left: 2rem;
+            margin-right: 2rem;
+        }
+    }
+
     /* Custom Scrollbar Styling */
     .sidebar-scrollable {
         scrollbar-width: thin;
@@ -127,41 +136,33 @@
 </style>
 
 <script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('sidebarState', (storageKey) => ({
+// Sidebar state component - fallback for pages not using Vite bundle
+// If using Vite bundle, sidebarState is already registered in app.js
+(function() {
+    const sidebarStateComponent = (storageKey) => ({
         collapsed: localStorage.getItem(storageKey) === 'true',
-        mobileOpen: false,
 
         init() {
-            // Store reference for overlay access
-            Alpine.store('sidebar', {
-                mobileOpen: this.mobileOpen,
-                collapsed: this.collapsed
-            });
-
-            // Watch for changes
-            this.$watch('mobileOpen', (value) => {
-                Alpine.store('sidebar').mobileOpen = value;
-                // Prevent body scroll when mobile sidebar is open
-                document.body.style.overflow = value ? 'hidden' : '';
-            });
-
-            this.$watch('collapsed', (value) => {
-                Alpine.store('sidebar').collapsed = value;
-                // Update main content margin on desktop
-                this.updateMainContentMargin();
-            });
-
-            // Initial margin update
-            this.updateMainContentMargin();
-
-            // Listen for mobile toggle from external button
-            const mobileToggle = document.getElementById('sidebar-toggle-mobile');
-            if (mobileToggle) {
-                mobileToggle.addEventListener('click', () => {
-                    this.mobileOpen = !this.mobileOpen;
+            // Store reference for other components
+            if (window.Alpine && window.Alpine.store) {
+                window.Alpine.store('sidebar', {
+                    collapsed: this.collapsed
                 });
             }
+
+            // Watch for collapse changes
+            this.$watch('collapsed', (value) => {
+                if (window.Alpine && window.Alpine.store) {
+                    window.Alpine.store('sidebar').collapsed = value;
+                }
+                // Update main content margin and body class on desktop
+                this.updateMainContentMargin();
+                this.updateBodyClass();
+            });
+
+            // Initial updates
+            this.updateMainContentMargin();
+            this.updateBodyClass();
         },
 
         toggleCollapse() {
@@ -172,13 +173,39 @@ document.addEventListener('alpine:init', () => {
         updateMainContentMargin() {
             const mainContent = document.getElementById('main-content');
             if (mainContent && window.innerWidth >= 768) {
-                // Use CSS class-based approach instead of inline styles
                 mainContent.classList.remove('md:mr-80', 'md:mr-20');
                 mainContent.classList.add(this.collapsed ? 'md:mr-20' : 'md:mr-80');
             }
+        },
+
+        updateBodyClass() {
+            if (this.collapsed) {
+                document.body.classList.add('sidebar-collapsed');
+            } else {
+                document.body.classList.remove('sidebar-collapsed');
+            }
         }
-    }));
-});
+    });
+
+    // Make available globally (for x-data evaluation)
+    if (!window.sidebarState) {
+        window.sidebarState = sidebarStateComponent;
+    }
+
+    // Register with Alpine.data if Alpine is available and not already registered
+    function registerSidebarState() {
+        if (window.Alpine && !window.Alpine._registeredSidebarStateInline) {
+            window.Alpine.data('sidebarState', sidebarStateComponent);
+            window.Alpine._registeredSidebarStateInline = true;
+        }
+    }
+
+    // Try to register immediately
+    registerSidebarState();
+
+    // Also listen for alpine:init (for pages loading Alpine later)
+    document.addEventListener('alpine:init', registerSidebarState);
+})();
 
 // Tooltip functionality for collapsed sidebar
 document.addEventListener('DOMContentLoaded', function() {
@@ -187,30 +214,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!sidebar || !tooltip) return;
 
-    // Use event delegation for nav items
-    sidebar.addEventListener('mouseenter', function(e) {
+    let hideTimeout = null;
+
+    // Get Alpine.js data from tooltip element
+    function getTooltipData() {
+        return Alpine.$data(tooltip);
+    }
+
+    function showTooltip(navItem) {
+        // Cancel any pending hide
+        if (hideTimeout) {
+            clearTimeout(hideTimeout);
+            hideTimeout = null;
+        }
+
+        const tooltipContent = navItem.getAttribute('data-tooltip');
+        if (tooltipContent) {
+            const rect = navItem.getBoundingClientRect();
+            const tooltipData = getTooltipData();
+            if (tooltipData) {
+                tooltipData.text = tooltipContent;
+                tooltipData.top = rect.top + (rect.height / 2) - 16;
+                tooltipData.show = true;
+            }
+        }
+    }
+
+    function hideTooltip() {
+        // Cancel any pending hide first
+        if (hideTimeout) {
+            clearTimeout(hideTimeout);
+        }
+        // Schedule hide with small delay
+        hideTimeout = setTimeout(() => {
+            const tooltipData = getTooltipData();
+            if (tooltipData) {
+                tooltipData.show = false;
+            }
+            hideTimeout = null;
+        }, 150);
+    }
+
+    // Use mouseover/mouseout for proper event delegation (they bubble)
+    sidebar.addEventListener('mouseover', function(e) {
         const navItem = e.target.closest('.nav-item');
         if (!navItem) return;
 
         const isCollapsed = sidebar.classList.contains('w-20');
         if (!isCollapsed || window.innerWidth < 768) return;
 
-        const tooltipContent = navItem.getAttribute('data-tooltip');
-        if (tooltipContent) {
-            const rect = navItem.getBoundingClientRect();
-            tooltip.__x.$data.text = tooltipContent;
-            tooltip.__x.$data.top = rect.top + (rect.height / 2) - 16;
-            tooltip.__x.$data.show = true;
-        }
-    }, true);
+        showTooltip(navItem);
+    });
 
-    sidebar.addEventListener('mouseleave', function(e) {
+    sidebar.addEventListener('mouseout', function(e) {
         const navItem = e.target.closest('.nav-item');
-        if (navItem && tooltip.__x) {
-            setTimeout(() => {
-                tooltip.__x.$data.show = false;
-            }, 100);
+        const relatedTarget = e.relatedTarget;
+
+        // Check if we're moving to another nav-item
+        const targetNavItem = relatedTarget ? relatedTarget.closest('.nav-item') : null;
+
+        // Only schedule hide if we're not moving to another nav-item
+        if (navItem && !targetNavItem) {
+            hideTooltip();
         }
-    }, true);
+    });
 });
 </script>

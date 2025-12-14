@@ -71,7 +71,7 @@
 
   <!-- Main Content -->
   <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+    <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
 
       <!-- Welcome Section -->
       <div class="mb-6 md:mb-8">
@@ -263,213 +263,245 @@
 
       <!-- Recorded Courses Section (Full Width) -->
       <div class="mt-12">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">الكورسات المسجلة</h2>
-          <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
-             class="text-cyan-500 hover:text-cyan-600 text-sm font-medium transition-colors">
-            عرض جميع الكورسات
-            <i class="ri-arrow-left-s-line mr-1"></i>
-          </a>
-        </div>
-
         @php
-          $debugRecordedCourses = isset($recordedCourses) ? $recordedCourses : collect();
-          $debugCount = $debugRecordedCourses->count();
+          $recordedCoursesCollection = isset($recordedCourses) ? $recordedCourses : collect();
+          $recordedCoursesCount = $recordedCoursesCollection->count();
         @endphp
 
-        @if($debugCount > 0)
-          <!-- Courses Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($debugRecordedCourses->take(6) as $course)
-              <x-course-card :course="$course" :academy="auth()->user()->academy" />
-            @endforeach
-          </div>
-        @else
-          <!-- Empty State -->
-          <div class="text-center py-12 bg-white rounded-xl border border-gray-200">
-            <div class="max-w-md mx-auto">
-              <div class="mb-4">
-                <i class="ri-video-line text-4xl text-cyan-400"></i>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+          <!-- Card Header -->
+          <div class="p-6 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-cyan-500">
+                  <i class="ri-video-line text-xl text-white"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">الكورسات المسجلة</h3>
+                  <p class="text-sm text-gray-500">دورات مسجلة يمكنك مشاهدتها في أي وقت</p>
+                </div>
               </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">لا توجد كورسات مسجلة</h3>
-              <p class="text-gray-600 mb-4">
-                لم يتم العثور على كورسات مسجلة. استكشف المزيد من الدورات المتاحة.
-              </p>
+            </div>
+          </div>
+
+          <!-- Card Content -->
+          <div class="p-6">
+            @if($recordedCoursesCount > 0)
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                @foreach($recordedCoursesCollection->take(6) as $course)
+                  <a href="{{ route('courses.show', ['subdomain' => auth()->user()->academy->subdomain, 'id' => $course->id]) }}" class="block">
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                      <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-cyan-100 ml-3">
+                        <i class="ri-video-line text-sm text-cyan-600"></i>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <h4 class="font-medium text-gray-900 truncate">{{ $course->title }}</h4>
+                        <p class="text-sm text-gray-500 truncate">
+                          {{ $course->lessons_count ?? $course->lessons->count() ?? 0 }} درس
+                          @if($course->instructor)
+                            - {{ $course->instructor->name }}
+                          @endif
+                        </p>
+                        @if($course->pivot && $course->pivot->progress)
+                          <div class="mt-2">
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                              <span>التقدم</span>
+                              <span>{{ $course->pivot->progress }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                              <div class="bg-cyan-600 h-2 rounded-full transition-all duration-300"
+                                   style="width: {{ $course->pivot->progress }}%"></div>
+                            </div>
+                          </div>
+                        @endif
+                      </div>
+                      <div class="flex items-center space-x-2 space-x-reverse mr-3">
+                        @if($course->is_published)
+                          <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">متاح</span>
+                        @endif
+                        <div class="text-cyan-600 hover:text-cyan-700 transition-colors">
+                          <i class="ri-arrow-left-s-line"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                @endforeach
+              </div>
+            @else
+              <div class="text-center py-8">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="ri-video-line text-2xl text-gray-400"></i>
+                </div>
+                <h4 class="text-lg font-medium text-gray-900 mb-2">لا توجد كورسات مسجلة</h4>
+                <p class="text-gray-500 mb-4">لم يتم العثور على كورسات مسجلة. استكشف المزيد من الدورات المتاحة.</p>
+                <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" class="bg-cyan-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-cyan-700 transition-colors inline-block">
+                  استكشاف الكورسات
+                </a>
+              </div>
+            @endif
+          </div>
+
+          <!-- Card Footer -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-500">
+                <div class="flex items-center space-x-1 space-x-reverse">
+                  <i class="ri-video-line"></i>
+                  <span>{{ $recordedCoursesCount }} كورس{{ $recordedCoursesCount > 1 ? 'ات' : '' }}</span>
+                </div>
+              </div>
               <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
-                 class="inline-block bg-cyan-500 text-white px-6 py-2 rounded-lg hover:bg-cyan-600 transition-colors">
-                <i class="ri-search-line ml-2"></i>
-                استكشاف الكورسات
+                 class="text-cyan-600 hover:text-cyan-700 text-sm font-medium transition-colors">
+                عرض جميع الكورسات
+                <i class="ri-arrow-left-s-line mr-1"></i>
               </a>
             </div>
           </div>
-        @endif
+        </div>
       </div>
 
 
 
       <!-- Quran Trial Requests Section -->
-      <div class="mt-12">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">طلبات الجلسات التجريبية للقرآن</h2>
-          <a href="{{ route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" 
-             class="text-green-500 hover:text-green-600 text-sm font-medium transition-colors">
-            عرض جميع المعلمين
-            <i class="ri-arrow-left-s-line mr-1"></i>
-          </a>
-        </div>
-        
-        @if($quranTrialRequests && $quranTrialRequests->count() > 0)
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($quranTrialRequests->take(6) as $trialRequest)
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300">
-                <div class="flex items-center space-x-3 space-x-reverse mb-4">
-                  @if($trialRequest->teacher)
-                    @include('components.teacher-avatar', [
-                      'teacher' => $trialRequest->teacher,
-                      'size' => 'sm',
-                      'showBadge' => false
-                    ])
+      <div class="mt-8">
+        @php
+          $trialRequestsCollection = isset($quranTrialRequests) ? $quranTrialRequests : collect();
+          $trialRequestsCount = $trialRequestsCollection->count();
+        @endphp
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+          <!-- Card Header -->
+          <div class="p-6 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-emerald-500">
+                  <i class="ri-calendar-todo-line text-xl text-white"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">طلبات الجلسات التجريبية للقرآن</h3>
+                  <p class="text-sm text-gray-500">جلسات تجريبية مجانية مع معلمي القرآن المؤهلين</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Content -->
+          <div class="p-6">
+            @if($trialRequestsCount > 0)
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                @foreach($trialRequestsCollection->take(6) as $trialRequest)
+                  @php
+                    $teacherName = 'معلم القرآن';
+                    if($trialRequest->teacher) {
+                      $teacherName = $trialRequest->teacher->full_name ??
+                         ($trialRequest->teacher->first_name && $trialRequest->teacher->last_name ?
+                          $trialRequest->teacher->first_name . ' ' . $trialRequest->teacher->last_name : null) ??
+                         $trialRequest->teacher->first_name ??
+                         $trialRequest->teacher->user?->name ??
+                         'معلم القرآن';
+                    }
+
+                    $statusConfig = [
+                      'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'قيد المراجعة'],
+                      'scheduled' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'مجدولة'],
+                      'completed' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'مكتملة'],
+                      'cancelled' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'ملغية'],
+                    ];
+                    $statusStyle = $statusConfig[$trialRequest->status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => $trialRequest->status];
+
+                    $preferredTimeText = '';
+                    if($trialRequest->preferred_time) {
+                      $preferredTime = $trialRequest->preferred_time;
+                      if ($preferredTime instanceof \Carbon\Carbon) {
+                        \Carbon\Carbon::setLocale('ar');
+                        $preferredTimeText = $preferredTime->translatedFormat('l، d F Y');
+                      } elseif (is_string($preferredTime) && preg_match('/^\d{4}-\d{2}-\d{2}/', $preferredTime)) {
+                        try {
+                          $parsedTime = \Carbon\Carbon::parse($preferredTime);
+                          \Carbon\Carbon::setLocale('ar');
+                          $preferredTimeText = $parsedTime->translatedFormat('l، d F Y');
+                        } catch (\Exception $e) {
+                          $preferredTimeText = $preferredTime;
+                        }
+                      } else {
+                        $translations = ['morning' => 'صباحاً', 'afternoon' => 'بعد الظهر', 'evening' => 'مساءً', 'night' => 'ليلاً'];
+                        $preferredTimeText = $translations[strtolower($preferredTime)] ?? $preferredTime;
+                      }
+                    }
+                  @endphp
+
+                  @if($trialRequest->trialSession)
+                    <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain, 'sessionId' => $trialRequest->trialSession->id]) }}" class="block">
                   @else
-                    <div class="w-12 h-12 rounded-full border border-blue-200 overflow-hidden bg-blue-50">
-                      <div class="w-full h-full flex items-center justify-center text-blue-600 bg-blue-100">
-                        <i class="ri-user-star-line text-sm"></i>
+                    <div>
+                  @endif
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors {{ $trialRequest->trialSession ? 'cursor-pointer' : '' }}">
+                      <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-100 ml-3">
+                        <i class="ri-user-star-line text-sm text-emerald-600"></i>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <h4 class="font-medium text-gray-900 truncate">{{ $teacherName }}</h4>
+                        <p class="text-sm text-gray-500 truncate">
+                          @if($preferredTimeText)
+                            {{ $preferredTimeText }}
+                          @else
+                            تم الطلب: {{ $trialRequest->created_at->diffForHumans() }}
+                          @endif
+                        </p>
+                      </div>
+                      <div class="flex items-center space-x-2 space-x-reverse mr-3">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $statusStyle['bg'] }} {{ $statusStyle['text'] }}">
+                          {{ $statusStyle['label'] }}
+                        </span>
+                        @if($trialRequest->trialSession)
+                          <div class="text-emerald-600 hover:text-emerald-700 transition-colors">
+                            <i class="ri-arrow-left-s-line"></i>
+                          </div>
+                        @endif
                       </div>
                     </div>
-                  @endif
-                  <div class="flex-1">
-                    <h3 class="font-semibold text-gray-900">
-                      @if($trialRequest->teacher)
-                        {{ $trialRequest->teacher->full_name ?? 
-                           ($trialRequest->teacher->first_name && $trialRequest->teacher->last_name ? 
-                            $trialRequest->teacher->first_name . ' ' . $trialRequest->teacher->last_name : null) ?? 
-                           $trialRequest->teacher->first_name ?? 
-                           $trialRequest->teacher->user?->name ?? 
-                           'معلم القرآن' }}
-                      @else
-                        معلم القرآن
-                      @endif
-                    </h3>
-                    <p class="text-sm text-gray-500">
-                      @if($trialRequest->status === 'pending')
-                        في انتظار الموافقة
-                      @elseif($trialRequest->status === 'scheduled')
-                        مجدولة
-                      @elseif($trialRequest->status === 'completed')
-                        مكتملة
-                      @else
-                        {{ $trialRequest->status }}
-                      @endif
-                    </p>
-                  </div>
-                  <div class="text-left">
-                    @if($trialRequest->status === 'pending')
-                      <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                        قيد المراجعة
-                      </span>
-                    @elseif($trialRequest->status === 'scheduled')
-                      <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                        مجدولة
-                      </span>
-                    @elseif($trialRequest->status === 'completed')
-                      <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                        مكتملة
-                      </span>
-                    @endif
-                  </div>
-                </div>
-                
-                <div class="space-y-2 mb-4">
-                  @if($trialRequest->preferred_time)
-                    <div class="flex items-center text-sm text-gray-600">
-                      <i class="ri-time-line ml-2"></i>
-                      <span>
-                        @php
-                          $preferredTime = $trialRequest->preferred_time;
-                          
-                          if ($preferredTime instanceof \Carbon\Carbon) {
-                            \Carbon\Carbon::setLocale('ar');
-                            echo $preferredTime->translatedFormat('l، d F Y - H:i');
-                          } elseif (is_string($preferredTime) && preg_match('/^\d{4}-\d{2}-\d{2}/', $preferredTime)) {
-                            try {
-                              $parsedTime = \Carbon\Carbon::parse($preferredTime);
-                              \Carbon\Carbon::setLocale('ar');
-                              echo $parsedTime->translatedFormat('l، d F Y - H:i');
-                            } catch (\Exception $e) {
-                              // Fallback to displaying as is if parsing fails
-                              echo $preferredTime;
-                            }
-                          } else {
-                            // Handle text preferences like "morning", "afternoon" etc.
-                            $translations = [
-                              'morning' => 'صباحاً',
-                              'afternoon' => 'بعد الظهر', 
-                              'evening' => 'مساءً',
-                              'night' => 'ليلاً'
-                            ];
-                            echo $translations[strtolower($preferredTime)] ?? $preferredTime;
-                          }
-                        @endphp
-                      </span>
+                  @if($trialRequest->trialSession)
+                    </a>
+                  @else
                     </div>
                   @endif
-                  @if($trialRequest->notes)
-                    <div class="flex items-start text-sm text-gray-600">
-                      <i class="ri-file-text-line ml-2 mt-1"></i>
-                      <span class="line-clamp-2">{{ $trialRequest->notes }}</span>
-                    </div>
-                  @endif
-                  <div class="flex items-center text-sm text-gray-600">
-                    <i class="ri-calendar-line ml-2"></i>
-                    <span>تم الطلب: {{ $trialRequest->created_at->diffForHumans() }}</span>
-                  </div>
-                </div>
-                
-                @if($trialRequest->trialSession)
-                  <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain, 'sessionId' => $trialRequest->trialSession->id]) }}"
-                     class="w-full inline-block text-center {{ $trialRequest->status === 'completed' ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-secondary' }} text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <i class="ri-video-line ml-1"></i>
-                    {{ $trialRequest->status === 'completed' ? 'مراجعة الجلسة' : 'دخول الجلسة' }}
-                  </a>
-                @elseif($trialRequest->status === 'pending')
-                  <button class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed" disabled>
-                    <i class="ri-time-line ml-1"></i>
-                    في انتظار الرد
-                  </button>
-                @endif
+                @endforeach
               </div>
-            @endforeach
+            @else
+              <div class="text-center py-8">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="ri-calendar-todo-line text-2xl text-gray-400"></i>
+                </div>
+                <h4 class="text-lg font-medium text-gray-900 mb-2">لا توجد طلبات جلسات تجريبية</h4>
+                <p class="text-gray-500 mb-4">احجز جلسة تجريبية مجانية مع أحد معلمي القرآن المؤهلين وابدأ رحلة التعلم.</p>
+                <a href="{{ route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]) }}" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors inline-block">
+                  طلب جلسة تجريبية
+                </a>
+              </div>
+            @endif
           </div>
-        @else
-          <!-- Empty State for Trial Requests -->
-          <div class="text-center py-12 bg-white rounded-xl border border-gray-200">
-            <div class="max-w-md mx-auto">
-              <div class="mb-4">
-                <i class="ri-calendar-todo-line text-4xl text-gray-400"></i>
+
+          <!-- Card Footer -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-500">
+                <div class="flex items-center space-x-1 space-x-reverse">
+                  <i class="ri-calendar-todo-line"></i>
+                  <span>{{ $trialRequestsCount }} طلب{{ $trialRequestsCount > 1 ? 'ات' : '' }}</span>
+                </div>
               </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">لا توجد طلبات جلسات تجريبية</h3>
-              <p class="text-gray-600 mb-4">
-                احجز جلسة تجريبية مجانية مع أحد معلمي القرآن المؤهلين وابدأ رحلة التعلم.
-              </p>
               <a href="{{ route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
-                 class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                <i class="ri-add-circle-line ml-2"></i>
-                طلب جلسة تجريبية
+                 class="text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors">
+                عرض جميع المعلمين
+                <i class="ri-arrow-left-s-line mr-1"></i>
               </a>
             </div>
           </div>
-        @endif
+        </div>
       </div>
 
     </div>
   </main>
-
-  <!-- Mobile Sidebar Toggle -->
-  <button id="sidebar-toggle-mobile"
-          @click="$dispatch('toggle-sidebar')"
-          class="fixed bottom-6 right-6 md:hidden bg-primary text-white min-h-[56px] min-w-[56px] p-4 rounded-full shadow-lg z-50 flex items-center justify-center">
-    <i class="ri-menu-line text-2xl"></i>
-  </button>
-
 
 </body>
 </html> 

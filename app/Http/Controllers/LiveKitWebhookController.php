@@ -10,7 +10,7 @@ use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\SessionMeetingService;
 use App\Services\MeetingAttendanceService;
-use App\Services\SessionStatusService;
+use App\Services\UnifiedSessionStatusService;
 use App\Services\AttendanceEventService;
 use App\Services\RecordingService;
 use App\Enums\SessionStatus;
@@ -19,14 +19,14 @@ class LiveKitWebhookController extends Controller
 {
     private SessionMeetingService $sessionMeetingService;
     private MeetingAttendanceService $attendanceService;
-    private SessionStatusService $statusService;
+    private UnifiedSessionStatusService $statusService;
     private AttendanceEventService $eventService;
     private RecordingService $recordingService;
 
     public function __construct(
         SessionMeetingService $sessionMeetingService,
         MeetingAttendanceService $attendanceService,
-        SessionStatusService $statusService,
+        UnifiedSessionStatusService $statusService,
         AttendanceEventService $eventService,
         RecordingService $recordingService
     ) {
@@ -203,9 +203,8 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
-            // 🎥 AUTO-RECORDING: Start recording automatically if enabled
-            // This runs for both READY->ONGOING transitions AND already ONGOING sessions
-            $this->tryStartAutoRecording($session, $roomName);
+            // NOTE: Auto-recording is now triggered on participant_joined, not room_started
+            // This ensures recording starts only when someone actually joins AND session time has started
 
         } catch (\Exception $e) {
             Log::error('Failed to handle room started event', [
@@ -237,6 +236,17 @@ class LiveKitWebhookController extends Controller
                 Log::info('🎬 AUTO-RECORDING: Session does not implement RecordingCapable', [
                     'session_id' => $session->id,
                     'session_class' => get_class($session),
+                ]);
+                return;
+            }
+
+            // 🕐 Check if session's scheduled time has started
+            if ($session->scheduled_at && now()->lt($session->scheduled_at)) {
+                Log::info('🎬 AUTO-RECORDING: Session scheduled time not yet reached - skipping', [
+                    'session_id' => $session->id,
+                    'scheduled_at' => $session->scheduled_at->toISOString(),
+                    'current_time' => now()->toISOString(),
+                    'minutes_until_start' => now()->diffInMinutes($session->scheduled_at),
                 ]);
                 return;
             }
@@ -342,6 +352,23 @@ class LiveKitWebhookController extends Controller
             // Remove persistence since room is finished
             $this->sessionMeetingService->removeSessionPersistence($session);
 
+            // 🎥 BACKUP: Stop any active recording when room closes
+            if ($session instanceof \App\Contracts\RecordingCapable && $session->isRecording()) {
+                Log::info('🎬 Stopping recording on room_finished (backup)', [
+                    'session_id' => $session->id,
+                    'room_name' => $roomName,
+                ]);
+                try {
+                    $session->stopRecording();
+                    Log::info('✅ Recording stopped on room_finished', ['session_id' => $session->id]);
+                } catch (\Exception $e) {
+                    Log::error('❌ Failed to stop recording on room_finished', [
+                        'session_id' => $session->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             Log::info('Session meeting finished', [
                 'session_id' => $session->id,
                 'room_name' => $roomName,
@@ -444,6 +471,20 @@ class LiveKitWebhookController extends Controller
 
             // Clear any cached attendance status
             \Cache::forget("attendance_status_{$session->id}_{$userId}");
+
+            // 🎥 AUTO-RECORDING: Try to start recording when first participant joins
+            // Recording will only start if:
+            // 1. Session scheduled time has passed
+            // 2. Recording is enabled on the course
+            // 3. Session is not already being recorded
+            $participantCount = $data['room']['num_participants'] ?? 0;
+            if ($participantCount == 1) {
+                Log::info('🎬 First participant joined - attempting auto-recording', [
+                    'session_id' => $session->id,
+                    'participant_count' => $participantCount,
+                ]);
+                $this->tryStartAutoRecording($session, $roomName);
+            }
 
         } catch (\Illuminate\Database\UniqueConstraintException $e) {
             // Duplicate webhook - safely ignore

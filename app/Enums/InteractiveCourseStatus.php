@@ -53,16 +53,30 @@ enum InteractiveCourseStatus: string
     }
 
     /**
-     * Get color for the status
+     * Get Filament color for the status
      */
     public function color(): string
     {
         return match($this) {
             self::DRAFT => 'gray',
-            self::PUBLISHED => 'green',
-            self::ACTIVE => 'blue',
+            self::PUBLISHED => 'success',
+            self::ACTIVE => 'info',
             self::COMPLETED => 'purple',
-            self::CANCELLED => 'red',
+            self::CANCELLED => 'danger',
+        };
+    }
+
+    /**
+     * Get hex color for calendar display
+     */
+    public function hexColor(): string
+    {
+        return match($this) {
+            self::DRAFT => '#6B7280',      // gray-500
+            self::PUBLISHED => '#22c55e',   // green-500
+            self::ACTIVE => '#3B82F6',      // blue-500
+            self::COMPLETED => '#8b5cf6',   // purple-500
+            self::CANCELLED => '#ef4444',   // red-500
         };
     }
 
@@ -80,5 +94,36 @@ enum InteractiveCourseStatus: string
     public function isVisibleToPublic(): bool
     {
         return in_array($this, [self::PUBLISHED, self::ACTIVE]);
+    }
+
+    /**
+     * Get all status values as array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
+
+    /**
+     * Get status options for forms (value => Arabic label)
+     */
+    public static function options(): array
+    {
+        return array_combine(
+            self::values(),
+            array_map(fn ($status) => $status->label(), self::cases())
+        );
+    }
+
+    /**
+     * Get color options for badge columns (color => value)
+     */
+    public static function colorOptions(): array
+    {
+        $colors = [];
+        foreach (self::cases() as $status) {
+            $colors[$status->color()] = $status->value;
+        }
+        return $colors;
     }
 }

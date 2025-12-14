@@ -36,11 +36,8 @@
         </style>
 
         {{ $head ?? '' }}
+        @stack('styles')
     </x-app-head>
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    @stack('styles')
 </head>
 
 <body class="bg-gray-50 text-gray-900">
@@ -56,7 +53,7 @@
 
     <!-- Main Content -->
     <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
             <!-- Flash Messages -->
             @if (session('success'))
                 <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative" role="alert">

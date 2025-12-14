@@ -76,8 +76,8 @@
   @include('components.sidebar.teacher-sidebar')
 
   <!-- Main Content -->
-  <main class="mr-0 md:mr-80 pt-20 min-h-screen transition-all duration-300" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
+    <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       @isset($slot)
         {{ $slot }}
       @else
@@ -106,6 +106,18 @@
       </div>
     </div>
   </div>
+
+  <!-- Early Alpine component registration listener - MUST be before @livewireScripts -->
+  <script>
+    // Set up alpine:init listener BEFORE Livewire loads Alpine
+    // This ensures we can register components before Alpine processes the DOM
+    document.addEventListener('alpine:init', function() {
+      // Wait for tabsComponent to be available (loaded by Vite bundle)
+      if (window.tabsComponent && window.Alpine) {
+        window.Alpine.data('tabsComponent', window.tabsComponent);
+      }
+    });
+  </script>
 
   @livewireScripts
 

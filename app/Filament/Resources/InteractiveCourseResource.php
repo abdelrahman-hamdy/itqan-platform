@@ -339,13 +339,7 @@ class InteractiveCourseResource extends BaseResource
 
                         Forms\Components\Select::make('status')
                             ->label('حالة الدورة')
-                            ->options([
-                                'draft' => 'مسودة',
-                                'published' => 'منشور',
-                                'active' => 'نشط',
-                                'completed' => 'مكتمل',
-                                'cancelled' => 'ملغي',
-                            ])
+                            ->options(\App\Enums\InteractiveCourseStatus::options())
                             ->default('draft')
                             ->required()
                             ->helperText('حالة الدورة الحالية'),
@@ -445,15 +439,16 @@ class InteractiveCourseResource extends BaseResource
                     ->money('SAR')
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('status_in_arabic')
+                Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
-                    ->colors([
-                        'secondary' => 'مسودة',
-                        'info' => 'منشور',
-                        'success' => 'نشط',
-                        'primary' => 'مكتمل',
-                        'danger' => 'ملغي',
-                    ]),
+                    ->colors(\App\Enums\InteractiveCourseStatus::colorOptions())
+                    ->formatStateUsing(function ($state): string {
+                        if ($state instanceof \App\Enums\InteractiveCourseStatus) {
+                            return $state->label();
+                        }
+                        $statusEnum = \App\Enums\InteractiveCourseStatus::tryFrom($state);
+                        return $statusEnum?->label() ?? $state;
+                    }),
 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('تاريخ البداية')
@@ -479,13 +474,7 @@ class InteractiveCourseResource extends BaseResource
 
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options([
-                        'draft' => 'مسودة',
-                        'published' => 'منشور',
-                        'active' => 'نشط',
-                        'completed' => 'مكتمل',
-                        'cancelled' => 'ملغي',
-                    ]),
+                    ->options(\App\Enums\InteractiveCourseStatus::options()),
 
                 Tables\Filters\TernaryFilter::make('is_published')
                     ->label('منشور')

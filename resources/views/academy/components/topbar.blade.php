@@ -1,5 +1,6 @@
-<!-- Topbar Navigation -->
-<nav id="navigation" class="bg-white shadow-lg sticky top-0 z-50" role="navigation" aria-label="التنقل الرئيسي">
+<!-- Topbar Navigation Wrapper -->
+<div x-data="{ mobileMenuOpen: false }" class="sticky top-0 z-50">
+<nav id="navigation" class="bg-white shadow-lg" role="navigation" aria-label="التنقل الرئيسي">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-20">
       <!-- Logo and Academy Name -->
@@ -72,8 +73,8 @@
               <i class="ri-arrow-down-s-line text-sm"></i>
             </button>
             
-            <!-- Dropdown Menu -->
-            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden" role="menu">
+            <!-- Dropdown Menu - Left positioned for RTL -->
+            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute left-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden" role="menu">
               <div class="py-1">
                 <div class="px-4 py-2 border-b border-gray-100">
                   <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
@@ -108,93 +109,90 @@
         @endauth
 
         <!-- Mobile Menu Button -->
-        <button class="md:hidden focus:ring-custom" aria-label="فتح قائمة التنقل" aria-expanded="false" id="mobile-menu-button">
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden focus:ring-custom p-2" aria-label="فتح قائمة التنقل" :aria-expanded="mobileMenuOpen">
           <div class="w-6 h-6 flex items-center justify-center">
-            <i class="ri-menu-line text-xl"></i>
+            <i :class="mobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'" class="text-xl"></i>
           </div>
         </button>
       </div>
     </div>
 
-    <!-- Mobile Navigation Menu -->
-    <div class="md:hidden hidden" id="mobile-menu">
-      <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-        @php
-          // Section names mapping (reuse from desktop menu)
-          $mobileSectionNames = [
-            'hero' => 'الرئيسية',
-            'stats' => 'الإحصائيات',
-            'reviews' => 'آراء طلابنا',
-            'quran' => 'القرآن الكريم',
-            'academic' => 'الأكاديمي',
-            'courses' => 'الكورسات المسجلة',
-            'features' => 'المميزات',
-          ];
-
-          // Anchor IDs mapping
-          $mobileSectionAnchors = [
-            'hero' => 'main-content',
-            'stats' => 'stats',
-            'reviews' => 'testimonials',
-            'quran' => 'quran',
-            'academic' => 'academic',
-            'courses' => 'courses',
-            'features' => 'features',
-          ];
-
-          // Get sections order
-          $mobileSectionsOrder = $academy->sections_order ?? ['hero', 'stats', 'reviews', 'quran', 'academic', 'courses', 'features'];
-        @endphp
-
-        @foreach($mobileSectionsOrder as $section)
-          @php
-            $sectionVisible = $academy->{$section . '_visible'} ?? true;
-            $showInNav = $academy->{$section . '_show_in_nav'} ?? false;
-            $sectionName = $mobileSectionNames[$section] ?? ucfirst($section);
-            $anchorId = $mobileSectionAnchors[$section] ?? $section;
-          @endphp
-          @if($sectionVisible && $showInNav)
-            <a href="#{{ $anchorId }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none" aria-label="انتقل إلى {{ $sectionName }}">{{ $sectionName }}</a>
-          @endif
-        @endforeach
-
-        @auth
-          <div class="border-t border-gray-200 pt-2 mt-2">
-            @php
-              $profileRouteName = auth()->user()->isTeacher() ? 'teacher.profile' : 'student.profile';
-              $isAdminOrSuperAdmin = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin();
-            @endphp
-            @if(!$isAdminOrSuperAdmin)
-            <a href="{{ route($profileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block px-3 py-2 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none">الملف الشخصي</a>
-            @endif
-            <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}">
-              @csrf
-              <button type="submit" class="block w-full text-right px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md focus:outline-none">تسجيل الخروج</button>
-            </form>
-          </div>
-        @endauth
-      </div>
-    </div>
   </div>
 </nav>
 
+<!-- Mobile Navigation Menu - Fixed overlay -->
+<div x-show="mobileMenuOpen"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     @click="mobileMenuOpen = false"
+     x-cloak
+     class="md:hidden fixed inset-0 top-20 z-40 bg-black/20" id="mobile-menu-overlay">
+</div>
+<div x-show="mobileMenuOpen"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0 -translate-y-2"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-end="opacity-0 -translate-y-2"
+     x-cloak
+     class="md:hidden fixed left-0 right-0 top-20 z-50 bg-white shadow-lg border-t border-gray-200" id="mobile-menu">
+  <div class="px-4 py-3 space-y-1 max-h-[70vh] overflow-y-auto">
+    @php
+      // Section names mapping (reuse from desktop menu)
+      $mobileSectionNames = [
+        'hero' => 'الرئيسية',
+        'stats' => 'الإحصائيات',
+        'reviews' => 'آراء طلابنا',
+        'quran' => 'القرآن الكريم',
+        'academic' => 'الأكاديمي',
+        'courses' => 'الكورسات المسجلة',
+        'features' => 'المميزات',
+      ];
+
+      // Anchor IDs mapping
+      $mobileSectionAnchors = [
+        'hero' => 'main-content',
+        'stats' => 'stats',
+        'reviews' => 'testimonials',
+        'quran' => 'quran',
+        'academic' => 'academic',
+        'courses' => 'courses',
+        'features' => 'features',
+      ];
+
+      // Get sections order
+      $mobileSectionsOrder = $academy->sections_order ?? ['hero', 'stats', 'reviews', 'quran', 'academic', 'courses', 'features'];
+    @endphp
+
+    @foreach($mobileSectionsOrder as $section)
+      @php
+        $sectionVisible = $academy->{$section . '_visible'} ?? true;
+        $showInNav = $academy->{$section . '_show_in_nav'} ?? false;
+        $sectionName = $mobileSectionNames[$section] ?? ucfirst($section);
+        $anchorId = $mobileSectionAnchors[$section] ?? $section;
+      @endphp
+      @if($sectionVisible && $showInNav)
+        <a href="#{{ $anchorId }}" @click="mobileMenuOpen = false" class="block px-3 py-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="انتقل إلى {{ $sectionName }}">{{ $sectionName }}</a>
+      @endif
+    @endforeach
+  </div>
+</div>
+</div>
+
 <!-- Alpine.js for dropdown functionality -->
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<style>
+  [x-cloak] { display: none !important; }
+</style>
 
-<!-- Mobile menu toggle script -->
+<!-- Smooth scroll script -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const mobileMenuButton = document.getElementById('mobile-menu-button');
-  const mobileMenu = document.getElementById('mobile-menu');
-
-  if (mobileMenuButton && mobileMenu) {
-    mobileMenuButton.addEventListener('click', function() {
-      mobileMenu.classList.toggle('hidden');
-      const isExpanded = !mobileMenu.classList.contains('hidden');
-      mobileMenuButton.setAttribute('aria-expanded', isExpanded);
-    });
-  }
-
   // Smooth scroll for anchor links
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
@@ -212,12 +210,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       e.preventDefault();
       e.stopPropagation();
-
-      // Close mobile menu if open
-      if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-        mobileMenu.classList.add('hidden');
-        mobileMenuButton.setAttribute('aria-expanded', 'false');
-      }
 
       // Get navbar height
       const navbar = document.getElementById('navigation');

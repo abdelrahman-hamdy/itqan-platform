@@ -111,9 +111,9 @@ class SessionController extends Controller
         $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($user) {
             $q->where('user_id', $user->id);
         })
-            ->whereDate('scheduled_date', $today)
+            ->whereDate('scheduled_at', $today)
             ->with(['course.assignedTeacher.user'])
-            ->orderBy('scheduled_time')
+            ->orderBy('scheduled_at')
             ->get();
 
         foreach ($interactiveSessions as $session) {
@@ -177,12 +177,11 @@ class SessionController extends Controller
         $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($user) {
             $q->where('user_id', $user->id);
         })
-            ->whereDate('scheduled_date', '>', $now->toDateString())
-            ->whereDate('scheduled_date', '<=', $endDate->toDateString())
+            ->where('scheduled_at', '>', $now)
+            ->where('scheduled_at', '<=', $endDate)
             ->whereNotIn('status', ['cancelled', 'completed'])
             ->with(['course.assignedTeacher.user'])
-            ->orderBy('scheduled_date')
-            ->orderBy('scheduled_time')
+            ->orderBy('scheduled_at')
             ->limit(20)
             ->get();
 
@@ -399,14 +398,13 @@ class SessionController extends Controller
             $query->where('status', $status);
         }
         if ($dateFrom) {
-            $query->whereDate('scheduled_date', '>=', $dateFrom);
+            $query->whereDate('scheduled_at', '>=', $dateFrom);
         }
         if ($dateTo) {
-            $query->whereDate('scheduled_date', '<=', $dateTo);
+            $query->whereDate('scheduled_at', '<=', $dateTo);
         }
 
-        return $query->orderBy('scheduled_date', 'desc')
-            ->orderBy('scheduled_time', 'desc')
+        return $query->orderBy('scheduled_at', 'desc')
             ->get()
             ->map(fn($s) => $this->formatSession($s, 'interactive'))
             ->toArray();
@@ -417,9 +415,8 @@ class SessionController extends Controller
      */
     protected function formatSession($session, string $type): array
     {
-        $scheduledAt = $type === 'interactive'
-            ? Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time)->toISOString()
-            : $session->scheduled_at?->toISOString();
+        // All session types now use scheduled_at
+        $scheduledAt = $session->scheduled_at?->toISOString();
 
         $teacher = match ($type) {
             'quran' => $session->quranTeacher, // QuranSession::quranTeacher returns User directly
@@ -526,12 +523,7 @@ class SessionController extends Controller
     protected function canJoin($session, string $type): bool
     {
         $now = now();
-
-        if ($type === 'interactive') {
-            $sessionTime = Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time);
-        } else {
-            $sessionTime = $session->scheduled_at;
-        }
+        $sessionTime = $session->scheduled_at;
 
         if (!$sessionTime) {
             return false;

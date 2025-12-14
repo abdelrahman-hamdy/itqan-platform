@@ -125,8 +125,9 @@ class CourseController extends Controller
                     'session_number' => $session->session_number,
                     'title' => $session->title,
                     'description' => $session->description,
-                    'scheduled_date' => $session->scheduled_date?->toDateString(),
-                    'scheduled_time' => $session->scheduled_time,
+                    'scheduled_at' => $session->scheduled_at?->toISOString(),
+                    'scheduled_date' => $session->scheduled_at?->toDateString(), // Backward compatibility
+                    'scheduled_time' => $session->scheduled_at?->format('H:i'), // Backward compatibility
                     'duration_minutes' => $session->duration_minutes,
                     'status' => $session->status->value ?? $session->status,
                 ])->toArray(),

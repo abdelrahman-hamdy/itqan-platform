@@ -704,14 +704,15 @@ class CalendarService
 
     private function getSessionColor($session): string
     {
-        return match ($session->status) {
-            'scheduled' => '#059669', // Green
-            'ongoing' => '#DC2626', // Red
-            'completed' => '#6B7280', // Gray
-            'cancelled' => '#EF4444', // Light red
-            'rescheduled' => '#F59E0B', // Orange
-            default => '#6366F1' // Indigo
-        };
+        // Use enum hexColor() for consistent colors
+        $status = $session->status;
+
+        if ($status instanceof \App\Enums\SessionStatus) {
+            return $status->hexColor();
+        }
+
+        $statusEnum = \App\Enums\SessionStatus::tryFrom($status);
+        return $statusEnum?->hexColor() ?? '#6366F1';
     }
 
     private function getSessionUrl($session): string

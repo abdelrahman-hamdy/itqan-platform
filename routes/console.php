@@ -107,6 +107,15 @@ if ($isLocal) {
     $calculateAttendanceJob->everyFiveMinutes(); // Every 5 minutes for production
 }
 
+// 🎥 RECORDING: Stop recordings when session scheduled end time is reached
+// Runs every minute to check for sessions with active recordings that have passed their scheduled end time
+Schedule::command('recordings:stop-expired')
+    ->name('stop-expired-recordings')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Stop recordings for sessions that have reached their scheduled end time');
+
 // ════════════════════════════════════════════════════════════════
 // SUBSCRIPTION RENEWAL MANAGEMENT
 // ════════════════════════════════════════════════════════════════

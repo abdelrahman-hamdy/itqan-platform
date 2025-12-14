@@ -171,22 +171,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/students', [App\Http\Controllers\TeacherProfileController::class, 'students'])->name('teacher.students');
         Route::get('/students/{student}', [App\Http\Controllers\TeacherProfileController::class, 'showStudent'])->name('teacher.students.show');
 
-        // Enhanced Schedule Management Routes
-        Route::prefix('schedule')->name('teacher.schedule.')->group(function () {
-            Route::get('/dashboard', [App\Http\Controllers\TeacherScheduleController::class, 'index'])->name('dashboard');
-            Route::put('/availability', [App\Http\Controllers\TeacherScheduleController::class, 'updateAvailability'])->name('availability.update');
-
-            // Trial Session Scheduling
-            Route::get('/trial/{trialRequest}', [App\Http\Controllers\TeacherScheduleController::class, 'showTrialScheduling'])->name('trial.show');
-            Route::post('/trial/{trialRequest}', [App\Http\Controllers\TeacherScheduleController::class, 'scheduleTrialSession'])->name('trial.schedule');
-            Route::post('/trial/{trialRequest}/approve', [App\Http\Controllers\TeacherScheduleController::class, 'approveTrialRequest'])->name('trial.approve');
-            Route::post('/trial/{trialRequest}/reject', [App\Http\Controllers\TeacherScheduleController::class, 'rejectTrialRequest'])->name('trial.reject');
-
-            // Subscription Session Scheduling
-            Route::get('/subscription/{subscription}', [App\Http\Controllers\TeacherScheduleController::class, 'showSubscriptionScheduling'])->name('subscription.show');
-            Route::post('/subscription/{subscription}', [App\Http\Controllers\TeacherScheduleController::class, 'setupSubscriptionSessions'])->name('subscription.setup');
-        });
-
         // Meeting Link Management Routes
         Route::prefix('meetings')->name('teacher.meetings.')->group(function () {
             Route::get('/platforms', [App\Http\Controllers\MeetingLinkController::class, 'getMeetingPlatforms'])->name('platforms');

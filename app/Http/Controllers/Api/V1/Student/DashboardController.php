@@ -124,10 +124,10 @@ class DashboardController extends Controller
         $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
             $q->where('user_id', $userId);
         })
-            ->whereDate('scheduled_date', $today)
+            ->whereDate('scheduled_at', $today)
             ->whereNotIn('status', ['cancelled', 'completed'])
             ->with(['course.assignedTeacher.user'])
-            ->orderBy('scheduled_time')
+            ->orderBy('scheduled_at')
             ->get();
 
         foreach ($interactiveSessions as $session) {
@@ -137,16 +137,9 @@ class DashboardController extends Controller
             ];
         }
 
-        // Sort all sessions by time
+        // Sort all sessions by time (all session types now use scheduled_at)
         usort($sessions, function ($a, $b) {
-            $timeA = $a['type'] === 'interactive'
-                ? Carbon::parse($a['session']->scheduled_date . ' ' . $a['session']->scheduled_time)
-                : $a['session']->scheduled_at;
-            $timeB = $b['type'] === 'interactive'
-                ? Carbon::parse($b['session']->scheduled_date . ' ' . $b['session']->scheduled_time)
-                : $b['session']->scheduled_at;
-
-            return $timeA <=> $timeB;
+            return $a['session']->scheduled_at <=> $b['session']->scheduled_at;
         });
 
         return $sessions;
@@ -199,11 +192,11 @@ class DashboardController extends Controller
         $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
             $q->where('user_id', $userId);
         })
-            ->whereDate('scheduled_date', '>', $today)
-            ->whereDate('scheduled_date', '<=', $endDate)
+            ->whereDate('scheduled_at', '>', $today)
+            ->whereDate('scheduled_at', '<=', $endDate)
             ->whereNotIn('status', ['cancelled', 'completed'])
             ->with(['course.assignedTeacher.user'])
-            ->orderBy('scheduled_date')
+            ->orderBy('scheduled_at')
             ->limit(5)
             ->get();
 
@@ -214,16 +207,9 @@ class DashboardController extends Controller
             ];
         }
 
-        // Sort and limit
+        // Sort and limit (all session types now use scheduled_at)
         usort($sessions, function ($a, $b) {
-            $timeA = $a['type'] === 'interactive'
-                ? Carbon::parse($a['session']->scheduled_date . ' ' . $a['session']->scheduled_time)
-                : $a['session']->scheduled_at;
-            $timeB = $b['type'] === 'interactive'
-                ? Carbon::parse($b['session']->scheduled_date . ' ' . $b['session']->scheduled_time)
-                : $b['session']->scheduled_at;
-
-            return $timeA <=> $timeB;
+            return $a['session']->scheduled_at <=> $b['session']->scheduled_at;
         });
 
         return array_slice($sessions, 0, 10);
@@ -297,14 +283,8 @@ class DashboardController extends Controller
                 'can_join' => $this->canJoinSession($session, $type),
             ];
 
-            // Add time based on session type
-            if ($type === 'interactive') {
-                $baseData['scheduled_at'] = Carbon::parse(
-                    $session->scheduled_date . ' ' . $session->scheduled_time
-                )->toISOString();
-            } else {
-                $baseData['scheduled_at'] = $session->scheduled_at?->toISOString();
-            }
+            // Add scheduled time (all session types now use scheduled_at)
+            $baseData['scheduled_at'] = $session->scheduled_at?->toISOString();
 
             // Add teacher info
             $teacher = $this->getTeacherFromSession($session, $type);
@@ -354,12 +334,7 @@ class DashboardController extends Controller
     protected function canJoinSession($session, string $type): bool
     {
         $now = now();
-
-        if ($type === 'interactive') {
-            $sessionTime = Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time);
-        } else {
-            $sessionTime = $session->scheduled_at;
-        }
+        $sessionTime = $session->scheduled_at;
 
         if (!$sessionTime) {
             return false;

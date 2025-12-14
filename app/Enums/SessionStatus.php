@@ -45,18 +45,34 @@ enum SessionStatus: string
     }
 
     /**
-     * Get the color class for the status
+     * Get the Filament color class for the status
      */
     public function color(): string
     {
         return match ($this) {
             self::UNSCHEDULED => 'gray',
-            self::SCHEDULED => 'blue',
-            self::READY => 'green',
-            self::ONGOING => 'green',
-            self::COMPLETED => 'green',
-            self::CANCELLED => 'red',
-            self::ABSENT => 'red',
+            self::SCHEDULED => 'info',
+            self::READY => 'success',
+            self::ONGOING => 'primary',
+            self::COMPLETED => 'success',
+            self::CANCELLED => 'danger',
+            self::ABSENT => 'warning',
+        };
+    }
+
+    /**
+     * Get the hex color for calendar display
+     */
+    public function hexColor(): string
+    {
+        return match ($this) {
+            self::UNSCHEDULED => '#6B7280',  // gray-500
+            self::SCHEDULED => '#3B82F6',    // blue-500
+            self::READY => '#22c55e',        // green-500
+            self::ONGOING => '#3b82f6',      // blue-500
+            self::COMPLETED => '#22c55e',    // green-500
+            self::CANCELLED => '#ef4444',    // red-500
+            self::ABSENT => '#f59e0b',       // amber-500
         };
     }
 
@@ -174,5 +190,17 @@ enum SessionStatus: string
             self::COMPLETED->value => self::COMPLETED->label(),
             self::CANCELLED->value => self::CANCELLED->label(),
         ];
+    }
+
+    /**
+     * Get color options for badge columns (color => value)
+     */
+    public static function colorOptions(): array
+    {
+        $colors = [];
+        foreach (self::cases() as $status) {
+            $colors[$status->color()] = $status->value;
+        }
+        return $colors;
     }
 }

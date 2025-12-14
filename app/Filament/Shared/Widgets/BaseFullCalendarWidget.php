@@ -515,27 +515,19 @@ abstract class BaseFullCalendarWidget extends FullCalendarWidget
                             ->label('حالة الجلسة')
                             ->state($record->status)
                             ->badge()
-                            ->color(fn ($state): string => match ($state instanceof \App\Enums\SessionStatus ? $state->value : $state) {
-                                'unscheduled' => 'gray',
-                                'scheduled' => 'warning',
-                                'ready' => 'info',
-                                'ongoing' => 'primary',
-                                'completed' => 'success',
-                                'cancelled' => 'danger',
-                                'absent' => 'warning',
-                                'teacher_absent' => 'danger',
-                                default => 'gray',
+                            ->color(function ($state): string {
+                                if ($state instanceof \App\Enums\SessionStatus) {
+                                    return $state->color();
+                                }
+                                $statusEnum = \App\Enums\SessionStatus::tryFrom($state);
+                                return $statusEnum?->color() ?? 'gray';
                             })
-                            ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SessionStatus ? $state->value : $state) {
-                                'unscheduled' => 'غير مجدولة',
-                                'scheduled' => 'مجدولة',
-                                'ready' => 'جاهزة للبدء',
-                                'ongoing' => 'جارية',
-                                'completed' => 'مكتملة',
-                                'cancelled' => 'ملغية',
-                                'absent' => 'غياب الطالب',
-                                'teacher_absent' => 'غياب المعلم',
-                                default => $state instanceof \App\Enums\SessionStatus ? $state->value : $state,
+                            ->formatStateUsing(function ($state): string {
+                                if ($state instanceof \App\Enums\SessionStatus) {
+                                    return $state->label();
+                                }
+                                $statusEnum = \App\Enums\SessionStatus::tryFrom($state);
+                                return $statusEnum?->label() ?? $state;
                             }),
                     ];
                 }

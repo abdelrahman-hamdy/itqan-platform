@@ -111,7 +111,7 @@ class DashboardController extends Controller
                     ->pluck('id');
 
                 $stats['today_sessions'] += InteractiveCourseSession::whereIn('course_id', $courseIds)
-                    ->whereDate('scheduled_date', $today)
+                    ->whereDate('scheduled_at', $today)
                     ->whereNotIn('status', ['cancelled'])
                     ->count();
 
@@ -195,25 +195,20 @@ class DashboardController extends Controller
                     ->pluck('id');
 
                 $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $courseIds)
-                    ->whereDate('scheduled_date', $today)
+                    ->whereDate('scheduled_at', $today)
                     ->whereNotIn('status', ['cancelled'])
                     ->with(['course'])
-                    ->orderBy('scheduled_date')
+                    ->orderBy('scheduled_at')
                     ->get();
 
                 foreach ($interactiveSessions as $session) {
-                    $scheduledAt = $session->scheduled_date;
-                    if ($session->scheduled_time) {
-                        $scheduledAt = Carbon::parse($session->scheduled_date->format('Y-m-d') . ' ' . $session->scheduled_time);
-                    }
-
                     $sessions[] = [
                         'id' => $session->id,
                         'type' => 'interactive',
                         'title' => $session->title ?? $session->course?->title,
                         'course_name' => $session->course?->title,
                         'session_number' => $session->session_number,
-                        'scheduled_at' => $scheduledAt->toISOString(),
+                        'scheduled_at' => $session->scheduled_at?->toISOString(),
                         'status' => $session->status->value ?? $session->status,
                         'duration_minutes' => $session->duration_minutes ?? 60,
                     ];

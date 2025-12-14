@@ -17,25 +17,33 @@ class ColorIndicatorsWidget extends Widget
     protected static ?int $sort = 2; // Render after calendar widget (sort 1)
 
     /**
-     * Get color indicators based on teacher type
+     * Get session type color indicators based on teacher type
      */
-    public function getColorIndicators(): array
+    public function getSessionTypeIndicators(): array
     {
         $user = Auth::user();
 
         if ($user?->user_type === 'quran_teacher') {
-            return $this->getQuranColorIndicators();
+            return $this->getQuranSessionTypeIndicators();
         } elseif ($user?->user_type === 'academic_teacher') {
-            return $this->getAcademicColorIndicators();
+            return $this->getAcademicSessionTypeIndicators();
         }
 
         return [];
     }
 
     /**
-     * Get color indicators for Quran teachers
+     * Get status color indicators
      */
-    protected function getQuranColorIndicators(): array
+    public function getStatusIndicators(): array
+    {
+        return $this->getStatusColorIndicators();
+    }
+
+    /**
+     * Get session type indicators for Quran teachers
+     */
+    protected function getQuranSessionTypeIndicators(): array
     {
         $colorScheme = $this->getColorScheme('quran_teacher');
 
@@ -59,9 +67,9 @@ class ColorIndicatorsWidget extends Widget
     }
 
     /**
-     * Get color indicators for Academic teachers
+     * Get session type indicators for Academic teachers
      */
-    protected function getAcademicColorIndicators(): array
+    protected function getAcademicSessionTypeIndicators(): array
     {
         $colorScheme = $this->getColorScheme('academic_teacher');
 

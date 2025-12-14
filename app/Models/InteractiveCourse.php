@@ -248,14 +248,7 @@ class InteractiveCourse extends Model
 
     public function getStatusInArabicAttribute(): string
     {
-        return match ($this->status) {
-            'draft' => 'مسودة',
-            'published' => 'منشور',
-            'active' => 'نشط',
-            'completed' => 'مكتمل',
-            'cancelled' => 'ملغي',
-            default => $this->status,
-        };
+        return $this->status->label();
     }
 
     public function getPaymentTypeInArabicAttribute(): string

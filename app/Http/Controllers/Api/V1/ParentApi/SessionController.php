@@ -113,14 +113,14 @@ class SessionController extends Controller
                 }
 
                 if ($request->filled('from_date')) {
-                    $interactiveQuery->whereDate('scheduled_date', '>=', $request->from_date);
+                    $interactiveQuery->whereDate('scheduled_at', '>=', $request->from_date);
                 }
 
                 if ($request->filled('to_date')) {
-                    $interactiveQuery->whereDate('scheduled_date', '<=', $request->to_date);
+                    $interactiveQuery->whereDate('scheduled_at', '<=', $request->to_date);
                 }
 
-                $interactiveSessions = $interactiveQuery->orderBy('scheduled_date', 'desc')
+                $interactiveSessions = $interactiveQuery->orderBy('scheduled_at', 'desc')
                     ->limit(50)
                     ->get();
 
@@ -279,7 +279,7 @@ class SessionController extends Controller
                 ->pluck('course_id');
 
             $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
-                ->whereDate('scheduled_date', $today)
+                ->whereDate('scheduled_at', $today)
                 ->whereNotIn('status', ['cancelled'])
                 ->with(['course.assignedTeacher.user'])
                 ->get();
@@ -360,10 +360,10 @@ class SessionController extends Controller
                 ->pluck('course_id');
 
             $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
-                ->where('scheduled_date', '>', $now->toDateString())
+                ->where('scheduled_at', '>', $now)
                 ->whereNotIn('status', ['cancelled', 'completed'])
                 ->with(['course.assignedTeacher.user'])
-                ->orderBy('scheduled_date')
+                ->orderBy('scheduled_at')
                 ->limit($limit)
                 ->get();
 
@@ -418,18 +418,13 @@ class SessionController extends Controller
             ]);
         }
 
-        // Interactive
-        $scheduledAt = $session->scheduled_date;
-        if ($session->scheduled_time) {
-            $scheduledAt = Carbon::parse($session->scheduled_date->format('Y-m-d') . ' ' . $session->scheduled_time);
-        }
-
+        // Interactive - all session types now use scheduled_at
         return array_merge($base, [
             'title' => $session->title ?? $session->course?->title,
             'course_name' => $session->course?->title,
             'teacher_name' => $session->course?->assignedTeacher?->user?->name,
             'session_number' => $session->session_number,
-            'scheduled_at' => $scheduledAt->toISOString(),
+            'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes ?? 60,
         ]);
     }

@@ -4,10 +4,10 @@ namespace App\Console\Commands;
 
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
-use App\Services\AcademicSessionStatusService;
 use App\Services\CronJobLogger;
-use App\Services\SessionStatusService;
+use App\Services\UnifiedSessionStatusService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -16,29 +16,25 @@ class UpdateSessionStatusesCommand extends Command
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'sessions:update-statuses 
+    protected $signature = 'sessions:update-statuses
                           {--academy-id= : Process only specific academy ID}
                           {--dry-run : Show what would be done without actually updating sessions}
                           {--details : Show detailed output}
                           {--academic-only : Process only academic sessions}
-                          {--quran-only : Process only Quran sessions}';
+                          {--quran-only : Process only Quran sessions}
+                          {--interactive-only : Process only interactive course sessions}';
 
     /**
      * The console command description.
      */
     protected $description = 'Update session statuses based on current time and business rules';
 
-    private SessionStatusService $sessionStatusService;
+    private UnifiedSessionStatusService $statusService;
 
-    private AcademicSessionStatusService $academicSessionStatusService;
-
-    public function __construct(
-        SessionStatusService $sessionStatusService,
-        AcademicSessionStatusService $academicSessionStatusService
-    ) {
+    public function __construct(UnifiedSessionStatusService $statusService)
+    {
         parent::__construct();
-        $this->sessionStatusService = $sessionStatusService;
-        $this->academicSessionStatusService = $academicSessionStatusService;
+        $this->statusService = $statusService;
     }
 
     /**
@@ -51,6 +47,7 @@ class UpdateSessionStatusesCommand extends Command
         $academyId = $this->option('academy-id');
         $academicOnly = $this->option('academic-only');
         $quranOnly = $this->option('quran-only');
+        $interactiveOnly = $this->option('interactive-only');
 
         // Start enhanced logging
         $executionData = CronJobLogger::logCronStart('sessions:update-statuses', [
@@ -59,22 +56,25 @@ class UpdateSessionStatusesCommand extends Command
             'academy_id' => $academyId,
             'academic_only' => $academicOnly,
             'quran_only' => $quranOnly,
+            'interactive_only' => $interactiveOnly,
         ]);
 
         $now = now();
 
         if ($isVerbose) {
-            $this->info('🕐 Starting enhanced session status update process...');
-            $this->info("📅 Current time: {$now->format('Y-m-d H:i:s')}");
+            $this->info('Starting session status update process (Unified Service)...');
+            $this->info("Current time: {$now->format('Y-m-d H:i:s')}");
             if ($isDryRun) {
-                $this->warn('🧪 DRY RUN MODE - No changes will be made');
+                $this->warn('DRY RUN MODE - No changes will be made');
             }
             if ($academicOnly) {
-                $this->info('🎓 Processing only ACADEMIC sessions');
+                $this->info('Processing only ACADEMIC sessions');
             } elseif ($quranOnly) {
-                $this->info('📖 Processing only QURAN sessions');
+                $this->info('Processing only QURAN sessions');
+            } elseif ($interactiveOnly) {
+                $this->info('Processing only INTERACTIVE COURSE sessions');
             } else {
-                $this->info('📚 Processing BOTH Quran and Academic sessions');
+                $this->info('Processing ALL session types (Quran, Academic, Interactive)');
             }
         }
 
@@ -82,28 +82,40 @@ class UpdateSessionStatusesCommand extends Command
             $totalStats = [
                 'quran' => ['processed' => 0, 'transitions' => []],
                 'academic' => ['processed' => 0, 'transitions' => []],
+                'interactive' => ['processed' => 0, 'transitions' => []],
             ];
 
             // Process Quran sessions
-            if (! $academicOnly) {
+            if (!$academicOnly && !$interactiveOnly) {
                 $quranStats = $this->processQuranSessions($academyId, $isDryRun, $isVerbose);
                 $totalStats['quran'] = $quranStats;
             }
 
             // Process Academic sessions
-            if (! $quranOnly) {
+            if (!$quranOnly && !$interactiveOnly) {
                 $academicStats = $this->processAcademicSessions($academyId, $isDryRun, $isVerbose);
                 $totalStats['academic'] = $academicStats;
+            }
+
+            // Process Interactive course sessions
+            if (!$quranOnly && !$academicOnly) {
+                $interactiveStats = $this->processInteractiveSessions($academyId, $isDryRun, $isVerbose);
+                $totalStats['interactive'] = $interactiveStats;
             }
 
             // Display combined results
             $this->displayCombinedResults($totalStats, $isDryRun, $isVerbose);
 
             // Log completion
+            $totalProcessed = $totalStats['quran']['processed'] +
+                             $totalStats['academic']['processed'] +
+                             $totalStats['interactive']['processed'];
+
             CronJobLogger::logCronEnd('sessions:update-statuses', $executionData, [
-                'total_processed' => $totalStats['quran']['processed'] + $totalStats['academic']['processed'],
+                'total_processed' => $totalProcessed,
                 'quran_stats' => $totalStats['quran'],
                 'academic_stats' => $totalStats['academic'],
+                'interactive_stats' => $totalStats['interactive'],
                 'academy_id' => $academyId,
                 'dry_run' => $isDryRun,
             ]);
@@ -111,10 +123,10 @@ class UpdateSessionStatusesCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('❌ Session status update failed: '.$e->getMessage());
+            $this->error('Session status update failed: ' . $e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: '.$e->getTraceAsString());
+                $this->error('Stack trace: ' . $e->getTraceAsString());
             }
 
             CronJobLogger::logCronError('sessions:update-statuses', $executionData, $e);
@@ -124,9 +136,9 @@ class UpdateSessionStatusesCommand extends Command
     }
 
     /**
-     * Simulate status transitions for dry run mode
+     * Simulate status transitions for dry run mode (generic method)
      */
-    private function simulateStatusTransitions($sessions, bool $isVerbose): array
+    private function simulateStatusTransitions($sessions, bool $isVerbose, string $sessionType = 'session'): array
     {
         $stats = [
             'scheduled_to_ready' => 0,
@@ -139,41 +151,41 @@ class UpdateSessionStatusesCommand extends Command
         foreach ($sessions as $session) {
             try {
                 // Check for READY transition
-                if ($this->sessionStatusService->shouldTransitionToReady($session)) {
+                if ($this->statusService->shouldTransitionToReady($session)) {
                     $stats['scheduled_to_ready']++;
-                    $stats['details'][] = "Would transition session {$session->id} from SCHEDULED to READY";
+                    $stats['details'][] = "Would transition {$sessionType} {$session->id} from SCHEDULED to READY";
 
                     if ($isVerbose) {
-                        $this->info("🔄 Would transition session {$session->id} to READY");
+                        $this->info("🔄 Would transition {$sessionType} {$session->id} to READY");
                     }
                 }
 
                 // Check for ABSENT transition (individual sessions only)
-                if ($this->sessionStatusService->shouldTransitionToAbsent($session)) {
+                if ($this->statusService->shouldTransitionToAbsent($session)) {
                     $stats['ready_to_absent']++;
-                    $stats['details'][] = "Would transition session {$session->id} from READY to ABSENT";
+                    $stats['details'][] = "Would transition {$sessionType} {$session->id} from READY to ABSENT";
 
                     if ($isVerbose) {
-                        $this->info("⏰ Would mark session {$session->id} as ABSENT");
+                        $this->info("⏰ Would mark {$sessionType} {$session->id} as ABSENT");
                     }
                 }
 
                 // Check for auto-completion
-                if ($this->sessionStatusService->shouldAutoComplete($session)) {
+                if ($this->statusService->shouldAutoComplete($session)) {
                     $stats['ongoing_to_completed']++;
-                    $stats['details'][] = "Would transition session {$session->id} from ONGOING to COMPLETED";
+                    $stats['details'][] = "Would transition {$sessionType} {$session->id} from ONGOING to COMPLETED";
 
                     if ($isVerbose) {
-                        $this->info("✅ Would auto-complete session {$session->id}");
+                        $this->info("✅ Would auto-complete {$sessionType} {$session->id}");
                     }
                 }
 
             } catch (\Exception $e) {
                 $stats['errors']++;
-                $stats['details'][] = "Error processing session {$session->id}: {$e->getMessage()}";
+                $stats['details'][] = "Error processing {$sessionType} {$session->id}: {$e->getMessage()}";
 
                 if ($isVerbose) {
-                    $this->error("❌ Error simulating session {$session->id}: {$e->getMessage()}");
+                    $this->error("❌ Error simulating {$sessionType} {$session->id}: {$e->getMessage()}");
                 }
             }
         }
@@ -285,11 +297,11 @@ class UpdateSessionStatusesCommand extends Command
             return ['processed' => 0, 'transitions' => []];
         }
 
-        // Process status transitions using the enhanced service
+        // Process status transitions using the unified service
         if ($isDryRun) {
-            $stats = $this->simulateQuranStatusTransitions($sessionsToProcess, $isVerbose);
+            $stats = $this->simulateStatusTransitions($sessionsToProcess, $isVerbose, 'Quran session');
         } else {
-            $rawStats = $this->sessionStatusService->processStatusTransitions($sessionsToProcess);
+            $rawStats = $this->statusService->processStatusTransitions($sessionsToProcess);
             $stats = $this->formatStats($rawStats, $isVerbose);
         }
 
@@ -327,11 +339,11 @@ class UpdateSessionStatusesCommand extends Command
             return ['processed' => 0, 'transitions' => []];
         }
 
-        // Process status transitions using the academic service
+        // Process status transitions using the unified service
         if ($isDryRun) {
-            $stats = $this->simulateAcademicStatusTransitions($sessionsToProcess, $isVerbose);
+            $stats = $this->simulateStatusTransitions($sessionsToProcess, $isVerbose, 'Academic session');
         } else {
-            $rawStats = $this->academicSessionStatusService->processStatusTransitions($sessionsToProcess);
+            $rawStats = $this->statusService->processStatusTransitions($sessionsToProcess);
             $stats = $this->formatStats($rawStats, $isVerbose);
         }
 
@@ -339,123 +351,52 @@ class UpdateSessionStatusesCommand extends Command
     }
 
     /**
-     * Simulate Quran status transitions for dry run mode
+     * Process Interactive Course sessions
      */
-    private function simulateQuranStatusTransitions($sessions, bool $isVerbose): array
+    private function processInteractiveSessions(?int $academyId, bool $isDryRun, bool $isVerbose): array
     {
-        $stats = [
-            'scheduled_to_ready' => 0,
-            'ready_to_absent' => 0,
-            'ongoing_to_completed' => 0,
-            'errors' => 0,
-            'details' => [],
-        ];
+        // Get base query
+        $query = InteractiveCourseSession::query();
 
-        foreach ($sessions as $session) {
-            try {
-                // Check for READY transition
-                if ($this->sessionStatusService->shouldTransitionToReady($session)) {
-                    $stats['scheduled_to_ready']++;
-                    $stats['details'][] = "Would transition Quran session {$session->id} from SCHEDULED to READY";
-
-                    if ($isVerbose) {
-                        $this->info("🔄 Would transition Quran session {$session->id} to READY");
-                    }
-                }
-
-                // Check for ABSENT transition (individual sessions only)
-                if ($this->sessionStatusService->shouldTransitionToAbsent($session)) {
-                    $stats['ready_to_absent']++;
-                    $stats['details'][] = "Would transition Quran session {$session->id} from READY to ABSENT";
-
-                    if ($isVerbose) {
-                        $this->info("⏰ Would mark Quran session {$session->id} as ABSENT");
-                    }
-                }
-
-                // Check for auto-completion
-                if ($this->sessionStatusService->shouldAutoComplete($session)) {
-                    $stats['ongoing_to_completed']++;
-                    $stats['details'][] = "Would transition Quran session {$session->id} from ONGOING to COMPLETED";
-
-                    if ($isVerbose) {
-                        $this->info("✅ Would auto-complete Quran session {$session->id}");
-                    }
-                }
-
-            } catch (\Exception $e) {
-                $stats['errors']++;
-                $stats['details'][] = "Error processing Quran session {$session->id}: {$e->getMessage()}";
-
-                if ($isVerbose) {
-                    $this->error("❌ Error simulating Quran session {$session->id}: {$e->getMessage()}");
-                }
-            }
+        // InteractiveCourseSession doesn't have academy_id directly, it gets it through course
+        if ($academyId) {
+            $query->whereHas('course', function ($q) use ($academyId) {
+                $q->where('academy_id', $academyId);
+            });
         }
 
-        return $stats;
+        // Get all sessions that might need status updates
+        $sessionsToProcess = $query->whereIn('status', [
+            SessionStatus::SCHEDULED,
+            SessionStatus::READY,
+            SessionStatus::ONGOING,
+        ])->with(['course.academy', 'course.assignedTeacher.user'])->get();
+
+        if ($isVerbose) {
+            $this->info("🎬 Found {$sessionsToProcess->count()} Interactive Course sessions to process");
+        }
+
+        if ($sessionsToProcess->isEmpty()) {
+            if ($isVerbose) {
+                $this->info('✅ No Interactive Course sessions require status updates');
+            }
+
+            return ['processed' => 0, 'transitions' => []];
+        }
+
+        // Process status transitions using the unified service
+        if ($isDryRun) {
+            $stats = $this->simulateStatusTransitions($sessionsToProcess, $isVerbose, 'Interactive session');
+        } else {
+            $rawStats = $this->statusService->processStatusTransitions($sessionsToProcess);
+            $stats = $this->formatStats($rawStats, $isVerbose);
+        }
+
+        return ['processed' => $sessionsToProcess->count(), 'transitions' => $stats];
     }
 
     /**
-     * Simulate Academic status transitions for dry run mode
-     */
-    private function simulateAcademicStatusTransitions($sessions, bool $isVerbose): array
-    {
-        $stats = [
-            'scheduled_to_ready' => 0,
-            'ready_to_absent' => 0,
-            'ongoing_to_completed' => 0,
-            'errors' => 0,
-            'details' => [],
-        ];
-
-        foreach ($sessions as $session) {
-            try {
-                // Check for READY transition
-                if ($this->academicSessionStatusService->shouldTransitionToReady($session)) {
-                    $stats['scheduled_to_ready']++;
-                    $stats['details'][] = "Would transition Academic session {$session->id} from SCHEDULED to READY";
-
-                    if ($isVerbose) {
-                        $this->info("🔄 Would transition Academic session {$session->id} to READY");
-                    }
-                }
-
-                // Check for ABSENT transition (individual sessions only)
-                if ($this->academicSessionStatusService->shouldTransitionToAbsent($session)) {
-                    $stats['ready_to_absent']++;
-                    $stats['details'][] = "Would transition Academic session {$session->id} from READY to ABSENT";
-
-                    if ($isVerbose) {
-                        $this->info("⏰ Would mark Academic session {$session->id} as ABSENT");
-                    }
-                }
-
-                // Check for auto-completion
-                if ($this->academicSessionStatusService->shouldAutoComplete($session)) {
-                    $stats['ongoing_to_completed']++;
-                    $stats['details'][] = "Would transition Academic session {$session->id} from ONGOING to COMPLETED";
-
-                    if ($isVerbose) {
-                        $this->info("✅ Would auto-complete Academic session {$session->id}");
-                    }
-                }
-
-            } catch (\Exception $e) {
-                $stats['errors']++;
-                $stats['details'][] = "Error processing Academic session {$session->id}: {$e->getMessage()}";
-
-                if ($isVerbose) {
-                    $this->error("❌ Error simulating Academic session {$session->id}: {$e->getMessage()}");
-                }
-            }
-        }
-
-        return $stats;
-    }
-
-    /**
-     * Display combined results for both session types
+     * Display combined results for all session types
      */
     private function displayCombinedResults(array $totalStats, bool $isDryRun, bool $isVerbose): void
     {
@@ -463,8 +404,9 @@ class UpdateSessionStatusesCommand extends Command
         $this->info("\n📊 {$mode} Results:");
         $this->info('═══════════════════════════════════════════════════');
 
-        $quranStats = $totalStats['quran']['transitions'];
-        $academicStats = $totalStats['academic']['transitions'];
+        $quranStats = $totalStats['quran']['transitions'] ?? [];
+        $academicStats = $totalStats['academic']['transitions'] ?? [];
+        $interactiveStats = $totalStats['interactive']['transitions'] ?? [];
 
         $quranTransitions = ($quranStats['scheduled_to_ready'] ?? 0) +
                            ($quranStats['ready_to_absent'] ?? 0) +
@@ -474,9 +416,14 @@ class UpdateSessionStatusesCommand extends Command
                               ($academicStats['ready_to_absent'] ?? 0) +
                               ($academicStats['ongoing_to_completed'] ?? 0);
 
-        $totalTransitions = $quranTransitions + $academicTransitions;
+        $interactiveTransitions = ($interactiveStats['scheduled_to_ready'] ?? 0) +
+                                 ($interactiveStats['ready_to_absent'] ?? 0) +
+                                 ($interactiveStats['ongoing_to_completed'] ?? 0);
 
-        if ($totalTransitions === 0 && ($quranStats['errors'] ?? 0) === 0 && ($academicStats['errors'] ?? 0) === 0) {
+        $totalTransitions = $quranTransitions + $academicTransitions + $interactiveTransitions;
+        $totalErrors = ($quranStats['errors'] ?? 0) + ($academicStats['errors'] ?? 0) + ($interactiveStats['errors'] ?? 0);
+
+        if ($totalTransitions === 0 && $totalErrors === 0) {
             $this->info('✅ No status changes required - all sessions are in correct states');
 
             return;
@@ -492,6 +439,12 @@ class UpdateSessionStatusesCommand extends Command
         if ($totalStats['academic']['processed'] > 0) {
             $this->info("\n🎓 Academic Sessions ({$totalStats['academic']['processed']} processed):");
             $this->displaySessionTypeResults($academicStats, $isDryRun, $isVerbose, 'Academic');
+        }
+
+        // Interactive course session results
+        if ($totalStats['interactive']['processed'] > 0) {
+            $this->info("\n🎬 Interactive Course Sessions ({$totalStats['interactive']['processed']} processed):");
+            $this->displaySessionTypeResults($interactiveStats, $isDryRun, $isVerbose, 'Interactive');
         }
 
         $this->info("\n📈 Total Summary: {$totalTransitions} status transitions processed");

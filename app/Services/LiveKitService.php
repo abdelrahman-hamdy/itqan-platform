@@ -267,10 +267,11 @@ class LiveKitService
                 'api_url' => $apiUrl,
             ]);
 
-            // Call LiveKit Egress API
+            // Call LiveKit Egress Twirp API (StartRoomCompositeEgress)
             $response = \Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->generateEgressToken(),
-            ])->post($apiUrl . '/egress/room', $payload);
+                'Content-Type' => 'application/json',
+            ])->post($apiUrl . '/twirp/livekit.Egress/StartRoomCompositeEgress', $payload);
 
             if (!$response->successful()) {
                 throw new \Exception('Egress API error: ' . $response->body());
@@ -323,10 +324,13 @@ class LiveKitService
                 'api_url' => $apiUrl,
             ]);
 
-            // Call LiveKit Egress API to stop recording
+            // Call LiveKit Egress Twirp API (StopEgress)
             $response = \Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->generateEgressToken(),
-            ])->delete($apiUrl . '/egress/' . $egressId);
+                'Content-Type' => 'application/json',
+            ])->post($apiUrl . '/twirp/livekit.Egress/StopEgress', [
+                'egress_id' => $egressId,
+            ]);
 
             if (!$response->successful()) {
                 throw new \Exception('Egress API error: ' . $response->body());
@@ -357,13 +361,16 @@ class LiveKitService
     {
         // For LiveKit Egress API, we can use the same API key/secret as access tokens
         // Create a JWT with canCreateEgress grant
-        $token = new AccessToken($this->apiKey, $this->apiSecret);
-        $token->setIdentity('egress-service');
-        $token->setTtl(3600); // 1 hour
+        $tokenOptions = (new AccessTokenOptions)
+            ->setIdentity('egress-service')
+            ->setTtl(3600); // 1 hour
 
-        // Add video grant with egress permissions
+        // Add video grant with recording/egress permissions
         $grant = new VideoGrant();
-        $grant->setCanCreateEgress(true);
+        $grant->setRoomRecord(true);
+        $grant->setRoomAdmin(true);
+
+        $token = new AccessToken($this->apiKey, $this->apiSecret, $tokenOptions);
         $token->setGrant($grant);
 
         return $token->toJwt();

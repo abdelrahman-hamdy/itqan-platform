@@ -118,10 +118,10 @@ class TeacherProfileController extends Controller
 
     public function schedule()
     {
-        // Redirect to the unified schedule dashboard
+        // Redirect to the teacher profile page
         $subdomain = request()->route('subdomain') ?? 'itqan-academy';
 
-        return redirect()->route('teacher.schedule.dashboard', ['subdomain' => $subdomain]);
+        return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
     }
 
     public function students()

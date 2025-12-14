@@ -2,6 +2,9 @@
 
 namespace App\Filament\Shared\Traits;
 
+use App\Enums\SessionStatus;
+use App\Enums\InteractiveCourseStatus;
+
 /**
  * Trait FormatsCalendarData
  *
@@ -11,59 +14,64 @@ namespace App\Filament\Shared\Traits;
 trait FormatsCalendarData
 {
     /**
-     * Color scheme for different session types
+     * Color scheme for different session types (non-status based)
      */
-    public const SESSION_COLORS = [
+    public const SESSION_TYPE_COLORS = [
         // Quran session types
-        'trial' => '#eab308',      // yellow-500
-        'group' => '#22c55e',      // green-500
-        'quran_individual' => '#6366f1',  // indigo-500
+        'trial' => '#eab308',           // yellow-500
+        'group' => '#22c55e',           // green-500
+        'quran_individual' => '#6366f1', // indigo-500
 
         // Academic session types
         'academic_individual' => '#3B82F6',  // blue-500
-        'interactive_course' => '#10B981',   // green-500
-
-        // Status overrides
-        'cancelled' => '#ef4444',  // red-500
-        'ongoing' => '#3b82f6',    // blue-500
+        'interactive_course' => '#10B981',   // emerald-500
     ];
 
     /**
      * Get color for a session based on type and status
+     * Uses enum hexColor() for status-based colors
      *
      * @param string $sessionType Session type (trial, group, individual, etc.)
-     * @param string $status Session status
+     * @param SessionStatus|string $status Session status
      * @param bool $isAcademic Whether this is an academic session
      * @return string Hex color code
      */
-    protected function getSessionColor(string $sessionType, string $status, bool $isAcademic = false): string
+    protected function getSessionColor(string $sessionType, SessionStatus|string $status, bool $isAcademic = false): string
     {
-        // Status-based colors take precedence
-        if (in_array($status, ['cancelled', 'ongoing'])) {
-            return self::SESSION_COLORS[$status];
+        // Convert string to enum if needed
+        $statusEnum = $status instanceof SessionStatus
+            ? $status
+            : SessionStatus::tryFrom($status);
+
+        // Status-based colors take precedence for certain statuses
+        if ($statusEnum) {
+            if (in_array($statusEnum, [SessionStatus::CANCELLED, SessionStatus::ONGOING, SessionStatus::ABSENT])) {
+                return $statusEnum->hexColor();
+            }
         }
 
         // Type-based colors
-        if ($sessionType === 'trial') {
-            return self::SESSION_COLORS['trial'];
-        }
+        return match ($sessionType) {
+            'trial' => self::SESSION_TYPE_COLORS['trial'],
+            'group' => self::SESSION_TYPE_COLORS['group'],
+            'individual' => $isAcademic
+                ? self::SESSION_TYPE_COLORS['academic_individual']
+                : self::SESSION_TYPE_COLORS['quran_individual'],
+            'interactive_course' => self::SESSION_TYPE_COLORS['interactive_course'],
+            default => self::SESSION_TYPE_COLORS['group'],
+        };
+    }
 
-        if ($sessionType === 'group') {
-            return self::SESSION_COLORS['group'];
-        }
+    /**
+     * Get hex color directly from session status enum
+     */
+    protected function getStatusHexColor(SessionStatus|string $status): string
+    {
+        $statusEnum = $status instanceof SessionStatus
+            ? $status
+            : SessionStatus::tryFrom($status);
 
-        if ($sessionType === 'individual') {
-            return $isAcademic
-                ? self::SESSION_COLORS['academic_individual']
-                : self::SESSION_COLORS['quran_individual'];
-        }
-
-        if ($sessionType === 'interactive_course') {
-            return self::SESSION_COLORS['interactive_course'];
-        }
-
-        // Default fallback
-        return self::SESSION_COLORS['group'];
+        return $statusEnum?->hexColor() ?? '#6B7280';
     }
 
     /**
@@ -77,12 +85,12 @@ trait FormatsCalendarData
         if ($teacherType === 'academic_teacher') {
             return [
                 'private_lesson' => [
-                    'color' => self::SESSION_COLORS['academic_individual'],
+                    'color' => self::SESSION_TYPE_COLORS['academic_individual'],
                     'label' => 'درس خاص',
                     'icon' => '👤',
                 ],
                 'interactive_course' => [
-                    'color' => self::SESSION_COLORS['interactive_course'],
+                    'color' => self::SESSION_TYPE_COLORS['interactive_course'],
                     'label' => 'دورة تفاعلية',
                     'icon' => '👥',
                 ],
@@ -92,17 +100,17 @@ trait FormatsCalendarData
         // Quran teacher
         return [
             'trial' => [
-                'color' => self::SESSION_COLORS['trial'],
+                'color' => self::SESSION_TYPE_COLORS['trial'],
                 'label' => 'جلسة تجريبية',
                 'icon' => '🎯',
             ],
             'group' => [
-                'color' => self::SESSION_COLORS['group'],
+                'color' => self::SESSION_TYPE_COLORS['group'],
                 'label' => 'حلقة جماعية',
                 'icon' => '👥',
             ],
             'individual' => [
-                'color' => self::SESSION_COLORS['quran_individual'],
+                'color' => self::SESSION_TYPE_COLORS['quran_individual'],
                 'label' => 'حلقة فردية',
                 'icon' => '👤',
             ],
@@ -110,21 +118,63 @@ trait FormatsCalendarData
     }
 
     /**
-     * Format status badge for display
+     * Get status color indicators for calendar legend
+     * Uses enum for consistent colors and labels
+     */
+    protected function getStatusColorIndicators(): array
+    {
+        return [
+            [
+                'status' => SessionStatus::SCHEDULED,
+                'color' => SessionStatus::SCHEDULED->hexColor(),
+                'label' => SessionStatus::SCHEDULED->label(),
+            ],
+            [
+                'status' => SessionStatus::READY,
+                'color' => SessionStatus::READY->hexColor(),
+                'label' => SessionStatus::READY->label(),
+            ],
+            [
+                'status' => SessionStatus::ONGOING,
+                'color' => SessionStatus::ONGOING->hexColor(),
+                'label' => SessionStatus::ONGOING->label(),
+            ],
+            [
+                'status' => SessionStatus::COMPLETED,
+                'color' => SessionStatus::COMPLETED->hexColor(),
+                'label' => SessionStatus::COMPLETED->label(),
+            ],
+            [
+                'status' => SessionStatus::CANCELLED,
+                'color' => SessionStatus::CANCELLED->hexColor(),
+                'label' => SessionStatus::CANCELLED->label(),
+            ],
+            [
+                'status' => SessionStatus::ABSENT,
+                'color' => SessionStatus::ABSENT->hexColor(),
+                'label' => SessionStatus::ABSENT->label(),
+            ],
+        ];
+    }
+
+    /**
+     * Format status badge for display using enum
      *
-     * @param string $status Session status
+     * @param SessionStatus|string $status Session status
      * @return array Badge configuration [color, label]
      */
-    protected function formatStatusBadge(string $status): array
+    protected function formatStatusBadge(SessionStatus|string $status): array
     {
+        $statusEnum = $status instanceof SessionStatus
+            ? $status
+            : SessionStatus::tryFrom($status);
+
+        if ($statusEnum) {
+            return [$statusEnum->color(), $statusEnum->label()];
+        }
+
+        // Fallback for non-standard statuses
         return match ($status) {
-            'unscheduled' => ['gray', 'غير مجدولة'],
-            'scheduled' => ['warning', 'مجدولة'],
-            'ready' => ['info', 'جاهزة للبدء'],
-            'ongoing' => ['primary', 'جارية'],
-            'completed' => ['success', 'مكتملة'],
-            'cancelled' => ['danger', 'ملغية'],
-            'absent' => ['warning', 'غياب الطالب'],
             'teacher_absent' => ['danger', 'غياب المعلم'],
             default => ['gray', $status],
         };

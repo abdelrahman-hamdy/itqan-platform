@@ -81,14 +81,14 @@ class SessionController extends Controller
         }
 
         if ($request->filled('from_date')) {
-            $interactiveQuery->whereDate('scheduled_date', '>=', $request->from_date);
+            $interactiveQuery->whereDate('scheduled_at', '>=', $request->from_date);
         }
 
         if ($request->filled('to_date')) {
-            $interactiveQuery->whereDate('scheduled_date', '<=', $request->to_date);
+            $interactiveQuery->whereDate('scheduled_at', '<=', $request->to_date);
         }
 
-        $interactiveSessions = $interactiveQuery->orderBy('scheduled_date', 'desc')
+        $interactiveSessions = $interactiveQuery->orderBy('scheduled_at', 'desc')
             ->limit(50)
             ->get();
 
@@ -99,7 +99,7 @@ class SessionController extends Controller
                 'title' => $session->title ?? $session->course?->title,
                 'course_name' => $session->course?->title,
                 'session_number' => $session->session_number,
-                'scheduled_at' => $session->scheduled_date?->toISOString(),
+                'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
                 'status' => $session->status->value ?? $session->status,
                 'meeting_link' => $session->meeting_link,
@@ -211,8 +211,9 @@ class SessionController extends Controller
                     ] : null,
                     'session_number' => $interactiveSession->session_number,
                     'description' => $interactiveSession->description,
-                    'scheduled_date' => $interactiveSession->scheduled_date?->toDateString(),
-                    'scheduled_time' => $interactiveSession->scheduled_time,
+                    'scheduled_at' => $interactiveSession->scheduled_at?->toISOString(),
+                    'scheduled_date' => $interactiveSession->scheduled_at?->toDateString(), // Backward compatibility
+                    'scheduled_time' => $interactiveSession->scheduled_at?->format('H:i'), // Backward compatibility
                     'duration_minutes' => $interactiveSession->duration_minutes ?? 60,
                     'status' => $interactiveSession->status->value ?? $interactiveSession->status,
                     'meeting_link' => $interactiveSession->meeting_link,

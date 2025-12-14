@@ -56,7 +56,7 @@
                             <a href="{{ route('student.profile', ['subdomain' => request()->route('subdomain')]) }}"
                                class="hover:text-primary">الملف الشخصي</a>
                         @else
-                            <a href="{{ route('teacher.schedule.dashboard', ['subdomain' => request()->route('subdomain')]) }}"
+                            <a href="{{ route('teacher.profile', ['subdomain' => request()->route('subdomain')]) }}"
                                class="hover:text-primary">
                                 {{ $session->session_type === 'trial' ? 'الجلسات التجريبية' : 'جدول الجلسات' }}
                             </a>

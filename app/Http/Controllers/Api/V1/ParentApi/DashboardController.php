@@ -117,7 +117,7 @@ class DashboardController extends Controller
         $interactiveCount = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
             $q->where('user_id', $userId);
         })
-            ->whereDate('scheduled_date', $today)
+            ->whereDate('scheduled_at', $today)
             ->whereNotIn('status', ['cancelled'])
             ->count();
 

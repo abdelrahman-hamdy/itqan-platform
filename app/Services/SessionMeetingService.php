@@ -14,14 +14,14 @@ class SessionMeetingService
 {
     private LiveKitService $livekitService;
 
-    private SessionStatusService $sessionStatusService;
+    private UnifiedSessionStatusService $statusService;
 
     public function __construct(
         LiveKitService $livekitService,
-        SessionStatusService $sessionStatusService
+        UnifiedSessionStatusService $statusService
     ) {
         $this->livekitService = $livekitService;
-        $this->sessionStatusService = $sessionStatusService;
+        $this->statusService = $statusService;
     }
 
     /**
@@ -164,7 +164,10 @@ class SessionMeetingService
     }
 
     /**
-     * Auto-start sessions that are scheduled to begin
+     * Process Quran sessions - create meetings for sessions in READY status
+     *
+     * NOTE: Status transitions are handled by UnifiedSessionStatusService.
+     * This method only handles meeting creation and cleanup.
      */
     public function processScheduledSessions(): array
     {
@@ -178,27 +181,19 @@ class SessionMeetingService
         $timezone = AcademyContextService::getTimezone();
         $now = Carbon::now($timezone);
 
-        // Get sessions that should be starting within the preparation window
-        // We need to get sessions grouped by academy to use their specific settings
-        $upcomingSessions = QuranSession::where('scheduled_at', '>=', $now)
-            ->where('scheduled_at', '<=', $now->copy()->addMinutes(30)) // Max window to check
-            ->where('status', '!=', SessionStatus::COMPLETED)
+        // Get Quran sessions in READY status without meetings yet
+        // Note: UnifiedSessionStatusService handles SCHEDULED -> READY transitions
+        $readySessions = QuranSession::where('status', SessionStatus::READY)
             ->whereNull('meeting_room_name') // Sessions without meetings yet
             ->with(['academy'])
-            ->get()
-            ->filter(function ($session) use ($now) {
-                // Check if session is within the academy's preparation window
-                $academySettings = AcademySettings::where('academy_id', $session->academy_id)->first();
-                $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
-                return $session->scheduled_at <= $now->copy()->addMinutes($preparationMinutes);
-            });
+            ->get();
 
-        foreach ($upcomingSessions as $session) {
+        foreach ($readySessions as $session) {
             try {
                 $this->ensureMeetingAvailable($session, true);
                 $results['started']++;
 
-                Log::info('Auto-created meeting for upcoming session', [
+                Log::info('Auto-created meeting for ready Quran session', [
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at,
                     'room_name' => $session->meeting_room_name,
@@ -206,35 +201,21 @@ class SessionMeetingService
 
             } catch (\Exception $e) {
                 $results['errors']++;
-                Log::error('Failed to auto-create meeting for session', [
+                Log::error('Failed to auto-create meeting for Quran session', [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
                 ]);
             }
         }
 
-        // Update status of active sessions
-        $activeSessions = QuranSession::where('scheduled_at', '<=', $now)
-            ->where('scheduled_at', '>', $now->copy()->subMinutes(60))
-            ->where('status', SessionStatus::SCHEDULED)
-            ->get();
+        // Note: Status transitions to ONGOING are handled by UnifiedSessionStatusService
+        // when participant joins (via LiveKit webhook) or via scheduled command.
 
-        foreach ($activeSessions as $session) {
-            try {
-                $session->update(['status' => SessionStatus::ONGOING]);
-                $results['updated']++;
-            } catch (\Exception $e) {
-                Log::error('Failed to update session status', [
-                    'session_id' => $session->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        // Clean up expired sessions
+        // Clean up expired sessions (sessions that ended 2+ hours ago)
+        $defaultCleanupHours = 2;
         $expiredSessions = QuranSession::whereNotNull('meeting_room_name')
             ->whereNotNull('scheduled_at')
-            ->where('scheduled_at', '<', $now->copy()->subHours(2)) // Sessions that ended 2+ hours ago
+            ->where('scheduled_at', '<', $now->copy()->subHours($defaultCleanupHours))
             ->where('status', '!=', SessionStatus::COMPLETED)
             ->get();
 
@@ -243,7 +224,7 @@ class SessionMeetingService
                 $this->cleanupExpiredSession($session);
                 $results['cleaned']++;
             } catch (\Exception $e) {
-                Log::error('Failed to cleanup expired session', [
+                Log::error('Failed to cleanup expired Quran session', [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
                 ]);
@@ -520,7 +501,10 @@ class SessionMeetingService
     }
 
     /**
-     * Terminate meetings for expired sessions
+     * Terminate meetings for expired Quran sessions
+     *
+     * NOTE: Status transitions (ONGOING -> COMPLETED) are handled by UnifiedSessionStatusService.
+     * This method only terminates the LiveKit rooms for cleanup.
      */
     public function terminateExpiredMeetings(): array
     {
@@ -530,27 +514,22 @@ class SessionMeetingService
             'errors' => [],
         ];
 
-        // Get sessions that should have meetings terminated
-        $expiredSessions = QuranSession::whereNotNull('meeting_room_name')
-            ->whereIn('status', [SessionStatus::ONGOING, SessionStatus::READY])
-            ->with(['academy', 'circle', 'individualCircle'])
-            ->get()
-            ->filter(function ($session) {
-                return $this->sessionStatusService->shouldAutoComplete($session);
-            });
+        // Get COMPLETED sessions that still have meeting rooms active
+        // Note: UnifiedSessionStatusService handles the ONGOING -> COMPLETED transition
+        $completedWithMeetings = QuranSession::whereNotNull('meeting_room_name')
+            ->where('status', SessionStatus::COMPLETED)
+            ->get();
 
-        foreach ($expiredSessions as $session) {
+        foreach ($completedWithMeetings as $session) {
             try {
-                // End the meeting
+                // End the meeting room on LiveKit
                 if ($session->endMeeting()) {
                     $results['meetings_terminated']++;
                 }
 
-                // Transition session to completed
-                $this->sessionStatusService->transitionToCompleted($session);
                 $results['sessions_processed']++;
 
-                Log::info('Meeting terminated for expired session', [
+                Log::info('Meeting terminated for completed Quran session', [
                     'session_id' => $session->id,
                     'status' => $session->status->value,
                 ]);
@@ -561,7 +540,7 @@ class SessionMeetingService
                     'error' => $e->getMessage(),
                 ];
 
-                Log::error('Failed to terminate meeting for expired session', [
+                Log::error('Failed to terminate meeting for completed Quran session', [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
                 ]);
@@ -572,7 +551,11 @@ class SessionMeetingService
     }
 
     /**
-     * Enhanced processing method that uses the new status service
+     * Enhanced processing method for Quran session meetings
+     *
+     * NOTE: Status transitions are now handled by UnifiedSessionStatusService
+     * via the sessions:update-statuses command. This method only handles
+     * meeting creation and cleanup.
      */
     public function processSessionMeetings(): array
     {
@@ -584,31 +567,16 @@ class SessionMeetingService
         ];
 
         try {
-            // CRITICAL FIX: Process status transitions FIRST
-            // This ensures sessions transition to READY before we try to create meetings
-            $transitionSessions = QuranSession::whereIn('status', [
-                SessionStatus::SCHEDULED,
-                SessionStatus::READY,
-                SessionStatus::ONGOING,
-            ])->with(['academy', 'circle', 'individualCircle'])->get();
+            // Status transitions are now handled by UnifiedSessionStatusService
+            // via the sessions:update-statuses command. We don't duplicate that logic here.
+            // This separation ensures consistent behavior across all session types.
 
-            $transitionResults = $this->sessionStatusService->processStatusTransitions($transitionSessions);
-            $results['status_transitions'] = $transitionResults['transitions_to_ready']
-                + $transitionResults['transitions_to_absent']
-                + $transitionResults['transitions_to_completed'];
-
-            Log::info('Status transitions processed', [
-                'transitions_to_ready' => $transitionResults['transitions_to_ready'],
-                'transitions_to_absent' => $transitionResults['transitions_to_absent'],
-                'transitions_to_completed' => $transitionResults['transitions_to_completed'],
-            ]);
-
-            // THEN create meetings for ready sessions (including newly transitioned ones)
+            // Create meetings for ready Quran sessions
             $createResults = $this->createMeetingsForReadySessions();
             $results['meetings_created'] = $createResults['meetings_created'];
             $results['errors'] = array_merge($results['errors'], $createResults['errors']);
 
-            // Finally, terminate expired meetings
+            // Terminate expired meetings
             $terminateResults = $this->terminateExpiredMeetings();
             $results['meetings_terminated'] = $terminateResults['meetings_terminated'];
             $results['errors'] = array_merge($results['errors'], $terminateResults['errors']);
@@ -618,7 +586,7 @@ class SessionMeetingService
                 'general' => $e->getMessage(),
             ];
 
-            Log::error('Error in session meeting processing', [
+            Log::error('Error in Quran session meeting processing', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
