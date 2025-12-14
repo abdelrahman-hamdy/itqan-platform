@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 
 class EarningsOverviewWidget extends BaseWidget
 {
+    // Prevent auto-discovery - not needed on main dashboard
+    protected static bool $isDiscoverable = false;
+
     protected static ?int $sort = 1;
 
     protected function getStats(): array

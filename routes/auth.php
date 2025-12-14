@@ -29,6 +29,20 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Password Reset Routes
+    |--------------------------------------------------------------------------
+    */
+
+    // Forgot password - show form and send reset link
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email')->middleware('throttle:5,1');
+
+    // Reset password - show form and process reset
+    Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update')->middleware('throttle:5,1');
+
+    /*
+    |--------------------------------------------------------------------------
     | Student Registration Routes
     |--------------------------------------------------------------------------
     */

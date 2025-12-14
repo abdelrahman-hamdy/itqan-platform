@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Auth;
 
 class RecentMonitoredSessionsWidget extends BaseWidget
 {
+    // Prevent auto-discovery - not needed on main dashboard
+    protected static bool $isDiscoverable = false;
+
     protected static ?string $heading = 'الجلسات الأخيرة';
 
     protected static ?int $sort = 2;

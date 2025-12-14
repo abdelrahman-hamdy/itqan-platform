@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Auth;
 
 class AcademicWeeklyChartWidget extends ChartWidget
 {
+    // Prevent auto-discovery - not needed on main dashboard
+    protected static bool $isDiscoverable = false;
+
     protected static ?string $heading = 'الجلسات - آخر 7 أيام';
 
     protected static ?int $sort = 3;
