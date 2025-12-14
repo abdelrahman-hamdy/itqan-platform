@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuizResource\Pages;
 use App\Filament\Resources\QuizResource\RelationManagers;
-use App\Helpers\AcademyHelper;
+use App\Services\AcademyContextService;
 use App\Models\Academy;
 use App\Models\Quiz;
 use Filament\Forms;
@@ -31,7 +31,7 @@ class QuizResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
 
         return $form
             ->schema([
@@ -165,7 +165,7 @@ class QuizResource extends Resource
                 SoftDeletingScope::class,
             ]);
 
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
         if ($currentAcademy) {
             $query->where('academy_id', $currentAcademy->id);
         }

@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\RecordedCourseResource\Pages;
 
 use App\Filament\Resources\RecordedCourseResource;
-use App\Helpers\AcademyHelper;
+use App\Services\AcademyContextService;
 use App\Models\RecordedCourse;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Str;
@@ -14,7 +14,7 @@ class CreateRecordedCourse extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
 
         if ($currentAcademy) {
             $data['academy_id'] = $currentAcademy->id;

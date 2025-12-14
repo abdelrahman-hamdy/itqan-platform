@@ -3,7 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuizAssignmentResource\Pages;
-use App\Helpers\AcademyHelper;
+use App\Services\AcademyContextService;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
@@ -48,7 +48,7 @@ class QuizAssignmentResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
 
         return $form
             ->schema([
@@ -231,7 +231,7 @@ class QuizAssignmentResource extends Resource
     {
         $query = parent::getEloquentQuery()->with(['quiz', 'assignable']);
 
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
         if ($currentAcademy) {
             $query->whereHas('quiz', function ($q) use ($currentAcademy) {
                 $q->where('academy_id', $currentAcademy->id);

@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Helpers\AcademyHelper;
+use App\Services\AcademyContextService;
 use App\Models\Academy;
 use App\Models\RecordedCourse;
 use App\Models\User;
@@ -19,7 +19,7 @@ class Dashboard extends BaseDashboard
 
     public function getTitle(): string
     {
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
         
         if ($currentAcademy) {
             return "لوحة تحكم {$currentAcademy->name}";
@@ -30,7 +30,7 @@ class Dashboard extends BaseDashboard
 
     public function getSubheading(): string
     {
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
         
         if ($currentAcademy) {
             return "مرحباً بك في لوحة تحكم {$currentAcademy->name}";
@@ -48,7 +48,7 @@ class Dashboard extends BaseDashboard
 
     protected function getFooterWidgets(): array
     {
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
         
         if ($currentAcademy) {
             return [

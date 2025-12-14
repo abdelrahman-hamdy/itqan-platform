@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\RecordedCourseResource\Pages;
-use App\Helpers\AcademyHelper;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\Academy;
@@ -35,7 +34,7 @@ class RecordedCourseResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
 
         return $form
             ->schema([
@@ -271,7 +270,7 @@ class RecordedCourseResource extends Resource
 
                 Tables\Columns\TextColumn::make('academy.name')
                     ->label('الأكاديمية')
-                    ->visible(fn () => ! AcademyHelper::hasAcademySelected())
+                    ->visible(fn () => ! AcademyContextService::hasAcademySelected())
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('subject.name')
@@ -318,8 +317,8 @@ class RecordedCourseResource extends Resource
         $query = parent::getEloquentQuery();
 
         // Filter by current academy if selected
-        if (AcademyHelper::hasAcademySelected()) {
-            $query->where('academy_id', AcademyHelper::getCurrentAcademyId());
+        if (AcademyContextService::hasAcademySelected()) {
+            $query->where('academy_id', AcademyContextService::getCurrentAcademyId());
         }
 
         return $query;
