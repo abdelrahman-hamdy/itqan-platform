@@ -352,25 +352,41 @@ Tables\Columns\TextColumn::make('attendance_status')
 
 ## Implementation Tracking
 
-### Phase 1: Quick Wins (Low Risk)
-- [ ] Remove deprecated backup files (.bak files)
-- [ ] Migrate AcademyHelper to AcademyContextService (4 files)
+### Phase 1: Quick Wins (Low Risk) ✅ COMPLETED
+- [x] Remove deprecated backup files (.bak files) - Deleted 3 files
+- [x] Migrate AcademyHelper to AcademyContextService (6 files updated)
 
-### Phase 2: Code Consolidation (Medium Risk)
-- [ ] Create shared base resources for duplicated code
-- [ ] Refactor CertificateResource to use shared base
-- [ ] Refactor HomeworkSubmissionResource to use shared base
-- [ ] Refactor QuizResource to use shared base
-- [ ] Refactor QuizAssignmentResource to use shared base
+### Phase 2: Code Consolidation (Medium Risk) ✅ COMPLETED
+- [x] Create `BaseCertificateResource.php` - shared base for Certificate resources
+- [x] Refactor CertificateResource (Teacher & AcademicTeacher) - reduced from ~240 lines to ~22 lines each
+- [x] Create `BaseHomeworkSubmissionResource.php` - shared base with configurable submitable types
+- [x] Refactor HomeworkSubmissionResource (Teacher & AcademicTeacher) - reduced from ~225-254 lines to ~32-44 lines each
+- [x] Create `BaseQuizResource.php` - shared base with configurable assignable types
+- [x] Refactor QuizResource (Teacher & AcademicTeacher) - reduced from ~265 lines to ~60-74 lines each
+- [x] Create `BaseQuizAssignmentResource.php` - shared base with abstract methods for panel-specific logic
+- [x] Refactor QuizAssignmentResource (Teacher & AcademicTeacher) - reduced from ~270 lines to ~100-122 lines each
+
+**Total Lines Saved:** ~1,200+ lines of duplicated code eliminated
 
 ### Phase 3: Standardization (Medium Risk)
 - [ ] Fix base class inheritance (QuranSessionResource, etc.)
 - [ ] Replace hardcoded enums with Enum classes
 - [ ] Standardize timezone handling
 
-### Phase 4: New Features (Low Risk - New Code)
+### Phase 4: New Features (Low Risk - New Code) - DEFERRED
 - [ ] Implement Supervisor panel resources
 - [ ] Add missing resources for Teacher panels
 
 ### Phase 5: Authorization (Medium Risk)
 - [ ] Create missing policies for resources
+
+---
+
+## Files Created (Phase 2)
+
+| File | Purpose |
+|------|---------|
+| `app/Filament/Shared/Resources/BaseCertificateResource.php` | Shared Certificate form/table/query logic |
+| `app/Filament/Shared/Resources/BaseHomeworkSubmissionResource.php` | Shared HomeworkSubmission with configurable submitable types |
+| `app/Filament/Shared/Resources/BaseQuizResource.php` | Shared Quiz with configurable assign action |
+| `app/Filament/Shared/Resources/BaseQuizAssignmentResource.php` | Shared QuizAssignment with abstract teacher filtering |
