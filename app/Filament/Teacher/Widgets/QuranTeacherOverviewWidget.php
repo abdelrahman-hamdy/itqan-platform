@@ -2,158 +2,104 @@
 
 namespace App\Filament\Teacher\Widgets;
 
-use App\Models\QuranTrialRequest;
-use App\Models\QuranSubscription;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
-use App\Models\QuranTeacherProfile;
+use App\Models\QuranTrialRequest;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
 
 class QuranTeacherOverviewWidget extends BaseWidget
 {
-    protected static ?string $pollingInterval = '30s';
-    
+    protected static ?string $pollingInterval = '60s';
+
     protected static bool $isLazy = false;
+
+    protected static ?int $sort = 1;
 
     public function getStats(): array
     {
         $user = Auth::user();
-        
-        if (!$user->isQuranTeacher()) {
+
+        if (! $user->isQuranTeacher()) {
             return [];
         }
 
         $teacher = $user->quranTeacherProfile;
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             return [];
         }
 
-        // Get teacher-specific counts
-        $pendingTrialRequests = QuranTrialRequest::where('teacher_id', $teacher->id)
-            ->where('status', 'pending')
-            ->count();
-        
-        $totalTrialRequests = QuranTrialRequest::where('teacher_id', $teacher->id)->count();
-        
-        $activeSubscriptions = QuranSubscription::where('quran_teacher_id', $teacher->id)
-            ->where('status', 'active')
-            ->where('payment_status', 'current')
-            ->count();
-        
-        $totalSubscriptions = QuranSubscription::where('quran_teacher_id', $teacher->id)->count();
-        
         // Today's sessions
         $todaySessions = QuranSession::where('quran_teacher_id', $teacher->id)
             ->whereDate('scheduled_at', today())
             ->count();
-            
+
+        // Today's completed sessions
+        $todayCompleted = QuranSession::where('quran_teacher_id', $teacher->id)
+            ->whereDate('scheduled_at', today())
+            ->where('status', 'completed')
+            ->count();
+
         // This week's sessions
         $weekSessions = QuranSession::where('quran_teacher_id', $teacher->id)
             ->whereBetween('scheduled_at', [
                 now()->startOfWeek(),
-                now()->endOfWeek()
+                now()->endOfWeek(),
             ])
-            ->count();
-        
-        // Total sessions completed
-        $completedSessions = QuranSession::where('quran_teacher_id', $teacher->id)
-            ->where('status', 'completed')
-            ->count();
-        
-        // Upcoming sessions (next 7 days)
-        $upcomingSessions = QuranSession::where('quran_teacher_id', $teacher->id)
-            ->whereBetween('scheduled_at', [
-                now(),
-                now()->addDays(7)
-            ])
-            ->where('status', 'scheduled')
             ->count();
 
-        // Calculate growth rates
-        $subscriptionsLastMonth = QuranSubscription::where('quran_teacher_id', $teacher->id)
-            ->whereMonth('created_at', now()->subMonth()->month)
-            ->whereYear('created_at', now()->subMonth()->year)
-            ->count();
-        $subscriptionGrowth = $subscriptionsLastMonth > 0 ? 
-            round((($activeSubscriptions - $subscriptionsLastMonth) / $subscriptionsLastMonth) * 100, 1) : 0;
+        // Total active students (from circles)
+        $groupCircleStudents = QuranCircle::where('quran_teacher_id', $teacher->id)
+            ->where('status', true)
+            ->sum('enrolled_students');
 
-        $sessionsLastWeek = QuranSession::where('quran_teacher_id', $teacher->id)
-            ->whereBetween('scheduled_at', [
-                now()->subWeek()->startOfWeek(),
-                now()->subWeek()->endOfWeek()
-            ])
+        $individualCircleStudents = QuranIndividualCircle::where('quran_teacher_id', $teacher->id)
+            ->where('status', 'active')
             ->count();
-        $sessionGrowth = $sessionsLastWeek > 0 ? 
-            round((($weekSessions - $sessionsLastWeek) / $sessionsLastWeek) * 100, 1) : 0;
+
+        $totalActiveStudents = $groupCircleStudents + $individualCircleStudents;
+
+        // Pending trial requests
+        $pendingTrials = QuranTrialRequest::where('teacher_id', $teacher->id)
+            ->where('status', 'pending')
+            ->count();
 
         return [
-            Stat::make('طلبات الجلسات التجريبية', $pendingTrialRequests)
-                ->description($pendingTrialRequests > 0 ? 'في انتظار الرد' : 'لا توجد طلبات معلقة')
-                ->descriptionIcon($pendingTrialRequests > 0 ? 'heroicon-m-clock' : 'heroicon-m-check-circle')
-                ->color($pendingTrialRequests > 0 ? 'warning' : 'success')
-                ->url('/teacher/schedule/dashboard'),
-
-            Stat::make('الاشتراكات النشطة', $activeSubscriptions)
-                ->description($subscriptionGrowth >= 0 ? "+{$subscriptionGrowth}% هذا الشهر" : "{$subscriptionGrowth}% هذا الشهر")
-                ->descriptionIcon($subscriptionGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->color($subscriptionGrowth >= 0 ? 'success' : 'danger')
-                ->chart($this->getSubscriptionChart()),
-
             Stat::make('جلسات اليوم', $todaySessions)
-                ->description("من إجمالي {$weekSessions} جلسة هذا الأسبوع")
+                ->description($todayCompleted > 0 ? "{$todayCompleted} مكتملة" : 'لا جلسات مكتملة بعد')
                 ->descriptionIcon('heroicon-m-calendar-days')
-                ->color('info')
-                ->chart($this->getSessionChart()),
+                ->color($todaySessions > 0 ? 'primary' : 'gray')
+                ->chart($this->getWeekSessionsChart()),
 
-            Stat::make('الجلسات القادمة', $upcomingSessions)
-                ->description('خلال الأسبوع القادم')
-                ->descriptionIcon('heroicon-m-clock')
-                ->color('primary'),
+            Stat::make('جلسات الأسبوع', $weekSessions)
+                ->description('هذا الأسبوع')
+                ->descriptionIcon('heroicon-m-calendar')
+                ->color('info'),
 
-            Stat::make('إجمالي الجلسات المكتملة', $completedSessions)
-                ->description($sessionGrowth >= 0 ? "+{$sessionGrowth}% هذا الأسبوع" : "{$sessionGrowth}% هذا الأسبوع")
-                ->descriptionIcon($sessionGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->color($sessionGrowth >= 0 ? 'success' : 'danger'),
+            Stat::make('الطلاب النشطين', $totalActiveStudents)
+                ->description($individualCircleStudents.' فردي، '.$groupCircleStudents.' جماعي')
+                ->descriptionIcon('heroicon-m-users')
+                ->color('success'),
 
-            Stat::make('التقييم العام', $teacher->rating ? round($teacher->rating, 1) : 'جديد')
-                ->description($teacher->total_reviews ? "من {$teacher->total_reviews} تقييم" : 'لا يوجد تقييمات بعد')
-                ->descriptionIcon('heroicon-m-star')
-                ->color($teacher->rating ? ($teacher->rating >= 4 ? 'success' : 'warning') : 'gray'),
+            Stat::make('طلبات تجريبية', $pendingTrials)
+                ->description($pendingTrials > 0 ? 'في انتظار الرد' : 'لا طلبات معلقة')
+                ->descriptionIcon($pendingTrials > 0 ? 'heroicon-m-clock' : 'heroicon-m-check-circle')
+                ->color($pendingTrials > 0 ? 'warning' : 'success'),
         ];
     }
 
-    private function getSubscriptionChart(): array
+    private function getWeekSessionsChart(): array
     {
         $user = Auth::user();
-        if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
+        if (! $user->isQuranTeacher() || ! $user->quranTeacherProfile) {
             return [];
         }
-        
-        $teacher = $user->quranTeacherProfile;
-        
-        // Get subscription creations for the last 7 days
-        $data = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $count = QuranSubscription::where('quran_teacher_id', $teacher->id)
-                ->whereDate('created_at', $date)
-                ->count();
-            $data[] = $count;
-        }
-        return $data;
-    }
 
-    private function getSessionChart(): array
-    {
-        $user = Auth::user();
-        if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
-            return [];
-        }
-        
         $teacher = $user->quranTeacherProfile;
-        
+
         // Get sessions for the last 7 days
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -163,6 +109,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
                 ->count();
             $data[] = $count;
         }
+
         return $data;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicIndividualLesson;
+use App\Models\InteractiveCourse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ class AcademicIndividualLessonController extends Controller
     }
 
     /**
-     * Display individual lessons for the academic teacher
+     * Display individual lessons (subscriptions) for the academic teacher
      */
     public function index(Request $request, $subdomain = null)
     {
@@ -31,16 +32,17 @@ class AcademicIndividualLessonController extends Controller
             abort(404, 'ملف المعلم غير موجود');
         }
 
-        $lessons = AcademicIndividualLesson::where('academic_teacher_id', $teacherProfile->id)
+        // Use AcademicSubscription for consistency with show view and profile page
+        $subscriptions = \App\Models\AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
-            ->with(['student', 'academicSubject', 'academicGradeLevel', 'academicSubscription'])
+            ->with(['student', 'subject', 'gradeLevel'])
             ->when($request->status, function ($query, $status) {
                 return $query->where('status', $status);
             })
             ->latest()
             ->paginate(15);
 
-        return view('teacher.academic-lessons.index', compact('lessons'));
+        return view('teacher.academic-lessons.index', compact('subscriptions'));
     }
 
     /**
@@ -185,5 +187,35 @@ class AcademicIndividualLessonController extends Controller
             'message' => 'تم تحديث إعدادات الدرس بنجاح',
             'lesson' => $lessonModel->fresh(),
         ]);
+    }
+
+    /**
+     * Display interactive courses assigned to the academic teacher
+     */
+    public function interactiveCoursesIndex(Request $request, $subdomain = null)
+    {
+        $user = Auth::user();
+
+        if (! $user->isAcademicTeacher()) {
+            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
+        }
+
+        // Get teacher profile
+        $teacherProfile = $user->academicTeacherProfile;
+        if (! $teacherProfile) {
+            abort(404, 'ملف المعلم غير موجود');
+        }
+
+        // Get courses assigned to this teacher
+        $courses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
+            ->where('academy_id', $user->academy_id)
+            ->with(['enrollments', 'subject', 'gradeLevel'])
+            ->when($request->status, function ($query, $status) {
+                return $query->where('status', $status);
+            })
+            ->latest()
+            ->paginate(15);
+
+        return view('teacher.interactive-courses.index', compact('courses'));
     }
 }

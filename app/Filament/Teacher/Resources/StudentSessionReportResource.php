@@ -34,9 +34,9 @@ class StudentSessionReportResource extends Resource
 
     protected static ?string $pluralModelLabel = 'تقارير الطلاب';
 
-    protected static ?string $navigationGroup = 'جلساتي';
+    protected static ?string $navigationGroup = 'التقارير والتقييمات';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     // Scope to only the current teacher's reports
     public static function getEloquentQuery(): Builder

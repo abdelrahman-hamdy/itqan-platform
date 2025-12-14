@@ -20,13 +20,15 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
 
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-bar';
 
-    protected static ?string $navigationGroup = 'الدورات التفاعلية';
+    protected static ?string $navigationGroup = 'جلساتي';
+
+    protected static ?string $navigationLabel = 'الدورات التفاعلية';
 
     protected static ?string $modelLabel = 'دورة تفاعلية';
 
     protected static ?string $pluralModelLabel = 'الدورات التفاعلية';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     /**
      * Check if current user can view this record

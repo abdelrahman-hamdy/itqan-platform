@@ -14,6 +14,9 @@ use App\Filament\AcademicTeacher\Resources\HomeworkSubmissionResource\Pages;
  */
 class HomeworkSubmissionResource extends BaseHomeworkSubmissionResource
 {
+    protected static ?string $navigationGroup = 'التقارير والتقييمات';
+
+    protected static ?int $navigationSort = 3;
     /**
      * Get the submitable types for Academic teacher.
      */

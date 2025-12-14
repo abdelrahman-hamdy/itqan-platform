@@ -43,7 +43,7 @@ class QuranCircleResource extends BaseTeacherResource
 
     protected static ?string $navigationGroup = 'جلساتي';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     /**
      * Check if current user can view this record

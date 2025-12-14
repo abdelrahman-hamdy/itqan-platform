@@ -27,19 +27,10 @@ class ViewQuranIndividualCircle extends ViewRecord
 
     public function getBreadcrumbs(): array
     {
-        $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
-
-        $breadcrumbs = [
-            route('teacher.profile', ['subdomain' => $subdomain]) => 'ملفي الشخصي',
+        return [
+            static::getResource()::getUrl() => 'حلقاتي الفردية',
+            '' => $this->getBreadcrumb(),
         ];
-
-        // Add parent breadcrumbs
-        $parentBreadcrumbs = parent::getBreadcrumbs();
-
-        // Skip the first item (dashboard) and use our custom profile link instead
-        $filteredBreadcrumbs = array_slice($parentBreadcrumbs, 1, null, true);
-
-        return array_merge($breadcrumbs, $filteredBreadcrumbs);
     }
 
     public function infolist(Infolist $infolist): Infolist

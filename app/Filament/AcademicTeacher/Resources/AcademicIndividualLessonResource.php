@@ -20,13 +20,15 @@ class AcademicIndividualLessonResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationGroup = 'دروسي الفردية';
+    protected static ?string $navigationGroup = 'جلساتي';
+
+    protected static ?string $navigationLabel = 'الدروس الفردية';
 
     protected static ?string $modelLabel = 'درس فردي';
 
     protected static ?string $pluralModelLabel = 'الدروس الفردية';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {

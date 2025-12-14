@@ -2,8 +2,12 @@
 
 namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 
+use App\Enums\QuranSurah;
+use App\Enums\SessionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use Filament\Actions;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewQuranSession extends ViewRecord
@@ -18,33 +22,130 @@ class ViewQuranSession extends ViewRecord
         ];
     }
 
-    protected function mutateFormDataBeforeFill(array $data): array
+    public function getTitle(): string
     {
-        // Load homework data if exists for view mode
-        if ($this->record->sessionHomework) {
-            $homework = $this->record->sessionHomework;
+        return $this->getRecord()->title ?? 'تفاصيل جلسة القرآن';
+    }
 
-            // Ensure comprehensive_review_surahs is properly formatted as array with enum keys
-            $comprehensiveReviewSurahs = $homework->comprehensive_review_surahs;
-            if (is_string($comprehensiveReviewSurahs)) {
-                $comprehensiveReviewSurahs = json_decode($comprehensiveReviewSurahs, true) ?: [];
-            } elseif (! is_array($comprehensiveReviewSurahs)) {
-                $comprehensiveReviewSurahs = [];
-            }
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('معلومات الجلسة')
+                    ->schema([
+                        Infolists\Components\Grid::make(3)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('session_code')
+                                    ->label('رمز الجلسة')
+                                    ->copyable(),
+                                Infolists\Components\TextEntry::make('title')
+                                    ->label('العنوان'),
+                                Infolists\Components\TextEntry::make('session_type')
+                                    ->label('نوع الجلسة')
+                                    ->badge()
+                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                        'individual' => 'فردية',
+                                        'group' => 'جماعية',
+                                        'trial' => 'تجريبية',
+                                        'makeup' => 'تعويضية',
+                                        default => $state,
+                                    })
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'individual' => 'primary',
+                                        'group' => 'success',
+                                        'trial' => 'warning',
+                                        'makeup' => 'info',
+                                        default => 'gray',
+                                    }),
+                            ]),
+                        Infolists\Components\TextEntry::make('student.name')
+                            ->label('الطالب'),
+                    ]),
 
-            $data['sessionHomework'] = [
-                'has_new_memorization' => $homework->has_new_memorization,
-                'has_review' => $homework->has_review,
-                'has_comprehensive_review' => $homework->has_comprehensive_review,
-                'new_memorization_pages' => $homework->new_memorization_pages,
-                'new_memorization_surah' => $homework->new_memorization_surah,
-                'review_pages' => $homework->review_pages,
-                'review_surah' => $homework->review_surah,
-                'comprehensive_review_surahs' => $comprehensiveReviewSurahs,
-                'additional_instructions' => $homework->additional_instructions,
-            ];
-        }
+                Infolists\Components\Section::make('التوقيت والحالة')
+                    ->schema([
+                        Infolists\Components\Grid::make(3)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('scheduled_at')
+                                    ->label('موعد الجلسة')
+                                    ->dateTime('Y-m-d H:i'),
+                                Infolists\Components\TextEntry::make('duration_minutes')
+                                    ->label('المدة')
+                                    ->suffix(' دقيقة'),
+                                Infolists\Components\TextEntry::make('status')
+                                    ->label('الحالة')
+                                    ->badge()
+                                    ->formatStateUsing(function ($state): string {
+                                        if ($state instanceof SessionStatus) {
+                                            return $state->label();
+                                        }
+                                        $status = SessionStatus::tryFrom($state);
+                                        return $status?->label() ?? (string) $state;
+                                    })
+                                    ->color(fn ($state): string => SessionStatus::tryFrom($state)?->color() ?? 'gray'),
+                            ]),
+                        Infolists\Components\TextEntry::make('attendance_status')
+                            ->label('حالة الحضور')
+                            ->badge()
+                            ->formatStateUsing(fn (?string $state): string => match ($state) {
+                                'attended' => 'حاضر',
+                                'absent' => 'غائب',
+                                'late' => 'متأخر',
+                                'leaved' => 'غادر مبكراً',
+                                'pending' => 'في الانتظار',
+                                default => 'غير محدد',
+                            })
+                            ->color(fn (?string $state): string => match ($state) {
+                                'attended' => 'success',
+                                'absent' => 'danger',
+                                'late' => 'warning',
+                                'leaved' => 'info',
+                                default => 'gray',
+                            }),
+                    ]),
 
-        return $data;
+                Infolists\Components\Section::make('الواجب المنزلي')
+                    ->schema([
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                Infolists\Components\IconEntry::make('sessionHomework.has_new_memorization')
+                                    ->label('حفظ جديد')
+                                    ->boolean(),
+                                Infolists\Components\TextEntry::make('sessionHomework.new_memorization_surah')
+                                    ->label('سورة الحفظ')
+                                    ->formatStateUsing(fn ($state) => $state ? QuranSurah::from($state)->label() : '-')
+                                    ->visible(fn ($record) => $record->sessionHomework?->has_new_memorization),
+                            ]),
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                Infolists\Components\IconEntry::make('sessionHomework.has_review')
+                                    ->label('مراجعة')
+                                    ->boolean(),
+                                Infolists\Components\TextEntry::make('sessionHomework.review_surah')
+                                    ->label('سورة المراجعة')
+                                    ->formatStateUsing(fn ($state) => $state ? QuranSurah::from($state)->label() : '-')
+                                    ->visible(fn ($record) => $record->sessionHomework?->has_review),
+                            ]),
+                        Infolists\Components\TextEntry::make('sessionHomework.additional_instructions')
+                            ->label('تعليمات إضافية')
+                            ->placeholder('لا توجد')
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsed()
+                    ->visible(fn ($record) => $record->sessionHomework !== null),
+
+                Infolists\Components\Section::make('المحتوى')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('description')
+                            ->label('وصف الجلسة')
+                            ->columnSpanFull()
+                            ->placeholder('لا يوجد وصف'),
+                        Infolists\Components\TextEntry::make('lesson_content')
+                            ->label('محتوى الدرس')
+                            ->columnSpanFull()
+                            ->placeholder('لا يوجد محتوى'),
+                    ])
+                    ->collapsed(),
+            ]);
     }
 }

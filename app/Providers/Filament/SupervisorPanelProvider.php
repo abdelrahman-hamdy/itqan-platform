@@ -48,13 +48,11 @@ class SupervisorPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Supervisor/Resources'), for: 'App\\Filament\\Supervisor\\Resources')
             ->discoverPages(in: app_path('Filament/Supervisor/Pages'), for: 'App\\Filament\\Supervisor\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                \App\Filament\Supervisor\Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Supervisor/Widgets'), for: 'App\\Filament\\Supervisor\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                \App\Filament\Supervisor\Widgets\SupervisorStatsWidget::class,
-                \App\Filament\Supervisor\Widgets\RecentMonitoredSessionsWidget::class,
+                // Widgets controlled by Dashboard page
             ])
             ->middleware([
                 EncryptCookies::class,

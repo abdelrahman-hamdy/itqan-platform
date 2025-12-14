@@ -30,7 +30,7 @@ class InteractiveSessionReportResource extends Resource
 
     protected static ?string $pluralModelLabel = 'تقارير الجلسات التفاعلية';
 
-    protected static ?string $navigationGroup = 'التقييمات';
+    protected static ?string $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 2;
 

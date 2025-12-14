@@ -39,9 +39,9 @@ class QuranTrialRequestResource extends BaseTeacherResource
 
     protected static ?string $pluralModelLabel = 'طلبات الجلسات التجريبية';
 
-    protected static ?string $navigationGroup = 'طلبات القرآن';
+    protected static ?string $navigationGroup = 'جلساتي';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 5;
 
     /**
      * Check if current user can view this record

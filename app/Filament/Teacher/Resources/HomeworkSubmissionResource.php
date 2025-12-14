@@ -13,6 +13,9 @@ use App\Filament\Teacher\Resources\HomeworkSubmissionResource\Pages;
  */
 class HomeworkSubmissionResource extends BaseHomeworkSubmissionResource
 {
+    protected static ?string $navigationGroup = 'التقارير والتقييمات';
+
+    protected static ?int $navigationSort = 2;
     /**
      * Get the submitable types for Quran teacher.
      */

@@ -1433,6 +1433,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     | Consolidated routes for academic teachers to manage individual lessons
     */
     Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        // Academic lessons (subscriptions) listing for teachers
+        Route::get('/academic-lessons', [App\Http\Controllers\AcademicIndividualLessonController::class, 'index'])->name('academic.lessons.index');
+        Route::get('/academic-lessons/{lesson}', [App\Http\Controllers\AcademicIndividualLessonController::class, 'show'])->name('academic.lessons.show');
+
         // Academic sessions list
         Route::get('/academic-sessions', [App\Http\Controllers\AcademicSessionController::class, 'index'])->name('academic-sessions.index');
 
@@ -1463,6 +1467,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     | Routes for academic teachers to manage interactive course sessions
     */
     Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        // Interactive courses listing for teachers
+        Route::get('/interactive-courses', [App\Http\Controllers\AcademicIndividualLessonController::class, 'interactiveCoursesIndex'])->name('interactive-courses.index');
+
         // Interactive course comprehensive report
         Route::get('/interactive-courses/{course}/report', [App\Http\Controllers\StudentProfileController::class, 'interactiveCourseReport'])->name('interactive-courses.report');
         // Interactive course individual student report

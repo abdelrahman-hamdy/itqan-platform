@@ -177,9 +177,11 @@
         </div>
         <h4 class="text-lg font-medium text-gray-900 mb-2">{{ $emptyTitle ?? 'لا توجد عناصر' }}</h4>
         <p class="text-gray-500 mb-4">{{ $emptyDescription ?? 'لم يتم العثور على أي عناصر في هذا القسم' }}</p>
-        <a href="{{ $emptyActionLink ?? '#' }}" class="{{ $colors['bg'] }} text-white px-4 py-2 rounded-lg text-sm font-medium {{ $colors['hover'] }} transition-colors inline-block">
-          {{ $emptyActionText ?? 'إضافة عنصر جديد' }}
-        </a>
+        @if(!empty($emptyActionText))
+          <a href="{{ $emptyActionLink ?? '#' }}" class="{{ $colors['bg'] }} text-white px-4 py-2 rounded-lg text-sm font-medium {{ $colors['hover'] }} transition-colors inline-block">
+            {{ $emptyActionText }}
+          </a>
+        @endif
       </div>
     @endif
   </div>

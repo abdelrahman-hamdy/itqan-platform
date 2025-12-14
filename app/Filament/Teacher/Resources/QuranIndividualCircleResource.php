@@ -24,13 +24,15 @@ class QuranIndividualCircleResource extends BaseTeacherResource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static ?string $navigationLabel = 'الحلقات الفردية';
+    protected static ?string $navigationLabel = 'حلقاتي الفردية';
 
     protected static ?string $modelLabel = 'حلقة فردية';
 
-    protected static ?string $pluralModelLabel = 'الحلقات الفردية';
+    protected static ?string $pluralModelLabel = 'حلقاتي الفردية';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?string $navigationGroup = 'جلساتي';
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

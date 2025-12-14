@@ -42,6 +42,18 @@
       <x-sidebar.nav-section title="إدارة التدريس">
         @if($isQuran)
           <x-sidebar.nav-item
+            :href="route('teacher.individual-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+            label="الحلقات الفردية"
+            icon="ri-user-star-line"
+            :active="request()->routeIs('teacher.individual-circles.*') || request()->routeIs('individual-circles.*')" />
+
+          <x-sidebar.nav-item
+            :href="route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+            label="الحلقات الجماعية"
+            icon="ri-group-line"
+            :active="request()->routeIs('teacher.group-circles.*')" />
+
+          <x-sidebar.nav-item
             href="/teacher-panel/quran-trial-requests"
             label="طلبات الجلسات التجريبية"
             icon="ri-user-add-line"
@@ -54,14 +66,28 @@
             :external="true" />
         @else
           <x-sidebar.nav-item
-            href="#"
-            label="الجلسات والدروس"
-            icon="ri-time-line" />
+            :href="route('teacher.academic.lessons.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+            label="الدروس الخاصة"
+            icon="ri-user-3-line"
+            :active="request()->routeIs('teacher.academic.lessons.*')" />
 
           <x-sidebar.nav-item
-            href="#"
+            :href="route('teacher.interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+            label="الدورات التفاعلية"
+            icon="ri-book-open-line"
+            :active="request()->routeIs('teacher.interactive-courses.*')" />
+
+          <x-sidebar.nav-item
+            href="/academic-teacher-panel"
+            label="الجلسات والدروس"
+            icon="ri-time-line"
+            :external="true" />
+
+          <x-sidebar.nav-item
+            href="/academic-teacher-panel/homework-submissions"
             label="الواجبات والاختبارات"
-            icon="ri-file-list-3-line" />
+            icon="ri-file-list-3-line"
+            :external="true" />
         @endif
       </x-sidebar.nav-section>
 

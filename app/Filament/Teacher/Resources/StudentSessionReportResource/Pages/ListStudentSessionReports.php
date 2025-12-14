@@ -20,11 +20,8 @@ class ListStudentSessionReports extends ListRecords
 
     public function getBreadcrumbs(): array
     {
-        $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
-
         return [
-            route('teacher.profile', ['subdomain' => $subdomain]) => 'ملفي الشخصي',
-            '' => 'تقارير الطلاب',
+            static::getResource()::getUrl() => 'تقارير الطلاب',
         ];
     }
 

@@ -262,7 +262,7 @@
         <!-- Trial Requests Section - Full Width -->
         <div class="mt-6 md:mt-8" id="trial-requests">
           @include('components.cards.learning-section-card', [
-            'title' => 'طلبات التجريب',
+            'title' => 'الجلسات التجريبيه',
             'subtitle' => 'طلبات الجلسات التجريبية المعلقة والمجدولة',
             'icon' => 'ri-user-add-line',
             'iconBgColor' => 'bg-amber-500',

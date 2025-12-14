@@ -19,29 +19,33 @@ class AcademicSessionReportResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     
-    protected static ?string $navigationLabel = 'تقرير الجلسة';
-    
-    protected static ?string $modelLabel = 'تقرير الجلسة';
-    
-    protected static ?string $pluralModelLabel = 'تقارير الجلسات';
-    
-    protected static ?string $navigationGroup = 'التقييمات';
+    protected static ?string $navigationLabel = 'تقارير الجلسات الأكاديمية';
+
+    protected static ?string $modelLabel = 'تقرير جلسة أكاديمية';
+
+    protected static ?string $pluralModelLabel = 'تقارير الجلسات الأكاديمية';
+
+    protected static ?string $navigationGroup = 'التقارير والتقييمات';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Session Information')
+                Forms\Components\Section::make('معلومات الجلسة')
                     ->schema([
                         Forms\Components\Select::make('session_id')
                             ->relationship('session', 'title', fn (Builder $query) =>
                                 $query->whereHas('academicTeacher', fn ($q) => $q->where('user_id', auth()->id()))
                             )
+                            ->label('الجلسة')
                             ->required()
                             ->searchable()
                             ->preload(),
                         Forms\Components\Select::make('student_id')
                             ->relationship('student', 'name')
+                            ->label('الطالب')
                             ->required()
                             ->searchable()
                             ->disabled(fn (?AcademicSessionReport $record) => $record !== null),
@@ -67,28 +71,28 @@ class AcademicSessionReportResource extends Resource
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('Attendance Override (if needed)')
+                Forms\Components\Section::make('تعديل الحضور (إذا لزم الأمر)')
                     ->schema([
                         Forms\Components\Select::make('attendance_status')
-                            ->label('Override Attendance Status')
+                            ->label('تعديل حالة الحضور')
                             ->options([
                                 'attended' => 'حاضر',
                                 'late' => 'متأخر',
                                 'leaved' => 'غادر مبكراً',
                                 'absent' => 'غائب',
                             ])
-                            ->helperText('Only change if the automatic attendance calculation is incorrect'),
+                            ->helperText('قم بالتغيير فقط إذا كان حساب الحضور التلقائي غير صحيح'),
                         Forms\Components\Toggle::make('manually_evaluated')
-                            ->label('Mark as Manually Evaluated')
-                            ->helperText('Check this if you\'re overriding the automatic attendance'),
+                            ->label('تحديد كتقييم يدوي')
+                            ->helperText('حدد هذا إذا كنت تقوم بتعديل الحضور التلقائي'),
                         Forms\Components\Textarea::make('override_reason')
-                            ->label('Reason for Override')
-                            ->placeholder('Explain why you\'re overriding the automatic attendance...')
+                            ->label('سبب التعديل')
+                            ->placeholder('اشرح سبب تعديل الحضور التلقائي...')
                             ->visible(fn (Forms\Get $get) => $get('manually_evaluated'))
                             ->columnSpanFull(),
                     ])->columns(2)
                     ->collapsed()
-                    ->description('Expand this section only if you need to manually correct attendance'),
+                    ->description('افتح هذا القسم فقط إذا كنت بحاجة إلى تصحيح الحضور يدوياً'),
             ]);
     }
 
@@ -97,11 +101,11 @@ class AcademicSessionReportResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('session.title')
-                    ->label('Session')
+                    ->label('الجلسة')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('student.name')
-                    ->label('Student')
+                    ->label('الطالب')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('homework_degree')
@@ -117,8 +121,15 @@ class AcademicSessionReportResource extends Resource
                     })
                     ->formatStateUsing(fn (?string $state): string => $state ? $state . '/10' : 'لم يقيم'),
                 Tables\Columns\TextColumn::make('attendance_status')
-                    ->label('Attendance')
+                    ->label('الحضور')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'attended' => 'حاضر',
+                        'late' => 'متأخر',
+                        'leaved' => 'غادر مبكراً',
+                        'absent' => 'غائب',
+                        default => $state,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'attended' => 'success',
                         'late' => 'warning',
@@ -127,28 +138,28 @@ class AcademicSessionReportResource extends Resource
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('actual_attendance_minutes')
-                    ->label('Duration')
-                    ->formatStateUsing(fn (string $state): string => $state . ' min')
+                    ->label('مدة الحضور')
+                    ->formatStateUsing(fn (string $state): string => $state . ' دقيقة')
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\IconColumn::make('manually_evaluated')
-                    ->label('Override')
+                    ->label('تعديل يدوي')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('evaluated_at')
-                    ->label('Evaluated')
+                    ->label('تاريخ التقييم')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
+                    ->label('تاريخ الإنشاء')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('attendance_status')
-                    ->label('Attendance Status')
+                    ->label('حالة الحضور')
                     ->options([
                         'attended' => 'حاضر',
                         'late' => 'متأخر',
@@ -160,8 +171,10 @@ class AcademicSessionReportResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('عرض'),
+                Tables\Actions\EditAction::make()
+                    ->label('تعديل'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

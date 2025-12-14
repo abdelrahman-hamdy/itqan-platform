@@ -13,17 +13,15 @@ class ListQuranIndividualCircles extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('إضافة حلقة فردية'),
         ];
     }
 
     public function getBreadcrumbs(): array
     {
-        $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
-
         return [
-            route('teacher.profile', ['subdomain' => $subdomain]) => 'ملفي الشخصي',
-            '' => 'الحلقات الفردية',
+            static::getResource()::getUrl() => 'حلقاتي الفردية',
         ];
     }
 }
