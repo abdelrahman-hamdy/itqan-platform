@@ -12,6 +12,8 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class PlatformOverviewWidget extends BaseWidget
 {
+    protected static bool $isDiscoverable = false;
+
     protected function getStats(): array
     {
         // Check if super admin is in global view mode

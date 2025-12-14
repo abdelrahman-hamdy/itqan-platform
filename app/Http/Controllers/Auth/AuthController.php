@@ -10,11 +10,15 @@ use App\Models\QuranTeacherProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
 use App\Models\UserSession;
+use App\Notifications\ResetPasswordNotification;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -498,6 +502,204 @@ class AuthController extends Controller
         }
 
         return view('auth.teacher-register-success', compact('academy'));
+    }
+
+    /**
+     * Show forgot password form
+     */
+    public function showForgotPasswordForm(Request $request)
+    {
+        $subdomain = $request->route('subdomain');
+        $academy = Academy::where('subdomain', $subdomain)->first();
+
+        if (! $academy || ! $academy->is_active) {
+            abort(404, 'Academy not found or inactive');
+        }
+
+        return view('auth.forgot-password', compact('academy'));
+    }
+
+    /**
+     * Send password reset link to user's email
+     */
+    public function sendResetLink(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ], [
+            'email.required' => 'البريد الإلكتروني مطلوب',
+            'email.email' => 'البريد الإلكتروني غير صحيح',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $subdomain = $request->route('subdomain');
+        $academy = Academy::where('subdomain', $subdomain)->first();
+
+        if (! $academy || ! $academy->is_active) {
+            return back()->withErrors(['email' => 'الأكاديمية غير موجودة أو غير نشطة'])->withInput();
+        }
+
+        // Find user in this academy
+        $user = User::where('email', $request->email)
+            ->where('academy_id', $academy->id)
+            ->first();
+
+        // Always show success message (security best practice - prevent user enumeration)
+        $successMessage = 'إذا كان هذا البريد الإلكتروني مسجلاً لدينا، ستتلقى رابط إعادة تعيين كلمة المرور خلال دقائق.';
+
+        if ($user) {
+            // Generate reset token
+            $token = Str::random(64);
+
+            // Store token in password_reset_tokens table
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $request->email],
+                [
+                    'email' => $request->email,
+                    'token' => Hash::make($token),
+                    'created_at' => now(),
+                ]
+            );
+
+            // Send reset email notification
+            try {
+                $user->notify(new ResetPasswordNotification($token, $academy));
+            } catch (\Exception $e) {
+                Log::error('Failed to send password reset email', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return back()->with('status', $successMessage);
+    }
+
+    /**
+     * Show reset password form
+     */
+    public function showResetPasswordForm(Request $request, string $token)
+    {
+        $subdomain = $request->route('subdomain');
+        $academy = Academy::where('subdomain', $subdomain)->first();
+
+        if (! $academy || ! $academy->is_active) {
+            abort(404, 'Academy not found or inactive');
+        }
+
+        $email = $request->query('email');
+
+        if (! $email) {
+            return redirect()->route('password.request', ['subdomain' => $subdomain])
+                ->withErrors(['email' => 'رابط إعادة التعيين غير صالح']);
+        }
+
+        // Verify token exists and is not expired
+        $record = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->first();
+
+        if (! $record) {
+            return redirect()->route('password.request', ['subdomain' => $subdomain])
+                ->withErrors(['email' => 'رابط إعادة التعيين غير صالح أو منتهي الصلاحية']);
+        }
+
+        // Check if token is expired (60 minutes)
+        $createdAt = Carbon::parse($record->created_at);
+        if ($createdAt->diffInMinutes(now()) > 60) {
+            // Delete expired token
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+            return redirect()->route('password.request', ['subdomain' => $subdomain])
+                ->withErrors(['email' => 'انتهت صلاحية رابط إعادة التعيين. يرجى طلب رابط جديد.']);
+        }
+
+        return view('auth.reset-password', compact('academy', 'token', 'email'));
+    }
+
+    /**
+     * Reset user's password
+     */
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'email.required' => 'البريد الإلكتروني مطلوب',
+            'email.email' => 'البريد الإلكتروني غير صحيح',
+            'token.required' => 'رمز إعادة التعيين مطلوب',
+            'password.required' => 'كلمة المرور مطلوبة',
+            'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+            'password.confirmed' => 'كلمة المرور غير متطابقة',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $subdomain = $request->route('subdomain');
+        $academy = Academy::where('subdomain', $subdomain)->first();
+
+        if (! $academy || ! $academy->is_active) {
+            return back()->withErrors(['email' => 'الأكاديمية غير موجودة أو غير نشطة'])->withInput();
+        }
+
+        // Find reset record
+        $record = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (! $record) {
+            return back()->withErrors(['email' => 'رابط إعادة التعيين غير صالح أو منتهي الصلاحية'])->withInput();
+        }
+
+        // Verify token
+        if (! Hash::check($request->token, $record->token)) {
+            return back()->withErrors(['email' => 'رابط إعادة التعيين غير صالح'])->withInput();
+        }
+
+        // Check if token is expired (60 minutes)
+        $createdAt = Carbon::parse($record->created_at);
+        if ($createdAt->diffInMinutes(now()) > 60) {
+            // Delete expired token
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+            return redirect()->route('password.request', ['subdomain' => $subdomain])
+                ->withErrors(['email' => 'انتهت صلاحية رابط إعادة التعيين. يرجى طلب رابط جديد.']);
+        }
+
+        // Find user in this academy
+        $user = User::where('email', $request->email)
+            ->where('academy_id', $academy->id)
+            ->first();
+
+        if (! $user) {
+            return back()->withErrors(['email' => 'لم يتم العثور على حساب بهذا البريد الإلكتروني'])->withInput();
+        }
+
+        // Update password
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        // Delete reset token
+        DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->delete();
+
+        // Invalidate all existing sessions for security
+        UserSession::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->update(['is_active' => false, 'logout_at' => now()]);
+
+        return redirect()->route('login', ['subdomain' => $subdomain])
+            ->with('success', 'تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.');
     }
 
     /**

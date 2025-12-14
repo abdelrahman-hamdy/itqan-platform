@@ -8,10 +8,12 @@ use Filament\Widgets\ChartWidget;
 class AcademyStatsWidget extends ChartWidget
 {
     protected static ?string $heading = 'إحصائيات الأكاديميات';
-    
+
     protected static ?int $sort = 2;
-    
+
     protected int | string | array $columnSpan = 'full';
+
+    protected static bool $isDiscoverable = false;
 
     protected function getData(): array
     {
@@ -94,5 +96,10 @@ class AcademyStatsWidget extends ChartWidget
                 ]
             ]
         ];
+    }
+
+    public static function canView(): bool
+    {
+        return false;
     }
 } 

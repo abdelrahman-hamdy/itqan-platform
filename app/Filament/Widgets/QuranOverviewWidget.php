@@ -14,8 +14,10 @@ use Illuminate\Support\Facades\DB;
 class QuranOverviewWidget extends BaseWidget
 {
     protected static ?string $pollingInterval = '30s';
-    
+
     protected static bool $isLazy = false;
+
+    protected static bool $isDiscoverable = false;
 
     public function getStats(): array
     {

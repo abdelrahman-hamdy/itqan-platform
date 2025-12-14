@@ -1,11 +1,11 @@
-<div class="relative" x-data="{ open: false }"
+<div class="relative" x-data="{ open: false }" style="z-index: 50;"
      @academy-selected.window="window.location.reload()"
      @global-view-enabled.window="setTimeout(() => window.location.reload(), 100)"
      >
     <!-- Academy Selector Button -->
-    <button 
+    <button
         @click="open = !open"
-        class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+        class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 dark:bg-gray-900 dark:border-gray-500 dark:text-gray-100 dark:hover:bg-gray-800 dark:hover:border-gray-400"
     >
         @if($isGlobalView)
             <!-- Global View State -->
@@ -42,14 +42,14 @@
         @endif
         
         <!-- Dropdown Arrow -->
-        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
     </button>
 
     <!-- Dropdown Menu -->
-    <div 
-        x-show="open" 
+    <div
+        x-show="open"
         @click.away="open = false"
         x-transition:enter="transition ease-out duration-100"
         x-transition:enter-start="transform opacity-0 scale-95"
@@ -57,20 +57,29 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 dark:bg-gray-800 dark:ring-white/10"
+        class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-2xl border border-gray-200 dark:bg-gray-900 dark:border-gray-600"
+        style="z-index: 99999; position: fixed; top: auto; right: auto;"
+        x-init="$watch('open', value => {
+            if (value) {
+                const btn = $el.previousElementSibling;
+                const rect = btn.getBoundingClientRect();
+                $el.style.top = (rect.bottom + 8) + 'px';
+                $el.style.right = (window.innerWidth - rect.right) + 'px';
+            }
+        })"
     >
         <div class="py-1">
             <!-- Header -->
-            <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-sm font-medium text-gray-900 dark:text-white">الأكاديميات المتاحة</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">اختر أكاديمية لإدارة محتواها</p>
+            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-t-lg">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">الأكاديميات المتاحة</h3>
+                <p class="text-xs text-gray-600 dark:text-gray-300 mt-0.5">اختر أكاديمية لإدارة محتواها</p>
             </div>
 
             <!-- Global View Option -->
-            <button 
+            <button
                 wire:click="selectAcademy('global')"
                 type="button"
-                class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors {{ $isGlobalView ? 'bg-green-50 dark:bg-green-900/50 border-l-4 border-green-600 dark:border-green-400' : '' }}"
+                class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors {{ $isGlobalView ? 'bg-green-50 dark:bg-green-900/40 border-l-4 border-green-600 dark:border-green-400' : '' }}"
             >
                 <div class="flex items-center gap-3">
                     <!-- Global View Icon -->
@@ -83,10 +92,10 @@
                     
                     <!-- Global View Info -->
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium truncate {{ $isGlobalView ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white' }}">
+                        <p class="text-sm font-medium truncate {{ $isGlobalView ? 'text-green-800 dark:text-green-200' : 'text-gray-800 dark:text-gray-100' }}">
                             جميع الأكاديميات
                         </p>
-                        <p class="text-xs truncate {{ $isGlobalView ? 'text-green-700 dark:text-green-200' : 'text-gray-500 dark:text-gray-400' }}">
+                        <p class="text-xs truncate {{ $isGlobalView ? 'text-green-600 dark:text-green-300' : 'text-gray-600 dark:text-gray-400' }}">
                             عرض شامل لجميع البيانات عبر كل الأكاديميات
                         </p>
                     </div>
@@ -105,10 +114,10 @@
 
             <!-- Academy List -->
             @forelse($academies as $academy)
-                <button 
+                <button
                     wire:click="selectAcademy({{ $academy->id }})"
                     type="button"
-                    class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors {{ $selectedAcademyId == $academy->id ? 'bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-600 dark:border-blue-400' : '' }}"
+                    class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors {{ $selectedAcademyId == $academy->id ? 'bg-blue-50 dark:bg-blue-900/40 border-l-4 border-blue-600 dark:border-blue-400' : '' }}"
                 >
                     <div class="flex items-center gap-3">
                         <!-- Academy Logo/Icon -->
@@ -129,10 +138,10 @@
                         
                         <!-- Academy Info -->
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium truncate {{ $selectedAcademyId == $academy->id ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
+                            <p class="text-sm font-medium truncate {{ $selectedAcademyId == $academy->id ? 'text-blue-800 dark:text-blue-200' : 'text-gray-800 dark:text-gray-100' }}">
                                 {{ $academy->name }}
                             </p>
-                            <p class="text-xs truncate {{ $selectedAcademyId == $academy->id ? 'text-blue-700 dark:text-blue-200' : 'text-gray-500 dark:text-gray-400' }}">
+                            <p class="text-xs truncate {{ $selectedAcademyId == $academy->id ? 'text-blue-600 dark:text-blue-300' : 'text-gray-600 dark:text-gray-400' }}">
                                 {{ $academy->subdomain }}.{{ config('app.domain', 'itqan-platform.test') }}
                             </p>
                         </div>
@@ -146,7 +155,7 @@
                     </div>
                 </button>
             @empty
-                <div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                <div class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     لا توجد أكاديميات متاحة
                 </div>
             @endforelse

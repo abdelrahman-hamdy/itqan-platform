@@ -3,6 +3,8 @@
 namespace App\Filament\Supervisor\Widgets;
 
 use App\Enums\SessionStatus;
+use App\Filament\Supervisor\Resources\MonitoredCirclesResource;
+use App\Filament\Supervisor\Resources\MonitoredSessionsResource;
 use App\Models\QuranCircle;
 use App\Models\QuranSession;
 use Filament\Widgets\Widget;
@@ -10,6 +12,9 @@ use Illuminate\Support\Facades\Auth;
 
 class SupervisorQuickActionsWidget extends Widget
 {
+    // Prevent auto-discovery - Dashboard explicitly adds this widget
+    protected static bool $isDiscoverable = false;
+
     protected static string $view = 'filament.supervisor.widgets.quick-actions';
 
     protected static ?int $sort = 2;
@@ -26,6 +31,10 @@ class SupervisorQuickActionsWidget extends Widget
                 'ongoingSessions' => 0,
                 'todayScheduled' => 0,
                 'activeCircles' => 0,
+                'ongoingSessionsUrl' => MonitoredSessionsResource::getUrl('index'),
+                'todaySessionsUrl' => MonitoredSessionsResource::getUrl('index'),
+                'circlesUrl' => MonitoredCirclesResource::getUrl('index'),
+                'allSessionsUrl' => MonitoredSessionsResource::getUrl('index'),
             ];
         }
 
@@ -60,6 +69,10 @@ class SupervisorQuickActionsWidget extends Widget
             'ongoingSessions' => $ongoingSessions,
             'todayScheduled' => $todayScheduled,
             'activeCircles' => $activeCircles,
+            'ongoingSessionsUrl' => MonitoredSessionsResource::getUrl('index', ['tableFilters[status][value]' => 'ongoing']),
+            'todaySessionsUrl' => MonitoredSessionsResource::getUrl('index', ['tableFilters[scheduled_date][value]' => today()->toDateString()]),
+            'circlesUrl' => MonitoredCirclesResource::getUrl('index'),
+            'allSessionsUrl' => MonitoredSessionsResource::getUrl('index'),
         ];
     }
 }

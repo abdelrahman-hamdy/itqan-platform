@@ -7,7 +7,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- Today's Academic Session --}}
             @if($todaySession)
-                <a href="{{ route('filament.academic-teacher.resources.academic-sessions.view', ['record' => $todaySession->id]) }}"
+                <a href="{{ $todaySessionUrl }}"
                    class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
                     <div class="flex-shrink-0 w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
                         <x-heroicon-o-play class="w-6 h-6 text-white" />
@@ -19,7 +19,7 @@
                     </div>
                 </a>
             @elseif($todayCourseSession)
-                <a href="{{ route('filament.academic-teacher.resources.interactive-course-sessions.view', ['record' => $todayCourseSession->id]) }}"
+                <a href="{{ $todayCourseSessionUrl }}"
                    class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
                     <div class="flex-shrink-0 w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
                         <x-heroicon-o-play class="w-6 h-6 text-white" />
@@ -43,7 +43,7 @@
             @endif
 
             {{-- Academic Sessions --}}
-            <a href="{{ route('filament.academic-teacher.resources.academic-sessions.index') }}"
+            <a href="{{ $academicSessionsUrl }}"
                class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
                 <div class="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
                     <x-heroicon-o-video-camera class="w-6 h-6 text-white" />
@@ -55,7 +55,7 @@
             </a>
 
             {{-- Interactive Courses --}}
-            <a href="{{ route('filament.academic-teacher.resources.interactive-courses.index') }}"
+            <a href="{{ $interactiveCoursesUrl }}"
                class="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
                 <div class="flex-shrink-0 w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
                     <x-heroicon-o-academic-cap class="w-6 h-6 text-white" />
@@ -67,7 +67,7 @@
             </a>
 
             {{-- Session Reports --}}
-            <a href="{{ route('filament.academic-teacher.resources.academic-session-reports.index') }}"
+            <a href="{{ $reportsUrl }}"
                class="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
                 <div class="flex-shrink-0 w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
                     <x-heroicon-o-document-chart-bar class="w-6 h-6 text-white" />

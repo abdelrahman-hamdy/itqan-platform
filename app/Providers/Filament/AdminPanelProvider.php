@@ -42,14 +42,13 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                \App\Filament\Widgets\PlatformOverviewWidget::class,
-                \App\Filament\Widgets\QuranOverviewWidget::class,
-                \App\Filament\Widgets\AcademyStatsWidget::class,
-                \App\Filament\Widgets\AcademyContextWidget::class,
-                \App\Filament\Widgets\RecentActivitiesWidget::class,
+                // Only show these specific widgets - no auto-discovery
+                \App\Filament\Widgets\SuperAdminStatsWidget::class,
+                \App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class,
+                \App\Filament\Widgets\UserAnalyticsChartWidget::class,
+                \App\Filament\Widgets\SessionAnalyticsChartWidget::class,
+                \App\Filament\Widgets\RecentBusinessRequestsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

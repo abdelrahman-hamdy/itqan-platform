@@ -38,7 +38,8 @@
                     <span class="mr-2 text-gray-700 group-hover:text-primary transition-smooth">تذكرني</span>
                 </label>
 
-                <a href="#" class="font-medium text-primary hover:underline transition-smooth">
+                <a href="{{ route('password.request', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
+                   class="font-medium text-primary hover:underline transition-smooth">
                     نسيت كلمة المرور؟
                 </a>
             </div>

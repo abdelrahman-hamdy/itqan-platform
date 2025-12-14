@@ -7,7 +7,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- Today's Session --}}
             @if($todaySession)
-                <a href="{{ route('filament.teacher.resources.quran-sessions.view', ['record' => $todaySession->id]) }}"
+                <a href="{{ $todaySessionUrl }}"
                    class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
                     <div class="flex-shrink-0 w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
                         <x-heroicon-o-play class="w-6 h-6 text-white" />
@@ -31,7 +31,7 @@
             @endif
 
             {{-- Trial Requests --}}
-            <a href="{{ route('filament.teacher.resources.quran-trial-requests.index') }}"
+            <a href="{{ $trialRequestsUrl }}"
                class="flex items-center gap-3 p-4 {{ $pendingTrials > 0 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' }} rounded-xl border hover:opacity-90 transition-opacity">
                 <div class="flex-shrink-0 w-12 h-12 {{ $pendingTrials > 0 ? 'bg-amber-500' : 'bg-blue-500' }} rounded-xl flex items-center justify-center relative">
                     <x-heroicon-o-user-plus class="w-6 h-6 text-white" />
@@ -50,7 +50,7 @@
             </a>
 
             {{-- My Sessions --}}
-            <a href="{{ route('filament.teacher.resources.quran-sessions.index') }}"
+            <a href="{{ $sessionsUrl }}"
                class="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
                 <div class="flex-shrink-0 w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
                     <x-heroicon-o-video-camera class="w-6 h-6 text-white" />
@@ -62,7 +62,7 @@
             </a>
 
             {{-- Student Reports --}}
-            <a href="{{ route('filament.teacher.resources.student-session-reports.index') }}"
+            <a href="{{ $reportsUrl }}"
                class="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
                 <div class="flex-shrink-0 w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
                     <x-heroicon-o-document-chart-bar class="w-6 h-6 text-white" />

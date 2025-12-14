@@ -6,7 +6,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- Ongoing Sessions --}}
-            <a href="{{ route('filament.supervisor.resources.monitored-sessions.index', ['tableFilters[status][value]' => 'ongoing']) }}"
+            <a href="{{ $ongoingSessionsUrl }}"
                class="flex items-center gap-3 p-4 {{ $ongoingSessions > 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700' }} rounded-xl border hover:opacity-90 transition-opacity">
                 <div class="flex-shrink-0 w-12 h-12 {{ $ongoingSessions > 0 ? 'bg-green-500' : 'bg-gray-400' }} rounded-xl flex items-center justify-center relative">
                     <x-heroicon-o-video-camera class="w-6 h-6 text-white" />
@@ -25,7 +25,7 @@
             </a>
 
             {{-- Today's Scheduled --}}
-            <a href="{{ route('filament.supervisor.resources.monitored-sessions.index', ['tableFilters[scheduled_date][value]' => today()->toDateString()]) }}"
+            <a href="{{ $todaySessionsUrl }}"
                class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
                 <div class="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
                     <x-heroicon-o-calendar class="w-6 h-6 text-white" />
@@ -37,7 +37,7 @@
             </a>
 
             {{-- Monitored Circles --}}
-            <a href="{{ route('filament.supervisor.resources.monitored-circles.index') }}"
+            <a href="{{ $circlesUrl }}"
                class="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
                 <div class="flex-shrink-0 w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
                     <x-heroicon-o-user-group class="w-6 h-6 text-white" />
@@ -49,7 +49,7 @@
             </a>
 
             {{-- All Sessions --}}
-            <a href="{{ route('filament.supervisor.resources.monitored-sessions.index') }}"
+            <a href="{{ $allSessionsUrl }}"
                class="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
                 <div class="flex-shrink-0 w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
                     <x-heroicon-o-queue-list class="w-6 h-6 text-white" />

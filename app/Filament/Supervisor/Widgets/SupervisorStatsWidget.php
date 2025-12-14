@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Auth;
 
 class SupervisorStatsWidget extends BaseWidget
 {
+    // Prevent auto-discovery - Dashboard explicitly adds this widget
+    protected static bool $isDiscoverable = false;
+
     protected static ?int $sort = 1;
 
     protected function getStats(): array

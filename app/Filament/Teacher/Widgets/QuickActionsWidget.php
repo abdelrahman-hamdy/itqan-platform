@@ -2,6 +2,9 @@
 
 namespace App\Filament\Teacher\Widgets;
 
+use App\Filament\Teacher\Resources\QuranSessionResource;
+use App\Filament\Teacher\Resources\QuranTrialRequestResource;
+use App\Filament\Teacher\Resources\StudentSessionReportResource;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use Filament\Widgets\Widget;
@@ -9,6 +12,9 @@ use Illuminate\Support\Facades\Auth;
 
 class QuickActionsWidget extends Widget
 {
+    // Prevent auto-discovery - Dashboard explicitly adds this widget
+    protected static bool $isDiscoverable = false;
+
     protected static string $view = 'filament.teacher.widgets.quick-actions';
 
     protected static ?int $sort = 2;
@@ -22,10 +28,12 @@ class QuickActionsWidget extends Widget
 
         if (! $teacher) {
             return [
-                'actions' => [],
                 'todaySession' => null,
+                'todaySessionUrl' => null,
                 'pendingTrials' => 0,
-                'pendingHomework' => 0,
+                'trialRequestsUrl' => QuranTrialRequestResource::getUrl('index'),
+                'sessionsUrl' => QuranSessionResource::getUrl('index'),
+                'reportsUrl' => StudentSessionReportResource::getUrl('index'),
             ];
         }
 
@@ -41,13 +49,13 @@ class QuickActionsWidget extends Widget
             ->where('status', 'pending')
             ->count();
 
-        // Get pending homework to review count
-        $pendingHomework = 0; // TODO: Implement when homework system is ready
-
         return [
             'todaySession' => $todaySession,
+            'todaySessionUrl' => $todaySession ? QuranSessionResource::getUrl('view', ['record' => $todaySession->id]) : null,
             'pendingTrials' => $pendingTrials,
-            'pendingHomework' => $pendingHomework,
+            'trialRequestsUrl' => QuranTrialRequestResource::getUrl('index'),
+            'sessionsUrl' => QuranSessionResource::getUrl('index'),
+            'reportsUrl' => StudentSessionReportResource::getUrl('index'),
         ];
     }
 }

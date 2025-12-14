@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Auth;
 
 class AcademicTeacherOverviewWidget extends BaseWidget
 {
+    // Prevent auto-discovery - Dashboard explicitly adds this widget
+    protected static bool $isDiscoverable = false;
+
     protected static ?string $pollingInterval = '60s';
 
     protected static bool $isLazy = false;

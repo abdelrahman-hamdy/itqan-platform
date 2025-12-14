@@ -13,10 +13,17 @@ use Illuminate\Database\Eloquent\Builder;
 class RecentActivitiesWidget extends BaseWidget
 {
     protected static ?string $heading = 'النشاطات الأخيرة';
-    
+
     protected static ?int $sort = 3;
-    
+
     protected int | string | array $columnSpan = 'full';
+
+    protected static bool $isDiscoverable = false;
+
+    public static function canView(): bool
+    {
+        return false;
+    }
 
     public function table(Table $table): Table
     {

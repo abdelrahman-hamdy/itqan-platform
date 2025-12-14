@@ -33,7 +33,7 @@ class AcademyContextWidget extends Widget
 
     public static function canView(): bool
     {
-        // Show this widget for super admin or when academy context is available
-        return AcademyContextService::isSuperAdmin() || AcademyContextService::getCurrentAcademy() !== null;
+        // Hide this widget - no longer needed on dashboard
+        return false;
     }
 } 

@@ -2,6 +2,10 @@
 
 namespace App\Filament\AcademicTeacher\Widgets;
 
+use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionResource;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource;
+use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use Filament\Widgets\Widget;
@@ -9,6 +13,9 @@ use Illuminate\Support\Facades\Auth;
 
 class AcademicQuickActionsWidget extends Widget
 {
+    // Prevent auto-discovery - Dashboard explicitly adds this widget
+    protected static bool $isDiscoverable = false;
+
     protected static string $view = 'filament.academic-teacher.widgets.quick-actions';
 
     protected static ?int $sort = 2;
@@ -23,7 +30,12 @@ class AcademicQuickActionsWidget extends Widget
         if (! $teacherProfile) {
             return [
                 'todaySession' => null,
+                'todaySessionUrl' => null,
                 'todayCourseSession' => null,
+                'todayCourseSessionUrl' => null,
+                'academicSessionsUrl' => AcademicSessionResource::getUrl('index'),
+                'interactiveCoursesUrl' => InteractiveCourseResource::getUrl('index'),
+                'reportsUrl' => AcademicSessionReportResource::getUrl('index'),
             ];
         }
 
@@ -46,7 +58,12 @@ class AcademicQuickActionsWidget extends Widget
 
         return [
             'todaySession' => $todaySession,
+            'todaySessionUrl' => $todaySession ? AcademicSessionResource::getUrl('view', ['record' => $todaySession->id]) : null,
             'todayCourseSession' => $todayCourseSession,
+            'todayCourseSessionUrl' => $todayCourseSession ? InteractiveCourseSessionResource::getUrl('view', ['record' => $todayCourseSession->id]) : null,
+            'academicSessionsUrl' => AcademicSessionResource::getUrl('index'),
+            'interactiveCoursesUrl' => InteractiveCourseResource::getUrl('index'),
+            'reportsUrl' => AcademicSessionReportResource::getUrl('index'),
         ];
     }
 }

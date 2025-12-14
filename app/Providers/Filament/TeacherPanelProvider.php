@@ -7,7 +7,7 @@ use App\Services\AcademyContextService;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
+// Note: Dashboard page is discovered from App\Filament\Teacher\Pages
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -56,7 +56,7 @@ class TeacherPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')
             ->discoverPages(in: app_path('Filament/Teacher/Pages'), for: 'App\\Filament\\Teacher\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                \App\Filament\Teacher\Pages\Dashboard::class,
                 \App\Filament\Shared\Pages\UnifiedTeacherCalendar::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
