@@ -100,7 +100,7 @@
                     'icon' => 'ri-bar-chart-line',
                     'label' => 'التقرير',
                     'shortLabel' => 'التقرير',
-                    'class' => 'bg-amber-600 hover:bg-amber-700 text-white',
+                    'class' => 'bg-green-600 hover:bg-green-700 text-white',
                 ];
 
                 // Chat action

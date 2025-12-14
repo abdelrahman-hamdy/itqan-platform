@@ -4,7 +4,6 @@ namespace App\Filament\Teacher\Pages;
 
 use App\Filament\Teacher\Widgets\QuickActionsWidget;
 use App\Filament\Teacher\Widgets\QuranTeacherOverviewWidget;
-use App\Filament\Teacher\Widgets\TeacherWeeklyChartWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 
@@ -35,7 +34,6 @@ class Dashboard extends BaseDashboard
     {
         return [
             QuickActionsWidget::class,
-            TeacherWeeklyChartWidget::class,
         ];
     }
 

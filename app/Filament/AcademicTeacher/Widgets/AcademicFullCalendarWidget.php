@@ -19,6 +19,9 @@ use Saade\FilamentFullCalendar\Data\EventData;
  */
 class AcademicFullCalendarWidget extends BaseFullCalendarWidget
 {
+    // Prevent auto-discovery - only used on dedicated calendar page
+    protected static bool $isDiscoverable = false;
+
     // Default model for academic sessions
     public Model|string|null $model = AcademicSession::class;
 

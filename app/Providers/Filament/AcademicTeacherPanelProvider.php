@@ -61,10 +61,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/AcademicTeacher/Widgets'), for: 'App\\Filament\\AcademicTeacher\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                \App\Filament\AcademicTeacher\Widgets\AcademicTeacherOverviewWidget::class,
-                \App\Filament\AcademicTeacher\Widgets\RecentAcademicSessionsWidget::class,
-                \App\Filament\AcademicTeacher\Widgets\EarningsOverviewWidget::class,
+                // Dashboard page controls which widgets to display
             ])
             ->middleware([
                 EncryptCookies::class,

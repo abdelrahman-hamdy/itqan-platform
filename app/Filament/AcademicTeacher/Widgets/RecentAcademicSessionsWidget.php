@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 
 class RecentAcademicSessionsWidget extends BaseWidget
 {
+    // Prevent auto-discovery - not needed on dashboard
+    protected static bool $isDiscoverable = false;
+
     protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table

@@ -113,7 +113,7 @@
                     'icon' => 'ri-bar-chart-line',
                     'label' => 'التقرير',
                     'shortLabel' => 'التقرير',
-                    'class' => 'bg-teal-600 hover:bg-teal-700 text-white',
+                    'class' => 'bg-green-600 hover:bg-green-700 text-white',
                 ];
 
                 $actions[] = [

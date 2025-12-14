@@ -110,7 +110,7 @@
                     'icon' => 'ri-bar-chart-line',
                     'label' => 'التقرير',
                     'shortLabel' => 'التقرير',
-                    'class' => 'bg-indigo-600 hover:bg-indigo-700 text-white',
+                    'class' => 'bg-green-600 hover:bg-green-700 text-white',
                 ];
             }
         @endphp

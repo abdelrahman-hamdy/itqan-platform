@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\Auth;
 
 class TeacherAnalyticsWidget extends ChartWidget
 {
+    // Prevent auto-discovery - not needed on dashboard
+    protected static bool $isDiscoverable = false;
+
     protected static ?string $heading = 'تحليلات الجلسات - آخر 30 يوم';
-    
+
     protected static ?int $sort = 2;
-    
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
     {

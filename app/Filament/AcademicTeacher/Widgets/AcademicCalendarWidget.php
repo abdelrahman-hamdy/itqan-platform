@@ -11,9 +11,12 @@ use Carbon\Carbon;
 
 class AcademicCalendarWidget extends Widget
 {
+    // Prevent auto-discovery - only used on dedicated calendar page
+    protected static bool $isDiscoverable = false;
+
     protected static string $view = 'filament.academic-teacher.widgets.academic-calendar-widget';
-    
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
 
     public function getViewData(): array
     {

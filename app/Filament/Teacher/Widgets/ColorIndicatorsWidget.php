@@ -10,9 +10,12 @@ class ColorIndicatorsWidget extends Widget
 {
     use FormatsCalendarData;
 
+    // Prevent auto-discovery - only used on calendar page
+    protected static bool $isDiscoverable = false;
+
     protected static string $view = 'filament.teacher.widgets.color-indicators';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = 2; // Render after calendar widget (sort 1)
 

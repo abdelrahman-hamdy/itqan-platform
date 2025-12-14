@@ -4,7 +4,6 @@ namespace App\Filament\AcademicTeacher\Pages;
 
 use App\Filament\AcademicTeacher\Widgets\AcademicQuickActionsWidget;
 use App\Filament\AcademicTeacher\Widgets\AcademicTeacherOverviewWidget;
-use App\Filament\AcademicTeacher\Widgets\AcademicWeeklyChartWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 
@@ -42,7 +41,6 @@ class Dashboard extends BaseDashboard
     {
         return [
             AcademicQuickActionsWidget::class,
-            AcademicWeeklyChartWidget::class,
         ];
     }
 }

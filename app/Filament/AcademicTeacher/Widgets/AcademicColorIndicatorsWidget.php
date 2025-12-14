@@ -9,6 +9,9 @@ class AcademicColorIndicatorsWidget extends Widget
 {
     use FormatsCalendarData;
 
+    // Prevent auto-discovery - only used on calendar page
+    protected static bool $isDiscoverable = false;
+
     protected static string $view = 'filament.academic-teacher.widgets.academic-color-indicators';
 
     protected int|string|array $columnSpan = 'full';

@@ -56,103 +56,101 @@
     };
 @endphp
 
-<div class="min-h-screen bg-gray-50 py-4 md:py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Breadcrumbs -->
-        @if(count($breadcrumbs) > 0)
-            <nav class="mb-4 md:mb-6 overflow-x-auto">
-                <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
-                    @foreach($breadcrumbs as $index => $crumb)
-                        @if($index > 0)
-                            <li>/</li>
-                        @endif
-                        @if(isset($crumb['href']))
-                            <li><a href="{{ $crumb['href'] }}" class="min-h-[44px] inline-flex items-center hover:{{ $colorConfig['text'] }} transition-colors">{{ $crumb['label'] }}</a></li>
-                        @else
-                            <li class="text-gray-900 font-medium truncate max-w-[150px] md:max-w-none">{{ $crumb['label'] }}</li>
-                        @endif
-                    @endforeach
-                </ol>
-            </nav>
-        @endif
-
-        <!-- Page Header -->
-        <div class="mb-6 md:mb-8">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ $title }}</h1>
-                    <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ $subtitle }}</p>
-                </div>
-                @if(count($filterOptions) > 0)
-                    <div class="flex items-center">
-                        <select id="statusFilter" class="min-h-[44px] w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary">
-                            @foreach($filterOptions as $value => $label)
-                                <option value="{{ $value }}" {{ request($filterParam) === $value ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        @if(count($stats) > 0)
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-                @foreach($stats as $stat)
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-6">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 md:w-12 md:h-12 {{ $stat['bgColor'] ?? 'bg-blue-100' }} rounded-lg flex items-center justify-center flex-shrink-0 hidden sm:flex">
-                                <i class="{{ $stat['icon'] }} {{ $stat['iconColor'] ?? 'text-blue-600' }} text-lg md:text-xl"></i>
-                            </div>
-                            <div>
-                                <div class="text-xl md:text-2xl font-bold text-gray-900">{{ $stat['value'] }}</div>
-                                <div class="text-xs md:text-sm text-gray-600">{{ $stat['label'] }}</div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        @endif
-
-        <!-- Items List -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div class="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
-                <h2 class="text-base md:text-lg font-semibold text-gray-900">{{ $listTitle }}</h2>
-            </div>
-
-            @if($items->count() > 0)
-                <div class="divide-y divide-gray-200">
-                    {{ $slot }}
-                </div>
-
-                <!-- Pagination -->
-                @if($items->hasPages())
-                    <div class="px-4 md:px-6 py-4 border-t border-gray-200">
-                        {{ $items->links() }}
-                    </div>
-                @endif
-            @else
-                <div class="px-4 md:px-6 py-8 md:py-12 text-center">
-                    <div class="w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                        <i class="{{ $emptyIcon }} text-xl md:text-2xl text-gray-400"></i>
-                    </div>
-                    <h3 class="text-base md:text-lg font-medium text-gray-900 mb-1 md:mb-2">{{ $emptyTitle }}</h3>
-                    <p class="text-sm md:text-base text-gray-600">
-                        @if(request($filterParam))
-                            {{ $emptyFilterDescription }}
-                        @else
-                            {{ $emptyDescription }}
-                        @endif
-                    </p>
-                    @if(request($filterParam) && $clearFilterRoute)
-                        <a href="{{ $clearFilterRoute }}"
-                           class="min-h-[44px] inline-flex items-center justify-center px-4 py-2 {{ $colorConfig['button'] }} text-white text-sm font-medium rounded-lg transition-colors mt-4">
-                            {{ $clearFilterText }}
-                        </a>
+<div>
+    <!-- Breadcrumbs -->
+    @if(count($breadcrumbs) > 0)
+        <nav class="mb-4 md:mb-6 overflow-x-auto">
+            <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
+                @foreach($breadcrumbs as $index => $crumb)
+                    @if($index > 0)
+                        <li>/</li>
                     @endif
+                    @if(isset($crumb['href']))
+                        <li><a href="{{ $crumb['href'] }}" class="min-h-[44px] inline-flex items-center hover:{{ $colorConfig['text'] }} transition-colors">{{ $crumb['label'] }}</a></li>
+                    @else
+                        <li class="text-gray-900 font-medium truncate max-w-[150px] md:max-w-none">{{ $crumb['label'] }}</li>
+                    @endif
+                @endforeach
+            </ol>
+        </nav>
+    @endif
+
+    <!-- Page Header -->
+    <div class="mb-6 md:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ $title }}</h1>
+                <p class="mt-1 md:mt-2 text-sm md:text-base text-gray-600">{{ $subtitle }}</p>
+            </div>
+            @if(count($filterOptions) > 0)
+                <div class="flex items-center">
+                    <select id="statusFilter" class="min-h-[44px] w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary">
+                        @foreach($filterOptions as $value => $label)
+                            <option value="{{ $value }}" {{ request($filterParam) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </div>
             @endif
         </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    @if(count($stats) > 0)
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+            @foreach($stats as $stat)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 md:w-12 md:h-12 {{ $stat['bgColor'] ?? 'bg-blue-100' }} rounded-lg flex items-center justify-center flex-shrink-0 hidden sm:flex">
+                            <i class="{{ $stat['icon'] }} {{ $stat['iconColor'] ?? 'text-blue-600' }} text-lg md:text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="text-xl md:text-2xl font-bold text-gray-900">{{ $stat['value'] }}</div>
+                            <div class="text-xs md:text-sm text-gray-600">{{ $stat['label'] }}</div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
+    <!-- Items List -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+            <h2 class="text-base md:text-lg font-semibold text-gray-900">{{ $listTitle }}</h2>
+        </div>
+
+        @if($items->count() > 0)
+            <div class="divide-y divide-gray-200">
+                {{ $slot }}
+            </div>
+
+            <!-- Pagination -->
+            @if($items->hasPages())
+                <div class="px-4 md:px-6 py-4 border-t border-gray-200">
+                    {{ $items->links() }}
+                </div>
+            @endif
+        @else
+            <div class="px-4 md:px-6 py-8 md:py-12 text-center">
+                <div class="w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                    <i class="{{ $emptyIcon }} text-xl md:text-2xl text-gray-400"></i>
+                </div>
+                <h3 class="text-base md:text-lg font-medium text-gray-900 mb-1 md:mb-2">{{ $emptyTitle }}</h3>
+                <p class="text-sm md:text-base text-gray-600">
+                    @if(request($filterParam))
+                        {{ $emptyFilterDescription }}
+                    @else
+                        {{ $emptyDescription }}
+                    @endif
+                </p>
+                @if(request($filterParam) && $clearFilterRoute)
+                    <a href="{{ $clearFilterRoute }}"
+                       class="min-h-[44px] inline-flex items-center justify-center px-4 py-2 {{ $colorConfig['button'] }} text-white text-sm font-medium rounded-lg transition-colors mt-4">
+                        {{ $clearFilterText }}
+                    </a>
+                @endif
+            </div>
+        @endif
     </div>
 </div>
 

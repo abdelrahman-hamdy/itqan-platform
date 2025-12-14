@@ -61,9 +61,7 @@ class TeacherPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                \App\Filament\Teacher\Widgets\QuranTeacherOverviewWidget::class,
-                \App\Filament\Teacher\Widgets\EarningsOverviewWidget::class,
+                // Dashboard page controls which widgets to display
             ])
             ->middleware([
                 EncryptCookies::class,

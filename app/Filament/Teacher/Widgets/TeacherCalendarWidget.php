@@ -25,6 +25,9 @@ use Saade\FilamentFullCalendar\Data\EventData;
  */
 class TeacherCalendarWidget extends BaseFullCalendarWidget
 {
+    // Prevent auto-discovery - this widget is only used on the dedicated calendar page
+    protected static bool $isDiscoverable = false;
+
     // Note: FormatsCalendarData and ValidatesConflicts traits are inherited from BaseFullCalendarWidget
 
     // Default model for widget initialization
