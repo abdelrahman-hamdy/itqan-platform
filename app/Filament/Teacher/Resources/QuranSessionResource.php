@@ -3,8 +3,10 @@
 namespace App\Filament\Teacher\Resources;
 
 use App\Enums\QuranSurah;
+use App\Enums\SessionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Grid;
@@ -14,7 +16,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\BadgeColumn;
@@ -25,7 +26,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
-class QuranSessionResource extends Resource
+/**
+ * Quran Session Resource for Teacher Panel
+ *
+ * Extends BaseTeacherResource for proper authorization.
+ * Uses SessionStatus enum for status options.
+ */
+class QuranSessionResource extends BaseTeacherResource
 {
     protected static ?string $model = QuranSession::class;
 
@@ -88,7 +95,7 @@ class QuranSessionResource extends Resource
                                     ->required()
                                     ->native(false)
                                     ->seconds(false)
-                                    ->timezone(fn () => auth()->user()?->academy?->timezone?->value ?? 'UTC')
+                                    ->timezone(AcademyContextService::getTimezone())
                                     ->displayFormat('Y-m-d H:i'),
 
                                 TextInput::make('duration_minutes')
@@ -101,14 +108,8 @@ class QuranSessionResource extends Resource
 
                                 Select::make('status')
                                     ->label('حالة الجلسة')
-                                    ->options([
-                                        'scheduled' => 'مجدولة',
-                                        'ongoing' => 'جارية',
-                                        'completed' => 'مكتملة',
-                                        'cancelled' => 'ملغية',
-                                        'absent' => 'غياب الطالب',
-                                    ])
-                                    ->default('scheduled')
+                                    ->options(SessionStatus::options())
+                                    ->default(SessionStatus::SCHEDULED->value)
                                     ->required(),
                             ]),
                     ]),
@@ -266,22 +267,13 @@ class QuranSessionResource extends Resource
 
                 BadgeColumn::make('status')
                     ->label('الحالة')
-                    ->colors([
-                        'warning' => 'scheduled',
-                        'info' => 'in_progress',
-                        'success' => 'completed',
-                        'danger' => 'cancelled',
-                        'gray' => 'no_show',
-                    ])
-                    ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SessionStatus ? $state->value : $state) {
-                        'unscheduled' => 'غير مجدولة',
-                        'scheduled' => 'مجدولة',
-                        'ready' => 'جاهزة للبدء',
-                        'ongoing' => 'جارية',
-                        'completed' => 'مكتملة',
-                        'cancelled' => 'ملغية',
-                        'absent' => 'غياب الطالب',
-                        default => $state,
+                    ->colors(SessionStatus::colorOptions())
+                    ->formatStateUsing(function ($state): string {
+                        if ($state instanceof SessionStatus) {
+                            return $state->label();
+                        }
+                        $status = SessionStatus::tryFrom($state);
+                        return $status?->label() ?? $state;
                     }),
 
                 BadgeColumn::make('attendance_status')
@@ -325,13 +317,7 @@ class QuranSessionResource extends Resource
 
                 SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options([
-                        'scheduled' => 'مجدولة',
-                        'in_progress' => 'جارية',
-                        'completed' => 'مكتملة',
-                        'cancelled' => 'ملغية',
-                        'no_show' => 'غياب',
-                    ]),
+                    ->options(SessionStatus::options()),
 
                 SelectFilter::make('attendance_status')
                     ->label('الحضور')

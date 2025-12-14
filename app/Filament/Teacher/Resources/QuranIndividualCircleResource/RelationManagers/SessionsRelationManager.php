@@ -3,6 +3,7 @@
 namespace App\Filament\Teacher\Resources\QuranIndividualCircleResource\RelationManagers;
 
 use App\Models\QuranSession;
+use App\Enums\SessionStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -31,12 +32,8 @@ class SessionsRelationManager extends RelationManager
 
                 Forms\Components\Select::make('status')
                     ->label('الحالة')
-                    ->options([
-                        'scheduled' => 'مجدولة',
-                        'in_progress' => 'جارية',
-                        'completed' => 'مكتملة',
-                        'cancelled' => 'ملغية',
-                    ])
+                    ->options(SessionStatus::options())
+                    ->default(SessionStatus::SCHEDULED->value)
                     ->required(),
 
                 Forms\Components\Textarea::make('notes')
@@ -58,18 +55,13 @@ class SessionsRelationManager extends RelationManager
 
                 BadgeColumn::make('status')
                     ->label('الحالة')
-                    ->colors([
-                        'warning' => 'scheduled',
-                        'info' => 'in_progress',
-                        'success' => 'completed',
-                        'danger' => 'cancelled',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'scheduled' => 'مجدولة',
-                        'in_progress' => 'جارية',
-                        'completed' => 'مكتملة',
-                        'cancelled' => 'ملغية',
-                        default => $state,
+                    ->colors(SessionStatus::colorOptions())
+                    ->formatStateUsing(function ($state): string {
+                        if ($state instanceof SessionStatus) {
+                            return $state->label();
+                        }
+                        $status = SessionStatus::tryFrom($state);
+                        return $status?->label() ?? $state;
                     }),
 
                 TextColumn::make('duration_minutes')
@@ -102,10 +94,13 @@ class SessionsRelationManager extends RelationManager
                     ->label('بدء الجلسة')
                     ->icon('heroicon-o-play')
                     ->color('success')
-                    ->visible(fn (QuranSession $record): bool => $record->status === 'scheduled')
+                    ->visible(fn (QuranSession $record): bool =>
+                        $record->status instanceof SessionStatus
+                            ? $record->status->canStart()
+                            : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
                     ->action(function (QuranSession $record) {
                         $record->update([
-                            'status' => 'in_progress',
+                            'status' => SessionStatus::ONGOING,
                             'started_at' => now(),
                         ]);
                     }),
@@ -113,10 +108,13 @@ class SessionsRelationManager extends RelationManager
                     ->label('إنهاء الجلسة')
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn (QuranSession $record): bool => $record->status === 'in_progress')
+                    ->visible(fn (QuranSession $record): bool =>
+                        $record->status instanceof SessionStatus
+                            ? $record->status === SessionStatus::ONGOING
+                            : $record->status === SessionStatus::ONGOING->value)
                     ->action(function (QuranSession $record) {
                         $record->update([
-                            'status' => 'completed',
+                            'status' => SessionStatus::COMPLETED,
                             'ended_at' => now(),
                         ]);
                     }),

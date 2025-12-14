@@ -11,6 +11,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Services\AcademyContextService;
+use App\Enums\SessionStatus;
 
 class AcademicSessionResource extends BaseAcademicTeacherResource
 {
@@ -122,7 +124,7 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->required()
                             ->native(false)
                             ->seconds(false)
-                            ->timezone(fn () => auth()->user()?->academy?->timezone?->value ?? 'UTC')
+                            ->timezone(AcademyContextService::getTimezone())
                             ->displayFormat('Y-m-d H:i'),
 
                         Forms\Components\TextInput::make('duration_minutes')
@@ -135,14 +137,8 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
 
                         Forms\Components\Select::make('status')
                             ->label('حالة الجلسة')
-                            ->options([
-                                'scheduled' => 'مجدولة',
-                                'ongoing' => 'جارية',
-                                'completed' => 'مكتملة',
-                                'cancelled' => 'ملغية',
-                                'rescheduled' => 'معاد جدولتها',
-                            ])
-                            ->default('scheduled')
+                            ->options(SessionStatus::options())
+                            ->default(SessionStatus::SCHEDULED->value)
                             ->required(),
                     ])->columns(2),
 
@@ -210,24 +206,14 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
-                    ->colors([
-                        'primary' => 'scheduled',
-                        'success' => 'ongoing',
-                        'success' => 'completed',
-                        'danger' => 'cancelled',
-                        'warning' => 'rescheduled',
-                    ])
-                    ->formatStateUsing(fn ($state): string => $state instanceof \App\Enums\SessionStatus
-                        ? $state->label()
-                        : match ($state) {
-                            'scheduled' => 'مجدولة',
-                            'ongoing' => 'جارية',
-                            'completed' => 'مكتملة',
-                            'cancelled' => 'ملغية',
-                            'rescheduled' => 'معاد جدولتها',
-                            default => (string) $state,
+                    ->colors(SessionStatus::colorOptions())
+                    ->formatStateUsing(function ($state): string {
+                        if ($state instanceof SessionStatus) {
+                            return $state->label();
                         }
-                    ),
+                        $status = SessionStatus::tryFrom($state);
+                        return $status?->label() ?? (string) $state;
+                    }),
 
                 Tables\Columns\BadgeColumn::make('attendance_status')
                     ->label('الحضور')
@@ -262,13 +248,7 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options([
-                        'scheduled' => 'مجدولة',
-                        'ongoing' => 'جارية',
-                        'completed' => 'مكتملة',
-                        'cancelled' => 'ملغية',
-                        'rescheduled' => 'معاد جدولتها',
-                    ]),
+                    ->options(SessionStatus::options()),
 
                 Tables\Filters\SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')

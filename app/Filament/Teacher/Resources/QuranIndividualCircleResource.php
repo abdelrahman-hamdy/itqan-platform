@@ -6,7 +6,6 @@ use App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages;
 use App\Models\QuranIndividualCircle;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -14,7 +13,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 
-class QuranIndividualCircleResource extends Resource
+/**
+ * Quran Individual Circle Resource for Teacher Panel
+ *
+ * Extends BaseTeacherResource for proper authorization.
+ */
+class QuranIndividualCircleResource extends BaseTeacherResource
 {
     protected static ?string $model = QuranIndividualCircle::class;
 
