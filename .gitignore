@@ -48,11 +48,30 @@ auth.json
 /.nova/
 /.vscode/
 /.zed/
-/.cursor/
-/.claude/
 *.sublime-project
 *.sublime-workspace
 *.code-workspace
+
+# ----------------
+# AI Coding Agents (NEVER commit these)
+# ----------------
+CLAUDE.md
+/.claude/
+/.cursor/
+/.windsurf/
+/.codeium/
+/.continue/
+/.aider/
+/.taskmaster/
+/.plan/
+.mcp.json
+mcp.json
+.qoder.json
+.copilot/
+.github/copilot/
+.tabnine/
+cody.json
+.sourcegraph/
 
 # ----------------
 # Testing & Development
@@ -103,8 +122,6 @@ docker-compose.override.yml
 # ----------------
 /docs/development-notes/
 /docs/archive/
-/.taskmaster/
-/.plan/
 
 # ----------------
 # Development Scripts (Not needed in production)
