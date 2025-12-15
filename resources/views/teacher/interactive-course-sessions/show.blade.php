@@ -4,15 +4,14 @@
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-4 md:mb-8 overflow-x-auto">
-        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
-            <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">الصفحة الرئيسية</a></li>
-            <li>/</li>
-            <li><a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary min-h-[44px] inline-flex items-center truncate max-w-[120px] md:max-w-none">{{ $session->course->title }}</a></li>
-            <li>/</li>
-            <li class="text-gray-900">جلسة رقم {{ $session->session_number }}</li>
-        </ol>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'الدورات التفاعلية', 'route' => route('teacher.interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
+            ['label' => $session->course->title, 'route' => route('teacher.interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $session->course->id]), 'truncate' => true],
+            ['label' => 'جلسة رقم ' . $session->session_number],
+        ]"
+        view-type="teacher"
+    />
 
     <div class="space-y-4 md:space-y-6">
         <!-- Session Header -->

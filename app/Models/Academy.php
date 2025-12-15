@@ -45,7 +45,7 @@ class Academy extends Model
         'growth_rate',
         // Design Settings
         'sections_order',
-        'hero_visible', 'hero_template', 'hero_heading', 'hero_subheading', 'hero_show_in_nav',
+        'hero_visible', 'hero_template', 'hero_heading', 'hero_subheading', 'hero_image', 'hero_show_in_nav',
         'stats_visible', 'stats_template', 'stats_heading', 'stats_subheading', 'stats_show_in_nav',
         'reviews_visible', 'reviews_template', 'reviews_heading', 'reviews_subheading', 'reviews_show_in_nav',
         'quran_visible', 'quran_template', 'quran_heading', 'quran_subheading', 'quran_show_in_nav',

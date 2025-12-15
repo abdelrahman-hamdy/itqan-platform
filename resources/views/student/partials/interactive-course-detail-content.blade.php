@@ -1,12 +1,17 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-0">
+@php
+    $isTeacher = auth()->check() && (auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher());
+    $viewType = $isTeacher ? 'teacher' : 'student';
+@endphp
+
+<div>
     <!-- Breadcrumb -->
-    <nav class="mb-4 md:mb-6 overflow-x-auto">
-        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-500 whitespace-nowrap">
-            <li><a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-blue-600 transition-colors min-h-[44px] inline-flex items-center">الكورسات التفاعلية</a></li>
-            <li><i class="ri-arrow-left-s-line"></i></li>
-            <li class="text-gray-900 font-medium truncate max-w-[200px]">{{ $course->title }}</li>
-        </ol>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'الكورسات التفاعلية', 'route' => route('interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
+            ['label' => $course->title, 'truncate' => true],
+        ]"
+        :view-type="$viewType"
+    />
 
     @php
         $now = now();
@@ -120,34 +125,35 @@
                         <i class="ri-user-star-line text-blue-500"></i>
                         المدرس
                     </h2>
-                    <div class="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                    <div class="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
                         <!-- Teacher Avatar -->
-                        <x-avatar
-                            :user="$course->assignedTeacher->user"
-                            size="2xl"
-                            userType="academic_teacher"
-                            :gender="$course->assignedTeacher->gender ?? 'male'" />
+                        <div class="flex-shrink-0">
+                            <x-avatar
+                                :user="$course->assignedTeacher->user"
+                                size="2xl"
+                                userType="academic_teacher"
+                                :gender="$course->assignedTeacher->gender ?? 'male'" />
+                        </div>
 
                         <!-- Teacher Info -->
-                        <div class="flex-1">
+                        <div class="flex-1 w-full text-center md:text-right">
                             <!-- Name with Rating -->
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                            <div class="flex flex-col sm:flex-row items-center sm:items-center md:items-start sm:justify-center md:justify-between gap-1 sm:gap-2 mb-3">
                                 <h3 class="text-lg md:text-xl font-bold text-gray-900">{{ $course->assignedTeacher->full_name }}</h3>
                                 @if($course->assignedTeacher->rating)
-                                <div class="inline-flex items-center gap-1">
-                                    <i class="ri-star-fill text-yellow-500"></i>
+                                <div class="inline-flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                                    <i class="ri-star-fill text-yellow-500 text-sm"></i>
                                     <span class="text-sm font-bold text-gray-900">{{ number_format($course->assignedTeacher->rating, 1) }}</span>
                                 </div>
                                 @endif
                             </div>
 
-
-                            <!-- Degree and Languages - Horizontal Layout -->
-                            <div class="flex flex-wrap items-center gap-4 mb-4">
+                            <!-- Teacher Stats - Grid on mobile -->
+                            <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center md:justify-start items-center gap-2 sm:gap-3 md:gap-4 mb-4">
                                 @if($course->assignedTeacher->educational_qualification)
-                                <div class="flex items-center gap-2 text-sm">
+                                <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm bg-gray-50 rounded-lg px-2 py-1.5 sm:bg-transparent sm:p-0">
                                     <i class="ri-graduation-cap-line text-blue-500"></i>
-                                    <span class="text-gray-900 font-medium">{{ $course->assignedTeacher->educational_qualification }}</span>
+                                    <span class="text-gray-900 font-medium truncate">{{ $course->assignedTeacher->educational_qualification }}</span>
                                 </div>
                                 @endif
 
@@ -161,60 +167,61 @@
                                         default => $course->assignedTeacher->education_level
                                     };
                                 @endphp
-                                <div class="flex items-center gap-2 text-sm">
+                                <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm bg-gray-50 rounded-lg px-2 py-1.5 sm:bg-transparent sm:p-0">
                                     <i class="ri-book-line text-blue-500"></i>
                                     <span class="text-gray-900 font-medium">{{ $educationLevelArabic }}</span>
                                 </div>
                                 @endif
 
-                                @if($course->assignedTeacher->languages && count($course->assignedTeacher->languages) > 0)
-                                @php
-                                    $languageMap = [
-                                        'Arabic' => 'العربية',
-                                        'English' => 'الإنجليزية',
-                                        'French' => 'الفرنسية',
-                                        'Spanish' => 'الإسبانية',
-                                        'German' => 'الألمانية',
-                                        'Turkish' => 'التركية',
-                                        'Urdu' => 'الأردية',
-                                    ];
-                                    $languagesInArabic = array_map(function($lang) use ($languageMap) {
-                                        return $languageMap[$lang] ?? $lang;
-                                    }, $course->assignedTeacher->languages);
-                                @endphp
-                                <div class="flex items-center gap-2 text-sm">
-                                    <i class="ri-global-line text-blue-500"></i>
-                                    <span class="text-gray-900 font-medium">{{ implode(' • ', $languagesInArabic) }}</span>
-                                </div>
-                                @endif
-
                                 @if($course->assignedTeacher->years_of_experience)
-                                <div class="flex items-center gap-2 text-sm">
+                                <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm bg-gray-50 rounded-lg px-2 py-1.5 sm:bg-transparent sm:p-0">
                                     <i class="ri-medal-line text-blue-500"></i>
                                     <span class="text-gray-900 font-medium">{{ $course->assignedTeacher->years_of_experience }} سنة خبرة</span>
                                 </div>
                                 @endif
 
                                 @if($course->assignedTeacher->total_students)
-                                <div class="flex items-center gap-2 text-sm">
+                                <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm bg-gray-50 rounded-lg px-2 py-1.5 sm:bg-transparent sm:p-0">
                                     <i class="ri-group-line text-blue-500"></i>
                                     <span class="text-gray-900 font-medium">{{ $course->assignedTeacher->total_students }} طالب</span>
                                 </div>
                                 @endif
                             </div>
 
+                            <!-- Languages -->
+                            @if($course->assignedTeacher->languages && count($course->assignedTeacher->languages) > 0)
+                            @php
+                                $languageMap = [
+                                    'Arabic' => 'العربية',
+                                    'English' => 'الإنجليزية',
+                                    'French' => 'الفرنسية',
+                                    'Spanish' => 'الإسبانية',
+                                    'German' => 'الألمانية',
+                                    'Turkish' => 'التركية',
+                                    'Urdu' => 'الأردية',
+                                ];
+                                $languagesInArabic = array_map(function($lang) use ($languageMap) {
+                                    return $languageMap[$lang] ?? $lang;
+                                }, $course->assignedTeacher->languages);
+                            @endphp
+                            <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm text-gray-600 mb-4">
+                                <i class="ri-global-line text-blue-500"></i>
+                                <span>{{ implode(' • ', $languagesInArabic) }}</span>
+                            </div>
+                            @endif
+
                             <!-- Bio -->
                             @if($course->assignedTeacher->bio_arabic)
-                            <p class="text-gray-600 leading-relaxed mb-4">{{ $course->assignedTeacher->bio_arabic }}</p>
+                            <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 text-right">{{ $course->assignedTeacher->bio_arabic }}</p>
                             @endif
 
                             <!-- Certifications -->
                             @if($course->assignedTeacher->certifications && count($course->assignedTeacher->certifications) > 0)
                             <div class="mb-4">
                                 <p class="text-xs text-gray-500 mb-2">الشهادات والدورات</p>
-                                <div class="flex flex-wrap gap-2">
+                                <div class="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2">
                                     @foreach($course->assignedTeacher->certifications as $cert)
-                                    <span class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                                    <span class="inline-flex items-center px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] sm:text-xs font-medium">
                                         <i class="ri-award-line ml-1"></i>
                                         {{ is_array($cert) ? $cert['name'] : $cert }}
                                     </span>
@@ -224,7 +231,7 @@
                             @endif
 
                             <!-- Action Buttons -->
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3 mt-4">
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-center md:justify-start gap-2 md:gap-3 mt-4">
                                 <a href="{{ route('academic-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacherId' => $course->assignedTeacher->id]) }}"
                                    class="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-medium transition-colors text-sm md:text-base">
                                     <i class="ri-user-line"></i>
@@ -310,9 +317,9 @@
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                         @foreach($course->schedule as $day => $time)
-                        <div class="flex items-center justify-between p-4 bg-gradient-to-l from-purple-50 to-white rounded-xl border border-purple-100">
-                            <span class="font-semibold text-gray-900">{{ $day }}</span>
-                            <span class="text-purple-600 font-bold">{{ $time }}</span>
+                        <div class="flex items-center justify-between p-3 md:p-4 bg-gradient-to-l from-purple-50 to-white rounded-xl border border-purple-100">
+                            <span class="font-semibold text-gray-900 text-sm md:text-base">{{ $day }}</span>
+                            <span class="text-purple-600 font-bold text-sm md:text-base">{{ $time }}</span>
                         </div>
                         @endforeach
                     </div>
@@ -354,7 +361,7 @@
                         @endphp
                         <x-sessions.sessions-list
                             :sessions="$allCourseSessions"
-                            view-type="student"
+                            :view-type="$viewType"
                             :show-tabs="false"
                             empty-message="لا توجد جلسات مجدولة بعد" />
                     </x-tabs.panel>
@@ -404,7 +411,7 @@
         </div>
 
         <!-- Sidebar (Right Column - 1/3) -->
-        <div data-sticky-sidebar>
+        <div class="lg:sticky lg:top-4" data-sticky-sidebar>
             <!-- Inner wrapper for proper spacing -->
             <div class="space-y-4 md:space-y-6">
                 @if($isEnrolled && isset($enrollment))
@@ -458,7 +465,7 @@
                             </div>
                         @endif
                     </div>
-                @elseif(!$isEnrolled && $course->is_published && (!$course->enrollment_deadline || $course->enrollment_deadline >= now()->toDateString()) && ($enrollmentStats['available_spots'] ?? 0) > 0)
+                @elseif(!$isTeacher && !$isEnrolled && $course->is_published && (!$course->enrollment_deadline || $course->enrollment_deadline >= now()->toDateString()) && ($enrollmentStats['available_spots'] ?? 0) > 0)
                     <!-- Enrollment Card - Show for non-enrolled students who can enroll -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
                         <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
@@ -497,31 +504,31 @@
                     </h3>
                     <div class="space-y-2 md:space-y-3">
                         <!-- Start Date -->
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="ri-calendar-check-line text-blue-600"></i>
+                        <div class="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-gray-50 rounded-xl">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-calendar-check-line text-blue-600 text-sm sm:text-base"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs text-gray-500 mb-0.5">تاريخ البدء</p>
-                                <p class="font-bold text-gray-900">{{ $course->start_date->format('d/m/Y') }}</p>
+                                <p class="text-[10px] sm:text-xs text-gray-500 mb-0.5">تاريخ البدء</p>
+                                <p class="font-bold text-gray-900 text-sm sm:text-base">{{ $course->start_date->format('d/m/Y') }}</p>
                             </div>
                         </div>
 
                         <!-- End Date -->
                         @if($course->end_date)
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="ri-calendar-close-line text-purple-600"></i>
+                        <div class="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-gray-50 rounded-xl">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="ri-calendar-close-line text-purple-600 text-sm sm:text-base"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs text-gray-500 mb-0.5">تاريخ الانتهاء</p>
-                                <p class="font-bold text-gray-900">{{ $course->end_date->format('d/m/Y') }}</p>
+                                <p class="text-[10px] sm:text-xs text-gray-500 mb-0.5">تاريخ الانتهاء</p>
+                                <p class="font-bold text-gray-900 text-sm sm:text-base">{{ $course->end_date->format('d/m/Y') }}</p>
                             </div>
                         </div>
                         @endif
 
-                        <!-- Enrollment Deadline with Countdown - Only show for non-enrolled students -->
-                        @if(!$isEnrolled && $enrollmentStats['enrollment_deadline'])
+                        <!-- Enrollment Deadline with Countdown - Only show for non-enrolled students (not teachers) -->
+                        @if(!$isTeacher && !$isEnrolled && $enrollmentStats['enrollment_deadline'])
                         @php
                             $deadline = $enrollmentStats['enrollment_deadline'];
                             $now = now();
@@ -550,14 +557,14 @@
                             }
                         @endphp
 
-                        <div class="p-4 {{ $bgColor }} rounded-xl border-2 {{ $borderColor }}" id="enrollment-deadline-card">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 {{ $iconBg }} rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <i class="ri-time-line {{ $iconColor }}"></i>
+                        <div class="p-3 sm:p-4 {{ $bgColor }} rounded-xl border-2 {{ $borderColor }}" id="enrollment-deadline-card">
+                            <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                                <div class="w-9 h-9 sm:w-10 sm:h-10 {{ $iconBg }} rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="ri-time-line {{ $iconColor }} text-sm sm:text-base"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs text-gray-600 mb-0.5">آخر موعد للتسجيل</p>
-                                    <p class="font-bold text-gray-900">{{ $deadline->format('d/m/Y') }}</p>
+                                    <p class="text-[10px] sm:text-xs text-gray-600 mb-0.5">آخر موعد للتسجيل</p>
+                                    <p class="font-bold text-gray-900 text-sm sm:text-base">{{ $deadline->format('d/m/Y') }}</p>
                                 </div>
                             </div>
 
@@ -570,25 +577,25 @@
                             @else
                                 <div id="countdown-timer" class="text-center py-2"
                                      data-deadline="{{ $deadline->format('Y-m-d 23:59:59') }}">
-                                    <div class="flex justify-center items-start gap-1">
-                                        <div class="flex flex-col items-center">
-                                            <span id="countdown-days" class="text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
-                                            <span class="text-xs text-gray-500 mt-1">يوم</span>
+                                    <div class="flex justify-center items-start gap-0.5 sm:gap-1">
+                                        <div class="flex flex-col items-center min-w-[40px] sm:min-w-[48px]">
+                                            <span id="countdown-days" class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
+                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">يوم</span>
                                         </div>
-                                        <span class="text-2xl font-bold {{ $countdownColor }}">:</span>
-                                        <div class="flex flex-col items-center">
-                                            <span id="countdown-hours" class="text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
-                                            <span class="text-xs text-gray-500 mt-1">ساعة</span>
+                                        <span class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }}">:</span>
+                                        <div class="flex flex-col items-center min-w-[40px] sm:min-w-[48px]">
+                                            <span id="countdown-hours" class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
+                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">ساعة</span>
                                         </div>
-                                        <span class="text-2xl font-bold {{ $countdownColor }}">:</span>
-                                        <div class="flex flex-col items-center">
-                                            <span id="countdown-minutes" class="text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
-                                            <span class="text-xs text-gray-500 mt-1">دقيقة</span>
+                                        <span class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }}">:</span>
+                                        <div class="flex flex-col items-center min-w-[40px] sm:min-w-[48px]">
+                                            <span id="countdown-minutes" class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
+                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">دقيقة</span>
                                         </div>
-                                        <span class="text-2xl font-bold {{ $countdownColor }}">:</span>
-                                        <div class="flex flex-col items-center">
-                                            <span id="countdown-seconds" class="text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
-                                            <span class="text-xs text-gray-500 mt-1">ثانية</span>
+                                        <span class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }}">:</span>
+                                        <div class="flex flex-col items-center min-w-[40px] sm:min-w-[48px]">
+                                            <span id="countdown-seconds" class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
+                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">ثانية</span>
                                         </div>
                                     </div>
                                 </div>
@@ -606,6 +613,7 @@
                     />
                 @endif
 
+                @if(!$isTeacher)
                 <!-- Quick Actions (only for enrolled students) -->
                 @if($isEnrolled)
                     <div class="mb-4 md:mb-6">
@@ -625,6 +633,7 @@
                         :subscription="$enrollment"
                         type="interactive"
                     />
+                @endif
                 @endif
             </div>
             <!-- End inner wrapper -->

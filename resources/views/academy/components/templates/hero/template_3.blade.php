@@ -11,6 +11,9 @@
     // Get hero heading and subheading with defaults
     $heroHeading = $heading ?? 'تعليم متميز للمستقبل';
     $heroSubheading = $subheading ?? 'انضم إلى آلاف الطلاب الذين يطورون مهاراتهم في القرآن الكريم والتعليم الأكاديمي مع أفضل المعلمين المتخصصين';
+
+    // Get hero image
+    $heroImage = $academy?->hero_image ? asset('storage/' . $academy->hero_image) : null;
 @endphp
 
 <!-- Hero Section - Template 3: Classic Professional Design -->
@@ -95,13 +98,17 @@
       <!-- Left Image -->
       <div class="order-1 lg:order-2">
         <div class="aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-{{ $gradientFrom }}/20 to-{{ $gradientTo }}/20 border border-gray-200">
-          <!-- Placeholder for image - can be replaced with actual image -->
-          <div class="w-full h-full flex items-center justify-center">
-            <div class="text-center text-gray-400">
-              <i class="ri-image-line text-6xl mb-2"></i>
-              <p class="text-sm">صورة البطل</p>
+          @if($heroImage)
+            <img src="{{ $heroImage }}" alt="{{ $heroHeading }}" class="w-full h-full object-cover">
+          @else
+            <!-- Placeholder for image - can be replaced with actual image -->
+            <div class="w-full h-full flex items-center justify-center">
+              <div class="text-center text-gray-400">
+                <i class="ri-image-line text-6xl mb-2"></i>
+                <p class="text-sm">صورة البطل</p>
+              </div>
             </div>
-          </div>
+          @endif
         </div>
       </div>
     </div>

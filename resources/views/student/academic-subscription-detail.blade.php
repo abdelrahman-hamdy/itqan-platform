@@ -4,15 +4,13 @@
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-8">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-            <li><a href="{{ route('student.profile', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">الملف الشخصي</a></li>
-            <li>/</li>
-            <li><a href="{{ route('academic-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">المعلمون الأكاديميون</a></li>
-            <li>/</li>
-            <li class="text-gray-900">{{ $subscription->subject_name ?? 'درس أكاديمي' }}</li>
-        </ol>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'المعلمون الأكاديميون', 'route' => route('academic-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']), 'icon' => 'ri-user-star-line'],
+            ['label' => $subscription->subject_name ?? 'درس أكاديمي', 'truncate' => true],
+        ]"
+        view-type="student"
+    />
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-sticky-container>
         <!-- Main Content -->

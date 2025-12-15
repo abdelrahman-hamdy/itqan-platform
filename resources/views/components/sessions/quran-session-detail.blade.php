@@ -3,72 +3,45 @@
     'viewType' => 'student' // student, teacher
 ])
 
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Breadcrumb -->
-        <nav class="mb-8">
-            <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-                <li>
-                    <a href="{{ route($viewType . '.profile', ['subdomain' => request()->route('subdomain')]) }}"
-                       class="hover:text-primary">
-                        {{ $viewType === 'student' ? 'ملفي الشخصي' : 'ملفي الشخصي' }}
-                    </a>
-                </li>
-                <li>/</li>
-                @if($session->circle_id && $session->circle)
-                    <li>
-                        @if($viewType === 'student')
-                            <a href="{{ route('quran-circles.index', ['subdomain' => request()->route('subdomain')]) }}"
-                               class="hover:text-primary">حلقات القرآن</a>
-                        @else
-                            <a href="{{ route('teacher.group-circles.index', ['subdomain' => request()->route('subdomain')]) }}"
-                               class="hover:text-primary">الحلقات الجماعية</a>
-                        @endif
-                    </li>
-                    <li>/</li>
-                    <li>
-                        @if($viewType === 'student')
-                            <a href="{{ route('student.circles.show', ['subdomain' => request()->route('subdomain'), 'circleId' => $session->circle->id]) }}"
-                               class="hover:text-primary">{{ $session->circle->name ?? 'الحلقة' }}</a>
-                        @else
-                            <a href="{{ route('teacher.group-circles.show', ['subdomain' => request()->route('subdomain'), 'circle' => $session->circle->id]) }}"
-                               class="hover:text-primary">{{ $session->circle->name ?? 'الحلقة' }}</a>
-                        @endif
-                    </li>
-                @elseif($session->individual_circle_id && $session->individualCircle)
-                    <li>
-                        @if($viewType === 'student')
-                            <a href="{{ route('quran-teachers.index', ['subdomain' => request()->route('subdomain')]) }}"
-                               class="hover:text-primary">معلمي القرآن</a>
-                        @else
-                            <a href="{{ route('teacher.individual-circles.index', ['subdomain' => request()->route('subdomain')]) }}"
-                               class="hover:text-primary">الحلقات الفردية</a>
-                        @endif
-                    </li>
-                    <li>/</li>
-                    <li>
-                        <a href="{{ route('individual-circles.show', ['subdomain' => request()->route('subdomain'), 'circle' => $session->individualCircle->id]) }}"
-                           class="hover:text-primary">{{ $session->individualCircle->subscription->package->name ?? 'الحلقة الفردية' }}</a>
-                    </li>
-                @else
-                    <li>
-                        @if($viewType === 'student')
-                            <a href="{{ route('student.profile', ['subdomain' => request()->route('subdomain')]) }}"
-                               class="hover:text-primary">الملف الشخصي</a>
-                        @else
-                            <a href="{{ route('teacher.profile', ['subdomain' => request()->route('subdomain')]) }}"
-                               class="hover:text-primary">
-                                {{ $session->session_type === 'trial' ? 'الجلسات التجريبية' : 'جدول الجلسات' }}
-                            </a>
-                        @endif
-                    </li>
-                @endif
-                <li>/</li>
-                <li class="text-gray-900">{{ $session->title ?? 'تفاصيل الجلسة' }}</li>
-            </ol>
-        </nav>
+@php
+    $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $breadcrumbItems = [];
 
-        <div class="space-y-6">
+    // Build session-type specific breadcrumb items
+    if($session->circle_id && $session->circle) {
+        // Group Circle Session
+        if($viewType === 'student') {
+            $breadcrumbItems[] = ['label' => 'حلقات القرآن', 'route' => route('quran-circles.index', ['subdomain' => $subdomain]), 'icon' => 'ri-book-read-line'];
+            $breadcrumbItems[] = ['label' => $session->circle->name ?? 'الحلقة', 'route' => route('student.circles.show', ['subdomain' => $subdomain, 'circleId' => $session->circle->id]), 'truncate' => true];
+        } else {
+            $breadcrumbItems[] = ['label' => 'الحلقات الجماعية', 'route' => route('teacher.group-circles.index', ['subdomain' => $subdomain])];
+            $breadcrumbItems[] = ['label' => $session->circle->name ?? 'الحلقة', 'route' => route('teacher.group-circles.show', ['subdomain' => $subdomain, 'circle' => $session->circle->id]), 'truncate' => true];
+        }
+    } elseif($session->individual_circle_id && $session->individualCircle) {
+        // Individual Circle Session
+        if($viewType === 'student') {
+            $breadcrumbItems[] = ['label' => 'معلمو القرآن', 'route' => route('quran-teachers.index', ['subdomain' => $subdomain]), 'icon' => 'ri-user-star-line'];
+            $breadcrumbItems[] = ['label' => $session->individualCircle->subscription->package->name ?? 'حلقة فردية', 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
+        } else {
+            $breadcrumbItems[] = ['label' => 'الحلقات الفردية', 'route' => route('teacher.individual-circles.index', ['subdomain' => $subdomain])];
+            $breadcrumbItems[] = ['label' => $session->individualCircle->subscription->package->name ?? 'حلقة فردية', 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
+        }
+    } else {
+        // Fallback - trial or other session
+        if($viewType === 'teacher') {
+            $breadcrumbItems[] = ['label' => $session->session_type === 'trial' ? 'الجلسات التجريبية' : 'جدول الجلسات', 'route' => route('teacher.profile', ['subdomain' => $subdomain])];
+        }
+    }
+
+    // Add session title as the last item
+    $breadcrumbItems[] = ['label' => $session->title ?? 'تفاصيل الجلسة', 'truncate' => true];
+@endphp
+
+<div>
+    <!-- Breadcrumb -->
+    <x-ui.breadcrumb :items="$breadcrumbItems" :view-type="$viewType" />
+
+    <div class="space-y-4 md:space-y-6">
             <!-- Session Header -->
             <x-sessions.session-header :session="$session" :view-type="$viewType" />
 
@@ -227,7 +200,6 @@
                 @endif
             @endif
 
-        </div>
     </div>
 </div>
 

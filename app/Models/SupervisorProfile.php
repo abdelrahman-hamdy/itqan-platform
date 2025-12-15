@@ -52,10 +52,22 @@ class SupervisorProfile extends Model
             if (empty($model->supervisor_code)) {
                 // Use academy_id from the model, or fallback to 1 if not set
                 $academyId = $model->academy_id ?: 1;
-                
-                // Count existing profiles in the same academy for proper numbering
-                $count = static::where('academy_id', $academyId)->count() + 1;
-                $model->supervisor_code = 'SUP-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $prefix = 'SUP-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+
+                // Find the highest existing sequence number for this academy
+                $maxCode = static::withoutGlobalScopes()
+                    ->where('supervisor_code', 'like', $prefix . '%')
+                    ->orderByRaw('CAST(SUBSTRING(supervisor_code, -4) AS UNSIGNED) DESC')
+                    ->value('supervisor_code');
+
+                if ($maxCode) {
+                    // Extract the sequence number and increment
+                    $sequence = (int) substr($maxCode, -4) + 1;
+                } else {
+                    $sequence = 1;
+                }
+
+                $model->supervisor_code = $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
             }
         });
     }

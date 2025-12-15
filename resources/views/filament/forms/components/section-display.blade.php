@@ -1,12 +1,22 @@
 @php
     $sectionNames = [
-        'hero' => 'القسم الرئيسي (Hero)',
-        'stats' => 'قسم الإحصائيات',
-        'reviews' => 'قسم التقييمات',
-        'quran' => 'قسم القرآن الكريم',
-        'academic' => 'القسم الأكاديمي',
-        'courses' => 'قسم الدورات',
-        'features' => 'قسم المميزات',
+        'hero' => 'القسم الرئيسي',
+        'stats' => 'الإحصائيات',
+        'reviews' => 'التقييمات',
+        'quran' => 'القرآن الكريم',
+        'academic' => 'الأكاديمي',
+        'courses' => 'الدورات',
+        'features' => 'المميزات',
+    ];
+
+    $sectionIcons = [
+        'hero' => 'ri-home-line',
+        'stats' => 'ri-bar-chart-line',
+        'reviews' => 'ri-star-line',
+        'quran' => 'ri-book-open-line',
+        'academic' => 'ri-graduation-cap-line',
+        'courses' => 'ri-video-line',
+        'features' => 'ri-lightbulb-line',
     ];
 
     // Get the section value from state
@@ -18,13 +28,12 @@
     }
 
     $displayName = $sectionNames[$sectionValue] ?? $sectionValue;
+    $iconClass = $sectionIcons[$sectionValue] ?? 'ri-layout-line';
 @endphp
 
-<div class="flex items-center gap-2 px-2 py-1 bg-white dark:bg-gray-900 rounded border border-gray-300 dark:border-gray-600">
-    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-    </svg>
-    <span class="text-sm text-gray-600 dark:text-gray-400">{{ $displayName }}</span>
+<div class="flex items-center gap-3 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-800 dark:text-gray-200">
+    <i class="{{ $iconClass }} text-primary-500 dark:text-primary-400"></i>
+    <span class="font-medium">{{ $displayName }}</span>
 </div>
 
 {{-- Hidden input to preserve the value --}}

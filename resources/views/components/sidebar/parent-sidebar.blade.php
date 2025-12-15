@@ -15,7 +15,8 @@
     user-type="parent"
     :display-name="$fullName"
     :role-label="$roleLabel"
-    :gender="$parentGender" />
+    :gender="$parentGender"
+    :profile-route="route('parent.profile', ['subdomain' => $subdomain])" />
 
   <!-- Navigation Menu -->
   <nav id="nav-menu" class="p-4 transition-all duration-300" role="navigation" aria-label="قائمة التنقل">

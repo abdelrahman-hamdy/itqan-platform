@@ -17,16 +17,13 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Models\Academy;
-
 class SupervisorPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
             ->id('supervisor')
-            ->path('/supervisor-panel')
-            ->tenant(Academy::class)
+            ->path('supervisor-panel')
             ->colors([
                 'primary' => Color::Purple,
                 'success' => Color::Green,
@@ -35,9 +32,9 @@ class SupervisorPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(asset('images/favicon.ico'))
+            ->favicon(asset('favicon.ico'))
             ->brandName('لوحة المشرف')
-            ->brandLogo(asset('images/itqan-logo.svg'))
+            ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'purple', 'panelType' => 'supervisor']))
             ->navigationGroups([
                 'الحلقات المراقبة',
                 'مراقبة الدردشة',

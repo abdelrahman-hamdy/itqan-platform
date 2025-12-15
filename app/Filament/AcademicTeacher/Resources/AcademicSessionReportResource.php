@@ -44,8 +44,12 @@ class AcademicSessionReportResource extends Resource
                             ->searchable()
                             ->preload(),
                         Forms\Components\Select::make('student_id')
-                            ->relationship('student', 'name')
                             ->label('الطالب')
+                            ->options(fn () => \App\Models\User::query()
+                                ->where('user_type', 'student')
+                                ->whereNotNull('name')
+                                ->pluck('name', 'id')
+                            )
                             ->required()
                             ->searchable()
                             ->disabled(fn (?AcademicSessionReport $record) => $record !== null),

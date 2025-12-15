@@ -7,7 +7,6 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
     $breadcrumbs = [
-        ['label' => 'الملف الشخصي', 'href' => route('teacher.profile', ['subdomain' => $subdomain])],
         ['label' => 'الدروس الخاصة'],
     ];
 

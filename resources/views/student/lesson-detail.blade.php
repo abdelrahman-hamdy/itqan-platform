@@ -1,40 +1,15 @@
 @extends('components.layouts.student')
 
 @section('content')
-<!-- Enhanced Breadcrumb -->
-<nav class="mb-8">
-    <ol class="flex items-center space-x-2 space-x-reverse text-sm">
-        <li>
-            <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}"
-               class="text-gray-500 hover:text-cyan-500 transition-colors flex items-center">
-                <i class="ri-home-line ml-1"></i>
-                الرئيسية
-            </a>
-        </li>
-        <li class="text-gray-400">
-            <i class="ri-arrow-left-s-line"></i>
-        </li>
-        <li>
-            <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}"
-               class="text-gray-500 hover:text-cyan-500 transition-colors">
-                الدورات المسجلة
-            </a>
-        </li>
-        <li class="text-gray-400">
-            <i class="ri-arrow-left-s-line"></i>
-        </li>
-        <li>
-            <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
-               class="text-gray-500 hover:text-cyan-500 transition-colors">
-                {{ $course->title }}
-            </a>
-        </li>
-        <li class="text-gray-400">
-            <i class="ri-arrow-left-s-line"></i>
-        </li>
-        <li class="text-cyan-500 font-medium">{{ $lesson->title }}</li>
-    </ol>
-</nav>
+<!-- Breadcrumb -->
+<x-ui.breadcrumb
+    :items="[
+        ['label' => 'الدورات المسجلة', 'route' => route('courses.index', ['subdomain' => $academy->subdomain]), 'icon' => 'ri-play-circle-line'],
+        ['label' => $course->title, 'route' => route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]), 'truncate' => true],
+        ['label' => $lesson->title, 'truncate' => true],
+    ]"
+    view-type="student"
+/>
 
 <!-- Content Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

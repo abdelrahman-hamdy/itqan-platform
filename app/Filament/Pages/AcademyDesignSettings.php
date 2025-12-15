@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Academy;
 use App\Services\AcademyContextService;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -71,11 +72,11 @@ class AcademyDesignSettings extends Page implements HasForms
                     ->schema([
                         Repeater::make('sections_order')
                             ->label('')
-                            ->schema([
+                            ->simple(
                                 \Filament\Forms\Components\ViewField::make('section')
-                                    ->label('القسم')
+                                    ->label('')
                                     ->view('filament.forms.components.section-display'),
-                            ])
+                            )
                             ->reorderable()
                             ->deletable(false)
                             ->addable(false)
@@ -109,7 +110,20 @@ class AcademyDesignSettings extends Page implements HasForms
                                 'template_3' => 'القالب الثالث',
                             ])
                             ->default('template_1')
+                            ->live()
                             ->required(),
+
+                        FileUpload::make('hero_image')
+                            ->label('صورة القسم الرئيسي')
+                            ->helperText('هذه الصورة تظهر فقط في القالب الثالث')
+                            ->image()
+                            ->directory('academies/hero-images')
+                            ->visibility('public')
+                            ->imageResizeMode('cover')
+                            ->imageCropAspectRatio('4:3')
+                            ->imageResizeTargetWidth('800')
+                            ->imageResizeTargetHeight('600')
+                            ->visible(fn ($get) => $get('hero_template') === 'template_3'),
 
                         TextInput::make('hero_heading')
                             ->label('عنوان القسم')

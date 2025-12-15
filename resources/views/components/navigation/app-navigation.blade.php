@@ -44,8 +44,22 @@
     ];
   }
 
-  // Teacher navigation items - empty (removed nav links from topbar)
+  // Teacher navigation items - links to Filament dashboard resources
   $teacherNavItems = [];
+
+  if ($user && $user->isQuranTeacher()) {
+    $teacherNavItems = [
+      ['route' => null, 'href' => '/teacher-panel/quran-sessions', 'label' => 'جدول الجلسات', 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/teacher-panel/quran-trial-requests', 'label' => 'الجلسات التجريبية', 'icon' => 'ri-user-add-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/teacher-panel/quran-session-reports', 'label' => 'تقارير الجلسات', 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
+    ];
+  } elseif ($user && $user->isAcademicTeacher()) {
+    $teacherNavItems = [
+      ['route' => null, 'href' => '/academic-teacher-panel/academic-sessions', 'label' => 'جدول الجلسات', 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/academic-teacher-panel/homework-submissions', 'label' => 'الواجبات', 'icon' => 'ri-file-list-3-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/academic-teacher-panel/academic-session-reports', 'label' => 'تقارير الجلسات', 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
+    ];
+  }
 
   // Parent navigation items
   $parentNavItems = [];
@@ -136,12 +150,13 @@
                   break;
                 }
               }
-              $itemRoute = Route::has($item['route']) ? route($item['route'], ['subdomain' => $subdomain]) : '#';
-              $isCourseRoute = $item['route'] === 'courses.index';
-              $isQuranCircleRoute = $item['route'] === 'quran-circles.index';
-              $isQuranTeacherRoute = $item['route'] === 'quran-teachers.index';
-              $isInteractiveCourseRoute = $item['route'] === 'interactive-courses.index';
-              $isAcademicTeacherRoute = $item['route'] === 'academic-teachers.index';
+              // Handle both route-based and href-based items
+              $itemRoute = isset($item['href']) ? $item['href'] : (Route::has($item['route'] ?? '') ? route($item['route'], ['subdomain' => $subdomain]) : '#');
+              $isCourseRoute = ($item['route'] ?? null) === 'courses.index';
+              $isQuranCircleRoute = ($item['route'] ?? null) === 'quran-circles.index';
+              $isQuranTeacherRoute = ($item['route'] ?? null) === 'quran-teachers.index';
+              $isInteractiveCourseRoute = ($item['route'] ?? null) === 'interactive-courses.index';
+              $isAcademicTeacherRoute = ($item['route'] ?? null) === 'academic-teachers.index';
 
               // Determine primary color for each resource
               $activeColorClass = $isCourseRoute ? 'text-cyan-600' :
@@ -481,12 +496,13 @@
                 break;
               }
             }
-            $itemRoute = Route::has($item['route']) ? route($item['route'], ['subdomain' => $subdomain]) : '#';
-            $isCourseRoute = $item['route'] === 'courses.index';
-            $isQuranCircleRoute = $item['route'] === 'quran-circles.index';
-            $isQuranTeacherRoute = $item['route'] === 'quran-teachers.index';
-            $isInteractiveCourseRoute = $item['route'] === 'interactive-courses.index';
-            $isAcademicTeacherRoute = $item['route'] === 'academic-teachers.index';
+            // Handle both route-based and href-based items
+            $itemRoute = isset($item['href']) ? $item['href'] : (Route::has($item['route'] ?? '') ? route($item['route'], ['subdomain' => $subdomain]) : '#');
+            $isCourseRoute = ($item['route'] ?? null) === 'courses.index';
+            $isQuranCircleRoute = ($item['route'] ?? null) === 'quran-circles.index';
+            $isQuranTeacherRoute = ($item['route'] ?? null) === 'quran-teachers.index';
+            $isInteractiveCourseRoute = ($item['route'] ?? null) === 'interactive-courses.index';
+            $isAcademicTeacherRoute = ($item['route'] ?? null) === 'academic-teachers.index';
 
             // Determine icon for nav items
             $navIcon = isset($item['icon']) ? $item['icon'] :

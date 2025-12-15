@@ -1,17 +1,20 @@
+  @php
+      $isTeacher = auth()->check() && (auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher());
+      $viewType = $isTeacher ? 'teacher' : 'student';
+  @endphp
+
   <style>
     [x-cloak] { display: none !important; }
   </style>
 
   <!-- Breadcrumb -->
-  <nav class="mb-4 md:mb-6 overflow-x-auto">
-    <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-500 whitespace-nowrap">
-      <li><a href="{{ route('academy.home', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-gray-900 min-h-[44px] inline-flex items-center">الرئيسية</a></li>
-      <li>/</li>
-      <li><a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-gray-900">المعلمون</a></li>
-      <li>/</li>
-      <li class="text-gray-900 font-medium truncate max-w-[150px] md:max-w-[250px]">{{ $teacher->user->name }}</li>
-    </ol>
-  </nav>
+  <x-ui.breadcrumb
+      :items="[
+          ['label' => 'المعلمون الأكاديميون', 'route' => route('academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
+          ['label' => $teacher->user->name, 'truncate' => true],
+      ]"
+      :view-type="$viewType"
+  />
 
   <!-- Alert Messages -->
   @if (session('success'))
@@ -106,6 +109,7 @@
     </div>
   </div>
 
+  @if(!$isTeacher)
   <!-- Packages Section (Full Width) -->
   @if($packages->count() > 0)
     <div class="mt-6 md:mt-8" x-data="{ pricingPeriod: 'monthly' }">
@@ -146,5 +150,6 @@
         @endforeach
       </div>
     </div>
+  @endif
   @endif
 

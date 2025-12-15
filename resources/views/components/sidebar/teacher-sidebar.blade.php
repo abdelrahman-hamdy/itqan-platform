@@ -17,7 +17,8 @@
     :user-type="$teacherType"
     :display-name="$displayName"
     :role-label="$roleLabel"
-    :gender="$teacherGender" />
+    :gender="$teacherGender"
+    :profile-route="route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])" />
 
   <!-- Navigation Menu -->
   <nav id="nav-menu" class="p-4 transition-all duration-300" role="navigation" aria-label="قائمة التنقل الشخصية">
@@ -52,18 +53,6 @@
             label="الحلقات الجماعية"
             icon="ri-group-line"
             :active="request()->routeIs('teacher.group-circles.*')" />
-
-          <x-sidebar.nav-item
-            href="/teacher-panel/quran-trial-requests"
-            label="طلبات الجلسات التجريبية"
-            icon="ri-user-add-line"
-            :external="true" />
-
-          <x-sidebar.nav-item
-            href="/teacher-panel/quran-sessions"
-            label="جلسات القرآن"
-            icon="ri-time-line"
-            :external="true" />
         @else
           <x-sidebar.nav-item
             :href="route('teacher.academic.lessons.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
@@ -76,18 +65,6 @@
             label="الدورات التفاعلية"
             icon="ri-book-open-line"
             :active="request()->routeIs('teacher.interactive-courses.*')" />
-
-          <x-sidebar.nav-item
-            href="/academic-teacher-panel"
-            label="الجلسات والدروس"
-            icon="ri-time-line"
-            :external="true" />
-
-          <x-sidebar.nav-item
-            href="/academic-teacher-panel/homework-submissions"
-            label="الواجبات والاختبارات"
-            icon="ri-file-list-3-line"
-            :external="true" />
         @endif
       </x-sidebar.nav-section>
 

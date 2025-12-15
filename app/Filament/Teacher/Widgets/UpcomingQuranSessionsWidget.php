@@ -1,17 +1,16 @@
 <?php
 
-namespace App\Filament\AcademicTeacher\Widgets;
+namespace App\Filament\Teacher\Widgets;
 
 use App\Enums\SessionStatus;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
+use Filament\Facades\Filament;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
-class RecentAcademicSessionsWidget extends BaseWidget
+class UpcomingQuranSessionsWidget extends BaseWidget
 {
     // Prevent auto-display on dashboard - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
@@ -28,12 +27,12 @@ class RecentAcademicSessionsWidget extends BaseWidget
     public function table(Table $table): Table
     {
         $user = Auth::user();
-        $teacherProfile = $user->academicTeacherProfile;
+        $teacherProfile = $user->quranTeacherProfile;
 
         return $table
             ->query(
-                AcademicSession::query()
-                    ->where('academic_teacher_id', $teacherProfile?->id ?? 0)
+                QuranSession::query()
+                    ->where('quran_teacher_id', $teacherProfile?->id ?? 0)
                     ->where('scheduled_at', '>=', now())
                     ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING])
                     ->orderBy('scheduled_at', 'asc')
@@ -45,9 +44,21 @@ class RecentAcademicSessionsWidget extends BaseWidget
                     ->placeholder('غير محدد')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('academicIndividualLesson.academicSubject.name')
-                    ->label('المادة')
-                    ->placeholder('غير محدد'),
+                Tables\Columns\TextColumn::make('session_type')
+                    ->label('النوع')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'individual' => 'فردية',
+                        'group' => 'جماعية',
+                        'trial' => 'تجريبية',
+                        default => $state,
+                    })
+                    ->color(fn ($state) => match ($state) {
+                        'individual' => 'primary',
+                        'group' => 'success',
+                        'trial' => 'warning',
+                        default => 'gray',
+                    }),
 
                 Tables\Columns\TextColumn::make('scheduled_at')
                     ->label('الموعد')
@@ -71,8 +82,8 @@ class RecentAcademicSessionsWidget extends BaseWidget
                 Tables\Actions\Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => route('filament.academic-teacher.resources.academic-sessions.view', [
-                        'tenant' => $record->academy?->subdomain ?? 'default',
+                    ->url(fn ($record) => route('filament.teacher.resources.quran-sessions.view', [
+                        'tenant' => Filament::getTenant(),
                         'record' => $record->id,
                     ]))
                     ->color('primary'),

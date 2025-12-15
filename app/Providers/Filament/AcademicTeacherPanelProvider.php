@@ -23,6 +23,15 @@ use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class AcademicTeacherPanelProvider extends PanelProvider
 {
+    protected function getTenantFavicon(): string
+    {
+        $tenant = \Filament\Facades\Filament::getTenant();
+        if ($tenant && $tenant->favicon) {
+            return \Illuminate\Support\Facades\Storage::url($tenant->favicon);
+        }
+        return asset('favicon.ico');
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -38,9 +47,9 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(asset('images/favicon.ico'))
+            ->favicon(fn () => $this->getTenantFavicon())
             ->brandName('لوحة المعلم الأكاديمي')
-            ->brandLogo(asset('images/itqan-logo.svg'))
+            ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'blue', 'panelType' => 'academic-teacher']))
             ->navigationGroups([
                 'لوحة التحكم',
                 'دروسي الفردية',
@@ -61,7 +70,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/AcademicTeacher/Widgets'), for: 'App\\Filament\\AcademicTeacher\\Widgets')
             ->widgets([
-                // Dashboard page controls which widgets to display
+                // Widgets registered for Livewire - Dashboard controls actual display
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -124,6 +133,17 @@ class AcademicTeacherPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::TOPBAR_END,
                 fn (): string => view('filament.academic-teacher.render-hooks.messages-count')->render()
+            )
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
+                fn (): string => view('filament.components.profile-button', [
+                    'profileUrl' => auth()->user()?->academy
+                        ? route('teacher.profile', [
+                            'subdomain' => auth()->user()->academy->subdomain,
+                        ])
+                        : null,
+                    'label' => 'لوحتي الرئيسية',
+                ])->render()
             );
     }
 }

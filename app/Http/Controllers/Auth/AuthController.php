@@ -800,7 +800,10 @@ class AuthController extends Controller
         }
 
         if ($user->isSupervisor()) {
-            return redirect('/supervisor');
+            // Supervisors go to supervisor dashboard
+            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? 'itqan-academy');
+
+            return redirect()->route('supervisor.dashboard', ['subdomain' => $subdomain]);
         }
 
         // Students and parents go to profile page (no dashboard)

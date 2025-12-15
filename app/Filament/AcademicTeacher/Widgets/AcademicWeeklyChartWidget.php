@@ -9,16 +9,16 @@ use Illuminate\Support\Facades\Auth;
 
 class AcademicWeeklyChartWidget extends ChartWidget
 {
-    // Prevent auto-discovery - not needed on main dashboard
+    // Prevent auto-discovery - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
 
-    protected static ?string $heading = 'الجلسات - آخر 7 أيام';
+    protected static ?string $heading = 'نشاط الجلسات - آخر 7 أيام';
 
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 2;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $maxHeight = '250px';
+    protected static ?string $maxHeight = '280px';
 
     protected function getData(): array
     {
@@ -32,9 +32,9 @@ class AcademicWeeklyChartWidget extends ChartWidget
 
         // Get data for the last 7 days
         $labels = [];
-        $academicCompletedData = [];
         $academicScheduledData = [];
         $courseSessionsData = [];
+        $completedData = [];
 
         $daysAr = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
@@ -42,18 +42,11 @@ class AcademicWeeklyChartWidget extends ChartWidget
             $date = now()->subDays($i);
             $labels[] = $daysAr[$date->dayOfWeek];
 
-            // Count completed academic sessions for this day
-            $completedCount = AcademicSession::where('academic_teacher_id', $teacher->id)
-                ->whereDate('scheduled_at', $date)
-                ->where('status', 'completed')
-                ->count();
-            $academicCompletedData[] = $completedCount;
-
-            // Count all scheduled academic sessions for this day
-            $scheduledCount = AcademicSession::where('academic_teacher_id', $teacher->id)
+            // Count all academic sessions for this day
+            $academicCount = AcademicSession::where('academic_teacher_id', $teacher->id)
                 ->whereDate('scheduled_at', $date)
                 ->count();
-            $academicScheduledData[] = $scheduledCount;
+            $academicScheduledData[] = $academicCount;
 
             // Count interactive course sessions for this day
             $courseCount = InteractiveCourseSession::whereHas('course', function ($q) use ($teacher) {
@@ -62,33 +55,54 @@ class AcademicWeeklyChartWidget extends ChartWidget
                 ->whereDate('scheduled_at', $date)
                 ->count();
             $courseSessionsData[] = $courseCount;
+
+            // Count completed sessions (both types) for this day
+            $completedAcademic = AcademicSession::where('academic_teacher_id', $teacher->id)
+                ->whereDate('scheduled_at', $date)
+                ->where('status', 'completed')
+                ->count();
+
+            $completedCourse = InteractiveCourseSession::whereHas('course', function ($q) use ($teacher) {
+                $q->where('assigned_teacher_id', $teacher->id);
+            })
+                ->whereDate('scheduled_at', $date)
+                ->where('status', 'completed')
+                ->count();
+
+            $completedData[] = $completedAcademic + $completedCourse;
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'الجلسات الأكاديمية',
+                    'label' => 'الدروس الفردية',
                     'data' => $academicScheduledData,
-                    'borderColor' => '#6366f1',
-                    'backgroundColor' => 'rgba(99, 102, 241, 0.1)',
+                    'borderColor' => '#3B82F6',
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
+                    'pointBackgroundColor' => '#3B82F6',
+                    'pointBorderColor' => '#3B82F6',
                     'fill' => true,
-                    'tension' => 0.3,
+                    'tension' => 0.4,
                 ],
                 [
                     'label' => 'جلسات الدورات',
                     'data' => $courseSessionsData,
-                    'borderColor' => '#f59e0b',
+                    'borderColor' => '#F59E0B',
                     'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
+                    'pointBackgroundColor' => '#F59E0B',
+                    'pointBorderColor' => '#F59E0B',
                     'fill' => true,
-                    'tension' => 0.3,
+                    'tension' => 0.4,
                 ],
                 [
                     'label' => 'المكتملة',
-                    'data' => $academicCompletedData,
-                    'borderColor' => '#10b981',
+                    'data' => $completedData,
+                    'borderColor' => '#10B981',
                     'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
+                    'pointBackgroundColor' => '#10B981',
+                    'pointBorderColor' => '#10B981',
                     'fill' => true,
-                    'tension' => 0.3,
+                    'tension' => 0.4,
                 ],
             ],
             'labels' => $labels,
@@ -108,17 +122,58 @@ class AcademicWeeklyChartWidget extends ChartWidget
             'plugins' => [
                 'legend' => [
                     'display' => true,
-                    'position' => 'top',
+                    'position' => 'bottom',
                     'rtl' => true,
+                    'labels' => [
+                        'usePointStyle' => true,
+                        'padding' => 20,
+                        'font' => [
+                            'family' => 'Tajawal',
+                            'size' => 12,
+                        ],
+                    ],
+                ],
+                'tooltip' => [
+                    'mode' => 'index',
+                    'intersect' => false,
+                    'rtl' => true,
+                    'bodyFont' => [
+                        'family' => 'Tajawal',
+                    ],
+                    'titleFont' => [
+                        'family' => 'Tajawal',
+                    ],
                 ],
             ],
             'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
+                'x' => [
+                    'grid' => [
+                        'display' => false,
+                    ],
                     'ticks' => [
-                        'stepSize' => 1,
+                        'font' => [
+                            'family' => 'Tajawal',
+                        ],
                     ],
                 ],
+                'y' => [
+                    'beginAtZero' => true,
+                    'grid' => [
+                        'color' => 'rgba(0, 0, 0, 0.05)',
+                    ],
+                    'ticks' => [
+                        'stepSize' => 1,
+                        'precision' => 0,
+                        'font' => [
+                            'family' => 'Tajawal',
+                        ],
+                    ],
+                ],
+            ],
+            'interaction' => [
+                'mode' => 'nearest',
+                'axis' => 'x',
+                'intersect' => false,
             ],
         ];
     }

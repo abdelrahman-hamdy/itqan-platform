@@ -76,11 +76,15 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->dehydrated(),
 
                         Forms\Components\Select::make('student_id')
-                            ->relationship('student', 'id')
-                            ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->first_name ?? '') . ' ' . ($record->last_name ?? '')) ?: $record->name ?? 'طالب #' . $record->id)
                             ->label('الطالب')
+                            ->options(fn () => \App\Models\User::query()
+                                ->where('user_type', 'student')
+                                ->get()
+                                ->mapWithKeys(fn ($user) => [
+                                    $user->id => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id
+                                ])
+                            )
                             ->searchable()
-                            ->preload()
                             ->disabled(fn ($record) => $record !== null)
                             ->dehydrated(),
 
@@ -262,7 +266,11 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
 
                 Tables\Filters\SelectFilter::make('student_id')
                     ->label('الطالب')
-                    ->relationship('student', 'name')
+                    ->options(fn () => \App\Models\User::query()
+                        ->where('user_type', 'student')
+                        ->whereNotNull('name')
+                        ->pluck('name', 'id')
+                    )
                     ->searchable(),
 
                 Tables\Filters\Filter::make('scheduled_today')

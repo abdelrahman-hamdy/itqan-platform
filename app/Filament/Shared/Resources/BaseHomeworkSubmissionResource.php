@@ -146,11 +146,9 @@ abstract class BaseHomeworkSubmissionResource extends Resource
     protected static function getInfoSectionSchema(): array
     {
         $schema = [
-            Forms\Components\Select::make('student_id')
-                ->relationship('student', 'name')
+            Forms\Components\Placeholder::make('student_name')
                 ->label('الطالب')
-                ->disabled()
-                ->dehydrated(false),
+                ->content(fn ($record) => $record?->student?->name ?? '-'),
 
             Forms\Components\TextInput::make('submission_code')
                 ->label('كود التسليم')

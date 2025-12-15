@@ -2,19 +2,20 @@
     :title="($session->title ?? 'جلسة تفاعلية رقم ' . $session->session_number) . ' - ' . config('app.name', 'منصة إتقان')"
     :description="'تفاصيل الجلسة التفاعلية - ' . ($session->course->title ?? 'كورس تفاعلي')">
 
+@php
+    $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+@endphp
+
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-4 md:mb-8 overflow-x-auto">
-        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap min-w-max">
-            <li><a href="{{ route('student.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">الملف الشخصي</a></li>
-            <li>/</li>
-            <li class="hidden sm:inline"><a href="{{ route('interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary">كورساتي التفاعلية</a></li>
-            <li class="hidden sm:inline">/</li>
-            <li class="hidden md:inline"><a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary truncate max-w-[200px]">{{ $session->course->title }}</a></li>
-            <li class="hidden md:inline">/</li>
-            <li class="text-gray-900 font-medium">جلسة رقم {{ $session->session_number }}</li>
-        </ol>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'الكورسات التفاعلية', 'route' => route('interactive-courses.index', ['subdomain' => $subdomain]), 'icon' => 'ri-book-open-line'],
+            ['label' => $session->course->title, 'route' => route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $session->course->id]), 'truncate' => true],
+            ['label' => 'جلسة رقم ' . $session->session_number],
+        ]"
+        view-type="student"
+    />
 
     <div class="space-y-4 md:space-y-6">
         <!-- Session Header -->

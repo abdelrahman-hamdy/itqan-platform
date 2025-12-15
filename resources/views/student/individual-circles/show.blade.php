@@ -4,13 +4,13 @@
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-4 md:mb-8 overflow-x-auto">
-        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
-            <li><a href="{{ route('quran-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">معلمو القرآن</a></li>
-            <li>/</li>
-            <li class="text-gray-900 font-medium truncate max-w-[200px]">{{ $individualCircle->subscription->package->name ?? 'حلقة فردية' }}</li>
-        </ol>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'معلمو القرآن', 'route' => route('quran-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']), 'icon' => 'ri-book-read-line'],
+            ['label' => $individualCircle->subscription->package->name ?? 'حلقة فردية', 'truncate' => true],
+        ]"
+        view-type="student"
+    />
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
         <!-- Main Content -->

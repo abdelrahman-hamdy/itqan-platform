@@ -32,6 +32,15 @@ use App\Filament\Resources\InteractiveCourseResource;
 
 class AcademyPanelProvider extends PanelProvider
 {
+    protected function getTenantFavicon(): string
+    {
+        $tenant = \Filament\Facades\Filament::getTenant();
+        if ($tenant && $tenant->favicon) {
+            return \Illuminate\Support\Facades\Storage::url($tenant->favicon);
+        }
+        return asset('favicon.ico');
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -49,9 +58,9 @@ class AcademyPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(asset('images/favicon.ico'))
+            ->favicon(fn () => $this->getTenantFavicon())
             ->brandName('لوحة إدارة الأكاديمية')
-            ->brandLogo(asset('images/itqan-logo.svg'))
+            ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'blue', 'panelType' => 'academy']))
             ->navigationGroups([
                 'لوحة التحكم',
                 'إدارة المستخدمين',

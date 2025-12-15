@@ -45,7 +45,8 @@ class MonitoredCirclesResource extends BaseSupervisorResource
                             ->disabled(),
 
                         Forms\Components\Select::make('quran_teacher_id')
-                            ->relationship('quranTeacher.user', 'name')
+                            ->relationship('quranTeacher', 'id')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?? $record->full_name ?? 'غير محدد')
                             ->label('المعلم')
                             ->disabled(),
 
@@ -128,10 +129,9 @@ class MonitoredCirclesResource extends BaseSupervisorResource
                     ->sortable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('quranTeacher.user.name')
+                Tables\Columns\TextColumn::make('teacher_name')
                     ->label('المعلم')
-                    ->searchable()
-                    ->sortable(),
+                    ->state(fn ($record) => $record->quranTeacher?->user?->name ?? 'غير محدد'),
 
                 Tables\Columns\BadgeColumn::make('circle_type')
                     ->label('النوع')
@@ -219,7 +219,8 @@ class MonitoredCirclesResource extends BaseSupervisorResource
 
                 Tables\Filters\SelectFilter::make('quran_teacher_id')
                     ->label('المعلم')
-                    ->relationship('quranTeacher.user', 'name')
+                    ->relationship('quranTeacher', 'id')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?? $record->full_name ?? 'غير محدد')
                     ->searchable()
                     ->preload(),
 

@@ -4,24 +4,13 @@
 
 <div class="p-4 md:p-6">
     <!-- Breadcrumbs -->
-    <nav class="mb-4 md:mb-6 overflow-x-auto" aria-label="Breadcrumb">
-        <ol class="flex items-center gap-2 text-xs md:text-sm whitespace-nowrap">
-            <li class="inline-flex items-center">
-                <a href="{{ route('teacher.dashboard', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="min-h-[44px] inline-flex items-center font-medium text-gray-700 hover:text-blue-600">
-                    <i class="ri-home-line ml-1.5"></i>
-                    الرئيسية
-                </a>
-            </li>
-            <li>/</li>
-            <li>
-                <a href="{{ route('teacher.students', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="min-h-[44px] inline-flex items-center font-medium text-gray-700 hover:text-blue-600">الطلاب</a>
-            </li>
-            <li>/</li>
-            <li aria-current="page">
-                <span class="font-medium text-gray-500 truncate max-w-[100px] md:max-w-none">{{ $student->name }}</span>
-            </li>
-        </ol>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'الطلاب', 'route' => route('teacher.students', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
+            ['label' => $student->name, 'truncate' => true],
+        ]"
+        view-type="teacher"
+    />
 
     <!-- Student Header -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">

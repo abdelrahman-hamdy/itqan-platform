@@ -16,7 +16,8 @@
     user-type="student"
     :display-name="$fullName"
     :role-label="$roleLabel"
-    :gender="$studentGender" />
+    :gender="$studentGender"
+    :profile-route="$user ? route('student.profile', ['subdomain' => $user->academy->subdomain ?? 'itqan-academy']) : '#'" />
 
   <!-- Navigation Menu -->
   <nav id="nav-menu" class="p-4 transition-all duration-300" role="navigation" aria-label="قائمة التنقل الشخصية">

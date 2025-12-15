@@ -1,24 +1,17 @@
+@php
+    $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+@endphp
+
 <x-layouts.student-layout>
     {{-- Breadcrumb Navigation --}}
-    <nav class="mb-6 text-sm breadcrumbs">
-        <ul class="flex items-center space-x-2 text-gray-600">
-            <li>
-                <a href="{{ route('interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary-600 transition">
-                    <i class="ri-book-2-line"></i> My Courses
-                </a>
-            </li>
-            <li class="text-gray-400">/</li>
-            <li>
-                <a href="{{ route('interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $session->course->id]) }}" class="hover:text-primary-600 transition">
-                    {{ $session->course->title }}
-                </a>
-            </li>
-            <li class="text-gray-400">/</li>
-            <li class="text-gray-900 font-medium">
-                Session {{ $session->session_number }}
-            </li>
-        </ul>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'الكورسات التفاعلية', 'route' => route('interactive-courses.index', ['subdomain' => $subdomain]), 'icon' => 'ri-book-open-line'],
+            ['label' => $session->course->title, 'route' => route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $session->course->id]), 'truncate' => true],
+            ['label' => 'جلسة رقم ' . $session->session_number, 'truncate' => true],
+        ]"
+        view-type="student"
+    />
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Main Content --}}

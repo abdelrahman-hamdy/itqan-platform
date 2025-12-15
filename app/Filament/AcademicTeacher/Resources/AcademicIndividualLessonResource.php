@@ -50,9 +50,14 @@ class AcademicIndividualLessonResource extends Resource
 
                         Forms\Components\Select::make('student_id')
                             ->label('الطالب')
-                            ->relationship('student', 'first_name')
+                            ->options(fn () => \App\Models\User::query()
+                                ->where('user_type', 'student')
+                                ->get()
+                                ->mapWithKeys(fn ($user) => [
+                                    $user->id => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id
+                                ])
+                            )
                             ->searchable()
-                            ->preload()
                             ->required(),
 
                         Forms\Components\Select::make('academic_subject_id')

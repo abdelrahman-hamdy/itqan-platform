@@ -66,7 +66,8 @@ class MonitoredSessionsResource extends BaseSupervisorResource
                 Forms\Components\Section::make('المعلم والحلقة')
                     ->schema([
                         Forms\Components\Select::make('quran_teacher_id')
-                            ->relationship('quranTeacher.user', 'name')
+                            ->relationship('quranTeacher', 'id')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?? $record->full_name ?? 'غير محدد')
                             ->label('المعلم')
                             ->disabled(),
 
@@ -136,10 +137,9 @@ class MonitoredSessionsResource extends BaseSupervisorResource
                     ->searchable()
                     ->limit(25),
 
-                TextColumn::make('quranTeacher.user.name')
+                TextColumn::make('teacher_name')
                     ->label('المعلم')
-                    ->searchable()
-                    ->sortable(),
+                    ->state(fn ($record) => $record->quranTeacher?->user?->name ?? 'غير محدد'),
 
                 TextColumn::make('circle.name_ar')
                     ->label('الحلقة')
@@ -221,7 +221,8 @@ class MonitoredSessionsResource extends BaseSupervisorResource
 
                 Tables\Filters\SelectFilter::make('quran_teacher_id')
                     ->label('المعلم')
-                    ->relationship('quranTeacher.user', 'name')
+                    ->relationship('quranTeacher', 'id')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?? $record->full_name ?? 'غير محدد')
                     ->searchable()
                     ->preload(),
 

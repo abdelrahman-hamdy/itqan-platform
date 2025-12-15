@@ -1,18 +1,23 @@
+@php
+    $isTeacher = auth()->check() && (auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher());
+    $viewType = $isTeacher ? 'teacher' : 'student';
+@endphp
+
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-4 md:mb-8 overflow-x-auto">
-        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
-            <li><a href="{{ route('quran-circles.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">حلقات القرآن الجماعية</a></li>
-            <li>/</li>
-            <li class="text-gray-900 font-medium truncate max-w-[200px]">{{ $circle->name }}</li>
-        </ol>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'حلقات القرآن', 'route' => route('quran-circles.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
+            ['label' => $circle->name, 'truncate' => true],
+        ]"
+        :view-type="$viewType"
+    />
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8" data-sticky-container>
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-4 md:space-y-6">
             <!-- Circle Header -->
-            <x-circle.circle-header :circle="$circle" type="group" view-type="student" />
+            <x-circle.circle-header :circle="$circle" type="group" :view-type="$viewType" />
 
             @if($isEnrolled)
                 @php
@@ -49,7 +54,7 @@
                         <x-tabs.panel id="sessions">
                             <x-sessions.sessions-list
                                 :sessions="$allCircleSessions"
-                                view-type="student"
+                                :view-type="$viewType"
                                 :show-tabs="false"
                                 :circle="$circle"
                                 empty-message="لا توجد جلسات مجدولة بعد" />
@@ -113,8 +118,9 @@
         <div class="lg:col-span-1" data-sticky-sidebar>
             <div class="space-y-4 md:space-y-6">
                 <!-- Circle Info Sidebar -->
-                <x-circle.info-sidebar :circle="$circle" view-type="student" />
+                <x-circle.info-sidebar :circle="$circle" :view-type="$viewType" />
 
+                @if(!$isTeacher)
                 <!-- Quick Actions (only for enrolled students) -->
                 @if($isEnrolled)
                 <x-circle.quick-actions :circle="$circle" type="group" view-type="student" :isEnrolled="$isEnrolled" :canEnroll="$canEnroll" />
@@ -149,6 +155,7 @@
                         :subscription="$subscription"
                         view-type="student"
                     />
+                @endif
                 @endif
             </div>
         </div>

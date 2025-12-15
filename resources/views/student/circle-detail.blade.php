@@ -12,6 +12,13 @@
     <x-layouts.parent-layout :title="$circle->name . ' - ' . ($academy->name ?? 'منصة إتقان')">
         @include('student.partials.circle-detail-content')
     </x-layouts.parent-layout>
+  @elseif(auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher())
+    {{-- Show teacher layout for teachers --}}
+    <x-layouts.teacher
+        :title="$circle->name . ' - ' . ($academy->name ?? 'منصة إتقان')"
+        :description="'تفاصيل حلقة القرآن: ' . $circle->name">
+        @include('student.partials.circle-detail-content')
+    </x-layouts.teacher>
   @else
     {{-- Show student layout for students --}}
     <x-layouts.student

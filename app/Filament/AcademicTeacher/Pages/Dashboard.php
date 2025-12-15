@@ -2,8 +2,10 @@
 
 namespace App\Filament\AcademicTeacher\Pages;
 
-use App\Filament\AcademicTeacher\Widgets\AcademicQuickActionsWidget;
 use App\Filament\AcademicTeacher\Widgets\AcademicTeacherOverviewWidget;
+use App\Filament\AcademicTeacher\Widgets\PendingHomeworkWidget;
+use App\Filament\AcademicTeacher\Widgets\RecentAcademicSessionsWidget;
+use App\Filament\AcademicTeacher\Widgets\StudentPerformanceChartWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,20 +29,29 @@ class Dashboard extends BaseDashboard
 
     public function getColumns(): int|string|array
     {
-        return 1;
+        return 2;
     }
 
-    protected function getHeaderWidgets(): array
+    // Return only the widgets we want - override parent to prevent auto-discovered widgets
+    public function getWidgets(): array
     {
         return [
             AcademicTeacherOverviewWidget::class,
+            RecentAcademicSessionsWidget::class,
+            PendingHomeworkWidget::class,
+            StudentPerformanceChartWidget::class,
         ];
     }
 
+    // Empty header - all widgets go through getWidgets()
+    protected function getHeaderWidgets(): array
+    {
+        return [];
+    }
+
+    // Empty footer - all widgets go through getWidgets()
     protected function getFooterWidgets(): array
     {
-        return [
-            AcademicQuickActionsWidget::class,
-        ];
+        return [];
     }
 }

@@ -54,8 +54,12 @@ class InteractiveSessionReportResource extends Resource
                                 $record->course?->name . ' - ' . $record->scheduled_date?->format('Y-m-d')
                             ),
                         Forms\Components\Select::make('student_id')
-                            ->relationship('student', 'name')
                             ->label('الطالب')
+                            ->options(fn () => \App\Models\User::query()
+                                ->where('user_type', 'student')
+                                ->whereNotNull('name')
+                                ->pluck('name', 'id')
+                            )
                             ->required()
                             ->searchable()
                             ->disabled(fn (?InteractiveSessionReport $record) => $record !== null),

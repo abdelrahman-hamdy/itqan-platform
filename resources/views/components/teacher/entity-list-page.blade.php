@@ -59,20 +59,17 @@
 <div>
     <!-- Breadcrumbs -->
     @if(count($breadcrumbs) > 0)
-        <nav class="mb-4 md:mb-6 overflow-x-auto">
-            <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
-                @foreach($breadcrumbs as $index => $crumb)
-                    @if($index > 0)
-                        <li>/</li>
-                    @endif
-                    @if(isset($crumb['href']))
-                        <li><a href="{{ $crumb['href'] }}" class="min-h-[44px] inline-flex items-center hover:{{ $colorConfig['text'] }} transition-colors">{{ $crumb['label'] }}</a></li>
-                    @else
-                        <li class="text-gray-900 font-medium truncate max-w-[150px] md:max-w-none">{{ $crumb['label'] }}</li>
-                    @endif
-                @endforeach
-            </ol>
-        </nav>
+        @php
+            // Convert href to route for unified component compatibility
+            $unifiedBreadcrumbs = collect($breadcrumbs)->map(function($crumb) {
+                if (isset($crumb['href'])) {
+                    $crumb['route'] = $crumb['href'];
+                    unset($crumb['href']);
+                }
+                return $crumb;
+            })->toArray();
+        @endphp
+        <x-ui.breadcrumb :items="$unifiedBreadcrumbs" view-type="teacher" />
     @endif
 
     <!-- Page Header -->

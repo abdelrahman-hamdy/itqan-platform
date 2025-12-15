@@ -31,12 +31,13 @@ class AdminPanelProvider extends PanelProvider
             ->authGuard('web')
             ->authPasswordBroker('users')
             ->brandName('منصة إتقان - لوحة التحكم')
+            ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'amber', 'panelType' => 'admin']))
             ->colors([
                 'primary' => Color::Amber,
                 'gray' => Color::Slate,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(asset('images/favicon.ico'))
+            ->favicon(asset('favicon.ico'))
             ->resources($this->getResources())
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

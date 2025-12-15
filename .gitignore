@@ -1,47 +1,149 @@
-*.log
-.DS_Store
+# ================================================
+# Laravel Production .gitignore
+# ================================================
+
+# ----------------
+# Environment & Secrets
+# ----------------
 .env
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
-/node_modules
-/public/build
+.env.staging
+.env.local
+.env.*.local
+auth.json
+*.key
+
+# ----------------
+# Dependencies
+# ----------------
+/vendor/
+/node_modules/
+
+# ----------------
+# Build Artifacts
+# ----------------
+/public/build/
 /public/hot
 /public/storage
+
+# ----------------
+# Laravel Cache & Storage
+# ----------------
 /storage/*.key
 /storage/pail
-/vendor
-Homestead.json
-Homestead.yaml
-Thumbs.db
+/storage/debugbar/
+/storage/clockwork/
+/storage/logs/*.log
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/bootstrap/cache/*.php
 
+# ----------------
+# IDE & Editor Files
+# ----------------
+/.fleet/
+/.idea/
+/.nova/
+/.vscode/
+/.zed/
+/.cursor/
+/.claude/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# ----------------
+# Testing & Development
+# ----------------
+/.phpunit.cache/
+/.phpunit.result.cache
+.phpactor.json
+coverage/
+.nyc_output/
+phpunit.xml
+.pest/
+
+# ----------------
+# OS Generated Files
+# ----------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ----------------
 # Logs
-logs
+# ----------------
+*.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 dev-debug.log
-# Dependency directories
-node_modules/
-# Environment variables
-# Editor directories and files
-.idea
-.vscode
+pnpm-debug.log*
+lerna-debug.log*
+
+# ----------------
+# Homestead & Sail
+# ----------------
+Homestead.json
+Homestead.yaml
+docker-compose.override.yml
+
+# ----------------
+# Development Documentation (Not needed in production)
+# ----------------
+/docs/development-notes/
+/docs/archive/
+/.taskmaster/
+/.plan/
+
+# ----------------
+# Development Scripts (Not needed in production)
+# ----------------
+/scripts/dev/
+/scripts/chat/
+/scripts/livekit/
+/scripts/maintenance/
+/scripts/ngrok/
+
+# ----------------
+# SSL Certificates (Local dev only)
+# ----------------
+/ssl-certs/
+/livekit-config/
+
+# ----------------
+# Certificates (Generated, not source controlled)
+# ----------------
+/certificates/
+
+# ----------------
+# IDE Testing
+# ----------------
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-# OS specific
 
-# Task files
-# tasks.json
-# tasks/ 
+# ----------------
+# Temporary Files
+# ----------------
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ----------------
+# Flutter/Mobile (If separate project)
+# ----------------
+/itqan/

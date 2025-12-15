@@ -36,8 +36,8 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
         static::created(function ($user) {
             // Automatically create profile based on user_type
-            // Skip teachers as they are handled manually during registration
-            if ($user->user_type && $user->academy_id && ! in_array($user->user_type, ['quran_teacher', 'academic_teacher'])) {
+            // Skip teachers and supervisors as they are handled manually during registration
+            if ($user->user_type && $user->academy_id && ! in_array($user->user_type, ['quran_teacher', 'academic_teacher', 'supervisor'])) {
                 $user->createProfile();
             }
         });
@@ -87,6 +87,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
      */
     protected $fillable = [
         'academy_id',
+        // 'name' is a generated column (computed from first_name + last_name) - do not include
         'first_name',
         'last_name',
         'email',

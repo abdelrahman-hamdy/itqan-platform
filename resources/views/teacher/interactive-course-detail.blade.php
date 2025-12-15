@@ -3,13 +3,13 @@
   description="إدارة الكورس التفاعلي {{ $course->title }} - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
 
   <!-- Breadcrumb -->
-  <nav class="mb-4 md:mb-6 overflow-x-auto">
-    <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-500 whitespace-nowrap">
-      <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="min-h-[44px] inline-flex items-center hover:text-blue-600 transition-colors">الملف الشخصي</a></li>
-      <li>/</li>
-      <li class="text-gray-900 font-medium truncate max-w-[150px] md:max-w-none">{{ $course->title }}</li>
-    </ol>
-  </nav>
+  <x-ui.breadcrumb
+      :items="[
+          ['label' => 'الدورات التفاعلية', 'route' => route('teacher.interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
+          ['label' => $course->title, 'truncate' => true],
+      ]"
+      view-type="teacher"
+  />
 
   <!-- Success Messages -->
   @if (session('success'))

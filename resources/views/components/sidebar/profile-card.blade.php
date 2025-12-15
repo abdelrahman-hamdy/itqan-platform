@@ -1,14 +1,17 @@
 @props([
     'user',
-    'userType', // 'student', 'quran_teacher', 'academic_teacher'
+    'userType', // 'student', 'quran_teacher', 'academic_teacher', 'parent'
     'displayName',
     'roleLabel',
     'gender' => 'male',
     'phone' => null,
+    'profileRoute' => null, // Route to navigate when clicking on profile
 ])
 
 <!-- Profile Section -->
-<div id="profile-section" class="p-6 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100/50 transition-all duration-300">
+<a href="{{ $profileRoute ?? '#' }}"
+   id="profile-section"
+   class="block p-6 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100/50 transition-all duration-300 {{ $profileRoute ? 'hover:bg-gray-100/80 cursor-pointer' : '' }}">
   <div id="profile-content" class="flex flex-col items-center text-center mb-4 transition-all duration-300">
     <x-avatar
       :user="$user"
@@ -40,4 +43,4 @@
       <span class="truncate">{{ $user?->email ?? 'غير محدد' }}</span>
     </div>
   </div>
-</div>
+</a>

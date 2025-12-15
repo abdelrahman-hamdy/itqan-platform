@@ -144,6 +144,13 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         })->name('academy.admin.dashboard');
     });
 
+    // Supervisor routes (dashboard access)
+    Route::middleware(['auth', 'role:supervisor'])->prefix('supervisor')->group(function () {
+        Route::get('/', function () {
+            return redirect('/supervisor-panel');
+        })->name('supervisor.dashboard');
+    });
+
     // Teacher routes (profile-based with dashboard access)
     Route::middleware(['auth', 'role:teacher,quran_teacher,academic_teacher'])->prefix('teacher')->group(function () {
         // Main teacher route with smart dashboard redirect
@@ -206,10 +213,4 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         });
     });
 
-    // Supervisor routes (dashboard access)
-    Route::middleware(['auth', 'role:supervisor'])->group(function () {
-        Route::get('/supervisor', function () {
-            return redirect('/supervisor/dashboard');
-        })->name('supervisor.dashboard');
-    });
 });

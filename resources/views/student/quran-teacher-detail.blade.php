@@ -12,6 +12,13 @@
     <x-layouts.parent-layout title="معلم القرآن الكريم - {{ $teacher->user->name }}">
       @include('student.partials.quran-teacher-detail-content')
     </x-layouts.parent-layout>
+  @elseif(auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher())
+    {{-- Show teacher layout for teachers --}}
+    <x-layouts.teacher
+      title="معلم القرآن الكريم - {{ $teacher->user->name }}"
+      description="تعلم القرآن الكريم مع الأستاذ {{ $teacher->user->name }} - معلم مؤهل ومعتمد في {{ $academy->name ?? 'أكاديمية إتقان' }}">
+      @include('student.partials.quran-teacher-detail-content')
+    </x-layouts.teacher>
   @else
     {{-- Show student layout for students --}}
     <x-layouts.student

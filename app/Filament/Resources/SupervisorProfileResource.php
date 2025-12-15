@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
+use App\Models\Academy;
 
 class SupervisorProfileResource extends BaseResource
 {
@@ -20,7 +21,7 @@ class SupervisorProfileResource extends BaseResource
 
     protected static ?string $model = SupervisorProfile::class;
     
-    protected static ?string $tenantOwnershipRelationshipName = 'user';
+    protected static ?string $tenantOwnershipRelationshipName = 'academy';
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
@@ -36,7 +37,7 @@ class SupervisorProfileResource extends BaseResource
 
     protected static function getAcademyRelationshipPath(): string
     {
-        return 'user.academy'; // SupervisorProfile -> User -> Academy
+        return 'academy'; // SupervisorProfile -> Academy (direct relationship)
     }
 
     // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
@@ -47,13 +48,42 @@ class SupervisorProfileResource extends BaseResource
             ->schema([
                 Forms\Components\Section::make('المعلومات الأساسية')
                     ->schema([
+                        // Academy selection field for super admin when in global view or creating new records
+                        Forms\Components\Select::make('academy_id')
+                            ->label('الأكاديمية')
+                            ->options(Academy::active()->pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->default(fn () => AcademyContextService::getCurrentAcademy()?->id)
+                            ->visible(function () {
+                                $user = auth()->user();
+                                return $user && $user->isSuperAdmin() && !AcademyContextService::getCurrentAcademy();
+                            })
+                            ->dehydrated(true) // CRITICAL: Always include in form data even when hidden
+                            ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المشرف'),
+
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('email')
                                     ->label('البريد الإلكتروني')
                                     ->email()
                                     ->required()
-                                    ->unique(ignoreRecord: true)
+                                    ->unique(table: SupervisorProfile::class, ignoreRecord: true)
+                                    ->rules([
+                                        function (?SupervisorProfile $record) {
+                                            return function (string $attribute, $value, \Closure $fail) use ($record) {
+                                                // Check if email exists in users table (excluding the linked user)
+                                                $query = \App\Models\User::where('email', $value);
+                                                if ($record && $record->user_id) {
+                                                    $query->where('id', '!=', $record->user_id);
+                                                }
+                                                if ($query->exists()) {
+                                                    $fail('البريد الإلكتروني مستخدم بالفعل في حساب مستخدم آخر.');
+                                                }
+                                            };
+                                        },
+                                    ])
                                     ->maxLength(255)
                                     ->helperText('سيستخدم المشرف هذا البريد للدخول إلى المنصة'),
                                 Forms\Components\TextInput::make('first_name')
@@ -70,6 +100,30 @@ class SupervisorProfileResource extends BaseResource
                                     ->required()
                                     ->maxLength(255),
                             ]),
+
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('password')
+                                    ->label('كلمة المرور')
+                                    ->password()
+                                    ->revealable()
+                                    ->dehydrated(fn ($state) => filled($state))
+                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->minLength(8)
+                                    ->maxLength(255)
+                                    ->helperText('سيتم إنشاء حساب تلقائياً للمشرف باستخدام هذه الكلمة. الحد الأدنى 8 أحرف.')
+                                    ->visible(fn ($record) => !$record || !$record->user_id),
+                                Forms\Components\TextInput::make('password_confirmation')
+                                    ->label('تأكيد كلمة المرور')
+                                    ->password()
+                                    ->revealable()
+                                    ->dehydrated(false)
+                                    ->required(fn (string $context, $get): bool => $context === 'create' && filled($get('password')))
+                                    ->same('password')
+                                    ->maxLength(255)
+                                    ->visible(fn ($record) => !$record || !$record->user_id),
+                            ]),
+
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
                             ->image()

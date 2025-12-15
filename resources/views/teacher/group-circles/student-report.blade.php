@@ -4,17 +4,14 @@
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-4 md:mb-8 overflow-x-auto">
-        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
-            <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="min-h-[44px] inline-flex items-center hover:text-primary">{{ auth()->user()->name }}</a></li>
-            <li>/</li>
-            <li><a href="{{ route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="min-h-[44px] inline-flex items-center hover:text-primary">الحلقات الجماعية</a></li>
-            <li>/</li>
-            <li><a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" class="min-h-[44px] inline-flex items-center hover:text-primary truncate max-w-[80px] md:max-w-none">{{ $circle->name }}</a></li>
-            <li>/</li>
-            <li class="text-gray-900 font-medium truncate max-w-[100px] md:max-w-none">تقرير {{ $student->name }}</li>
-        </ol>
-    </nav>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'الحلقات الجماعية', 'route' => route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
+            ['label' => $circle->name, 'route' => route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]), 'truncate' => true],
+            ['label' => 'تقرير ' . $student->name, 'truncate' => true],
+        ]"
+        view-type="teacher"
+    />
 
     <!-- Header -->
     <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">

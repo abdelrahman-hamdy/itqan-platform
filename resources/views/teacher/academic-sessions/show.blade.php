@@ -4,15 +4,17 @@
 
 <div>
     <!-- Breadcrumb -->
-    <nav class="mb-4 md:mb-8 overflow-x-auto">
-        <ol class="flex items-center gap-2 text-xs md:text-sm text-gray-600 whitespace-nowrap">
-            <li><a href="{{ route('teacher.profile', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">الصفحة الرئيسية</a></li>
-            <li>/</li>
-            <li><a href="{{ route('teacher.academic-sessions.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="hover:text-primary min-h-[44px] inline-flex items-center">الجلسات الأكاديمية</a></li>
-            <li>/</li>
-            <li class="text-gray-900 truncate max-w-[150px] md:max-w-none">{{ $session->title ?? 'جلسة أكاديمية' }}</li>
-        </ol>
-    </nav>
+    @php
+        $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+        $breadcrumbItems = [
+            ['label' => 'الدروس الخاصة', 'route' => route('teacher.academic.lessons.index', ['subdomain' => $subdomain])],
+        ];
+        if($session->academicSubscription) {
+            $breadcrumbItems[] = ['label' => $session->academicSubscription->student->name ?? 'الطالب', 'route' => route('teacher.academic.lessons.show', ['subdomain' => $subdomain, 'subscription' => $session->academicSubscription->id]), 'truncate' => true];
+        }
+        $breadcrumbItems[] = ['label' => $session->title ?? 'جلسة أكاديمية', 'truncate' => true];
+    @endphp
+    <x-ui.breadcrumb :items="$breadcrumbItems" view-type="teacher" />
 
     <div class="space-y-4 md:space-y-6">
         <!-- Session Header -->
