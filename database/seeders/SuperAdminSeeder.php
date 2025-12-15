@@ -27,8 +27,9 @@ class SuperAdminSeeder extends Seeder
         User::where('email', 'abdelrahmanhamdy320@gmail.com')->forceDelete();
 
         // Create super admin using DB insert to bypass model restrictions
+        // Super admin has NO academy_id - they manage the whole platform
         \DB::table('users')->insert([
-            'academy_id' => $academy->id,
+            'academy_id' => null,
             'first_name' => 'Abdelrahman',
             'last_name' => 'Hamdy',
             'email' => 'abdelrahmanhamdy320@gmail.com',
@@ -39,7 +40,7 @@ class SuperAdminSeeder extends Seeder
             'email_verified_at' => now(),
             'status' => 'active',
             'active_status' => 1,
-            'user_type' => 'admin',
+            'user_type' => 'super_admin',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
