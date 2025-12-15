@@ -31,7 +31,6 @@ class SuperAdminSeeder extends Seeder
             'academy_id' => $academy->id,
             'first_name' => 'Abdelrahman',
             'last_name' => 'Hamdy',
-            'name' => 'Abdelrahman Hamdy',
             'email' => 'abdelrahmanhamdy320@gmail.com',
             'password' => Hash::make('Admin@Dev98'),
             'gender' => 'male',
