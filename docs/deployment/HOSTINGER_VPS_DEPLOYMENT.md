@@ -116,8 +116,8 @@ mysql -u root -p
 
 ```sql
 CREATE DATABASE itqan_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'itqan_user'@'localhost' IDENTIFIED BY 'YOUR_STRONG_PASSWORD';
-GRANT ALL PRIVILEGES ON itqan_platform.* TO 'itqan_user'@'localhost';
+CREATE USER 'itqan_user'@'localhost' IDENTIFIED BY 'ItqanDatabaseAdmin@2025';
+GRANT ALL PRIVILEGES ON itqan_platform.* TO 'admin'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -136,31 +136,33 @@ systemctl enable redis
 
 ### 2.4 Install Nginx
 ```bash
-apt install -y nginx
-systemctl enable nginx
+sudo apt install -y nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
 ```
 
 ### 2.5 Install Node.js 20
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
 ```
 
 ### 2.6 Install Composer
 ```bash
 curl -sS https://getcomposer.org/installer | php
-mv composer.phar /usr/local/bin/composer
+sudo mv composer.phar /usr/local/bin/composer
 ```
 
 ### 2.7 Install Supervisor
 ```bash
-apt install -y supervisor
-systemctl enable supervisor
+sudo apt install -y supervisor
+sudo systemctl enable supervisor
+sudo systemctl start supervisor
 ```
 
 ### 2.8 Install Certbot (SSL)
 ```bash
-apt install -y certbot python3-certbot-nginx
+sudo apt install -y certbot python3-certbot-nginx
 ```
 
 ---
@@ -169,14 +171,14 @@ apt install -y certbot python3-certbot-nginx
 
 ### 3.1 Create Nginx Configuration
 ```bash
-nano /etc/nginx/sites-available/itqan-platform
+sudo nano /etc/nginx/sites-available/itqan-platform
 ```
 
 ```nginx
 server {
     listen 80;
     listen [::]:80;
-    server_name yourdomain.com *.yourdomain.com;
+    server_name itqanway.com *.itqanway.com;
     root /var/www/itqan-platform/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
@@ -242,10 +244,10 @@ server {
 
 ### 3.2 Enable Site
 ```bash
-ln -s /etc/nginx/sites-available/itqan-platform /etc/nginx/sites-enabled/
-rm /etc/nginx/sites-enabled/default  # Remove default site
-nginx -t
-systemctl reload nginx
+sudo ln -s /etc/nginx/sites-available/itqan-platform /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default  # Remove default site
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
 ---
@@ -254,9 +256,9 @@ systemctl reload nginx
 
 ### 4.1 Create Directory Structure
 ```bash
-mkdir -p /var/www/itqan-platform
-chown -R deploy:www-data /var/www/itqan-platform
-chmod -R 775 /var/www/itqan-platform
+sudo mkdir -p /var/www/itqan-platform
+sudo chown -R deploy:www-data /var/www/itqan-platform
+sudo chmod -R 775 /var/www/itqan-platform
 ```
 
 ### 4.2 Clone Repository
@@ -289,7 +291,7 @@ APP_ENV=production
 APP_KEY=
 APP_DEBUG=false
 APP_TIMEZONE=Asia/Riyadh
-APP_URL=https://yourdomain.com
+APP_URL=https://itqanway.com
 APP_LOCALE=ar
 APP_FALLBACK_LOCALE=en
 
@@ -319,7 +321,7 @@ BROADCAST_CONNECTION=reverb
 REVERB_APP_ID=itqan-platform
 REVERB_APP_KEY=your-reverb-app-key
 REVERB_APP_SECRET=your-reverb-app-secret
-REVERB_HOST=yourdomain.com
+REVERB_HOST=itqanway.com
 REVERB_PORT=443
 REVERB_SCHEME=https
 
@@ -335,10 +337,10 @@ FILESYSTEM_DISK=local
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.hostinger.com
 MAIL_PORT=465
-MAIL_USERNAME=your-email@yourdomain.com
+MAIL_USERNAME=noreply@itqanway.com
 MAIL_PASSWORD=your-email-password
 MAIL_ENCRYPTION=ssl
-MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_ADDRESS=noreply@itqanway.com
 MAIL_FROM_NAME="${APP_NAME}"
 
 # LiveKit (if using video meetings)
@@ -354,10 +356,9 @@ php artisan key:generate
 
 ### 4.6 Set Permissions
 ```bash
-# As root or with sudo
-chown -R deploy:www-data /var/www/itqan-platform
-chmod -R 775 /var/www/itqan-platform/storage
-chmod -R 775 /var/www/itqan-platform/bootstrap/cache
+sudo chown -R deploy:www-data /var/www/itqan-platform
+sudo chmod -R 775 /var/www/itqan-platform/storage
+sudo chmod -R 775 /var/www/itqan-platform/bootstrap/cache
 
 # Create storage link
 php artisan storage:link
@@ -394,7 +395,7 @@ php artisan tinker
 ```php
 $user = \App\Models\User::create([
     'name' => 'Admin',
-    'email' => 'admin@yourdomain.com',
+    'email' => 'admin@itqanway.com',
     'password' => bcrypt('your-secure-password'),
     'role' => 'super_admin',
 ]);
@@ -408,7 +409,7 @@ Supervisor manages Laravel queue workers and Reverb WebSocket server.
 
 ### 6.1 Create Queue Worker Configuration
 ```bash
-nano /etc/supervisor/conf.d/itqan-worker.conf
+sudo nano /etc/supervisor/conf.d/itqan-worker.conf
 ```
 
 ```ini
@@ -428,7 +429,7 @@ stopwaitsecs=3600
 
 ### 6.2 Create Reverb Configuration
 ```bash
-nano /etc/supervisor/conf.d/itqan-reverb.conf
+sudo nano /etc/supervisor/conf.d/itqan-reverb.conf
 ```
 
 ```ini
@@ -445,9 +446,9 @@ stdout_logfile=/var/www/itqan-platform/storage/logs/reverb.log
 
 ### 6.3 Start Supervisor
 ```bash
-supervisorctl reread
-supervisorctl update
-supervisorctl start all
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start all
 ```
 
 ---
@@ -456,12 +457,12 @@ supervisorctl start all
 
 ### 7.1 Obtain SSL Certificate
 ```bash
-certbot --nginx -d yourdomain.com -d www.yourdomain.com
+sudo certbot --nginx -d itqanway.com -d www.itqanway.com
 ```
 
 ### 7.2 Auto-Renewal Test
 ```bash
-certbot renew --dry-run
+sudo certbot renew --dry-run
 ```
 
 ---
@@ -500,7 +501,7 @@ See [docs/deployment/LIVEKIT_RECORDINGS_SETUP.md](LIVEKIT_RECORDINGS_SETUP.md)
 ### 10.1 Verify Application
 ```bash
 # Test site access
-curl -I https://yourdomain.com
+curl -I https://itqanway.com
 
 # Check logs
 tail -f /var/www/itqan-platform/storage/logs/laravel.log
@@ -509,7 +510,7 @@ tail -f /var/www/itqan-platform/storage/logs/laravel.log
 ### 10.2 Setup Monitoring (Optional)
 ```bash
 # Install htop for basic monitoring
-apt install -y htop
+sudo apt install -y htop
 
 # View system resources
 htop
@@ -594,26 +595,26 @@ chmod +x /home/deploy/deploy.sh
 **1. 502 Bad Gateway**
 ```bash
 # Check PHP-FPM status
-systemctl status php8.2-fpm
-systemctl restart php8.2-fpm
+sudo systemctl status php8.2-fpm
+sudo systemctl restart php8.2-fpm
 ```
 
 **2. Permission Denied**
 ```bash
-chown -R deploy:www-data /var/www/itqan-platform
-chmod -R 775 /var/www/itqan-platform/storage
+sudo chown -R deploy:www-data /var/www/itqan-platform
+sudo chmod -R 775 /var/www/itqan-platform/storage
 ```
 
 **3. Queue Not Processing**
 ```bash
-supervisorctl status
-supervisorctl restart itqan-worker:*
+sudo supervisorctl status
+sudo supervisorctl restart itqan-worker:*
 ```
 
 **4. WebSocket Connection Failed**
 ```bash
 # Check Reverb status
-supervisorctl status itqan-reverb
+sudo supervisorctl status itqan-reverb
 
 # Check logs
 tail -f /var/www/itqan-platform/storage/logs/reverb.log
@@ -630,8 +631,8 @@ cat /var/www/itqan-platform/.env | grep DB_
 
 **6. SSL Certificate Issues**
 ```bash
-certbot certificates
-certbot renew --force-renewal
+sudo certbot certificates
+sudo certbot renew --force-renewal
 ```
 
 ### Useful Commands
@@ -644,14 +645,14 @@ php artisan optimize:clear
 tail -f /var/www/itqan-platform/storage/logs/laravel.log
 
 # Check Nginx error log
-tail -f /var/log/nginx/error.log
+sudo tail -f /var/log/nginx/error.log
 
 # Check supervisor logs
-tail -f /var/log/supervisor/supervisord.log
+sudo tail -f /var/log/supervisor/supervisord.log
 
 # Restart all services
-systemctl restart nginx php8.2-fpm redis mysql
-supervisorctl restart all
+sudo systemctl restart nginx php8.2-fpm redis mysql
+sudo supervisorctl restart all
 ```
 
 ---

@@ -1,2 +1,0 @@
-devkey: devsecret
-APIqA5G9frJqZNd: 5yJ5TGwzv8vXfEVkaHDf3ZDcqymDCe8Hw7oGsBXfsusD
