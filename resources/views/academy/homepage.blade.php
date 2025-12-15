@@ -32,7 +32,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.16"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&family=Cairo:wght@300;400;500;700&family=Pacifico&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
   <script>
     tailwind.config = {
@@ -42,6 +42,10 @@
             primary: "{{ $academy->brand_color->getHexValue(500) ?? '#4169E1' }}",
             gradientFrom: "{{ $gradientFromHex }}",
             gradientTo: "{{ $gradientToHex }}",
+          },
+          fontFamily: {
+            sans: ['Tajawal', 'Cairo', 'sans-serif'],
+            arabic: ['Tajawal', 'Cairo', 'sans-serif'],
           },
           borderRadius: {
             none: "0px",
@@ -60,6 +64,11 @@
     };
   </script>
   <style>
+    /* Force Tajawal font on all elements */
+    body, html, * {
+      font-family: 'Tajawal', 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
+
     :where([class^="ri-"])::before {
       content: "\f3c2";
     }
