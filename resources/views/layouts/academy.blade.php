@@ -31,6 +31,11 @@
             --academy-primary: {{ $academy->brand_color ?? '#0ea5e9' }};
             --academy-secondary: {{ $academy->secondary_color ?? '#10b981' }};
         }
+
+        /* Force Tajawal font on all elements */
+        body, html, * {
+            font-family: 'Tajawal', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
         
         .academy-primary {
             color: var(--academy-primary);
