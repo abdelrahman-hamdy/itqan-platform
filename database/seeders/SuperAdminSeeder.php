@@ -38,6 +38,7 @@ class SuperAdminSeeder extends Seeder
             'phone_country_code' => '+966',
             'email_verified_at' => now(),
             'status' => 'active',
+            'active_status' => 1,
             'user_type' => 'admin',
             'created_at' => now(),
             'updated_at' => now(),
