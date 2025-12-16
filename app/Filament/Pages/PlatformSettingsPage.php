@@ -13,7 +13,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Illuminate\Support\Facades\Auth;
+use App\Services\AcademyContextService;
 
 class PlatformSettingsPage extends Page implements HasForms
 {
@@ -27,7 +27,7 @@ class PlatformSettingsPage extends Page implements HasForms
 
     protected static ?string $title = 'إعدادات المنصة';
 
-    protected static ?string $navigationGroup = 'الإعدادات';
+    protected static ?string $navigationGroup = 'إدارة النظام';
 
     protected static ?int $navigationSort = 0;
 
@@ -35,8 +35,7 @@ class PlatformSettingsPage extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        $user = Auth::user();
-        return $user && $user->isSuperAdmin();
+        return AcademyContextService::isSuperAdmin();
     }
 
     public function mount(): void
