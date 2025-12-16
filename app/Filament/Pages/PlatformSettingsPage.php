@@ -7,6 +7,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -127,15 +128,32 @@ class PlatformSettingsPage extends Page implements HasForms
                             ->schema([
                                 Grid::make(3)
                                     ->schema([
-                                        TextInput::make('icon')
-                                            ->label('الأيقونة')
-                                            ->placeholder('ri-facebook-fill')
-                                            ->helperText('استخدم أيقونات Remix Icon مثل: ri-facebook-fill, ri-twitter-x-fill, ri-instagram-fill, ri-whatsapp-fill, ri-youtube-fill, ri-linkedin-fill, ri-tiktok-fill')
+                                        Select::make('icon')
+                                            ->label('المنصة')
+                                            ->options([
+                                                'ri-facebook-fill' => 'فيسبوك',
+                                                'ri-twitter-x-fill' => 'إكس (تويتر)',
+                                                'ri-instagram-fill' => 'انستغرام',
+                                                'ri-whatsapp-fill' => 'واتساب',
+                                                'ri-youtube-fill' => 'يوتيوب',
+                                                'ri-linkedin-fill' => 'لينكد إن',
+                                                'ri-tiktok-fill' => 'تيك توك',
+                                                'ri-telegram-fill' => 'تيليجرام',
+                                                'ri-snapchat-fill' => 'سناب شات',
+                                                'ri-threads-fill' => 'ثريدز',
+                                                'ri-pinterest-fill' => 'بنترست',
+                                                'ri-discord-fill' => 'ديسكورد',
+                                                'ri-github-fill' => 'جيت هب',
+                                                'ri-mail-fill' => 'البريد الإلكتروني',
+                                                'ri-phone-fill' => 'الهاتف',
+                                                'ri-global-fill' => 'الموقع الإلكتروني',
+                                            ])
+                                            ->searchable()
                                             ->required(),
 
                                         TextInput::make('name')
-                                            ->label('الاسم')
-                                            ->placeholder('فيسبوك')
+                                            ->label('الاسم المعروض')
+                                            ->placeholder('مثال: صفحتنا على فيسبوك')
                                             ->required(),
 
                                         TextInput::make('url')
