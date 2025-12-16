@@ -25,7 +25,6 @@ class AcademicPackage extends Model
         'yearly_price',
         'currency',
         'features',
-        'max_students_per_session',
         'is_active',
         'sort_order',
         'created_by',
@@ -39,7 +38,6 @@ class AcademicPackage extends Model
         'quarterly_price' => 'decimal:2',
         'yearly_price' => 'decimal:2',
         'features' => 'array',
-        'max_students_per_session' => 'integer',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
@@ -48,7 +46,6 @@ class AcademicPackage extends Model
         'currency' => 'SAR',
         'session_duration_minutes' => 60,
         'sessions_per_month' => 8,
-        'max_students_per_session' => 1,
         'is_active' => true,
         'sort_order' => 0,
     ];

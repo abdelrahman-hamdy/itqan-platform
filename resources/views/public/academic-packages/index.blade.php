@@ -141,12 +141,6 @@
                     <i class="ri-time-line text-blue-500 ml-2"></i>
                     <span>{{ $package->session_duration_minutes }} دقيقة لكل جلسة</span>
                   </div>
-                  @if($package->max_students_per_session > 1)
-                    <div class="flex items-center text-sm">
-                      <i class="ri-group-line text-purple-500 ml-2"></i>
-                      <span>حتى {{ $package->max_students_per_session }} طلاب</span>
-                    </div>
-                  @endif
                   @if($package->features)
                     @foreach($package->features as $feature)
                       <div class="flex items-center text-sm">

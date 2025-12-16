@@ -84,17 +84,6 @@ class AcademicPackageResource extends BaseResource
                                     ->default(60)
                                     ->required(),
                             ]),
-                        
-                        Forms\Components\Grid::make(1)
-                            ->schema([
-                                Forms\Components\TextInput::make('max_students_per_session')
-                                    ->label('عدد الطلاب الأقصى في الحصة')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(10)
-                                    ->default(1)
-                                    ->helperText('الحد الأقصى لعدد الطلاب في كل حصة'),
-                            ]),
                     ]),
 
                 Forms\Components\Section::make('الأسعار')
@@ -192,12 +181,6 @@ class AcademicPackageResource extends BaseResource
                     ->sortable()
                     ->alignEnd(),
 
-                Tables\Columns\TextColumn::make('max_students_per_session')
-                    ->label('عدد الطلاب الأقصى')
-                    ->sortable()
-                    ->alignCenter()
-                    ->toggleable(),
-
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('الحالة')
                     ->boolean()
@@ -268,7 +251,7 @@ class AcademicPackageResource extends BaseResource
 
                 Components\Section::make('تفاصيل الحصص')
                     ->schema([
-                        Components\Grid::make(3)
+                        Components\Grid::make(2)
                             ->schema([
                                 Components\TextEntry::make('sessions_per_month')
                                     ->label('عدد الحصص في الشهر'),
@@ -276,9 +259,6 @@ class AcademicPackageResource extends BaseResource
                                 Components\TextEntry::make('session_duration_minutes')
                                     ->label('مدة الحصة')
                                     ->formatStateUsing(fn (string $state): string => $state . ' دقيقة'),
-
-                                Components\TextEntry::make('max_students_per_session')
-                                    ->label('عدد الطلاب الأقصى'),
                             ]),
                     ]),
 
