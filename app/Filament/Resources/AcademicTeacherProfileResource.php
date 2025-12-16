@@ -359,9 +359,23 @@ class AcademicTeacherProfileResource extends BaseResource
                 Forms\Components\Section::make('الحالة')
                     ->schema([
                         Forms\Components\Toggle::make('is_active')
-                            ->label('حالة النشاط')
+                            ->label('نشط')
+                            ->default(true)
                             ->helperText('تفعيل أو إلغاء تفعيل المدرس'),
-                        
+                        Forms\Components\Select::make('approval_status')
+                            ->label('حالة الموافقة')
+                            ->options([
+                                'pending' => 'قيد الانتظار',
+                                'approved' => 'موافق عليه',
+                                'rejected' => 'مرفوض',
+                            ])
+                            ->default('pending')
+                            ->required()
+                            ->helperText('يجب أن يكون المدرس موافق عليه ونشط ليظهر للطلاب'),
+                        Forms\Components\DateTimePicker::make('approved_at')
+                            ->label('تاريخ الموافقة')
+                            ->disabled()
+                            ->visible(fn ($record) => $record && $record->approval_status === 'approved'),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات إدارية')
                             ->maxLength(1000)
@@ -413,13 +427,34 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                Tables\Columns\IconColumn::make('is_active')
+                Tables\Columns\BadgeColumn::make('is_active')
                     ->label('نشط')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'نشط' : 'غير نشط')
+                    ->colors([
+                        'success' => true,
+                        'gray' => false,
+                    ]),
+
+                Tables\Columns\BadgeColumn::make('approval_status')
+                    ->label('حالة الموافقة')
+                    ->formatStateUsing(fn (?string $state): string => match($state) {
+                        'approved' => 'موافق عليه',
+                        'pending' => 'قيد الانتظار',
+                        'rejected' => 'مرفوض',
+                        default => 'قيد الانتظار'
+                    })
+                    ->colors([
+                        'success' => 'approved',
+                        'warning' => 'pending',
+                        'danger' => 'rejected',
+                    ])
+                    ->icon(fn (?string $state): string => match($state) {
+                        'approved' => 'heroicon-o-check-circle',
+                        'pending' => 'heroicon-o-clock',
+                        'rejected' => 'heroicon-o-x-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    }),
+
                 Tables\Columns\TextColumn::make('teaching_experience_years')
                     ->label('سنوات الخبرة')
                     ->sortable(),
@@ -434,13 +469,13 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->options(Academy::where('is_active', true)->pluck('name', 'id'))
                     ->searchable(),
 
-                // Tables\Filters\SelectFilter::make('approval_status')
-                //     ->label('حالة الموافقة')
-                //     ->options([
-                //         'pending' => 'في الانتظار',
-                //         'approved' => 'معتمد',
-                //         'rejected' => 'مرفوض',
-                //     ]),
+                Tables\Filters\SelectFilter::make('approval_status')
+                    ->label('حالة الموافقة')
+                    ->options([
+                        'pending' => 'قيد الانتظار',
+                        'approved' => 'موافق عليه',
+                        'rejected' => 'مرفوض',
+                    ]),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('نشط'),
                 Tables\Filters\TernaryFilter::make('user_id')
@@ -450,6 +485,26 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->falseLabel('غير مربوط'),
             ])
             ->actions([
+                Tables\Actions\Action::make('approve')
+                    ->label('موافقة')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->approval_status !== 'approved')
+                    ->requiresConfirmation()
+                    ->modalHeading('الموافقة على المدرس')
+                    ->modalDescription('هل أنت متأكد من الموافقة على هذا المدرس؟')
+                    ->action(function ($record) {
+                        $record->update([
+                            'approval_status' => 'approved',
+                            'approved_by' => auth()->user()->id,
+                            'approved_at' => now(),
+                        ]);
+                        Notification::make()
+                            ->title('تمت الموافقة على المدرس بنجاح')
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\Action::make('activate')
                     ->label('تفعيل')
                     ->icon('heroicon-o-check-circle')
@@ -457,7 +512,7 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->visible(fn ($record) => !$record->is_active)
                     ->requiresConfirmation()
                     ->modalHeading('تفعيل المدرس')
-                    ->modalDescription('هل أنت متأكد من تفعيل هذا المدرس؟ سيتم تفعيل حسابه.')
+                    ->modalDescription('هل أنت متأكد من تفعيل هذا المدرس؟ سيتم تفعيل حسابه والموافقة عليه.')
                     ->action(function ($record) {
                         $record->activate(auth()->user()->id);
                         Notification::make()

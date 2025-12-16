@@ -44,7 +44,9 @@ class AcademicTeacherProfile extends Model
         'available_time_end',
         'session_price_individual',
         'languages',
-        // 'approval_status',   // ← REMOVED - using is_active only
+        'approval_status',    // Required for admin approval workflow
+        'approved_by',
+        'approved_at',
         'is_active',          // ← PRIMARY ACTIVATION FIELD
         'notes',
         'bio_arabic',
@@ -337,6 +339,9 @@ class AcademicTeacherProfile extends Model
     {
         $this->update([
             'is_active' => true,
+            'approval_status' => 'approved',  // Also approve when activating
+            'approved_by' => $activatedBy,
+            'approved_at' => now(),
         ]);
 
         // Also activate the related User account
