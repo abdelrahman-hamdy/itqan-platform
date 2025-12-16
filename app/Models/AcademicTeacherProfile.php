@@ -31,7 +31,6 @@ class AcademicTeacherProfile extends Model
         'teacher_code',
         'education_level',
         'university',
-        'qualification_degree',
         'teaching_experience_years',
         'certifications',
         'subject_ids',         // ← SINGLE SOURCE OF TRUTH

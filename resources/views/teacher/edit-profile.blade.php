@@ -79,28 +79,23 @@
           <!-- Education Level (Academic Teacher) -->
           @if($isAcademicTeacher)
             <x-profile.select-input
-                label="المستوى التعليمي"
+                label="المؤهل التعليمي"
                 name="education_level"
                 :value="$teacherProfile->education_level ?? 'bachelor'"
                 :options="[
                     'diploma' => 'دبلوم',
                     'bachelor' => 'بكالوريوس',
                     'master' => 'ماجستير',
-                    'phd' => 'دكتوراه'
+                    'phd' => 'دكتوراه',
+                    'other' => 'أخرى'
                 ]"
-                placeholder="اختر المستوى التعليمي" />
+                placeholder="اختر المؤهل التعليمي" />
 
             <!-- University -->
             <x-profile.text-input
                 label="الجامعة"
                 name="university"
                 :value="$teacherProfile->university ?? ''" />
-
-            <!-- Qualification Degree -->
-            <x-profile.text-input
-                label="المؤهل التعليمي"
-                name="qualification_degree"
-                :value="$teacherProfile->qualification_degree ?? ''" />
           @endif
 
           <!-- Teaching Experience Years -->

@@ -149,10 +149,9 @@ class AcademicTeacherController extends Controller
                 'user_id' => 'required|exists:users,id|unique:academic_teachers,user_id',
                 'academy_id' => 'required|exists:academies,id',
                 'teacher_code' => 'nullable|string|max:50|unique:academic_teachers,teacher_code',
-                'education_level' => 'required|string|in:bachelor,master,phd,diploma,other',
+                'education_level' => 'required|string|in:diploma,bachelor,master,phd,other',
                 'university' => 'required|string|max:255',
                 'graduation_year' => 'required|integer|min:1950|max:' . (date('Y') + 1),
-                'qualification_degree' => 'required|string|max:255',
                 'teaching_experience_years' => 'required|integer|min:0|max:50',
                 'certifications' => 'nullable|array',
                 'certifications.*' => 'string|max:255',
@@ -248,10 +247,9 @@ class AcademicTeacherController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'teacher_code' => 'nullable|string|max:50|unique:academic_teachers,teacher_code,' . $id,
-                'education_level' => 'sometimes|string|in:bachelor,master,phd,diploma,other',
+                'education_level' => 'sometimes|string|in:diploma,bachelor,master,phd,other',
                 'university' => 'sometimes|string|max:255',
                 'graduation_year' => 'sometimes|integer|min:1950|max:' . (date('Y') + 1),
-                'qualification_degree' => 'sometimes|string|max:255',
                 'teaching_experience_years' => 'sometimes|integer|min:0|max:50',
                 'certifications' => 'nullable|array',
                 'certifications.*' => 'string|max:255',

@@ -126,6 +126,7 @@ class AdminPanelProvider extends PanelProvider
             \App\Filament\Resources\AcademicSubjectResource::class,
             \App\Filament\Resources\RecordedCourseResource::class,
             \App\Filament\Resources\AcademicPackageResource::class,
+            \App\Filament\Resources\AcademicSubscriptionResource::class,
 
             // المالية - Financial Management
             \App\Filament\Resources\PaymentResource::class,

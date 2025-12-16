@@ -46,21 +46,18 @@
   @endif
 
   <!-- Degree/Education Level -->
-  @if($teacher->education_level ?? $teacher->qualification_degree)
+  @if($teacher->education_level)
     <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
       <i class="ri-graduation-cap-line text-green-500"></i>
       <span>
-        @if($teacher->education_level)
-          {{ match($teacher->education_level) {
-              'diploma' => 'دبلوم',
-              'bachelor' => 'بكالوريوس', 
-              'master' => 'ماجستير',
-              'phd' => 'دكتوراه',
-              default => $teacher->education_level
-          } }}
-        @else
-          {{ $teacher->qualification_degree }}
-        @endif
+        {{ match($teacher->education_level) {
+            'diploma' => 'دبلوم',
+            'bachelor' => 'بكالوريوس',
+            'master' => 'ماجستير',
+            'phd' => 'دكتوراه',
+            'other' => 'أخرى',
+            default => $teacher->education_level
+        } }}
         @if($teacher->university)
           - {{ $teacher->university }}
         @endif

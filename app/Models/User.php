@@ -401,7 +401,6 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             case 'academic_teacher':
                 AcademicTeacherProfile::create(array_merge($profileDataWithAcademy, [
                     'education_level' => 'bachelor',
-                    'qualification_degree' => 'بكالوريوس في التربية',
                     'teaching_experience_years' => 1,
                     'session_price_individual' => 60,
                     'approval_status' => 'pending',

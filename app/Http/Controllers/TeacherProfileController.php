@@ -321,9 +321,8 @@ class TeacherProfileController extends Controller
 
         // Add Academic teacher specific fields
         if ($user->isAcademicTeacher()) {
-            $rules['education_level'] = 'nullable|string|in:diploma,bachelor,master,phd';
+            $rules['education_level'] = 'nullable|string|in:diploma,bachelor,master,phd,other';
             $rules['university'] = 'nullable|string|max:255';
-            $rules['qualification_degree'] = 'nullable|string|max:255';
         }
 
         $validated = $request->validate($rules);

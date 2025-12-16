@@ -203,19 +203,21 @@
   <!-- Languages -->
   @if($teacher->languages && is_array($teacher->languages) && count($teacher->languages) > 0)
   <div class="mb-6">
-    <p class="text-xs font-medium text-gray-500 mb-2">اللغات</p>
-    <div class="flex flex-wrap gap-1.5">
-      @foreach(array_slice($teacher->languages, 0, 3) as $lang)
-      <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
-        <i class="ri-global-line ml-1"></i>
-        {{ $lang }}
-      </span>
-      @endforeach
-      @if(count($teacher->languages) > 3)
-      <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-        +{{ count($teacher->languages) - 3 }}
-      </span>
-      @endif
+    <div class="flex items-center gap-2">
+      <span class="text-xs font-medium text-gray-500">اللغات:</span>
+      <div class="flex flex-wrap gap-1.5">
+        @foreach(array_slice($teacher->languages, 0, 3) as $lang)
+        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
+          <i class="ri-global-line ml-1"></i>
+          {{ $lang }}
+        </span>
+        @endforeach
+        @if(count($teacher->languages) > 3)
+        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+          +{{ count($teacher->languages) - 3 }}
+        </span>
+        @endif
+      </div>
     </div>
   </div>
   @endif

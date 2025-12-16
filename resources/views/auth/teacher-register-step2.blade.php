@@ -79,9 +79,9 @@
                 <h3 class="text-lg font-semibold text-gray-900">المعلومات المهنية</h3>
             </div>
 
-            <!-- Qualification Degree -->
+            <!-- Education Level / Qualification -->
             <div class="mb-4" x-data="{ focused: false }">
-                <label for="qualification_degree" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="education_level" class="block text-sm font-medium text-gray-700 mb-2">
                     المؤهل التعليمي
                     <span class="text-red-500">*</span>
                 </label>
@@ -91,24 +91,25 @@
                         <i class="ri-medal-line text-lg transition-smooth"></i>
                     </div>
                     <select
-                        id="qualification_degree"
-                        name="qualification_degree"
+                        id="education_level"
+                        name="education_level"
                         required
                         @focus="focused = true"
                         @blur="focused = false"
-                        class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('qualification_degree') border-red-500 ring-2 ring-red-200 @enderror"
+                        class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('education_level') border-red-500 ring-2 ring-red-200 @enderror"
                     >
                         <option value="">اختر المؤهل التعليمي</option>
-                        <option value="bachelor" {{ old('qualification_degree') == 'bachelor' ? 'selected' : '' }}>بكالوريوس</option>
-                        <option value="master" {{ old('qualification_degree') == 'master' ? 'selected' : '' }}>ماجستير</option>
-                        <option value="phd" {{ old('qualification_degree') == 'phd' ? 'selected' : '' }}>دكتوراه</option>
-                        <option value="other" {{ old('qualification_degree') == 'other' ? 'selected' : '' }}>أخرى</option>
+                        <option value="diploma" {{ old('education_level') == 'diploma' ? 'selected' : '' }}>دبلوم</option>
+                        <option value="bachelor" {{ old('education_level') == 'bachelor' ? 'selected' : '' }}>بكالوريوس</option>
+                        <option value="master" {{ old('education_level') == 'master' ? 'selected' : '' }}>ماجستير</option>
+                        <option value="phd" {{ old('education_level') == 'phd' ? 'selected' : '' }}>دكتوراه</option>
+                        <option value="other" {{ old('education_level') == 'other' ? 'selected' : '' }}>أخرى</option>
                     </select>
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="ri-arrow-down-s-line text-gray-400"></i>
                     </div>
                 </div>
-                @error('qualification_degree')
+                @error('education_level')
                     <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
                         <i class="ri-error-warning-line ml-1"></i>
                         {{ $message }}

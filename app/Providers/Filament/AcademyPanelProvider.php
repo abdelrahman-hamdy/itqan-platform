@@ -86,6 +86,7 @@ class AcademyPanelProvider extends PanelProvider
                 
                 // إدارة التعليم الأكاديمي
                 InteractiveCourseResource::class,
+                \App\Filament\Resources\AcademicSubscriptionResource::class,
 
                 // إدارة الدورات المسجلة
                 RecordedCourseResource::class,

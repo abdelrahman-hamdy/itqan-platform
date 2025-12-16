@@ -132,20 +132,18 @@ class AcademicTeacherProfileResource extends BaseResource
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\Select::make('education_level')
-                                    ->label('المستوى التعليمي')
+                                    ->label('المؤهل التعليمي')
                                     ->options([
                                         'diploma' => 'دبلوم',
                                         'bachelor' => 'بكالوريوس',
                                         'master' => 'ماجستير',
                                         'phd' => 'دكتوراه',
+                                        'other' => 'أخرى',
                                     ])
                                     ->default('bachelor')
                                     ->required(),
                                 Forms\Components\TextInput::make('university')
                                     ->label('الجامعة')
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('qualification_degree')
-                                    ->label('المؤهل التعليمي')
                                     ->maxLength(255),
                             ]),
                         Forms\Components\TextInput::make('teaching_experience_years')
