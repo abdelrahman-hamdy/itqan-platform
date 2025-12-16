@@ -3,6 +3,9 @@
 @section('title', 'اتصل بنا - منصة إتقان')
 
 @section('content')
+    @php
+        $platformSettings = \App\Models\PlatformSettings::instance();
+    @endphp
     <!-- Hero Section -->
     <div data-hero class="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 py-20 pt-40" style="min-height: 70vh;">
         <!-- Background Pattern Layer -->
@@ -25,8 +28,8 @@
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <!-- Animated Label -->
             <div class="mb-8" data-aos="fade-up">
-                <span class="inline-flex items-center gap-3 px-6 py-3 bg-white/10 text-blue-100 rounded-full text-sm font-semibold border border-blue-300/30 backdrop-blur-sm">
-                    <i class="ri-phone-line text-lg"></i>
+                <span class="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-white/10 text-blue-100 rounded-full text-xs md:text-sm font-semibold border border-blue-300/30 backdrop-blur-sm">
+                    <i class="ri-phone-line text-base md:text-lg"></i>
                     تواصل معنا
                 </span>
             </div>
@@ -82,8 +85,7 @@
                             </div>
                             <div class="min-w-0">
                                 <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">البريد الإلكتروني</h3>
-                                <p class="text-sm md:text-base text-gray-600 break-all">info@itqan.com</p>
-                                <p class="text-sm md:text-base text-gray-600 break-all">support@itqan.com</p>
+                                <p class="text-sm md:text-base text-gray-600 break-all">{{ $platformSettings->email ?? 'info@itqan.com' }}</p>
                             </div>
                         </div>
 
@@ -93,8 +95,7 @@
                             </div>
                             <div class="min-w-0">
                                 <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">الهاتف</h3>
-                                <p class="text-sm md:text-base text-gray-600">+966 50 123 4567</p>
-                                <p class="text-sm md:text-base text-gray-600">+966 11 234 5678</p>
+                                <p class="text-sm md:text-base text-gray-600" dir="ltr">{{ $platformSettings->phone ?? '+966 50 123 4567' }}</p>
                             </div>
                         </div>
 
@@ -104,8 +105,7 @@
                             </div>
                             <div class="min-w-0">
                                 <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">العنوان</h3>
-                                <p class="text-sm md:text-base text-gray-600">الرياض، المملكة العربية السعودية</p>
-                                <p class="text-sm md:text-base text-gray-600">برج المملكة، الطابق 15</p>
+                                <p class="text-sm md:text-base text-gray-600">{{ $platformSettings->address ?? 'الرياض، المملكة العربية السعودية' }}</p>
                             </div>
                         </div>
 
@@ -115,28 +115,25 @@
                             </div>
                             <div class="min-w-0">
                                 <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">ساعات العمل</h3>
-                                <p class="text-sm md:text-base text-gray-600">الأحد - الخميس: 8:00 ص - 6:00 م</p>
-                                <p class="text-sm md:text-base text-gray-600">الجمعة - السبت: 9:00 ص - 2:00 م</p>
+                                <p class="text-sm md:text-base text-gray-600">{{ $platformSettings->working_hours ?? 'الأحد - الخميس: 9:00 ص - 6:00 م' }}</p>
                             </div>
                         </div>
                     </div>
 
+                    @if($platformSettings->social_links && count($platformSettings->social_links) > 0)
                     <div class="mt-8 md:mt-12">
                         <h3 class="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">تابعنا على وسائل التواصل الاجتماعي</h3>
                         <div class="flex gap-3 md:gap-4">
-                            <a href="#" class="min-h-[44px] min-w-[44px] w-11 h-11 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors">
-                                <i class="ri-twitter-x-line text-lg md:text-xl text-blue-600"></i>
+                            @foreach($platformSettings->social_links as $link)
+                            <a href="{{ $link['url'] ?? '#' }}" target="_blank" rel="noopener noreferrer" class="min-h-[44px] min-w-[44px] w-11 h-11 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors" title="{{ $link['name'] ?? '' }}">
+                                <i class="{{ $link['icon'] ?? 'ri-link' }} text-lg md:text-xl text-blue-600"></i>
                             </a>
-                            <a href="#" class="min-h-[44px] min-w-[44px] w-11 h-11 md:w-12 md:h-12 bg-indigo-100 rounded-lg flex items-center justify-center hover:bg-indigo-200 transition-colors">
-                                <i class="ri-facebook-line text-lg md:text-xl text-indigo-600"></i>
-                            </a>
-                            <a href="#" class="min-h-[44px] min-w-[44px] w-11 h-11 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center hover:bg-purple-200 transition-colors">
-                                <i class="ri-linkedin-line text-lg md:text-xl text-purple-600"></i>
-                            </a>
+                            @endforeach
                         </div>
                     </div>
+                    @endif
                 </div>
-                
+
                 <div class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 rounded-xl md:rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-200 shadow-xl" data-aos="fade-left">
                     <h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">
                         <span class="flex items-center gap-2 md:gap-3">
