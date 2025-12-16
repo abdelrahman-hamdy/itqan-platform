@@ -101,10 +101,16 @@
             </div>
           </div>
         </div>
+        @else
+        <!-- Desktop Login Button (Non-Authenticated Users) -->
+        <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="hidden md:flex items-center h-20 px-4 text-primary hover:text-primary/80 hover:bg-primary/5 transition-colors duration-200 font-medium" aria-label="تسجيل الدخول">
+          <i class="ri-login-box-line ml-2"></i>
+          تسجيل الدخول
+        </a>
         @endauth
 
-        <!-- Menu Button -->
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="focus:ring-custom p-2" aria-label="فتح القائمة" :aria-expanded="mobileMenuOpen">
+        <!-- Mobile Menu Button (Mobile Only) -->
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden focus:ring-custom p-2" aria-label="فتح القائمة" :aria-expanded="mobileMenuOpen">
           <div class="w-6 h-6 flex items-center justify-center">
             <i :class="mobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'" class="text-xl"></i>
           </div>
