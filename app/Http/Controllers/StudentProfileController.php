@@ -2199,8 +2199,9 @@ class StudentProfileController extends Controller
             // Set experience years
             $teacher->experience_years = $teacher->teaching_experience_years;
 
-            // Set qualification
-            $teacher->qualification = $teacher->qualification_degree ?? $teacher->education_level;
+            // Set qualification label from education_level
+            $educationLabels = ['diploma' => 'دبلوم', 'bachelor' => 'بكالوريوس', 'master' => 'ماجستير', 'phd' => 'دكتوراه', 'other' => 'أخرى'];
+            $teacher->qualification = $educationLabels[$teacher->education_level] ?? $teacher->education_level;
 
             // Calculate minimum price from available packages
             if ($allPackages->count() > 0) {

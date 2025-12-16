@@ -31,6 +31,8 @@ class AcademicTeacherProfileResource extends BaseResource
 
     protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
 
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $modelLabel = 'مدرس أكاديمي';
 
     protected static ?string $pluralModelLabel = 'المدرسين الأكاديميين';

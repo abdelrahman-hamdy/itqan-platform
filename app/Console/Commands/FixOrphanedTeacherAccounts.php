@@ -84,7 +84,6 @@ class FixOrphanedTeacherAccounts extends Command
                             'last_name' => $user->last_name,
                             'phone' => $user->phone,
                             'education_level' => 'bachelor',
-                            'qualification_degree' => 'بكالوريوس',
                             'teaching_experience_years' => 1,
                             'subject_ids' => json_encode([]), // Empty subjects
                             'grade_level_ids' => json_encode([]), // Empty grade levels

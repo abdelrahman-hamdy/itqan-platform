@@ -239,7 +239,6 @@ class TeacherController extends Controller
                 'bio' => $teacher->bio_arabic,
                 'bio_en' => $teacher->bio_english,
                 'education_level' => $teacher->education_level,
-                'qualification_degree' => $teacher->qualification_degree,
                 'university' => $teacher->university,
                 'teaching_experience_years' => $teacher->teaching_experience_years,
                 'certifications' => $teacher->certifications ?? [],

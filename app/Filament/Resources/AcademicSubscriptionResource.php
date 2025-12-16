@@ -27,10 +27,10 @@ class AcademicSubscriptionResource extends Resource
     protected static ?string $modelLabel = 'اشتراك أكاديمي';
     
     protected static ?string $pluralModelLabel = 'الاشتراكات الأكاديمية';
-    
-    protected static ?string $navigationGroup = 'الإدارة الأكاديمية';
-    
-    protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {

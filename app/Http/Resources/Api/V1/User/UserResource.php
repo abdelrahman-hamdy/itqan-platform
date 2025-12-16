@@ -153,7 +153,6 @@ class UserResource extends JsonResource
             'is_active' => $profile->is_active,
             'approval_status' => $profile->approval_status,
             'education_level' => $profile->education_level,
-            'qualification_degree' => $profile->qualification_degree,
             'teaching_experience_years' => $profile->teaching_experience_years,
             'session_price_individual' => (float) $profile->session_price_individual,
             'rating' => (float) $profile->rating,

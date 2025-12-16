@@ -105,7 +105,8 @@ class InteractiveCourseResource extends BaseResource
                                             ->mapWithKeys(function($teacher) {
                                                 // Use linked user name if available, otherwise use profile's full name
                                                 $displayName = $teacher->user ? $teacher->user->name : $teacher->full_name;
-                                                $qualification = $teacher->qualification_degree ?? 'غير محدد';
+                                                $educationLabels = ['diploma' => 'دبلوم', 'bachelor' => 'بكالوريوس', 'master' => 'ماجستير', 'phd' => 'دكتوراه', 'other' => 'أخرى'];
+                                                $qualification = $educationLabels[$teacher->education_level] ?? 'غير محدد';
                                                 return [$teacher->id => $displayName . ' (' . $qualification . ')'];
                                             }) : [];
                                     })
