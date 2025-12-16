@@ -131,16 +131,18 @@
 </div>
 
 <style>
-    /* Header styling - simple approach without backdrop-filter over gradient heroes */
+    /* Header styling - subtle background over hero section */
     #platform-header {
-        background: transparent;
-        transition: background 0.3s ease, box-shadow 0.3s ease;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(59, 130, 246, 0.3) 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     }
 
     /* Header past hero section - solid gradient background */
     #platform-header.header-gradient {
         background: linear-gradient(135deg, rgba(99, 102, 241, 0.95) 0%, rgba(59, 130, 246, 0.95) 100%);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        border-bottom: 1px solid rgba(99, 102, 241, 0.3);
     }
 
     /* Active page styling */
