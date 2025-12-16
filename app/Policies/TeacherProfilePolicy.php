@@ -177,11 +177,17 @@ class TeacherProfilePolicy
      */
     private function sameAcademy(User $user, $profile): bool
     {
-        $userAcademyId = $user->getCurrentAcademyId();
-        if (!$userAcademyId) {
-            return false;
+        // For super_admin, use the selected academy context
+        if ($user->hasRole('super_admin')) {
+            $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+            // If super admin is in global view (no specific academy selected), allow access
+            if (!$userAcademyId) {
+                return true;
+            }
+            return $profile->academy_id === $userAcademyId;
         }
 
-        return $profile->academy_id === $userAcademyId;
+        // For other users, use their assigned academy
+        return $profile->academy_id === $user->academy_id;
     }
 }

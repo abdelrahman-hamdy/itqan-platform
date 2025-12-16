@@ -234,10 +234,22 @@ class SessionPolicy
      */
     private function sameAcademy(User $user, $session): bool
     {
-        $userAcademyId = $user->getCurrentAcademyId();
-        if (!$userAcademyId) {
-            return false;
+        // For super_admin, use the selected academy context
+        if ($user->hasRole('super_admin')) {
+            $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+            // If super admin is in global view (no specific academy selected), allow access
+            if (!$userAcademyId) {
+                return true;
+            }
+
+            if ($session instanceof InteractiveCourseSession) {
+                return $session->course?->academy_id === $userAcademyId;
+            }
+            return $session->academy_id === $userAcademyId;
         }
+
+        // For other users, use their assigned academy
+        $userAcademyId = $user->academy_id;
 
         if ($session instanceof InteractiveCourseSession) {
             return $session->course?->academy_id === $userAcademyId;
