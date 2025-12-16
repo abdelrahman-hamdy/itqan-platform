@@ -95,7 +95,8 @@
     "extra": {
         "laravel": {
             "dont-discover": [
-                "munafio/chatify"
+                "munafio/chatify",
+                "namu/wirechat"
             ]
         }
     },

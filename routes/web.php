@@ -1634,7 +1634,49 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/interactive-courses/{course}/report', [App\Http\Controllers\StudentProfileController::class, 'studentInteractiveCourseReport'])->name('interactive-courses.report');
     });
 
-    // Chat routes removed - WireChat uninstalled
+    /*
+    |--------------------------------------------------------------------------
+    | Chat Routes (WireChat)
+    |--------------------------------------------------------------------------
+    | Override WireChat package routes to provide Arabic titles and subdomain support
+    */
+    Route::middleware(config('wirechat.routes.middleware'))
+        ->prefix(config('wirechat.routes.prefix'))
+        ->group(function () {
+            Route::get('/', \App\Livewire\Pages\Chats::class)->name('chats');
+            Route::get('/start-with/{user}', function ($subdomain, \App\Models\User $user) {
+                // Log the attempt for debugging
+                \Log::info('Chat start-with route called', [
+                    'subdomain' => $subdomain,
+                    'auth_user_id' => auth()->id(),
+                    'target_user_id' => $user->id,
+                    'target_user_name' => $user->name,
+                ]);
+
+                // Get or create conversation with the specified user
+                $conversation = auth()->user()->getOrCreatePrivateConversation($user);
+
+                if (!$conversation) {
+                    \Log::error('Failed to create conversation in route', [
+                        'auth_user_id' => auth()->id(),
+                        'target_user_id' => $user->id,
+                    ]);
+                    // If conversation creation fails, redirect to chats list with error
+                    return redirect()->route('chats', ['subdomain' => $subdomain])
+                        ->with('error', 'حدث خطأ في إنشاء المحادثة. يرجى المحاولة لاحقاً.');
+                }
+
+                \Log::info('Conversation created/found successfully', [
+                    'conversation_id' => $conversation->id,
+                ]);
+
+                return redirect()->route('chat', [
+                    'subdomain' => $subdomain,
+                    'conversation' => $conversation->id
+                ]);
+            })->name('chat.start-with');
+            Route::get('/{conversation}', \App\Livewire\Pages\Chat::class)->middleware('belongsToConversation')->name('chat');
+        });
 
     // OLD: Chatify test routes - DISABLED
     // Route::get('/test-broadcast/{userId}', function ($userId) {
@@ -1831,30 +1873,4 @@ if (app()->environment('local')) {
     })->name('dev.certificate-pdf-preview');
 }
 
-/*
-|--------------------------------------------------------------------------
-| Chat Routes (Override WireChat with Arabic Titles)
-|--------------------------------------------------------------------------
-| These routes override the WireChat package routes to provide Arabic titles
-*/
-Route::middleware(config('wirechat.routes.middleware'))
-    ->prefix(config('wirechat.routes.prefix'))
-    ->group(function () {
-        Route::get('/', \App\Livewire\Pages\Chats::class)->name('chats');
-        Route::get('/start-with/{user}', function (\App\Models\User $user) {
-            // Get or create conversation with the specified user
-            $conversation = auth()->user()->getOrCreatePrivateConversation($user);
-
-            if (!$conversation) {
-                // If conversation creation fails, redirect to chats list with error
-                return redirect()->route('chats', ['subdomain' => request()->route('subdomain')])
-                    ->with('error', 'حدث خطأ في إنشاء المحادثة. يرجى المحاولة لاحقاً.');
-            }
-
-            return redirect()->route('chat', [
-                'subdomain' => request()->route('subdomain'),
-                'conversation' => $conversation->id
-            ]);
-        })->name('chat.start-with');
-        Route::get('/{conversation}', \App\Livewire\Pages\Chat::class)->middleware('belongsToConversation')->name('chat');
-    });
+// Chat routes moved to subdomain group (see line ~1637)

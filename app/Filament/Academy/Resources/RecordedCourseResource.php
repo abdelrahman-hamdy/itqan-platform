@@ -371,6 +371,7 @@ class RecordedCourseResource extends Resource
                                                     ->visibility('public')
                                                     ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
                                                     ->maxSize(512 * 1024) // 512MB - matches Livewire config
+                                                    ->chunkedUpload() // Enable chunked uploads for large video files
                                                     // ->required() // Temporarily disabled to test form save
                                                     ->columnSpanFull()
                                                     ->placeholder('اختر فيديو الدرس')
@@ -378,7 +379,8 @@ class RecordedCourseResource extends Resource
                                                         fn (TemporaryUploadedFile $file): string => 'lesson_video_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
                                                     )
                                                     ->uploadingMessage('جاري رفع الفيديو...')
-                                                    ->loadingIndicatorPosition('left'),
+                                                    ->removeUploadedFileButtonPosition('right')
+                                                    ->uploadProgressIndicatorPosition('left'),
 
                                                 RichEditor::make('description')
                                                     ->label('وصف الدرس')

@@ -378,6 +378,7 @@ class CreateRecordedCourse extends CreateRecord
                                                     ->visibility('public')
                                                     ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
                                                     ->maxSize(500 * 1024) // 500MB
+                                                    ->chunkedUpload() // Enable chunked uploads for large video files
                                                     // ->required() // Temporarily disabled to test form save
                                                     ->columnSpanFull()
                                                     ->helperText('الحد الأقصى: 500 ميجابايت. الصيغ المدعومة: MP4, WebM, MOV, AVI')
@@ -385,7 +386,8 @@ class CreateRecordedCourse extends CreateRecord
                                                     ->getUploadedFileNameForStorageUsing(
                                                         fn (TemporaryUploadedFile $file): string => 'lesson_video_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
                                                     )
-                                                    ->moveFiles(),
+                                                    ->removeUploadedFileButtonPosition('right')
+                                                    ->uploadProgressIndicatorPosition('left'),
 
                                                 RichEditor::make('description')
                                                     ->label('وصف الدرس')

@@ -225,6 +225,9 @@ class RecordedCourseResource extends Resource
                                                     ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
                                                     ->maxSize(512 * 1024) // 512MB
                                                     ->columnSpanFull()
+                                                    ->chunkedUpload() // Enable chunked uploads for large video files
+                                                    ->removeUploadedFileButtonPosition('right')
+                                                    ->uploadProgressIndicatorPosition('left')
                                                     ->getUploadedFileNameForStorageUsing(
                                                         fn (TemporaryUploadedFile $file): string => 'lesson_video_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension()
                                                     ),
