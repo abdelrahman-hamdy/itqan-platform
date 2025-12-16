@@ -486,11 +486,9 @@ class PaymentResource extends Resource
 
     public static function getPages(): array
     {
+        // Only the index page (Coming Soon) is active until the feature is built
         return [
             'index' => Pages\ListPayments::route('/'),
-            'create' => Pages\CreatePayment::route('/create'),
-            'view' => Pages\ViewPayment::route('/{record}'),
-            'edit' => Pages\EditPayment::route('/{record}/edit'),
         ];
     }
 
