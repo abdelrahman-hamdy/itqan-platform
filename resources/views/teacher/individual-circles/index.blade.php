@@ -105,10 +105,9 @@
                 // Chat action
                 if ($circle->subscription && $circle->subscription->student) {
                     $studentUser = ($circle->student instanceof \App\Models\User) ? $circle->student : ($circle->student->user ?? null);
-                    $conv = $studentUser ? auth()->user()->getOrCreatePrivateConversation($studentUser) : null;
-                    if ($conv) {
+                    if ($studentUser) {
                         $actions[] = [
-                            'href' => route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]),
+                            'href' => route('chat.start-with', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $studentUser->id]),
                             'icon' => 'ri-message-line',
                             'label' => 'راسل الطالب',
                             'shortLabel' => 'راسل',

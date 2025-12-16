@@ -202,11 +202,8 @@
                         <td class="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
                           @php
                             $studentUser = $enrollment->student->user;
-                            $conv = auth()->user()->getOrCreatePrivateConversation($studentUser);
                             $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
-                            $chatUrl = $conv
-                              ? route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id])
-                              : route('chats', ['subdomain' => $subdomain]);
+                            $chatUrl = route('chat.start-with', ['subdomain' => $subdomain, 'user' => $studentUser->id]);
                           @endphp
                           <a href="{{ $chatUrl }}"
                              class="min-h-[36px] inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
@@ -225,11 +222,8 @@
                 @foreach($course->enrollments as $enrollment)
                   @php
                     $studentUser = $enrollment->student->user;
-                    $conv = auth()->user()->getOrCreatePrivateConversation($studentUser);
                     $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
-                    $chatUrl = $conv
-                      ? route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id])
-                      : route('chats', ['subdomain' => $subdomain]);
+                    $chatUrl = route('chat.start-with', ['subdomain' => $subdomain, 'user' => $studentUser->id]);
                   @endphp
                   <div class="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <!-- Student Info -->

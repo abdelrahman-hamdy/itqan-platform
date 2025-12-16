@@ -245,14 +245,11 @@
 
       <!-- Chat Button -->
       @if($teacher->user)
-        @php $conv = auth()->user()->getOrCreatePrivateConversation($teacher->user); @endphp
-        @if($conv)
-        <a href="{{ route('chat', ['conversation' => $conv->id]) }}"
+        <a href="{{ route('chat.start-with', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'user' => $teacher->user->id]) }}"
            class="inline-flex items-center justify-center px-5 bg-green-50 border-2 border-green-200 rounded-lg text-green-700 hover:bg-green-100 transition-colors"
            style="height: 52px;">
           <i class="ri-message-3-line text-xl"></i>
         </a>
-        @endif
       @endif
     @endif
   </div>

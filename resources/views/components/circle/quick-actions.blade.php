@@ -98,10 +98,9 @@
             @if(($isIndividual || $isTrial) && $student)
                 @php
                     $studentUser = ($student instanceof \App\Models\User) ? $student : ($student->user ?? null);
-                    $conv = $studentUser ? auth()->user()->getOrCreatePrivateConversation($studentUser) : null;
                 @endphp
-                @if($conv)
-                    <a href="{{ route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id]) }}"
+                @if($studentUser)
+                    <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $studentUser->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                         <i class="ri-message-3-line ml-2"></i>
                         مراسلة الطالب
@@ -145,14 +144,14 @@
             @if($teacher && (!$isGroup || $isEnrolled))
                 @php
                     $teacherUser = ($teacher instanceof \App\Models\User) ? $teacher : ($teacher->user ?? null);
-                    $conv = $teacherUser ? auth()->user()->getOrCreatePrivateConversation($teacherUser) : null;
                 @endphp
-                <a href="{{ $conv ? route('chat', ['subdomain' => $subdomain, 'conversation' => $conv->id]) : '#' }}"
-                   class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200"
-                   @if(!$conv) onclick="alert('حدث خطأ في إنشاء المحادثة. يرجى المحاولة لاحقاً.'); return false;" @endif>
-                    <i class="ri-message-3-line ml-2"></i>
-                    مراسلة المعلم
-                </a>
+                @if($teacherUser)
+                    <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacherUser->id]) }}"
+                       class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
+                        <i class="ri-message-3-line ml-2"></i>
+                        مراسلة المعلم
+                    </a>
+                @endif
             @endif
 
             {{-- View Full Report (Enrolled/Subscribed students only) --}}

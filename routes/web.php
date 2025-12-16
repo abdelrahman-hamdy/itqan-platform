@@ -1841,5 +1841,20 @@ Route::middleware(config('wirechat.routes.middleware'))
     ->prefix(config('wirechat.routes.prefix'))
     ->group(function () {
         Route::get('/', \App\Livewire\Pages\Chats::class)->name('chats');
+        Route::get('/start-with/{user}', function (\App\Models\User $user) {
+            // Get or create conversation with the specified user
+            $conversation = auth()->user()->getOrCreatePrivateConversation($user);
+
+            if (!$conversation) {
+                // If conversation creation fails, redirect to chats list with error
+                return redirect()->route('chats', ['subdomain' => request()->route('subdomain')])
+                    ->with('error', 'حدث خطأ في إنشاء المحادثة. يرجى المحاولة لاحقاً.');
+            }
+
+            return redirect()->route('chat', [
+                'subdomain' => request()->route('subdomain'),
+                'conversation' => $conversation->id
+            ]);
+        })->name('chat.start-with');
         Route::get('/{conversation}', \App\Livewire\Pages\Chat::class)->middleware('belongsToConversation')->name('chat');
     });

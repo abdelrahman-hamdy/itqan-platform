@@ -1,6 +1,24 @@
 @props(['label', 'name', 'value' => [], 'placeholder' => 'أضف عنصراً جديداً'])
 
-<div x-data="tagsInput(@js(old($name, $value)))">
+@php
+    // Normalize value to ensure it's always an array of strings
+    $normalizedValue = old($name, $value);
+
+    // If it's a string (corrupted data), convert to empty array
+    if (is_string($normalizedValue)) {
+        $normalizedValue = [];
+    }
+
+    // If it's not an array at all, make it an empty array
+    if (!is_array($normalizedValue)) {
+        $normalizedValue = [];
+    }
+
+    // Filter out any non-string values and ensure all items are strings
+    $normalizedValue = array_values(array_filter($normalizedValue, fn($item) => is_string($item) && !empty(trim($item))));
+@endphp
+
+<div x-data="tagsInput(@js($normalizedValue))">
     <label class="block text-sm font-medium text-gray-700 mb-2">{{ $label }}</label>
 
     <!-- Tags Display -->
@@ -37,8 +55,14 @@
 
 <script>
 function tagsInput(initialTags = []) {
+    // Ensure initialTags is always an array
+    let safeTags = [];
+    if (Array.isArray(initialTags)) {
+        safeTags = initialTags.filter(tag => typeof tag === 'string' && tag.trim() !== '');
+    }
+
     return {
-        tags: initialTags || [],
+        tags: safeTags,
         newTag: '',
         addTag() {
             const tag = this.newTag.trim();

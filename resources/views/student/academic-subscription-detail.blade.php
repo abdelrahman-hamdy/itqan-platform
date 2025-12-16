@@ -118,13 +118,7 @@ function openSessionDetail(sessionId) {
 // Chat with teacher function
 function openChatWithTeacher() {
     @if($subscription->academicTeacher && $subscription->academicTeacher->user)
-        @php
-            $teacherUser = $subscription->academicTeacher->user;
-            $conv = auth()->user()->getOrCreatePrivateConversation($teacherUser);
-        @endphp
-        @if($conv)
-            window.location.href = "{{ route('chat', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'conversation' => $conv->id]) }}";
-        @endif
+        window.location.href = "{{ route('chat.start-with', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $subscription->academicTeacher->user->id]) }}";
     @endif
 }
 </script>
