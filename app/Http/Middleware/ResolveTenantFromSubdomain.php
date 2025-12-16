@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Academy;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 class ResolveTenantFromSubdomain
@@ -42,6 +43,17 @@ class ResolveTenantFromSubdomain
             ]);
         }
 
+        // Even for Livewire requests, we need to set URL defaults for route generation
+        // Extract subdomain from host and set URL defaults BEFORE any early returns
+        $host = $request->getHost();
+        $baseDomain = config('app.domain', 'itqan-platform.test');
+        if (str_contains($host, $baseDomain)) {
+            $earlySubdomain = str_replace('.'.$baseDomain, '', $host);
+            if ($earlySubdomain !== $baseDomain && ! empty($earlySubdomain)) {
+                URL::defaults(['subdomain' => $earlySubdomain]);
+            }
+        }
+
         // Comprehensive exclusions        // Early return for ANY Livewire operation
         if (str_contains($path, 'livewire') ||
             str_contains($uri, 'livewire') ||
@@ -67,10 +79,7 @@ class ResolveTenantFromSubdomain
             return $next($request);
         }
 
-        $host = $request->getHost();
-        $baseDomain = config('app.domain', 'itqan-platform.test');
-
-        // Extract subdomain if it exists
+        // Extract subdomain if it exists (reuse $host and $baseDomain from above)
         try {
             if (str_contains($host, $baseDomain)) {
                 $subdomain = str_replace('.'.$baseDomain, '', $host);
