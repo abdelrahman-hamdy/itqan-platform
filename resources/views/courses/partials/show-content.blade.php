@@ -139,15 +139,19 @@
         
         <div class="space-y-3">
           @foreach($course->lessons->sortBy('id') as $index => $lesson)
-            <div class="border border-gray-200 rounded-lg p-4 transition-all duration-200 group {{ $isEnrolled || $lesson->is_free_preview ? 'hover:bg-gray-50 hover:border-primary/30 cursor-pointer' : 'cursor-not-allowed opacity-75' }}" 
-                 @if($isEnrolled || $lesson->is_free_preview) onclick="openLesson({{ $lesson->id }}, {{ $course->id }})" @endif>
+            @if($isEnrolled || $lesson->is_free_preview)
+              <a href="{{ url('/courses/' . $course->id . '/lessons/' . $lesson->id) }}"
+                 class="block border border-gray-200 rounded-lg p-4 transition-all duration-200 group hover:bg-gray-50 hover:border-primary/30 cursor-pointer no-underline">
+            @else
+              <div class="border border-gray-200 rounded-lg p-4 transition-all duration-200 group cursor-not-allowed opacity-75">
+            @endif
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
                   <!-- Lesson Number -->
                   <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                     <span class="text-sm font-bold text-primary">{{ $index + 1 }}</span>
                   </div>
-                  
+
                   <!-- Play/Lock Icon -->
                   <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                     @if($isEnrolled || $lesson->is_free_preview)
@@ -156,14 +160,14 @@
                       <i class="ri-lock-line text-gray-400"></i>
                     @endif
                   </div>
-                  
+
                   <!-- Lesson Info -->
                   <div class="flex-1">
                     <h4 class="font-medium text-gray-900 mb-1 group-hover:text-primary transition-colors">{{ $lesson->title }}</h4>
                     @if($lesson->description)
                       <p class="text-sm text-gray-600">{{ Str::limit(html_entity_decode(strip_tags($lesson->description)), 120) }}</p>
                     @endif
-                    
+
                     <!-- Lesson Meta -->
                     <div class="flex items-center gap-4 mt-2">
                       @if($lesson->video_duration_seconds)
@@ -172,7 +176,7 @@
                           {{ gmdate('i:s', $lesson->video_duration_seconds) }} دقيقة
                         </span>
                       @endif
-                      
+
                       @if($lesson->is_free_preview)
                         <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
                           <i class="ri-eye-line ml-1"></i>
@@ -182,7 +186,7 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <!-- Action Button -->
                 <div class="flex items-center">
                   @if($isEnrolled || $lesson->is_free_preview)
@@ -195,7 +199,11 @@
                   @endif
                 </div>
               </div>
-            </div>
+            @if($isEnrolled || $lesson->is_free_preview)
+              </a>
+            @else
+              </div>
+            @endif
           @endforeach
         </div>
       </div>
@@ -448,11 +456,6 @@
 @endif
 
 <script>
-function openLesson(lessonId, courseId) {
-  // Navigate to individual lesson page
-  window.location.href = `/courses/${courseId}/lessons/${lessonId}`;
-}
-
 function toggleSection(sectionId) {
   const content = document.getElementById(`section-${sectionId}`);
   const arrow = document.querySelector(`.section-arrow-${sectionId}`);

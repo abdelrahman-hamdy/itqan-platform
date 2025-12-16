@@ -173,10 +173,16 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">دروس الدورة</h3>
                     <div class="space-y-2">
                         @foreach($course->lessons->sortBy('id') as $index => $courseLesson)
+                        @if($isEnrolled || $courseLesson->is_free_preview)
+                        <a href="{{ url('/courses/' . $course->id . '/lessons/' . $courseLesson->id) }}"
+                           class="block p-3 rounded-lg border transition-colors no-underline
+                            {{ $courseLesson->id === $lesson->id ? 'bg-cyan-50 border-cyan-500' : 'border-gray-200' }}
+                            hover:bg-gray-50 cursor-pointer">
+                        @else
                         <div class="p-3 rounded-lg border transition-colors
                             {{ $courseLesson->id === $lesson->id ? 'bg-cyan-50 border-cyan-500' : 'border-gray-200' }}
-                            {{ $isEnrolled || $courseLesson->is_free_preview ? 'hover:bg-gray-50 cursor-pointer' : 'cursor-not-allowed opacity-75' }}"
-                             @if($isEnrolled || $courseLesson->is_free_preview) onclick="openLesson({{ $courseLesson->id }}, {{ $course->id }})" @endif>
+                            cursor-not-allowed opacity-75">
+                        @endif
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0">
                                     <span class="text-xs font-bold text-cyan-500">{{ $index + 1 }}</span>
@@ -199,7 +205,11 @@
                                     @endif
                                 </div>
                             </div>
+                        @if($isEnrolled || $courseLesson->is_free_preview)
+                        </a>
+                        @else
                         </div>
+                        @endif
                         @endforeach
                     </div>
                 </div>
@@ -209,10 +219,6 @@
 </div>
 
 <script>
-function openLesson(lessonId, courseId) {
-    window.location.href = `/courses/${courseId}/lessons/${lessonId}`;
-}
-
 // Track video progress
 document.addEventListener('DOMContentLoaded', function() {
     const video = document.getElementById('lesson-video');
