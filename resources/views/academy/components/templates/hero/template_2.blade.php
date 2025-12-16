@@ -5,7 +5,7 @@
 @endphp
 
 <!-- Hero Section - Template 2: Modern Abstract Design -->
-<section id="main-content" class="relative min-h-screen flex items-center overflow-hidden bg-white" role="main">
+<section id="main-content" class="relative min-h-screen flex items-center overflow-hidden bg-white py-24 sm:py-16 lg:py-0" role="main">
   <!-- Abstract Background with Subtle Orbs -->
   <div class="absolute inset-0 overflow-hidden">
     <!-- Subtle Gradient Overlay -->
@@ -53,63 +53,63 @@
       <!-- Right Content - 4 Items Grid -->
       <div class="grid grid-cols-2 gap-4 lg:gap-6">
         <!-- Quran Circles -->
-        <div class="group relative bg-white rounded-2xl p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
+        <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="relative z-10 space-y-4">
-            <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <i class="ri-group-line text-3xl text-white"></i>
+          <div class="relative z-10 space-y-3 sm:space-y-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <i class="ri-group-line text-2xl sm:text-3xl text-white"></i>
             </div>
             <div>
-              <h3 class="text-lg font-bold text-gray-900 mb-1">حلقات القرآن</h3>
-              <p class="text-sm text-gray-600">تعلم جماعي مع معلمين متخصصين</p>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">حلقات القرآن</h3>
+              <p class="text-xs sm:text-sm text-gray-600">تعلم جماعي مع معلمين متخصصين</p>
             </div>
           </div>
-          <div class="absolute -bottom-2 -right-2 w-20 h-20 bg-green-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
+          <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
 
         <!-- Individual Quran Learning -->
-        <div class="group relative bg-white rounded-2xl p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
+        <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="relative z-10 space-y-4">
-            <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <i class="ri-user-line text-3xl text-white"></i>
+          <div class="relative z-10 space-y-3 sm:space-y-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <i class="ri-user-line text-2xl sm:text-3xl text-white"></i>
             </div>
             <div>
-              <h3 class="text-lg font-bold text-gray-900 mb-1">تعليم فردي</h3>
-              <p class="text-sm text-gray-600">حفظ شخصي مع متابعة مباشرة</p>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">تعليم فردي</h3>
+              <p class="text-xs sm:text-sm text-gray-600">حفظ شخصي مع متابعة مباشرة</p>
             </div>
           </div>
-          <div class="absolute -bottom-2 -right-2 w-20 h-20 bg-blue-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
+          <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
 
         <!-- Private Classes -->
-        <div class="group relative bg-white rounded-2xl p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
+        <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="relative z-10 space-y-4">
-            <div class="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <i class="ri-video-line text-3xl text-white"></i>
+          <div class="relative z-10 space-y-3 sm:space-y-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <i class="ri-video-line text-2xl sm:text-3xl text-white"></i>
             </div>
             <div>
-              <h3 class="text-lg font-bold text-gray-900 mb-1">دروس خاصة</h3>
-              <p class="text-sm text-gray-600">تعليم أكاديمي مع معلمين خبراء</p>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">دروس خاصة</h3>
+              <p class="text-xs sm:text-sm text-gray-600">تعليم أكاديمي مع معلمين خبراء</p>
             </div>
           </div>
-          <div class="absolute -bottom-2 -right-2 w-20 h-20 bg-amber-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
+          <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-amber-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
 
         <!-- Interactive Courses -->
-        <div class="group relative bg-white rounded-2xl p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
+        <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-violet-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="relative z-10 space-y-4">
-            <div class="w-16 h-16 bg-gradient-to-br from-violet-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <i class="ri-computer-line text-3xl text-white"></i>
+          <div class="relative z-10 space-y-3 sm:space-y-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <i class="ri-computer-line text-2xl sm:text-3xl text-white"></i>
             </div>
             <div>
-              <h3 class="text-lg font-bold text-gray-900 mb-1">كورسات تفاعلية</h3>
-              <p class="text-sm text-gray-600">تعلم متقدم مع تقنيات حديثة</p>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">كورسات تفاعلية</h3>
+              <p class="text-xs sm:text-sm text-gray-600">تعلم متقدم مع تقنيات حديثة</p>
             </div>
           </div>
-          <div class="absolute -bottom-2 -right-2 w-20 h-20 bg-violet-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
+          <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-violet-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
       </div>
     </div>

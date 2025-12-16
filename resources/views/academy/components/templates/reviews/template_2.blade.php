@@ -3,17 +3,17 @@
 @endphp
 
 <!-- Testimonials Section - Template 2: Clean Grid Layout -->
-<section id="testimonials" class="bg-white py-20" role="region" aria-labelledby="testimonials-heading">
+<section id="testimonials" class="bg-white py-16 sm:py-18 lg:py-20" role="region" aria-labelledby="testimonials-heading">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16">
-      <h2 id="testimonials-heading" class="text-4xl font-bold text-gray-900 mb-4">{{ $heading ?? 'آراء طلابنا' }}</h2>
-      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+    <div class="text-center mb-10 sm:mb-12 lg:mb-16">
+      <h2 id="testimonials-heading" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{{ $heading ?? 'آراء طلابنا' }}</h2>
+      <p class="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
         {{ $subheading ?? 'اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم في تحقيق أهدافهم التعليمية' }}
       </p>
     </div>
 
     <!-- Testimonials Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       <!-- Testimonial 1 -->
       <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-{{ $brandColor }}-300 transition-all duration-200">
         <div class="flex items-center gap-3 mb-4">
