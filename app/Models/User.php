@@ -892,14 +892,14 @@ class User extends Authenticatable implements FilamentUser, HasTenants
                 'conversation_id' => $newConversation->id,
                 'participantable_id' => $this->id,
                 'participantable_type' => User::class,
-                'role' => 'member',
+                'role' => 'participant',
             ]);
 
             \Namu\WireChat\Models\Participant::create([
                 'conversation_id' => $newConversation->id,
                 'participantable_id' => $otherUser->id,
                 'participantable_type' => User::class,
-                'role' => 'member',
+                'role' => 'participant',
             ]);
 
             return $newConversation;
