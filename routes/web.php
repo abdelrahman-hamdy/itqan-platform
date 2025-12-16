@@ -1830,3 +1830,16 @@ if (app()->environment('local')) {
             ->header('Content-Disposition', 'inline; filename="certificate-preview.pdf"');
     })->name('dev.certificate-pdf-preview');
 }
+
+/*
+|--------------------------------------------------------------------------
+| Chat Routes (Override WireChat with Arabic Titles)
+|--------------------------------------------------------------------------
+| These routes override the WireChat package routes to provide Arabic titles
+*/
+Route::middleware(config('wirechat.routes.middleware'))
+    ->prefix(config('wirechat.routes.prefix'))
+    ->group(function () {
+        Route::get('/', \App\Livewire\Pages\Chats::class)->name('chats');
+        Route::get('/{conversation}', \App\Livewire\Pages\Chat::class)->middleware('belongsToConversation')->name('chat');
+    });
