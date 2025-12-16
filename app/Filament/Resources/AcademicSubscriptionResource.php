@@ -239,20 +239,11 @@ class AcademicSubscriptionResource extends Resource
                     ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SubscriptionStatus ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof \App\Enums\SubscriptionStatus ? $state->color() : 'secondary'),
                 
-                Tables\Columns\BadgeColumn::make('payment_status')
+                Tables\Columns\TextColumn::make('payment_status')
                     ->label('حالة الدفع')
-                    ->colors([
-                        'success' => 'current',
-                        'warning' => 'pending',
-                        'danger' => ['overdue', 'failed'],
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'current' => 'محدث',
-                        'pending' => 'في الانتظار',
-                        'overdue' => 'متأخر',
-                        'failed' => 'فشل',
-                        default => $state,
-                    }),
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->color() : 'secondary'),
                 
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('تاريخ البدء')
