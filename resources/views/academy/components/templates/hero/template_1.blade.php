@@ -14,7 +14,7 @@
 @endphp
 
 <!-- Modern Hero Section -->
-<section id="main-content" class="relative min-h-screen flex items-center overflow-hidden" role="banner">
+<section id="main-content" class="relative min-h-screen flex items-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
   <!-- Grid Pattern Background -->
   <div class="absolute inset-0 opacity-60" style="background-image: linear-gradient(rgba(0,0,0,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px); background-size: 100px 100px;"></div>
 
@@ -55,48 +55,48 @@
         </div>
 
         <!-- Academy Sections -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 pt-8 border-t border-gray-100">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 pt-8 border-t border-gray-100">
           <!-- Quran Circles -->
-          <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-3xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl">
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-green-500/10 text-green-600">
-              <i class="ri-group-line text-3xl"></i>
+          <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 bg-green-500/10 text-green-600">
+              <i class="ri-group-line text-2xl sm:text-3xl"></i>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <h3 class="text-base font-semibold text-gray-800 leading-snug">حلقات القرآن</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">تعلم جماعي مع معلمين متخصصين</p>
+            <div class="flex flex-col gap-1">
+              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">حلقات القرآن</h3>
+              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">تعلم جماعي مع معلمين متخصصين</p>
             </div>
           </div>
 
           <!-- Individual Quran Learning -->
-          <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-3xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl">
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-blue-500/10 text-blue-600">
-              <i class="ri-user-line text-3xl"></i>
+          <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 bg-blue-500/10 text-blue-600">
+              <i class="ri-user-line text-2xl sm:text-3xl"></i>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <h3 class="text-base font-semibold text-gray-800 leading-snug">تعليم فردي</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">حفظ شخصي مع متابعة مباشرة</p>
+            <div class="flex flex-col gap-1">
+              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">تعليم فردي</h3>
+              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">حفظ شخصي مع متابعة مباشرة</p>
             </div>
           </div>
 
           <!-- Private Classes -->
-          <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-3xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl">
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-amber-500/10 text-amber-600">
-              <i class="ri-video-line text-3xl"></i>
+          <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 bg-amber-500/10 text-amber-600">
+              <i class="ri-video-line text-2xl sm:text-3xl"></i>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <h3 class="text-base font-semibold text-gray-800 leading-snug">دروس خاصة</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">تعليم أكاديمي مع معلمين خبراء</p>
+            <div class="flex flex-col gap-1">
+              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">دروس خاصة</h3>
+              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">تعليم أكاديمي مع معلمين خبراء</p>
             </div>
           </div>
 
           <!-- Interactive Courses -->
-          <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-3xl p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl">
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-violet-500/10 text-violet-600">
-              <i class="ri-computer-line text-3xl"></i>
+          <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 bg-violet-500/10 text-violet-600">
+              <i class="ri-computer-line text-2xl sm:text-3xl"></i>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <h3 class="text-base font-semibold text-gray-800 leading-snug">كورسات تفاعلية</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">تعلم متقدم مع تقنيات حديثة</p>
+            <div class="flex flex-col gap-1">
+              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">كورسات تفاعلية</h3>
+              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">تعلم متقدم مع تقنيات حديثة</p>
             </div>
           </div>
         </div>

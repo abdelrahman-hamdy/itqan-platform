@@ -1,23 +1,23 @@
 <!-- Quran Section -->
-<section id="quran" class="py-24 bg-gradient-to-br from-green-100 via-white to-yellow-100 relative overflow-hidden">
+<section id="quran" class="py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-green-100 via-white to-yellow-100 relative overflow-hidden">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-20">
-      <h2 class="text-3xl font-bold text-black mb-4">{{ $heading ?? 'برامج القرآن الكريم' }}</h2>
+    <div class="text-center mb-12 sm:mb-16 lg:mb-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-black mb-4">{{ $heading ?? 'برامج القرآن الكريم' }}</h2>
       @if(isset($subheading))
-        <p class="text-lg text-gray-700 mb-8">{{ $subheading }}</p>
+        <p class="text-base sm:text-lg text-gray-700 mb-8">{{ $subheading }}</p>
       @endif
     </div>
-    
+
     <!-- Quran Group Circles Section -->
-    <div class="mb-24">
-      <div class="mb-12 flex items-center justify-between">
+    <div class="mb-16 sm:mb-20 lg:mb-24">
+      <div class="mb-8 sm:mb-12 flex items-start sm:items-center justify-between gap-4">
         <div>
-          <h3 class="text-3xl font-bold text-gray-900 mb-2">حلقات التحفيظ المتاحة</h3>
-          <p class="text-gray-600">اختر الحلقة المناسبة لمستواك وابدأ رحلتك في حفظ القرآن الكريم</p>
+          <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">حلقات التحفيظ المتاحة</h3>
+          <p class="text-sm sm:text-base text-gray-600">اختر الحلقة المناسبة لمستواك وابدأ رحلتك في حفظ القرآن الكريم</p>
         </div>
         @if($quranCircles->count() > 0)
         <a href="{{ route('quran-circles.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors whitespace-nowrap">
+           class="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg text-sm sm:text-base font-semibold hover:bg-green-700 transition-colors whitespace-nowrap flex-shrink-0">
           عرض المزيد
           <i class="ri-arrow-left-line mr-2"></i>
         </a>
@@ -40,15 +40,15 @@
     </div>
       
     <!-- Quran Teachers Section -->
-    <div class="mb-12">
-      <div class="mb-8 flex items-center justify-between">
+    <div class="mb-8 sm:mb-12">
+      <div class="mb-6 sm:mb-8 flex items-start sm:items-center justify-between gap-4">
         <div>
-          <h3 class="text-3xl font-bold text-gray-900 mb-2">معلمو القرآن المتميزون</h3>
-          <p class="text-gray-600">نخبة من أفضل معلمي القرآن الكريم المؤهلين لتعليمك</p>
+          <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">معلمو القرآن المتميزون</h3>
+          <p class="text-sm sm:text-base text-gray-600">نخبة من أفضل معلمي القرآن الكريم المؤهلين لتعليمك</p>
         </div>
         @if($quranTeachers->count() > 0)
         <a href="{{ route('quran-teachers.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center px-6 py-3 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 transition-colors whitespace-nowrap">
+           class="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-yellow-600 text-white rounded-lg text-sm sm:text-base font-semibold hover:bg-yellow-700 transition-colors whitespace-nowrap flex-shrink-0">
           عرض المزيد
           <i class="ri-arrow-left-line mr-2"></i>
         </a>

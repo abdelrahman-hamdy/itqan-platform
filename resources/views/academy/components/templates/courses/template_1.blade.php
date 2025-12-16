@@ -1,13 +1,13 @@
 <!-- Recorded Courses Section -->
-<section id="courses" class="py-20 bg-gradient-to-b from-gray-50 to-white">
+<section id="courses" class="py-16 sm:py-18 lg:py-20 bg-gradient-to-b from-gray-50 to-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16">
-      <h2 class="text-3xl font-bold text-black mb-4">{{ $heading ?? 'الدورات المسجلة' }}</h2>
+    <div class="text-center mb-10 sm:mb-12 lg:mb-16">
+      <h2 class="text-2xl sm:text-3xl font-bold text-black mb-4">{{ $heading ?? 'الدورات المسجلة' }}</h2>
       @if(isset($subheading))
-        <p class="text-lg text-gray-700 mb-8">{{ $subheading }}</p>
+        <p class="text-base sm:text-lg text-gray-700 mb-8">{{ $subheading }}</p>
       @endif
     </div>
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
       @forelse($recordedCourses as $course)
         <x-course-card :course="$course" :academy="$academy" />
       @empty
