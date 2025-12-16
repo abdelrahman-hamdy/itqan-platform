@@ -6,6 +6,7 @@ use App\Models\AcademySettings;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -380,5 +381,110 @@ class SessionManagementService
             'session_month' => $session->session_month,
             'monthly_number' => $session->monthly_session_number,
         ]);
+    }
+
+    /**
+     * Generate exact number of group sessions from a schedule
+     *
+     * @param \App\Models\QuranCircleSchedule $schedule The circle schedule with weekly_schedule
+     * @param int $sessionCount Number of sessions to generate
+     * @return int Number of sessions created
+     */
+    public function generateExactGroupSessions(\App\Models\QuranCircleSchedule $schedule, int $sessionCount): int
+    {
+        $circle = $schedule->circle;
+
+        if (!$circle) {
+            throw new \Exception('الجدول غير مرتبط بحلقة');
+        }
+
+        $weeklySchedule = $schedule->weekly_schedule ?? [];
+
+        if (empty($weeklySchedule)) {
+            throw new \Exception('لم يتم تحديد جدول أسبوعي');
+        }
+
+        // Map day names to Carbon day numbers
+        $dayMapping = [
+            'saturday' => Carbon::SATURDAY,
+            'sunday' => Carbon::SUNDAY,
+            'monday' => Carbon::MONDAY,
+            'tuesday' => Carbon::TUESDAY,
+            'wednesday' => Carbon::WEDNESDAY,
+            'thursday' => Carbon::THURSDAY,
+            'friday' => Carbon::FRIDAY,
+        ];
+
+        // Get the academy timezone
+        $timezone = AcademyContextService::getTimezone();
+
+        // Start from schedule start date or today
+        $startDate = $schedule->schedule_starts_at
+            ? Carbon::parse($schedule->schedule_starts_at, $timezone)->startOfDay()
+            : Carbon::now($timezone)->startOfDay();
+
+        // Ensure we don't schedule in the past
+        $today = Carbon::now($timezone)->startOfDay();
+        if ($startDate->lt($today)) {
+            $startDate = $today;
+        }
+
+        $currentDate = $startDate->copy();
+        $createdCount = 0;
+        $maxIterations = 365; // Safety limit to prevent infinite loops
+        $iterations = 0;
+
+        while ($createdCount < $sessionCount && $iterations < $maxIterations) {
+            $iterations++;
+
+            foreach ($weeklySchedule as $slot) {
+                if ($createdCount >= $sessionCount) {
+                    break;
+                }
+
+                $dayName = strtolower($slot['day'] ?? '');
+                $time = $slot['time'] ?? '10:00';
+
+                if (!isset($dayMapping[$dayName])) {
+                    continue;
+                }
+
+                $targetDay = $dayMapping[$dayName];
+
+                // Check if current date matches this day of week
+                if ($currentDate->dayOfWeek === $targetDay) {
+                    // Create datetime in academy timezone
+                    $scheduledAt = Carbon::parse(
+                        $currentDate->format('Y-m-d') . ' ' . $time,
+                        $timezone
+                    );
+
+                    // Skip if this datetime is in the past
+                    if ($scheduledAt->lt(Carbon::now($timezone))) {
+                        continue;
+                    }
+
+                    try {
+                        $this->createGroupSession(
+                            $circle,
+                            $scheduledAt,
+                            $schedule->default_duration_minutes ?? $circle->session_duration_minutes ?? 60
+                        );
+                        $createdCount++;
+                    } catch (\Exception $e) {
+                        // Log but continue - might be a conflict
+                        \Log::warning('Could not create group session', [
+                            'circle_id' => $circle->id,
+                            'scheduled_at' => $scheduledAt->toDateTimeString(),
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+
+            $currentDate->addDay();
+        }
+
+        return $createdCount;
     }
 }
