@@ -1,4 +1,4 @@
-<nav id="platform-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+<nav id="platform-header" class="fixed top-0 left-0 right-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16 md:h-20 lg:h-24">
             <!-- Logo Section -->
@@ -131,19 +131,48 @@
 </div>
 
 <style>
-    /* Default header state - transparent */
+    /* Default header state - use pseudo-element for background to avoid layout thrashing */
     #platform-header {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        will-change: transform;
+        transform: translateZ(0); /* Force GPU layer */
     }
 
-    /* Header past hero section - indigo/blue gradient with 80% opacity */
-    #platform-header.header-gradient {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.8) 0%, rgba(59, 130, 246, 0.8) 100%);
+    /* Background layer using pseudo-element for smoother transitions */
+    #platform-header::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        opacity: 1;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+    }
+
+    /* Gradient background layer */
+    #platform-header::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(59, 130, 246, 0.9) 100%);
         backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+    }
+
+    /* Header past hero section - just toggle opacity */
+    #platform-header.header-gradient::before {
+        opacity: 0;
+    }
+
+    #platform-header.header-gradient::after {
+        opacity: 1;
     }
 
     /* Active page styling */
@@ -176,13 +205,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeMenuBtn = document.getElementById('close-menu-btn');
     const mobileOverlay = document.getElementById('mobile-overlay');
     const mobileSidebar = document.getElementById('mobile-sidebar');
-    const menuIcon = document.getElementById('menu-icon');
 
     // Cache hero height for performance
     let cachedHeroHeight = null;
     let hasHeroSection = false;
+    let isGradientActive = false;
+    let ticking = false;
 
-    // Get hero section - only look for explicitly marked hero sections
+    // Hysteresis values to prevent rapid toggling
+    const HYSTERESIS = 30; // pixels of dead zone
+
+    // Get hero section
     function getHeroSection() {
         return document.querySelector('[data-hero]') ||
                document.querySelector('#hero') ||
@@ -197,31 +230,35 @@ document.addEventListener('DOMContentLoaded', function() {
         if (heroSection) {
             cachedHeroHeight = heroSection.offsetHeight;
         } else {
-            // No hero section - use small threshold (show gradient after minimal scroll)
             cachedHeroHeight = 50;
         }
         return cachedHeroHeight;
     }
 
-    // Handle scroll - toggle gradient class when past hero
-    function handleScroll() {
-        if (!header) return;
+    // Update header state - called via requestAnimationFrame
+    function updateHeader() {
+        ticking = false;
+        if (!header || !hasHeroSection) return;
 
-        // Pages without hero section - always keep gradient, never change
-        if (!hasHeroSection) {
-            header.classList.add('header-gradient');
-            return;
-        }
-
-        // Pages with hero section - toggle based on scroll position
         const heroHeight = cachedHeroHeight || calculateHeroHeight();
         const scrollY = window.pageYOffset || window.scrollY;
-        const threshold = heroHeight - 80; // 80px before hero ends
+        const threshold = heroHeight - 80;
 
-        if (scrollY > threshold) {
+        // Apply hysteresis to prevent flickering
+        if (!isGradientActive && scrollY > threshold) {
             header.classList.add('header-gradient');
-        } else {
+            isGradientActive = true;
+        } else if (isGradientActive && scrollY < (threshold - HYSTERESIS)) {
             header.classList.remove('header-gradient');
+            isGradientActive = false;
+        }
+    }
+
+    // Throttled scroll handler using requestAnimationFrame
+    function handleScroll() {
+        if (!ticking) {
+            requestAnimationFrame(updateHeader);
+            ticking = true;
         }
     }
 
@@ -231,42 +268,37 @@ document.addEventListener('DOMContentLoaded', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function() {
             calculateHeroHeight();
-            handleScroll();
+            updateHeader();
         }, 150);
     }
 
-    // Initial calculation
+    // Initial setup
     calculateHeroHeight();
 
-    // For pages without hero section, show gradient immediately
+    // For pages without hero section, show gradient immediately and don't listen to scroll
     if (!hasHeroSection) {
         header.classList.add('header-gradient');
+        isGradientActive = true;
+    } else {
+        // Listen for scroll only on pages with hero
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        // Initial check
+        updateHeader();
     }
-
-    // Initial check after small delay (for dynamic content)
-    setTimeout(function() {
-        calculateHeroHeight();
-        // Recheck if no hero - gradient should stay
-        if (!hasHeroSection) {
-            header.classList.add('header-gradient');
-        } else {
-            handleScroll();
-        }
-    }, 100);
-
-    // Listen for scroll
-    window.addEventListener('scroll', handleScroll, { passive: true });
 
     // Listen for resize
     window.addEventListener('resize', handleResize, { passive: true });
 
-    // Recalculate when images load (may affect hero height)
+    // Recalculate when images load
     window.addEventListener('load', function() {
         calculateHeroHeight();
-        handleScroll();
+        if (hasHeroSection) {
+            updateHeader();
+        }
     });
 
-    // Mobile menu toggle - using right positioning for reliability
+    // Mobile menu functions
     function openMobileMenu() {
         mobileSidebar.style.right = '0';
         mobileOverlay.style.display = 'block';
@@ -295,12 +327,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (mobileOverlay) {
-        mobileOverlay.addEventListener('click', function() {
-            closeMobileMenu();
-        });
+        mobileOverlay.addEventListener('click', closeMobileMenu);
     }
 
-    // Close menu on escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeMobileMenu();
