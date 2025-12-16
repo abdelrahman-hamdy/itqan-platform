@@ -882,7 +882,10 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             }
 
             // If no conversation exists, create a new one
-            $newConversation = \Namu\WireChat\Models\Conversation::create(['type' => 'private']);
+            // Note: 'type' is not in fillable, so we need to set it directly
+            $newConversation = new \Namu\WireChat\Models\Conversation();
+            $newConversation->type = 'private';
+            $newConversation->save();
 
             // Add both participants
             \Namu\WireChat\Models\Participant::create([
