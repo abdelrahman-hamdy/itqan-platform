@@ -131,48 +131,16 @@
 </div>
 
 <style>
-    /* Default header state - use pseudo-element for background to avoid layout thrashing */
+    /* Header styling - simple approach without backdrop-filter over gradient heroes */
     #platform-header {
-        will-change: transform;
-        transform: translateZ(0); /* Force GPU layer */
+        background: transparent;
+        transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* Background layer using pseudo-element for smoother transitions */
-    #platform-header::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        opacity: 1;
-        transition: opacity 0.3s ease;
-        z-index: -1;
-    }
-
-    /* Gradient background layer */
-    #platform-header::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(59, 130, 246, 0.9) 100%);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+    /* Header past hero section - solid gradient background */
+    #platform-header.header-gradient {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.95) 0%, rgba(59, 130, 246, 0.95) 100%);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        border-bottom: 1px solid rgba(99, 102, 241, 0.3);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        z-index: -1;
-    }
-
-    /* Header past hero section - just toggle opacity */
-    #platform-header.header-gradient::before {
-        opacity: 0;
-    }
-
-    #platform-header.header-gradient::after {
-        opacity: 1;
     }
 
     /* Active page styling */
