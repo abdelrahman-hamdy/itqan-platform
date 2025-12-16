@@ -15,20 +15,5 @@
                 </div>
             @endforeach
         </div>
-
-        {{-- Status Indicators --}}
-        <div class="flex flex-wrap items-center gap-4">
-            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">حالة الجلسة:</span>
-            @foreach ($this->getStatusIndicators() as $indicator)
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: {{ $indicator['color'] }} !important;"></div>
-                    <span class="text-xs dark:text-white">{{ $indicator['label'] }}</span>
-                </div>
-            @endforeach
-        </div>
-
-        <div class="text-xs text-gray-500 dark:text-gray-400">
-            • الجلسات المنتهية تظهر مع خط عبر النص
-        </div>
     </div>
 </x-filament-widgets::widget>
