@@ -110,6 +110,7 @@
     $finalGender = $gender ?? $detectedGender;
 
     // User type specific configuration (use final values)
+    // Default avatars are in public/app-design-assets/ (not storage)
     $config = match($finalUserType) {
         'quran_teacher' => [
             'bgColor' => 'bg-yellow-100',
@@ -119,7 +120,7 @@
             'icon' => 'ri-book-read-line',
             'badge' => 'معلم قرآن',
             'badgeColor' => 'bg-yellow-500',
-            'defaultAvatar' => 'app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-quran-teacher-avatar.png',
+            'defaultAvatarUrl' => asset('app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-quran-teacher-avatar.png'),
         ],
         'academic_teacher' => [
             'bgColor' => 'bg-violet-100',
@@ -129,7 +130,7 @@
             'icon' => 'ri-graduation-cap-line',
             'badge' => 'معلم أكاديمي',
             'badgeColor' => 'bg-violet-500',
-            'defaultAvatar' => 'app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-academic-teacher-avatar.png',
+            'defaultAvatarUrl' => asset('app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-academic-teacher-avatar.png'),
         ],
         'parent' => [
             'bgColor' => "bg-{$brandColor}-100",
@@ -139,7 +140,7 @@
             'icon' => 'ri-parent-line',
             'badge' => 'ولي أمر',
             'badgeColor' => "bg-{$brandColor}-500",
-            'defaultAvatar' => null, // No default avatar for parents
+            'defaultAvatarUrl' => null, // No default avatar for parents
         ],
         'supervisor' => [
             'bgColor' => 'bg-orange-100',
@@ -149,7 +150,7 @@
             'icon' => 'ri-shield-user-line',
             'badge' => 'مشرف',
             'badgeColor' => 'bg-orange-500',
-            'defaultAvatar' => null,
+            'defaultAvatarUrl' => null,
         ],
         'academy_admin', 'admin' => [
             'bgColor' => 'bg-red-100',
@@ -159,7 +160,7 @@
             'icon' => 'ri-shield-star-line',
             'badge' => 'مدير',
             'badgeColor' => 'bg-red-500',
-            'defaultAvatar' => null,
+            'defaultAvatarUrl' => null,
         ],
         default => [ // student
             'bgColor' => 'bg-blue-100',
@@ -169,7 +170,7 @@
             'icon' => 'ri-user-line',
             'badge' => 'طالب',
             'badgeColor' => 'bg-blue-500',
-            'defaultAvatar' => 'app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-student-avatar.png',
+            'defaultAvatarUrl' => asset('app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-student-avatar.png'),
         ]
     };
 
@@ -205,8 +206,8 @@
                     <img src="{{ asset('storage/' . $avatarPath) }}"
                          alt="{{ $userName }}"
                          class="w-full h-full object-cover">
-                @elseif($config['defaultAvatar'])
-                    <img src="{{ asset('storage/' . $config['defaultAvatar']) }}"
+                @elseif($config['defaultAvatarUrl'])
+                    <img src="{{ $config['defaultAvatarUrl'] }}"
                          alt="{{ $userName }}"
                          class="object-cover"
                          style="width: 120%; height: 120%; object-position: center top; margin-left: -10%; margin-top: 0;">
@@ -228,8 +229,8 @@
                 <img src="{{ asset('storage/' . $avatarPath) }}"
                      alt="{{ $userName }}"
                      class="w-full h-full object-cover">
-            @elseif($config['defaultAvatar'])
-                <img src="{{ asset('storage/' . $config['defaultAvatar']) }}"
+            @elseif($config['defaultAvatarUrl'])
+                <img src="{{ $config['defaultAvatarUrl'] }}"
                      alt="{{ $userName }}"
                      class="object-cover"
                      style="width: 120%; height: 120%; object-position: center top; margin-left: -10%; margin-top: 0;">
