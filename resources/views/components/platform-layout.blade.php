@@ -1,3 +1,6 @@
+@php
+    $platformSettings = \App\Models\PlatformSettings::instance();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
@@ -8,6 +11,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Itqan Platform - Islamic Education Technology Platform')</title>
+
+    <!-- Favicon -->
+    @if($platformSettings->favicon)
+        <link rel="icon" type="image/png" href="{{ asset('storage/' . $platformSettings->favicon) }}">
+    @endif
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,13 +98,13 @@
 </head>
 
 <body class="bg-gray-50 text-gray-900" style="font-family: 'Tajawal', sans-serif;">
-    @include('components.platform-header')
+    @include('components.platform-header', ['platformSettings' => $platformSettings])
 
     <main>
         @yield('content')
     </main>
 
-    @include('components.platform-footer')
+    @include('components.platform-footer', ['platformSettings' => $platformSettings])
 </body>
 
 </html>

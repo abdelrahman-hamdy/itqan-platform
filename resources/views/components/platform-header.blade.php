@@ -4,9 +4,13 @@
             <!-- Logo Section -->
             <div class="flex items-center">
                 <a href="{{ route('platform.home') }}" class="block">
-                    <h1 class="text-xl md:text-2xl font-bold text-white">
-                        منصة إتقان
-                    </h1>
+                    @if(isset($platformSettings) && $platformSettings->logo)
+                        <img src="{{ asset('storage/' . $platformSettings->logo) }}" alt="منصة إتقان" class="h-10 md:h-12 lg:h-14 w-auto">
+                    @else
+                        <h1 class="text-xl md:text-2xl font-bold text-white">
+                            منصة إتقان
+                        </h1>
+                    @endif
                 </a>
             </div>
 

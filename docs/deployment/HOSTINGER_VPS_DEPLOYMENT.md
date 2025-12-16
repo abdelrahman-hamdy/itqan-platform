@@ -266,7 +266,7 @@ sudo chmod -R 775 /var/www/itqan-platform
 # As deploy user
 su - deploy
 cd /var/www/itqan-platform
-git clone https://github.com/YOUR_USERNAME/itqan-platform.git .
+git clone https://github.com/abdelrahman-hamdy/itqan-platform.git .
 ```
 
 ### 4.3 Install Dependencies
@@ -394,9 +394,9 @@ php artisan tinker
 
 ```php
 $user = \App\Models\User::create([
-    'name' => 'Admin',
-    'email' => 'admin@itqanway.com',
-    'password' => bcrypt('your-secure-password'),
+    'name' => 'Abdelrahman Hamdy',
+    'email' => 'abdelrahmanhamdy320@gmail.com',
+    'password' => bcrypt('pass123'),
     'role' => 'super_admin',
 ]);
 ```

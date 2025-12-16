@@ -10,8 +10,8 @@
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <div class="mb-8" data-aos="fade-up">
-                <span class="inline-flex items-center gap-3 px-6 py-3 bg-white/10 text-green-100 rounded-full text-sm font-semibold border border-white/30 backdrop-blur-sm">
-                    <i class="ri-team-line text-lg"></i>
+                <span class="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-white/10 text-green-100 rounded-full text-xs md:text-sm font-semibold border border-white/30 backdrop-blur-sm">
+                    <i class="ri-team-line text-base md:text-lg"></i>
                     منصة إتقان
                 </span>
             </div>
