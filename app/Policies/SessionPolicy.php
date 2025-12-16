@@ -21,7 +21,7 @@ class SessionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher', 'student']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher', 'student']);
     }
 
     /**
@@ -30,7 +30,7 @@ class SessionPolicy
     public function view(User $user, $session): bool
     {
         // Admins and supervisors can view any session in their academy
-        if ($user->hasRole(['superadmin', 'admin', 'supervisor'])) {
+        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
             return $this->sameAcademy($user, $session);
         }
 
@@ -57,7 +57,7 @@ class SessionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher']);
     }
 
     /**
@@ -66,7 +66,7 @@ class SessionPolicy
     public function update(User $user, $session): bool
     {
         // Admins and supervisors can update any session in their academy
-        if ($user->hasRole(['superadmin', 'admin', 'supervisor'])) {
+        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
             return $this->sameAcademy($user, $session);
         }
 
@@ -84,7 +84,7 @@ class SessionPolicy
     public function delete(User $user, $session): bool
     {
         // Only admins can delete sessions
-        if ($user->hasRole(['superadmin', 'admin'])) {
+        if ($user->hasRole(['super_admin', 'admin'])) {
             return $this->sameAcademy($user, $session);
         }
 
@@ -115,11 +115,11 @@ class SessionPolicy
     public function manageMeeting(User $user, $session): bool
     {
         // Only teachers can manage their own session meetings
-        if (!$user->hasRole(['superadmin', 'admin', 'teacher', 'quran_teacher', 'academic_teacher'])) {
+        if (!$user->hasRole(['super_admin', 'admin', 'teacher', 'quran_teacher', 'academic_teacher'])) {
             return false;
         }
 
-        return $this->isSessionTeacher($user, $session) || $user->hasRole(['superadmin', 'admin']);
+        return $this->isSessionTeacher($user, $session) || $user->hasRole(['super_admin', 'admin']);
     }
 
     /**

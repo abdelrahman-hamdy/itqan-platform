@@ -20,7 +20,7 @@ class SubscriptionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher', 'student']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher', 'student']);
     }
 
     /**
@@ -29,7 +29,7 @@ class SubscriptionPolicy
     public function view(User $user, $subscription): bool
     {
         // Admins and supervisors can view any subscription in their academy
-        if ($user->hasRole(['superadmin', 'admin', 'supervisor'])) {
+        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
             return $this->sameAcademy($user, $subscription);
         }
 
@@ -56,7 +56,7 @@ class SubscriptionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin', 'supervisor']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor']);
     }
 
     /**
@@ -65,7 +65,7 @@ class SubscriptionPolicy
     public function update(User $user, $subscription): bool
     {
         // Only admins can update subscriptions
-        if ($user->hasRole(['superadmin', 'admin'])) {
+        if ($user->hasRole(['super_admin', 'admin'])) {
             return $this->sameAcademy($user, $subscription);
         }
 
@@ -78,7 +78,7 @@ class SubscriptionPolicy
     public function delete(User $user, $subscription): bool
     {
         // Only superadmin can delete subscriptions
-        return $user->hasRole('superadmin');
+        return $user->hasRole('super_admin');
     }
 
     /**
@@ -121,7 +121,7 @@ class SubscriptionPolicy
         }
 
         // Admins can renew any subscription
-        return $user->hasRole(['superadmin', 'admin']);
+        return $user->hasRole(['super_admin', 'admin']);
     }
 
     /**

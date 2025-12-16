@@ -17,7 +17,7 @@ class PaymentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin', 'supervisor', 'student']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'student']);
     }
 
     /**
@@ -26,7 +26,7 @@ class PaymentPolicy
     public function view(User $user, Payment $payment): bool
     {
         // Admins can view any payment in their academy
-        if ($user->hasRole(['superadmin', 'admin', 'supervisor'])) {
+        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
             return $this->sameAcademy($user, $payment);
         }
 
@@ -49,7 +49,7 @@ class PaymentPolicy
     public function create(User $user): bool
     {
         // Admins can create payments manually
-        if ($user->hasRole(['superadmin', 'admin'])) {
+        if ($user->hasRole(['super_admin', 'admin'])) {
             return true;
         }
 
@@ -72,7 +72,7 @@ class PaymentPolicy
     public function update(User $user, Payment $payment): bool
     {
         // Only admins can update payments
-        return $user->hasRole(['superadmin', 'admin']) && $this->sameAcademy($user, $payment);
+        return $user->hasRole(['super_admin', 'admin']) && $this->sameAcademy($user, $payment);
     }
 
     /**
@@ -81,7 +81,7 @@ class PaymentPolicy
     public function delete(User $user, Payment $payment): bool
     {
         // Only superadmin can delete payments
-        return $user->hasRole('superadmin');
+        return $user->hasRole('super_admin');
     }
 
     /**
@@ -90,7 +90,7 @@ class PaymentPolicy
     public function refund(User $user, Payment $payment): bool
     {
         // Only admins can refund payments
-        if (!$user->hasRole(['superadmin', 'admin'])) {
+        if (!$user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 

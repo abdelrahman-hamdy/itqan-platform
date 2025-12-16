@@ -19,7 +19,7 @@ class TeacherProfilePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin', 'supervisor', 'student']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'student']);
     }
 
     /**
@@ -28,7 +28,7 @@ class TeacherProfilePolicy
     public function view(User $user, $profile): bool
     {
         // Admins can view any profile in their academy
-        if ($user->hasRole(['superadmin', 'admin', 'supervisor'])) {
+        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
             return $this->sameAcademy($user, $profile);
         }
 
@@ -55,7 +55,7 @@ class TeacherProfilePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin']);
+        return $user->hasRole(['super_admin', 'admin']);
     }
 
     /**
@@ -64,7 +64,7 @@ class TeacherProfilePolicy
     public function update(User $user, $profile): bool
     {
         // Admins can update any profile in their academy
-        if ($user->hasRole(['superadmin', 'admin'])) {
+        if ($user->hasRole(['super_admin', 'admin'])) {
             return $this->sameAcademy($user, $profile);
         }
 
@@ -77,8 +77,8 @@ class TeacherProfilePolicy
      */
     public function delete(User $user, $profile): bool
     {
-        // Only superadmin can delete teacher profiles
-        return $user->hasRole('superadmin');
+        // Only super_admin can delete teacher profiles
+        return $user->hasRole('super_admin');
     }
 
     /**
@@ -87,7 +87,7 @@ class TeacherProfilePolicy
     public function viewEarnings(User $user, $profile): bool
     {
         // Only the teacher themselves or admin can view earnings
-        if ($user->hasRole(['superadmin', 'admin'])) {
+        if ($user->hasRole(['super_admin', 'admin'])) {
             return $this->sameAcademy($user, $profile);
         }
 

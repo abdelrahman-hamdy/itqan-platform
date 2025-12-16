@@ -17,7 +17,7 @@ class StudentProfilePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher']);
     }
 
     /**
@@ -26,7 +26,7 @@ class StudentProfilePolicy
     public function view(User $user, StudentProfile $profile): bool
     {
         // Admins can view any profile in their academy
-        if ($user->hasRole(['superadmin', 'admin', 'supervisor'])) {
+        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
             return $this->sameAcademy($user, $profile);
         }
 
@@ -53,7 +53,7 @@ class StudentProfilePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'admin', 'supervisor']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor']);
     }
 
     /**
@@ -62,7 +62,7 @@ class StudentProfilePolicy
     public function update(User $user, StudentProfile $profile): bool
     {
         // Admins can update any profile in their academy
-        if ($user->hasRole(['superadmin', 'admin'])) {
+        if ($user->hasRole(['super_admin', 'admin'])) {
             return $this->sameAcademy($user, $profile);
         }
 
@@ -76,7 +76,7 @@ class StudentProfilePolicy
     public function delete(User $user, StudentProfile $profile): bool
     {
         // Only superadmin can delete student profiles
-        return $user->hasRole('superadmin');
+        return $user->hasRole('super_admin');
     }
 
     /**
@@ -101,7 +101,7 @@ class StudentProfilePolicy
     public function viewPayments(User $user, StudentProfile $profile): bool
     {
         // Only the student, their parent, or admin can view payments
-        if ($user->hasRole(['superadmin', 'admin'])) {
+        if ($user->hasRole(['super_admin', 'admin'])) {
             return $this->sameAcademy($user, $profile);
         }
 
