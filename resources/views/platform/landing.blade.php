@@ -10,16 +10,16 @@
         <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
     </div>
     
-    <!-- Enhanced Background Elements -->
-    <div class="absolute top-0 right-0 w-[40rem] h-[40rem] bg-gradient-to-br from-blue-500/20 via-blue-600/30 to-indigo-600/25 rounded-full blur-3xl opacity-60 animate-pulse" style="animation-duration: 6s;"></div>
-    <div class="absolute bottom-0 left-0 w-[45rem] h-[45rem] bg-gradient-to-tr from-emerald-500/20 via-green-600/25 to-teal-600/20 rounded-full blur-3xl opacity-55 animate-bounce" style="animation-duration: 8s;"></div>
-    <div class="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] bg-gradient-to-l from-cyan-500/20 via-teal-600/25 to-blue-600/20 rounded-full blur-3xl opacity-50 animate-ping" style="animation-duration: 10s;"></div>
-    <div class="absolute top-0 left-0 w-[38rem] h-[38rem] bg-gradient-to-br from-purple-500/20 via-violet-600/25 to-indigo-600/20 rounded-full blur-3xl opacity-45 animate-pulse" style="animation-duration: 7s; animation-delay: 2s;"></div>
-    <div class="absolute bottom-0 right-0 w-[42rem] h-[42rem] bg-gradient-to-tl from-indigo-500/20 via-blue-600/25 to-purple-600/20 rounded-full blur-3xl opacity-50 animate-bounce" style="animation-duration: 9s; animation-delay: 3s;"></div>
-    
+    <!-- Enhanced Background Elements (static for performance with backdrop-filter) -->
+    <div class="absolute top-0 right-0 w-[40rem] h-[40rem] bg-gradient-to-br from-blue-500/20 via-blue-600/30 to-indigo-600/25 rounded-full blur-3xl opacity-60"></div>
+    <div class="absolute bottom-0 left-0 w-[45rem] h-[45rem] bg-gradient-to-tr from-emerald-500/20 via-green-600/25 to-teal-600/20 rounded-full blur-3xl opacity-55"></div>
+    <div class="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] bg-gradient-to-l from-cyan-500/20 via-teal-600/25 to-blue-600/20 rounded-full blur-3xl opacity-50"></div>
+    <div class="absolute top-0 left-0 w-[38rem] h-[38rem] bg-gradient-to-br from-purple-500/20 via-violet-600/25 to-indigo-600/20 rounded-full blur-3xl opacity-45"></div>
+    <div class="absolute bottom-0 right-0 w-[42rem] h-[42rem] bg-gradient-to-tl from-indigo-500/20 via-blue-600/25 to-purple-600/20 rounded-full blur-3xl opacity-50"></div>
+
     <!-- Additional subtle elements -->
-    <div class="absolute top-1/4 left-1/4 w-[20rem] h-[20rem] bg-gradient-to-r from-rose-500/15 to-pink-600/20 rounded-full blur-2xl opacity-30 animate-pulse" style="animation-duration: 12s; animation-delay: 1s;"></div>
-    <div class="absolute bottom-1/4 right-1/4 w-[25rem] h-[25rem] bg-gradient-to-r from-amber-500/15 to-yellow-600/20 rounded-full blur-2xl opacity-25 animate-bounce" style="animation-duration: 11s; animation-delay: 4s;"></div>
+    <div class="absolute top-1/4 left-1/4 w-[20rem] h-[20rem] bg-gradient-to-r from-rose-500/15 to-pink-600/20 rounded-full blur-2xl opacity-30"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[25rem] h-[25rem] bg-gradient-to-r from-amber-500/15 to-yellow-600/20 rounded-full blur-2xl opacity-25"></div>
     
     <!-- Content -->
     <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-16">
