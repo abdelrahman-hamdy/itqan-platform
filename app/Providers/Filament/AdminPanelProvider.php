@@ -88,6 +88,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::topbar.start',
                 fn (): string => view('filament.hooks.academy-selector')->render()
+            )
+            ->renderHook(
+                'panels::user-menu.before',
+                fn (): string => view('filament.hooks.topbar-buttons')->render()
             );
     }
 
