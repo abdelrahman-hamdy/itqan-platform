@@ -17,12 +17,20 @@
     <!-- Remix Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
 
+    <!-- Alpine.js (must be defer and in head) -->
+    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
     <!-- Styles -->
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
 
     <style>
+        /* Hide Alpine.js elements until loaded */
+        [x-cloak] {
+            display: none !important;
+        }
+
         .hero-gradient {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }

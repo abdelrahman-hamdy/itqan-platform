@@ -4,10 +4,10 @@
 
 @section('content')
 <!-- Hero Section with Dark Gradient Background -->
-<section class="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 py-20" style="min-height: 100vh; padding-top: 7rem;">
+<section data-hero class="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 py-20" style="min-height: 100vh; padding-top: 7rem;">
     <!-- Background Pattern Layer -->
     <div class="absolute inset-0 opacity-20">
-        <div class="absolute inset-0" style="background-image: url('/storage/app-design-assets/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
+        <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
     </div>
     
     <!-- Enhanced Background Elements -->
@@ -24,9 +24,9 @@
     <!-- Content -->
     <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-16">
         <!-- Animated Label -->
-        <div class="mb-4" data-aos="fade-down" data-aos-delay="100">
-            <span class="inline-flex items-center gap-3 px-6 py-3 bg-white/10 text-blue-100 rounded-full text-sm font-semibold border border-blue-300/30 backdrop-blur-sm animate-bounce">
-                <span class="text-lg">🚀</span>
+        <div class="mb-2 md:mb-4" data-aos="fade-down" data-aos-delay="100">
+            <span class="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-white/10 text-blue-100 rounded-full text-xs md:text-sm font-semibold border border-blue-300/30 backdrop-blur-sm animate-bounce">
+                <span class="text-base md:text-lg">🚀</span>
                 منصة رائدة في التكنولوجيا والتعليم
             </span>
         </div>
@@ -49,29 +49,29 @@
         </p>
         
         <!-- Modern Action Buttons -->
-        <div class="flex flex-col sm:flex-row gap-6 justify-center mb-16" data-aos="fade-up" data-aos-delay="800">
+        <div class="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-16" data-aos="fade-up" data-aos-delay="800">
             <!-- Business Solutions Button -->
-            <a href="{{ route('platform.business-services') }}" 
-               class="group relative px-10 py-5 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl overflow-hidden">
+            <a href="{{ route('platform.business-services') }}"
+               class="group relative w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-2xl font-bold text-base md:text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl overflow-hidden text-center">
                 <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div class="absolute -inset-1 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl blur opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                <span class="relative z-10 flex items-center gap-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span class="relative z-10 flex items-center justify-center gap-3">
+                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                     </svg>
                 خدمات الأعمال
                 </span>
             </a>
-            
+
             <!-- Education Button -->
-            <a href="http://itqan-academy.{{ config('app.domain') }}" 
-               class="group relative px-10 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl overflow-hidden">
+            <a href="http://itqan-academy.{{ config('app.domain') }}"
+               class="group relative w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-base md:text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl overflow-hidden text-center">
                 <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                <span class="relative z-10 flex items-center gap-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span class="relative z-10 flex items-center justify-center gap-3">
+                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
                     الأكاديمية التعليمية
@@ -111,7 +111,7 @@
                 <!-- User Info -->
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full overflow-hidden">
-                        <img src="/storage/app-design-assets/user-avatar2.png" alt="أحمد محمد" class="w-full h-full object-cover">
+                        <img src="/assets/images/user-avatar2.png" alt="أحمد محمد" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <p class="text-sm font-medium text-white">أحمد محمد</p>
@@ -150,7 +150,7 @@
                 <!-- User Info -->
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full overflow-hidden">
-                        <img src="/storage/app-design-assets/user-avatar1.png" alt="فاطمة علي" class="w-full h-full object-cover">
+                        <img src="/assets/images/user-avatar1.png" alt="فاطمة علي" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <p class="text-sm font-medium text-white">فاطمة علي</p>
@@ -189,7 +189,7 @@
                 <!-- User Info -->
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full overflow-hidden">
-                        <img src="/storage/app-design-assets/user-avatar3.png" alt="عمر حسن" class="w-full h-full object-cover">
+                        <img src="/assets/images/user-avatar3.png" alt="عمر حسن" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <p class="text-sm font-medium text-white">عمر حسن</p>
@@ -208,7 +208,7 @@
     
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('/storage/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+        <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
 </div>
 
     <!-- Subtle Background Elements -->
@@ -216,10 +216,10 @@
     <div class="absolute bottom-10 right-10 w-40 h-40 bg-indigo-50 rounded-full blur-2xl opacity-25"></div>
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="text-center mb-16" data-aos="fade-up">
-            <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-relaxed">
-                <span class="flex items-center justify-center gap-4">
-                    <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="text-center mb-12 md:mb-16" data-aos="fade-up">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 mb-4 md:mb-6 leading-relaxed">
+                <span class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                    <svg class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
                     <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -227,7 +227,7 @@
                     </span>
                 </span>
             </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p class="text-base md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
                 منصة تعليمية متكاملة تقدم دورات في القرآن الكريم والعلوم الإسلامية
             </p>
         </div>
@@ -290,11 +290,11 @@
 
             <!-- Right Column - Text Content and Button -->
             <div class="space-y-8" data-aos="fade-left">
-                <div class="space-y-6">
-                    <h3 class="text-3xl md:text-4xl font-bold text-gray-900 section-heading">
+                <div class="space-y-4 md:space-y-6 text-center lg:text-right">
+                    <h3 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 section-heading">
                         تعلم مع أفضل المعلمين المتخصصين
                     </h3>
-                    <p class="text-lg text-gray-600 leading-relaxed">
+                    <p class="text-base md:text-lg text-gray-600 leading-relaxed">
                         انضم إلى آلاف الطلاب الذين يثقون في منصة إتقان لتطوير مهاراتهم التعليمية والدينية. نقدم بيئة تعليمية تفاعلية ومحفزة مع معلمين مؤهلين وطرق تدريس حديثة.
                     </p>
                 </div>
@@ -371,7 +371,7 @@
     
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('/storage/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+        <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
 </div>
 
     <!-- Subtle Background Elements -->
@@ -379,10 +379,10 @@
     <div class="absolute bottom-10 left-10 w-40 h-40 bg-teal-50 rounded-full blur-2xl opacity-25"></div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="text-center mb-16" data-aos="fade-up">
-            <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-relaxed">
-                <span class="flex items-center justify-center gap-4">
-                    <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="text-center mb-12 md:mb-16" data-aos="fade-up">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 mb-4 md:mb-6 leading-relaxed">
+                <span class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                    <svg class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                     </svg>
                     <span class="bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
@@ -390,7 +390,7 @@
                     </span>
                 </span>
             </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p class="text-base md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
                 نقدم مجموعة متنوعة من الخدمات الاحترافية لمساعدة شركتك على النمو والتطور
             </p>
         </div>
@@ -398,11 +398,11 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <!-- Left Column - Text Content and Button -->
             <div class="space-y-8" data-aos="fade-right">
-                <div class="space-y-6">
-                    <h3 class="text-3xl md:text-4xl font-bold text-gray-900 section-heading">
+                <div class="space-y-4 md:space-y-6 text-center lg:text-right">
+                    <h3 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 section-heading">
                         حلول تقنية متكاملة لأعمالك
                     </h3>
-                    <p class="text-lg text-gray-600 leading-relaxed">
+                    <p class="text-base md:text-lg text-gray-600 leading-relaxed">
                         نقدم خدمات تقنية متطورة وحلول إبداعية لمساعدة شركتك على النمو والتميز في السوق. فريقنا المتخصص يضمن لك الحصول على أفضل النتائج بأعلى معايير الجودة.
                     </p>
                 </div>
@@ -535,7 +535,7 @@
     
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-5">
-        <div class="absolute inset-0" style="background-image: url('/storage/app-design-assets/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
+        <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 50px 50px; background-repeat: repeat;"></div>
     </div>
     
     <!-- Subtle Background Elements -->
@@ -543,13 +543,13 @@
     <div class="absolute bottom-10 left-10 w-40 h-40 bg-slate-100 rounded-full blur-2xl opacity-25"></div>
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="text-center mb-16" data-aos="fade-up">
-            <h2 class="text-4xl md:text-5xl font-bold mb-6 leading-relaxed">
+        <div class="text-center mb-12 md:mb-16" data-aos="fade-up">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-relaxed">
                 <span class="bg-gradient-to-r from-gray-700 to-slate-700 bg-clip-text text-transparent">
                     خدماتنا المتاحة
                 </span>
             </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p class="text-base md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
                 مجموعة شاملة من الخدمات الاحترافية المصممة خصيصاً لتنمية أعمالك وتحقيق أهدافك
             </p>
         </div>
@@ -635,10 +635,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <section class="py-24 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 relative overflow-hidden">
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6" data-aos="fade-up">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 md:mb-6" data-aos="fade-up">
             هل أنت مستعد لبدء مشروعك؟
         </h2>
-        <p class="text-xl mb-12 text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="200">
+        <p class="text-base md:text-xl mb-8 md:mb-12 text-gray-600 max-w-2xl mx-auto px-4" data-aos="fade-up" data-aos-delay="200">
             دعنا نعمل معاً لتحقيق رؤيتك ونقل أعمالك إلى المستوى التالي
         </p>
         <a href="{{ route('platform.business-services') }}" 

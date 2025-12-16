@@ -278,7 +278,7 @@
         <!-- Messages Container -->
         <div class="chat-messages-container relative" id="messages-container">
           <!-- Background Pattern Layer -->
-          <div class="absolute inset-0 opacity-15 z-0" style="background-image: url('/storage/app-design-assets/chat-bg-pattern.png'); background-repeat: repeat; background-size: 200px;"></div>
+          <div class="absolute inset-0 opacity-15 z-0" style="background-image: url('/assets/images/chat-bg-pattern.png'); background-repeat: repeat; background-size: 200px;"></div>
           
           <!-- Gradient Overlay -->
           <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-indigo-600/20 z-1"></div>

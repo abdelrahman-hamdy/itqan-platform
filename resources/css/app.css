@@ -219,7 +219,7 @@ html {
 
 /* Background Pattern Utility */
 .bg-pattern {
-    background-image: url('/storage/app-design-assets/bg-pattern1.png');
+    background-image: url('/assets/images/bg-pattern1.png');
     background-size: 150px;
     background-repeat: repeat;
 }
