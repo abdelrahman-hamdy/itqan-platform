@@ -28,12 +28,12 @@
         @forelse($quranCircles->take(3) as $circle)
           <x-quran-circle-card-list :circle="$circle" :academy="$academy" />
         @empty
-          <div class="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="ri-group-line text-2xl text-green-600"></i>
+          <div class="col-span-full text-center py-12">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="ri-group-line text-green-500 text-3xl"></i>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد حلقات متاحة حالياً</h3>
-            <p class="text-gray-600">سيتم إضافة حلقات القرآن الكريم قريباً</p>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا توجد حلقات متاحة حالياً</h3>
+            <p class="text-sm text-gray-600">سيتم إضافة حلقات القرآن الكريم قريباً</p>
           </div>
         @endforelse
       </div>
@@ -59,16 +59,15 @@
         @forelse($quranTeachers->take(2) as $teacher)
           <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" />
         @empty
-          <div class="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="ri-user-star-line text-2xl text-gray-400"></i>
+          <div class="col-span-full text-center py-12">
+            <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="ri-user-star-line text-yellow-500 text-3xl"></i>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد معلمين متاحين حالياً</h3>
-            <p class="text-gray-600">سيتم إضافة معلمي القرآن الكريم قريباً</p>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون متاحون حالياً</h3>
+            <p class="text-sm text-gray-600">سيتم إضافة معلمي القرآن الكريم قريباً</p>
           </div>
         @endforelse
       </div>
-    </div>
     </div>
   </div>
 </section> 

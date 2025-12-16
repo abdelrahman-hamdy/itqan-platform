@@ -58,66 +58,53 @@
 
       <!-- Right Side Actions -->
       <div class="flex items-center space-x-4 space-x-reverse">
-        <!-- User/Guest Dropdown -->
-        <div class="relative h-20 flex items-center" x-data="{ open: false }">
+        <!-- User Dropdown (Authenticated Users Only) -->
+        @auth
+        <div class="relative h-20 flex items-center hidden md:flex" x-data="{ open: false }">
           <button @click="open = !open" class="flex items-center h-20 px-3 space-x-2 space-x-reverse text-gray-700 hover:text-primary hover:bg-gray-50 focus:outline-none transition-colors duration-200" aria-label="قائمة المستخدم" aria-expanded="false">
-            @auth
-              @if(auth()->user()->avatar)
-                <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-8 h-8 rounded-full object-cover">
-              @else
-                <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <i class="ri-user-line text-white text-sm"></i>
-                </div>
-              @endif
-              <span class="hidden sm:block text-sm font-medium">{{ auth()->user()->name }}</span>
+            @if(auth()->user()->avatar)
+              <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-8 h-8 rounded-full object-cover">
             @else
-              <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                <i class="ri-user-line text-gray-600 text-sm"></i>
+              <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <i class="ri-user-line text-white text-sm"></i>
               </div>
-              <span class="hidden sm:block text-sm font-medium">الحساب</span>
-            @endauth
+            @endif
+            <span class="hidden sm:block text-sm font-medium">{{ auth()->user()->name }}</span>
             <i class="ri-arrow-down-s-line text-sm"></i>
           </button>
 
-          <!-- Dropdown Menu - Left positioned for RTL -->
+          <!-- Dropdown Menu -->
           <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute left-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden" role="menu">
             <div class="py-1">
-              @auth
-                <div class="px-4 py-2 border-b border-gray-100">
-                  <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
-                  <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
-                </div>
-                @php
-                  $profileRouteName = auth()->user()->isTeacher() ? 'teacher.profile' : 'student.profile';
-                  $isAdminOrSuperAdmin = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin();
-                @endphp
-                @if(!$isAdminOrSuperAdmin)
-                <a href="{{ route($profileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200" role="menuitem">
-                  <i class="ri-user-line ml-2"></i>
-                  الملف الشخصي
-                </a>
-                <div class="border-t border-gray-100"></div>
-                @endif
-                <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block">
-                  @csrf
-                  <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200" role="menuitem">
-                    <i class="ri-logout-box-line ml-2"></i>
-                    تسجيل الخروج
-                  </button>
-                </form>
-              @else
-                <!-- Guest Menu Items -->
-                <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200" role="menuitem">
-                  <i class="ri-login-box-line ml-2"></i>
-                  تسجيل الدخول
-                </a>
-              @endauth
+              <div class="px-4 py-2 border-b border-gray-100">
+                <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
+                <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
+              </div>
+              @php
+                $profileRouteName = auth()->user()->isTeacher() ? 'teacher.profile' : 'student.profile';
+                $isAdminOrSuperAdmin = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin();
+              @endphp
+              @if(!$isAdminOrSuperAdmin)
+              <a href="{{ route($profileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200" role="menuitem">
+                <i class="ri-user-line ml-2"></i>
+                الملف الشخصي
+              </a>
+              <div class="border-t border-gray-100"></div>
+              @endif
+              <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block">
+                @csrf
+                <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200" role="menuitem">
+                  <i class="ri-logout-box-line ml-2"></i>
+                  تسجيل الخروج
+                </button>
+              </form>
             </div>
           </div>
         </div>
+        @endauth
 
-        <!-- Mobile Menu Button -->
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden focus:ring-custom p-2" aria-label="فتح قائمة التنقل" :aria-expanded="mobileMenuOpen">
+        <!-- Menu Button -->
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="focus:ring-custom p-2" aria-label="فتح القائمة" :aria-expanded="mobileMenuOpen">
           <div class="w-6 h-6 flex items-center justify-center">
             <i :class="mobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'" class="text-xl"></i>
           </div>
@@ -189,15 +176,33 @@
       @endif
     @endforeach
 
-    <!-- Login Link for Guests in Mobile Menu -->
-    @guest
-      <div class="border-t border-gray-200 pt-2 mt-2">
+    <!-- User Actions -->
+    <div class="border-t border-gray-200 pt-2 mt-2">
+      @auth
+        @php
+          $mobileProfileRouteName = auth()->user()->isTeacher() ? 'teacher.profile' : 'student.profile';
+          $mobileIsAdminOrSuperAdmin = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin();
+        @endphp
+        @if(!$mobileIsAdminOrSuperAdmin)
+        <a href="{{ route($mobileProfileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="الملف الشخصي">
+          <i class="ri-user-line ml-2"></i>
+          الملف الشخصي
+        </a>
+        @endif
+        <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block">
+          @csrf
+          <button type="submit" @click="mobileMenuOpen = false" class="flex items-center w-full px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-md focus:outline-none font-medium" aria-label="تسجيل الخروج">
+            <i class="ri-logout-box-line ml-2"></i>
+            تسجيل الخروج
+          </button>
+        </form>
+      @else
         <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-primary hover:bg-primary/10 rounded-md focus:outline-none font-medium" aria-label="تسجيل الدخول">
           <i class="ri-login-box-line ml-2"></i>
           تسجيل الدخول
         </a>
-      </div>
-    @endguest
+      @endauth
+    </div>
   </div>
 </div>
 </div>

@@ -12,11 +12,11 @@
         <x-course-card :course="$course" :academy="$academy" />
       @empty
         <div class="col-span-full text-center py-12">
-          <div class="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="ri-play-circle-line text-green-400 text-4xl"></i>
+          <div class="w-20 h-20 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="ri-play-circle-line text-cyan-500 text-3xl"></i>
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد كورسات مسجلة متاحة حالياً</h3>
-          <p class="text-gray-600">سيتم إضافة الكورسات قريباً</p>
+          <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا توجد كورسات مسجلة متاحة حالياً</h3>
+          <p class="text-sm text-gray-600">سيتم إضافة الكورسات قريباً</p>
         </div>
       @endforelse
     </div>

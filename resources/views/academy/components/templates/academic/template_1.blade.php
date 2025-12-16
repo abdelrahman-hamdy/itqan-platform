@@ -36,11 +36,11 @@
           <x-interactive-course-card :course="$course" :academy="$academy" />
         @empty
           <div class="col-span-full text-center py-12">
-            <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="ri-book-open-line text-blue-400 text-4xl"></i>
+            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="ri-book-open-line text-blue-500 text-3xl"></i>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد كورسات تفاعلية متاحة حالياً</h3>
-            <p class="text-gray-600">سيتم إضافة الكورسات قريباً</p>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا توجد كورسات تفاعلية متاحة حالياً</h3>
+            <p class="text-sm text-gray-600">سيتم إضافة الكورسات قريباً</p>
           </div>
         @endforelse
       </div>
@@ -66,15 +66,13 @@
           <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" :subjects="$subjects ?? collect()" :gradeLevels="$gradeLevels ?? collect()" />
         @empty
           <div class="col-span-full text-center py-12">
-            <div class="w-24 h-24 bg-violet-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="ri-user-star-line text-violet-400 text-4xl"></i>
+            <div class="w-20 h-20 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="ri-user-star-line text-violet-500 text-3xl"></i>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون أكاديميون متاحون حالياً</h3>
-            <p class="text-gray-600">سيتم إضافة المعلمين قريباً</p>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون أكاديميون متاحون حالياً</h3>
+            <p class="text-sm text-gray-600">سيتم إضافة المعلمين قريباً</p>
           </div>
         @endforelse
-      </div>
-    </div>
       </div>
     </div>
   </div>
