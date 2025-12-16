@@ -276,8 +276,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
      */
     private function getSubscriptionLimits(): array
     {
-        // Get total sessions from subscription (should always be set from package)
-        $totalSessions = $this->subscription->total_sessions;
+        // Get total sessions from subscription with fallback
+        $totalSessions = $this->subscription->total_sessions ?? 8;
 
         // Calculate used sessions
         $usedSessions = $this->subscription->sessions()
