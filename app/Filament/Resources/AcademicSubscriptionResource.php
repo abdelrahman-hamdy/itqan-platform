@@ -233,22 +233,11 @@ class AcademicSubscriptionResource extends Resource
                     ->money('SAR')
                     ->sortable(),
                 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
-                    ->colors([
-                        'success' => 'active',
-                        'warning' => 'paused',
-                        'danger' => ['cancelled', 'suspended'],
-                        'secondary' => 'expired',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'active' => 'نشط',
-                        'paused' => 'معلق',
-                        'suspended' => 'موقوف',
-                        'cancelled' => 'ملغي',
-                        'expired' => 'منتهي',
-                        default => $state,
-                    }),
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SubscriptionStatus ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof \App\Enums\SubscriptionStatus ? $state->color() : 'secondary'),
                 
                 Tables\Columns\BadgeColumn::make('payment_status')
                     ->label('حالة الدفع')
