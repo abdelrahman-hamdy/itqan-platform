@@ -28,7 +28,7 @@ class QuranTeacherProfileResource extends BaseResource
 
     protected static ?string $navigationGroup = 'إدارة القرآن';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 0;
 
     protected static ?string $modelLabel = 'معلم قرآن';
 
