@@ -17,11 +17,11 @@
 @endphp
 
 <!-- Hero Section - Template 3: Classic Professional Design -->
-<section id="main-content" class="relative py-20 lg:py-24 overflow-hidden bg-white" role="banner">
+<section id="main-content" class="relative py-20 sm:py-16 lg:py-24 overflow-hidden bg-white" role="banner">
   <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid lg:grid-cols-2 gap-12 items-center">
+    <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
       <!-- Right Content -->
-      <div class="order-2 lg:order-1 space-y-8 text-right">
+      <div class="order-2 lg:order-1 space-y-6 sm:space-y-8 text-center lg:text-right">
         <!-- Badge -->
         <div class="inline-flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-md">
           <div class="w-1.5 h-1.5 bg-{{ $brandColor }}-600 rounded-full"></div>
@@ -29,17 +29,17 @@
         </div>
 
         <!-- Main Heading - Increased Size -->
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight text-gray-900">
           {{ $heroHeading }}
         </h1>
 
         <!-- Subheading - Increased Size -->
-        <p class="text-lg lg:text-xl text-gray-600 leading-relaxed">
+        <p class="text-base sm:text-lg lg:text-xl text-gray-600 leading-relaxed">
           {{ $heroSubheading }}
         </p>
 
         <!-- CTA Button -->
-        <div>
+        <div class="flex justify-center lg:justify-start">
           <a href="{{ route('student.register', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
              class="inline-flex items-center gap-2 px-6 py-3 bg-{{ $brandColor }}-600 text-white rounded-md font-semibold hover:bg-{{ $brandColor }}-700 transition-colors">
             <i class="ri-arrow-left-line"></i>

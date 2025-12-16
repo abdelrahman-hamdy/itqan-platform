@@ -1,46 +1,49 @@
 <!-- Quran Section - Template 3: Classic Design with Dynamic Colored Background -->
-<section id="quran" class="py-16 relative overflow-hidden transition-colors duration-500" x-data="{ activeTab: 'circles' }"
+<section id="quran" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden transition-colors duration-500" x-data="{ activeTab: 'circles' }"
          :class="activeTab === 'circles' ? 'bg-green-50/70' : 'bg-yellow-50/70'">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header with Tabs Alongside -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
-      <div class="text-right">
-        <h2 class="text-3xl font-bold text-gray-900 mb-2">{{ $heading ?? 'برامج القرآن الكريم' }}</h2>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 sm:mb-10">
+      <div class="text-center md:text-right">
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{{ $heading ?? 'برامج القرآن الكريم' }}</h2>
         @if(isset($subheading))
-          <p class="text-base text-gray-600">{{ $subheading }}</p>
+          <p class="text-sm sm:text-base text-gray-600">{{ $subheading }}</p>
         @endif
       </div>
 
-      <!-- Tab Toggle Floated Left -->
-      <div class="flex gap-2 bg-white rounded-lg p-1 shadow-sm border border-gray-200 flex-shrink-0">
-        <button
-          @click="activeTab = 'circles'"
-          :class="activeTab === 'circles' ? 'bg-green-600 text-white' : 'text-gray-600 hover:text-gray-900'"
-          class="px-5 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap">
-          <i class="ri-group-line ml-1"></i>
-          حلقات التحفيظ
-        </button>
-        <button
-          @click="activeTab = 'teachers'"
-          :class="activeTab === 'teachers' ? 'bg-yellow-600 text-white' : 'text-gray-600 hover:text-gray-900'"
-          class="px-5 py-2 rounded-md font-medium transition-all duration-200 text-sm whitespace-nowrap">
-          <i class="ri-user-star-line ml-1"></i>
-          المعلمون
-        </button>
+      <!-- Tab Toggle - Centered on Mobile -->
+      <div class="flex justify-center md:justify-end">
+        <div class="inline-flex gap-1 sm:gap-2 bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+          <button
+            @click="activeTab = 'circles'"
+            :class="activeTab === 'circles' ? 'bg-green-600 text-white' : 'text-gray-600 hover:text-gray-900'"
+            class="px-3 sm:px-5 py-2 rounded-md font-medium transition-all duration-200 text-xs sm:text-sm whitespace-nowrap">
+            <i class="ri-group-line ml-1"></i>
+            <span class="hidden sm:inline">حلقات التحفيظ</span>
+            <span class="sm:hidden">الحلقات</span>
+          </button>
+          <button
+            @click="activeTab = 'teachers'"
+            :class="activeTab === 'teachers' ? 'bg-yellow-600 text-white' : 'text-gray-600 hover:text-gray-900'"
+            class="px-3 sm:px-5 py-2 rounded-md font-medium transition-all duration-200 text-xs sm:text-sm whitespace-nowrap">
+            <i class="ri-user-star-line ml-1"></i>
+            المعلمون
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Quran Group Circles Section -->
     <div x-show="activeTab === 'circles'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         @forelse($quranCircles->take(3) as $circle)
           <x-quran-circle-card-list :circle="$circle" :academy="$academy" />
         @empty
-          <div class="col-span-full text-center py-10">
-            <div class="w-16 h-16 bg-green-50 rounded-lg flex items-center justify-center mx-auto mb-3">
-              <i class="ri-group-line text-xl text-green-600"></i>
+          <div class="col-span-full text-center py-10 sm:py-12">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="ri-group-line text-3xl text-green-500"></i>
             </div>
-            <h3 class="text-base font-semibold text-gray-900 mb-1">لا توجد حلقات متاحة حالياً</h3>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا توجد حلقات متاحة حالياً</h3>
             <p class="text-sm text-gray-600">سيتم إضافة حلقات القرآن الكريم قريباً</p>
           </div>
         @endforelse
@@ -59,15 +62,15 @@
 
     <!-- Quran Teachers Section -->
     <div x-show="activeTab === 'teachers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         @forelse($quranTeachers->take(2) as $teacher)
           <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" />
         @empty
-          <div class="col-span-full text-center py-10">
-            <div class="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center mx-auto mb-3">
-              <i class="ri-user-star-line text-xl text-gray-400"></i>
+          <div class="col-span-full text-center py-10 sm:py-12">
+            <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="ri-user-star-line text-3xl text-yellow-500"></i>
             </div>
-            <h3 class="text-base font-semibold text-gray-900 mb-1">لا توجد معلمين متاحين حالياً</h3>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون متاحون حالياً</h3>
             <p class="text-sm text-gray-600">سيتم إضافة معلمي القرآن الكريم قريباً</p>
           </div>
         @endforelse

@@ -7,14 +7,14 @@
 @endphp
 
 <!-- Testimonials Section - Template 3: Classic Design with 2 Items Per Slide -->
-<section id="testimonials" class="py-16 relative overflow-hidden" role="region" aria-labelledby="testimonials-heading">
+<section id="testimonials" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden" role="region" aria-labelledby="testimonials-heading">
   <!-- Subtle Gradient Background -->
   <div class="absolute inset-0 bg-gradient-to-br from-{{ $gradientFrom }}/20 via-gray-50 to-{{ $gradientTo }}/20"></div>
 
   <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-right mb-12">
-      <h2 id="testimonials-heading" class="text-3xl font-bold text-gray-900 mb-3">{{ $heading ?? 'آراء طلابنا' }}</h2>
-      <p class="text-base text-gray-600 max-w-2xl">
+    <div class="text-center md:text-right mb-8 sm:mb-10 lg:mb-12">
+      <h2 id="testimonials-heading" class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">{{ $heading ?? 'آراء طلابنا' }}</h2>
+      <p class="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto md:mx-0">
         {{ $subheading ?? 'اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم في تحقيق أهدافهم التعليمية' }}
       </p>
     </div>
