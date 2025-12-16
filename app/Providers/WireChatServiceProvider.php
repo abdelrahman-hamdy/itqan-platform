@@ -160,10 +160,28 @@ class WireChatServiceProvider extends ServiceProvider
      */
     protected function loadStyles(): void
     {
-        Blade::directive('wirechatStyles', function () {
-            $path = __DIR__.'/../../vendor/namu/wirechat/resources/views/components/styles.blade.php';
+        $primaryColor = \Namu\WireChat\Facades\WireChat::getColor();
+        Blade::directive('wirechatStyles', function () use ($primaryColor) {
+            return "<?php echo <<<EOT
+                <style>
+                    :root {
+                        --wc-brand-primary: {$primaryColor};
 
-            return "<?php echo view('wirechat::components.styles')->render(); ?>";
+                        --wc-light-primary: #fff;  /* white */
+                        --wc-light-secondary: oklch(0.967 0.003 264.542);/* --color-gray-100 */
+                        --wc-light-accent: oklch(0.985 0.002 247.839);/* --color-gray-50 */
+                        --wc-light-border: oklch(0.928 0.006 264.531);/* --color-gray-200 */
+
+                        --wc-dark-primary: oklch(0.21 0.034 264.665); /* --color-zinc-900 */
+                        --wc-dark-secondary: oklch(0.278 0.033 256.848);/* --color-zinc-800 */
+                        --wc-dark-accent: oklch(0.373 0.034 259.733);/* --color-zinc-700 */
+                        --wc-dark-border: oklch(0.373 0.034 259.733);/* --color-zinc-700 */
+                    }
+                    [x-cloak] {
+                        display: none !important;
+                    }
+                </style>
+            EOT; ?>";
         });
     }
 }
