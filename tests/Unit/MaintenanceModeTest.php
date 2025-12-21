@@ -110,7 +110,7 @@ class MaintenanceModeTest extends TestCase
      */
     public function test_academy_admin_can_bypass_own_academy_maintenance()
     {
-        $admin = User::factory()->create(['user_type' => 'teacher']);
+        $admin = User::factory()->create(['user_type' => 'admin']);
         $academy = Academy::factory()->create([
             'maintenance_mode' => true,
             'admin_id' => $admin->id

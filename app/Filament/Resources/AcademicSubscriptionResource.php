@@ -32,6 +32,12 @@ class AcademicSubscriptionResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['student', 'teacher.user', 'subject', 'gradeLevel', 'academy']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

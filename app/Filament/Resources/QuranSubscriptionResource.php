@@ -46,7 +46,14 @@ class QuranSubscriptionResource extends BaseResource
     protected static ?string $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 2;
-public static function form(Form $form): Form
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['student', 'quranTeacher', 'package', 'academy']);
+    }
+
+    public static function form(Form $form): Form
     {
         return $form
             ->schema([

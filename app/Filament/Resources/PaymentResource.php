@@ -495,6 +495,7 @@ class PaymentResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with(['user', 'academy'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Exceptions\MeetingException;
 use App\Models\Academy;
 use App\Models\User;
 use App\Services\LiveKitService;
@@ -65,7 +66,7 @@ trait HasMeetings
             $academy = $this->getAcademy();
 
             if (! $academy) {
-                throw new \Exception('Session must belong to an academy to create meetings');
+                throw MeetingException::academyRequired();
             }
 
             // Create meeting through LiveKit service
@@ -114,7 +115,7 @@ trait HasMeetings
                 'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Failed to create meeting: '.$e->getMessage());
+            throw MeetingException::creationFailed($e->getMessage());
         }
     }
 
@@ -125,7 +126,7 @@ trait HasMeetings
     {
         try {
             if (! $this->meeting_room_name) {
-                throw new \Exception('Meeting room not created yet');
+                throw MeetingException::roomNotCreated();
             }
 
             $liveKitService = app(LiveKitService::class);
@@ -158,7 +159,7 @@ trait HasMeetings
                 'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Failed to generate access token: '.$e->getMessage());
+            throw MeetingException::tokenGenerationFailed($e->getMessage());
         }
     }
 

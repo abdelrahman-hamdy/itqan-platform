@@ -279,6 +279,7 @@ class CertificateResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with(['student', 'academy', 'teacher', 'issuedBy'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

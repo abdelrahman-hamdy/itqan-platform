@@ -457,6 +457,66 @@ class QuranSession extends BaseSession
     }
 
     /**
+     * Record session attendance for all students in this session
+     *
+     * This method updates attendance records when a session status changes.
+     * For individual sessions: updates the single student's attendance
+     * For group sessions: updates attendance for all enrolled students
+     *
+     * @param string $status The attendance status ('attended', 'absent', 'cancelled', 'late', 'leaved')
+     * @return void
+     */
+    protected function recordSessionAttendance(string $status): void
+    {
+        try {
+            // Get students based on session type
+            $students = $this->getStudentsForSession();
+
+            if ($students->isEmpty()) {
+                Log::warning('No students found for session attendance recording', [
+                    'session_id' => $this->id,
+                    'session_type' => $this->session_type,
+                ]);
+                return;
+            }
+
+            foreach ($students as $student) {
+                // Update or create attendance record
+                QuranSessionAttendance::updateOrCreate(
+                    [
+                        'session_id' => $this->id,
+                        'student_id' => $student->id,
+                    ],
+                    [
+                        'academy_id' => $this->academy_id,
+                        'attendance_status' => $status,
+                        'recorded_at' => now(),
+                        'auto_tracked' => false,
+                        'manually_overridden' => true,
+                    ]
+                );
+
+                // Also update student session report if exists
+                StudentSessionReport::where('session_id', $this->id)
+                    ->where('student_id', $student->id)
+                    ->update(['attendance_status' => $status]);
+            }
+
+            Log::info('Session attendance recorded', [
+                'session_id' => $this->id,
+                'status' => $status,
+                'students_count' => $students->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to record session attendance', [
+                'session_id' => $this->id,
+                'status' => $status,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
      *
      * For Quran sessions:
@@ -1295,15 +1355,15 @@ class QuranSession extends BaseSession
     {
         $participants = [];
 
-        // Add the teacher
-        if ($this->teacher) {
+        // Add the teacher (using quranTeacher relationship)
+        if ($this->quranTeacher) {
             $participants[] = [
-                'id' => $this->teacher->id,
-                'name' => trim($this->teacher->first_name.' '.$this->teacher->last_name),
-                'email' => $this->teacher->email,
+                'id' => $this->quranTeacher->id,
+                'name' => trim($this->quranTeacher->first_name.' '.$this->quranTeacher->last_name),
+                'email' => $this->quranTeacher->email,
                 'role' => 'quran_teacher',
                 'is_teacher' => true,
-                'user' => $this->teacher,
+                'user' => $this->quranTeacher,
             ];
         }
 

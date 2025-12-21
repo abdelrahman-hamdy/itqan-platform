@@ -20,10 +20,10 @@ abstract class BaseSessionAttendance extends Model
     use HasFactory;
 
     /**
-     * Shared fillable fields across all attendance types
-     * Child classes should merge these with their specific fields
+     * Base fillable fields - child classes merge these via constructor
+     * This pattern prevents duplication of ~16 fields in each child class.
      */
-    protected $fillable = [
+    protected static array $baseFillable = [
         'session_id',
         'student_id',
         'attendance_status',
@@ -43,9 +43,11 @@ abstract class BaseSessionAttendance extends Model
     ];
 
     /**
-     * Shared casts across all attendance types
+     * Base casts - child classes merge via getCasts() override
+     * IMPORTANT: Child classes should NOT define protected $casts as it would override this.
+     * Instead, they should override getCasts() and call parent::getCasts().
      */
-    protected $casts = [
+    protected static array $baseCasts = [
         'join_time' => 'datetime',
         'leave_time' => 'datetime',
         'auto_join_time' => 'datetime',
@@ -57,6 +59,14 @@ abstract class BaseSessionAttendance extends Model
         'participation_score' => 'decimal:1',
         'auto_duration_minutes' => 'integer',
     ];
+
+    /**
+     * Get the casts array - child classes should override this and merge with parent
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), static::$baseCasts);
+    }
 
     /**
      * Default attributes

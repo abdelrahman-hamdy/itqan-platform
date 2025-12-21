@@ -29,6 +29,12 @@ class HomeworkSubmissionResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['student', 'academy', 'gradedBy']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

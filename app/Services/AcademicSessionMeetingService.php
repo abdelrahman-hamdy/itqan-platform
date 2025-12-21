@@ -4,14 +4,20 @@ namespace App\Services;
 
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
-use App\Models\AcademySettings;
-use App\Models\MeetingAttendance;
+use App\Services\Traits\SessionMeetingTrait;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Service for managing Academic session meetings.
+ *
+ * Uses SessionMeetingTrait for common meeting management logic shared
+ * with SessionMeetingService (Quran).
+ */
 class AcademicSessionMeetingService
 {
+    use SessionMeetingTrait;
+
     private LiveKitService $livekitService;
 
     private UnifiedSessionStatusService $statusService;
@@ -25,34 +31,71 @@ class AcademicSessionMeetingService
     }
 
     /**
+     * Get the session type identifier
+     */
+    protected function getSessionType(): string
+    {
+        return 'academic';
+    }
+
+    /**
+     * Get max participants for Academic sessions (typically 1-on-1)
+     */
+    protected function getMaxParticipants(): int
+    {
+        return 2;
+    }
+
+    /**
+     * Get Arabic label for messages
+     */
+    protected function getSessionLabel(): string
+    {
+        return 'الجلسة الأكاديمية';
+    }
+
+    /**
+     * Get cache key prefix for persistence
+     */
+    protected function getCacheKeyPrefix(): string
+    {
+        return 'academic_session_meeting';
+    }
+
+    /**
+     * Get the field name for ended_at timestamp
+     * Academic sessions use 'ended_at' instead of 'meeting_ended_at'
+     */
+    protected function getEndedAtField(): string
+    {
+        return 'ended_at';
+    }
+
+    /**
      * Ensure meeting room is created and available for academic session
      */
     public function ensureMeetingAvailable(AcademicSession $session, bool $forceCreate = false): array
     {
-        // Check if meeting room should be active based on timing
         $sessionTiming = $this->getSessionTiming($session);
 
         if (! $forceCreate && ! $sessionTiming['is_available']) {
             throw new \Exception($sessionTiming['message']);
         }
 
-        // Create or get existing meeting room
         if (! $session->meeting_room_name) {
             $session->generateMeetingLink();
         }
 
-        // Verify room exists on LiveKit server
         $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
 
         if (! $roomInfo) {
-            // Room doesn't exist on server, recreate it
             Log::info('Academic meeting room not found on server, recreating', [
                 'session_id' => $session->id,
                 'room_name' => $session->meeting_room_name,
             ]);
 
             $session->generateMeetingLink([
-                'max_participants' => 2, // Academic sessions are typically 1-on-1
+                'max_participants' => $this->getMaxParticipants(),
                 'empty_timeout' => $this->calculateEmptyTimeout($session),
                 'max_duration' => $this->calculateMaxDuration($session),
             ]);
@@ -72,105 +115,7 @@ class AcademicSessionMeetingService
     }
 
     /**
-     * Get academic session timing information
-     */
-    public function getSessionTiming(AcademicSession $session): array
-    {
-        if (! $session->scheduled_at) {
-            return [
-                'is_available' => true,
-                'is_scheduled' => false,
-                'message' => 'الجلسة الأكاديمية متاحة في أي وقت',
-                'status' => 'available',
-            ];
-        }
-
-        $timezone = AcademyContextService::getTimezone();
-        $now = Carbon::now($timezone);
-        $sessionStart = $session->scheduled_at;
-        $sessionEnd = $sessionStart->copy()->addMinutes($session->duration_minutes ?? 60);
-
-        // Get academy settings for timing configuration
-        $academySettings = AcademySettings::where('academy_id', $session->academy_id)->first();
-        $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
-        $endingBufferMinutes = $academySettings?->default_buffer_minutes ?? 5;
-
-        // Allow joining based on preparation time
-        $joinableStart = $sessionStart->copy()->subMinutes($preparationMinutes);
-
-        // Keep room available with buffer
-        $roomExpiry = $sessionEnd->copy()->addMinutes($endingBufferMinutes);
-
-        if ($now->lt($joinableStart)) {
-            // Too early to join
-            $minutesUntilJoinable = $now->diffInMinutes($joinableStart);
-
-            return [
-                'is_available' => false,
-                'is_scheduled' => true,
-                'message' => "الجلسة الأكاديمية ستكون متاحة خلال {$minutesUntilJoinable} دقيقة",
-                'status' => 'too_early',
-                'minutes_until_available' => $minutesUntilJoinable,
-                'scheduled_start' => $sessionStart,
-                'scheduled_end' => $sessionEnd,
-            ];
-        } elseif ($now->between($joinableStart, $sessionStart)) {
-            // Pre-session period (15 minutes before)
-            $minutesUntilStart = $now->diffInMinutes($sessionStart);
-
-            return [
-                'is_available' => true,
-                'is_scheduled' => true,
-                'message' => "الجلسة الأكاديمية ستبدأ خلال {$minutesUntilStart} دقيقة",
-                'status' => 'pre_session',
-                'minutes_until_start' => $minutesUntilStart,
-                'scheduled_start' => $sessionStart,
-                'scheduled_end' => $sessionEnd,
-            ];
-        } elseif ($now->between($sessionStart, $sessionEnd)) {
-            // During session
-            $minutesRemaining = $now->diffInMinutes($sessionEnd);
-
-            return [
-                'is_available' => true,
-                'is_scheduled' => true,
-                'message' => "الجلسة الأكاديمية جارية - باقي {$minutesRemaining} دقيقة",
-                'status' => 'active',
-                'minutes_remaining' => $minutesRemaining,
-                'scheduled_start' => $sessionStart,
-                'scheduled_end' => $sessionEnd,
-            ];
-        } elseif ($now->between($sessionEnd, $roomExpiry)) {
-            // Post-session grace period
-            $minutesSinceEnd = $sessionEnd->diffInMinutes($now);
-
-            return [
-                'is_available' => true,
-                'is_scheduled' => true,
-                'message' => "انتهت الجلسة الأكاديمية منذ {$minutesSinceEnd} دقيقة",
-                'status' => 'post_session',
-                'minutes_since_end' => $minutesSinceEnd,
-                'scheduled_start' => $sessionStart,
-                'scheduled_end' => $sessionEnd,
-            ];
-        } else {
-            // Session has expired
-            return [
-                'is_available' => false,
-                'is_scheduled' => true,
-                'message' => 'انتهت الجلسة الأكاديمية',
-                'status' => 'expired',
-                'scheduled_start' => $sessionStart,
-                'scheduled_end' => $sessionEnd,
-            ];
-        }
-    }
-
-    /**
      * Process academic sessions - create meetings for sessions in preparation window
-     *
-     * NOTE: Status transitions are handled by UnifiedSessionStatusService.
-     * This method only handles meeting creation and cleanup.
      */
     public function processScheduledSessions(): array
     {
@@ -184,10 +129,8 @@ class AcademicSessionMeetingService
         $timezone = AcademyContextService::getTimezone();
         $now = Carbon::now($timezone);
 
-        // Get academic sessions in READY status without meetings yet
-        // Note: UnifiedSessionStatusService handles SCHEDULED -> READY transitions
         $readySessions = AcademicSession::where('status', SessionStatus::READY)
-            ->whereNull('meeting_room_name') // Sessions without meetings yet
+            ->whereNull('meeting_room_name')
             ->with(['academy'])
             ->get();
 
@@ -211,10 +154,6 @@ class AcademicSessionMeetingService
             }
         }
 
-        // Note: Status transitions to ONGOING are handled by UnifiedSessionStatusService
-        // when participant joins (via LiveKit webhook) or via scheduled command.
-
-        // Clean up expired academic sessions (get cleanup hours from academy settings)
         $defaultCleanupHours = 2;
         $expiredSessions = AcademicSession::whereNotNull('meeting_room_name')
             ->whereNotNull('scheduled_at')
@@ -238,168 +177,11 @@ class AcademicSessionMeetingService
     }
 
     /**
-     * Get academic session persistence key for tracking active meetings
-     */
-    public function getSessionPersistenceKey(AcademicSession $session): string
-    {
-        return "academic_session_meeting:{$session->id}:persistence";
-    }
-
-    /**
-     * Mark academic session meeting as persistent (survives teacher disconnect)
-     */
-    public function markSessionPersistent(AcademicSession $session, ?int $durationMinutes = null): void
-    {
-        $duration = $durationMinutes ?? $session->duration_minutes ?? 60;
-        $expirationMinutes = $duration + 30; // Session duration + 30 minutes grace
-
-        $timezone = AcademyContextService::getTimezone();
-        $now = Carbon::now($timezone);
-
-        Cache::put(
-            $this->getSessionPersistenceKey($session),
-            [
-                'session_id' => $session->id,
-                'room_name' => $session->meeting_room_name,
-                'created_at' => $now,
-                'expires_at' => $now->copy()->addMinutes($expirationMinutes),
-                'scheduled_end' => $session->scheduled_at
-                    ? $session->scheduled_at->addMinutes($duration)
-                    : $now->copy()->addMinutes($duration),
-            ],
-            $now->copy()->addMinutes($expirationMinutes)
-        );
-
-        Log::info('Marked academic session as persistent', [
-            'session_id' => $session->id,
-            'room_name' => $session->meeting_room_name,
-            'expires_in_minutes' => $expirationMinutes,
-        ]);
-    }
-
-    /**
-     * Check if academic session meeting should persist
-     */
-    public function shouldSessionPersist(AcademicSession $session): bool
-    {
-        $persistenceData = Cache::get($this->getSessionPersistenceKey($session));
-
-        if (! $persistenceData) {
-            return false;
-        }
-
-        $timezone = AcademyContextService::getTimezone();
-        $expiresAt = Carbon::parse($persistenceData['expires_at']);
-
-        return Carbon::now($timezone)->lt($expiresAt);
-    }
-
-    /**
-     * Get academic session persistence information
-     */
-    public function getSessionPersistenceInfo(AcademicSession $session): ?array
-    {
-        return Cache::get($this->getSessionPersistenceKey($session));
-    }
-
-    /**
-     * Remove academic session persistence
-     */
-    public function removeSessionPersistence(AcademicSession $session): void
-    {
-        Cache::forget($this->getSessionPersistenceKey($session));
-
-        Log::info('Removed academic session persistence', [
-            'session_id' => $session->id,
-            'room_name' => $session->meeting_room_name,
-        ]);
-    }
-
-    /**
-     * Calculate empty timeout for room based on academic session timing
-     */
-    private function calculateEmptyTimeout(AcademicSession $session): int
-    {
-        if ($session->scheduled_at) {
-            $sessionEnd = $session->scheduled_at->copy()
-                ->addMinutes($session->duration_minutes ?? 60);
-
-            $timezone = AcademyContextService::getTimezone();
-            $minutesUntilEnd = Carbon::now($timezone)->diffInMinutes($sessionEnd, false);
-
-            if ($minutesUntilEnd > 0) {
-                // Keep room alive for session duration + buffer
-                $bufferMinutes = config('livekit.session_settings.timeout_buffer_minutes', 30);
-                return ($minutesUntilEnd + $bufferMinutes) * 60; // Convert to seconds
-            }
-        }
-
-        // Default: use empty timeout from config
-        return config('livekit.default_room_settings.empty_timeout', 1800);
-    }
-
-    /**
-     * Calculate maximum duration for academic session room
-     */
-    private function calculateMaxDuration(AcademicSession $session): int
-    {
-        $defaultDuration = config('livekit.session_settings.default_duration_minutes', 60);
-        $baseDuration = $session->duration_minutes ?? $defaultDuration;
-
-        // Add buffer for late starts and overtime
-        $overtimeBuffer = config('livekit.session_settings.overtime_buffer_minutes', 60);
-        return ($baseDuration + $overtimeBuffer) * 60; // Convert to seconds
-    }
-
-    /**
      * Clean up expired academic session
      */
     private function cleanupExpiredSession(AcademicSession $session): void
     {
-        try {
-            // Try to end the meeting room on LiveKit server
-            if ($session->meeting_room_name) {
-                $this->livekitService->endMeeting($session->meeting_room_name);
-            }
-
-            // FIXED: Check attendance before marking session status for individual sessions
-            if ($session->session_type === 'individual') {
-                // For individual sessions, check if student attended
-                $studentAttended = $this->checkStudentAttendance($session);
-                $sessionStatus = $studentAttended ? SessionStatus::COMPLETED : SessionStatus::ABSENT;
-
-                Log::info('Individual academic session status based on attendance', [
-                    'session_id' => $session->id,
-                    'student_attended' => $studentAttended,
-                    'final_status' => $sessionStatus->value,
-                ]);
-            } else {
-                // For group sessions, always mark as completed
-                $sessionStatus = SessionStatus::COMPLETED;
-            }
-
-            // Update session status
-            $timezone = AcademyContextService::getTimezone();
-            $session->update([
-                'status' => $sessionStatus,
-                'ended_at' => Carbon::now($timezone),
-            ]);
-
-            // Remove persistence
-            $this->removeSessionPersistence($session);
-
-            Log::info('Cleaned up expired academic session', [
-                'session_id' => $session->id,
-                'room_name' => $session->meeting_room_name,
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error during academic session cleanup', [
-                'session_id' => $session->id,
-                'error' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
+        $this->cleanupExpiredSessionCommon($session);
     }
 
     /**
@@ -408,37 +190,6 @@ class AcademicSessionMeetingService
     public function forceCreateMeeting(AcademicSession $session): array
     {
         return $this->ensureMeetingAvailable($session, true);
-    }
-
-    /**
-     * Get room activity summary for academic session
-     */
-    public function getRoomActivity(AcademicSession $session): array
-    {
-        if (! $session->meeting_room_name) {
-            return [
-                'exists' => false,
-                'participants' => 0,
-                'is_active' => false,
-            ];
-        }
-
-        $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
-
-        if (! $roomInfo) {
-            return [
-                'exists' => false,
-                'participants' => 0,
-                'is_active' => false,
-            ];
-        }
-
-        return [
-            'exists' => true,
-            'participants' => $roomInfo['participant_count'],
-            'is_active' => $roomInfo['is_active'],
-            'room_info' => $roomInfo,
-        ];
     }
 
     /**
@@ -452,7 +203,6 @@ class AcademicSessionMeetingService
             'errors' => [],
         ];
 
-        // Get academic sessions that are already READY but don't have meetings yet
         $readySessions = AcademicSession::where('status', SessionStatus::READY)
             ->whereNull('meeting_room_name')
             ->with(['academy', 'academicSubscription'])
@@ -465,7 +215,6 @@ class AcademicSessionMeetingService
 
         foreach ($readySessions as $session) {
             try {
-                // Session is already READY, just create the meeting
                 Log::info('Creating meeting for ready academic session', [
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at,
@@ -473,7 +222,7 @@ class AcademicSessionMeetingService
                 ]);
 
                 $session->generateMeetingLink([
-                    'max_participants' => 2, // Academic sessions are 1-on-1
+                    'max_participants' => $this->getMaxParticipants(),
                     'empty_timeout' => $this->calculateEmptyTimeout($session),
                     'max_duration' => $this->calculateMaxDuration($session),
                 ]);
@@ -505,9 +254,6 @@ class AcademicSessionMeetingService
 
     /**
      * Terminate meetings for expired academic sessions
-     *
-     * NOTE: Status transitions (ONGOING -> COMPLETED) are handled by UnifiedSessionStatusService.
-     * This method only terminates the LiveKit rooms for cleanup.
      */
     public function terminateExpiredMeetings(): array
     {
@@ -517,18 +263,12 @@ class AcademicSessionMeetingService
             'errors' => [],
         ];
 
-        $timezone = AcademyContextService::getTimezone();
-        $now = Carbon::now($timezone);
-
-        // Get COMPLETED sessions that still have meeting rooms active
-        // Note: UnifiedSessionStatusService handles the ONGOING -> COMPLETED transition
         $completedWithMeetings = AcademicSession::whereNotNull('meeting_room_name')
             ->where('status', SessionStatus::COMPLETED)
             ->get();
 
         foreach ($completedWithMeetings as $session) {
             try {
-                // End the meeting room on LiveKit
                 if ($session->meeting_room_name) {
                     $this->livekitService->endMeeting($session->meeting_room_name);
                     $results['meetings_terminated']++;
@@ -559,78 +299,9 @@ class AcademicSessionMeetingService
 
     /**
      * Enhanced processing method for academic session meetings
-     *
-     * NOTE: Status transitions are now handled by UnifiedSessionStatusService
-     * via the sessions:update-statuses command. This method only handles
-     * meeting creation and cleanup.
      */
     public function processSessionMeetings(): array
     {
-        $results = [
-            'meetings_created' => 0,
-            'meetings_terminated' => 0,
-            'status_transitions' => 0,
-            'errors' => [],
-        ];
-
-        try {
-            // Status transitions are now handled by UnifiedSessionStatusService
-            // via the sessions:update-statuses command. We don't duplicate that logic here.
-            // This separation ensures consistent behavior across all session types.
-
-            // Create meetings for ready academic sessions
-            $createResults = $this->createMeetingsForReadySessions();
-            $results['meetings_created'] = $createResults['meetings_created'];
-            $results['errors'] = array_merge($results['errors'], $createResults['errors']);
-
-            // Terminate expired meetings
-            $terminateResults = $this->terminateExpiredMeetings();
-            $results['meetings_terminated'] = $terminateResults['meetings_terminated'];
-            $results['errors'] = array_merge($results['errors'], $terminateResults['errors']);
-
-        } catch (\Exception $e) {
-            $results['errors'][] = [
-                'general' => $e->getMessage(),
-            ];
-
-            Log::error('Error in academic session meeting processing', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-        }
-
-        return $results;
-    }
-
-    /**
-     * Check if student attended the individual academic session
-     */
-    private function checkStudentAttendance(AcademicSession $session): bool
-    {
-        // Get meeting attendance data
-        $meetingAttendance = MeetingAttendance::where('session_id', $session->id)
-            ->where('user_id', $session->student_id)
-            ->first();
-
-        if (! $meetingAttendance) {
-            return false; // No attendance record = absent
-        }
-
-        // Calculate final attendance to ensure sync is done
-        $meetingAttendance->calculateFinalAttendance();
-
-        // Check if student attended for meaningful duration
-        $minimumMinutes = max(5, ($session->duration_minutes ?? 30) * 0.1); // At least 10% or 5 minutes
-        $actualMinutes = $meetingAttendance->total_duration_minutes;
-
-        Log::info('Checking academic student attendance', [
-            'session_id' => $session->id,
-            'student_id' => $session->student_id,
-            'actual_minutes' => $actualMinutes,
-            'minimum_required' => $minimumMinutes,
-            'attended' => $actualMinutes >= $minimumMinutes,
-        ]);
-
-        return $actualMinutes >= $minimumMinutes;
+        return $this->processSessionMeetingsCommon();
     }
 }

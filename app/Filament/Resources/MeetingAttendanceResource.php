@@ -30,6 +30,12 @@ class MeetingAttendanceResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['session', 'user']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

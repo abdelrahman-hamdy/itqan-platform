@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Traits\AttendanceCalculatorTrait;
 use App\Traits\ScopedToAcademy;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +19,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 abstract class BaseSessionReport extends Model
 {
-    use HasFactory, ScopedToAcademy;
+    use AttendanceCalculatorTrait;
+    use HasFactory;
+    use ScopedToAcademy;
 
     /**
      * Shared fillable fields across all report types
@@ -271,12 +274,13 @@ abstract class BaseSessionReport extends Model
                 ? $meetingAttendance->getCurrentSessionDuration()  // Includes current active time
                 : $meetingAttendance->total_duration_minutes;      // Completed cycles only
 
+            $sessionDuration = $this->session->duration_minutes ?? 60;
             $this->update([
                 'meeting_enter_time' => $meetingAttendance->first_join_time,
                 'meeting_leave_time' => $meetingAttendance->last_leave_time,
                 'actual_attendance_minutes' => $actualMinutes,
-                'attendance_status' => $this->calculateRealtimeAttendanceStatus($meetingAttendance),
-                'attendance_percentage' => $this->calculateAttendancePercentage($actualMinutes),
+                'attendance_status' => $this->calculateRealtimeAttendanceStatusFromMeeting($meetingAttendance),
+                'attendance_percentage' => $this->calculateAttendancePercentage($actualMinutes, $sessionDuration),
                 'meeting_events' => $meetingAttendance->join_leave_cycles ?? [],
                 'is_calculated' => $meetingAttendance->is_calculated,
             ]);
@@ -308,11 +312,12 @@ abstract class BaseSessionReport extends Model
     }
 
     /**
-     * Calculate real-time attendance status based on grace time rules
-     * CRITICAL: Handle edge cases for students who join early/stay long
-     * FIXED: Use pre-calculated status from MeetingAttendance when available
+     * Calculate real-time attendance status based on grace time rules.
+     * Uses centralized AttendanceCalculatorTrait for calculation logic.
+     *
+     * CRITICAL: Uses pre-calculated status from MeetingAttendance when available.
      */
-    protected function calculateRealtimeAttendanceStatus(MeetingAttendance $meetingAttendance): string
+    protected function calculateRealtimeAttendanceStatusFromMeeting(MeetingAttendance $meetingAttendance): string
     {
         // CRITICAL FIX: If attendance is already calculated, use that status (most accurate)
         if ($meetingAttendance->is_calculated && $meetingAttendance->attendance_status) {
@@ -321,6 +326,7 @@ abstract class BaseSessionReport extends Model
                 'student_id' => $this->student_id,
                 'status' => $meetingAttendance->attendance_status,
             ]);
+
             return $meetingAttendance->attendance_status;
         }
 
@@ -333,49 +339,27 @@ abstract class BaseSessionReport extends Model
         $graceMinutes = $this->getGracePeriodMinutes();
         $sessionDuration = $session->duration_minutes ?? 60;
 
-        // Check if first join was within grace period (persistent rule)
-        $sessionStartTime = $session->scheduled_at;
-        $graceThresholdTime = $sessionStartTime->copy()->addMinutes($graceMinutes);
-        $joinedWithinGrace = $meetingAttendance->first_join_time->lte($graceThresholdTime);
-
-        // Calculate current attendance percentage
+        // Calculate current attendance
         $currentDuration = $meetingAttendance->isCurrentlyInMeeting()
             ? $meetingAttendance->getCurrentSessionDuration()
             : $meetingAttendance->total_duration_minutes;
 
-        $attendancePercentage = $sessionDuration > 0 ? ($currentDuration / $sessionDuration) * 100 : 0;
-
-        // CRITICAL: 100% attendance override - if student attended 100%+, always mark as attended
-        if ($attendancePercentage >= 100) {
-            return 'attended'; // Anyone who attended full session should be marked attended
-        }
-
-        // If first join was after grace time, check if they made up for it with attendance
-        if (! $joinedWithinGrace) {
-            // If late but attended 95%+, mark as 'late' not 'absent'
-            if ($attendancePercentage >= 95) {
-                return 'late'; // Late arrival but excellent attendance
-            } elseif ($attendancePercentage >= 80) {
-                return 'leaved'; // Late and decent attendance
-            } else {
-                return 'absent'; // Late and poor attendance
-            }
-        }
-
-        // Joined on time - standard percentage rules
-        if ($attendancePercentage >= 80) {
-            return 'attended';
-        } elseif ($attendancePercentage >= 30) {
-            return 'leaved';
-        } else {
-            return 'absent';
-        }
+        // Delegate to centralized trait method
+        return $this->calculateRealtimeAttendanceStatus(
+            $meetingAttendance->first_join_time,
+            $session->scheduled_at,
+            $sessionDuration,
+            $currentDuration,
+            $graceMinutes,
+            $meetingAttendance->isCurrentlyInMeeting()
+        );
     }
 
     /**
-     * Calculate attendance percentage based on current minutes
+     * Calculate attendance percentage based on current minutes.
+     * Note: Uses trait method with same signature to avoid conflicts.
      */
-    protected function calculateAttendancePercentage(int $actualMinutes): float
+    protected function calculateAttendancePercentageForReport(int $actualMinutes): float
     {
         if (! $this->session) {
             return 0.0;
@@ -383,7 +367,7 @@ abstract class BaseSessionReport extends Model
 
         $sessionDuration = $this->session->duration_minutes ?? 60;
 
-        return $sessionDuration > 0 ? min(100, ($actualMinutes / $sessionDuration) * 100) : 0.0;
+        return $this->calculateAttendancePercentage($actualMinutes, $sessionDuration);
     }
 
     /**
@@ -430,8 +414,8 @@ abstract class BaseSessionReport extends Model
             ? min(100, ($this->actual_attendance_minutes / $sessionDuration) * 100)
             : 0;
 
-        // Determine attendance status
-        $this->attendance_status = $this->determineAttendanceStatus($sessionStartTime, $sessionDuration, $lateThreshold);
+        // Determine attendance status using centralized trait
+        $this->attendance_status = $this->determineAttendanceStatusForReport($sessionStartTime, $sessionDuration, $lateThreshold);
 
         // Mark as calculated
         $this->is_calculated = true;
@@ -440,34 +424,19 @@ abstract class BaseSessionReport extends Model
     }
 
     /**
-     * Determine attendance status based on attendance percentage and timing
+     * Determine attendance status based on attendance percentage and timing.
+     * Uses centralized AttendanceCalculatorTrait for calculation logic.
      */
-    protected function determineAttendanceStatus(Carbon $sessionStartTime, int $sessionDuration, int $graceMinutes): string
+    protected function determineAttendanceStatusForReport(Carbon $sessionStartTime, int $sessionDuration, int $graceMinutes): string
     {
-        // If never joined, definitely absent
-        if (! $this->meeting_enter_time) {
-            return 'absent';
-        }
-
-        // CRITICAL: 100% attendance override - always mark as attended
-        if ($this->attendance_percentage >= 100) {
-            return 'attended'; // Anyone who attended full session should be marked attended
-        }
-
-        // Determine status based on attendance percentage
-        if ($this->attendance_percentage < 30) {
-            return 'absent';
-        } elseif ($this->attendance_percentage < 80) {
-            return 'leaved';
-        }
-
-        // If attended 80%+, check if they were late
-        // If 95%+ attendance but late, still mark as 'attended' (they made up for it)
-        if ($this->attendance_percentage >= 95) {
-            return 'attended'; // Excellent attendance overrides lateness
-        }
-
-        return $this->is_late ? 'late' : 'attended';
+        // Delegate to centralized trait method
+        return $this->calculateAttendanceStatus(
+            $this->meeting_enter_time,
+            $sessionStartTime,
+            $sessionDuration,
+            $this->actual_attendance_minutes ?? 0,
+            $graceMinutes
+        );
     }
 
     /**

@@ -180,9 +180,12 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     /**
      * الحصول على وقت انتهاء الجلسة
      */
-    public function getEndTimeAttribute(): Carbon
+    public function getEndTimeAttribute(): ?Carbon
     {
-        return $this->scheduled_datetime->addMinutes($this->duration_minutes);
+        if (!$this->scheduled_at) {
+            return null;
+        }
+        return $this->scheduled_at->copy()->addMinutes($this->duration_minutes ?? 60);
     }
 
     /**
@@ -190,9 +193,13 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function canStart(): bool
     {
-        return $this->status === 'scheduled' && 
-               $this->scheduled_datetime->isPast() &&
-               $this->scheduled_datetime->diffInMinutes(now()) <= 30; // يمكن البدء قبل 30 دقيقة
+        if (!$this->scheduled_at) {
+            return false;
+        }
+
+        return $this->status === \App\Enums\SessionStatus::SCHEDULED &&
+               $this->scheduled_at->isPast() &&
+               $this->scheduled_at->diffInMinutes(now()) <= 30; // يمكن البدء قبل 30 دقيقة
     }
 
     /**
@@ -200,8 +207,12 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function canCancel(): bool
     {
-        return in_array($this->status, ['scheduled', 'ongoing']) &&
-               $this->scheduled_datetime->isFuture();
+        if (!$this->scheduled_at) {
+            return false;
+        }
+
+        return in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::ONGOING]) &&
+               $this->scheduled_at->isFuture();
     }
 
     // ========================================

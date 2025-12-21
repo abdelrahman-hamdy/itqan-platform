@@ -12,32 +12,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * - quiz_completion: Whether session quizzes were completed
  * - exercises_completed: Number of practical exercises completed
  * - interaction_score: Level of interaction with course content (0-10)
+ *
+ * Uses constructor merge pattern for fillable and getCasts() override for casts
+ * to avoid duplicating ~25 lines of parent definitions.
  */
 class InteractiveSessionAttendance extends BaseSessionAttendance
 {
     /**
-     * Interactive-specific fillable fields (includes base fields + Interactive-specific)
+     * Interactive-specific fillable fields only
+     * Base fields are merged via constructor
      */
     protected $fillable = [
-        // Base fields from BaseSessionAttendance
-        'session_id',
-        'student_id',
-        'attendance_status',
-        'join_time',
-        'leave_time',
-        'auto_join_time',
-        'auto_leave_time',
-        'auto_duration_minutes',
-        'auto_tracked',
-        'manually_overridden',
-        'overridden_by',
-        'overridden_at',
-        'override_reason',
-        'meeting_events',
-        'participation_score',
-        'notes',
-
-        // Interactive-specific fields
         'video_completion_percentage',
         'quiz_completion',
         'exercises_completed',
@@ -45,27 +30,27 @@ class InteractiveSessionAttendance extends BaseSessionAttendance
     ];
 
     /**
-     * Interactive-specific casts (merged with parent)
+     * Constructor - merge base fillable with Interactive-specific fields
      */
-    protected $casts = [
-        // Parent casts inherited
-        'join_time' => 'datetime',
-        'leave_time' => 'datetime',
-        'auto_join_time' => 'datetime',
-        'auto_leave_time' => 'datetime',
-        'overridden_at' => 'datetime',
-        'auto_tracked' => 'boolean',
-        'manually_overridden' => 'boolean',
-        'meeting_events' => 'array',
-        'participation_score' => 'decimal:1',
-        'auto_duration_minutes' => 'integer',
+    public function __construct(array $attributes = [])
+    {
+        $this->fillable = array_merge(static::$baseFillable, $this->fillable);
+        parent::__construct($attributes);
+    }
 
-        // Interactive-specific casts
-        'video_completion_percentage' => 'decimal:2',
-        'quiz_completion' => 'boolean',
-        'exercises_completed' => 'integer',
-        'interaction_score' => 'decimal:1',
-    ];
+    /**
+     * Get casts - merge base casts with Interactive-specific casts
+     * IMPORTANT: Do NOT define protected $casts - it would override parent's casts
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), [
+            'video_completion_percentage' => 'decimal:2',
+            'quiz_completion' => 'boolean',
+            'exercises_completed' => 'integer',
+            'interaction_score' => 'decimal:1',
+        ]);
+    }
 
     // ========================================
     // Implementation of Abstract Methods

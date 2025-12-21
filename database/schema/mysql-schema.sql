@@ -454,6 +454,7 @@ CREATE TABLE `academies` (
   `growth_rate` decimal(5,2) NOT NULL DEFAULT '0.00',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `academies_subdomain_unique` (`subdomain`),
   KEY `academies_subdomain_index` (`subdomain`),

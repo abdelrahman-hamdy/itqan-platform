@@ -13,29 +13,19 @@ use App\Services\MeetingAttendanceService;
 use App\Services\UnifiedSessionStatusService;
 use App\Services\AttendanceEventService;
 use App\Services\RecordingService;
+use App\Services\RoomPermissionService;
 use App\Enums\SessionStatus;
 
 class LiveKitWebhookController extends Controller
 {
-    private SessionMeetingService $sessionMeetingService;
-    private MeetingAttendanceService $attendanceService;
-    private UnifiedSessionStatusService $statusService;
-    private AttendanceEventService $eventService;
-    private RecordingService $recordingService;
-
     public function __construct(
-        SessionMeetingService $sessionMeetingService,
-        MeetingAttendanceService $attendanceService,
-        UnifiedSessionStatusService $statusService,
-        AttendanceEventService $eventService,
-        RecordingService $recordingService
-    ) {
-        $this->sessionMeetingService = $sessionMeetingService;
-        $this->attendanceService = $attendanceService;
-        $this->statusService = $statusService;
-        $this->eventService = $eventService;
-        $this->recordingService = $recordingService;
-    }
+        protected SessionMeetingService $sessionMeetingService,
+        protected MeetingAttendanceService $attendanceService,
+        protected UnifiedSessionStatusService $statusService,
+        protected AttendanceEventService $eventService,
+        protected RecordingService $recordingService,
+        protected RoomPermissionService $roomPermissionService
+    ) {}
 
     /**
      * Handle webhooks from LiveKit server
@@ -839,7 +829,7 @@ class LiveKitWebhookController extends Controller
         }
 
         // Check room permissions
-        $permissionService = app(\App\Services\RoomPermissionService::class);
+        $permissionService = $this->roomPermissionService;
         $permissions = $permissionService->getRoomPermissions($roomName);
 
         $shouldMute = false;

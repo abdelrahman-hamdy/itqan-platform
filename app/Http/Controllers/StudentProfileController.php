@@ -18,6 +18,15 @@ use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Models\RecordedCourse;
 use App\Models\StudentProfile;
+use App\Services\Attendance\InteractiveReportService;
+use App\Services\CircleEnrollmentService;
+use App\Services\HomeworkService;
+use App\Services\Reports\InteractiveCourseReportService;
+use App\Services\StudentDashboardService;
+use App\Services\StudentProfileService;
+use App\Services\StudentSearchService;
+use App\Services\StudentStatisticsService;
+use App\Services\StudentSubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -26,89 +35,27 @@ use Illuminate\Support\Facades\Storage;
 
 class StudentProfileController extends Controller
 {
+    public function __construct(
+        protected StudentDashboardService $dashboardService,
+        protected StudentStatisticsService $statisticsService,
+        protected StudentProfileService $profileService,
+        protected CircleEnrollmentService $circleEnrollmentService,
+        protected StudentSubscriptionService $subscriptionService,
+        protected StudentSearchService $searchService,
+        protected InteractiveCourseReportService $interactiveReportService,
+        protected InteractiveReportService $attendanceReportService,
+        protected HomeworkService $homeworkService
+    ) {}
+
     public function index()
     {
         $user = Auth::user();
-        $studentProfile = $user->studentProfileUnscoped;
         $academy = $user->academy;
 
-        // Get student's Quran circles
-        $quranCircles = QuranCircle::where('academy_id', $academy->id)
-            ->whereHas('students', function ($query) use ($user) {
-                $query->where('users.id', $user->id);
-            })
-            ->with(['students'])
-            ->get();
+        // Load dashboard data using service
+        $dashboardData = $this->dashboardService->loadDashboardData($user);
 
-        // Manually load teacher data for each circle
-        foreach ($quranCircles as $circle) {
-            if ($circle->quran_teacher_id) {
-                $circle->teacherData = \App\Models\User::find($circle->quran_teacher_id);
-            }
-        }
-
-        // Get student's Quran private sessions
-        $quranPrivateSessions = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('subscription_type', 'individual')
-            ->where('status', 'active')
-            ->whereHas('individualCircle', function ($query) {
-                $query->whereNull('deleted_at');
-            })
-            ->with(['package', 'individualCircle', 'sessions' => function ($query) {
-                $query->orderBy('scheduled_at', 'desc')->limit(5);
-            }])
-            ->get();
-
-        // Manually load teacher data for each subscription
-        foreach ($quranPrivateSessions as $subscription) {
-            if ($subscription->quran_teacher_id) {
-                $subscription->teacherData = \App\Models\User::find($subscription->quran_teacher_id);
-            }
-        }
-
-        // Get student's Quran trial requests
-        $quranTrialRequests = QuranTrialRequest::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->with(['teacher', 'trialSession'])
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
-
-        // Get student's interactive courses
-        $studentId = $studentProfile?->id;
-        $interactiveCourses = collect();
-
-        if ($studentId) {
-            $interactiveCourses = InteractiveCourse::where('academy_id', $academy->id)
-                ->whereHas('enrollments', function ($query) use ($studentId) {
-                    $query->where('student_id', $studentId)
-                          ->whereIn('enrollment_status', ['enrolled', 'completed']);
-                })
-                ->with(['assignedTeacher', 'enrollments' => function ($query) use ($studentId) {
-                    $query->where('student_id', $studentId);
-                }])
-                ->get();
-        }
-
-        // Get student's recorded courses
-        $recordedCourses = RecordedCourse::where('academy_id', $academy->id)
-            ->whereHas('enrollments', function ($query) use ($user) {
-                $query->where('student_id', $user->id);
-            })
-            ->with([
-                'enrollments' => function ($query) use ($user) {
-                    $query->where('student_id', $user->id)
-                        ->select('id', 'recorded_course_id', 'student_id', 'status', 'progress_percentage',
-                            'completed_lessons', 'total_lessons', 'watch_time_minutes');
-                },
-                'subject',
-                'gradeLevel',
-            ])
-            ->select('id', 'academy_id', 'title', 'description', 'thumbnail_url', 'difficulty_level', 'subject_id', 'grade_level_id', 'price', 'avg_rating', 'total_enrollments')
-            ->get();
-
-        // Get student's academic private sessions
+        // Get academic private sessions (still inline for now)
         $academicPrivateSessions = AcademicSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
             ->where('status', 'active')
@@ -123,336 +70,31 @@ class StudentProfileController extends Controller
                 ->get();
         }
 
-        // Calculate statistics
-        $stats = $this->calculateStudentStats($user);
+        // Calculate statistics using service
+        $stats = $this->statisticsService->calculate($user);
 
-        return view('student.profile', compact(
-            'quranCircles',
-            'quranPrivateSessions',
-            'quranTrialRequests',
-            'interactiveCourses',
-            'recordedCourses',
-            'academicPrivateSessions',
-            'stats'
-        ));
-    }
-
-    private function calculateStudentStats($user)
-    {
-        $academy = $user->academy;
-        $studentId = $user->studentProfile?->id;
-
-        // Get next upcoming session across all session types
-        $nextQuranSession = \App\Models\QuranSession::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->whereIn('status', [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])
-            ->where('scheduled_at', '>', now())
-            ->orderBy('scheduled_at')
-            ->first();
-
-        $nextAcademicSession = AcademicSession::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->whereIn('status', [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])
-            ->where('scheduled_at', '>', now())
-            ->orderBy('scheduled_at')
-            ->first();
-
-        // Determine which session is next
-        $nextSession = null;
-        if ($nextQuranSession && $nextAcademicSession) {
-            $nextSession = $nextQuranSession->scheduled_at < $nextAcademicSession->scheduled_at ? $nextQuranSession : $nextAcademicSession;
-        } elseif ($nextQuranSession) {
-            $nextSession = $nextQuranSession;
-        } elseif ($nextAcademicSession) {
-            $nextSession = $nextAcademicSession;
-        }
-
-        $nextSessionText = $nextSession ? $nextSession->scheduled_at->diffForHumans() : 'لا توجد جلسات قادمة';
-        $nextSessionIcon = 'ri-calendar-event-line';
-
-        // Count pending homework assignments
-        $pendingHomework = 0;
-
-        // Count pending Quran homework from sessions
-        // For Quran sessions, homework is stored in homework_assigned and homework_details fields
-        // We consider homework "pending" if it's assigned but not yet evaluated by teacher
-        // Quran homework is graded via new_memorization_degree or reservation_degree in student_session_reports
-        $pendingQuranHomework = \App\Models\QuranSession::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('status', \App\Enums\SessionStatus::COMPLETED)
-            ->where(function ($query) {
-                $query->where('homework_assigned', true)
-                    ->orWhereNotNull('homework_details');
-            })
-            ->whereDoesntHave('studentReports', function ($query) use ($user) {
-                $query->where('student_id', $user->id)
-                    ->where(function ($q) {
-                        $q->whereNotNull('new_memorization_degree')
-                          ->orWhereNotNull('reservation_degree');
-                    });
-            })
-            ->count();
-
-        // Count pending academic homework from sessions
-        // Academic homework is graded via homework_completion_degree in academic_session_reports
-        $pendingAcademicHomework = AcademicSession::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('status', \App\Enums\SessionStatus::COMPLETED)
-            ->where(function ($query) {
-                $query->where('homework_assigned', true)
-                    ->orWhereNotNull('homework_description');
-            })
-            ->whereDoesntHave('studentReports', function ($query) use ($user) {
-                $query->where('student_id', $user->id)
-                    ->whereNotNull('homework_completion_degree');
-            })
-            ->count();
-
-        $pendingHomework = $pendingQuranHomework + $pendingAcademicHomework;
-
-        // Calculate overall attendance rate across all sessions
-        // Count Quran session attendances
-        $quranTotalAttendances = \App\Models\QuranSessionAttendance::where('student_id', $user->id)
-            ->whereHas('session', function ($query) use ($academy) {
-                $query->where('academy_id', $academy->id);
-            })
-            ->count();
-
-        $quranPresentAttendances = \App\Models\QuranSessionAttendance::where('student_id', $user->id)
-            ->whereIn('attendance_status', [
-                \App\Enums\AttendanceStatus::ATTENDED->value,
-                \App\Enums\AttendanceStatus::LATE->value,
-                \App\Enums\AttendanceStatus::LEAVED->value
-            ])
-            ->whereHas('session', function ($query) use ($academy) {
-                $query->where('academy_id', $academy->id);
-            })
-            ->count();
-
-        // Count Academic session attendances
-        $academicTotalAttendances = \App\Models\AcademicSessionAttendance::where('student_id', $user->id)
-            ->whereHas('session', function ($query) use ($academy) {
-                $query->where('academy_id', $academy->id);
-            })
-            ->count();
-
-        $academicPresentAttendances = \App\Models\AcademicSessionAttendance::where('student_id', $user->id)
-            ->whereIn('attendance_status', [
-                \App\Enums\AttendanceStatus::ATTENDED->value,
-                \App\Enums\AttendanceStatus::LATE->value,
-                \App\Enums\AttendanceStatus::LEAVED->value
-            ])
-            ->whereHas('session', function ($query) use ($academy) {
-                $query->where('academy_id', $academy->id);
-            })
-            ->count();
-
-        // Combine both types
-        $totalAttendances = $quranTotalAttendances + $academicTotalAttendances;
-        $presentAttendances = $quranPresentAttendances + $academicPresentAttendances;
-
-        $attendanceRate = $totalAttendances > 0 ? round(($presentAttendances / $totalAttendances) * 100) : 0;
-
-        // Calculate today's learning hours from scheduled sessions
-        $todayStart = now()->startOfDay();
-        $todayEnd = now()->endOfDay();
-
-        // Get today's Quran sessions (scheduled or completed today)
-        $todayQuranMinutes = \App\Models\QuranSession::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->whereBetween('scheduled_at', [$todayStart, $todayEnd])
-            ->whereIn('status', [
-                \App\Enums\SessionStatus::SCHEDULED,
-                \App\Enums\SessionStatus::READY,
-                \App\Enums\SessionStatus::ONGOING,
-                \App\Enums\SessionStatus::COMPLETED
-            ])
-            ->sum('duration_minutes');
-
-        // Get today's Academic sessions
-        $todayAcademicMinutes = AcademicSession::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->whereBetween('scheduled_at', [$todayStart, $todayEnd])
-            ->whereIn('status', [
-                \App\Enums\SessionStatus::SCHEDULED,
-                \App\Enums\SessionStatus::READY,
-                \App\Enums\SessionStatus::ONGOING,
-                \App\Enums\SessionStatus::COMPLETED
-            ])
-            ->sum('duration_minutes');
-
-        // Get today's Interactive course sessions
-        $todayInteractiveMinutes = 0;
-        if ($studentId) {
-            $todayInteractiveMinutes = \App\Models\InteractiveCourseSession::whereHas('course.enrollments', function ($query) use ($studentId) {
-                    $query->where('student_id', $studentId);
-                })
-                ->whereBetween('scheduled_at', [$todayStart, $todayEnd])
-                ->whereIn('status', [
-                    \App\Enums\SessionStatus::SCHEDULED,
-                    \App\Enums\SessionStatus::READY,
-                    \App\Enums\SessionStatus::ONGOING,
-                    \App\Enums\SessionStatus::COMPLETED
-                ])
-                ->sum('duration_minutes');
-        }
-
-        $todayLearningMinutes = $todayQuranMinutes + $todayAcademicMinutes + $todayInteractiveMinutes;
-        $todayLearningHours = round($todayLearningMinutes / 60, 1);
-
-        // Count pending quizzes (simpler approach)
-        // Count quiz assignments from enrolled courses where student hasn't completed any attempt
-        $pendingQuizzes = 0;
-        if ($studentId) {
-            try {
-                $pendingQuizzes = \App\Models\QuizAssignment::where('is_visible', true)
-                    ->where(function ($query) {
-                        // Check availability dates
-                        $query->where(function ($q) {
-                            $q->whereNull('available_from')
-                              ->orWhere('available_from', '<=', now());
-                        })->where(function ($q) {
-                            $q->whereNull('available_until')
-                              ->orWhere('available_until', '>=', now());
-                        });
-                    })
-                    // For interactive courses the student is enrolled in
-                    ->where('assignable_type', 'App\\Models\\InteractiveCourse')
-                    ->whereHas('assignable', function ($query) use ($studentId) {
-                        $query->whereHas('enrollments', function ($enrollQuery) use ($studentId) {
-                            $enrollQuery->where('student_id', $studentId)
-                                        ->whereIn('enrollment_status', ['enrolled', 'completed']);
-                        });
-                    })
-                    // Student hasn't submitted any attempt yet
-                    ->whereDoesntHave('attempts', function ($query) use ($studentId) {
-                        $query->where('student_id', $studentId)
-                              ->whereNotNull('submitted_at');
-                    })
-                    ->count();
-            } catch (\Exception $e) {
-                // If there's an issue with quiz counting, just set to 0
-                $pendingQuizzes = 0;
-                Log::warning('Error counting pending quizzes', ['error' => $e->getMessage()]);
-            }
-        }
-
-        // Count total completed sessions across all types (keeping for backward compatibility)
-        $completedQuranSessions = \App\Models\QuranSession::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('status', \App\Enums\SessionStatus::COMPLETED)
-            ->count();
-
-        $completedAcademicSessions = AcademicSession::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('status', \App\Enums\SessionStatus::COMPLETED)
-            ->count();
-
-        $completedInteractiveSessions = 0;
-        if ($studentId) {
-            $completedInteractiveSessions = \App\Models\InteractiveCourseSession::whereHas('course.enrollments', function ($query) use ($studentId) {
-                    $query->where('student_id', $studentId);
-                })
-                ->where('status', \App\Enums\SessionStatus::COMPLETED)
-                ->count();
-        }
-
-        $totalCompletedSessions = $completedQuranSessions + $completedAcademicSessions + $completedInteractiveSessions;
-
-        // Count active interactive courses
-        $activeInteractiveCourses = 0;
-        if ($studentId) {
-            $activeInteractiveCourses = InteractiveCourse::where('academy_id', $academy->id)
-                ->whereHas('enrollments', function ($query) use ($studentId) {
-                    $query->where('student_id', $studentId)
-                          ->whereIn('enrollment_status', ['enrolled', 'completed']);
-                })
-                ->count();
-        }
-
-        // Count active recorded courses
-        $activeRecordedCourses = RecordedCourse::where('academy_id', $academy->id)
-            ->whereHas('enrollments', function ($query) use ($user) {
-                $query->where('student_id', $user->id)->where('status', 'active');
-            })
-            ->count();
-
-        // Total active courses
-        $activeCourses = $activeInteractiveCourses + $activeRecordedCourses;
-
-        // Calculate real Quran progress
-        $quranSubscriptions = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->get();
-
-        $quranProgress = $quranSubscriptions->avg('progress_percentage') ?? 0;
-        $quranPages = $quranSubscriptions->sum('verses_memorized') ?? 0;
-
-        // Count Quran trial requests
-        $quranTrialRequestsCount = QuranTrialRequest::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->count();
-
-        // Count active Quran subscriptions
-        $activeQuranSubscriptions = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('status', 'active')
-            ->count();
-
-        // Count active Quran circles
-        $quranCirclesCount = QuranCircle::where('academy_id', $academy->id)
-            ->whereHas('students', function ($query) use ($user) {
-                $query->where('users.id', $user->id);
-            })
-            ->count();
-
-        return [
-            // New useful stats
-            'nextSessionText' => $nextSessionText,
-            'nextSessionIcon' => $nextSessionIcon,
-            'nextSessionDate' => $nextSession?->scheduled_at,
-            'pendingHomework' => $pendingHomework,
-            'pendingQuizzes' => $pendingQuizzes,
-            'todayLearningHours' => $todayLearningHours,
-            'todayLearningMinutes' => $todayLearningMinutes,
-            'attendanceRate' => $attendanceRate,
-            'totalCompletedSessions' => $totalCompletedSessions,
-
-            // Keep existing stats for backward compatibility
-            'activeCourses' => $activeCourses,
-            'activeInteractiveCourses' => $activeInteractiveCourses,
-            'activeRecordedCourses' => $activeRecordedCourses,
-            'quranProgress' => round($quranProgress, 1),
-            'quranPages' => $quranPages,
-            'quranTrialRequestsCount' => $quranTrialRequestsCount,
-            'activeQuranSubscriptions' => $activeQuranSubscriptions,
-            'quranCirclesCount' => $quranCirclesCount,
-        ];
+        return view('student.profile', [
+            'quranCircles' => $dashboardData['circles'],
+            'quranPrivateSessions' => $dashboardData['privateSessions'],
+            'quranTrialRequests' => $dashboardData['trialRequests'],
+            'interactiveCourses' => $dashboardData['interactiveCourses'],
+            'recordedCourses' => $dashboardData['recordedCourses'],
+            'academicPrivateSessions' => $academicPrivateSessions,
+            'stats' => $stats,
+        ]);
     }
 
     public function edit()
     {
         $user = Auth::user();
-        $studentProfile = $user->studentProfileUnscoped;
+        $studentProfile = $this->profileService->getOrCreateProfile($user);
 
-        // Handle case where student profile doesn't exist or was orphaned
-        if (! $studentProfile) {
-            // Try to create a basic student profile if one doesn't exist
-            $studentProfile = $this->createBasicStudentProfile($user);
-
-            if (! $studentProfile) {
-                return redirect()->route('student.profile')
-                    ->with('error', 'لم يتم العثور على الملف الشخصي للطالب. يرجى التواصل مع الدعم الفني.');
-            }
+        if (!$studentProfile) {
+            return redirect()->route('student.profile')
+                ->with('error', 'لم يتم العثور على الملف الشخصي للطالب. يرجى التواصل مع الدعم الفني.');
         }
 
-        // Get grade levels for the current academy
-        $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $user->academy_id)
-            ->active()
-            ->ordered()
-            ->get();
-
-        // Get countries for the nationality dropdown
+        $gradeLevels = $this->profileService->getGradeLevels($user);
         $countries = Country::toArray();
 
         return view('student.edit-profile', compact('studentProfile', 'gradeLevels', 'countries'));
@@ -461,16 +103,11 @@ class StudentProfileController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
-        $studentProfile = $user->studentProfileUnscoped;
+        $studentProfile = $this->profileService->getOrCreateProfile($user);
 
-        // Handle case where student profile doesn't exist or was orphaned
-        if (! $studentProfile) {
-            $studentProfile = $this->createBasicStudentProfile($user);
-
-            if (! $studentProfile) {
-                return redirect()->back()
-                    ->with('error', 'لم يتم العثور على الملف الشخصي للطالب. يرجى التواصل مع الدعم الفني.');
-            }
+        if (!$studentProfile) {
+            return redirect()->back()
+                ->with('error', 'لم يتم العثور على الملف الشخصي للطالب. يرجى التواصل مع الدعم الفني.');
         }
 
         $validated = $request->validate([
@@ -486,18 +123,11 @@ class StudentProfileController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Handle avatar upload
-        if ($request->hasFile('avatar')) {
-            // Delete old avatar if exists
-            if ($studentProfile->avatar) {
-                Storage::disk('public')->delete($studentProfile->avatar);
-            }
-
-            // Store new avatar
-            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
-        }
-
-        $studentProfile->update($validated);
+        $this->profileService->updateProfile(
+            $studentProfile,
+            $validated,
+            $request->file('avatar')
+        );
 
         return redirect()->route('student.profile', ['subdomain' => $user->academy->subdomain ?? 'itqan-academy'])
             ->with('success', 'تم تحديث الملف الشخصي بنجاح');
@@ -621,57 +251,17 @@ class StudentProfileController extends Controller
     public function toggleAutoRenew(Request $request, string $subdomain, string $type, string $id)
     {
         $user = Auth::user();
-        $academy = $user->academy;
-        $subdomain = $academy->subdomain ?? 'itqan-academy';
+        $subdomain = $user->academy->subdomain ?? 'itqan-academy';
 
-        Log::info('Toggle auto-renew called', [
-            'type' => $type,
-            'id' => $id,
-            'user_id' => $user->id,
-            'academy_id' => $academy->id,
-            'request_url' => $request->fullUrl(),
-            'request_path' => $request->path(),
-            'route_params' => $request->route()?->parameters() ?? [],
-        ]);
+        $result = $this->subscriptionService->toggleAutoRenew($user, $type, $id);
 
-        $subscription = match ($type) {
-            'quran' => QuranSubscription::where('id', $id)
-                ->where('student_id', $user->id)
-                ->where('academy_id', $academy->id)
-                ->first(),
-            'academic' => AcademicSubscription::where('id', $id)
-                ->where('student_id', $user->id)
-                ->where('academy_id', $academy->id)
-                ->first(),
-            default => null,
-        };
-
-        if (!$subscription) {
-            Log::warning('Subscription not found for toggle', [
-                'type' => $type,
-                'id' => $id,
-                'user_id' => $user->id,
-            ]);
+        if (!$result['success']) {
             return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-                ->with('error', 'الاشتراك غير موجود');
+                ->with('error', $result['error']);
         }
 
-        $oldValue = $subscription->auto_renew;
-        $subscription->auto_renew = !$subscription->auto_renew;
-        $subscription->save();
-
-        Log::info('Auto-renew toggled', [
-            'subscription_id' => $subscription->id,
-            'old_value' => $oldValue,
-            'new_value' => $subscription->auto_renew,
-        ]);
-
-        $message = $subscription->auto_renew
-            ? 'تم تفعيل التجديد التلقائي بنجاح'
-            : 'تم إيقاف التجديد التلقائي بنجاح';
-
         return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-            ->with('success', $message);
+            ->with('success', $result['message']);
     }
 
     /**
@@ -680,41 +270,17 @@ class StudentProfileController extends Controller
     public function cancelSubscription(Request $request, string $subdomain, string $type, string $id)
     {
         $user = Auth::user();
-        $academy = $user->academy;
-        $subdomain = $academy->subdomain ?? 'itqan-academy';
+        $subdomain = $user->academy->subdomain ?? 'itqan-academy';
 
-        $subscription = match ($type) {
-            'quran' => QuranSubscription::where('id', $id)
-                ->where('student_id', $user->id)
-                ->where('academy_id', $academy->id)
-                ->first(),
-            'academic' => AcademicSubscription::where('id', $id)
-                ->where('student_id', $user->id)
-                ->where('academy_id', $academy->id)
-                ->first(),
-            default => null,
-        };
+        $result = $this->subscriptionService->cancelSubscription($user, $type, $id);
 
-        if (!$subscription) {
+        if (!$result['success']) {
             return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-                ->with('error', 'الاشتراك غير موجود');
+                ->with('error', $result['error']);
         }
 
-        // Update subscription status to cancelled
-        $subscription->status = \App\Enums\SubscriptionStatus::CANCELLED;
-        $subscription->cancelled_at = now();
-        $subscription->cancellation_reason = 'إلغاء من قبل الطالب';
-        $subscription->auto_renew = false;
-        $subscription->save();
-
-        Log::info('Student cancelled subscription', [
-            'subscription_id' => $subscription->id,
-            'subscription_type' => $type,
-            'student_id' => $user->id,
-        ]);
-
         return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-            ->with('success', 'تم إلغاء الاشتراك بنجاح');
+            ->with('success', $result['message']);
     }
 
     public function certificates()
@@ -743,60 +309,6 @@ class StudentProfileController extends Controller
         ]);
 
         return view('student.certificates', compact('certificates'));
-    }
-
-    /**
-     * Create a basic student profile for users who don't have one
-     * This can happen when grade levels are deleted and relationships become orphaned
-     */
-    private function createBasicStudentProfile($user)
-    {
-        try {
-            // Check if a profile already exists but might be orphaned
-            $existingProfile = StudentProfile::withoutGlobalScopes()
-                ->where('user_id', $user->id)
-                ->first();
-
-            if ($existingProfile) {
-                return $existingProfile;
-            }
-
-            // Generate a unique student code
-            $studentCode = 'STU'.str_pad($user->id, 6, '0', STR_PAD_LEFT);
-
-            // Check for existing student code and make it unique
-            $counter = 1;
-            $originalCode = $studentCode;
-            while (StudentProfile::where('student_code', $studentCode)->exists()) {
-                $studentCode = $originalCode.'-'.$counter;
-                $counter++;
-            }
-
-            // Find the default grade level for the user's academy
-            $defaultGradeLevel = \App\Models\AcademicGradeLevel::where('academy_id', $user->academy_id)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->first();
-
-            // Create a basic student profile
-            $studentProfile = StudentProfile::create([
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'first_name' => $user->first_name ?? 'طالب',
-                'last_name' => $user->last_name ?? 'جديد',
-                'student_code' => $studentCode,
-                'grade_level_id' => $defaultGradeLevel?->id, // Can be null initially
-                'enrollment_date' => now(),
-                'notes' => 'تم إنشاء الملف الشخصي تلقائياً بعد حل مشكلة البيانات المفقودة',
-            ]);
-
-            return $studentProfile;
-
-        } catch (\Exception $e) {
-            Log::error('Failed to create basic student profile for user '.$user->id.': '.$e->getMessage());
-
-            return null;
-        }
     }
 
     public function quranCircles(Request $request)
@@ -1068,78 +580,23 @@ class StudentProfileController extends Controller
             ->where('id', $circleId)
             ->first();
 
-        if (! $circle) {
+        if (!$circle) {
             return response()->json(['error' => 'Circle not found'], 404);
         }
 
-        // Check if student is already enrolled
-        $isEnrolled = $circle->students()->where('users.id', $user->id)->exists();
-        if ($isEnrolled) {
-            return response()->json(['error' => 'You are already enrolled in this circle'], 400);
-        }
-
-        // Check if circle is available for enrollment
-        if ($circle->status !== true || $circle->enrollment_status !== 'open') {
-            return response()->json(['error' => 'This circle is not open for enrollment'], 400);
-        }
-
-        if ($circle->enrolled_students >= $circle->max_students) {
-            return response()->json(['error' => 'This circle is full'], 400);
-        }
-
         try {
-            DB::transaction(function () use ($circle, $user, $academy) {
-                // Enroll student in circle
-                $circle->students()->attach($user->id, [
-                    'enrolled_at' => now(),
-                    'status' => 'enrolled',
-                    'attendance_count' => 0,
-                    'missed_sessions' => 0,
-                    'makeup_sessions_used' => 0,
-                    'current_level' => 'beginner',
-                ]);
+            $result = $this->circleEnrollmentService->enroll($user, $circle);
 
-                // Create a group subscription for this enrollment
-                $subscription = \App\Models\QuranSubscription::create([
-                    'academy_id' => $academy->id,
-                    'student_id' => $user->id,
-                    'quran_teacher_id' => $circle->quran_teacher_id,
-                    'subscription_code' => \App\Models\QuranSubscription::generateSubscriptionCode($academy->id),
-                    'subscription_type' => 'group',
-                    'total_sessions' => $circle->sessions_per_month ?? 8, // Default sessions per month
-                    'sessions_used' => 0,
-                    'sessions_remaining' => $circle->sessions_per_month ?? 8,
-                    'total_price' => $circle->monthly_fee ?? 0,
-                    'discount_amount' => 0,
-                    'final_price' => $circle->monthly_fee ?? 0,
-                    'currency' => $circle->currency ?? 'SAR',
-                    'billing_cycle' => 'monthly',
-                    'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
-                    'status' => 'active',
-                    'memorization_level' => $circle->memorization_level ?? 'beginner',
-                    'starts_at' => now(),
-                    'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
-                    'auto_renew' => true,
-                ]);
-
-                // Update circle enrollment count
-                $circle->increment('enrolled_students');
-
-                // Check if circle is now full
-                if ($circle->enrolled_students >= $circle->max_students) {
-                    $circle->update(['enrollment_status' => 'full']);
-                }
-            });
+            if (!$result['success']) {
+                return response()->json(['error' => $result['error']], 400);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'تم تسجيلك في الحلقة بنجاح!',
+                'message' => $result['message'],
                 'redirect_url' => route('student.quran-circles', ['subdomain' => $academy->subdomain]),
             ]);
-
         } catch (\Exception $e) {
-            Log::error('Error enrolling student in circle: '.$e->getMessage());
-
             return response()->json([
                 'success' => false,
                 'error' => 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى',
@@ -1159,51 +616,23 @@ class StudentProfileController extends Controller
             ->where('id', $circleId)
             ->first();
 
-        if (! $circle) {
+        if (!$circle) {
             return response()->json(['error' => 'Circle not found'], 404);
         }
 
-        // Check if student is enrolled
-        $isEnrolled = $circle->students()->where('users.id', $user->id)->exists();
-        if (! $isEnrolled) {
-            return response()->json(['error' => 'You are not enrolled in this circle'], 400);
-        }
-
         try {
-            DB::transaction(function () use ($circle, $user, $academy) {
-                // Remove student from circle
-                $circle->students()->detach($user->id);
+            $result = $this->circleEnrollmentService->leave($user, $circle);
 
-                // Cancel the group subscription if it exists
-                $subscription = \App\Models\QuranSubscription::where('student_id', $user->id)
-                    ->where('academy_id', $academy->id)
-                    ->where('quran_teacher_id', $circle->quran_teacher_id)
-                    ->where('subscription_type', 'group')
-                    ->whereIn('status', ['active', 'pending'])
-                    ->first();
-
-                if ($subscription) {
-                    $subscription->cancel('Student left the circle');
-                }
-
-                // Update circle enrollment count
-                $circle->decrement('enrolled_students');
-
-                // If circle was full, open it for enrollment
-                if ($circle->enrollment_status === 'full') {
-                    $circle->update(['enrollment_status' => 'open']);
-                }
-            });
+            if (!$result['success']) {
+                return response()->json(['error' => $result['error']], 400);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'تم إلغاء تسجيلك من الحلقة بنجاح',
+                'message' => $result['message'],
                 'redirect_url' => route('student.quran-circles', ['subdomain' => $academy->subdomain]),
             ]);
-
         } catch (\Exception $e) {
-            Log::error('Error removing student from circle: '.$e->getMessage());
-
             return response()->json([
                 'success' => false,
                 'error' => 'حدث خطأ أثناء إلغاء التسجيل. يرجى المحاولة مرة أخرى',
@@ -1722,7 +1151,7 @@ class StudentProfileController extends Controller
         }
 
         // Get report service
-        $reportService = app(\App\Services\Reports\InteractiveCourseReportService::class);
+        $reportService = $this->interactiveReportService;
 
         // Generate comprehensive report using DTOs
         $reportData = $reportService->getCourseOverviewReport($course);
@@ -1785,7 +1214,7 @@ class StudentProfileController extends Controller
         }
 
         // Get report service
-        $reportService = app(\App\Services\Attendance\InteractiveReportService::class);
+        $reportService = $this->attendanceReportService;
 
         // Calculate metrics for this specific student
         $performance = $reportService->calculatePerformance($course, $student->id);
@@ -1870,7 +1299,7 @@ class StudentProfileController extends Controller
         }
 
         // Get report service
-        $reportService = app(\App\Services\Reports\InteractiveCourseReportService::class);
+        $reportService = $this->interactiveReportService;
 
         // Generate student report using DTOs
         $reportData = $reportService->getStudentReport($course, $studentProfile);
@@ -2060,7 +1489,7 @@ class StudentProfileController extends Controller
 
         // Use existing HomeworkService if available
         if (class_exists(\App\Services\HomeworkService::class)) {
-            app(\App\Services\HomeworkService::class)->submitHomework(
+            $this->homeworkService->submitHomework(
                 $homework,
                 $student,
                 $validated
@@ -2392,93 +1821,20 @@ class StudentProfileController extends Controller
                 ->with('error', 'الرجاء إدخال كلمة بحث');
         }
 
-        // Search Interactive Courses
-        $interactiveCourses = InteractiveCourse::where('academy_id', $academy->id)
-            ->where('is_published', true)
-            ->where(function ($q) use ($query) {
-                $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%");
-            })
-            ->with(['assignedTeacher'])
-            ->limit(10)
-            ->get();
+        // Use search service for all searches
+        $results = $this->searchService->search($user, $query);
+        $totalResults = $this->searchService->getTotalCount($results);
 
-        // Search Recorded Courses
-        $recordedCourses = RecordedCourse::where('academy_id', $academy->id)
-            ->where('is_published', true)
-            ->where(function ($q) use ($query) {
-                $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%");
-            })
-            ->limit(10)
-            ->get();
-
-        // Search Quran Teachers
-        $quranTeachers = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
-            ->where(function ($q) use ($query) {
-                $q->where('first_name', 'like', "%{$query}%")
-                  ->orWhere('last_name', 'like', "%{$query}%")
-                  ->orWhere('bio_arabic', 'like', "%{$query}%")
-                  ->orWhere('bio_english', 'like', "%{$query}%")
-                  ->orWhereHas('user', function ($userQuery) use ($query) {
-                      $userQuery->where('name', 'like', "%{$query}%");
-                  });
-            })
-            ->with(['user'])
-            ->limit(10)
-            ->get();
-
-        // Search Academic Teachers
-        $academicTeachers = AcademicTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
-            ->where(function ($q) use ($query) {
-                $q->where('first_name', 'like', "%{$query}%")
-                  ->orWhere('last_name', 'like', "%{$query}%")
-                  ->orWhere('bio_arabic', 'like', "%{$query}%")
-                  ->orWhere('bio_english', 'like', "%{$query}%")
-                  ->orWhereHas('user', function ($userQuery) use ($query) {
-                      $userQuery->where('name', 'like', "%{$query}%");
-                  });
-            })
-            ->with(['user'])
-            ->limit(10)
-            ->get();
-
-        // Search Quran Circles
-        $quranCircles = QuranCircle::where('academy_id', $academy->id)
-            ->where('status', true)
-            ->where('enrollment_status', 'open')
-            ->where(function ($q) use ($query) {
-                $q->where('name_ar', 'like', "%{$query}%")
-                  ->orWhere('name_en', 'like', "%{$query}%")
-                  ->orWhere('description_ar', 'like', "%{$query}%")
-                  ->orWhere('description_en', 'like', "%{$query}%")
-                  ->orWhere('circle_code', 'like', "%{$query}%");
-            })
-            ->with(['teacher'])
-            ->limit(10)
-            ->get();
-
-        // Calculate total results
-        $totalResults = $interactiveCourses->count() +
-                       $recordedCourses->count() +
-                       $quranTeachers->count() +
-                       $academicTeachers->count() +
-                       $quranCircles->count();
-
-        return view('student.search', compact(
-            'query',
-            'totalResults',
-            'interactiveCourses',
-            'recordedCourses',
-            'quranTeachers',
-            'academicTeachers',
-            'quranCircles',
-            'academy',
-            'subdomain'
-        ));
+        return view('student.search', [
+            'query' => $query,
+            'totalResults' => $totalResults,
+            'interactiveCourses' => $results['interactive_courses'],
+            'recordedCourses' => $results['recorded_courses'],
+            'quranTeachers' => $results['quran_teachers'],
+            'academicTeachers' => $results['academic_teachers'],
+            'quranCircles' => $results['quran_circles'],
+            'academy' => $academy,
+            'subdomain' => $subdomain,
+        ]);
     }
 }

@@ -145,7 +145,9 @@ class CheckMaintenanceMode
 
             // Handle wildcard exceptions
             if (str_contains($except, '*')) {
-                $pattern = str_replace('*', '.*', $except);
+                // Escape special regex chars except *, then replace * with .*
+                $pattern = preg_quote($except, '/');
+                $pattern = str_replace('\*', '.*', $pattern);
                 if (preg_match('/^' . $pattern . '$/u', $request->path())) {
                     return true;
                 }

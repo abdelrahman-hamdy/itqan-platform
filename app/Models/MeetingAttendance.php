@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\MeetingCapable;
+use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class MeetingAttendance extends Model
 {
+    use AttendanceCalculatorTrait;
     use HasFactory;
 
     protected $fillable = [
@@ -287,8 +289,8 @@ class MeetingAttendance extends Model
         $sessionDuration = $session->duration_minutes ?? 60;
         $sessionStartTime = $session->scheduled_at;
 
-        // Calculate attendance status
-        $attendanceStatus = $this->determineAttendanceStatus(
+        // Calculate attendance status using centralized trait
+        $attendanceStatus = $this->determineAttendanceStatusForFinal(
             $sessionStartTime,
             $sessionDuration,
             $graceMinutes
@@ -322,39 +324,22 @@ class MeetingAttendance extends Model
     }
 
     /**
-     * Determine attendance status based on join time and duration
-     * Using new 50% threshold logic with enum
+     * Determine attendance status based on join time and duration.
+     * Uses centralized AttendanceCalculatorTrait for calculation logic.
      */
-    private function determineAttendanceStatus(
+    private function determineAttendanceStatusForFinal(
         Carbon $sessionStartTime,
         int $sessionDuration,
         int $graceMinutes
     ): string {
-        // If never joined, definitely absent
-        if (! $this->first_join_time) {
-            return \App\Enums\AttendanceStatus::ABSENT->value;
-        }
-
-        $attendancePercentage = $sessionDuration > 0
-            ? ($this->total_duration_minutes / $sessionDuration) * 100
-            : 0;
-
-        // Stayed < 50% - left early (regardless of join time)
-        if ($attendancePercentage < 50) {
-            return \App\Enums\AttendanceStatus::LEAVED->value;
-        }
-
-        // Stayed >= 50% - check if late
-        $lateThreshold = $sessionStartTime->copy()->addMinutes($graceMinutes);
-        $wasLate = $this->first_join_time->isAfter($lateThreshold);
-
-        // Stayed >= 50% and joined after tolerance - late
-        if ($wasLate) {
-            return \App\Enums\AttendanceStatus::LATE->value;
-        }
-
-        // Stayed >= 50% and joined on time - attended
-        return \App\Enums\AttendanceStatus::ATTENDED->value;
+        // Delegate to centralized trait method
+        return $this->calculateAttendanceStatus(
+            $this->first_join_time,
+            $sessionStartTime,
+            $sessionDuration,
+            $this->total_duration_minutes,
+            $graceMinutes
+        );
     }
 
     /**

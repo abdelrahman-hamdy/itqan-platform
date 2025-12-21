@@ -30,6 +30,12 @@ class InteractiveCourseSessionResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['course', 'course.assignedTeacher']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

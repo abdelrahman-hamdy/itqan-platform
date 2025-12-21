@@ -11,12 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 class MeetingAttendanceService
 {
-    private UnifiedSessionStatusService $statusService;
-
-    public function __construct(UnifiedSessionStatusService $statusService)
-    {
-        $this->statusService = $statusService;
-    }
+    public function __construct(
+        protected UnifiedSessionStatusService $statusService,
+        protected NotificationService $notificationService,
+        protected ParentNotificationService $parentNotificationService
+    ) {}
 
     /**
      * Handle user joining a meeting
@@ -288,17 +287,15 @@ class MeetingAttendanceService
                         try {
                             $user = User::find($attendance->user_id);
                             if ($user && $attendance->user_type === 'student') {
-                                $notificationService = app(\App\Services\NotificationService::class);
-                                $notificationService->sendAttendanceMarkedNotification(
+                                $this->notificationService->sendAttendanceMarkedNotification(
                                     $attendance,
                                     $user,
                                     $attendance->attendance_status ?? 'present'
                                 );
 
-                                // Also notify parents using ParentNotificationService
+                                // Also notify parents
                                 try {
-                                    $parentNotificationService = app(\App\Services\ParentNotificationService::class);
-                                    $parents = $parentNotificationService->getParentsForStudent($user);
+                                    $parents = $this->parentNotificationService->getParentsForStudent($user);
 
                                     foreach ($parents as $parent) {
                                         $status = $attendance->attendance_status ?? 'present';
@@ -312,7 +309,7 @@ class MeetingAttendanceService
                                         $sessionType = $attendance->session->getMeetingType() ?? 'session';
                                         $routeName = $sessionType === 'quran' ? 'parent.sessions.show' : 'parent.sessions.show';
 
-                                        $notificationService->send(
+                                        $this->notificationService->send(
                                             $parent->user,
                                             $notificationType,
                                             [

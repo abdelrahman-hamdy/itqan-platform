@@ -12,58 +12,41 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * - homework_completion: Whether homework was completed
  * - pages_reviewed_today: Pages reviewed in this session
  *
- * Note: Quality metrics (recitation_quality, tajweed_accuracy) removed - covered by homework system
+ * Uses constructor merge pattern for fillable and getCasts() override for casts
+ * to avoid duplicating ~25 lines of parent definitions.
  */
 class QuranSessionAttendance extends BaseSessionAttendance
 {
     /**
-     * Quran-specific fillable fields (includes base fields + Quran-specific)
+     * Quran-specific fillable fields only
+     * Base fields are merged via constructor
      */
     protected $fillable = [
-        // Base fields from BaseSessionAttendance
-        'session_id',
-        'student_id',
-        'attendance_status',
-        'join_time',
-        'leave_time',
-        'auto_join_time',
-        'auto_leave_time',
-        'auto_duration_minutes',
-        'auto_tracked',
-        'manually_overridden',
-        'overridden_by',
-        'overridden_at',
-        'override_reason',
-        'meeting_events',
-        'participation_score',
-        'notes',
-
-        // Quran-specific fields
         'verses_reviewed',
         'homework_completion',
         'pages_reviewed_today',
     ];
 
     /**
-     * Quran-specific casts (merged with parent)
+     * Constructor - merge base fillable with Quran-specific fields
      */
-    protected $casts = [
-        // Parent casts inherited
-        'join_time' => 'datetime',
-        'leave_time' => 'datetime',
-        'auto_join_time' => 'datetime',
-        'auto_leave_time' => 'datetime',
-        'overridden_at' => 'datetime',
-        'auto_tracked' => 'boolean',
-        'manually_overridden' => 'boolean',
-        'meeting_events' => 'array',
-        'participation_score' => 'decimal:1',
-        'auto_duration_minutes' => 'integer',
+    public function __construct(array $attributes = [])
+    {
+        $this->fillable = array_merge(static::$baseFillable, $this->fillable);
+        parent::__construct($attributes);
+    }
 
-        // Quran-specific casts
-        'homework_completion' => 'boolean',
-        'pages_reviewed_today' => 'decimal:2',
-    ];
+    /**
+     * Get casts - merge base casts with Quran-specific casts
+     * IMPORTANT: Do NOT define protected $casts - it would override parent's casts
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), [
+            'homework_completion' => 'boolean',
+            'pages_reviewed_today' => 'decimal:2',
+        ]);
+    }
 
     // ========================================
     // Implementation of Abstract Methods

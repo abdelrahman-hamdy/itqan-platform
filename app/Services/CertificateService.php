@@ -20,6 +20,10 @@ use setasign\Fpdi\Tcpdf\Fpdi;
 
 class CertificateService
 {
+    public function __construct(
+        protected ParentNotificationService $parentNotificationService
+    ) {}
+
     /**
      * Generate a unique certificate number
      */
@@ -101,8 +105,7 @@ class CertificateService
 
         // Also notify parents
         try {
-            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
-            $parentNotificationService->sendCertificateIssued($certificate);
+            $this->parentNotificationService->sendCertificateIssued($certificate);
         } catch (\Exception $e) {
             \Log::error('Failed to send parent certificate notification', [
                 'certificate_id' => $certificate->id,
@@ -178,8 +181,7 @@ class CertificateService
 
         // Also notify parents
         try {
-            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
-            $parentNotificationService->sendCertificateIssued($certificate);
+            $this->parentNotificationService->sendCertificateIssued($certificate);
         } catch (\Exception $e) {
             \Log::error('Failed to send parent certificate notification', [
                 'certificate_id' => $certificate->id,
@@ -273,8 +275,7 @@ class CertificateService
 
         // Also notify parents
         try {
-            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
-            $parentNotificationService->sendCertificateIssued($certificate);
+            $this->parentNotificationService->sendCertificateIssued($certificate);
         } catch (\Exception $e) {
             \Log::error('Failed to send parent certificate notification', [
                 'certificate_id' => $certificate->id,

@@ -5,12 +5,18 @@ namespace App\Http\Controllers;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
+use App\Services\LiveKitService;
+use App\Services\RoomPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class LiveKitController extends Controller
 {
+    public function __construct(
+        protected LiveKitService $liveKitService,
+        protected RoomPermissionService $roomPermissionService
+    ) {}
     /**
      * Get LiveKit access token for a participant
      */
@@ -123,10 +129,7 @@ class LiveKitController extends Controller
             $trackSid = $request->input('track_sid');
             $muted = $request->input('muted');
 
-            // Get LiveKit service
-            $liveKitService = app(\App\Services\LiveKitService::class);
-
-            if (! $liveKitService->isConfigured()) {
+            if (! $this->liveKitService->isConfigured()) {
                 return response()->json(['error' => 'LiveKit service not configured'], 500);
             }
 
@@ -187,9 +190,7 @@ class LiveKitController extends Controller
 
             $roomName = $request->input('room_name');
 
-            // Get LiveKit service
-            $liveKitService = app(\App\Services\LiveKitService::class);
-            $roomInfo = $liveKitService->getRoomInfo($roomName);
+            $roomInfo = $this->liveKitService->getRoomInfo($roomName);
 
             if (! $roomInfo) {
                 return response()->json(['error' => 'Room not found'], 404);
@@ -260,9 +261,7 @@ class LiveKitController extends Controller
 
             $roomName = $request->input('room_name');
 
-            // Get permission service
-            $permissionService = app(\App\Services\RoomPermissionService::class);
-            $permissions = $permissionService->getRoomPermissions($roomName);
+            $permissions = $this->roomPermissionService->getRoomPermissions($roomName);
 
             return response()->json([
                 'success' => true,
@@ -324,10 +323,9 @@ class LiveKitController extends Controller
                 'muted' => $muted,
             ]);
 
-            // Store permission state in RoomPermissionService
-            $permissionService = app(\App\Services\RoomPermissionService::class);
+            // Store permission state
             $allowed = ! $muted; // Inverted: muted=true means NOT allowed
-            $permissionService->setMicrophonePermission($roomName, $allowed, auth()->id());
+            $this->roomPermissionService->setMicrophonePermission($roomName, $allowed, auth()->id());
 
             // Get room participants
             $roomService = new \Agence104\LiveKit\RoomServiceClient(
@@ -441,10 +439,9 @@ class LiveKitController extends Controller
                 'disabled' => $disabled,
             ]);
 
-            // Store permission state in RoomPermissionService
-            $permissionService = app(\App\Services\RoomPermissionService::class);
+            // Store permission state
             $allowed = ! $disabled; // Inverted: disabled=true means NOT allowed
-            $permissionService->setCameraPermission($roomName, $allowed, auth()->id());
+            $this->roomPermissionService->setCameraPermission($roomName, $allowed, auth()->id());
 
             $roomService = new \Agence104\LiveKit\RoomServiceClient(
                 config('livekit.api_url'),

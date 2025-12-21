@@ -102,9 +102,9 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'avatar',
         'profile_completed_at',
         'active_status',
-        'phone_verification_token',
-        'password_reset_token',
-        'remember_token',
+        // SECURITY: Removed phone_verification_token, password_reset_token, and remember_token
+        // These are sensitive security tokens that should NEVER be mass-assignable
+        // They should only be set programmatically via direct attribute assignment
 
         // Meeting preferences (non-Google)
         'meeting_preferences',

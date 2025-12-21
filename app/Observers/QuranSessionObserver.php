@@ -3,16 +3,17 @@
 namespace App\Observers;
 
 use App\Models\QuranSession;
+use App\Services\NotificationService;
+use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
 
 class QuranSessionObserver
 {
-    protected TrialRequestSyncService $trialSyncService;
-
-    public function __construct(TrialRequestSyncService $trialSyncService)
-    {
-        $this->trialSyncService = $trialSyncService;
-    }
+    public function __construct(
+        protected TrialRequestSyncService $trialSyncService,
+        protected NotificationService $notificationService,
+        protected ParentNotificationService $parentNotificationService
+    ) {}
 
     /**
      * Handle the QuranSession "created" event.
@@ -57,15 +58,12 @@ class QuranSessionObserver
         }
 
         try {
-            $notificationService = app(\App\Services\NotificationService::class);
-            $parentNotificationService = app(\App\Services\ParentNotificationService::class);
-
             // Get student(s)
             if ($quranSession->session_type === 'individual' && $quranSession->student) {
                 $student = $quranSession->student;
 
                 // Send notification to student
-                $notificationService->send(
+                $this->notificationService->send(
                     $student,
                     \App\Enums\NotificationType::HOMEWORK_ASSIGNED,
                     [
@@ -80,7 +78,7 @@ class QuranSessionObserver
                 );
 
                 // Also notify parents
-                $parentNotificationService->sendHomeworkAssigned(
+                $this->parentNotificationService->sendHomeworkAssigned(
                     new \App\Models\HomeworkSubmission([
                         'student_id' => $student->id,
                         'title' => 'واجب قرآني',

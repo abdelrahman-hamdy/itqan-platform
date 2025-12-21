@@ -13,6 +13,16 @@ class ParentStudentRelationship extends Pivot
     protected $table = 'parent_student_relationships';
 
     /**
+     * The attributes that are mass assignable.
+     * SECURITY: Explicitly define fillable fields to prevent mass assignment vulnerabilities.
+     */
+    protected $fillable = [
+        'parent_id',
+        'student_id',
+        'relationship_type',
+    ];
+
+    /**
      * The attributes that should be cast.
      */
     protected $casts = [

@@ -13,32 +13,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * - homework_quality: Quality of homework submission (0-10)
  * - questions_asked: Number of questions asked during session
  * - concepts_mastered: Number of concepts mastered during session
+ *
+ * Uses constructor merge pattern for fillable and getCasts() override for casts
+ * to avoid duplicating ~25 lines of parent definitions.
  */
 class AcademicSessionAttendance extends BaseSessionAttendance
 {
     /**
-     * Academic-specific fillable fields (includes base fields + Academic-specific)
+     * Academic-specific fillable fields only
+     * Base fields are merged via constructor
      */
     protected $fillable = [
-        // Base fields from BaseSessionAttendance
-        'session_id',
-        'student_id',
-        'attendance_status',
-        'join_time',
-        'leave_time',
-        'auto_join_time',
-        'auto_leave_time',
-        'auto_duration_minutes',
-        'auto_tracked',
-        'manually_overridden',
-        'overridden_by',
-        'overridden_at',
-        'override_reason',
-        'meeting_events',
-        'participation_score',
-        'notes',
-
-        // Academic-specific fields
         'lesson_understanding',
         'homework_completion',
         'homework_quality',
@@ -47,28 +32,28 @@ class AcademicSessionAttendance extends BaseSessionAttendance
     ];
 
     /**
-     * Academic-specific casts (merged with parent)
+     * Constructor - merge base fillable with Academic-specific fields
      */
-    protected $casts = [
-        // Parent casts inherited
-        'join_time' => 'datetime',
-        'leave_time' => 'datetime',
-        'auto_join_time' => 'datetime',
-        'auto_leave_time' => 'datetime',
-        'overridden_at' => 'datetime',
-        'auto_tracked' => 'boolean',
-        'manually_overridden' => 'boolean',
-        'meeting_events' => 'array',
-        'participation_score' => 'decimal:1',
-        'auto_duration_minutes' => 'integer',
+    public function __construct(array $attributes = [])
+    {
+        $this->fillable = array_merge(static::$baseFillable, $this->fillable);
+        parent::__construct($attributes);
+    }
 
-        // Academic-specific casts
-        'lesson_understanding' => 'decimal:1',
-        'homework_quality' => 'decimal:1',
-        'homework_completion' => 'boolean',
-        'questions_asked' => 'integer',
-        'concepts_mastered' => 'integer',
-    ];
+    /**
+     * Get casts - merge base casts with Academic-specific casts
+     * IMPORTANT: Do NOT define protected $casts - it would override parent's casts
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), [
+            'lesson_understanding' => 'decimal:1',
+            'homework_quality' => 'decimal:1',
+            'homework_completion' => 'boolean',
+            'questions_asked' => 'integer',
+            'concepts_mastered' => 'integer',
+        ]);
+    }
 
     // ========================================
     // Implementation of Abstract Methods

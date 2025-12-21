@@ -25,8 +25,12 @@ return new class extends Migration
             $table->renameColumn('course_id', 'reviewable_id');
         });
 
-        // Drop the old unique constraint and add new one
+        // Drop the old foreign key and unique constraint, then add new ones
         Schema::table('course_reviews', function (Blueprint $table) {
+            // Must drop foreign key first as it depends on the unique index
+            if (Schema::hasColumn('course_reviews', 'reviewable_id')) {
+                $table->dropForeign('course_reviews_course_id_foreign');
+            }
             $table->dropUnique('course_reviews_course_id_user_id_unique'); // Original constraint name
         });
 

@@ -48,7 +48,7 @@ class StudentSessionReportResource extends Resource
         }
 
         return parent::getEloquentQuery()
-            ->with(['student', 'session.circle', 'session.individualCircle'])
+            ->with(['student', 'teacher', 'academy', 'session', 'session.circle', 'session.individualCircle'])
             ->whereHas('session', function (Builder $query) use ($teacher) {
                 $query->where('quran_teacher_id', $teacher->id);
             });

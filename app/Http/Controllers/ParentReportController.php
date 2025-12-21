@@ -11,6 +11,9 @@ use App\Models\AcademicSession;
 use App\Models\QuranSubscription;
 use App\Models\InteractiveCourse;
 use App\Services\ParentDataService;
+use App\Services\Reports\AcademicReportService;
+use App\Services\Reports\InteractiveCourseReportService;
+use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,11 +26,12 @@ use Illuminate\Support\Facades\DB;
  */
 class ParentReportController extends Controller
 {
-    protected ParentDataService $dataService;
-
-    public function __construct(ParentDataService $dataService)
-    {
-        $this->dataService = $dataService;
+    public function __construct(
+        protected ParentDataService $dataService,
+        protected QuranReportService $quranReportService,
+        protected AcademicReportService $academicReportService,
+        protected InteractiveCourseReportService $interactiveReportService
+    ) {
 
         // Enforce read-only access
         $this->middleware(function ($request, $next) {
@@ -658,7 +662,7 @@ class ParentReportController extends Controller
         }
 
         // Use the same report service as student reports
-        $reportService = app(\App\Services\Reports\QuranReportService::class);
+        $reportService = $this->quranReportService;
         $dateRange = $this->getDateRangeFromRequest($request);
         $reportData = $reportService->getIndividualCircleReport($circle, $dateRange);
 
@@ -688,7 +692,7 @@ class ParentReportController extends Controller
         }
 
         // Use the same report service as student reports
-        $reportService = app(\App\Services\Reports\AcademicReportService::class);
+        $reportService = $this->academicReportService;
         $dateRange = $this->getDateRangeFromRequest($request);
         $reportData = $reportService->getSubscriptionReport($subscription, $dateRange);
 
@@ -726,7 +730,7 @@ class ParentReportController extends Controller
             ->first();
 
         // Use the same report service as student reports
-        $reportService = app(\App\Services\Reports\InteractiveCourseReportService::class);
+        $reportService = $this->interactiveReportService;
         $dateRange = $this->getDateRangeFromRequest($request);
         $reportData = $reportService->getStudentReport($course, $enrollment->student, $dateRange);
 

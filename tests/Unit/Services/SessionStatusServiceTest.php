@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services;
 
-use App\Services\SessionStatusService;
+use App\Services\UnifiedSessionStatusService;
 use App\Models\QuranSession;
 use App\Models\AcademicSession;
 use App\Enums\SessionStatus;
@@ -22,12 +22,12 @@ class SessionStatusServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected SessionStatusService $service;
+    protected UnifiedSessionStatusService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = app(SessionStatusService::class);
+        $this->service = app(UnifiedSessionStatusService::class);
     }
 
     /**
