@@ -140,58 +140,18 @@ class SupervisorProfileResource extends BaseResource
                                     ->label('رمز المشرف')
                                     ->disabled()
                                     ->dehydrated(false),
-                                Forms\Components\Select::make('department')
-                                    ->label('القسم')
-                                    ->options([
-                                        'quran' => 'قسم القرآن',
-                                        'academic' => 'القسم الأكاديمي',
-                                        'recorded_courses' => 'الدورات المسجلة',
-                                        'general' => 'عام',
-                                    ])
-                                    ->required(),
-                                Forms\Components\Select::make('supervision_level')
-                                    ->label('مستوى الإشراف')
-                                    ->options([
-                                        'junior' => 'مشرف مبتدئ',
-                                        'senior' => 'مشرف متقدم',
-                                        'lead' => 'مشرف رئيسي',
-                                    ])
-                                    ->required(),
                                 Forms\Components\TextInput::make('salary')
                                     ->label('الراتب')
                                     ->numeric()
                                     ->prefix('ر.س')
                                     ->minValue(0),
                             ]),
-                        Forms\Components\KeyValue::make('monitoring_permissions')
-                            ->label('صلاحيات المراقبة')
-                            ->keyLabel('الصلاحية')
-                            ->valueLabel('القيمة')
-                            ->default([
-                                'view_sessions' => true,
-                                'view_reports' => true,
-                                'view_chat' => true,
-                                'view_assignments' => true,
-                            ]),
-                        Forms\Components\Select::make('reports_access_level')
-                            ->label('مستوى الوصول للتقارير')
-                            ->options([
-                                'basic' => 'أساسي',
-                                'detailed' => 'مفصل',
-                                'full' => 'كامل',
-                            ])
-                            ->required(),
                     ]),
                 Forms\Components\Section::make('معلومات التوظيف')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\DatePicker::make('hired_date')
-                                    ->label('تاريخ التعيين')
-                                    ->required(),
-                                Forms\Components\DatePicker::make('contract_end_date')
-                                    ->label('تاريخ انتهاء العقد'),
-                            ]),
+                        Forms\Components\DatePicker::make('hired_date')
+                            ->label('تاريخ التعيين')
+                            ->required(),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)
@@ -223,21 +183,6 @@ class SupervisorProfileResource extends BaseResource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('رقم الهاتف')
                     ->searchable(),
-                Tables\Columns\BadgeColumn::make('department')
-                    ->label('القسم')
-                    ->colors([
-                        'primary' => 'quran',
-                        'success' => 'academic',
-                        'warning' => 'recorded_courses',
-                        'info' => 'general',
-                    ]),
-                Tables\Columns\BadgeColumn::make('supervision_level')
-                    ->label('مستوى الإشراف')
-                    ->colors([
-                        'info' => 'junior',
-                        'warning' => 'senior',
-                        'success' => 'lead',
-                    ]),
                 Tables\Columns\IconColumn::make('is_linked')
                     ->label('مرتبط بحساب')
                     ->boolean()
@@ -249,21 +194,6 @@ class SupervisorProfileResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('department')
-                    ->label('القسم')
-                    ->options([
-                        'quran' => 'قسم القرآن',
-                        'academic' => 'القسم الأكاديمي',
-                        'recorded_courses' => 'الدورات المسجلة',
-                        'general' => 'عام',
-                    ]),
-                Tables\Filters\SelectFilter::make('supervision_level')
-                    ->label('مستوى الإشراف')
-                    ->options([
-                        'junior' => 'مشرف مبتدئ',
-                        'senior' => 'مشرف متقدم',
-                        'lead' => 'مشرف رئيسي',
-                    ]),
                 Tables\Filters\TernaryFilter::make('is_linked')
                     ->label('مرتبط بحساب')
                     ->placeholder('جميع المشرفين')

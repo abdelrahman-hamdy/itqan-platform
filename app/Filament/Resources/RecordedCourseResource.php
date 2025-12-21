@@ -225,7 +225,6 @@ class RecordedCourseResource extends Resource
                                                     ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
                                                     ->maxSize(512 * 1024) // 512MB
                                                     ->columnSpanFull()
-                                                    ->chunkedUpload() // Enable chunked uploads for large video files
                                                     ->removeUploadedFileButtonPosition('right')
                                                     ->uploadProgressIndicatorPosition('left')
                                                     ->getUploadedFileNameForStorageUsing(
@@ -280,7 +279,7 @@ class RecordedCourseResource extends Resource
                     ->label('المادة')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('grade_level.name')
+                Tables\Columns\TextColumn::make('gradeLevel.name')
                     ->label('الصف الدراسي')
                     ->sortable(),
 

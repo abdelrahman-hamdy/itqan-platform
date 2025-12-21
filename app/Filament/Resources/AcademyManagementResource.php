@@ -173,29 +173,6 @@ class AcademyManagementResource extends BaseResource
 
                 Section::make('الإعدادات')
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('timezone')
-                                    ->label('المنطقة الزمنية')
-                                    ->options([
-                                        'Asia/Riyadh' => 'الرياض (GMT+3)',
-                                        'Asia/Dubai' => 'دبي (GMT+4)',
-                                        'Africa/Cairo' => 'القاهرة (GMT+2)',
-                                    ])
-                                    ->default('Asia/Riyadh')
-                                    ->required(),
-
-                                Select::make('currency')
-                                    ->label('العملة')
-                                    ->options([
-                                        'SAR' => 'ريال سعودي',
-                                        'AED' => 'درهم إماراتي',
-                                        'EGP' => 'جنيه مصري',
-                                    ])
-                                    ->default('SAR')
-                                    ->required(),
-                            ]),
-
                         Grid::make(3)
                             ->schema([
                                 Toggle::make('is_active')
