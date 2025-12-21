@@ -144,10 +144,12 @@ class SessionPolicy
     private function isSessionTeacher(User $user, $session): bool
     {
         if ($session instanceof QuranSession) {
-            return $session->quran_teacher_profile_id === $user->quranTeacherProfile?->id;
+            // quran_teacher_id references the users table directly
+            return $session->quran_teacher_id === $user->id;
         }
 
         if ($session instanceof AcademicSession) {
+            // academic_teacher_profile_id references the profile table
             return $session->academic_teacher_profile_id === $user->academicTeacherProfile?->id;
         }
 
@@ -164,19 +166,25 @@ class SessionPolicy
      */
     private function isSessionStudent(User $user, $session): bool
     {
+        if ($session instanceof QuranSession) {
+            // QuranSession.student_id references Users table directly
+            // For individual sessions, check direct assignment
+            if ($session->session_type === 'individual') {
+                return $session->student_id === $user->id;
+            }
+            // For group sessions, check circle membership
+            $studentProfile = $user->studentProfileUnscoped;
+            if (!$studentProfile) {
+                return false;
+            }
+            $circle = $session->circle;
+            return $circle && $circle->students()->where('student_profiles.id', $studentProfile->id)->exists();
+        }
+
+        // For AcademicSession, check student_profile_id
         $studentProfile = $user->studentProfileUnscoped;
         if (!$studentProfile) {
             return false;
-        }
-
-        if ($session instanceof QuranSession) {
-            // For individual sessions, check direct assignment
-            if ($session->session_type === 'individual') {
-                return $session->student_profile_id === $studentProfile->id;
-            }
-            // For group sessions, check circle membership
-            $circle = $session->circle;
-            return $circle && $circle->students()->where('student_profiles.id', $studentProfile->id)->exists();
         }
 
         if ($session instanceof AcademicSession) {

@@ -22,7 +22,7 @@ class CertificateController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -44,8 +44,8 @@ class CertificateController extends Controller
                 continue;
             }
 
-            // Get certificates
-            $childCertificates = Certificate::where('user_id', $studentUserId)
+            // Get certificates - use student_id (StudentProfile.id), not user_id
+            $childCertificates = Certificate::where('student_id', $student->id)
                 ->with(['certificatable'])
                 ->orderBy('issued_at', 'desc')
                 ->get();
@@ -101,23 +101,20 @@ class CertificateController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
-        // Get all linked children's user IDs
-        $childUserIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
-            ->with('student.user')
-            ->get()
-            ->map(fn($r) => $r->student->user?->id ?? $r->student->id)
-            ->filter()
+        // Get all linked children's student profile IDs
+        $childStudentIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
+            ->pluck('student_id')
             ->toArray();
 
         $certificate = Certificate::where('id', $id)
-            ->whereIn('user_id', $childUserIds)
-            ->with(['certificatable', 'user'])
+            ->whereIn('student_id', $childStudentIds)
+            ->with(['certificatable'])
             ->first();
 
         if (!$certificate) {
@@ -126,10 +123,7 @@ class CertificateController extends Controller
 
         // Get child info
         $childRelation = ParentStudentRelationship::where('parent_id', $parentProfile->id)
-            ->whereHas('student', function ($q) use ($certificate) {
-                $q->where('user_id', $certificate->user_id)
-                    ->orWhere('id', $certificate->user_id);
-            })
+            ->where('student_id', $certificate->student_id)
             ->with('student')
             ->first();
 
@@ -174,7 +168,7 @@ class CertificateController extends Controller
     public function childCertificates(Request $request, int $childId): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -191,9 +185,8 @@ class CertificateController extends Controller
         }
 
         $student = $relationship->student;
-        $studentUserId = $student->user?->id ?? $student->id;
 
-        $certificates = Certificate::where('user_id', $studentUserId)
+        $certificates = Certificate::where('student_id', $student->id)
             ->with(['certificatable'])
             ->orderBy('issued_at', 'desc')
             ->paginate($request->get('per_page', 15));

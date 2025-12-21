@@ -28,7 +28,10 @@ class DashboardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+
+        // Use explicit relationship query instead of property access
+        // Property access was returning null due to relationship caching issues
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(
@@ -115,7 +118,7 @@ class DashboardController extends Controller
 
         // Interactive sessions
         $interactiveCount = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
+            $q->where('student_id', $userId);
         })
             ->whereDate('scheduled_at', $today)
             ->whereNotIn('status', ['cancelled'])
@@ -139,7 +142,7 @@ class DashboardController extends Controller
             ->where('status', 'active')
             ->count();
 
-        $count += CourseSubscription::where('user_id', $userId)
+        $count += CourseSubscription::where('student_id', $userId)
             ->where('status', 'active')
             ->count();
 

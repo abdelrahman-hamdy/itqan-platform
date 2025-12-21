@@ -29,7 +29,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $academy = $request->attributes->get('academy') ?? app('current_academy');
-        $studentProfile = $user->studentProfile;
+        $studentProfile = $user->studentProfile()->first();
 
         if (!$studentProfile) {
             return $this->error(
@@ -122,7 +122,7 @@ class DashboardController extends Controller
 
         // Interactive course sessions
         $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
+            $q->where('student_id', $userId);
         })
             ->whereDate('scheduled_at', $today)
             ->whereNotIn('status', ['cancelled', 'completed'])
@@ -190,7 +190,7 @@ class DashboardController extends Controller
 
         // Interactive course sessions
         $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
+            $q->where('student_id', $userId);
         })
             ->whereDate('scheduled_at', '>', $today)
             ->whereDate('scheduled_at', '<=', $endDate)
@@ -230,7 +230,7 @@ class DashboardController extends Controller
             ->where('status', 'active')
             ->count();
 
-        $count += CourseSubscription::where('user_id', $userId)
+        $count += CourseSubscription::where('student_id', $userId)
             ->where('status', 'active')
             ->count();
 

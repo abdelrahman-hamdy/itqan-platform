@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Namu\WireChat\Traits\Chatable;
 
 // Profile Models
@@ -25,7 +26,7 @@ use Namu\WireChat\Traits\Chatable;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
-    use HasFactory, Notifiable, Chatable, SoftDeletes;
+    use HasFactory, Notifiable, HasApiTokens, Chatable, SoftDeletes;
 
     /**
      * Boot method to add observers

@@ -24,7 +24,7 @@ class SubscriptionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -100,9 +100,9 @@ class SubscriptionController extends Controller
                 ];
             }
 
-            // Get Course subscriptions
-            $courseSubs = CourseSubscription::where('user_id', $studentUserId)
-                ->with(['course.assignedTeacher.user'])
+            // Get Course subscriptions - use student_id (StudentProfile.id)
+            $courseSubs = CourseSubscription::where('student_id', $student->id)
+                ->with(['interactiveCourse.assignedTeacher.user', 'recordedCourse'])
                 ->get();
 
             foreach ($courseSubs as $sub) {
@@ -158,7 +158,7 @@ class SubscriptionController extends Controller
     public function show(Request $request, string $type, int $id): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -182,8 +182,8 @@ class SubscriptionController extends Controller
                 ->with(['academicTeacher.user', 'subject', 'student.user', 'sessions'])
                 ->first(),
             'course' => CourseSubscription::where('id', $id)
-                ->whereIn('user_id', $childUserIds)
-                ->with(['course.assignedTeacher.user', 'course.sessions', 'user'])
+                ->whereIn('student_id', $childUserIds)
+                ->with(['interactiveCourse.assignedTeacher.user', 'recordedCourse'])
                 ->first(),
             default => null,
         };

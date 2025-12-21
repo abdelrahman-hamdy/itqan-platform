@@ -23,7 +23,7 @@ class ProfileController extends Controller
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
-        $profile = $user->studentProfile;
+        $profile = $user->studentProfile()->first();
 
         if (!$profile) {
             return $this->notFound(__('Student profile not found.'));
@@ -82,7 +82,7 @@ class ProfileController extends Controller
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
-        $profile = $user->studentProfile;
+        $profile = $user->studentProfile()->first();
 
         if (!$profile) {
             return $this->notFound(__('Student profile not found.'));
@@ -174,7 +174,7 @@ class ProfileController extends Controller
         }
 
         $user = $request->user();
-        $profile = $user->studentProfile;
+        $profile = $user->studentProfile()->first();
 
         if (!$profile) {
             return $this->notFound(__('Student profile not found.'));

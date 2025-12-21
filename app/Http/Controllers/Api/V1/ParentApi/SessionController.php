@@ -26,7 +26,7 @@ class SessionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -102,8 +102,8 @@ class SessionController extends Controller
 
             // Get Interactive course sessions
             if (!$request->filled('type') || $request->type === 'interactive') {
-                $enrolledCourseIds = CourseSubscription::where('user_id', $studentUserId)
-                    ->pluck('course_id');
+                $enrolledCourseIds = CourseSubscription::where('student_id', $studentUserId)
+                    ->pluck('interactive_course_id');
 
                 $interactiveQuery = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                     ->with(['course.assignedTeacher.user']);
@@ -164,7 +164,7 @@ class SessionController extends Controller
     public function show(Request $request, string $type, int $id): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -210,8 +210,8 @@ class SessionController extends Controller
             }
             if ($type === 'interactive') {
                 // For interactive, check if enrolled
-                $enrolled = CourseSubscription::where('user_id', $studentUserId)
-                    ->where('course_id', $session->course_id)
+                $enrolled = CourseSubscription::where('student_id', $studentUserId)
+                    ->where('interactive_course_id', $session->course_id)
                     ->exists();
                 if ($enrolled) {
                     $student = $rel->student;
@@ -234,7 +234,7 @@ class SessionController extends Controller
     public function today(Request $request): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -275,8 +275,8 @@ class SessionController extends Controller
             }
 
             // Interactive sessions
-            $enrolledCourseIds = CourseSubscription::where('user_id', $studentUserId)
-                ->pluck('course_id');
+            $enrolledCourseIds = CourseSubscription::where('student_id', $studentUserId)
+                ->pluck('interactive_course_id');
 
             $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->whereDate('scheduled_at', $today)
@@ -310,7 +310,7 @@ class SessionController extends Controller
     public function upcoming(Request $request): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -356,8 +356,8 @@ class SessionController extends Controller
             }
 
             // Interactive sessions
-            $enrolledCourseIds = CourseSubscription::where('user_id', $studentUserId)
-                ->pluck('course_id');
+            $enrolledCourseIds = CourseSubscription::where('student_id', $studentUserId)
+                ->pluck('interactive_course_id');
 
             $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->where('scheduled_at', '>', $now)
@@ -526,8 +526,8 @@ class SessionController extends Controller
      */
     protected function getInteractiveSession(int $id, array $childUserIds)
     {
-        $enrolledCourseIds = CourseSubscription::whereIn('user_id', $childUserIds)
-            ->pluck('course_id');
+        $enrolledCourseIds = CourseSubscription::whereIn('student_id', $childUserIds)
+            ->pluck('interactive_course_id');
 
         return InteractiveCourseSession::where('id', $id)
             ->whereIn('course_id', $enrolledCourseIds)

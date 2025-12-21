@@ -23,7 +23,7 @@ class PaymentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -104,7 +104,7 @@ class PaymentController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -169,7 +169,7 @@ class PaymentController extends Controller
         }
 
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');

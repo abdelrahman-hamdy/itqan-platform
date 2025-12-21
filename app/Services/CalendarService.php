@@ -602,12 +602,20 @@ class CalendarService
         })->where('status', '!=', 'cancelled');
 
         if ($user->isAcademicTeacher()) {
-            $query->whereHas('course', function ($q) use ($user) {
-                $q->where('assigned_teacher_id', $user->academicTeacherProfile->id);
+            $profile = $user->academicTeacherProfile;
+            if (!$profile) {
+                return collect();
+            }
+            $query->whereHas('course', function ($q) use ($profile) {
+                $q->where('assigned_teacher_id', $profile->id);
             });
         } else {
-            $query->whereHas('course.enrollments', function ($q) use ($user) {
-                $q->where('student_id', $user->studentProfile->id);
+            $studentProfile = $user->studentProfile;
+            if (!$studentProfile) {
+                return collect();
+            }
+            $query->whereHas('course.enrollments', function ($q) use ($studentProfile) {
+                $q->where('student_id', $studentProfile->id);
             });
         }
 

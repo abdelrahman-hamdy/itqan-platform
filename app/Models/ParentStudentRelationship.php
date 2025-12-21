@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Enums\RelationshipType;
 
 class ParentStudentRelationship extends Pivot
@@ -33,4 +34,20 @@ class ParentStudentRelationship extends Pivot
      * Indicates if the IDs are auto-incrementing.
      */
     public $incrementing = true;
+
+    /**
+     * Get the parent profile for this relationship.
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(ParentProfile::class, 'parent_id');
+    }
+
+    /**
+     * Get the student profile for this relationship.
+     */
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(StudentProfile::class, 'student_id');
+    }
 }

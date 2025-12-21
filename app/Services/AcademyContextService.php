@@ -67,6 +67,11 @@ class AcademyContextService
      */
     public static function getCurrentAcademyId(): ?int
     {
+        // First check if academy was set by API middleware (for API requests)
+        if (app()->bound('current_academy_id')) {
+            return app('current_academy_id');
+        }
+
         $academy = self::getCurrentAcademy();
         return $academy?->id;
     }

@@ -29,7 +29,7 @@ class ReportController extends Controller
     public function progress(Request $request, ?int $childId = null): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -103,7 +103,7 @@ class ReportController extends Controller
     public function attendance(Request $request, ?int $childId = null): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -188,7 +188,7 @@ class ReportController extends Controller
     public function subscription(Request $request, string $type, int $id): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -343,17 +343,17 @@ class ReportController extends Controller
     /**
      * Get Course progress for a student.
      */
-    protected function getCourseProgress(int $studentUserId): array
+    protected function getCourseProgress(int $studentId): array
     {
-        $enrollments = CourseSubscription::where('user_id', $studentUserId)
-            ->with('course')
+        $enrollments = CourseSubscription::where('student_id', $studentId)
+            ->with(['interactiveCourse', 'recordedCourse'])
             ->get();
 
         $activeEnrollments = $enrollments->where('status', 'active')->count();
         $completedEnrollments = $enrollments->where('status', 'completed')->count();
 
         $completedSessions = $enrollments->sum('completed_sessions');
-        $totalSessions = $enrollments->sum(fn($e) => $e->course?->total_sessions ?? 0);
+        $totalSessions = $enrollments->sum(fn($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);
 
         return [
             'active_enrollments' => $activeEnrollments,
@@ -408,8 +408,9 @@ class ReportController extends Controller
                 ->get();
         } else {
             // Course sessions - check enrollments
-            $enrolledCourseIds = CourseSubscription::where('user_id', $studentUserId)
-                ->pluck('course_id');
+            $enrolledCourseIds = CourseSubscription::where('student_id', $studentUserId)
+                ->pluck('interactive_course_id')
+                ->filter();
 
             $sessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])

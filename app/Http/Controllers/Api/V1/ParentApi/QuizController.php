@@ -23,7 +23,7 @@ class QuizController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -45,8 +45,8 @@ class QuizController extends Controller
                 continue;
             }
 
-            // Get quiz attempts
-            $attempts = QuizAttempt::where('user_id', $studentUserId)
+            // Get quiz attempts - use student_id (StudentProfile.id)
+            $attempts = QuizAttempt::where('student_id', $student->id)
                 ->with(['quiz.course', 'quiz.session'])
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -120,7 +120,7 @@ class QuizController extends Controller
     public function childQuizzes(Request $request, int $childId): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
@@ -137,10 +137,9 @@ class QuizController extends Controller
         }
 
         $student = $relationship->student;
-        $studentUserId = $student->user?->id ?? $student->id;
 
-        // Get quiz attempts with details
-        $attempts = QuizAttempt::where('user_id', $studentUserId)
+        // Get quiz attempts with details - use student_id (StudentProfile.id)
+        $attempts = QuizAttempt::where('student_id', $student->id)
             ->with(['quiz.course', 'quiz.session'])
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 15));
@@ -172,7 +171,7 @@ class QuizController extends Controller
                 'completed_at' => $attempt->completed_at?->toISOString(),
                 'created_at' => $attempt->created_at->toISOString(),
             ])->toArray(),
-            'stats' => $this->getChildQuizStats($studentUserId),
+            'stats' => $this->getChildQuizStats($student->id),
             'pagination' => [
                 'current_page' => $attempts->currentPage(),
                 'per_page' => $attempts->perPage(),
@@ -193,23 +192,20 @@ class QuizController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $parentProfile = $user->parentProfile;
+        $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
-        // Get all linked children's user IDs
-        $childUserIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
-            ->with('student.user')
-            ->get()
-            ->map(fn($r) => $r->student->user?->id ?? $r->student->id)
-            ->filter()
+        // Get all linked children's student profile IDs
+        $childStudentIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
+            ->pluck('student_id')
             ->toArray();
 
         $attempt = QuizAttempt::where('id', $id)
-            ->whereIn('user_id', $childUserIds)
-            ->with(['quiz.questions', 'user'])
+            ->whereIn('student_id', $childStudentIds)
+            ->with(['quiz.questions'])
             ->first();
 
         if (!$attempt) {
@@ -218,10 +214,7 @@ class QuizController extends Controller
 
         // Get child info
         $childRelation = ParentStudentRelationship::where('parent_id', $parentProfile->id)
-            ->whereHas('student', function ($q) use ($attempt) {
-                $q->where('user_id', $attempt->user_id)
-                    ->orWhere('id', $attempt->user_id);
-            })
+            ->where('student_id', $attempt->student_id)
             ->with('student')
             ->first();
 
@@ -260,9 +253,9 @@ class QuizController extends Controller
     /**
      * Get quiz stats for a child.
      */
-    protected function getChildQuizStats(int $userId): array
+    protected function getChildQuizStats(int $studentId): array
     {
-        $attempts = QuizAttempt::where('user_id', $userId)->get();
+        $attempts = QuizAttempt::where('student_id', $studentId)->get();
 
         $totalAttempts = $attempts->count();
         $passedAttempts = $attempts->filter(function ($a) {
