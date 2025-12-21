@@ -93,7 +93,7 @@ class ComprehensiveDataSeeder extends Seeder
                 'name_en' => 'Itqan Academy',
                 'subdomain' => 'itqan-academy',
                 'description' => 'الأكاديمية الرئيسية لمنصة إتقان التعليمية',
-                'brand_color' => '#0ea5e9',
+                'brand_color' => 'sky',
                 'total_revenue' => 250000.00,
                 'monthly_revenue' => 45000.00,
                 'active_subscriptions' => 180,
@@ -104,7 +104,7 @@ class ComprehensiveDataSeeder extends Seeder
                 'name_en' => 'Al-Noor Academy',
                 'subdomain' => 'alnoor',
                 'description' => 'أكاديمية متخصصة في تحفيظ القرآن الكريم',
-                'brand_color' => '#22c55e',
+                'brand_color' => 'green',
                 'total_revenue' => 180000.00,
                 'monthly_revenue' => 32000.00,
                 'active_subscriptions' => 120,
@@ -115,7 +115,7 @@ class ComprehensiveDataSeeder extends Seeder
                 'name_en' => 'Sciences Academy',
                 'subdomain' => 'sciences',
                 'description' => 'أكاديمية متخصصة في العلوم الأكاديمية',
-                'brand_color' => '#f59e0b',
+                'brand_color' => 'amber',
                 'total_revenue' => 120000.00,
                 'monthly_revenue' => 22000.00,
                 'active_subscriptions' => 85,
@@ -203,9 +203,7 @@ class ComprehensiveDataSeeder extends Seeder
                     ],
                     array_merge($subject, [
                         'academy_id' => $academy->id,
-                        'subject_code' => strtoupper(substr($subject['name_en'], 0, 3)).str_pad($academy->id, 2, '0', STR_PAD_LEFT).str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                         'description' => 'مادة '.$subject['name'].' في '.$academy->name,
-                        'hours_per_week' => rand(2, 6),
                         'is_active' => true,
                     ])
                 );
