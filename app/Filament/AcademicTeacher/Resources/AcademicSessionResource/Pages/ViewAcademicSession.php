@@ -64,7 +64,12 @@ class ViewAcademicSession extends ViewRecord
                                         $status = SessionStatus::tryFrom($state);
                                         return $status?->label() ?? (string) $state;
                                     })
-                                    ->color(fn ($state): string => SessionStatus::tryFrom($state)?->color() ?? 'gray'),
+                                    ->color(function ($state): string {
+                                        if ($state instanceof SessionStatus) {
+                                            return $state->color();
+                                        }
+                                        return SessionStatus::tryFrom($state)?->color() ?? 'gray';
+                                    }),
                             ]),
                         Infolists\Components\Grid::make(2)
                             ->schema([

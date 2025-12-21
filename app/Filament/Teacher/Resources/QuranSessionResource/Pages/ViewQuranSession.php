@@ -82,7 +82,12 @@ class ViewQuranSession extends ViewRecord
                                         $status = SessionStatus::tryFrom($state);
                                         return $status?->label() ?? (string) $state;
                                     })
-                                    ->color(fn ($state): string => SessionStatus::tryFrom($state)?->color() ?? 'gray'),
+                                    ->color(function ($state): string {
+                                        if ($state instanceof SessionStatus) {
+                                            return $state->color();
+                                        }
+                                        return SessionStatus::tryFrom($state)?->color() ?? 'gray';
+                                    }),
                             ]),
                         Infolists\Components\TextEntry::make('attendance_status')
                             ->label('حالة الحضور')
