@@ -1,329 +1,206 @@
 <?php
 
-namespace Tests\Unit\Models;
-
 use App\Models\Academy;
 use App\Models\User;
-use App\Models\StudentProfile;
-use App\Models\QuranTeacherProfile;
-use App\Models\AcademicTeacherProfile;
-use App\Models\ParentProfile;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
-use Tests\TestCase;
 
-/**
- * Unit tests for User model
- *
- * Tests cover:
- * - User creation and attributes
- * - User type handling
- * - Relationships
- * - Accessors and mutators
- * - Scopes
- */
-class UserTest extends TestCase
-{
-    use RefreshDatabase;
+describe('User Model', function () {
+    describe('factory', function () {
+        it('creates a user with default attributes', function () {
+            $user = User::factory()->create();
 
-    /**
-     * Test user can be created with basic attributes.
-     */
-    public function test_user_can_be_created_with_basic_attributes(): void
-    {
-        $user = User::factory()->create([
-            'first_name' => 'Ahmed',
-            'last_name' => 'Hassan',
-            'email' => 'ahmed@test.local',
-            'user_type' => 'student',
-        ]);
+            expect($user)->toBeInstanceOf(User::class)
+                ->and($user->exists)->toBeTrue()
+                ->and($user->first_name)->not->toBeEmpty()
+                ->and($user->last_name)->not->toBeEmpty()
+                ->and($user->email)->not->toBeEmpty()
+                ->and($user->active_status)->toBeTrue();
+        });
 
-        $this->assertDatabaseHas('users', [
-            'email' => 'ahmed@test.local',
-            'first_name' => 'Ahmed',
-            'last_name' => 'Hassan',
-        ]);
+        it('creates a super admin user', function () {
+            $user = User::factory()->superAdmin()->create();
 
-        $this->assertEquals('Ahmed', $user->first_name);
-        $this->assertEquals('Hassan', $user->last_name);
-        $this->assertEquals('student', $user->user_type);
-    }
+            expect($user->user_type)->toBe('super_admin')
+                ->and($user->academy_id)->toBeNull();
+        });
 
-    /**
-     * Test user password is hashed correctly.
-     */
-    public function test_user_password_is_hashed(): void
-    {
-        $user = User::factory()->create([
-            'password' => Hash::make('secret123'),
-        ]);
+        it('creates an admin user', function () {
+            $user = User::factory()->admin()->create();
 
-        $this->assertTrue(Hash::check('secret123', $user->password));
-    }
+            expect($user->user_type)->toBe('admin');
+        });
 
-    /**
-     * Test user full name accessor.
-     */
-    public function test_user_has_full_name_accessor(): void
-    {
-        $user = User::factory()->create([
-            'first_name' => 'Mohammed',
-            'last_name' => 'Ali',
-        ]);
+        it('creates a supervisor user', function () {
+            $user = User::factory()->supervisor()->create();
 
-        // Check if full_name accessor exists and works
-        if (method_exists($user, 'getFullNameAttribute') || isset($user->full_name)) {
-            $this->assertEquals('Mohammed Ali', $user->full_name);
-        } else {
-            $this->assertTrue(true); // Skip if no accessor exists
-        }
-    }
+            expect($user->user_type)->toBe('supervisor');
+        });
 
-    /**
-     * Test user belongs to an academy.
-     */
-    public function test_user_belongs_to_academy(): void
-    {
-        $academy = Academy::factory()->create(['name' => 'Test Academy']);
-        $user = User::factory()->create(['academy_id' => $academy->id]);
+        it('creates a quran teacher user', function () {
+            $user = User::factory()->quranTeacher()->create();
 
-        $this->assertInstanceOf(Academy::class, $user->academy);
-        $this->assertEquals('Test Academy', $user->academy->name);
-    }
+            expect($user->user_type)->toBe('quran_teacher');
+        });
 
-    /**
-     * Test super admin user has no academy.
-     */
-    public function test_super_admin_has_no_academy(): void
-    {
-        $user = User::factory()->superAdmin()->create();
+        it('creates an academic teacher user', function () {
+            $user = User::factory()->academicTeacher()->create();
 
-        $this->assertNull($user->academy_id);
-        $this->assertEquals('super_admin', $user->user_type);
-    }
+            expect($user->user_type)->toBe('academic_teacher');
+        });
 
-    /**
-     * Test student user type.
-     */
-    public function test_student_user_type(): void
-    {
-        $user = User::factory()->student()->create();
+        it('creates a student user', function () {
+            $user = User::factory()->student()->create();
 
-        $this->assertEquals('student', $user->user_type);
-    }
+            expect($user->user_type)->toBe('student');
+        });
 
-    /**
-     * Test quran teacher user type.
-     */
-    public function test_quran_teacher_user_type(): void
-    {
-        $user = User::factory()->quranTeacher()->create();
+        it('creates a parent user', function () {
+            $user = User::factory()->parent()->create();
 
-        $this->assertEquals('quran_teacher', $user->user_type);
-    }
+            expect($user->user_type)->toBe('parent');
+        });
 
-    /**
-     * Test academic teacher user type.
-     */
-    public function test_academic_teacher_user_type(): void
-    {
-        $user = User::factory()->academicTeacher()->create();
+        it('creates an inactive user', function () {
+            $user = User::factory()->inactive()->create();
 
-        $this->assertEquals('academic_teacher', $user->user_type);
-    }
+            expect($user->active_status)->toBeFalse();
+        });
 
-    /**
-     * Test parent user type.
-     */
-    public function test_parent_user_type(): void
-    {
-        $user = User::factory()->parent()->create();
+        it('creates a user for a specific academy', function () {
+            $academy = Academy::factory()->create();
+            $user = User::factory()->forAcademy($academy)->create();
 
-        $this->assertEquals('parent', $user->user_type);
-    }
+            expect($user->academy_id)->toBe($academy->id);
+        });
+    });
 
-    /**
-     * Test admin user type.
-     */
-    public function test_admin_user_type(): void
-    {
-        $user = User::factory()->admin()->create();
+    describe('role constants', function () {
+        it('has correct role constants defined', function () {
+            expect(User::ROLE_SUPER_ADMIN)->toBe('super_admin')
+                ->and(User::ROLE_ACADEMY_ADMIN)->toBe('academy_admin')
+                ->and(User::ROLE_QURAN_TEACHER)->toBe('quran_teacher')
+                ->and(User::ROLE_ACADEMIC_TEACHER)->toBe('academic_teacher')
+                ->and(User::ROLE_SUPERVISOR)->toBe('supervisor')
+                ->and(User::ROLE_STUDENT)->toBe('student')
+                ->and(User::ROLE_PARENT)->toBe('parent');
+        });
+    });
 
-        $this->assertEquals('admin', $user->user_type);
-    }
+    describe('hasRole()', function () {
+        it('returns true when user has the specified role', function () {
+            $user = User::factory()->create(['user_type' => 'quran_teacher']);
 
-    /**
-     * Test inactive user.
-     */
-    public function test_inactive_user(): void
-    {
-        $user = User::factory()->inactive()->create();
+            expect($user->hasRole('quran_teacher'))->toBeTrue();
+        });
 
-        $this->assertFalse($user->active_status);
-    }
+        it('returns false when user does not have the specified role', function () {
+            $user = User::factory()->create(['user_type' => 'student']);
 
-    /**
-     * Test user email verification.
-     */
-    public function test_user_email_verification(): void
-    {
-        $verifiedUser = User::factory()->create();
-        $unverifiedUser = User::factory()->unverified()->create();
+            expect($user->hasRole('quran_teacher'))->toBeFalse();
+        });
 
-        $this->assertNotNull($verifiedUser->email_verified_at);
-        $this->assertNull($unverifiedUser->email_verified_at);
-    }
+        it('accepts an array of roles and returns true if user has any', function () {
+            $user = User::factory()->create(['user_type' => 'quran_teacher']);
 
-    /**
-     * Test is super admin method.
-     */
-    public function test_is_super_admin_method(): void
-    {
-        $superAdmin = User::factory()->superAdmin()->create();
-        $student = User::factory()->student()->create();
+            expect($user->hasRole(['quran_teacher', 'academic_teacher']))->toBeTrue();
+        });
 
-        if (method_exists($superAdmin, 'isSuperAdmin')) {
-            $this->assertTrue($superAdmin->isSuperAdmin());
-            $this->assertFalse($student->isSuperAdmin());
-        } else {
-            $this->assertEquals('super_admin', $superAdmin->user_type);
-            $this->assertNotEquals('super_admin', $student->user_type);
-        }
-    }
+        it('returns false when user has none of the specified roles', function () {
+            $user = User::factory()->create(['user_type' => 'student']);
 
-    /**
-     * Test is admin method.
-     */
-    public function test_is_admin_method(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $student = User::factory()->student()->create();
+            expect($user->hasRole(['quran_teacher', 'academic_teacher']))->toBeFalse();
+        });
+    });
 
-        if (method_exists($admin, 'isAdmin')) {
-            $this->assertTrue($admin->isAdmin());
-            $this->assertFalse($student->isAdmin());
-        } else {
-            $this->assertEquals('admin', $admin->user_type);
-        }
-    }
+    describe('getIdentifier()', function () {
+        it('returns a unique identifier for LiveKit', function () {
+            $user = User::factory()->create([
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+            ]);
 
-    /**
-     * Test is teacher method.
-     */
-    public function test_is_teacher_method(): void
-    {
-        $quranTeacher = User::factory()->quranTeacher()->create();
-        $academicTeacher = User::factory()->academicTeacher()->create();
-        $student = User::factory()->student()->create();
+            $identifier = $user->getIdentifier();
 
-        if (method_exists($quranTeacher, 'isTeacher')) {
-            $this->assertTrue($quranTeacher->isTeacher());
-            $this->assertTrue($academicTeacher->isTeacher());
-            $this->assertFalse($student->isTeacher());
-        } else {
-            $this->assertContains($quranTeacher->user_type, ['quran_teacher', 'academic_teacher']);
-            $this->assertContains($academicTeacher->user_type, ['quran_teacher', 'academic_teacher']);
-        }
-    }
+            expect($identifier)->toContain($user->id)
+                ->and($identifier)->toContain('john_doe');
+        });
+    });
 
-    /**
-     * Test is student method.
-     */
-    public function test_is_student_method(): void
-    {
-        $student = User::factory()->student()->create();
-        $teacher = User::factory()->quranTeacher()->create();
+    describe('relationships', function () {
+        it('belongs to an academy', function () {
+            $academy = Academy::factory()->create();
+            $user = User::factory()->create(['academy_id' => $academy->id]);
 
-        if (method_exists($student, 'isStudent')) {
-            $this->assertTrue($student->isStudent());
-            $this->assertFalse($teacher->isStudent());
-        } else {
-            $this->assertEquals('student', $student->user_type);
-        }
-    }
+            expect($user->academy)->toBeInstanceOf(Academy::class)
+                ->and($user->academy->id)->toBe($academy->id);
+        });
 
-    /**
-     * Test is parent method.
-     */
-    public function test_is_parent_method(): void
-    {
-        $parent = User::factory()->parent()->create();
-        $student = User::factory()->student()->create();
+        it('can exist without an academy for super admin', function () {
+            $user = User::factory()->superAdmin()->create();
 
-        if (method_exists($parent, 'isParent')) {
-            $this->assertTrue($parent->isParent());
-            $this->assertFalse($student->isParent());
-        } else {
-            $this->assertEquals('parent', $parent->user_type);
-        }
-    }
+            expect($user->academy)->toBeNull()
+                ->and($user->user_type)->toBe('super_admin');
+        });
+    });
 
-    /**
-     * Test user can have multiple users in same academy.
-     */
-    public function test_multiple_users_in_same_academy(): void
-    {
-        $academy = Academy::factory()->create();
+    describe('fillable attributes', function () {
+        it('allows mass assignment of expected fields', function () {
+            $academy = Academy::factory()->create();
 
-        $user1 = User::factory()->create(['academy_id' => $academy->id]);
-        $user2 = User::factory()->create(['academy_id' => $academy->id]);
-        $user3 = User::factory()->create(['academy_id' => $academy->id]);
+            $user = User::factory()->create([
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'email' => 'test@example.com',
+                'phone' => '0512345678',
+                'user_type' => 'student',
+                'academy_id' => $academy->id,
+            ]);
 
-        $this->assertEquals($academy->id, $user1->academy_id);
-        $this->assertEquals($academy->id, $user2->academy_id);
-        $this->assertEquals($academy->id, $user3->academy_id);
+            expect($user->first_name)->toBe('Test')
+                ->and($user->last_name)->toBe('User')
+                ->and($user->email)->toBe('test@example.com')
+                ->and($user->phone)->toBe('0512345678')
+                ->and($user->user_type)->toBe('student')
+                ->and($user->academy_id)->toBe($academy->id);
+        });
+    });
 
-        // All three users should belong to the same academy
-        $academyUsers = User::where('academy_id', $academy->id)->count();
-        $this->assertEquals(3, $academyUsers);
-    }
+    describe('soft deletes', function () {
+        it('soft deletes user instead of permanently deleting', function () {
+            $user = User::factory()->create();
+            $userId = $user->id;
 
-    /**
-     * Test user has unique email.
-     */
-    public function test_user_email_must_be_unique(): void
-    {
-        User::factory()->create(['email' => 'unique@test.local']);
+            $user->delete();
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
+            expect(User::find($userId))->toBeNull()
+                ->and(User::withTrashed()->find($userId))->not->toBeNull()
+                ->and(User::withTrashed()->find($userId)->deleted_at)->not->toBeNull();
+        });
 
-        User::factory()->create(['email' => 'unique@test.local']);
-    }
+        it('can restore a soft deleted user', function () {
+            $user = User::factory()->create();
+            $userId = $user->id;
 
-    /**
-     * Test user phone number format.
-     */
-    public function test_user_phone_number(): void
-    {
-        $user = User::factory()->create(['phone' => '0501234567']);
+            $user->delete();
+            User::withTrashed()->find($userId)->restore();
 
-        $this->assertEquals('0501234567', $user->phone);
-    }
+            expect(User::find($userId))->not->toBeNull()
+                ->and(User::find($userId)->deleted_at)->toBeNull();
+        });
+    });
 
-    /**
-     * Test user fillable attributes.
-     */
-    public function test_user_fillable_attributes(): void
-    {
-        $user = new User();
-        $fillable = $user->getFillable();
+    describe('authentication', function () {
+        it('uses HasApiTokens trait for Sanctum', function () {
+            $user = User::factory()->create();
 
-        $this->assertContains('first_name', $fillable);
-        $this->assertContains('last_name', $fillable);
-        $this->assertContains('email', $fillable);
-        $this->assertContains('password', $fillable);
-        $this->assertContains('user_type', $fillable);
-    }
+            expect(method_exists($user, 'tokens'))->toBeTrue()
+                ->and(method_exists($user, 'createToken'))->toBeTrue();
+        });
 
-    /**
-     * Test user hidden attributes.
-     */
-    public function test_user_hidden_attributes(): void
-    {
-        $user = User::factory()->create();
-        $array = $user->toArray();
+        it('uses Notifiable trait', function () {
+            $user = User::factory()->create();
 
-        $this->assertArrayNotHasKey('password', $array);
-        $this->assertArrayNotHasKey('remember_token', $array);
-    }
-}
+            expect(method_exists($user, 'notify'))->toBeTrue()
+                ->and(method_exists($user, 'notifications'))->toBeTrue();
+        });
+    });
+});

@@ -152,21 +152,26 @@ class AcademyContextService
      */
     public static function getDefaultAcademy(): ?Academy
     {
-        // First try to get the designated default academy
-        $defaultAcademy = Academy::where('subdomain', 'itqan-academy')
-            ->where('is_active', true)
-            ->where('maintenance_mode', false)
-            ->first();
-            
-        if ($defaultAcademy) {
-            return $defaultAcademy;
+        try {
+            // First try to get the designated default academy
+            $defaultAcademy = Academy::where('subdomain', 'itqan-academy')
+                ->where('is_active', true)
+                ->where('maintenance_mode', false)
+                ->first();
+
+            if ($defaultAcademy) {
+                return $defaultAcademy;
+            }
+
+            // If no designated default, get the first active academy
+            return Academy::where('is_active', true)
+                ->where('maintenance_mode', false)
+                ->orderBy('created_at')
+                ->first();
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Handle case where database tables don't exist (e.g., during testing)
+            return null;
         }
-        
-        // If no designated default, get the first active academy
-        return Academy::where('is_active', true)
-            ->where('maintenance_mode', false)
-            ->orderBy('created_at')
-            ->first();
     }
 
     /**

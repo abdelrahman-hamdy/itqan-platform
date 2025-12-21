@@ -164,3 +164,4 @@ docker-compose.override.yml
 # Flutter/Mobile (If separate project)
 # ----------------
 /itqan/
+tests/Browser/Screenshots/

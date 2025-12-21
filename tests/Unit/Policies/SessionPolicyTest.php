@@ -1,246 +1,330 @@
 <?php
 
-namespace Tests\Unit\Policies;
-
-use App\Policies\SessionPolicy;
-use App\Models\User;
 use App\Models\Academy;
 use App\Models\QuranSession;
-use App\Models\QuranTeacherProfile;
-use App\Models\StudentProfile;
-use App\Enums\SessionStatus;
-use Carbon\Carbon;
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
+use App\Models\User;
+use App\Policies\SessionPolicy;
 
-/**
- * Test cases for SessionPolicy
- *
- * These tests verify authorization rules for sessions including:
- * - Admin access to all sessions
- * - Teacher access to their own sessions
- * - Student access to their enrolled sessions
- * - Parent access to their children's sessions
- */
-class SessionPolicyTest extends TestCase
-{
-    use RefreshDatabase;
-
-    protected SessionPolicy $policy;
-    protected string $testId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
+describe('SessionPolicy', function () {
+    beforeEach(function () {
         $this->policy = new SessionPolicy();
-        $this->createAcademy();
-        // Unique ID for this test run to avoid collisions
-        $this->testId = Str::random(8);
-    }
+        $this->academy = Academy::factory()->create();
+    });
 
-    /**
-     * Create a user with specific type and role.
-     */
-    protected function createUser(string $userType, string $suffix = ''): User
-    {
-        return User::factory()->create([
-            'academy_id' => $this->academy->id,
-            'user_type' => $userType,
-            'email' => "{$userType}{$suffix}_{$this->testId}@test.local",
-        ]);
-    }
+    describe('viewAny()', function () {
+        it('allows super admin to view any sessions', function () {
+            $user = User::factory()->superAdmin()->create();
 
-    /**
-     * Create a quran teacher with profile.
-     * Note: Quran teachers don't auto-create profiles, so we create manually.
-     */
-    protected function makeQuranTeacherWithProfile(string $suffix = ''): array
-    {
-        $user = $this->createUser('quran_teacher', $suffix);
-        $profile = QuranTeacherProfile::create([
-            'academy_id' => $this->academy->id,
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'first_name' => $user->first_name,
-            'last_name' => $user->last_name,
-            'phone' => '050' . rand(1000000, 9999999),
-            'teacher_code' => 'QT-' . $this->testId . $suffix,
-            'is_active' => true,
-        ]);
-        return ['user' => $user, 'profile' => $profile];
-    }
+            expect($this->policy->viewAny($user))->toBeTrue();
+        });
 
-    /**
-     * Create a student with profile.
-     * Note: Student users auto-create StudentProfiles via User::created event,
-     * so we just retrieve the auto-created profile.
-     */
-    protected function makeStudentWithProfile(string $suffix = ''): array
-    {
-        $user = $this->createUser('student', $suffix);
-        // The profile is auto-created by User::created event
-        $profile = $user->studentProfile;
-        return ['user' => $user, 'profile' => $profile];
-    }
+        it('allows academy admin to view sessions', function () {
+            $user = User::factory()->admin()->forAcademy($this->academy)->create();
 
-    /**
-     * Create a quran session.
-     * Note: Both quran_teacher_id and student_id reference users table, not profiles
-     */
-    protected function createQuranSession(User $teacherUser, ?User $studentUser = null): QuranSession
-    {
-        return QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacherUser->id, // References User, not profile
-            'session_type' => 'individual',
-            'student_id' => $studentUser?->id, // References User, not profile
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => 'QSE-' . $this->testId . '-' . Str::random(6),
-        ]);
-    }
+            expect($this->policy->viewAny($user))->toBeTrue();
+        });
 
-    /**
-     * Test admin can view any session in their academy.
-     */
-    public function test_admin_can_view_any_session(): void
-    {
-        $admin = $this->createUser('admin');
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $session = $this->createQuranSession($teacher['user']);
+        it('allows supervisors to view sessions', function () {
+            $user = User::factory()->supervisor()->forAcademy($this->academy)->create();
 
-        $this->assertTrue($this->policy->view($admin, $session));
-    }
+            expect($this->policy->viewAny($user))->toBeTrue();
+        });
 
-    /**
-     * Test teacher can view their own sessions.
-     */
-    public function test_teacher_can_view_own_sessions(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $session = $this->createQuranSession($teacher['user']);
+        it('allows quran teachers to view sessions', function () {
+            $user = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
 
-        $this->assertTrue($this->policy->view($teacher['user'], $session));
-    }
+            expect($this->policy->viewAny($user))->toBeTrue();
+        });
 
-    /**
-     * Test teacher cannot view other teachers sessions.
-     */
-    public function test_teacher_cannot_view_other_teacher_sessions(): void
-    {
-        $teacher1 = $this->makeQuranTeacherWithProfile('_1');
-        $teacher2 = $this->makeQuranTeacherWithProfile('_2');
+        it('allows academic teachers to view sessions', function () {
+            $user = User::factory()->academicTeacher()->forAcademy($this->academy)->create();
 
-        // Create session for teacher1
-        $session = $this->createQuranSession($teacher1['user']);
+            expect($this->policy->viewAny($user))->toBeTrue();
+        });
 
-        // Teacher2 should not be able to view teacher1's session
-        $this->assertFalse($this->policy->view($teacher2['user'], $session));
-    }
+        it('allows students to view sessions', function () {
+            $user = User::factory()->student()->forAcademy($this->academy)->create();
 
-    /**
-     * Test student can view their enrolled sessions.
-     */
-    public function test_student_can_view_enrolled_sessions(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
+            expect($this->policy->viewAny($user))->toBeTrue();
+        });
 
-        // Create session with this student (pass user, not profile)
-        $session = $this->createQuranSession($teacher['user'], $student['user']);
+        it('denies parents from viewAny', function () {
+            $user = User::factory()->parent()->forAcademy($this->academy)->create();
 
-        $this->assertTrue($this->policy->view($student['user'], $session));
-    }
+            expect($this->policy->viewAny($user))->toBeFalse();
+        });
+    });
 
-    /**
-     * Test student cannot view non-enrolled sessions.
-     */
-    public function test_student_cannot_view_non_enrolled_sessions(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student1 = $this->makeStudentWithProfile('_1');
-        $student2 = $this->makeStudentWithProfile('_2');
+    describe('view()', function () {
+        it('allows super admin to view any session', function () {
+            $user = User::factory()->superAdmin()->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
 
-        // Create session for student1 (pass user, not profile)
-        $session = $this->createQuranSession($teacher['user'], $student1['user']);
+            expect($this->policy->view($user, $session))->toBeTrue();
+        });
 
-        // Student2 should not be able to view student1's session
-        $this->assertFalse($this->policy->view($student2['user'], $session));
-    }
+        it('allows academy admin to view sessions in their academy', function () {
+            $user = User::factory()->admin()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
 
-    /**
-     * Test parent can view children's sessions.
-     */
-    public function test_parent_can_view_child_sessions(): void
-    {
-        // This test verifies that a parent without children cannot view the session
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $session = $this->createQuranSession($teacher['user']);
+            expect($this->policy->view($user, $session))->toBeTrue();
+        });
 
-        // Create a parent user (without proper child relationship)
-        $parentUser = $this->createUser('parent');
+        it('denies academy admin from viewing sessions in other academies', function () {
+            $otherAcademy = Academy::factory()->create();
+            $user = User::factory()->admin()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create(['academy_id' => $otherAcademy->id]);
 
-        // Parent without children should not see the session
-        $this->assertFalse($this->policy->view($parentUser, $session));
-    }
+            expect($this->policy->view($user, $session))->toBeFalse();
+        });
 
-    /**
-     * Test only teacher can manage meeting.
-     */
-    public function test_only_teacher_can_manage_meeting(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
-        $session = $this->createQuranSession($teacher['user'], $student['user']);
+        it('allows teachers to view their own sessions', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+            ]);
 
-        // Teacher can manage their session meeting
-        $this->assertTrue($this->policy->manageMeeting($teacher['user'], $session));
+            expect($this->policy->view($teacher, $session))->toBeTrue();
+        });
 
-        // Student cannot manage the meeting
-        $this->assertFalse($this->policy->manageMeeting($student['user'], $session));
-    }
+        it('denies teachers from viewing other teachers sessions', function () {
+            $teacher1 = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $teacher2 = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher2->id,
+            ]);
 
-    /**
-     * Test reschedule permission.
-     */
-    public function test_reschedule_permission(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
-        $admin = $this->createUser('admin', '_resc');
+            expect($this->policy->view($teacher1, $session))->toBeFalse();
+        });
 
-        $session = $this->createQuranSession($teacher['user'], $student['user']);
+        it('allows students to view their enrolled sessions', function () {
+            $student = User::factory()->student()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->individual()->create([
+                'academy_id' => $this->academy->id,
+                'student_id' => $student->id,
+            ]);
 
-        // Teacher can reschedule their own session
-        $this->assertTrue($this->policy->reschedule($teacher['user'], $session));
+            expect($this->policy->view($student, $session))->toBeTrue();
+        });
 
-        // Admin can reschedule any session in their academy
-        $this->assertTrue($this->policy->reschedule($admin, $session));
+        it('denies students from viewing other students sessions', function () {
+            $student1 = User::factory()->student()->forAcademy($this->academy)->create();
+            $student2 = User::factory()->student()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->individual()->create([
+                'academy_id' => $this->academy->id,
+                'student_id' => $student2->id,
+            ]);
 
-        // Student cannot reschedule
-        $this->assertFalse($this->policy->reschedule($student['user'], $session));
-    }
+            expect($this->policy->view($student1, $session))->toBeFalse();
+        });
+    });
 
-    /**
-     * Test cancel permission.
-     */
-    public function test_cancel_permission(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
-        $admin = $this->createUser('admin', '_canc');
+    describe('create()', function () {
+        it('allows super admin to create sessions', function () {
+            $user = User::factory()->superAdmin()->create();
 
-        $session = $this->createQuranSession($teacher['user'], $student['user']);
+            expect($this->policy->create($user))->toBeTrue();
+        });
 
-        // Teacher can cancel their own session
-        $this->assertTrue($this->policy->cancel($teacher['user'], $session));
+        it('allows academy admin to create sessions', function () {
+            $user = User::factory()->admin()->forAcademy($this->academy)->create();
 
-        // Admin can cancel any session in their academy
-        $this->assertTrue($this->policy->cancel($admin, $session));
+            expect($this->policy->create($user))->toBeTrue();
+        });
 
-        // Student cannot cancel
-        $this->assertFalse($this->policy->cancel($student['user'], $session));
-    }
-}
+        it('allows supervisors to create sessions', function () {
+            $user = User::factory()->supervisor()->forAcademy($this->academy)->create();
+
+            expect($this->policy->create($user))->toBeTrue();
+        });
+
+        it('allows quran teachers to create sessions', function () {
+            $user = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+
+            expect($this->policy->create($user))->toBeTrue();
+        });
+
+        it('allows academic teachers to create sessions', function () {
+            $user = User::factory()->academicTeacher()->forAcademy($this->academy)->create();
+
+            expect($this->policy->create($user))->toBeTrue();
+        });
+
+        it('denies students from creating sessions', function () {
+            $user = User::factory()->student()->forAcademy($this->academy)->create();
+
+            expect($this->policy->create($user))->toBeFalse();
+        });
+
+        it('denies parents from creating sessions', function () {
+            $user = User::factory()->parent()->forAcademy($this->academy)->create();
+
+            expect($this->policy->create($user))->toBeFalse();
+        });
+    });
+
+    describe('update()', function () {
+        it('allows super admin to update any session', function () {
+            $user = User::factory()->superAdmin()->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
+
+            expect($this->policy->update($user, $session))->toBeTrue();
+        });
+
+        it('allows academy admin to update sessions in their academy', function () {
+            $user = User::factory()->admin()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
+
+            expect($this->policy->update($user, $session))->toBeTrue();
+        });
+
+        it('allows teachers to update their own sessions', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+            ]);
+
+            expect($this->policy->update($teacher, $session))->toBeTrue();
+        });
+
+        it('denies teachers from updating other teachers sessions', function () {
+            $teacher1 = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $teacher2 = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher2->id,
+            ]);
+
+            expect($this->policy->update($teacher1, $session))->toBeFalse();
+        });
+
+        it('denies students from updating sessions', function () {
+            $student = User::factory()->student()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->individual()->create([
+                'academy_id' => $this->academy->id,
+                'student_id' => $student->id,
+            ]);
+
+            expect($this->policy->update($student, $session))->toBeFalse();
+        });
+    });
+
+    describe('delete()', function () {
+        it('allows super admin to delete any session', function () {
+            $user = User::factory()->superAdmin()->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
+
+            expect($this->policy->delete($user, $session))->toBeTrue();
+        });
+
+        it('allows academy admin to delete sessions in their academy', function () {
+            $user = User::factory()->admin()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
+
+            expect($this->policy->delete($user, $session))->toBeTrue();
+        });
+
+        it('denies supervisors from deleting sessions', function () {
+            $user = User::factory()->supervisor()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
+
+            expect($this->policy->delete($user, $session))->toBeFalse();
+        });
+
+        it('denies teachers from deleting sessions', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+            ]);
+
+            expect($this->policy->delete($teacher, $session))->toBeFalse();
+        });
+
+        it('denies students from deleting sessions', function () {
+            $student = User::factory()->student()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->individual()->create([
+                'academy_id' => $this->academy->id,
+                'student_id' => $student->id,
+            ]);
+
+            expect($this->policy->delete($student, $session))->toBeFalse();
+        });
+    });
+
+    describe('manageMeeting()', function () {
+        it('allows super admin to manage any session meeting', function () {
+            $user = User::factory()->superAdmin()->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
+
+            expect($this->policy->manageMeeting($user, $session))->toBeTrue();
+        });
+
+        it('allows academy admin to manage session meetings', function () {
+            $user = User::factory()->admin()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create(['academy_id' => $this->academy->id]);
+
+            expect($this->policy->manageMeeting($user, $session))->toBeTrue();
+        });
+
+        it('allows teachers to manage their own session meetings', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+            ]);
+
+            expect($this->policy->manageMeeting($teacher, $session))->toBeTrue();
+        });
+
+        it('denies teachers from managing other session meetings', function () {
+            $teacher1 = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $teacher2 = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher2->id,
+            ]);
+
+            expect($this->policy->manageMeeting($teacher1, $session))->toBeFalse();
+        });
+
+        it('denies students from managing meetings', function () {
+            $student = User::factory()->student()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->individual()->create([
+                'academy_id' => $this->academy->id,
+                'student_id' => $student->id,
+            ]);
+
+            expect($this->policy->manageMeeting($student, $session))->toBeFalse();
+        });
+    });
+
+    describe('reschedule()', function () {
+        it('uses same logic as update', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+            ]);
+
+            expect($this->policy->reschedule($teacher, $session))
+                ->toBe($this->policy->update($teacher, $session));
+        });
+    });
+
+    describe('cancel()', function () {
+        it('uses same logic as update', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+            ]);
+
+            expect($this->policy->cancel($teacher, $session))
+                ->toBe($this->policy->update($teacher, $session));
+        });
+    });
+});

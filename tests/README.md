@@ -1,196 +1,224 @@
-# Tests Directory
+# Itqan Platform Test Suite
 
-Test scripts and debugging tools for the Itqan Platform.
+This document describes the testing infrastructure for the Itqan Platform.
 
----
+## Test Framework
 
-## 📁 Structure
+The project uses **Pest PHP** as the testing framework with the following plugins:
+- `pestphp/pest` - Core Pest framework
+- `pestphp/pest-plugin-laravel` - Laravel integration
+- `pestphp/pest-plugin-livewire` - Livewire component testing
+- `pestphp/pest-plugin-faker` - Faker integration for test data
+- `pestphp/pest-plugin-arch` - Architecture testing
 
-### `/integration` (Integration Tests)
+## Running Tests
 
-End-to-end tests for complete features:
-
-- **`test-recording-integration.php`** ⭐ Recording feature integration test
-  - Tests RecordingService, SessionRecording model, routes, controllers
-  - Run: `php tests/integration/test-recording-integration.php`
-  - **Result**: All 9 tests passed ✅
-
-- **`test-cron-jobs.sh`** - Cron job/scheduler testing
-  - Tests scheduled tasks and jobs
-
-**Usage**:
 ```bash
-# Test recording integration
-php tests/integration/test-recording-integration.php
-
-# Test cron jobs
-./tests/integration/test-cron-jobs.sh
-```
-
----
-
-### `/debug` (Debugging Tools)
-
-Diagnostic scripts for troubleshooting production issues:
-
-- **`diagnose-attendance.php`** - Attendance system diagnostics
-  - Checks attendance tracking, webhooks, real-time updates
-  - Usage: `php tests/debug/diagnose-attendance.php`
-
-- **`diagnose-chat.php`** - Chat system diagnostics
-  - Checks WireChat configuration, database, permissions
-  - Usage: `php tests/debug/diagnose-chat.php`
-
-- **`debug-interactive-course-access.php`** - Course access debugging
-  - Debugs enrollment and permission issues
-  - Usage: `php tests/debug/debug-interactive-course-access.php`
-
-**When to Use**:
-- Production issues with attendance not recording
-- Chat messages not appearing
-- Students can't access courses
-
----
-
-### `/Unit` (PHPUnit Tests)
-
-Laravel PHPUnit tests (standard Laravel test directory):
-
-**Middleware Tests**:
-- `MaintenanceModeTest.php` - Tests maintenance mode feature
-
-**Service Tests** (`/Unit/Services`):
-- `SessionStatusServiceTest.php` - Tests session lifecycle management
-- `NotificationServiceTest.php` - Tests notification dispatch system
-- `CalendarServiceTest.php` - Tests calendar and scheduling
-
-**Policy Tests** (`/Unit/Policies`):
-- `SessionPolicyTest.php` - Tests session authorization rules
-
-**Run PHPUnit tests**:
-```bash
+# Run all tests
 php artisan test
-# or
-php artisan test --filter MaintenanceModeTest
-php artisan test --filter SessionStatusServiceTest
-php artisan test --testsuite=Unit
+
+# Run with coverage (requires Xdebug or PCOV)
+php artisan test --coverage
+
+# Run specific test files
+php artisan test --filter=UserTest
+
+# Run by test type
+php artisan test tests/Unit
+php artisan test tests/Feature
+php artisan test tests/Architecture
 ```
 
----
+## Test Structure
 
-## 🎯 Common Testing Scenarios
-
-### Test Recording Feature
-```bash
-php tests/integration/test-recording-integration.php
+```
+tests/
+├── Architecture/           # Architecture tests
+│   └── ArchitectureTest.php
+├── Browser/                # Browser navigation tests
+│   └── NavigationTest.php
+├── Feature/                # Feature/Integration tests
+│   ├── Api/
+│   │   ├── AuthApiTest.php
+│   │   ├── ParentApiTest.php
+│   │   └── StudentApiTest.php
+│   ├── Auth/
+│   │   └── LoginTest.php
+│   └── Livewire/
+│       ├── AcademySelectorTest.php
+│       └── NotificationCenterTest.php
+├── Unit/                   # Unit tests
+│   ├── Enums/
+│   │   └── SessionStatusTest.php
+│   ├── Models/
+│   │   ├── QuranSessionTest.php
+│   │   └── UserTest.php
+│   ├── Policies/
+│   │   └── SessionPolicyTest.php
+│   └── Services/
+│       ├── CalendarServiceTest.php
+│       ├── NotificationServiceTest.php
+│       └── SessionStatusServiceTest.php
+├── Pest.php                # Pest configuration
+└── TestCase.php            # Base test case
 ```
 
-**Expected Output**:
-```
-✅ Test 1: InteractiveCourseSession implements RecordingCapable
-✅ Test 2: HasRecording trait integration
-✅ Test 3: RecordingService methods
-...
-✅ ALL TESTS PASSED
-```
+## Test Categories
 
-### Debug Attendance Issues
-```bash
-php tests/debug/diagnose-attendance.php
-```
+### Architecture Tests (13 tests)
+Tests architectural constraints like:
+- Models extend Eloquent Model
+- Controllers have Controller suffix
+- Form requests extend FormRequest
+- Services are classes
+- Policies have Policy suffix
+- Livewire components extend Component
+- Enums are enums
+- No dd/dump in production code
+- Jobs implement ShouldQueue
 
-**What it checks**:
-- Database connection
-- Attendance records
-- Webhook configuration
-- Real-time broadcasting
+### Unit Tests (145+ tests)
 
-### Debug Chat Issues
-```bash
-php tests/debug/diagnose-chat.php
-```
+#### Models
+- User model - relationships, roles, factories, status checks
+- QuranSession model - factory states, relationships, status casting
 
-**What it checks**:
-- WireChat installation
-- Database tables
-- Chat permissions
-- Matrix server connection
+#### Services
+- CalendarService - session grouping, calendar queries
+- NotificationService - notification creation, filtering
+- SessionStatusService - status transitions, validation
 
----
+#### Policies
+- SessionPolicy - authorization rules, role-based access
 
-## 📊 Test Coverage
+#### Enums
+- SessionStatus - enum values, transitions, colors
 
-### Integration Tests
-- ✅ Recording feature (complete)
-- ✅ Cron jobs/scheduler
-- ⏳ Attendance system (partial - debug tools available)
-- ⏳ Chat system (partial - debug tools available)
+### Feature Tests (25+ tests)
 
-### Debug Tools
-- ✅ Attendance diagnostics
-- ✅ Chat diagnostics
-- ✅ Course access debugging
+#### Authentication
+- Login page display
+- User authentication with valid/invalid credentials
+- Role-based authentication
+- Logout functionality
 
----
+#### API
+- Token generation and validation
+- Protected endpoint access
+- Student API endpoints
+- Parent API endpoints
 
-## 🔧 Adding New Tests
+#### Livewire Components
+- AcademySelector component
+- NotificationCenter component
 
-### Integration Test Template
+## Test Helpers
+
+Available in `tests/Pest.php`:
+
 ```php
-#!/usr/bin/env php
+// Create a super admin and act as them
+asSuperAdmin();
+
+// Create an admin for an academy
+asAdmin($academy = null);
+
+// Create an academy
+createAcademy($attributes = []);
+
+// Create a user of specific type
+createUser($type = 'student', $academy = null, $attributes = []);
+```
+
+## Database
+
+Tests use a separate MySQL database: `itqan_platform_test`
+
+Configuration in `.env.testing`:
+```
+DB_DATABASE=itqan_platform_test
+```
+
+The `LazilyRefreshDatabase` trait is used for test isolation.
+
+## Writing New Tests
+
+### Using Pest Syntax
+
+```php
 <?php
 
-require __DIR__.'/../../vendor/autoload.php';
-$app = require_once __DIR__.'/../../bootstrap/app.php';
+use App\Models\User;
 
-echo "=== Feature Integration Test ===\n\n";
+describe('User Model', function () {
+    it('can be created', function () {
+        $user = User::factory()->create();
 
-// Test 1: Check component exists
-echo "Test 1: Component exists\n";
-$exists = class_exists('App\Models\YourModel');
-echo $exists ? "✅ PASS\n" : "❌ FAIL\n";
-
-// Add more tests...
-
-echo "\n=== TEST SUMMARY ===\n";
-echo $allPassed ? "✅ ALL TESTS PASSED\n" : "❌ SOME TESTS FAILED\n";
+        expect($user)->toBeInstanceOf(User::class);
+    });
+});
 ```
 
-### Debug Tool Template
+### Testing API Endpoints
+
 ```php
-#!/usr/bin/env php
 <?php
 
-require __DIR__.'/../../vendor/autoload.php';
-$app = require_once __DIR__.'/../../bootstrap/app.php';
+use App\Models\Academy;
+use App\Models\User;
+use Laravel\Sanctum\Sanctum;
 
-echo "=== Feature Diagnostics ===\n\n";
+describe('API', function () {
+    beforeEach(function () {
+        $this->academy = Academy::factory()->create([
+            'subdomain' => 'test-academy',
+            'is_active' => true,
+        ]);
+    });
 
-// Check 1: Database
-echo "1. Checking database...\n";
-try {
-    $count = \App\Models\YourModel::count();
-    echo "✅ Found {$count} records\n";
-} catch (\Exception $e) {
-    echo "❌ Error: {$e->getMessage()}\n";
-}
+    it('allows authenticated access', function () {
+        $user = User::factory()->student()->forAcademy($this->academy)->create();
 
-// Add more checks...
+        Sanctum::actingAs($user, ['*']);
+
+        $response = $this->getJson('/api/v1/student/profile', [
+            'X-Academy-Subdomain' => $this->academy->subdomain,
+        ]);
+
+        $response->assertStatus(200);
+    });
+});
 ```
 
----
+### Testing Livewire Components
 
-## 📝 Notes
+```php
+<?php
 
-- Integration tests are standalone scripts (don't require PHPUnit)
-- Debug tools are safe to run on production (read-only)
-- All scripts bootstrap Laravel for database access
-- Check script output for detailed error messages
+use App\Livewire\MyComponent;
+use Livewire\Livewire;
 
----
+describe('MyComponent', function () {
+    it('renders successfully', function () {
+        Livewire::test(MyComponent::class)
+            ->assertStatus(200);
+    });
+});
+```
 
-## 🔗 Related
+## Skipped Tests
 
-- **Main Tests**: `/tests/Feature/`, `/tests/Unit/` (PHPUnit)
-- **Scripts**: `/scripts/` directory
-- **Documentation**: `/docs/` directory
+Some tests are intentionally skipped due to:
+- Complex database setup requirements
+- Missing database columns in test environment
+- Features requiring external services
+
+These are marked with `->skip('reason')` and documented for future implementation.
+
+## CI/CD Integration
+
+```yaml
+# GitHub Actions example
+- name: Run Tests
+  run: php artisan test --parallel
+```

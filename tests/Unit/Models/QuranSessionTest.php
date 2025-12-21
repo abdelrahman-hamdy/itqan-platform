@@ -1,396 +1,252 @@
 <?php
 
-namespace Tests\Unit\Models;
-
-use App\Models\Academy;
-use App\Models\User;
-use App\Models\QuranSession;
-use App\Models\QuranTeacherProfile;
 use App\Enums\SessionStatus;
-use Carbon\Carbon;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Event;
-use Tests\TestCase;
+use App\Models\Academy;
+use App\Models\QuranSession;
+use App\Models\User;
 
-/**
- * Unit tests for QuranSession model
- *
- * Tests cover:
- * - Session creation
- * - Status transitions
- * - Relationships
- * - Scopes
- * - Session lifecycle
- */
-class QuranSessionTest extends TestCase
-{
-    use DatabaseTransactions;
+describe('QuranSession Model', function () {
+    describe('factory', function () {
+        it('creates a session with default attributes', function () {
+            $session = QuranSession::factory()->create();
 
-    protected string $testId;
+            expect($session)->toBeInstanceOf(QuranSession::class)
+                ->and($session->exists)->toBeTrue()
+                ->and($session->session_type)->toBe('individual')
+                ->and($session->status)->toBe(SessionStatus::SCHEDULED)
+                ->and($session->duration_minutes)->toBe(45);
+        });
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        Event::fake(); // Prevent observers from triggering during tests
-        $this->createAcademy();
-        $this->testId = uniqid();
-    }
+        it('creates an individual session', function () {
+            $session = QuranSession::factory()->individual()->create();
 
-    /**
-     * Create a teacher with profile.
-     */
-    protected function makeTeacher(): array
-    {
-        $user = User::factory()->quranTeacher()->create([
-            'academy_id' => $this->academy->id,
-        ]);
-        $profile = QuranTeacherProfile::create([
-            'academy_id' => $this->academy->id,
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'first_name' => $user->first_name,
-            'last_name' => $user->last_name,
-            'phone' => '050' . rand(1000000, 9999999),
-            'teacher_code' => 'QT-' . $this->testId . '-' . uniqid(),
-            'is_active' => true,
-        ]);
-        return ['user' => $user, 'profile' => $profile];
-    }
+            expect($session->session_type)->toBe('individual')
+                ->and($session->student_id)->not->toBeNull();
+        });
 
-    /**
-     * Create a student.
-     */
-    protected function makeStudent(): User
-    {
-        return User::factory()->student()->create([
-            'academy_id' => $this->academy->id,
-        ]);
-    }
+        it('creates a group session', function () {
+            $session = QuranSession::factory()->group()->create();
 
-    /**
-     * Generate a unique session code.
-     */
-    protected function generateSessionCode(): string
-    {
-        return 'QSE-' . $this->testId . '-' . uniqid();
-    }
+            expect($session->session_type)->toBe('group')
+                ->and($session->student_id)->toBeNull();
+        });
 
-    /**
-     * Test quran session can be created.
-     */
-    public function test_quran_session_can_be_created(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+        it('creates a scheduled session', function () {
+            $session = QuranSession::factory()->scheduled()->create();
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+            expect($session->status)->toBe(SessionStatus::SCHEDULED)
+                ->and($session->scheduled_at)->not->toBeNull();
+        });
 
-        $this->assertDatabaseHas('quran_sessions', [
-            'id' => $session->id,
-            'session_type' => 'individual',
-        ]);
-    }
+        it('creates an ongoing session', function () {
+            $session = QuranSession::factory()->ongoing()->create();
 
-    /**
-     * Test session has correct status cast.
-     */
-    public function test_session_status_is_cast_to_enum(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+            expect($session->status)->toBe(SessionStatus::ONGOING)
+                ->and($session->started_at)->not->toBeNull();
+        });
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+        it('creates a completed session', function () {
+            $session = QuranSession::factory()->completed()->create();
 
-        $this->assertInstanceOf(SessionStatus::class, $session->status);
-        $this->assertEquals(SessionStatus::SCHEDULED, $session->status);
-    }
+            expect($session->status)->toBe(SessionStatus::COMPLETED)
+                ->and($session->started_at)->not->toBeNull()
+                ->and($session->ended_at)->not->toBeNull()
+                ->and($session->actual_duration_minutes)->toBe(45);
+        });
 
-    /**
-     * Test session belongs to academy.
-     */
-    public function test_session_belongs_to_academy(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+        it('creates a cancelled session', function () {
+            $session = QuranSession::factory()->cancelled()->create();
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+            expect($session->status)->toBe(SessionStatus::CANCELLED)
+                ->and($session->cancelled_at)->not->toBeNull()
+                ->and($session->cancellation_reason)->not->toBeNull();
+        });
 
-        $this->assertInstanceOf(Academy::class, $session->academy);
-        $this->assertEquals($this->academy->id, $session->academy->id);
-    }
+        it('creates an absent session', function () {
+            $session = QuranSession::factory()->absent()->create();
 
-    /**
-     * Test session belongs to teacher.
-     */
-    public function test_session_belongs_to_teacher(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+            expect($session->status)->toBe(SessionStatus::ABSENT)
+                ->and($session->attendance_status)->toBe('absent');
+        });
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+        it('creates a ready session with meeting data', function () {
+            $session = QuranSession::factory()->ready()->create();
 
-        $this->assertEquals($teacher['user']->id, $session->quran_teacher_id);
-    }
+            expect($session->status)->toBe(SessionStatus::READY)
+                ->and($session->meeting_room_name)->not->toBeNull()
+                ->and($session->meeting_link)->not->toBeNull();
+        });
 
-    /**
-     * Test session belongs to student.
-     */
-    public function test_session_belongs_to_student(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+        it('creates a session for a specific teacher', function () {
+            $teacher = User::factory()->quranTeacher()->create();
+            $session = QuranSession::factory()->forTeacher($teacher)->create();
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+            expect($session->quran_teacher_id)->toBe($teacher->id)
+                ->and($session->academy_id)->toBe($teacher->academy_id);
+        });
 
-        $this->assertEquals($student->id, $session->student_id);
-    }
+        it('creates a session for a specific student', function () {
+            $student = User::factory()->student()->create();
+            $session = QuranSession::factory()->forStudent($student)->create();
 
-    /**
-     * Test session scheduled_at is cast to datetime.
-     */
-    public function test_session_scheduled_at_is_datetime(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
-        $scheduledTime = Carbon::now()->addDay();
+            expect($session->student_id)->toBe($student->id)
+                ->and($session->academy_id)->toBe($student->academy_id);
+        });
+    });
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => $scheduledTime,
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+    describe('relationships', function () {
+        it('belongs to an academy', function () {
+            $academy = Academy::factory()->create();
+            $session = QuranSession::factory()->create(['academy_id' => $academy->id]);
 
-        $this->assertInstanceOf(Carbon::class, $session->scheduled_at);
-    }
+            expect($session->academy)->toBeInstanceOf(Academy::class)
+                ->and($session->academy->id)->toBe($academy->id);
+        });
 
-    /**
-     * Test session scope scheduled.
-     */
-    public function test_session_scope_scheduled(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+        it('belongs to a quran teacher', function () {
+            $teacher = User::factory()->quranTeacher()->create();
+            $session = QuranSession::factory()->create(['quran_teacher_id' => $teacher->id]);
 
-        QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+            expect($session->quranTeacher)->toBeInstanceOf(User::class)
+                ->and($session->quranTeacher->id)->toBe($teacher->id);
+        });
 
-        QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->subDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::COMPLETED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+        it('belongs to a student for individual sessions', function () {
+            $student = User::factory()->student()->create();
+            $session = QuranSession::factory()->individual()->create([
+                'student_id' => $student->id,
+            ]);
 
-        $scheduledSessions = QuranSession::where('status', SessionStatus::SCHEDULED)->get();
+            expect($session->student)->toBeInstanceOf(User::class)
+                ->and($session->student->id)->toBe($student->id);
+        });
+    });
 
-        $this->assertEquals(1, $scheduledSessions->count());
-    }
+    describe('status enum casting', function () {
+        it('casts status to SessionStatus enum', function () {
+            $session = QuranSession::factory()->create(['status' => 'scheduled']);
 
-    /**
-     * Test session can be cancelled.
-     */
-    public function test_session_can_be_cancelled(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+            expect($session->status)->toBe(SessionStatus::SCHEDULED)
+                ->and($session->status)->toBeInstanceOf(SessionStatus::class);
+        });
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+        it('handles all status values correctly', function () {
+            foreach (SessionStatus::cases() as $status) {
+                $session = QuranSession::factory()->create(['status' => $status]);
 
-        $session->update([
-            'status' => SessionStatus::CANCELLED,
-            'cancelled_at' => now(),
-            'cancellation_reason' => 'Teacher unavailable',
-        ]);
+                expect($session->status)->toBe($status);
+            }
+        });
+    });
 
-        $session->refresh();
+    describe('datetime casting', function () {
+        it('casts scheduled_at to Carbon instance', function () {
+            $session = QuranSession::factory()->create();
 
-        $this->assertEquals(SessionStatus::CANCELLED, $session->status);
-        $this->assertNotNull($session->cancelled_at);
-    }
+            expect($session->scheduled_at)->toBeInstanceOf(\Carbon\Carbon::class);
+        });
 
-    /**
-     * Test session can be completed.
-     */
-    public function test_session_can_be_completed(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+        it('casts started_at to Carbon instance when set', function () {
+            $session = QuranSession::factory()->ongoing()->create();
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->subHour(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::ONGOING,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+            expect($session->started_at)->toBeInstanceOf(\Carbon\Carbon::class);
+        });
 
-        $session->update([
-            'status' => SessionStatus::COMPLETED,
-            'ended_at' => now(),
-        ]);
+        it('casts ended_at to Carbon instance when set', function () {
+            $session = QuranSession::factory()->completed()->create();
 
-        $session->refresh();
+            expect($session->ended_at)->toBeInstanceOf(\Carbon\Carbon::class);
+        });
+    });
 
-        $this->assertEquals(SessionStatus::COMPLETED, $session->status);
-        $this->assertNotNull($session->ended_at);
-    }
+    describe('scopes', function () {
+        beforeEach(function () {
+            // Create sessions with different statuses
+            QuranSession::factory()->scheduled()->create();
+            QuranSession::factory()->completed()->create();
+            QuranSession::factory()->cancelled()->create();
+            QuranSession::factory()->ongoing()->create();
+        });
 
-    /**
-     * Test group session type.
-     */
-    public function test_group_session_type(): void
-    {
-        $teacher = $this->makeTeacher();
+        it('filters scheduled sessions', function () {
+            $sessions = QuranSession::scheduled()->get();
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => null,
-            'session_type' => 'group',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+            expect($sessions)->each(fn ($session) =>
+                $session->status->toBe(SessionStatus::SCHEDULED)
+            );
+        });
 
-        $this->assertEquals('group', $session->session_type);
-        $this->assertNull($session->student_id);
-    }
+        it('filters completed sessions', function () {
+            $sessions = QuranSession::completed()->get();
 
-    /**
-     * Test session duration.
-     */
-    public function test_session_duration(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+            expect($sessions)->each(fn ($session) =>
+                $session->status->toBe(SessionStatus::COMPLETED)
+            );
+        });
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addDay(),
-            'duration_minutes' => 45,
-            'status' => SessionStatus::SCHEDULED,
-            'session_code' => $this->generateSessionCode(),
-        ]);
+        it('filters cancelled sessions', function () {
+            $sessions = QuranSession::cancelled()->get();
 
-        $this->assertEquals(45, $session->duration_minutes);
-    }
+            expect($sessions)->each(fn ($session) =>
+                $session->status->toBe(SessionStatus::CANCELLED)
+            );
+        });
 
-    /**
-     * Test session with meeting data.
-     */
-    public function test_session_with_meeting_data(): void
-    {
-        $teacher = $this->makeTeacher();
-        $student = $this->makeStudent();
+        it('filters ongoing sessions', function () {
+            $sessions = QuranSession::ongoing()->get();
 
-        $session = QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacher['user']->id,
-            'student_id' => $student->id,
-            'session_type' => 'individual',
-            'scheduled_at' => Carbon::now()->addMinutes(5),
-            'duration_minutes' => 60,
-            'status' => SessionStatus::READY,
-            'session_code' => $this->generateSessionCode(),
-            'meeting_room_name' => 'room-test-123',
-            'meeting_link' => 'https://meet.example.com/room-test-123',
-        ]);
+            expect($sessions)->each(fn ($session) =>
+                $session->status->toBe(SessionStatus::ONGOING)
+            );
+        });
+    });
 
-        $this->assertNotNull($session->meeting_room_name);
-        $this->assertNotNull($session->meeting_link);
-    }
+    describe('fillable attributes', function () {
+        it('allows mass assignment of session fields', function () {
+            $academy = Academy::factory()->create();
+            $teacher = User::factory()->quranTeacher()->forAcademy($academy)->create();
+            $student = User::factory()->student()->forAcademy($academy)->create();
 
-    /**
-     * Test session fillable attributes.
-     */
-    public function test_session_fillable_attributes(): void
-    {
-        $session = new QuranSession();
-        $fillable = $session->getFillable();
+            $session = QuranSession::factory()->create([
+                'academy_id' => $academy->id,
+                'quran_teacher_id' => $teacher->id,
+                'student_id' => $student->id,
+                'session_type' => 'individual',
+                'status' => SessionStatus::SCHEDULED,
+                'duration_minutes' => 60,
+                'current_surah' => 2,
+                'current_page' => 50,
+            ]);
 
-        $this->assertContains('academy_id', $fillable);
-        $this->assertContains('quran_teacher_id', $fillable);
-        $this->assertContains('student_id', $fillable);
-        $this->assertContains('session_type', $fillable);
-        $this->assertContains('scheduled_at', $fillable);
-        $this->assertContains('status', $fillable);
-    }
-}
+            expect($session->academy_id)->toBe($academy->id)
+                ->and($session->quran_teacher_id)->toBe($teacher->id)
+                ->and($session->student_id)->toBe($student->id)
+                ->and($session->session_type)->toBe('individual')
+                ->and($session->status)->toBe(SessionStatus::SCHEDULED)
+                ->and($session->duration_minutes)->toBe(60)
+                ->and($session->current_surah)->toBe(2)
+                ->and($session->current_page)->toBe(50);
+        });
+    });
+
+    describe('meeting data', function () {
+        it('stores meeting information', function () {
+            $session = QuranSession::factory()->withMeeting()->create();
+
+            expect($session->meeting_room_name)->not->toBeNull()
+                ->and($session->meeting_link)->not->toBeNull()
+                ->and($session->meeting_id)->not->toBeNull()
+                ->and($session->meeting_platform)->toBe('livekit');
+        });
+    });
+
+    describe('homework', function () {
+        it('can store homework details', function () {
+            $session = QuranSession::factory()->create([
+                'homework_details' => 'Memorize Surah Al-Fatiha',
+            ]);
+
+            expect($session->homework_details)->toBe('Memorize Surah Al-Fatiha');
+        });
+    });
+});

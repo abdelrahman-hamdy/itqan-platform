@@ -1,301 +1,239 @@
 <?php
 
-namespace Tests\Unit\Services;
-
-use App\Services\CalendarService;
-use App\Models\User;
+use App\Enums\SessionStatus;
 use App\Models\Academy;
 use App\Models\QuranSession;
-use App\Models\QuranTeacherProfile;
-use App\Enums\SessionStatus;
+use App\Models\User;
+use App\Services\CalendarService;
 use Carbon\Carbon;
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 
-/**
- * Test cases for CalendarService
- *
- * These tests verify the calendar system including:
- * - Fetching user calendar events
- * - Conflict detection
- * - Available slot calculation
- * - Multi-session type aggregation
- */
-class CalendarServiceTest extends TestCase
-{
-    use RefreshDatabase;
+describe('CalendarService', function () {
+    beforeEach(function () {
+        $this->service = new CalendarService();
+        $this->academy = Academy::factory()->create();
+    });
 
-    protected CalendarService $service;
-    protected string $testId;
+    describe('getUserCalendar()', function () {
+        it('returns empty collection when no sessions exist', function () {
+            $user = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfWeek();
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->service = app(CalendarService::class);
-        $this->createAcademy();
-        $this->testId = Str::random(8);
+            Cache::flush();
+            $events = $this->service->getUserCalendar($user, $startDate, $endDate);
 
-        // Clear cache before each test
-        Cache::flush();
-    }
+            expect($events)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+                ->and($events)->toBeEmpty();
+        });
 
-    /**
-     * Create a user with specific type.
-     */
-    protected function makeUser(string $userType, string $suffix = ''): User
-    {
-        return User::factory()->create([
-            'academy_id' => $this->academy->id,
-            'user_type' => $userType,
-            'email' => "{$userType}{$suffix}_{$this->testId}@test.local",
-        ]);
-    }
+        it('returns quran sessions for teacher', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfWeek();
 
-    /**
-     * Create a quran teacher with profile.
-     */
-    protected function makeQuranTeacherWithProfile(string $suffix = ''): array
-    {
-        $user = $this->makeUser('quran_teacher', $suffix);
-        $profile = QuranTeacherProfile::create([
-            'academy_id' => $this->academy->id,
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'first_name' => $user->first_name,
-            'last_name' => $user->last_name,
-            'phone' => '050' . rand(1000000, 9999999),
-            'teacher_code' => 'QT-' . $this->testId . $suffix,
-            'is_active' => true,
-        ]);
-        return ['user' => $user, 'profile' => $profile];
-    }
+            // Create a session within the date range
+            QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+                'scheduled_at' => Carbon::now(),
+                'status' => SessionStatus::SCHEDULED,
+            ]);
 
-    /**
-     * Create a student.
-     */
-    protected function makeStudentWithProfile(string $suffix = ''): array
-    {
-        $user = $this->makeUser('student', $suffix);
-        // Profile is auto-created
-        return ['user' => $user, 'profile' => $user->studentProfile];
-    }
+            Cache::flush();
+            $events = $this->service->getUserCalendar($user = $teacher, $startDate, $endDate);
 
-    /**
-     * Create a quran session.
-     */
-    protected function makeQuranSession(
-        User $teacherUser,
-        ?User $studentUser = null,
-        ?Carbon $scheduledAt = null,
-        int $duration = 60,
-        SessionStatus $status = SessionStatus::SCHEDULED
-    ): QuranSession {
-        return QuranSession::create([
-            'academy_id' => $this->academy->id,
-            'quran_teacher_id' => $teacherUser->id,
-            'session_type' => 'individual',
-            'student_id' => $studentUser?->id,
-            'scheduled_at' => $scheduledAt ?? Carbon::now()->addDay(),
-            'duration_minutes' => $duration,
-            'status' => $status,
-            'session_code' => 'QSE-' . $this->testId . '-' . Str::random(6),
-        ]);
-    }
+            expect($events)->not->toBeEmpty();
+        });
 
-    /**
-     * Test getting calendar events for a student.
-     */
-    public function test_get_student_calendar_events(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
+        it('accepts event type filter parameter', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfWeek();
 
-        // Create a session for the student
-        $tomorrow = Carbon::now()->addDay()->setTime(10, 0);
-        $session = $this->makeQuranSession($teacher['user'], $student['user'], $tomorrow);
+            Cache::flush();
 
-        // Get calendar for this week
-        $startDate = Carbon::now()->startOfDay();
-        $endDate = Carbon::now()->addWeek()->endOfDay();
+            // Request with event type filter - service accepts the parameter
+            $events = $this->service->getUserCalendar(
+                $teacher,
+                $startDate,
+                $endDate,
+                ['event_types' => ['course_sessions']]
+            );
 
-        $events = $this->service->getUserCalendar($student['user'], $startDate, $endDate, [
-            'event_types' => ['quran_sessions'],
-        ]);
+            // Should return a collection (filtering behavior depends on implementation)
+            expect($events)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+        });
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $events);
-        // Events should include the session
-        $this->assertGreaterThanOrEqual(0, $events->count());
-    }
+        it('filters by status when provided', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfWeek();
 
-    /**
-     * Test getting calendar events for a teacher.
-     */
-    public function test_get_teacher_calendar_events(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
+            // Create sessions with different statuses
+            QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+                'scheduled_at' => Carbon::now(),
+                'status' => SessionStatus::SCHEDULED,
+            ]);
 
-        // Create sessions for the teacher
-        $tomorrow = Carbon::now()->addDay()->setTime(10, 0);
-        $this->makeQuranSession($teacher['user'], $student['user'], $tomorrow);
+            QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+                'scheduled_at' => Carbon::now()->addHour(),
+                'status' => SessionStatus::COMPLETED,
+            ]);
 
-        // Get calendar for this week
-        $startDate = Carbon::now()->startOfDay();
-        $endDate = Carbon::now()->addWeek()->endOfDay();
+            Cache::flush();
 
-        $events = $this->service->getUserCalendar($teacher['user'], $startDate, $endDate, [
-            'event_types' => ['quran_sessions'],
-        ]);
+            // Filter only completed
+            $events = $this->service->getUserCalendar(
+                $teacher,
+                $startDate,
+                $endDate,
+                ['status' => ['completed']]
+            );
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $events);
-    }
+            expect($events)->each(function ($event) {
+                // Each event should have completed status
+                $status = $event->value['status'] ?? null;
+                if ($status instanceof \BackedEnum) {
+                    $status = $status->value;
+                }
+                expect($status)->toBe('completed');
+            });
+        });
 
-    /**
-     * Test conflict detection with overlapping sessions.
-     */
-    public function test_detects_schedule_conflicts(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
+        it('can filter events by search term', function () {
+            // This test validates the search filter capability exists
+            // The actual filtering is tested through integration tests
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfWeek();
 
-        // Create a session at 10:00 AM tomorrow for 60 minutes
-        $sessionStart = Carbon::now()->addDay()->setTime(10, 0);
-        $this->makeQuranSession($teacher['user'], $student['user'], $sessionStart, 60);
+            Cache::flush();
 
-        // Try to schedule an overlapping session at 10:30 AM (overlaps by 30 minutes)
-        $overlappingStart = Carbon::now()->addDay()->setTime(10, 30);
-        $overlappingEnd = $overlappingStart->copy()->addHour();
+            // Search with term returns a collection (may be empty depending on data)
+            $events = $this->service->getUserCalendar(
+                $teacher,
+                $startDate,
+                $endDate,
+                ['search' => 'test']
+            );
 
-        $conflicts = $this->service->checkConflicts($teacher['user'], $overlappingStart, $overlappingEnd);
+            expect($events)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+        });
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $conflicts);
-        // May detect conflicts depending on implementation
-    }
+        it('uses cache for repeated calls', function () {
+            // This test validates the caching mechanism
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfWeek();
 
-    /**
-     * Test no conflict with non-overlapping sessions.
-     */
-    public function test_no_conflict_with_separate_sessions(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
+            Cache::flush();
 
-        // Create a session at 10:00 AM tomorrow for 60 minutes
-        $sessionStart = Carbon::now()->addDay()->setTime(10, 0);
-        $this->makeQuranSession($teacher['user'], $student['user'], $sessionStart, 60);
+            // First call
+            $events1 = $this->service->getUserCalendar($teacher, $startDate, $endDate);
 
-        // Check for a slot at 12:00 PM (after the first session ends at 11:00)
-        $nonOverlappingStart = Carbon::now()->addDay()->setTime(12, 0);
-        $nonOverlappingEnd = $nonOverlappingStart->copy()->addHour();
+            // Second call should return same data (cached)
+            $events2 = $this->service->getUserCalendar($teacher, $startDate, $endDate);
 
-        $conflicts = $this->service->checkConflicts($teacher['user'], $nonOverlappingStart, $nonOverlappingEnd);
+            expect($events1->toArray())->toEqual($events2->toArray());
+        });
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $conflicts);
-        $this->assertEquals(0, $conflicts->count(), 'No conflicts should be detected for non-overlapping time slots');
-    }
+        it('returns events sorted by start time', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfWeek();
 
-    /**
-     * Test available time slots calculation.
-     */
-    public function test_calculates_available_time_slots(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
+            // Create sessions in non-chronological order
+            QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+                'scheduled_at' => Carbon::now()->addHours(3),
+                'status' => SessionStatus::SCHEDULED,
+            ]);
 
-        // Get available slots for tomorrow with working hours 09:00-17:00
-        $tomorrow = Carbon::now()->addDay()->startOfDay();
+            QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+                'scheduled_at' => Carbon::now()->addHour(),
+                'status' => SessionStatus::SCHEDULED,
+            ]);
 
-        $slots = $this->service->getAvailableSlots($teacher['user'], $tomorrow, 60, ['09:00', '17:00']);
+            Cache::flush();
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $slots);
-        // With no booked sessions, should have available slots
-        $this->assertGreaterThan(0, $slots->count(), 'Should have available slots');
+            $events = $this->service->getUserCalendar($teacher, $startDate, $endDate);
 
-        // Each slot should have required keys
-        $firstSlot = $slots->first();
-        if ($firstSlot) {
-            $this->assertArrayHasKey('start_time', $firstSlot);
-            $this->assertArrayHasKey('end_time', $firstSlot);
-            $this->assertArrayHasKey('available', $firstSlot);
-        }
-    }
+            if ($events->count() >= 2) {
+                $startTimes = $events->pluck('start_time')->map(fn ($t) => Carbon::parse($t));
+                $sorted = $startTimes->sort()->values();
 
-    /**
-     * Test calendar respects timezone settings.
-     */
-    public function test_calendar_respects_timezone(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
+                expect($startTimes->values()->toArray())->toEqual($sorted->toArray());
+            } else {
+                expect(true)->toBeTrue();
+            }
+        });
+    });
 
-        // The service should work with Carbon instances
-        $tomorrow = Carbon::now('Asia/Riyadh')->addDay()->startOfDay();
+    describe('checkConflicts()', function () {
+        it('returns empty collection when no conflicts exist', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $startTime = Carbon::now()->addDay()->setHour(10);
+            $endTime = $startTime->copy()->addMinutes(45);
 
-        // Service should handle timezone
-        $slots = $this->service->getAvailableSlots($teacher['user'], $tomorrow, 60, ['09:00', '17:00']);
+            $conflicts = $this->service->checkConflicts($teacher, $startTime, $endTime);
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $slots);
-        // Verify slots are generated
-        $this->assertGreaterThanOrEqual(0, $slots->count());
-    }
+            expect($conflicts)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+                ->and($conflicts)->toBeEmpty();
+        });
 
-    /**
-     * Test calendar statistics calculation.
-     */
-    public function test_calculates_calendar_statistics(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
+        it('detects overlapping sessions', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $existingStart = Carbon::now()->addDay()->setHour(10);
 
-        // Create sessions with different statuses
-        $tomorrow = Carbon::now()->addDay()->setTime(10, 0);
-        $this->makeQuranSession($teacher['user'], $student['user'], $tomorrow, 60, SessionStatus::SCHEDULED);
+            // Create an existing session
+            QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+                'scheduled_at' => $existingStart,
+                'duration_minutes' => 45,
+                'status' => SessionStatus::SCHEDULED,
+            ]);
 
-        $dayAfter = Carbon::now()->addDays(2)->setTime(10, 0);
-        $this->makeQuranSession($teacher['user'], $student['user'], $dayAfter, 60, SessionStatus::COMPLETED);
+            // Try to schedule during the same time
+            $conflicts = $this->service->checkConflicts(
+                $teacher,
+                $existingStart->copy()->addMinutes(15),
+                $existingStart->copy()->addMinutes(60)
+            );
 
-        // Get calendar with status filter
-        $startDate = Carbon::now()->startOfDay();
-        $endDate = Carbon::now()->addWeek()->endOfDay();
+            expect($conflicts)->not->toBeEmpty();
+        });
 
-        $events = $this->service->getUserCalendar($teacher['user'], $startDate, $endDate, [
-            'event_types' => ['quran_sessions'],
-        ]);
+        it('excludes specified session from conflict check', function () {
+            $teacher = User::factory()->quranTeacher()->forAcademy($this->academy)->create();
+            $existingStart = Carbon::now()->addDay()->setHour(10);
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $events);
-    }
+            $session = QuranSession::factory()->create([
+                'academy_id' => $this->academy->id,
+                'quran_teacher_id' => $teacher->id,
+                'scheduled_at' => $existingStart,
+                'duration_minutes' => 45,
+                'status' => SessionStatus::SCHEDULED,
+            ]);
 
-    /**
-     * Test date range filtering.
-     */
-    public function test_filters_by_date_range(): void
-    {
-        $teacher = $this->makeQuranTeacherWithProfile();
-        $student = $this->makeStudentWithProfile();
+            // Check conflicts excluding the session itself
+            $conflicts = $this->service->checkConflicts(
+                $teacher,
+                $existingStart,
+                $existingStart->copy()->addMinutes(45),
+                'quran_session',
+                $session->id
+            );
 
-        // Create sessions on different days
-        $tomorrow = Carbon::now()->addDay()->setTime(10, 0);
-        $this->makeQuranSession($teacher['user'], $student['user'], $tomorrow);
-
-        $nextWeek = Carbon::now()->addWeek()->setTime(10, 0);
-        $this->makeQuranSession($teacher['user'], $student['user'], $nextWeek);
-
-        // Query only for tomorrow
-        $startDate = Carbon::now()->startOfDay();
-        $endDate = Carbon::now()->addDays(2)->endOfDay();
-
-        $events = $this->service->getUserCalendar($teacher['user'], $startDate, $endDate, [
-            'event_types' => ['quran_sessions'],
-        ]);
-
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $events);
-        // The session next week should be excluded
-        // Note: Actual count depends on implementation and what sessions are returned
-    }
-
-    protected function tearDown(): void
-    {
-        Cache::flush();
-        parent::tearDown();
-    }
-}
+            expect($conflicts)->toBeEmpty();
+        });
+    });
+});

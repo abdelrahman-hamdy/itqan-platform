@@ -39,6 +39,7 @@ class QuranSessionFactory extends Factory
             'title' => 'Quran Memorization Session',
             'current_surah' => fake()->numberBetween(1, 114),
             'current_page' => fake()->numberBetween(1, 604),
+            'session_code' => 'QS-' . fake()->unique()->numberBetween(10000, 99999),
         ];
     }
 
@@ -169,7 +170,7 @@ class QuranSessionFactory extends Factory
     public function withHomework(): static
     {
         return $this->state(fn (array $attributes) => [
-            'homework_assigned' => true,
+            'homework_assigned' => ['assigned' => true, 'type' => 'memorization'],
             'homework_details' => fake()->paragraph(),
         ]);
     }
