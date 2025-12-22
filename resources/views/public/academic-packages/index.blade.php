@@ -68,7 +68,7 @@
                class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">
               تسجيل الدخول
             </a>
-            <a href="{{ route('register', ['subdomain' => $academy->subdomain]) }}" 
+            <a href="{{ route('student.register', ['subdomain' => $academy->subdomain]) }}" 
                class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-colors">
               التسجيل
             </a>

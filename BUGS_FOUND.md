@@ -1,8 +1,8 @@
 # Bugs Found and Fixed
 
 ## Summary
-- Total bugs found: 25
-- Total bugs fixed: 23
+- Total bugs found: 26
+- Total bugs fixed: 24
 - Deferred (need discussion): 2 (see DEFERRED_PROBLEMS.md)
 - PHPStan Level 1 errors remaining: 259 (mostly missing relationships on models)
 
@@ -100,6 +100,13 @@
   - Different URIs: `/teacher/academic-lessons` vs `/teacher/academic/lessons`
 - **Fix:** Removed duplicate routes from web.php, keeping more complete routes in auth.php
 
+### 2025-12-22 - Fixed undefined 'register' route (Phase 5)
+- **Files:**
+  - `resources/views/public/academic-packages/index.blade.php`
+  - `resources/views/welcome.blade.php`
+- **Error:** Views used non-existent `route('register')` - actual route is `student.register`
+- **Fix:** Changed to `route('student.register')` in both files
+
 ## Remaining PHPStan Level 1 Issues (259 errors)
 
 Most remaining errors fall into these categories:
@@ -141,7 +148,10 @@ These require either:
 - Result: All routes valid, `route:cache` succeeds
 
 ### Phase 5: Crawl Application
-- Status: Pending
+- Status: Completed
+- Tested: Key public and authenticated pages
+- Fixed: 1 undefined route error (`register` → `student.register`)
+- Result: All tested pages return 200/302 as expected
 
 ### Phase 6: Critical Flows
 - Status: Pending
