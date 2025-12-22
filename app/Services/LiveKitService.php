@@ -65,13 +65,13 @@ class LiveKitService
         Carbon $startTime,
         array $options = []
     ): array {
+        // Generate deterministic room name early so it's available in catch block
+        $roomName = $this->generateRoomName($academy, $sessionType, $sessionId);
+
         try {
             if (! $this->isConfigured()) {
                 throw new \Exception('LiveKit is not properly configured. Please check API credentials.');
             }
-
-            // Generate deterministic room name
-            $roomName = $this->generateRoomName($academy, $sessionType, $sessionId);
 
             // SIMPLIFIED APPROACH: Skip SDK room creation/checking
             // LiveKit will automatically create rooms when first participant joins
