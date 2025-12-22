@@ -344,12 +344,15 @@ class AcademicSession extends BaseSession
 
     public function getStatusBadgeColorAttribute(): string
     {
-        return match ($this->status) {
+        // Handle both enum and string values for status
+        $status = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
+
+        return match ($status) {
             'scheduled' => 'blue',
             'ongoing' => 'green',
             'completed' => 'gray',
             'cancelled' => 'red',
-            'rescheduled' => 'yellow',
+            'absent' => 'amber',
             default => 'gray'
         };
     }
@@ -384,8 +387,12 @@ class AcademicSession extends BaseSession
         }
 
         // Academic teacher can manage if they are the teacher for this session
-        if ($user->user_type === 'academic_teacher' && $user->id === $this->academic_teacher_id) {
-            return true;
+        // Note: academic_teacher_id references AcademicTeacherProfile.id, not User.id
+        if ($user->user_type === 'academic_teacher') {
+            $profile = $user->academicTeacherProfile;
+            if ($profile && $profile->id === $this->academic_teacher_id) {
+                return true;
+            }
         }
 
         return false;
@@ -594,7 +601,7 @@ class AcademicSession extends BaseSession
             $updateData = array_merge([
                 'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'attendance_status' => 'attended',
+                'attendance_status' => 'present',
             ], $additionalData);
 
             $session->update($updateData);
@@ -656,7 +663,7 @@ class AcademicSession extends BaseSession
             'status' => SessionStatus::ABSENT,
             'ended_at' => now(),
             'attendance_status' => 'absent',
-            'session_notes' => $reason,
+            'cancellation_reason' => $reason, // Store absence reason in cancellation_reason field
         ]);
 
         // Absent sessions still count towards subscription

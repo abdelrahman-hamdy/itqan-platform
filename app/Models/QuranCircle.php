@@ -507,7 +507,7 @@ class QuranCircle extends Model
     public function canEnrollStudent(User $student): bool
     {
         // Check if already enrolled
-        if ($this->students()->where('user_id', $student->id)->exists()) {
+        if ($this->students()->where('quran_circle_students.student_id', $student->id)->exists()) {
             return false;
         }
 
@@ -549,9 +549,10 @@ class QuranCircle extends Model
 
     public function suspend(?string $reason = null): self
     {
+        // Note: status column is boolean (tinyint(1)), false = suspended/inactive
+        // Note: 'notes' column doesn't exist in schema, reason parameter kept for API compatibility
         $this->update([
-            'status' => 'suspended',
-            'notes' => $reason,
+            'status' => false,
         ]);
 
         return $this;
@@ -559,8 +560,9 @@ class QuranCircle extends Model
 
     public function resume(): self
     {
+        // Note: status column is boolean (tinyint(1)), true = active/ongoing
         $this->update([
-            'status' => 'ongoing',
+            'status' => true,
         ]);
 
         return $this;
@@ -568,8 +570,9 @@ class QuranCircle extends Model
 
     public function complete(): self
     {
+        // Note: status column is boolean (tinyint(1)), false = completed/inactive
         $this->update([
-            'status' => 'completed',
+            'status' => false,
             'enrollment_status' => 'closed',
             'end_date' => now(),
         ]);
@@ -584,10 +587,11 @@ class QuranCircle extends Model
 
     public function cancel(?string $reason = null): self
     {
+        // Note: status column is boolean (tinyint(1)), false = cancelled/inactive
+        // Note: 'notes' column doesn't exist in schema, reason parameter kept for API compatibility
         $this->update([
-            'status' => 'cancelled',
+            'status' => false,
             'enrollment_status' => 'closed',
-            'notes' => $reason,
         ]);
 
         return $this;

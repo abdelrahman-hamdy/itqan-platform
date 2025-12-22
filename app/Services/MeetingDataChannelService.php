@@ -495,7 +495,17 @@ class MeetingDataChannelService
     private function getExpectedParticipantCount(QuranSession $session): int
     {
         // This would return the expected number of participants
-        // You might get this from the session's student count + teacher
-        return $session->students()->count() + 1; // +1 for teacher
+        // For individual sessions: 1 student + 1 teacher = 2
+        // For group sessions: use circle's student count + 1 teacher
+        if ($session->session_type === 'individual') {
+            return 2; // student + teacher
+        }
+
+        // For group/circle sessions
+        if ($session->circle) {
+            return $session->circle->students()->count() + 1; // students + teacher
+        }
+
+        return 2; // default fallback
     }
 }

@@ -135,7 +135,7 @@ class QuranSubscription extends BaseSubscription
     // ========================================
 
     const SUBSCRIPTION_TYPE_INDIVIDUAL = 'individual';
-    const SUBSCRIPTION_TYPE_CIRCLE = 'circle';
+    const SUBSCRIPTION_TYPE_CIRCLE = 'group';
 
     const MEMORIZATION_LEVELS = [
         'beginner' => 'مبتدئ',

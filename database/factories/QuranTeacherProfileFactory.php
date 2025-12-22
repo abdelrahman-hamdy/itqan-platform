@@ -28,7 +28,7 @@ class QuranTeacherProfileFactory extends Factory
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'phone' => fake()->numerify('05########'),
-            'educational_qualification' => fake()->randomElement(['bachelor', 'master', 'phd', 'diploma', 'high_school']),
+            'educational_qualification' => fake()->randomElement(['bachelor', 'master', 'phd', 'other']),
             'teaching_experience_years' => fake()->numberBetween(1, 20),
             'available_days' => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday'],
             'available_time_start' => '08:00',

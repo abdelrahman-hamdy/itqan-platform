@@ -25,20 +25,26 @@ class QuranSubscriptionFactory extends Factory
         $startDate = now();
         $endDate = $startDate->copy()->addMonth();
 
+        $totalSessions = fake()->randomElement([4, 8, 12, 16]);
+        $totalPrice = fake()->randomFloat(2, 100, 500);
+
         return [
             'academy_id' => Academy::factory(),
             'student_id' => User::factory()->student(),
             'quran_teacher_id' => User::factory()->quranTeacher(),
-            'package_name' => fake()->randomElement(['Basic', 'Standard', 'Premium']),
-            'sessions_per_month' => fake()->randomElement([4, 8, 12, 16]),
-            'session_duration_minutes' => fake()->randomElement([30, 45, 60]),
-            'price' => fake()->randomFloat(2, 100, 500),
+            'package_name_ar' => fake()->randomElement(['الأساسي', 'المتوسط', 'المتميز']),
+            'package_name_en' => fake()->randomElement(['Basic', 'Standard', 'Premium']),
+            'package_sessions_per_week' => fake()->randomElement([1, 2, 3, 4]),
+            'package_session_duration_minutes' => fake()->randomElement([30, 45, 60]),
+            'total_sessions' => $totalSessions,
+            'total_price' => $totalPrice,
+            'final_price' => $totalPrice,
             'currency' => 'SAR',
             'status' => SubscriptionStatus::ACTIVE,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
+            'starts_at' => $startDate,
+            'ends_at' => $endDate,
             'sessions_used' => 0,
-            'sessions_remaining' => fake()->randomElement([4, 8, 12, 16]),
+            'sessions_remaining' => $totalSessions,
             'auto_renew' => true,
         ];
     }
@@ -50,8 +56,8 @@ class QuranSubscriptionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => SubscriptionStatus::ACTIVE,
-            'start_date' => now()->subDays(10),
-            'end_date' => now()->addDays(20),
+            'starts_at' => now()->subDays(10),
+            'ends_at' => now()->addDays(20),
         ]);
     }
 
@@ -62,8 +68,8 @@ class QuranSubscriptionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => SubscriptionStatus::EXPIRED,
-            'start_date' => now()->subMonth(),
-            'end_date' => now()->subDay(),
+            'starts_at' => now()->subMonth(),
+            'ends_at' => now()->subDay(),
         ]);
     }
 
@@ -127,11 +133,16 @@ class QuranSubscriptionFactory extends Factory
     public function trial(): static
     {
         return $this->state(fn (array $attributes) => [
-            'package_name' => 'Trial',
-            'sessions_per_month' => 1,
-            'price' => 0,
-            'start_date' => now(),
-            'end_date' => now()->addWeek(),
+            'package_name_ar' => 'تجريبي',
+            'package_name_en' => 'Trial',
+            'package_sessions_per_week' => 1,
+            'total_sessions' => 1,
+            'sessions_remaining' => 1,
+            'total_price' => 0,
+            'final_price' => 0,
+            'starts_at' => now(),
+            'ends_at' => now()->addWeek(),
+            'is_trial_active' => true,
         ]);
     }
 }

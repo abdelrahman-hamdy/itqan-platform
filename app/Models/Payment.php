@@ -452,15 +452,13 @@ class Payment extends Model
 
     public static function getPaymentStats(int $academyId): array
     {
-        $baseQuery = self::where('academy_id', $academyId);
-
         return [
-            'total_payments' => $baseQuery->count(),
-            'successful_payments' => $baseQuery->where('status', 'completed')->count(),
-            'pending_payments' => $baseQuery->where('status', 'pending')->count(),
-            'failed_payments' => $baseQuery->where('status', 'failed')->count(),
-            'total_revenue' => $baseQuery->where('status', 'completed')->sum('amount'),
-            'total_refunded' => $baseQuery->whereIn('status', ['refunded', 'partially_refunded'])->sum('refund_amount'),
+            'total_payments' => self::where('academy_id', $academyId)->count(),
+            'successful_payments' => self::where('academy_id', $academyId)->where('status', 'completed')->count(),
+            'pending_payments' => self::where('academy_id', $academyId)->where('status', 'pending')->count(),
+            'failed_payments' => self::where('academy_id', $academyId)->where('status', 'failed')->count(),
+            'total_revenue' => self::where('academy_id', $academyId)->where('status', 'completed')->sum('amount'),
+            'total_refunded' => self::where('academy_id', $academyId)->whereIn('status', ['refunded', 'partially_refunded'])->sum('refund_amount'),
             'this_month_revenue' => self::getTotalRevenue($academyId, 'this_month'),
             'this_week_revenue' => self::getTotalRevenue($academyId, 'this_week'),
             'today_revenue' => self::getTotalRevenue($academyId, 'today')
