@@ -1,8 +1,8 @@
 # Bugs Found and Fixed
 
 ## Summary
-- Total bugs found: 26
-- Total bugs fixed: 24
+- Total bugs found: 27
+- Total bugs fixed: 25
 - Deferred (need discussion): 2 (see DEFERRED_PROBLEMS.md)
 - PHPStan Level 1 errors remaining: 259 (mostly missing relationships on models)
 
@@ -107,6 +107,14 @@
 - **Error:** Views used non-existent `route('register')` - actual route is `student.register`
 - **Fix:** Changed to `route('student.register')` in both files
 
+### 2025-12-22 - Fixed PHP 8.4 nullable parameter deprecations (Phase 6)
+- **Files:**
+  - `app/Models/Payment.php`
+  - `app/Models/Subscription.php`
+- **Error:** Implicit nullable parameters deprecated in PHP 8.4
+  - `string $reason = null` should be `?string $reason = null`
+- **Fix:** Added explicit `?` nullable type to parameters
+
 ## Remaining PHPStan Level 1 Issues (259 errors)
 
 Most remaining errors fall into these categories:
@@ -154,7 +162,11 @@ These require either:
 - Result: All tested pages return 200/302 as expected
 
 ### Phase 6: Critical Flows
-- Status: Pending
+- Status: Completed
+- Tested: Service instantiation (PaymentService, SubscriptionService, LiveKitService, etc.)
+- Tested: Model queries (User, Academy, QuranSession, etc.)
+- Fixed: 1 PHP 8.4 nullable parameter deprecation issue (2 files)
+- Result: All services instantiate correctly, all models queryable
 
 ### Phase 7: Check Logs
 - Status: Pending

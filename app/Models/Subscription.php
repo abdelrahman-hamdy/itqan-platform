@@ -220,7 +220,7 @@ class Subscription extends Model
         return $this;
     }
 
-    public function cancel(string $reason = null): self
+    public function cancel(?string $reason = null): self
     {
         $this->update([
             'status' => 'cancelled',
@@ -232,7 +232,7 @@ class Subscription extends Model
         return $this;
     }
 
-    public function suspend(string $reason = null): self
+    public function suspend(?string $reason = null): self
     {
         $this->update([
             'status' => 'suspended',

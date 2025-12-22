@@ -296,7 +296,7 @@ class Payment extends Model
         return $this;
     }
 
-    public function markAsFailed(string $reason = null, array $gatewayData = []): self
+    public function markAsFailed(?string $reason = null, array $gatewayData = []): self
     {
         $this->update([
             'status' => 'failed',
@@ -308,7 +308,7 @@ class Payment extends Model
         return $this;
     }
 
-    public function cancel(string $reason = null): self
+    public function cancel(?string $reason = null): self
     {
         $this->update([
             'status' => 'cancelled',
@@ -319,7 +319,7 @@ class Payment extends Model
         return $this;
     }
 
-    public function processRefund(float $amount, string $reason = null): self
+    public function processRefund(float $amount, ?string $reason = null): self
     {
         if (!$this->can_refund) {
             throw new \Exception('هذه الدفعة غير قابلة للاسترداد');
