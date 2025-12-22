@@ -86,14 +86,6 @@ class Course extends Model
     }
 
     /**
-     * Sessions for this course
-     */
-    public function sessions(): HasMany
-    {
-        return $this->hasMany(TeachingSession::class);
-    }
-
-    /**
      * Assignments for this course
      */
     public function assignments(): HasMany

@@ -72,11 +72,6 @@ class Subscription extends Model
         return $this->hasMany(Payment::class);
     }
 
-    public function invoices(): HasMany
-    {
-        return $this->hasMany(Invoice::class);
-    }
-
     // Scopes
     public function scopeActive($query)
     {

@@ -212,11 +212,6 @@ class InteractiveCourse extends Model
         return $this->hasMany(InteractiveCourseSession::class, 'course_id');
     }
 
-    public function teacherPayments(): HasMany
-    {
-        return $this->hasMany(InteractiveTeacherPayment::class, 'course_id');
-    }
-
     public function enrolledStudents(): HasMany
     {
         return $this->hasMany(InteractiveCourseEnrollment::class, 'course_id')

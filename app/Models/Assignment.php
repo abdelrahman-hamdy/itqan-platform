@@ -59,14 +59,6 @@ class Assignment extends Model
     }
 
     /**
-     * Assignment submissions
-     */
-    public function submissions(): HasMany
-    {
-        return $this->hasMany(AssignmentSubmission::class);
-    }
-
-    /**
      * Scope for active assignments
      */
     public function scopeActive($query)

@@ -32,8 +32,8 @@ class ViewInteractiveSessionReport extends ViewRecord
                 ->action(function () {
                     $session = $this->record->session;
                     if ($session && $session->meeting) {
-                        $attendanceService = app(\App\Services\UnifiedAttendanceService::class);
-                        $attendanceService->calculateSessionAttendance($session);
+                        $attendanceService = app(\App\Services\MeetingAttendanceService::class);
+                        $attendanceService->recalculateAttendance($session);
                     }
 
                     $this->record->update([
