@@ -1,8 +1,8 @@
 # Bugs Found and Fixed
 
 ## Summary
-- Total bugs found: 23
-- Total bugs fixed: 21
+- Total bugs found: 25
+- Total bugs fixed: 23
 - Deferred (need discussion): 2 (see DEFERRED_PROBLEMS.md)
 - PHPStan Level 1 errors remaining: 259 (mostly missing relationships on models)
 
@@ -78,6 +78,28 @@
 - **Fix:** Moved roomName generation before try block
 - **Commit:** e1e113b
 
+### 2025-12-22 - Fixed seeder schema mismatches (Phase 3)
+- **Files:**
+  - `app/Models/QuranTeacherProfile.php`
+  - `app/Models/AcademicTeacherProfile.php`
+  - `database/seeders/ComprehensiveDataSeeder.php`
+- **Errors Fixed:**
+  1. Duplicate teacher_code - `mt_rand(0,5)` caused non-deterministic codes
+  2. StudentProfile seeder creating duplicates (User boot() already creates profiles)
+  3. RecordedCourse seeder using non-existent columns
+  4. InteractiveCourse missing total_sessions calculation
+  5. QuranCircle using invalid session_duration_minutes column
+  6. QuranSubscription using wrong column names
+- **Fix:** Updated generateTeacherCode to use `withoutGlobalScopes()`, fixed seeder column mappings
+- **Commit:** 6f6e3cb
+
+### 2025-12-22 - Fixed duplicate route names (Phase 4)
+- **File:** `routes/web.php`
+- **Error:** Duplicate route names `teacher.academic.lessons.index` and `teacher.academic.lessons.show`
+  - Defined in both `routes/web.php` and `routes/auth.php`
+  - Different URIs: `/teacher/academic-lessons` vs `/teacher/academic/lessons`
+- **Fix:** Removed duplicate routes from web.php, keeping more complete routes in auth.php
+
 ## Remaining PHPStan Level 1 Issues (259 errors)
 
 Most remaining errors fall into these categories:
@@ -100,17 +122,23 @@ These require either:
 - Skipped: spatie/laravel-link-checker (incompatible with PHP 8.4/Laravel 11)
 
 ### Phase 2: Static Analysis (PHPStan)
-- Status: In Progress (Level 1)
+- Status: Completed (Level 1)
 - Started: 326 errors
 - Fixed: 67 errors
-- Remaining: 259 errors
-- Most remaining are relationship/architectural issues
+- Remaining: 259 errors (mostly relationship/architectural issues - deferred)
 
 ### Phase 3: Database Check
-- Status: Pending
+- Status: Completed
+- Command: `php artisan migrate:fresh --seed`
+- Fixed: 6 seeder schema mismatches
+- Result: Database seeding successful
 
 ### Phase 4: Route Check
-- Status: Pending
+- Status: Completed
+- Command: `php artisan route:list --json`
+- Checked: Duplicate route names, missing controllers
+- Fixed: 1 duplicate route name issue
+- Result: All routes valid, `route:cache` succeeds
 
 ### Phase 5: Crawl Application
 - Status: Pending

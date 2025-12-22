@@ -1014,9 +1014,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     | Consolidated routes for academic teachers to manage individual lessons
     */
     Route::middleware(['auth', 'role:academic_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
-        // Academic lessons (subscriptions) listing for teachers
-        Route::get('/academic-lessons', [App\Http\Controllers\AcademicIndividualLessonController::class, 'index'])->name('academic.lessons.index');
-        Route::get('/academic-lessons/{lesson}', [App\Http\Controllers\AcademicIndividualLessonController::class, 'show'])->name('academic.lessons.show');
+        // NOTE: Academic lessons routes are defined in auth.php under teacher.academic.* prefix
+        // (teacher/academic/lessons routes with progress and update-settings)
 
         // Academic sessions list
         Route::get('/academic-sessions', [App\Http\Controllers\AcademicSessionController::class, 'index'])->name('academic-sessions.index');
