@@ -15,12 +15,10 @@ use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
 
 class InteractiveCourseResource extends BaseResource
 {
-    use ScopedToAcademy;
 
     protected static ?string $model = InteractiveCourse::class;
 

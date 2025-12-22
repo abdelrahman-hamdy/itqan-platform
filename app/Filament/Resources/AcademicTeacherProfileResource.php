@@ -13,13 +13,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
-use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 use Filament\Notifications\Notification;
 
 class AcademicTeacherProfileResource extends BaseResource
 {
-    use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = AcademicTeacherProfile::class;
     

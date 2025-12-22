@@ -6,7 +6,6 @@ use App\Filament\Resources\StudentProfileResource\Pages;
 use App\Models\StudentProfile;
 use App\Models\ParentProfile;
 use App\Models\AcademicGradeLevel;
-use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -19,7 +18,6 @@ use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class StudentProfileResource extends BaseResource
 {
-    use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = StudentProfile::class;
     

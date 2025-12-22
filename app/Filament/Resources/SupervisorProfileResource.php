@@ -11,13 +11,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 use App\Models\Academy;
 
 class SupervisorProfileResource extends BaseResource
 {
-    use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = SupervisorProfile::class;
     

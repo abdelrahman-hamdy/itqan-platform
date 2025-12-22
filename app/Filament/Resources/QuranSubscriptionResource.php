@@ -28,11 +28,9 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
 use App\Services\AcademyContextService;
-use App\Traits\ScopedToAcademy;
 
 class QuranSubscriptionResource extends BaseResource
 {
-    use ScopedToAcademy;
     protected static ?string $model = QuranSubscription::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';

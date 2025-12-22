@@ -29,11 +29,9 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
 use App\Services\AcademyContextService;
-use App\Traits\ScopedToAcademy;
 
 class QuranTrialRequestResource extends BaseResource
 {
-    use ScopedToAcademy;
     
     protected static ?string $model = QuranTrialRequest::class;
 

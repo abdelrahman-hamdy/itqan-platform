@@ -12,12 +12,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Traits\ScopedToAcademyViaRelationship;
 use App\Services\AcademyContextService;
 
 class ParentProfileResource extends BaseResource
 {
-    use ScopedToAcademyViaRelationship;
 
     protected static ?string $model = ParentProfile::class;
     

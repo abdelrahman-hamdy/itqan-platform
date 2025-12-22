@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AcademicSubjectResource\Pages;
 use App\Models\AcademicSubject;
 use App\Models\Academy;
-use App\Traits\ScopedToAcademy;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
@@ -18,7 +17,6 @@ use App\Services\AcademyContextService;
 
 class AcademicSubjectResource extends BaseResource
 {
-    use ScopedToAcademy;
 
     protected static ?string $model = AcademicSubject::class;
 

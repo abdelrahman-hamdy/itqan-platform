@@ -7,7 +7,6 @@ use App\Enums\DifficultyLevel;
 use App\Enums\SessionDuration;
 use App\Filament\Resources\QuranCircleResource\Pages;
 use App\Models\QuranCircle;
-use App\Traits\ScopedToAcademy;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -30,7 +29,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class QuranCircleResource extends BaseResource
 {
-    use ScopedToAcademy;
 
     protected static ?string $model = QuranCircle::class;
 

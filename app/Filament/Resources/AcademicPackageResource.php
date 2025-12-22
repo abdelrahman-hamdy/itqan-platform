@@ -12,12 +12,10 @@ use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
 use App\Services\AcademyContextService;
-use App\Traits\ScopedToAcademy;
 use App\Enums\SessionDuration;
 
 class AcademicPackageResource extends BaseResource
 {
-    use ScopedToAcademy;
     protected static ?string $model = AcademicPackage::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
