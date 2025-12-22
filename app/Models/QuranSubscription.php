@@ -786,15 +786,21 @@ class QuranSubscription extends BaseSubscription
 
             $notificationService = app(\App\Services\NotificationService::class);
 
-            $circleUrl = $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL
-                ? route('individual-circles.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
-                    'circle' => $this->individualCircle?->id ?? '',
-                ])
-                : route('student.circles.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
-                    'circleId' => $this->quran_circle_id ?? '',
+            // Generate circle URL only if we have a valid circle ID
+            $circleUrl = null;
+            $subdomain = $this->academy->subdomain ?? 'itqan-academy';
+
+            if ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL && $this->individualCircle?->id) {
+                $circleUrl = route('individual-circles.show', [
+                    'subdomain' => $subdomain,
+                    'circle' => $this->individualCircle->id,
                 ]);
+            } elseif ($this->quran_circle_id) {
+                $circleUrl = route('student.circles.show', [
+                    'subdomain' => $subdomain,
+                    'circleId' => $this->quran_circle_id,
+                ]);
+            }
 
             $notificationService->send(
                 $this->student,
@@ -853,15 +859,21 @@ class QuranSubscription extends BaseSubscription
 
             $notificationService = app(\App\Services\NotificationService::class);
 
-            $circleUrl = $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL
-                ? route('individual-circles.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
-                    'circle' => $this->individualCircle?->id ?? '',
-                ])
-                : route('student.circles.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
-                    'circleId' => $this->quran_circle_id ?? '',
+            // Generate circle URL only if we have a valid circle ID
+            $circleUrl = null;
+            $subdomain = $this->academy->subdomain ?? 'itqan-academy';
+
+            if ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL && $this->individualCircle?->id) {
+                $circleUrl = route('individual-circles.show', [
+                    'subdomain' => $subdomain,
+                    'circle' => $this->individualCircle->id,
                 ]);
+            } elseif ($this->quran_circle_id) {
+                $circleUrl = route('student.circles.show', [
+                    'subdomain' => $subdomain,
+                    'circleId' => $this->quran_circle_id,
+                ]);
+            }
 
             $notificationService->send(
                 $this->student,

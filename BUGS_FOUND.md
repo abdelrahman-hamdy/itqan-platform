@@ -1,8 +1,8 @@
 # Bugs Found and Fixed
 
 ## Summary
-- Total bugs found: 27
-- Total bugs fixed: 25
+- Total bugs found: 28
+- Total bugs fixed: 26
 - Deferred (need discussion): 2 (see DEFERRED_PROBLEMS.md)
 - PHPStan Level 1 errors remaining: 259 (mostly missing relationships on models)
 
@@ -115,6 +115,12 @@
   - `string $reason = null` should be `?string $reason = null`
 - **Fix:** Added explicit `?` nullable type to parameters
 
+### 2025-12-22 - Fixed missing circleId in subscription notifications (Phase 7)
+- **File:** `app/Models/QuranSubscription.php`
+- **Error:** `Missing required parameter for [Route: student.circles.show] [Missing parameter: circleId]`
+  - When `quran_circle_id` is null, code passed empty string `''` to route
+- **Fix:** Added null check before generating route URL, set `$circleUrl = null` if no valid ID exists
+
 ## Remaining PHPStan Level 1 Issues (259 errors)
 
 Most remaining errors fall into these categories:
@@ -169,4 +175,9 @@ These require either:
 - Result: All services instantiate correctly, all models queryable
 
 ### Phase 7: Check Logs
-- Status: Pending
+- Status: Completed
+- Checked: `storage/logs/laravel.log` for errors
+- Found: 1 bug - missing circleId parameter in subscription notifications
+- Noted: Firebase credentials file not found (configuration issue, not code bug)
+- Fixed: 1 bug in `QuranSubscription.php`
+- Result: All code-related log errors addressed
