@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Teacher;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
-use App\Models\Payout;
+use App\Models\TeacherPayout;
 use App\Models\QuranSession;
 use App\Models\TeacherEarning;
 use Illuminate\Http\JsonResponse;
@@ -262,7 +262,7 @@ class EarningsController extends Controller
     {
         $user = $request->user();
 
-        $payouts = Payout::where('user_id', $user->id)
+        $payouts = TeacherPayout::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 15));
 

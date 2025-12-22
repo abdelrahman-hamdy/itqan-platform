@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1\Teacher\Quran;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
-use App\Models\QuranSessionReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -352,16 +351,17 @@ class SessionController extends Controller
             'quran_homework_review' => $request->homework_review ?? $session->quran_homework_review,
         ]);
 
-        // Create or update report
-        QuranSessionReport::updateOrCreate(
-            ['quran_session_id' => $session->id],
-            [
-                'teacher_feedback' => $request->feedback,
-                'memorization_rating' => $request->memorization_rating,
-                'tajweed_rating' => $request->tajweed_rating,
-                'rating' => round(($request->memorization_rating + $request->tajweed_rating) / 2),
-            ]
-        );
+        // TODO: DEFERRED - QuranSessionReport model doesn't exist
+        // See DEFERRED_PROBLEMS.md for details
+        // QuranSessionReport::updateOrCreate(
+        //     ['quran_session_id' => $session->id],
+        //     [
+        //         'teacher_feedback' => $request->feedback,
+        //         'memorization_rating' => $request->memorization_rating,
+        //         'tajweed_rating' => $request->tajweed_rating,
+        //         'rating' => round(($request->memorization_rating + $request->tajweed_rating) / 2),
+        //     ]
+        // );
 
         return $this->success([
             'session' => [

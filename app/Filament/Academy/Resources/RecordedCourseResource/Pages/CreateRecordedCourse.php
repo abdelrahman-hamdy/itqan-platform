@@ -371,7 +371,7 @@ class CreateRecordedCourse extends CreateRecord
                                                             ->helperText('سيتم ترقيم الدروس تلقائياً'),
                                                     ]),
 
-                                                Forms\Components\FileUpload::make('video_url')
+                                                FileUpload::make('video_url')
                                                     ->label('🎥 فيديو الدرس')
                                                     ->disk('public')
                                                     ->directory('lessons/videos')
@@ -444,7 +444,7 @@ class CreateRecordedCourse extends CreateRecord
                                                     ->addActionLabel('إضافة هدف')
                                                     ->columnSpanFull(),
 
-                                                Forms\Components\FileUpload::make('attachments')
+                                                FileUpload::make('attachments')
                                                     ->label('مرفقات الدرس')
                                                     ->multiple()
                                                     ->disk('public')

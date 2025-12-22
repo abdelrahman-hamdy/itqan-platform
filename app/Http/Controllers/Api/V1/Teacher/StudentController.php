@@ -263,15 +263,16 @@ class StudentController extends Controller
                 return $this->notFound(__('Session not found.'));
             }
 
-            // Create or update report
-            \App\Models\QuranSessionReport::updateOrCreate(
-                ['quran_session_id' => $session->id],
-                [
-                    'rating' => $request->rating,
-                    'notes' => $request->notes,
-                    'teacher_feedback' => $request->feedback,
-                ]
-            );
+            // TODO: DEFERRED - QuranSessionReport model doesn't exist
+            // See DEFERRED_PROBLEMS.md for details
+            // \App\Models\QuranSessionReport::updateOrCreate(
+            //     ['quran_session_id' => $session->id],
+            //     [
+            //         'rating' => $request->rating,
+            //         'notes' => $request->notes,
+            //         'teacher_feedback' => $request->feedback,
+            //     ]
+            // );
         } else {
             $academicTeacherId = $user->academicTeacherProfile?->id;
 
