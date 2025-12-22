@@ -541,18 +541,13 @@ class ComprehensiveDataSeeder extends Seeder
                             'title_en' => $subject->name_en.' - '.$gradeLevel->name.' (Recorded)',
                             'description' => 'دورة مسجلة في '.$subject->name.' للمرحلة '.$gradeLevel->name,
                             'description_en' => 'Recorded course in '.$subject->name_en.' for '.$gradeLevel->name,
-                            'level' => 'beginner',
                             'duration_hours' => rand(20, 40),
-                            'total_lessons' => rand(15, 30),
                             'price' => rand(300, 800),
-                            'currency' => 'SAR',
-                            'is_free' => rand(0, 1) === 0,
                             'is_featured' => rand(0, 1) === 1,
                             'is_published' => true,
-
+                            'language' => 'ar',
                             'thumbnail_url' => 'courses/default-thumbnail.jpg',
                             'trailer_video_url' => 'https://example.com/video.mp4',
-                            'published_at' => now()->subDays(rand(1, 30)),
                         ]
                     );
 
@@ -624,6 +619,10 @@ class ComprehensiveDataSeeder extends Seeder
                         continue;
                     }
                     $profileId = $profile->id;
+                    $durationWeeks = rand(8, 16);
+                    $sessionsPerWeek = rand(2, 4);
+                    $totalSessions = $durationWeeks * $sessionsPerWeek;
+
                     $interactiveCourse = InteractiveCourse::firstOrCreate(
                         [
                             'academy_id' => $academy->id,
@@ -633,9 +632,10 @@ class ComprehensiveDataSeeder extends Seeder
                         [
                             'title' => $subject->name.' - '.$gradeLevel->name.' (تفاعلي)',
                             'description' => 'دورة تفاعلية في '.$subject->name.' للمرحلة '.$gradeLevel->name,
-                            'course_code' => 'IC-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
-                            'duration_weeks' => rand(8, 16),
-                            'sessions_per_week' => rand(2, 4),
+                            'course_code' => 'IC-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.str_pad($subject->id, 3, '0', STR_PAD_LEFT).'-'.str_pad($gradeLevel->id, 3, '0', STR_PAD_LEFT),
+                            'duration_weeks' => $durationWeeks,
+                            'sessions_per_week' => $sessionsPerWeek,
+                            'total_sessions' => $totalSessions,
                             'session_duration_minutes' => 45,
                             'max_students' => rand(10, 25),
                             'student_price' => rand(200, 500),
@@ -646,9 +646,8 @@ class ComprehensiveDataSeeder extends Seeder
                             'end_date' => now()->addDays(rand(31, 90)),
                             'enrollment_deadline' => now()->addDays(rand(10, 30)),
                             'schedule' => [],
+                            'status' => 'published',
                             'is_published' => true,
-
-                            'publication_date' => now()->subDays(rand(1, 30)),
                         ]
                     );
 
@@ -671,6 +670,11 @@ class ComprehensiveDataSeeder extends Seeder
 
             for ($i = 1; $i <= 3; $i++) {
                 $teacher = $academyTeachers[array_rand($academyTeachers)];
+                // Get the teacher's profile id
+                $teacherProfile = QuranTeacherProfile::where('user_id', $teacher->id)->first();
+                if (!$teacherProfile) {
+                    continue;
+                }
 
                 $quranCircle = QuranCircle::firstOrCreate(
                     [
@@ -682,10 +686,9 @@ class ComprehensiveDataSeeder extends Seeder
                         'name_en' => 'Quran Circle '.$i,
                         'description_ar' => 'حلقة لتحفيظ القرآن الكريم في '.$academy->name,
                         'description_en' => 'Quran memorization circle in '.$academy->name_en,
-                        'quran_teacher_id' => $teacher->id,
+                        'quran_teacher_id' => $teacherProfile->id,
                         'max_students' => rand(10, 20),
                         'enrolled_students' => rand(5, 15),
-                        'session_duration_minutes' => 60,
                         'status' => 1, // Use 1 for active instead of 'active'
                         'enrollment_status' => 'open',
                         'circle_code' => 'QC-'.$academy->id.'-'.$i.'-'.rand(1000, 9999),
@@ -721,27 +724,31 @@ class ComprehensiveDataSeeder extends Seeder
                     $academyTeachers = array_filter($users['quranTeachers'], fn ($teacher) => $teacher->academy_id === $academy->id);
                     $teacher = $academyTeachers[array_rand($academyTeachers)];
 
+                    $totalSessions = $package->sessions_per_month * 12;
+                    $sessionsUsed = rand(0, 20);
+
+                    // Use group subscription type to avoid createIndividualCircle trigger
                     QuranSubscription::firstOrCreate(
                         [
                             'academy_id' => $academy->id,
                             'student_id' => $student->id,
-                            'quran_teacher_id' => $teacher->id,
+                            'quran_teacher_id' => $teacher->id, // Use user_id as expected by model logic
                             'package_id' => $package->id,
                         ],
                         [
                             'billing_cycle' => ['monthly', 'quarterly', 'yearly'][rand(0, 2)],
-                            'total_sessions' => $package->sessions_per_month * 12,
-                            'sessions_used' => rand(0, 20),
-                            'sessions_remaining' => $package->sessions_per_month * 12 - rand(0, 20),
-                            'verses_memorized' => rand(0, 50),
+                            'total_sessions' => $totalSessions,
+                            'sessions_used' => $sessionsUsed,
+                            'sessions_remaining' => $totalSessions - $sessionsUsed,
                             'progress_percentage' => rand(0, 100),
                             'total_price' => $package->monthly_price,
                             'final_price' => $package->monthly_price,
                             'is_trial_active' => rand(0, 1) === 1,
-                            'auto_renew' => rand(0, 1) === 1,
-                            'subscription_status' => ['active', 'paused', 'cancelled'][rand(0, 2)],
+                            'status' => ['active', 'paused', 'cancelled'][rand(0, 2)],
+                            'payment_status' => 'paid',
+                            'subscription_type' => 'group', // Use group to avoid individual circle creation
                             'starts_at' => now()->subDays(rand(1, 90)),
-                            'expires_at' => now()->addDays(rand(30, 365)),
+                            'ends_at' => now()->addDays(rand(30, 365)),
                             'subscription_code' => 'QS-'.$academy->id.'-'.$student->id.'-'.rand(1000, 9999),
                         ]
                     );
@@ -986,23 +993,18 @@ class ComprehensiveDataSeeder extends Seeder
     {
         $this->command->info('Creating student profiles...');
 
+        // Student profiles are auto-created by User model's boot() method
+        // Just update grade levels for existing profiles
         foreach ($users['students'] as $student) {
-            $profileExists = StudentProfile::where('user_id', $student->id)->exists();
-            if (! $profileExists) {
-                // Get a random grade level for this academy
-                $academyGradeLevels = array_filter($gradeLevels, fn ($gl) => $gl->academy_id === $student->academy_id);
-                $gradeLevel = ! empty($academyGradeLevels) ? array_rand($academyGradeLevels) : null;
+            $profile = StudentProfile::withoutGlobalScopes()->where('user_id', $student->id)->first();
+            if ($profile && !$profile->grade_level_id) {
+                // Get grade levels for this student's academy
+                $academyGradeLevels = $gradeLevels[$student->academy_id] ?? [];
+                $gradeLevel = !empty($academyGradeLevels) ? $academyGradeLevels[array_rand($academyGradeLevels)] : null;
 
-                StudentProfile::create([
-                    'user_id' => $student->id,
-                    'academy_id' => $student->academy_id,
-                    'grade_level_id' => $gradeLevel ? $academyGradeLevels[$gradeLevel]->id : null,
-                    'date_of_birth' => now()->subYears(rand(8, 18))->format('Y-m-d'),
-                    'gender' => ['male', 'female'][rand(0, 1)],
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                if ($gradeLevel) {
+                    $profile->update(['grade_level_id' => $gradeLevel->id]);
+                }
             }
         }
 

@@ -82,30 +82,32 @@ class AcademicTeacherProfile extends Model
     {
         $academyId = $academyId ?: 1;
         $prefix = 'AT-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
-        
+
         // Use a simple approach with multiple attempts for concurrent requests
         $maxRetries = 20;
-        
+
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
             // Get the highest existing sequence number for this academy
-            $maxNumber = static::where('academy_id', $academyId)
+            // Use withoutGlobalScopes to bypass ScopedToAcademy and SoftDeletes filters
+            $maxNumber = static::withoutGlobalScopes()
+                ->where('academy_id', $academyId)
                 ->where('teacher_code', 'LIKE', $prefix . '%')
                 ->selectRaw('MAX(CAST(SUBSTRING(teacher_code, -4) AS UNSIGNED)) as max_num')
                 ->value('max_num') ?: 0;
-            
-            // Generate next sequence number (add random offset for concurrent requests)
-            $nextNumber = $maxNumber + 1 + $attempt + mt_rand(0, 5);
+
+            // Generate next sequence number deterministically
+            $nextNumber = $maxNumber + 1 + $attempt;
             $newCode = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-            
-            // Check if this code already exists
-            if (!static::where('teacher_code', $newCode)->exists()) {
+
+            // Check if this code already exists (without global scopes)
+            if (!static::withoutGlobalScopes()->where('teacher_code', $newCode)->exists()) {
                 return $newCode;
             }
-            
+
             // Add a small delay to reduce contention
             usleep(5000 + ($attempt * 2000)); // 5ms + increasing delay
         }
-        
+
         // Fallback: use timestamp-based suffix if all retries failed
         $timestamp = substr(str_replace('.', '', microtime(true)), -4);
         return $prefix . $timestamp;
