@@ -912,7 +912,7 @@ class StudentProfileController extends Controller
             } else {
                 // If no teacher profile, check if assigned_teacher_id references a teacher with this user_id
                 if ($courseModel->assigned_teacher_id) {
-                    $assignedTeacher = \App\Models\AcademicTeacher::find($courseModel->assigned_teacher_id);
+                    $assignedTeacher = \App\Models\AcademicTeacherProfile::find($courseModel->assigned_teacher_id);
                     if ($assignedTeacher && $assignedTeacher->user_id === $user->id) {
                         $isAssignedTeacher = true;
                     }

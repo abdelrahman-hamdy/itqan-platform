@@ -102,7 +102,7 @@ class ViewStudentProgress extends ViewRecord
                                 $seconds = $state % 60;
                                 return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
                             }),
-                        Components\IconColumn::make('is_completed')
+                        Components\IconEntry::make('is_completed')
                             ->label('مكتمل')
                             ->boolean(),
                     ])->columns(4),

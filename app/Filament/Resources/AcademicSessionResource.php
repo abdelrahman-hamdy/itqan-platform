@@ -350,7 +350,6 @@ class AcademicSessionResource extends Resource
         return [
             'index' => Pages\ListAcademicSessions::route('/'),
             'create' => Pages\CreateAcademicSession::route('/create'),
-            'view' => Pages\ViewAcademicSession::route('/{record}'),
             'edit' => Pages\EditAcademicSession::route('/{record}/edit'),
         ];
     }
