@@ -29,8 +29,8 @@ class AcademicSubscriptionDetailsService extends BaseSubscriptionDetailsService
 
             // Dates
             'starts_at' => $subscription->starts_at,
-            'next_payment_at' => $subscription->next_payment_at,
-            'last_payment_at' => $subscription->last_payment_at,
+            'next_payment_date' => $subscription->next_billing_date,
+            'last_payment_date' => $subscription->last_payment_date,
             'paused_at' => $subscription->paused_at,
             'cancelled_at' => $subscription->cancelled_at,
 
@@ -45,9 +45,9 @@ class AcademicSubscriptionDetailsService extends BaseSubscriptionDetailsService
             'billing_cycle_text' => $this->getBillingCycleText($subscription->billing_cycle),
             'billing_cycle_ar' => $this->getBillingCycleTextArabic($subscription->billing_cycle),
             'currency' => $subscription->currency,
-            'total_price' => $subscription->total_price,
+            'total_price' => $subscription->monthly_price ?? $subscription->quarterly_price ?? $subscription->yearly_price ?? 0,
             'final_price' => $subscription->final_price,
-            'discount_amount' => $subscription->discount_amount,
+            'discount_amount' => $subscription->discount_amount ?? 0,
 
             // Status badges
             'status_badge_class' => $this->getStatusBadgeClass($subscription->status),

@@ -29,6 +29,16 @@ class AcademicGradeLevelFactory extends Factory
     }
 
     /**
+     * Create a grade level for a specific academy.
+     */
+    public function forAcademy(Academy $academy): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'academy_id' => $academy->id,
+        ]);
+    }
+
+    /**
      * Indicate that the grade level is inactive.
      */
     public function inactive(): static

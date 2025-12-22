@@ -51,6 +51,14 @@ class QuizAttempt extends Model
         return $this->belongsTo(StudentProfile::class, 'student_id');
     }
 
+    /**
+     * Alias for student() relationship for backwards compatibility
+     */
+    public function studentProfile(): BelongsTo
+    {
+        return $this->student();
+    }
+
     // ========================================
     // Scopes
     // ========================================

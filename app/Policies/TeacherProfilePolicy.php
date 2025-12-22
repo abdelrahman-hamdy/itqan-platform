@@ -2,7 +2,9 @@
 
 namespace App\Policies;
 
+use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\User;
 
@@ -123,22 +125,19 @@ class TeacherProfilePolicy
      */
     private function isStudentOfTeacher(User $user, $profile): bool
     {
-        $studentProfile = $user->studentProfileUnscoped;
-        if (!$studentProfile) {
-            return false;
-        }
-
+        // Subscriptions use student_id (User ID) and quran_teacher_id/academic_teacher_id (User ID)
         if ($profile instanceof QuranTeacherProfile) {
-            // Check if student has subscriptions with this teacher
-            return $studentProfile->quranSubscriptions()
-                ->where('quran_teacher_profile_id', $profile->id)
+            // Check if student has subscriptions with this teacher via their user_id
+            return QuranSubscription::where('student_id', $user->id)
+                ->where('quran_teacher_id', $profile->user_id)
                 ->exists();
         }
 
         if ($profile instanceof AcademicTeacherProfile) {
-            // Check if student has subscriptions with this teacher
-            return $studentProfile->academicSubscriptions()
-                ->where('academic_teacher_profile_id', $profile->id)
+            // Check if student has subscriptions with this teacher via profile id
+            // AcademicSubscription uses teacher_id which references AcademicTeacherProfile.id
+            return AcademicSubscription::where('student_id', $user->id)
+                ->where('teacher_id', $profile->id)
                 ->exists();
         }
 
@@ -155,18 +154,26 @@ class TeacherProfilePolicy
             return false;
         }
 
-        foreach ($parent->students as $student) {
-            if ($profile instanceof QuranTeacherProfile) {
-                if ($student->quranSubscriptions()->where('quran_teacher_profile_id', $profile->id)->exists()) {
-                    return true;
-                }
-            }
+        // Get all children's User IDs through parent->students (StudentProfile) relationships
+        $childUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
 
-            if ($profile instanceof AcademicTeacherProfile) {
-                if ($student->academicSubscriptions()->where('academic_teacher_profile_id', $profile->id)->exists()) {
-                    return true;
-                }
-            }
+        if (empty($childUserIds)) {
+            return false;
+        }
+
+        if ($profile instanceof QuranTeacherProfile) {
+            // Check if any child has subscription with this teacher
+            return QuranSubscription::whereIn('student_id', $childUserIds)
+                ->where('quran_teacher_id', $profile->user_id)
+                ->exists();
+        }
+
+        if ($profile instanceof AcademicTeacherProfile) {
+            // Check if any child has subscription with this teacher
+            // AcademicSubscription uses teacher_id which references AcademicTeacherProfile.id
+            return AcademicSubscription::whereIn('student_id', $childUserIds)
+                ->where('teacher_id', $profile->id)
+                ->exists();
         }
 
         return false;

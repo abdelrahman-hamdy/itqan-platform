@@ -193,7 +193,7 @@ class EarningsCalculationService
      */
     private function calculateAcademicSessionEarnings(AcademicSession $session): ?float
     {
-        $teacher = $session->academicTeacher?->academicTeacherProfile;
+        $teacher = $session->academicTeacher;
 
         if (!$teacher) {
             Log::error('Academic teacher profile not found', ['session_id' => $session->id]);
@@ -217,7 +217,7 @@ class EarningsCalculationService
         }
 
         return match($course->payment_type) {
-            'fixed' => $this->calculateFixedAmount($course),
+            'fixed_amount' => $this->calculateFixedAmount($course),
             'per_student' => $this->calculatePerStudent($course),
             'per_session' => $this->calculatePerSession($course),
             default => null,
@@ -265,14 +265,14 @@ class EarningsCalculationService
         if ($session instanceof AcademicSession) {
             return [
                 'type' => 'academic_teacher',
-                'id' => $session->academicTeacher?->academicTeacherProfile?->id,
+                'id' => $session->academicTeacher?->id,
             ];
         }
 
         if ($session instanceof InteractiveCourseSession) {
             return [
                 'type' => 'academic_teacher',
-                'id' => $session->course?->assignedTeacher?->academicTeacherProfile?->id,
+                'id' => $session->course?->assignedTeacher?->id,
             ];
         }
 
@@ -327,7 +327,7 @@ class EarningsCalculationService
         if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
             return match($course?->payment_type) {
-                'fixed' => 'fixed',
+                'fixed_amount' => 'fixed_amount',
                 'per_student' => 'per_student',
                 'per_session' => 'per_session',
                 default => 'unknown',
@@ -350,13 +350,13 @@ class EarningsCalculationService
         }
 
         if ($session instanceof AcademicSession) {
-            return $session->academicTeacher?->academicTeacherProfile?->session_price_individual;
+            return $session->academicTeacher?->session_price_individual;
         }
 
         if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
             return match($course?->payment_type) {
-                'fixed' => $course->teacher_fixed_amount,
+                'fixed_amount' => $course->teacher_fixed_amount,
                 'per_student' => $course->amount_per_student,
                 'per_session' => $course->amount_per_session,
                 default => null,

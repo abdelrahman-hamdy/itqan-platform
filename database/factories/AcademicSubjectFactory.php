@@ -26,4 +26,14 @@ class AcademicSubjectFactory extends Factory
             'is_active' => true,
         ];
     }
+
+    /**
+     * Create a subject for a specific academy.
+     */
+    public function forAcademy(Academy $academy): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'academy_id' => $academy->id,
+        ]);
+    }
 }

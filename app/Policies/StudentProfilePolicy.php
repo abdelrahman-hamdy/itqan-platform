@@ -125,16 +125,23 @@ class StudentProfilePolicy
      */
     private function isTeacherOfStudent(User $user, StudentProfile $profile): bool
     {
-        // Check Quran teacher
-        if ($user->quranTeacherProfile) {
-            if ($profile->quranSubscriptions()->where('quran_teacher_profile_id', $user->quranTeacherProfile->id)->exists()) {
+        // Get the student's User ID
+        $studentUserId = $profile->user_id;
+
+        // Check Quran teacher - subscriptions use student_id (User ID) and quran_teacher_id (User ID)
+        if ($user->hasRole(['quran_teacher'])) {
+            if (\App\Models\QuranSubscription::where('student_id', $studentUserId)
+                ->where('quran_teacher_id', $user->id)
+                ->exists()) {
                 return true;
             }
         }
 
-        // Check Academic teacher
+        // Check Academic teacher - subscriptions use student_id (User ID) and teacher_id (Profile ID)
         if ($user->academicTeacherProfile) {
-            if ($profile->academicSubscriptions()->where('academic_teacher_profile_id', $user->academicTeacherProfile->id)->exists()) {
+            if (\App\Models\AcademicSubscription::where('student_id', $studentUserId)
+                ->where('teacher_id', $user->academicTeacherProfile->id)
+                ->exists()) {
                 return true;
             }
         }
@@ -162,6 +169,14 @@ class StudentProfilePolicy
      */
     private function sameAcademy(User $user, StudentProfile $profile): bool
     {
+        // Load grade level relationship if not loaded to access academy_id
+        if (!$profile->relationLoaded('gradeLevel')) {
+            $profile->load('gradeLevel');
+        }
+
+        // Get profile's academy ID through the accessor
+        $profileAcademyId = $profile->academy_id;
+
         // For super_admin, use the selected academy context
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
@@ -169,10 +184,10 @@ class StudentProfilePolicy
             if (!$userAcademyId) {
                 return true;
             }
-            return $profile->academy_id === $userAcademyId;
+            return $profileAcademyId === $userAcademyId;
         }
 
         // For other users, use their assigned academy
-        return $profile->academy_id === $user->academy_id;
+        return $profileAcademyId === $user->academy_id;
     }
 }

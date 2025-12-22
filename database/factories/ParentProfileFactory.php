@@ -26,8 +26,7 @@ class ParentProfileFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
-            'phone' => fake()->phoneNumber(),
-            'relationship_type' => fake()->randomElement([RelationshipType::FATHER, RelationshipType::MOTHER]),
+            'phone' => fake()->numerify('05########'),
             'preferred_contact_method' => fake()->randomElement(['phone', 'email', 'sms']),
         ];
     }

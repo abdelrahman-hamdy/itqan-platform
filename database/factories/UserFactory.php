@@ -3,6 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\Academy;
+use App\Models\AcademicTeacherProfile;
+use App\Models\ParentProfile;
+use App\Models\QuranTeacherProfile;
+use App\Models\SupervisorProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -39,6 +43,63 @@ class UserFactory extends Factory
             'active_status' => true,
             'academy_id' => Academy::factory(),
         ];
+    }
+
+    /**
+     * Configure the model factory.
+     * Auto-creates profiles for user types that need them manually.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            // Create profiles for teachers and supervisors (skipped in User::boot)
+            $this->createProfileForUser($user);
+        });
+    }
+
+    /**
+     * Create the appropriate profile for a user based on their type.
+     */
+    protected function createProfileForUser(User $user): void
+    {
+        if ($user->user_type === 'quran_teacher' && $user->academy_id) {
+            // Check if profile exists using direct query (relationship may be cached)
+            $exists = QuranTeacherProfile::where('user_id', $user->id)->exists();
+            if (!$exists) {
+                QuranTeacherProfile::factory()->create([
+                    'user_id' => $user->id,
+                    'academy_id' => $user->academy_id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                ]);
+            }
+        } elseif ($user->user_type === 'academic_teacher' && $user->academy_id) {
+            $exists = AcademicTeacherProfile::where('user_id', $user->id)->exists();
+            if (!$exists) {
+                AcademicTeacherProfile::factory()->create([
+                    'user_id' => $user->id,
+                    'academy_id' => $user->academy_id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                ]);
+            }
+        } elseif ($user->user_type === 'supervisor' && $user->academy_id) {
+            $exists = SupervisorProfile::where('user_id', $user->id)->exists();
+            if (!$exists) {
+                SupervisorProfile::factory()->create([
+                    'user_id' => $user->id,
+                    'academy_id' => $user->academy_id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                ]);
+            }
+        }
     }
 
     /**
@@ -84,6 +145,7 @@ class UserFactory extends Factory
 
     /**
      * Create a Quran teacher user.
+     * Note: Profile is auto-created via User model's created event
      */
     public function quranTeacher(): static
     {
@@ -94,6 +156,7 @@ class UserFactory extends Factory
 
     /**
      * Create an academic teacher user.
+     * Note: Profile is auto-created via User model's created event
      */
     public function academicTeacher(): static
     {
@@ -104,6 +167,7 @@ class UserFactory extends Factory
 
     /**
      * Create a student user.
+     * Note: Profile is auto-created via User model's created event
      */
     public function student(): static
     {
@@ -114,6 +178,7 @@ class UserFactory extends Factory
 
     /**
      * Create a parent user.
+     * Note: Profile is auto-created via User model's created event
      */
     public function parent(): static
     {

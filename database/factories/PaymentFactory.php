@@ -19,19 +19,30 @@ class PaymentFactory extends Factory
      */
     public function definition(): array
     {
+        $amount = fake()->randomFloat(2, 50, 1000);
+
         return [
             'academy_id' => Academy::factory(),
             'user_id' => User::factory()->student(),
             'payment_code' => 'PAY-' . fake()->unique()->randomNumber(6),
             'payment_method' => fake()->randomElement(['credit_card', 'mada', 'bank_transfer', 'cash']),
-            'payment_gateway' => fake()->randomElement(['moyasar', 'tap', 'payfort', 'hyperpay', 'paytabs', 'manual']),
-            'amount' => fake()->randomFloat(2, 50, 1000),
+            'payment_gateway' => fake()->randomElement(['tap', 'moyasar', 'payfort', 'hyperpay', 'paytabs', 'manual']),
+            'amount' => $amount,
             'currency' => 'SAR',
             'fees' => 0,
-            'net_amount' => fake()->randomFloat(2, 50, 1000),
+            'net_amount' => $amount,
             'status' => 'pending',
             'payment_status' => 'pending',
             'payment_date' => now(),
+            // Gateway integration fields - null by default
+            'gateway_transaction_id' => null,
+            'gateway_intent_id' => null,
+            'gateway_order_id' => null,
+            'client_secret' => null,
+            'redirect_url' => null,
+            'iframe_url' => null,
+            'paid_at' => null,
+            'refund_amount' => null,
         ];
     }
 
@@ -41,9 +52,10 @@ class PaymentFactory extends Factory
     public function completed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'completed',
+            'status' => 'success',
             'payment_status' => 'paid',
             'confirmed_at' => now(),
+            'paid_at' => now(),
         ]);
     }
 

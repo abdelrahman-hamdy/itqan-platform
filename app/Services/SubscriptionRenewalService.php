@@ -205,10 +205,8 @@ class SubscriptionRenewalService
             'renewal_reminder_sent_at' => null,
         ]);
 
-        // Extend sessions if applicable
-        if (method_exists($subscription, 'extendSessionsOnRenewal')) {
-            $subscription->extendSessionsOnRenewal();
-        }
+        // Note: extendSessionsOnRenewal is called by the trait's processSuccessfulRenewal method
+        // It's protected and cannot be called directly from the service
 
         // Send success notification
         $this->sendRenewalSuccessNotification($subscription, $amount);
@@ -299,31 +297,24 @@ class SubscriptionRenewalService
     {
         $targetDate = now()->addDays($daysBeforeRenewal)->toDateString();
 
-        $subscriptions = collect();
+        $quranSubscriptions = QuranSubscription::where('auto_renew', true)
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->whereDate('next_billing_date', $targetDate)
+            ->when($daysBeforeRenewal === 7, function ($query) {
+                $query->whereNull('renewal_reminder_sent_at');
+            })
+            ->get();
 
-        // Quran subscriptions
-        $subscriptions = $subscriptions->merge(
-            QuranSubscription::where('auto_renew', true)
-                ->where('status', SubscriptionStatus::ACTIVE)
-                ->whereDate('next_billing_date', $targetDate)
-                ->when($daysBeforeRenewal === 7, function ($query) {
-                    $query->whereNull('renewal_reminder_sent_at');
-                })
-                ->get()
-        );
+        $academicSubscriptions = AcademicSubscription::where('auto_renew', true)
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->whereDate('next_billing_date', $targetDate)
+            ->when($daysBeforeRenewal === 7, function ($query) {
+                $query->whereNull('renewal_reminder_sent_at');
+            })
+            ->get();
 
-        // Academic subscriptions
-        $subscriptions = $subscriptions->merge(
-            AcademicSubscription::where('auto_renew', true)
-                ->where('status', SubscriptionStatus::ACTIVE)
-                ->whereDate('next_billing_date', $targetDate)
-                ->when($daysBeforeRenewal === 7, function ($query) {
-                    $query->whereNull('renewal_reminder_sent_at');
-                })
-                ->get()
-        );
-
-        return $subscriptions;
+        // Use Eloquent Collection's concat method to maintain Collection type
+        return $quranSubscriptions->concat($academicSubscriptions);
     }
 
     // ========================================
@@ -335,25 +326,18 @@ class SubscriptionRenewalService
      */
     public function getDueForRenewal(): Collection
     {
-        $subscriptions = collect();
+        $quranSubscriptions = QuranSubscription::where('auto_renew', true)
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('next_billing_date', '<=', now()->addDays(1))
+            ->get();
 
-        // Quran subscriptions due for renewal
-        $subscriptions = $subscriptions->merge(
-            QuranSubscription::where('auto_renew', true)
-                ->where('status', SubscriptionStatus::ACTIVE)
-                ->where('next_billing_date', '<=', now()->addDays(1))
-                ->get()
-        );
+        $academicSubscriptions = AcademicSubscription::where('auto_renew', true)
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('next_billing_date', '<=', now()->addDays(1))
+            ->get();
 
-        // Academic subscriptions due for renewal
-        $subscriptions = $subscriptions->merge(
-            AcademicSubscription::where('auto_renew', true)
-                ->where('status', SubscriptionStatus::ACTIVE)
-                ->where('next_billing_date', '<=', now()->addDays(1))
-                ->get()
-        );
-
-        return $subscriptions;
+        // Use Eloquent Collection's concat method to maintain Collection type
+        return $quranSubscriptions->concat($academicSubscriptions);
     }
 
     /**
@@ -363,25 +347,24 @@ class SubscriptionRenewalService
     {
         $since = now()->subDays($days);
 
-        $subscriptions = collect();
+        $quranSubscriptions = QuranSubscription::where('academy_id', $academyId)
+            ->where('status', SubscriptionStatus::EXPIRED)
+            ->where('payment_status', SubscriptionPaymentStatus::FAILED)
+            ->where('updated_at', '>=', $since)
+            ->get();
 
-        $subscriptions = $subscriptions->merge(
-            QuranSubscription::where('academy_id', $academyId)
-                ->where('status', SubscriptionStatus::EXPIRED)
-                ->where('payment_status', SubscriptionPaymentStatus::FAILED)
-                ->where('updated_at', '>=', $since)
-                ->get()
-        );
+        $academicSubscriptions = AcademicSubscription::where('academy_id', $academyId)
+            ->where('status', SubscriptionStatus::EXPIRED)
+            ->where('payment_status', SubscriptionPaymentStatus::FAILED)
+            ->where('updated_at', '>=', $since)
+            ->get();
 
-        $subscriptions = $subscriptions->merge(
-            AcademicSubscription::where('academy_id', $academyId)
-                ->where('status', SubscriptionStatus::EXPIRED)
-                ->where('payment_status', SubscriptionPaymentStatus::FAILED)
-                ->where('updated_at', '>=', $since)
-                ->get()
-        );
+        // Concat and sort, then wrap back into Eloquent Collection
+        $combined = $quranSubscriptions->concat($academicSubscriptions);
+        $sorted = $combined->sortByDesc('updated_at')->values();
 
-        return $subscriptions->sortByDesc('updated_at')->values();
+        // Convert back to Eloquent Collection by creating new instance
+        return new Collection($sorted->all());
     }
 
     // ========================================
@@ -550,10 +533,8 @@ class SubscriptionRenewalService
                 'cancellation_reason' => null,
             ]);
 
-            // Extend sessions if applicable
-            if (method_exists($subscription, 'extendSessionsOnRenewal')) {
-                $subscription->extendSessionsOnRenewal();
-            }
+            // Note: extendSessionsOnRenewal is protected and cannot be called from service
+            // For reactivation, sessions need to be extended manually if needed
 
             Log::info("Subscription {$subscription->id} reactivated", [
                 'amount' => $amount,

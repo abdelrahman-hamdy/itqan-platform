@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
@@ -50,7 +51,19 @@ class Payment extends Model
         'notes',
         'metadata',
         'created_by',
-        'updated_by'
+        'updated_by',
+        // Payment gateway integration fields
+        'transaction_id',
+        'gateway_intent_id',
+        'gateway_order_id',
+        'client_secret',
+        'redirect_url',
+        'iframe_url',
+        'paid_at',
+        'refunded_amount',
+        // Polymorphic payable relationship
+        'payable_type',
+        'payable_id',
     ];
 
     protected $casts = [
@@ -63,10 +76,12 @@ class Payment extends Model
         'tax_percentage' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'refund_amount' => 'decimal:2',
+        'refunded_amount' => 'integer', // Stored in cents
         'payment_date' => 'datetime',
         'processed_at' => 'datetime',
         'confirmed_at' => 'datetime',
         'refunded_at' => 'datetime',
+        'paid_at' => 'datetime',
         'gateway_response' => 'array',
         'metadata' => 'array'
     ];
@@ -90,6 +105,11 @@ class Payment extends Model
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    public function payable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     // Scopes

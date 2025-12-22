@@ -63,7 +63,7 @@ class TrialRequestSyncService
             SessionStatus::SCHEDULED => QuranTrialRequest::STATUS_SCHEDULED,
             SessionStatus::COMPLETED => QuranTrialRequest::STATUS_COMPLETED,
             SessionStatus::CANCELLED => QuranTrialRequest::STATUS_CANCELLED,
-            SessionStatus::MISSED => QuranTrialRequest::STATUS_NO_SHOW,
+            SessionStatus::ABSENT => QuranTrialRequest::STATUS_NO_SHOW,
             // Don't change status for other session states
             default => null,
         };

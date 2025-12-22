@@ -165,55 +165,61 @@ class ChatPermissionService
      */
     protected function isTeacherOfStudent(User $teacher, User $student, int $academyId): bool
     {
+        // Get teacher profile IDs if needed
+        $academicTeacherProfile = $teacher->academicTeacherProfile;
+        $academicTeacherProfileId = $academicTeacherProfile ? $academicTeacherProfile->id : null;
+
         // Use a single query to check all relationships
-        return DB::table(function ($query) use ($teacher, $student, $academyId) {
+        return DB::table(function ($query) use ($teacher, $student, $academyId, $academicTeacherProfileId) {
             // Quran sessions
             $query->select(DB::raw('1 as has_relationship'))
                 ->from('quran_sessions')
                 ->where('quran_teacher_id', $teacher->id)
                 ->where('student_id', $student->id)
-                ->where('academy_id', $academyId)
+                ->where('academy_id', $academyId);
 
-                // Academic sessions
-                ->unionAll(
+            // Academic sessions - uses profile ID
+            if ($academicTeacherProfileId) {
+                $query->unionAll(
                     DB::table('academic_sessions')
                         ->select(DB::raw('1 as has_relationship'))
-                        ->where('academic_teacher_id', $teacher->id)
+                        ->where('academic_teacher_id', $academicTeacherProfileId)
                         ->where('student_id', $student->id)
                         ->where('academy_id', $academyId)
-                )
-
-                // Active academic subscriptions
-                ->unionAll(
-                    DB::table('academic_subscriptions')
-                        ->select(DB::raw('1 as has_relationship'))
-                        ->where('student_id', $student->id)
-                        ->where('teacher_id', $teacher->id)
-                        ->where('academy_id', $academyId)
-                        ->where('status', 'active')
-                )
-
-                // Active Quran subscriptions
-                ->unionAll(
-                    DB::table('quran_subscriptions')
-                        ->select(DB::raw('1 as has_relationship'))
-                        ->where('student_id', $student->id)
-                        ->where('quran_teacher_id', $teacher->id)
-                        ->where('academy_id', $academyId)
-                        ->where('status', 'active')
-                )
-
-                // Group Quran circle memberships
-                ->unionAll(
-                    DB::table('quran_circles')
-                        ->select(DB::raw('1 as has_relationship'))
-                        ->join('quran_circle_students', 'quran_circles.id', '=', 'quran_circle_students.quran_circle_id')
-                        ->where('quran_circles.quran_teacher_id', $teacher->id)
-                        ->where('quran_circle_students.student_id', $student->id)
-                        ->where('quran_circles.academy_id', $academyId)
-                        ->where('quran_circle_students.status', 'active')
-                        ->where('quran_circles.status', 'active')
                 );
+            }
+
+            // Active academic subscriptions
+            $query->unionAll(
+                DB::table('academic_subscriptions')
+                    ->select(DB::raw('1 as has_relationship'))
+                    ->where('student_id', $student->id)
+                    ->where('teacher_id', $teacher->id)
+                    ->where('academy_id', $academyId)
+                    ->where('status', 'active')
+            );
+
+            // Active Quran subscriptions
+            $query->unionAll(
+                DB::table('quran_subscriptions')
+                    ->select(DB::raw('1 as has_relationship'))
+                    ->where('student_id', $student->id)
+                    ->where('quran_teacher_id', $teacher->id)
+                    ->where('academy_id', $academyId)
+                    ->where('status', 'active')
+            );
+
+            // Group Quran circle memberships - fixed column name
+            $query->unionAll(
+                DB::table('quran_circles')
+                    ->select(DB::raw('1 as has_relationship'))
+                    ->join('quran_circle_students', 'quran_circles.id', '=', 'quran_circle_students.circle_id')
+                    ->where('quran_circles.quran_teacher_id', $teacher->id)
+                    ->where('quran_circle_students.student_id', $student->id)
+                    ->where('quran_circles.academy_id', $academyId)
+                    ->where('quran_circle_students.status', 'enrolled')
+                    ->where('quran_circles.status', true)
+            );
         })->exists();
     }
 
@@ -222,9 +228,17 @@ class ChatPermissionService
      */
     protected function isParentOfStudent(User $parent, User $student): bool
     {
-        return DB::table('parent_students')
-            ->where('parent_id', $parent->id)
-            ->where('student_id', $student->id)
+        // Get parent and student profile IDs
+        $parentProfile = $parent->parentProfile;
+        $studentProfile = $student->studentProfile;
+
+        if (!$parentProfile || !$studentProfile) {
+            return false;
+        }
+
+        return DB::table('parent_student_relationships')
+            ->where('parent_id', $parentProfile->id)
+            ->where('student_id', $studentProfile->id)
             ->exists();
     }
 
@@ -233,28 +247,50 @@ class ChatPermissionService
      */
     protected function isTeacherOfParentChildren(User $teacher, User $parent, int $academyId): bool
     {
-        $childrenIds = DB::table('parent_students')
-            ->where('parent_id', $parent->id)
-            ->pluck('student_id');
-
-        if ($childrenIds->isEmpty()) {
+        // Get parent profile
+        $parentProfile = $parent->parentProfile;
+        if (!$parentProfile) {
             return false;
         }
 
-        return DB::table(function ($query) use ($teacher, $childrenIds, $academyId) {
+        // Get student profile IDs from parent relationships
+        $studentProfileIds = DB::table('parent_student_relationships')
+            ->where('parent_id', $parentProfile->id)
+            ->pluck('student_id');
+
+        if ($studentProfileIds->isEmpty()) {
+            return false;
+        }
+
+        // Get actual user IDs from student profiles
+        $childrenUserIds = DB::table('student_profiles')
+            ->whereIn('id', $studentProfileIds)
+            ->pluck('user_id');
+
+        if ($childrenUserIds->isEmpty()) {
+            return false;
+        }
+
+        // Get teacher profile IDs if needed
+        $academicTeacherProfile = $teacher->academicTeacherProfile;
+        $academicTeacherProfileId = $academicTeacherProfile ? $academicTeacherProfile->id : null;
+
+        return DB::table(function ($query) use ($teacher, $childrenUserIds, $academyId, $academicTeacherProfileId) {
             $query->select(DB::raw('1 as has_relationship'))
                 ->from('quran_sessions')
                 ->where('quran_teacher_id', $teacher->id)
-                ->whereIn('student_id', $childrenIds)
-                ->where('academy_id', $academyId)
+                ->whereIn('student_id', $childrenUserIds)
+                ->where('academy_id', $academyId);
 
-                ->unionAll(
+            if ($academicTeacherProfileId) {
+                $query->unionAll(
                     DB::table('academic_sessions')
                         ->select(DB::raw('1 as has_relationship'))
-                        ->where('academic_teacher_id', $teacher->id)
-                        ->whereIn('student_id', $childrenIds)
+                        ->where('academic_teacher_id', $academicTeacherProfileId)
+                        ->whereIn('student_id', $childrenUserIds)
                         ->where('academy_id', $academyId)
                 );
+            }
         })->exists();
     }
 

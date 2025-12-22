@@ -34,7 +34,7 @@ class TeacherEarning extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'rate_snapshot' => 'decimal:2',
+        'rate_snapshot' => 'array',
         'calculation_metadata' => 'array',
         'earning_month' => 'date',
         'session_completed_at' => 'datetime',

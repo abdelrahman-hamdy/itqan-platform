@@ -83,7 +83,8 @@ class ParentProfile extends Model
         return $this->belongsToMany(StudentProfile::class, 'parent_student_relationships', 'parent_id', 'student_id')
             ->using(ParentStudentRelationship::class)
             ->withPivot('relationship_type')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->withoutGlobalScopes(); // Disable global scopes - parent can see all their children regardless of academy context
     }
 
     /**

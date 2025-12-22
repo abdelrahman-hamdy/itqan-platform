@@ -129,13 +129,9 @@ class SubscriptionPolicy
      */
     private function isSubscriptionOwner(User $user, $subscription): bool
     {
-        $studentProfile = $user->studentProfileUnscoped;
-        if (!$studentProfile) {
-            return false;
-        }
-
+        // QuranSubscription and AcademicSubscription use student_id (user ID), not student_profile_id
         if ($subscription instanceof QuranSubscription || $subscription instanceof AcademicSubscription) {
-            return $subscription->student_profile_id === $studentProfile->id;
+            return $subscription->student_id === $user->id;
         }
 
         if ($subscription instanceof CourseSubscription) {
@@ -150,16 +146,18 @@ class SubscriptionPolicy
      */
     private function isTeacherOfSubscription(User $user, $subscription): bool
     {
+        // QuranSubscription uses quran_teacher_id (user ID), not profile ID
         if ($subscription instanceof QuranSubscription) {
-            return $subscription->quran_teacher_profile_id === $user->quranTeacherProfile?->id;
+            return $subscription->quran_teacher_id === $user->id;
         }
 
+        // AcademicSubscription uses academic_teacher_id (user ID), not profile ID
         if ($subscription instanceof AcademicSubscription) {
-            return $subscription->academic_teacher_profile_id === $user->academicTeacherProfile?->id;
+            return $subscription->academic_teacher_id === $user->id;
         }
 
         if ($subscription instanceof CourseSubscription) {
-            return $subscription->recordedCourse?->academic_teacher_profile_id === $user->academicTeacherProfile?->id;
+            return $subscription->recordedCourse?->academic_teacher_id === $user->id;
         }
 
         return false;
@@ -175,15 +173,16 @@ class SubscriptionPolicy
             return false;
         }
 
-        $studentIds = $parent->students()->pluck('student_profiles.id')->toArray();
+        // Get student user IDs through the parent-student relationship
+        $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
 
         if ($subscription instanceof QuranSubscription || $subscription instanceof AcademicSubscription) {
-            return in_array($subscription->student_profile_id, $studentIds);
+            // These subscriptions use student_id (user ID)
+            return in_array($subscription->student_id, $studentUserIds);
         }
 
         if ($subscription instanceof CourseSubscription) {
-            $userIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
-            return in_array($subscription->user_id, $userIds);
+            return in_array($subscription->user_id, $studentUserIds);
         }
 
         return false;

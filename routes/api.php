@@ -17,6 +17,21 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/courses/{courseId}/lessons/{lessonId}/toggle', [ProgressController::class, 'toggleLessonCompletion']);
 });
 
+// Session Status API routes
+Route::middleware('auth:sanctum')->prefix('sessions')->group(function () {
+    // Academic session status and attendance
+    Route::get('/academic/{sessionId}/status', [App\Http\Controllers\Api\SessionStatusApiController::class, 'academicSessionStatus'])
+        ->name('api.sessions.academic.status');
+    Route::get('/academic/{sessionId}/attendance', [App\Http\Controllers\Api\SessionStatusApiController::class, 'academicAttendanceStatus'])
+        ->name('api.sessions.academic.attendance');
+
+    // Quran session status and attendance
+    Route::get('/quran/{sessionId}/status', [App\Http\Controllers\Api\SessionStatusApiController::class, 'quranSessionStatus'])
+        ->name('api.sessions.quran.status');
+    Route::get('/quran/{sessionId}/attendance', [App\Http\Controllers\Api\SessionStatusApiController::class, 'quranAttendanceStatus'])
+        ->name('api.sessions.quran.attendance');
+});
+
 // Unified Meeting API routes - used by session detail pages
 // These are NOT separate meeting routes but API endpoints for session pages
 Route::middleware(['web', 'auth', 'verified'])->prefix('sessions')->group(function () {

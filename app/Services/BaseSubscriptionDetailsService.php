@@ -139,11 +139,11 @@ abstract class BaseSubscriptionDetailsService
      */
     protected function getDaysUntilNextPayment(BaseSubscription $subscription): ?int
     {
-        if (!$subscription->next_payment_at) {
+        if (!$subscription->next_billing_date) {
             return null;
         }
 
-        $daysUntil = now()->diffInDays($subscription->next_payment_at, false);
+        $daysUntil = now()->diffInDays($subscription->next_billing_date, false);
 
         return (int) ceil($daysUntil);
     }
