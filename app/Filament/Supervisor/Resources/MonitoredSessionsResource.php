@@ -275,7 +275,7 @@ class MonitoredSessionsResource extends BaseSupervisorResource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['quranTeacher.user', 'circle', 'student', 'academy']);
+            ->with(['quranTeacher', 'circle', 'student', 'academy']);
 
         $profile = static::getCurrentSupervisorProfile();
 

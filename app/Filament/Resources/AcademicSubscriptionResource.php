@@ -131,8 +131,8 @@ class AcademicSubscriptionResource extends Resource
                         Forms\Components\TextInput::make('session_duration_minutes')
                             ->label('مدة الجلسة (بالدقائق)')
                             ->numeric()
-                            ->min(30)
-                            ->max(120)
+                            ->minValue(30)
+                            ->maxValue(120)
                             ->default(60)
                             ->required(),
                         

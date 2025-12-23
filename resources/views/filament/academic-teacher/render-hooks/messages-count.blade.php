@@ -48,7 +48,7 @@
 </style>
 
 <div class="message-count-container">
-    <a href="{{ route('chats') }}"
+    <a href="{{ url('/chats') }}"
        class="message-count-icon"
        title="الرسائل">
         <i class="ri-message-2-line"></i>

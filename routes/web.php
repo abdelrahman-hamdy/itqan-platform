@@ -20,7 +20,7 @@ Broadcast::routes(['middleware' => ['web', 'auth']]);
 // LiveKit routes for teacher controls (tenant-aware)
 Route::prefix('livekit')->middleware(['auth'])->group(function () {
     // Basic participant endpoints available to authenticated users
-    Route::get('participants', [App\Http\Controllers\LiveKitController::class, 'getParticipants']);
+    Route::get('participants', [App\Http\Controllers\LiveKitController::class, 'getRoomParticipants']);
     Route::get('rooms/permissions', [App\Http\Controllers\LiveKitController::class, 'getRoomPermissions']);
 
     // Teacher-only participant control endpoints with detailed debugging

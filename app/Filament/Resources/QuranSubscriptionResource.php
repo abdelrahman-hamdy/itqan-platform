@@ -370,33 +370,32 @@ class QuranSubscriptionResource extends BaseResource
 
                 BadgeColumn::make('status')
                     ->label('حالة الاشتراك')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SubscriptionStatus ? $state->value : $state) {
                         'active' => 'نشط',
                         'expired' => 'منتهي',
                         'paused' => 'متوقف',
                         'cancelled' => 'ملغي',
                         'pending' => 'في الانتظار',
                         'suspended' => 'موقف',
-                        default => $state,
+                        default => $state instanceof \App\Enums\SubscriptionStatus ? $state->value : (string) $state,
                     })
                     ->colors([
                         'success' => 'active',
-                        'danger' => 'expired',
+                        'danger' => fn ($state): bool => in_array($state instanceof \App\Enums\SubscriptionStatus ? $state->value : $state, ['expired', 'suspended']),
                         'warning' => 'paused',
                         'secondary' => 'cancelled',
                         'info' => 'pending',
-                        'danger' => 'suspended',
                     ]),
 
                 BadgeColumn::make('payment_status')
                     ->label('حالة الدفع')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->value : $state) {
                         'paid' => 'مدفوع',
                         'pending' => 'في الانتظار',
                         'failed' => 'فشل',
                         'refunded' => 'مسترد',
                         'cancelled' => 'ملغي',
-                        default => $state,
+                        default => $state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->value : (string) $state,
                     })
                     ->colors([
                         'success' => 'paid',

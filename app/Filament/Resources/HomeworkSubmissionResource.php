@@ -32,7 +32,7 @@ class HomeworkSubmissionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['student', 'academy', 'gradedBy']);
+            ->with(['student', 'academy', 'grader']);
     }
 
     public static function form(Form $form): Form
@@ -107,7 +107,7 @@ class HomeworkSubmissionResource extends Resource
                         Forms\Components\DateTimePicker::make('graded_at')
                             ->label('تاريخ التصحيح'),
                         Forms\Components\Select::make('graded_by')
-                            ->relationship('gradedBy', 'name')
+                            ->relationship('grader', 'name')
                             ->label('المصحح')
                             ->searchable()
                             ->preload(),
@@ -189,7 +189,7 @@ class HomeworkSubmissionResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('gradedBy.name')
+                Tables\Columns\TextColumn::make('grader.name')
                     ->label('المصحح')
                     ->searchable()
                     ->sortable()

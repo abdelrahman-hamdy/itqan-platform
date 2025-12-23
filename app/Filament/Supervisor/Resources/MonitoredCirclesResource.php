@@ -250,7 +250,7 @@ class MonitoredCirclesResource extends BaseSupervisorResource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['quranTeacher.user', 'academy']);
+            ->with(['quranTeacher', 'academy']);
 
         $profile = static::getCurrentSupervisorProfile();
 
