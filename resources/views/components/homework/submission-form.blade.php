@@ -41,11 +41,11 @@
 
         @if($submission && $submission->submission_status)
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                {{ $submission->submission_status === 'not_submitted' ? 'bg-gray-100 text-gray-800' :
-                   ($submission->submission_status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                   ($submission->submission_status === 'submitted' || $submission->submission_status === 'late' ? 'bg-blue-100 text-blue-800' :
-                   ($submission->submission_status === 'graded' || $submission->submission_status === 'returned' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'))) }}">
-                {{ $submission->submission_status_text ?? 'لم يتم التسليم' }}
+                {{ $submission->submission_status === \App\Enums\HomeworkSubmissionStatus::NOT_STARTED ? 'bg-gray-100 text-gray-800' :
+                   ($submission->submission_status === \App\Enums\HomeworkSubmissionStatus::DRAFT ? 'bg-yellow-100 text-yellow-800' :
+                   (in_array($submission->submission_status, [\App\Enums\HomeworkSubmissionStatus::SUBMITTED, \App\Enums\HomeworkSubmissionStatus::LATE]) ? 'bg-blue-100 text-blue-800' :
+                   (in_array($submission->submission_status, [\App\Enums\HomeworkSubmissionStatus::GRADED, \App\Enums\HomeworkSubmissionStatus::RETURNED]) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'))) }}">
+                {{ $submission->submission_status->label() }}
             </span>
         @endif
     </div>

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
+use App\Enums\EnrollmentStatus;
 
 class LessonController extends Controller
 {
@@ -42,7 +43,7 @@ class LessonController extends Controller
             // Check if user is enrolled in the course
             $enrollment = CourseSubscription::where('student_id', $user->id)
                 ->where('recorded_course_id', $course->id)
-                ->where('status', 'active')
+                ->where('status', EnrollmentStatus::ACTIVE->value)
                 ->first();
 
             if (! $enrollment && ! $lesson->is_free_preview) {

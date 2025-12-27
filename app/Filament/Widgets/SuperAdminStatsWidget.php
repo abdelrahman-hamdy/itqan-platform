@@ -13,6 +13,7 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\PaymentStatus;
 
 class SuperAdminStatsWidget extends BaseWidget
 {
@@ -61,7 +62,7 @@ class SuperAdminStatsWidget extends BaseWidget
         $inactiveUsers = $totalUsers - $activeUsers;
 
         // Total Income (all time)
-        $totalIncome = Payment::where('status', 'completed')->sum('amount');
+        $totalIncome = Payment::where('status', PaymentStatus::COMPLETED->value)->sum('amount');
 
         // Sessions
         $totalQuranSessions = QuranSession::count();
@@ -137,7 +138,7 @@ class SuperAdminStatsWidget extends BaseWidget
         $inactiveUsers = $totalUsers - $activeUsers;
 
         // Total Income for academy
-        $totalIncome = Payment::where('academy_id', $academy->id)->where('status', SessionStatus::COMPLETED->value)->sum('amount');
+        $totalIncome = Payment::where('academy_id', $academy->id)->where('status', PaymentStatus::COMPLETED->value)->sum('amount');
 
         // Sessions for academy
         $totalQuranSessions = QuranSession::where('academy_id', $academy->id)->count();

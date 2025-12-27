@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BusinessRequestStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,7 @@ class BusinessServiceRequest extends Model
     ];
 
     protected $casts = [
+        'status' => BusinessRequestStatus::class,
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

@@ -40,10 +40,6 @@ class CourseRecording extends Model
         'status' => RecordingStatus::class,
     ];
 
-    protected $attributes = [
-        'status' => 'recording',
-        'file_format' => 'mp4',
-    ];
 
     /**
      * Relationships
@@ -68,12 +64,12 @@ class CourseRecording extends Model
      */
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', RecordingStatus::COMPLETED->value);
     }
 
     public function scopeRecording($query)
     {
-        return $query->where('status', 'recording');
+        return $query->where('status', RecordingStatus::RECORDING->value);
     }
 
     public function scopeForTeacher($query, $teacherId)
@@ -86,22 +82,22 @@ class CourseRecording extends Model
      */
     public function isCompleted(): bool
     {
-        return $this->status === 'completed';
+        return $this->status === RecordingStatus::COMPLETED;
     }
 
     public function isRecording(): bool
     {
-        return $this->status === 'recording';
+        return $this->status === RecordingStatus::RECORDING;
     }
 
     public function isProcessing(): bool
     {
-        return $this->status === 'processing';
+        return $this->status === RecordingStatus::PROCESSING;
     }
 
     public function hasFailed(): bool
     {
-        return $this->status === 'failed';
+        return $this->status === RecordingStatus::FAILED;
     }
 
     public function getFormattedDurationAttribute(): string

@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Enums\SessionStatus;
+use App\Enums\EducationalQualification;
+use Illuminate\Validation\Rules\Enum;
 
 class RegisterController extends Controller
 {
@@ -339,7 +341,7 @@ class RegisterController extends Controller
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'education_level' => ['required', 'in:diploma,bachelor,master,phd,other'],
+            'education_level' => ['required', new Enum(EducationalQualification::class)],
             'university' => ['nullable', 'string', 'max:255'],
             'years_experience' => ['required', 'integer', 'min:0', 'max:50'],
             'bio' => ['nullable', 'string', 'max:2000'],

@@ -131,9 +131,9 @@
             'title' => $course->title,
             'subtitle' => $course->assignedTeacher?->user?->name ?? 'معلم غير محدد',
             'status' => null,
-            'status_label' => $enrollment?->enrollment_status === 'completed' ? 'مكتمل' : 'مسجل',
-            'status_classes' => $enrollment?->enrollment_status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800',
-            'is_active' => $enrollment?->enrollment_status === 'enrolled',
+            'status_label' => $enrollment?->enrollment_status === \App\Enums\EnrollmentStatus::COMPLETED ? 'مكتمل' : 'مسجل',
+            'status_classes' => $enrollment?->enrollment_status === \App\Enums\EnrollmentStatus::COMPLETED ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800',
+            'is_active' => $enrollment?->enrollment_status === \App\Enums\EnrollmentStatus::ENROLLED,
             'progress' => $enrollment?->progress_percentage ?? 0,
             'sessions_used' => null,
             'total_sessions' => null,
@@ -458,16 +458,10 @@
                                 </span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
-                                {{ $trial->status === 'approved' ? 'bg-green-100 text-green-800' :
-                                   ($trial->status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                   ($trial->status === 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800')) }}">
-                                @switch($trial->status)
-                                    @case('approved') موافق عليه @break
-                                    @case('pending') قيد المراجعة @break
-                                    @case('completed') مكتمل @break
-                                    @case('rejected') مرفوض @break
-                                    @default {{ $trial->status }}
-                                @endswitch
+                                {{ $trial->status === \App\Enums\TrialRequestStatus::APPROVED ? 'bg-green-100 text-green-800' :
+                                   ($trial->status === \App\Enums\TrialRequestStatus::PENDING ? 'bg-yellow-100 text-yellow-800' :
+                                   ($trial->status === \App\Enums\TrialRequestStatus::COMPLETED ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800')) }}">
+                                {{ $trial->status->label() }}
                             </span>
                         </div>
                     </div>
@@ -493,13 +487,13 @@
 
                     <!-- Footer -->
                     <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
-                        @if($trial->status === 'approved' && $trial->meeting_link)
+                        @if($trial->status === \App\Enums\TrialRequestStatus::APPROVED && $trial->meeting_link)
                             <a href="{{ $trial->meeting_link }}" target="_blank"
                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
                                 <i class="ri-video-line ml-1"></i>
                                 دخول الجلسة
                             </a>
-                        @elseif($trial->status === 'completed')
+                        @elseif($trial->status === \App\Enums\TrialRequestStatus::COMPLETED)
                             <a href="{{ route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $trial->teacher?->id]) }}"
                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                                 <i class="ri-arrow-left-line ml-1"></i>
@@ -507,9 +501,9 @@
                             </a>
                         @else
                             <span class="block text-center text-sm text-gray-500 py-2">
-                                @if($trial->status === 'pending')
+                                @if($trial->status === \App\Enums\TrialRequestStatus::PENDING)
                                     في انتظار الموافقة
-                                @elseif($trial->status === 'rejected')
+                                @elseif($trial->status === \App\Enums\TrialRequestStatus::REJECTED)
                                     تم رفض الطلب
                                 @endif
                             </span>

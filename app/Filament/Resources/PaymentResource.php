@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\PaymentStatus;
 
 class PaymentResource extends Resource
 {
@@ -410,7 +411,7 @@ class PaymentResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (Payment $record) => $record->status === 'pending')
+                    ->visible(fn (Payment $record) => $record->status === PaymentStatus::PENDING->value)
                     ->action(function (Payment $record) {
                         $record->markAsCompleted();
                         Notification::make()

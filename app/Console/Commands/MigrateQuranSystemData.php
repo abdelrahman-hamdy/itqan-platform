@@ -159,7 +159,7 @@ class MigrateQuranSystemData extends Command
         foreach ($circles as $circle) {
             if (!$isDryRun) {
                 // Update circle to inactive until teacher sets schedule
-                $circle->update(['status' => 'inactive']);
+                $circle->update(['status' => false]);
             }
             $migratedCount++;
         }

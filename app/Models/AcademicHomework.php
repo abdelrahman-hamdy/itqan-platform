@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\HomeworkStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,6 +55,7 @@ class AcademicHomework extends Model
     ];
 
     protected $casts = [
+        'status' => HomeworkStatus::class,
         'learning_objectives' => 'array',
         'requirements' => 'array',
         'teacher_files' => 'array',
@@ -74,23 +76,6 @@ class AcademicHomework extends Model
         'late_count' => 'integer',
         'max_files' => 'integer',
         'max_file_size_mb' => 'integer',
-    ];
-
-    protected $attributes = [
-        'status' => 'published',
-        'is_active' => true,
-        'is_mandatory' => true,
-        'submission_type' => 'both',
-        'allow_late_submissions' => true,
-        'max_files' => 5,
-        'max_file_size_mb' => 10,
-        'priority' => 'medium',
-        'grading_scale' => 'points',
-        'max_score' => 100.00,
-        'total_students' => 0,
-        'submitted_count' => 0,
-        'graded_count' => 0,
-        'late_count' => 0,
     ];
 
     /**
@@ -155,24 +140,24 @@ class AcademicHomework extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('is_active', true)->where('status', 'published');
+        return $query->where('is_active', true)->where('status', HomeworkStatus::PUBLISHED->value);
     }
 
     public function scopePublished($query)
     {
-        return $query->where('status', 'published');
+        return $query->where('status', HomeworkStatus::PUBLISHED->value);
     }
 
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now())
-            ->where('status', 'published');
+            ->where('status', HomeworkStatus::PUBLISHED->value);
     }
 
     public function scopeDueSoon($query, int $days = 3)
     {
         return $query->whereBetween('due_date', [now(), now()->addDays($days)])
-            ->where('status', 'published');
+            ->where('status', HomeworkStatus::PUBLISHED->value);
     }
 
     public function scopeNeedsGrading($query)
@@ -195,7 +180,7 @@ class AcademicHomework extends Model
      */
     public function getIsOverdueAttribute(): bool
     {
-        return $this->due_date && $this->due_date->isPast() && $this->status === 'published';
+        return $this->due_date && $this->due_date->isPast() && $this->status === HomeworkStatus::PUBLISHED;
     }
 
     public function getDaysUntilDueAttribute(): ?int
@@ -293,12 +278,12 @@ class AcademicHomework extends Model
      */
     public function publish(): bool
     {
-        if ($this->status !== 'draft') {
+        if ($this->status !== HomeworkStatus::DRAFT) {
             return false;
         }
 
         $this->update([
-            'status' => 'published',
+            'status' => HomeworkStatus::PUBLISHED,
             'assigned_at' => now(),
         ]);
 
@@ -307,18 +292,18 @@ class AcademicHomework extends Model
 
     public function close(): bool
     {
-        if ($this->status !== 'published') {
+        if ($this->status !== HomeworkStatus::PUBLISHED) {
             return false;
         }
 
-        $this->update(['status' => 'closed']);
+        $this->update(['status' => HomeworkStatus::IN_PROGRESS]);
 
         return true;
     }
 
     public function archive(): bool
     {
-        $this->update(['status' => 'archived', 'is_active' => false]);
+        $this->update(['status' => HomeworkStatus::ARCHIVED, 'is_active' => false]);
 
         return true;
     }
@@ -353,7 +338,7 @@ class AcademicHomework extends Model
 
     public function canBeSubmittedBy(int $studentId): bool
     {
-        if ($this->status !== 'published') {
+        if ($this->status !== HomeworkStatus::PUBLISHED) {
             return false;
         }
 
@@ -385,7 +370,7 @@ class AcademicHomework extends Model
             'academic_subscription_id' => $session->academic_subscription_id,
             'teacher_id' => $session->academic_teacher_id,
             'assigned_at' => now(),
-            'status' => 'published',
+            'status' => HomeworkStatus::PUBLISHED,
         ]));
     }
 
@@ -393,7 +378,7 @@ class AcademicHomework extends Model
     {
         return self::query()
             ->where('academy_id', $academyId)
-            ->where('status', 'published')
+            ->where('status', HomeworkStatus::PUBLISHED->value)
             ->where('is_active', true)
             ->whereHas('session.academicSubscription', function ($query) use ($studentId) {
                 $query->where('student_id', $studentId);

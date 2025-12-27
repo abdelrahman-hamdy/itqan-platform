@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Academy;
 use App\Models\AcademicTeacherProfile;
 use App\Models\User;
+use App\Enums\EducationalQualification;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -29,7 +30,7 @@ class AcademicTeacherProfileFactory extends Factory
             'teacher_code' => 'AT-' . str_pad(fake()->unique()->randomNumber(4), 4, '0', STR_PAD_LEFT),
             'bio_arabic' => fake()->sentence(),
             'bio_english' => fake()->sentence(),
-            'education_level' => fake()->randomElement(['bachelor', 'master', 'phd']),
+            'education_level' => fake()->randomElement(EducationalQualification::cases()),
             'teaching_experience_years' => fake()->numberBetween(1, 20),
             'session_price_individual' => fake()->randomFloat(2, 50, 200),
             'approval_status' => 'approved',

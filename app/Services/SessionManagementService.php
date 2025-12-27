@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
+use App\Enums\EnrollmentStatus;
 
 class SessionManagementService
 {
@@ -269,11 +270,11 @@ class SessionManagementService
                 ->count(),
 
             'individual_circles_active' => QuranIndividualCircle::where('quran_teacher_id', $teacherId)
-                ->whereIn('status', ['pending', 'active'])
+                ->whereIn('status', [EnrollmentStatus::PENDING->value, EnrollmentStatus::ACTIVE->value])
                 ->count(),
 
             'group_circles_active' => QuranCircle::where('quran_teacher_id', $teacherId)
-                ->where('status', 'active')
+                ->where('status', EnrollmentStatus::ACTIVE->value)
                 ->count(),
         ];
     }

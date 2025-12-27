@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
+use App\Enums\EnrollmentStatus;
 
 /**
  * Service for handling student enrollment in Quran circles.
@@ -44,7 +46,7 @@ class CircleEnrollmentService
                 // Enroll student in circle
                 $circle->students()->attach($user->id, [
                     'enrolled_at' => now(),
-                    'status' => 'enrolled',
+                    'status' => EnrollmentStatus::ENROLLED->value,
                     'attendance_count' => 0,
                     'missed_sessions' => 0,
                     'makeup_sessions_used' => 0,
@@ -67,7 +69,7 @@ class CircleEnrollmentService
                     'currency' => $circle->currency ?? 'SAR',
                     'billing_cycle' => 'monthly',
                     'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
-                    'status' => 'active',
+                    'status' => SubscriptionStatus::ACTIVE->value,
                     'memorization_level' => $circle->memorization_level ?? 'beginner',
                     'starts_at' => now(),
                     'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
@@ -129,7 +131,7 @@ class CircleEnrollmentService
                     ->where('academy_id', $academy->id)
                     ->where('quran_teacher_id', $circle->quran_teacher_id)
                     ->where('subscription_type', 'group')
-                    ->whereIn('status', ['active', 'pending'])
+                    ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
                     ->first();
 
                 if ($subscription) {
@@ -238,7 +240,7 @@ class CircleEnrollmentService
             ->where('academy_id', $academy->id)
             ->where('quran_teacher_id', $circle->quran_teacher_id)
             ->where('subscription_type', 'group')
-            ->whereIn('status', ['active', 'pending'])
+            ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
             ->with(['package', 'quranTeacherUser'])
             ->first();
 
@@ -259,7 +261,7 @@ class CircleEnrollmentService
                 'currency' => $circle->currency ?? 'SAR',
                 'billing_cycle' => 'monthly',
                 'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
-                'status' => 'active',
+                'status' => SubscriptionStatus::ACTIVE->value,
                 'memorization_level' => $circle->memorization_level ?? 'beginner',
                 'starts_at' => now(),
                 'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,

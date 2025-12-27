@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Contracts\RecordingCapable;
+use App\Enums\RecordingStatus;
 use App\Models\InteractiveCourseSession;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -42,10 +43,10 @@ class StopExpiredRecordingsCommand extends Command
         // Find InteractiveCourseSession instances with active recordings
         $sessionsWithActiveRecordings = InteractiveCourseSession::query()
             ->whereHas('recordings', function ($query) {
-                $query->where('status', 'recording');
+                $query->where('status', RecordingStatus::RECORDING->value);
             })
             ->with(['recordings' => function ($query) {
-                $query->where('status', 'recording');
+                $query->where('status', RecordingStatus::RECORDING->value);
             }])
             ->get();
 

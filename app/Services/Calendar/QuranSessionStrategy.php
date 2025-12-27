@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use App\Enums\EnrollmentStatus;
 
 /**
  * Quran teacher session strategy
@@ -145,7 +146,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
 
         return QuranIndividualCircle::where('quran_teacher_id', $teacherId)
             ->with(['subscription.package', 'sessions', 'student'])
-            ->whereIn('status', ['pending', 'active'])
+            ->whereIn('status', [EnrollmentStatus::PENDING->value, EnrollmentStatus::ACTIVE->value])
             ->whereHas('student')
             ->get()
             ->map(function ($circle) {

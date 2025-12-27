@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Enums\SessionStatus;
+use App\Enums\PayoutStatus;
 
 class PayoutService
 {
@@ -95,7 +96,7 @@ class PayoutService
                 'total_amount' => $earnings->sum('amount'),
                 'sessions_count' => $earnings->count(),
                 'breakdown' => $breakdown,
-                'status' => 'pending',
+                'status' => PayoutStatus::PENDING->value,
             ]);
 
             // Link earnings to payout and finalize them
@@ -187,7 +188,7 @@ class PayoutService
 
         return DB::transaction(function () use ($payout, $approvedBy, $notes) {
             $payout->update([
-                'status' => 'approved',
+                'status' => PayoutStatus::APPROVED->value,
                 'approved_by' => $approvedBy->id,
                 'approved_at' => now(),
                 'approval_notes' => $notes,
@@ -230,7 +231,7 @@ class PayoutService
             ]);
 
             $payout->update([
-                'status' => 'rejected',
+                'status' => PayoutStatus::REJECTED->value,
                 'rejected_by' => $rejectedBy->id,
                 'rejected_at' => now(),
                 'rejection_reason' => $reason,
@@ -267,7 +268,7 @@ class PayoutService
 
         return DB::transaction(function () use ($payout, $paidBy, $paymentDetails) {
             $payout->update([
-                'status' => 'paid',
+                'status' => PayoutStatus::PAID->value,
                 'paid_by' => $paidBy->id,
                 'paid_at' => now(),
                 'payment_method' => $paymentDetails['method'] ?? null,
@@ -371,9 +372,9 @@ class PayoutService
 
         return [
             'total_payouts' => $payouts->count(),
-            'total_paid' => $payouts->where('status', 'paid')->sum('total_amount'),
-            'total_pending' => $payouts->where('status', 'pending')->sum('total_amount'),
-            'total_approved' => $payouts->where('status', 'approved')->sum('total_amount'),
+            'total_paid' => $payouts->where('status', PayoutStatus::PAID->value)->sum('total_amount'),
+            'total_pending' => $payouts->where('status', PayoutStatus::PENDING->value)->sum('total_amount'),
+            'total_approved' => $payouts->where('status', PayoutStatus::APPROVED->value)->sum('total_amount'),
             'last_payout' => $payouts->sortByDesc('payout_month')->first(),
         ];
     }

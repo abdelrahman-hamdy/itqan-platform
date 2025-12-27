@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LessonStatus;
 use App\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -49,6 +50,7 @@ class AcademicIndividualLesson extends Model
     ];
 
     protected $casts = [
+        'status' => LessonStatus::class,
         'preferred_times' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
@@ -62,17 +64,6 @@ class AcademicIndividualLesson extends Model
         'sessions_completed' => 'integer',
         'sessions_remaining' => 'integer',
         'default_duration_minutes' => 'integer',
-    ];
-
-    protected $attributes = [
-        'status' => 'pending',
-        'total_sessions' => 0,
-        'sessions_scheduled' => 0,
-        'sessions_completed' => 0,
-        'sessions_remaining' => 0,
-        'progress_percentage' => 0,
-        'default_duration_minutes' => 60,
-        'recording_enabled' => false,
     ];
 
     /**
@@ -157,7 +148,7 @@ class AcademicIndividualLesson extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', LessonStatus::ACTIVE->value);
     }
 
     public function scopeForTeacher($query, $teacherId)
@@ -180,12 +171,12 @@ class AcademicIndividualLesson extends Model
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === LessonStatus::ACTIVE;
     }
 
     public function isCompleted(): bool
     {
-        return $this->status === 'completed';
+        return $this->status === LessonStatus::COMPLETED;
     }
 
     public function getProgressPercentageAttribute(): float

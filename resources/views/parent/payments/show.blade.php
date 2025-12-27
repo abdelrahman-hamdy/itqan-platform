@@ -16,8 +16,8 @@
         <div class="bg-white rounded-lg md:rounded-xl shadow p-4 md:p-6">
             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 md:gap-4">
                 <div class="flex items-start gap-3 md:gap-4">
-                    <div class="bg-{{ $payment->status === 'paid' ? 'green' : ($payment->status === 'pending' ? 'yellow' : 'red') }}-100 rounded-lg p-3 md:p-4 flex-shrink-0">
-                        <i class="ri-money-dollar-circle-line text-2xl md:text-3xl text-{{ $payment->status === 'paid' ? 'green' : ($payment->status === 'pending' ? 'yellow' : 'red') }}-600"></i>
+                    <div class="bg-{{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'green' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'yellow' : 'red') }}-100 rounded-lg p-3 md:p-4 flex-shrink-0">
+                        <i class="ri-money-dollar-circle-line text-2xl md:text-3xl text-{{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'green' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'yellow' : 'red') }}-600"></i>
                     </div>
                     <div class="min-w-0">
                         <h1 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-900 break-words">فاتورة رقم #{{ $payment->transaction_id ?? $payment->id }}</h1>
@@ -25,11 +25,11 @@
                     </div>
                 </div>
                 <span class="self-start px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full flex-shrink-0
-                    {{ $payment->status === 'paid' ? 'bg-green-100 text-green-800' : '' }}
-                    {{ $payment->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                    {{ $payment->status === 'failed' ? 'bg-red-100 text-red-800' : '' }}
-                    {{ $payment->status === 'refunded' ? 'bg-gray-100 text-gray-800' : '' }}">
-                    {{ $payment->status === 'paid' ? 'مدفوع' : ($payment->status === 'pending' ? 'قيد الانتظار' : ($payment->status === 'failed' ? 'فاشل' : 'مسترد')) }}
+                    {{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'bg-green-100 text-green-800' : '' }}
+                    {{ $payment->status === \App\Enums\PaymentStatus::PENDING ? 'bg-yellow-100 text-yellow-800' : '' }}
+                    {{ $payment->status === \App\Enums\PaymentStatus::FAILED ? 'bg-red-100 text-red-800' : '' }}
+                    {{ $payment->status === \App\Enums\PaymentStatus::REFUNDED ? 'bg-gray-100 text-gray-800' : '' }}">
+                    {{ $payment->status->label() }}
                 </span>
             </div>
         </div>
@@ -170,7 +170,7 @@
                 @endif
 
                 <!-- Failure Reason -->
-                @if($payment->status === 'failed' && $payment->failure_reason)
+                @if($payment->status === \App\Enums\PaymentStatus::FAILED && $payment->failure_reason)
                     <div class="bg-red-50 border border-red-200 rounded-lg p-4 md:p-6">
                         <div class="flex items-start gap-2.5 md:gap-3">
                             <i class="ri-error-warning-line text-xl md:text-2xl text-red-600 flex-shrink-0"></i>
@@ -183,7 +183,7 @@
                 @endif
 
                 <!-- Refund Information -->
-                @if($payment->status === 'refunded' && $payment->refund_reason)
+                @if($payment->status === \App\Enums\PaymentStatus::REFUNDED && $payment->refund_reason)
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 md:p-6">
                         <div class="flex items-start gap-2.5 md:gap-3">
                             <i class="ri-refund-line text-xl md:text-2xl text-gray-600 flex-shrink-0"></i>
@@ -202,7 +202,7 @@
             <!-- Sidebar -->
             <div class="space-y-4 md:space-y-6">
                 <!-- Quick Actions -->
-                @if($payment->status === 'paid')
+                @if($payment->status === \App\Enums\PaymentStatus::COMPLETED)
                     <div class="bg-white rounded-lg md:rounded-xl shadow p-4 md:p-6">
                         <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">إجراءات سريعة</h3>
                         <div class="space-y-2">
@@ -232,7 +232,7 @@
                             </div>
                         </div>
 
-                        @if($payment->status === 'paid' && $payment->paid_at)
+                        @if($payment->status === \App\Enums\PaymentStatus::COMPLETED && $payment->paid_at)
                             <div class="flex items-start gap-2.5 md:gap-3">
                                 <div class="bg-green-100 rounded-full p-1.5 md:p-2 flex-shrink-0">
                                     <i class="ri-check-line text-sm md:text-base text-green-600"></i>
@@ -244,7 +244,7 @@
                             </div>
                         @endif
 
-                        @if($payment->status === 'failed')
+                        @if($payment->status === \App\Enums\PaymentStatus::FAILED)
                             <div class="flex items-start gap-2.5 md:gap-3">
                                 <div class="bg-red-100 rounded-full p-1.5 md:p-2 flex-shrink-0">
                                     <i class="ri-close-line text-sm md:text-base text-red-600"></i>
@@ -256,7 +256,7 @@
                             </div>
                         @endif
 
-                        @if($payment->status === 'refunded' && $payment->refunded_at)
+                        @if($payment->status === \App\Enums\PaymentStatus::REFUNDED && $payment->refunded_at)
                             <div class="flex items-start gap-2.5 md:gap-3">
                                 <div class="bg-gray-100 rounded-full p-1.5 md:p-2 flex-shrink-0">
                                     <i class="ri-refund-line text-sm md:text-base text-gray-600"></i>

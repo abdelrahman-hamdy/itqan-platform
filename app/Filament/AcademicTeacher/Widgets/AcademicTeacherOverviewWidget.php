@@ -14,6 +14,7 @@ use App\Models\TeacherEarning;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\HomeworkSubmissionStatus;
 
 class AcademicTeacherOverviewWidget extends BaseWidget
 {
@@ -78,6 +79,7 @@ class AcademicTeacherOverviewWidget extends BaseWidget
             ->count();
 
         // Active interactive courses
+        // Note: InteractiveCourse uses custom statuses, not enum-based
         $activeCourses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
             ->whereIn('status', ['published', 'in_progress'])
             ->count();
@@ -90,7 +92,7 @@ class AcademicTeacherOverviewWidget extends BaseWidget
 
         $pendingHomework = HomeworkSubmission::where('submitable_type', AcademicSession::class)
             ->whereIn('submitable_id', $teacherSessionIds)
-            ->where('status', 'submitted')
+            ->where('status', HomeworkSubmissionStatus::SUBMITTED->value)
             ->count();
 
         // Upcoming sessions (next 7 days)

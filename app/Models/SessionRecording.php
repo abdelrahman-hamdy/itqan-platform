@@ -66,10 +66,6 @@ class SessionRecording extends Model
         'status' => RecordingStatus::class,
     ];
 
-    protected $attributes = [
-        'status' => 'recording',
-        'file_format' => 'mp4',
-    ];
 
     // ========================================
     // RELATIONSHIPS
@@ -92,7 +88,7 @@ class SessionRecording extends Model
      */
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', RecordingStatus::COMPLETED->value);
     }
 
     /**
@@ -100,7 +96,7 @@ class SessionRecording extends Model
      */
     public function scopeRecording($query)
     {
-        return $query->where('status', 'recording');
+        return $query->where('status', RecordingStatus::RECORDING->value);
     }
 
     /**
@@ -108,7 +104,7 @@ class SessionRecording extends Model
      */
     public function scopeProcessing($query)
     {
-        return $query->where('status', 'processing');
+        return $query->where('status', RecordingStatus::PROCESSING->value);
     }
 
     /**
@@ -116,7 +112,7 @@ class SessionRecording extends Model
      */
     public function scopeFailed($query)
     {
-        return $query->where('status', 'failed');
+        return $query->where('status', RecordingStatus::FAILED->value);
     }
 
     /**
@@ -144,7 +140,7 @@ class SessionRecording extends Model
      */
     public function isCompleted(): bool
     {
-        return $this->status === 'completed';
+        return $this->status === RecordingStatus::COMPLETED;
     }
 
     /**
@@ -152,7 +148,7 @@ class SessionRecording extends Model
      */
     public function isRecording(): bool
     {
-        return $this->status === 'recording';
+        return $this->status === RecordingStatus::RECORDING;
     }
 
     /**
@@ -160,7 +156,7 @@ class SessionRecording extends Model
      */
     public function isProcessing(): bool
     {
-        return $this->status === 'processing';
+        return $this->status === RecordingStatus::PROCESSING;
     }
 
     /**
@@ -168,7 +164,7 @@ class SessionRecording extends Model
      */
     public function hasFailed(): bool
     {
-        return $this->status === 'failed';
+        return $this->status === RecordingStatus::FAILED;
     }
 
     /**
@@ -176,7 +172,7 @@ class SessionRecording extends Model
      */
     public function isDeleted(): bool
     {
-        return $this->status === 'deleted';
+        return $this->status === RecordingStatus::DELETED;
     }
 
     /**
@@ -286,7 +282,7 @@ class SessionRecording extends Model
     public function markAsProcessing(): void
     {
         $this->update([
-            'status' => 'processing',
+            'status' => RecordingStatus::PROCESSING,
             'ended_at' => $this->ended_at ?? now(),
         ]);
     }
@@ -297,7 +293,7 @@ class SessionRecording extends Model
     public function markAsCompleted(array $fileData): void
     {
         $this->update([
-            'status' => 'completed',
+            'status' => RecordingStatus::COMPLETED,
             'file_path' => $fileData['file_path'] ?? $this->file_path,
             'file_name' => $fileData['file_name'] ?? $this->file_name,
             'file_size' => $fileData['file_size'] ?? $this->file_size,
@@ -313,7 +309,7 @@ class SessionRecording extends Model
     public function markAsFailed(string $error): void
     {
         $this->update([
-            'status' => 'failed',
+            'status' => RecordingStatus::FAILED,
             'processing_error' => $error,
             'processed_at' => now(),
         ]);
@@ -325,7 +321,7 @@ class SessionRecording extends Model
     public function markAsDeleted(): void
     {
         $this->update([
-            'status' => 'deleted',
+            'status' => RecordingStatus::DELETED,
         ]);
     }
 

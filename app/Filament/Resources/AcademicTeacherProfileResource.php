@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Services\AcademyContextService;
 use Filament\Notifications\Notification;
 use App\Enums\SubscriptionStatus;
+use App\Enums\EducationalQualification;
 
 class AcademicTeacherProfileResource extends BaseResource
 {
@@ -134,14 +135,8 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->schema([
                                 Forms\Components\Select::make('education_level')
                                     ->label('المؤهل التعليمي')
-                                    ->options([
-                                        'diploma' => 'دبلوم',
-                                        'bachelor' => 'بكالوريوس',
-                                        'master' => 'ماجستير',
-                                        'phd' => 'دكتوراه',
-                                        'other' => 'أخرى',
-                                    ])
-                                    ->default('bachelor')
+                                    ->options(EducationalQualification::options())
+                                    ->default(EducationalQualification::BACHELOR->value)
                                     ->required(),
                                 Forms\Components\TextInput::make('university')
                                     ->label('الجامعة')

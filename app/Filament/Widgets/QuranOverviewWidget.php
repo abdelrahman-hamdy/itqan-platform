@@ -11,6 +11,7 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SubscriptionStatus;
+use App\Enums\TrialRequestStatus;
 
 class QuranOverviewWidget extends BaseWidget
 {
@@ -29,9 +30,9 @@ class QuranOverviewWidget extends BaseWidget
             ->count();
         
         $pendingApprovals = QuranTeacherProfile::where('approval_status', 'pending')->count();
-        
+
         $totalTrialRequests = QuranTrialRequest::count();
-        $pendingTrials = QuranTrialRequest::where('status', 'pending')->count();
+        $pendingTrials = QuranTrialRequest::where('status', TrialRequestStatus::PENDING->value)->count();
         
         $activeSubscriptions = QuranSubscription::where('status', SubscriptionStatus::ACTIVE->value)
             ->where('payment_status', 'current')

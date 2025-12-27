@@ -2,7 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\EnrollmentStatus;
+use App\Enums\HomeworkSubmissionStatus;
 use App\Enums\InteractiveCourseStatus;
+use App\Enums\LessonStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 use App\Models\Academy;
@@ -474,7 +479,7 @@ class GenerateTestData extends Command
                 'name' => 'Private Mathematics Tutoring',
                 'academic_subject_id' => $subject->id,
                 'academic_grade_level_id' => $gradeLevel->id,
-                'status' => 'active',
+                'status' => LessonStatus::ACTIVE->value,
                 'notes' => 'Regular tutoring sessions',
             ]
         );
@@ -547,7 +552,7 @@ class GenerateTestData extends Command
                     'scheduled_date' => now()->addDays(7 + ($i * 3)),
                     'scheduled_time' => '18:00',
                     'duration_minutes' => 60,
-                    'status' => $i < 1 ? 'completed' : 'scheduled',
+                    'status' => $i < 1 ? SessionStatus::COMPLETED->value : SessionStatus::SCHEDULED->value,
                 ]
             );
         }
@@ -562,8 +567,8 @@ class GenerateTestData extends Command
                 [
                     'academy_id' => $this->academy->id,
                     'enrollment_date' => now(),
-                    'enrollment_status' => 'enrolled',
-                    'payment_status' => 'paid',
+                    'enrollment_status' => EnrollmentStatus::ENROLLED->value,
+                    'payment_status' => PaymentStatus::COMPLETED->value,
                     'payment_amount' => $course->student_price ?? 800,
                     'completion_percentage' => 0,
                     'attendance_count' => 0,
@@ -669,10 +674,10 @@ class GenerateTestData extends Command
         $student = $this->testUsers['student'];
 
         $payments = [
-            ['status' => 'completed', 'amount' => 400, 'type' => 'subscription'],
-            ['status' => 'completed', 'amount' => 350, 'type' => 'subscription'],
-            ['status' => 'pending', 'amount' => 800, 'type' => 'course'],
-            ['status' => 'refunded', 'amount' => 200, 'type' => 'subscription'],
+            ['status' => PaymentStatus::COMPLETED->value, 'amount' => 400, 'type' => 'subscription'],
+            ['status' => PaymentStatus::COMPLETED->value, 'amount' => 350, 'type' => 'subscription'],
+            ['status' => PaymentStatus::PENDING->value, 'amount' => 800, 'type' => 'course'],
+            ['status' => PaymentStatus::REFUNDED->value, 'amount' => 200, 'type' => 'subscription'],
         ];
 
         foreach ($payments as $payment) {
@@ -815,7 +820,7 @@ class GenerateTestData extends Command
                         'submission_code' => 'HW-' . strtoupper(substr(md5(rand()), 0, 8)),
                         'submission_text' => 'Here are my completed exercises.',
                         'submitted_at' => now(),
-                        'status' => 'submitted',
+                        'status' => HomeworkSubmissionStatus::SUBMITTED->value,
                     ]
                 );
             }
@@ -891,7 +896,7 @@ class GenerateTestData extends Command
                     [
                         'academy_id' => $this->academy->id,
                         'teacher_id' => $quranSession->quran_teacher_id,
-                        'attendance_status' => 'attended',
+                        'attendance_status' => AttendanceStatus::ATTENDED->value,
                         'new_memorization_degree' => 4,
                         'reservation_degree' => 4,
                         'notes' => 'Excellent progress in memorization. Keep up the good work!',
@@ -915,7 +920,7 @@ class GenerateTestData extends Command
                     [
                         'academy_id' => $this->academy->id,
                         'teacher_id' => $academicSession->academic_teacher_id,
-                        'attendance_status' => 'attended',
+                        'attendance_status' => AttendanceStatus::ATTENDED->value,
                         'lesson_understanding_degree' => 8, // 0-10 scale
                         'homework_completion_degree' => 9, // 0-10 scale
                         'notes' => 'Good understanding of the material.',

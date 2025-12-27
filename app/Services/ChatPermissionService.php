@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
+use App\Enums\EnrollmentStatus;
 
 class ChatPermissionService
 {
@@ -197,7 +199,7 @@ class ChatPermissionService
                     ->where('student_id', $student->id)
                     ->where('teacher_id', $teacher->id)
                     ->where('academy_id', $academyId)
-                    ->where('status', 'active')
+                    ->where('status', SubscriptionStatus::ACTIVE->value)
             );
 
             // Active Quran subscriptions
@@ -207,7 +209,7 @@ class ChatPermissionService
                     ->where('student_id', $student->id)
                     ->where('quran_teacher_id', $teacher->id)
                     ->where('academy_id', $academyId)
-                    ->where('status', 'active')
+                    ->where('status', SubscriptionStatus::ACTIVE->value)
             );
 
             // Group Quran circle memberships - fixed column name
@@ -218,7 +220,7 @@ class ChatPermissionService
                     ->where('quran_circles.quran_teacher_id', $teacher->id)
                     ->where('quran_circle_students.student_id', $student->id)
                     ->where('quran_circles.academy_id', $academyId)
-                    ->where('quran_circle_students.status', 'enrolled')
+                    ->where('quran_circle_students.status', EnrollmentStatus::ENROLLED->value)
                     ->where('quran_circles.status', true)
             );
         })->exists();

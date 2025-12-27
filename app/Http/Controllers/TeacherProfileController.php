@@ -15,6 +15,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
+use App\Enums\TrialRequestStatus;
+use App\Enums\EducationalQualification;
+use Illuminate\Validation\Rules\Enum;
 
 class TeacherProfileController extends Controller
 {
@@ -322,7 +326,7 @@ class TeacherProfileController extends Controller
 
         // Add Academic teacher specific fields
         if ($user->isAcademicTeacher()) {
-            $rules['education_level'] = 'nullable|string|in:diploma,bachelor,master,phd,other';
+            $rules['education_level'] = ['nullable', new Enum(EducationalQualification::class)];
             $rules['university'] = 'nullable|string|max:255';
         }
 
@@ -385,7 +389,11 @@ class TeacherProfileController extends Controller
         // Get pending and scheduled trial requests
         $pendingTrialRequests = \App\Models\QuranTrialRequest::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $academy->id)
-            ->whereIn('status', ['pending', 'approved', 'scheduled'])
+            ->whereIn('status', [
+                TrialRequestStatus::PENDING->value,
+                TrialRequestStatus::APPROVED->value,
+                TrialRequestStatus::SCHEDULED->value
+            ])
             ->with(['student', 'academy', 'trialSession'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -394,7 +402,10 @@ class TeacherProfileController extends Controller
         // Get active subscriptions
         $activeSubscriptions = \App\Models\QuranSubscription::where('quran_teacher_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->whereIn('status', ['active', 'pending'])
+            ->whereIn('status', [
+                SubscriptionStatus::ACTIVE->value,
+                SubscriptionStatus::PENDING->value
+            ])
             ->whereIn('payment_status', ['paid', 'pending'])
             ->with(['student', 'package', 'individualCircle'])
             ->orderBy('created_at', 'desc')
@@ -404,7 +415,10 @@ class TeacherProfileController extends Controller
         // Get recent sessions
         $recentSessions = \App\Models\QuranSession::where('quran_teacher_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->whereIn('status', ['scheduled', 'completed'])
+            ->whereIn('status', [
+                SessionStatus::SCHEDULED->value,
+                SessionStatus::COMPLETED->value
+            ])
             ->with(['student', 'subscription'])
             ->orderBy('scheduled_at', 'desc')
             ->limit(5)

@@ -28,6 +28,7 @@ use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\TrialRequestStatus;
 
 class QuranTrialRequestResource extends BaseTeacherResource
 {
@@ -75,8 +76,8 @@ class QuranTrialRequestResource extends BaseTeacherResource
 
         // Allow editing if trial request belongs to current teacher
         // Teachers can update status and schedule trial sessions
-        return $record->teacher_id === $user->quranTeacherProfile->id && 
-               in_array($record->status, ['pending', 'approved', 'scheduled']);
+        return $record->teacher_id === $user->quranTeacherProfile->id &&
+               in_array($record->status, [TrialRequestStatus::PENDING->value, TrialRequestStatus::APPROVED->value, TrialRequestStatus::SCHEDULED->value]);
     }
 
     /**
@@ -332,8 +333,8 @@ class QuranTrialRequestResource extends BaseTeacherResource
 
             Filter::make('needs_action')
                 ->label('يتطلب إجراء')
-                ->query(fn (Builder $query): Builder => 
-                    $query->whereIn('status', ['pending', 'approved'])
+                ->query(fn (Builder $query): Builder =>
+                    $query->whereIn('status', [TrialRequestStatus::PENDING->value, TrialRequestStatus::APPROVED->value])
                           ->whereNull('scheduled_at')
                 ),
 
@@ -345,8 +346,8 @@ class QuranTrialRequestResource extends BaseTeacherResource
 
             Filter::make('overdue')
                 ->label('متأخر')
-                ->query(fn (Builder $query): Builder => 
-                    $query->where('status', 'approved')
+                ->query(fn (Builder $query): Builder =>
+                    $query->where('status', TrialRequestStatus::APPROVED->value)
                           ->where('scheduled_at', '<', now())
                 ),
         ];
@@ -380,10 +381,10 @@ class QuranTrialRequestResource extends BaseTeacherResource
                     ->label('موافقة سريعة')
                     ->icon('heroicon-m-check-circle')
                     ->color('success')
-                    ->visible(fn (QuranTrialRequest $record): bool => $record->status === 'pending')
+                    ->visible(fn (QuranTrialRequest $record): bool => $record->status === TrialRequestStatus::PENDING->value)
                     ->action(function (QuranTrialRequest $record) {
                         $record->update([
-                            'status' => 'approved',
+                            'status' => TrialRequestStatus::APPROVED->value,
                             'teacher_notes' => $record->teacher_notes . "\n\n[تم الموافقة السريع من قبل المعلم في " . now()->toDateTimeString() . "]",
                         ]);
                     }),
@@ -392,7 +393,7 @@ class QuranTrialRequestResource extends BaseTeacherResource
                     ->label('جدولة الجلسة')
                     ->icon('heroicon-m-calendar')
                     ->color('info')
-                    ->visible(fn (QuranTrialRequest $record): bool => in_array($record->status, ['pending', 'approved']))
+                    ->visible(fn (QuranTrialRequest $record): bool => in_array($record->status, [TrialRequestStatus::PENDING->value, TrialRequestStatus::APPROVED->value]))
                     ->form([
                         DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة التجريبية')
@@ -401,7 +402,7 @@ class QuranTrialRequestResource extends BaseTeacherResource
                     ])
                     ->action(function (QuranTrialRequest $record, array $data) {
                         $record->update([
-                            'status' => 'scheduled',
+                            'status' => TrialRequestStatus::SCHEDULED->value,
                             'scheduled_at' => $data['scheduled_at'],
                         ]);
                     }),
@@ -421,9 +422,9 @@ class QuranTrialRequestResource extends BaseTeacherResource
                 ->color('success')
                 ->action(function ($records) {
                     foreach ($records as $record) {
-                        if ($record->status === 'pending') {
+                        if ($record->status === TrialRequestStatus::PENDING->value) {
                             $record->update([
-                                'status' => 'approved',
+                                'status' => TrialRequestStatus::APPROVED->value,
                                 'teacher_notes' => ($record->teacher_notes ?? '') . "\n\n[تمت الموافقة الجماعية في " . now()->toDateTimeString() . "]",
                             ]);
                         }
@@ -442,9 +443,9 @@ class QuranTrialRequestResource extends BaseTeacherResource
                 ])
                 ->action(function (array $data, $records) {
                     foreach ($records as $record) {
-                        if (in_array($record->status, ['pending', 'approved'])) {
+                        if (in_array($record->status, [TrialRequestStatus::PENDING->value, TrialRequestStatus::APPROVED->value])) {
                             $record->update([
-                                'status' => 'scheduled',
+                                'status' => TrialRequestStatus::SCHEDULED->value,
                                 'scheduled_at' => $data['scheduled_at'],
                             ]);
                         }

@@ -360,7 +360,7 @@
                                 <a href="{{ $hw['submit_url'] ?? route('student.homework.submit', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'id' => $hw['id'], 'type' => $hw['type']]) }}"
                                    class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl md:rounded-lg transition-colors whitespace-nowrap flex-1 sm:flex-initial">
                                     <i class="ri-send-plane-line ml-1"></i>
-                                    @if($status === 'draft')
+                                    @if($status === \App\Enums\HomeworkSubmissionStatus::DRAFT)
                                         استكمال التسليم
                                     @else
                                         تسليم الواجب

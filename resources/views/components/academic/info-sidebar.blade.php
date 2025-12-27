@@ -116,11 +116,8 @@
         <div class="mt-6 pt-4 border-t border-gray-200">
             <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-600">الحالة</span>
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                    {{ $subscription->status === 'active' ? 'bg-green-100 text-green-800' : 
-                       ($subscription->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                    {{ $subscription->status === 'active' ? 'نشط' : 
-                       ($subscription->status === 'pending' ? 'قيد الانتظار' : 'مكتمل') }}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $subscription->status->badgeClasses() }}">
+                    {{ $subscription->status->label() }}
                 </span>
             </div>
         </div>

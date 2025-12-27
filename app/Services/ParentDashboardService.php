@@ -10,6 +10,7 @@ use App\Models\ParentProfile;
 use App\Models\Payment;
 use App\Models\QuranSession;
 use Illuminate\Support\Collection;
+use App\Enums\PaymentStatus;
 
 /**
  * Parent Dashboard Service
@@ -88,7 +89,7 @@ class ParentDashboardService
         // Outstanding payments
         $outstandingPayments = Payment::whereIn('user_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->whereIn('status', ['pending', 'processing'])
+            ->whereIn('status', [PaymentStatus::PENDING->value, PaymentStatus::PROCESSING->value])
             ->sum('amount');
 
         return [

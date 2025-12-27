@@ -15,6 +15,9 @@ use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\ApprovalStatus;
+use App\Enums\EducationalQualification;
+use Illuminate\Validation\Rules\Enum;
 
 class AcademicTeacherController extends Controller
 {
@@ -151,7 +154,7 @@ class AcademicTeacherController extends Controller
                 'user_id' => 'required|exists:users,id|unique:academic_teachers,user_id',
                 'academy_id' => 'required|exists:academies,id',
                 'teacher_code' => 'nullable|string|max:50|unique:academic_teachers,teacher_code',
-                'education_level' => 'required|string|in:diploma,bachelor,master,phd,other',
+                'education_level' => ['required', new Enum(EducationalQualification::class)],
                 'university' => 'required|string|max:255',
                 'graduation_year' => 'required|integer|min:1950|max:' . (date('Y') + 1),
                 'teaching_experience_years' => 'required|integer|min:0|max:50',
@@ -249,7 +252,7 @@ class AcademicTeacherController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'teacher_code' => 'nullable|string|max:50|unique:academic_teachers,teacher_code,' . $id,
-                'education_level' => 'sometimes|string|in:diploma,bachelor,master,phd,other',
+                'education_level' => ['sometimes', new Enum(EducationalQualification::class)],
                 'university' => 'sometimes|string|max:255',
                 'graduation_year' => 'sometimes|integer|min:1950|max:' . (date('Y') + 1),
                 'teaching_experience_years' => 'sometimes|integer|min:0|max:50',
@@ -404,7 +407,7 @@ class AcademicTeacherController extends Controller
                 'is_approved' => true,
                 'approval_date' => now(),
                 'approved_by' => auth()->id(),
-                'status' => 'approved'
+                'status' => ApprovalStatus::APPROVED->value
             ]);
 
             return response()->json([
@@ -514,7 +517,7 @@ class AcademicTeacherController extends Controller
             $teacher = AcademicTeacherProfile::findOrFail($id);
 
             $teacher->update([
-                'status' => 'approved',
+                'status' => ApprovalStatus::APPROVED->value,
                 'is_active' => true
             ]);
 
@@ -601,7 +604,7 @@ class AcademicTeacherController extends Controller
             $query = AcademicTeacherProfile::with(['user:id,name,email,avatar', 'subjects:id,name'])
                 ->where('is_approved', true)
                 ->where('is_active', true)
-                ->where('status', 'approved');
+                ->where('status', ApprovalStatus::APPROVED->value);
 
             // فلترة حسب المادة
             $query->whereHas('subjects', function ($q) use ($request) {

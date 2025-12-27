@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PayoutStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,6 +40,7 @@ class TeacherPayout extends Model
     ];
 
     protected $casts = [
+        'status' => PayoutStatus::class,
         'payout_month' => 'date',
         'total_amount' => 'decimal:2',
         'sessions_count' => 'integer',
@@ -138,7 +140,7 @@ class TeacherPayout extends Model
      */
     public function canApprove(): bool
     {
-        return $this->status === 'pending';
+        return $this->status === PayoutStatus::PENDING;
     }
 
     /**
@@ -146,7 +148,7 @@ class TeacherPayout extends Model
      */
     public function canReject(): bool
     {
-        return in_array($this->status, ['pending', 'approved']);
+        return in_array($this->status, [PayoutStatus::PENDING, PayoutStatus::APPROVED]);
     }
 
     /**
@@ -154,7 +156,7 @@ class TeacherPayout extends Model
      */
     public function canMarkPaid(): bool
     {
-        return $this->status === 'approved';
+        return $this->status === PayoutStatus::APPROVED;
     }
 
     /**
@@ -188,7 +190,7 @@ class TeacherPayout extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', PayoutStatus::PENDING->value);
     }
 
     /**
@@ -196,7 +198,7 @@ class TeacherPayout extends Model
      */
     public function scopeApproved($query)
     {
-        return $query->where('status', 'approved');
+        return $query->where('status', PayoutStatus::APPROVED->value);
     }
 
     /**
@@ -204,7 +206,7 @@ class TeacherPayout extends Model
      */
     public function scopePaid($query)
     {
-        return $query->where('status', 'paid');
+        return $query->where('status', PayoutStatus::PAID->value);
     }
 
     /**
@@ -212,7 +214,7 @@ class TeacherPayout extends Model
      */
     public function scopeRejected($query)
     {
-        return $query->where('status', 'rejected');
+        return $query->where('status', PayoutStatus::REJECTED->value);
     }
 
     /**

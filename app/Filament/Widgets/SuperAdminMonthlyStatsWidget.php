@@ -14,6 +14,7 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\PaymentStatus;
 
 class SuperAdminMonthlyStatsWidget extends BaseWidget
 {
@@ -64,13 +65,13 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
         $monthSessions = $monthQuranSessions + $monthAcademicSessions + $monthInteractiveSessions;
 
         // Revenue - This Month
-        $thisMonthRevenue = Payment::where('status', 'completed')
+        $thisMonthRevenue = Payment::where('status', PaymentStatus::COMPLETED->value)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('amount');
 
         // Last Month Revenue for comparison
-        $lastMonthRevenue = Payment::where('status', 'completed')
+        $lastMonthRevenue = Payment::where('status', PaymentStatus::COMPLETED->value)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->sum('amount');
@@ -137,13 +138,13 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
 
         // Revenue - This Month for academy
         $thisMonthRevenue = Payment::where('academy_id', $academy->id)
-            ->where('status', SessionStatus::COMPLETED->value)
+            ->where('status', PaymentStatus::COMPLETED->value)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('amount');
 
         $lastMonthRevenue = Payment::where('academy_id', $academy->id)
-            ->where('status', SessionStatus::COMPLETED->value)
+            ->where('status', PaymentStatus::COMPLETED->value)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->sum('amount');

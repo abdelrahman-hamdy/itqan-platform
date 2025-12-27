@@ -15,6 +15,7 @@ use App\Traits\ScopedToAcademy;
 use App\Models\Traits\HasReviews;
 use Illuminate\Support\Facades\DB;
 use App\Models\AcademicSubject;
+use App\Enums\EducationalQualification;
 
 class AcademicTeacherProfile extends Model
 {
@@ -74,6 +75,7 @@ class AcademicTeacherProfile extends Model
         'total_courses_created' => 'integer',
         'available_time_start' => 'datetime:H:i',
         'available_time_end' => 'datetime:H:i',
+        'education_level' => EducationalQualification::class,
     ];
 
     /**
@@ -303,6 +305,14 @@ class AcademicTeacherProfile extends Model
     public function getDisplayNameAttribute(): string
     {
         return $this->full_name . ' (' . $this->teacher_code . ')';
+    }
+
+    /**
+     * Get the education level label in Arabic
+     */
+    public function getEducationLevelInArabicAttribute(): ?string
+    {
+        return $this->education_level?->label();
     }
 
     /**

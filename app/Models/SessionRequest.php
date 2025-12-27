@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SessionRequestStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -72,6 +73,7 @@ class SessionRequest extends Model
     ];
 
     protected $casts = [
+        'status' => SessionRequestStatus::class,
         'proposed_schedule' => 'array',
         'current_proposal' => 'array',
         'is_trial_request' => 'boolean',
@@ -155,7 +157,7 @@ class SessionRequest extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', SessionRequestStatus::PENDING->value);
     }
 
     /**
@@ -163,7 +165,7 @@ class SessionRequest extends Model
      */
     public function scopeAgreed($query)
     {
-        return $query->where('status', 'agreed');
+        return $query->where('status', SessionRequestStatus::AGREED->value);
     }
 
     /**
@@ -171,7 +173,7 @@ class SessionRequest extends Model
      */
     public function scopePaid($query)
     {
-        return $query->where('status', 'paid');
+        return $query->where('status', SessionRequestStatus::PAID->value);
     }
 
     /**
@@ -179,9 +181,13 @@ class SessionRequest extends Model
      */
     public function scopeExpired($query)
     {
-        return $query->where('status', 'expired')
+        return $query->where('status', SessionRequestStatus::EXPIRED->value)
             ->orWhere(function ($q) {
-                $q->whereNotIn('status', ['paid', 'cancelled', 'rejected'])
+                $q->whereNotIn('status', [
+                    SessionRequestStatus::PAID->value,
+                    SessionRequestStatus::CANCELLED->value,
+                    'rejected'
+                ])
                     ->where('expires_at', '<', now());
             });
     }
@@ -191,8 +197,12 @@ class SessionRequest extends Model
      */
     public function isExpired(): bool
     {
-        return $this->status === 'expired' ||
-            ($this->expires_at && $this->expires_at->isPast() && !in_array($this->status, ['paid', 'cancelled', 'rejected']));
+        return $this->status === SessionRequestStatus::EXPIRED ||
+            ($this->expires_at && $this->expires_at->isPast() && !in_array($this->status, [
+                SessionRequestStatus::PAID,
+                SessionRequestStatus::CANCELLED,
+                'rejected'
+            ]));
     }
 
     /**
@@ -200,8 +210,12 @@ class SessionRequest extends Model
      */
     public function canNegotiate(): bool
     {
-        return in_array($this->status, ['pending', 'teacher_proposed', 'student_negotiating', 'teacher_revising'])
-            && !$this->isExpired();
+        return in_array($this->status, [
+            SessionRequestStatus::PENDING,
+            'teacher_proposed',
+            'student_negotiating',
+            'teacher_revising'
+        ]) && !$this->isExpired();
     }
 
     /**

@@ -9,6 +9,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\BusinessRequestStatus;
 
 class RecentBusinessRequestsWidget extends BaseWidget
 {
@@ -85,8 +86,8 @@ class RecentBusinessRequestsWidget extends BaseWidget
                     ->label('مراجعة')
                     ->icon('heroicon-o-check')
                     ->color('info')
-                    ->visible(fn (BusinessServiceRequest $record): bool => $record->status === 'pending')
-                    ->action(fn (BusinessServiceRequest $record) => $record->update(['status' => 'reviewed']))
+                    ->visible(fn (BusinessServiceRequest $record): bool => $record->status === BusinessRequestStatus::PENDING->value)
+                    ->action(fn (BusinessServiceRequest $record) => $record->update(['status' => BusinessRequestStatus::REVIEWED->value]))
                     ->requiresConfirmation()
                     ->modalHeading('تأكيد المراجعة')
                     ->modalDescription('هل تريد تحديث حالة الطلب إلى "تم المراجعة"؟'),
@@ -101,7 +102,7 @@ class RecentBusinessRequestsWidget extends BaseWidget
 
     protected function getTableHeading(): string
     {
-        $pendingCount = BusinessServiceRequest::where('status', 'pending')->count();
+        $pendingCount = BusinessServiceRequest::where('status', BusinessRequestStatus::PENDING->value)->count();
 
         if ($pendingCount > 0) {
             return "طلبات الخدمات الأخيرة ({$pendingCount} في الانتظار)";

@@ -281,11 +281,11 @@
               </div>
               <div class="flex-shrink-0">
                 <span class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold
-                  {{ $currentMonthPayout->status === 'paid' ? 'bg-white/30' : '' }}
-                  {{ $currentMonthPayout->status === 'approved' ? 'bg-blue-500/30' : '' }}
-                  {{ $currentMonthPayout->status === 'pending' ? 'bg-yellow-500/30' : '' }}
-                  {{ $currentMonthPayout->status === 'rejected' ? 'bg-red-500/30' : '' }}">
-                  {{ __('earnings.status.' . $currentMonthPayout->status) }}
+                  {{ $currentMonthPayout->status === \App\Enums\PayoutStatus::PAID ? 'bg-white/30' : '' }}
+                  {{ $currentMonthPayout->status === \App\Enums\PayoutStatus::APPROVED ? 'bg-blue-500/30' : '' }}
+                  {{ $currentMonthPayout->status === \App\Enums\PayoutStatus::PENDING ? 'bg-yellow-500/30' : '' }}
+                  {{ $currentMonthPayout->status === \App\Enums\PayoutStatus::REJECTED ? 'bg-red-500/30' : '' }}">
+                  {{ __('earnings.status.' . $currentMonthPayout->status->value) }}
                 </span>
               </div>
             </div>
@@ -339,11 +339,11 @@
                       <div class="flex flex-wrap items-center gap-2 md:gap-3 mb-1 md:mb-2">
                         <h3 class="text-base md:text-lg font-semibold text-gray-900">{{ $payout->payout_code }}</h3>
                         <span class="inline-flex items-center px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs font-medium
-                          {{ $payout->status === 'paid' ? 'bg-green-100 text-green-800' : '' }}
-                          {{ $payout->status === 'approved' ? 'bg-blue-100 text-blue-800' : '' }}
-                          {{ $payout->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                          {{ $payout->status === 'rejected' ? 'bg-red-100 text-red-800' : '' }}">
-                          {{ __('earnings.status.' . $payout->status) }}
+                          {{ $payout->status === \App\Enums\PayoutStatus::PAID ? 'bg-green-100 text-green-800' : '' }}
+                          {{ $payout->status === \App\Enums\PayoutStatus::APPROVED ? 'bg-blue-100 text-blue-800' : '' }}
+                          {{ $payout->status === \App\Enums\PayoutStatus::PENDING ? 'bg-yellow-100 text-yellow-800' : '' }}
+                          {{ $payout->status === \App\Enums\PayoutStatus::REJECTED ? 'bg-red-100 text-red-800' : '' }}">
+                          {{ __('earnings.status.' . $payout->status->value) }}
                         </span>
                       </div>
                       <p class="text-xs md:text-sm text-gray-500">

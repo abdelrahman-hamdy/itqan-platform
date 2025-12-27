@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Enums\SessionStatus;
+use App\Enums\EnrollmentStatus;
+use App\Enums\ApprovalStatus;
 
 class QuranCircleController extends Controller
 {
@@ -85,8 +87,8 @@ class QuranCircleController extends Controller
 
         $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
-            ->where('approval_status', 'approved')
+            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->get();
 
         return view('quran.circles.create', compact('academy', 'teachers'));
@@ -231,7 +233,7 @@ class QuranCircleController extends Controller
 
         // Calculate circle statistics
         $stats = [
-            'enrolled_students' => $circle->enrollments()->where('status', 'enrolled')->count(),
+            'enrolled_students' => $circle->enrollments()->where('status', EnrollmentStatus::ENROLLED->value)->count(),
             'completed_students' => $circle->enrollments()->where('status', SessionStatus::COMPLETED->value)->count(),
             'dropped_students' => $circle->enrollments()->where('status', 'dropped')->count(),
             'sessions_completed' => $circle->quranSessions()->completed()->count(),
@@ -265,8 +267,8 @@ class QuranCircleController extends Controller
 
         $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
-            ->where('approval_status', 'approved')
+            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->get();
 
         $circle->load('quranTeacher');
@@ -581,7 +583,7 @@ class QuranCircleController extends Controller
             $circle->enrollments()->create([
                 'student_id' => $student->id,
                 'enrolled_at' => now(),
-                'status' => 'enrolled',
+                'status' => EnrollmentStatus::ENROLLED->value,
                 'current_level' => 'beginner',
             ]);
 
@@ -622,7 +624,7 @@ class QuranCircleController extends Controller
 
         $query = QuranCircle::with('quranTeacher')
             ->where('academy_id', $academy->id)
-            ->where('status', 'pending')
+            ->where('status', EnrollmentStatus::PENDING->value)
             ->where('enrollment_status', 'open')
             ->whereColumn('enrolled_students', '<', 'max_students');
 

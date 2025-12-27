@@ -50,14 +50,7 @@
     <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
       <i class="ri-graduation-cap-line text-green-500"></i>
       <span>
-        {{ match($teacher->education_level) {
-            'diploma' => 'دبلوم',
-            'bachelor' => 'بكالوريوس',
-            'master' => 'ماجستير',
-            'phd' => 'دكتوراه',
-            'other' => 'أخرى',
-            default => $teacher->education_level
-        } }}
+        {{ $teacher->education_level instanceof \App\Enums\EducationalQualification ? $teacher->education_level->label() : \App\Enums\EducationalQualification::getLabel($teacher->education_level) }}
         @if($teacher->university)
           - {{ $teacher->university }}
         @endif

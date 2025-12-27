@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TrialRequestStatus;
 use App\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,36 +38,12 @@ class QuranTrialRequest extends Model
     ];
 
     protected $casts = [
+        'status' => TrialRequestStatus::class,
         'learning_goals' => 'array',
         'student_age' => 'integer',
         // Removed: scheduled_at - now in QuranSession
         'completed_at' => 'datetime',
         'rating' => 'integer',
-    ];
-
-    // Status constants
-    const STATUS_PENDING = 'pending';
-
-    const STATUS_APPROVED = 'approved';
-
-    const STATUS_REJECTED = 'rejected';
-
-    const STATUS_SCHEDULED = 'scheduled';
-
-    const STATUS_COMPLETED = 'completed';
-
-    const STATUS_CANCELLED = 'cancelled';
-
-    const STATUS_NO_SHOW = 'no_show';
-
-    const STATUSES = [
-        self::STATUS_PENDING => 'في الانتظار',
-        self::STATUS_APPROVED => 'موافق عليه',
-        self::STATUS_REJECTED => 'مرفوض',
-        self::STATUS_SCHEDULED => 'مجدول',
-        self::STATUS_COMPLETED => 'مكتمل',
-        self::STATUS_CANCELLED => 'ملغي',
-        self::STATUS_NO_SHOW => 'غياب',
     ];
 
     // Learning level constants
@@ -194,22 +171,22 @@ class QuranTrialRequest extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', self::STATUS_PENDING);
+        return $query->where('status', TrialRequestStatus::PENDING->value);
     }
 
     public function scopeApproved($query)
     {
-        return $query->where('status', self::STATUS_APPROVED);
+        return $query->where('status', TrialRequestStatus::APPROVED->value);
     }
 
     public function scopeScheduled($query)
     {
-        return $query->where('status', self::STATUS_SCHEDULED);
+        return $query->where('status', TrialRequestStatus::SCHEDULED->value);
     }
 
     public function scopeCompleted($query)
     {
-        return $query->where('status', self::STATUS_COMPLETED);
+        return $query->where('status', TrialRequestStatus::COMPLETED->value);
     }
 
     public function scopeForTeacher($query, $teacherId)
@@ -227,7 +204,7 @@ class QuranTrialRequest extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return self::STATUSES[$this->status] ?? $this->status;
+        return $this->status->label();
     }
 
     public function getLevelLabelAttribute(): string
@@ -246,27 +223,27 @@ class QuranTrialRequest extends Model
 
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === TrialRequestStatus::PENDING;
     }
 
     public function isApproved(): bool
     {
-        return $this->status === self::STATUS_APPROVED;
+        return $this->status === TrialRequestStatus::APPROVED;
     }
 
     public function isScheduled(): bool
     {
-        return $this->status === self::STATUS_SCHEDULED;
+        return $this->status === TrialRequestStatus::SCHEDULED;
     }
 
     public function isCompleted(): bool
     {
-        return $this->status === self::STATUS_COMPLETED;
+        return $this->status === TrialRequestStatus::COMPLETED;
     }
 
     public function canBeScheduled(): bool
     {
-        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_APPROVED]);
+        return in_array($this->status, [TrialRequestStatus::PENDING, TrialRequestStatus::APPROVED]);
     }
 
     /**
@@ -275,14 +252,14 @@ class QuranTrialRequest extends Model
     public function approve(): bool
     {
         return $this->update([
-            'status' => self::STATUS_APPROVED,
+            'status' => TrialRequestStatus::APPROVED,
         ]);
     }
 
     public function reject(): bool
     {
         return $this->update([
-            'status' => self::STATUS_REJECTED,
+            'status' => TrialRequestStatus::REJECTED,
         ]);
     }
 
@@ -293,14 +270,14 @@ class QuranTrialRequest extends Model
     public function schedule(): bool
     {
         return $this->update([
-            'status' => self::STATUS_SCHEDULED,
+            'status' => TrialRequestStatus::SCHEDULED,
         ]);
     }
 
     public function complete(?int $rating = null, ?string $feedback = null): bool
     {
         return $this->update([
-            'status' => self::STATUS_COMPLETED,
+            'status' => TrialRequestStatus::COMPLETED,
             'completed_at' => now(),
             'rating' => $rating,
             'feedback' => $feedback,

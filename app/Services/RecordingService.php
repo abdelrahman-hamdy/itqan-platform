@@ -7,6 +7,7 @@ use App\Models\SessionRecording;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Enums\SessionStatus;
+use App\Enums\RecordingStatus;
 
 /**
  * RecordingService
@@ -65,7 +66,7 @@ class RecordingService
                 'recordable_id' => $session->id,
                 'recording_id' => $egressResponse['egress_id'],
                 'meeting_room' => $config['room_name'],
-                'status' => 'recording',
+                'status' => RecordingStatus::RECORDING->value,
                 'started_at' => now(),
                 'metadata' => $config['metadata'] ?? [],
                 'file_format' => $config['preset'] === 'AUDIO_ONLY' ? 'm4a' : 'mp4',
@@ -330,16 +331,16 @@ class RecordingService
 
         return [
             'total_count' => $recordings->count(),
-            'completed_count' => $recordings->where('status', SessionStatus::COMPLETED->value)->count(),
-            'recording_count' => $recordings->where('status', 'recording')->count(),
-            'processing_count' => $recordings->where('status', 'processing')->count(),
-            'failed_count' => $recordings->where('status', 'failed')->count(),
-            'total_size_bytes' => $recordings->where('status', SessionStatus::COMPLETED->value)->sum('file_size'),
-            'total_size_formatted' => $this->formatBytes($recordings->where('status', SessionStatus::COMPLETED->value)->sum('file_size')),
-            'total_duration_seconds' => $recordings->where('status', SessionStatus::COMPLETED->value)->sum('duration'),
-            'total_duration_formatted' => $this->formatDuration($recordings->where('status', SessionStatus::COMPLETED->value)->sum('duration')),
-            'average_file_size_bytes' => $recordings->where('status', SessionStatus::COMPLETED->value)->avg('file_size'),
-            'average_duration_seconds' => $recordings->where('status', SessionStatus::COMPLETED->value)->avg('duration'),
+            'completed_count' => $recordings->where('status', RecordingStatus::COMPLETED->value)->count(),
+            'recording_count' => $recordings->where('status', RecordingStatus::RECORDING->value)->count(),
+            'processing_count' => $recordings->where('status', RecordingStatus::PROCESSING->value)->count(),
+            'failed_count' => $recordings->where('status', RecordingStatus::FAILED->value)->count(),
+            'total_size_bytes' => $recordings->where('status', RecordingStatus::COMPLETED->value)->sum('file_size'),
+            'total_size_formatted' => $this->formatBytes($recordings->where('status', RecordingStatus::COMPLETED->value)->sum('file_size')),
+            'total_duration_seconds' => $recordings->where('status', RecordingStatus::COMPLETED->value)->sum('duration'),
+            'total_duration_formatted' => $this->formatDuration($recordings->where('status', RecordingStatus::COMPLETED->value)->sum('duration')),
+            'average_file_size_bytes' => $recordings->where('status', RecordingStatus::COMPLETED->value)->avg('file_size'),
+            'average_duration_seconds' => $recordings->where('status', RecordingStatus::COMPLETED->value)->avg('duration'),
         ];
     }
 

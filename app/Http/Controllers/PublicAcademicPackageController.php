@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
+use App\Enums\ApprovalStatus;
 
 class PublicAcademicPackageController extends Controller
 {
@@ -40,7 +42,7 @@ class PublicAcademicPackageController extends Controller
         // Get all active academic teachers
         $teachers = AcademicTeacherProfile::where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->with(['user', 'subjects', 'gradeLevels'])
             ->get();
 
@@ -78,7 +80,7 @@ class PublicAcademicPackageController extends Controller
         $teacher = AcademicTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->with(['user'])
             ->first();
 
@@ -138,7 +140,7 @@ class PublicAcademicPackageController extends Controller
         $teacher = AcademicTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->first();
 
         if (! $teacher) {
@@ -209,7 +211,10 @@ class PublicAcademicPackageController extends Controller
                 ->where('student_id', $user->id)
                 ->where('teacher_id', $teacher->id)
                 ->where('subject_id', $request->subject_id)
-                ->whereIn('status', ['active', 'pending'])
+                ->whereIn('status', [
+                    SubscriptionStatus::ACTIVE->value,
+                    SubscriptionStatus::PENDING->value
+                ])
                 ->whereIn('payment_status', ['current', 'pending'])
                 ->first();
 
@@ -290,7 +295,7 @@ class PublicAcademicPackageController extends Controller
                 ],
                 'timezone' => 'Asia/Riyadh',
                 'auto_create_google_meet' => true,
-                'status' => 'active', // Valid status value
+                'status' => SubscriptionStatus::ACTIVE->value, // Valid status value
                 'payment_status' => 'pending', // Payment still pending
                 'has_trial_session' => false,
                 'trial_session_used' => false,
@@ -447,7 +452,7 @@ class PublicAcademicPackageController extends Controller
         $teacher = AcademicTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->with(['user', 'subjects', 'gradeLevels'])
             ->first();
 
@@ -469,7 +474,10 @@ class PublicAcademicPackageController extends Controller
             'total_sessions' => $teacher->total_sessions ?? 0,
             'years_experience' => $teacher->experience_years ?? 0,
             'active_subscriptions' => \App\Models\AcademicSubscription::where('teacher_id', $teacher->id)
-                ->whereIn('status', ['active', 'pending'])
+                ->whereIn('status', [
+                    SubscriptionStatus::ACTIVE->value,
+                    SubscriptionStatus::PENDING->value
+                ])
                 ->count(),
         ];
 
@@ -504,7 +512,7 @@ class PublicAcademicPackageController extends Controller
         // Get teachers that match this package's subjects and grade levels
         $teachers = AcademicTeacherProfile::where('academy_id', $academy->id)
             ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->with(['user', 'subjects', 'gradeLevels'])
             ->whereHas('subjects', function ($query) use ($package) {
                 if ($package->subject_ids) {

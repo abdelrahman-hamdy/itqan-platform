@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\RecordingService;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Log;
+use App\Enums\RecordingStatus;
 
 /**
  * Trait for models that support session recording
@@ -138,7 +139,7 @@ trait HasRecording
     public function isRecording(): bool
     {
         return $this->recordings()
-            ->whereIn('status', ['recording', 'processing'])
+            ->whereIn('status', [RecordingStatus::RECORDING->value, RecordingStatus::PROCESSING->value])
             ->exists();
     }
 
@@ -158,7 +159,7 @@ trait HasRecording
     public function getActiveRecording(): ?SessionRecording
     {
         return $this->recordings()
-            ->whereIn('status', ['recording', 'processing'])
+            ->whereIn('status', [RecordingStatus::RECORDING->value, RecordingStatus::PROCESSING->value])
             ->latest()
             ->first();
     }
@@ -169,7 +170,7 @@ trait HasRecording
     public function getLatestCompletedRecording(): ?SessionRecording
     {
         return $this->recordings()
-            ->where('status', 'completed')
+            ->where('status', RecordingStatus::COMPLETED->value)
             ->latest('completed_at')
             ->first();
     }
@@ -305,7 +306,7 @@ trait HasRecording
     public function getRecordingStats(): array
     {
         $allRecordings = $this->getRecordings();
-        $completedRecordings = $allRecordings->where('status', 'completed');
+        $completedRecordings = $allRecordings->where('status', RecordingStatus::COMPLETED->value);
 
         $totalSizeBytes = $completedRecordings->sum('file_size');
         $totalDurationSeconds = $completedRecordings->sum('duration');
@@ -313,8 +314,8 @@ trait HasRecording
         return [
             'total_recordings' => $allRecordings->count(),
             'completed_recordings' => $completedRecordings->count(),
-            'failed_recordings' => $allRecordings->where('status', 'failed')->count(),
-            'processing_recordings' => $allRecordings->where('status', 'processing')->count(),
+            'failed_recordings' => $allRecordings->where('status', RecordingStatus::FAILED->value)->count(),
+            'processing_recordings' => $allRecordings->where('status', RecordingStatus::PROCESSING->value)->count(),
             'is_recording' => $this->isRecording(),
             'active_recording' => $this->getActiveRecording(),
             'latest_completed' => $this->getLatestCompletedRecording(),

@@ -15,6 +15,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
+use App\Enums\InteractiveCourseStatus;
 
 /**
  * Academic teacher session strategy
@@ -72,7 +74,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
 
         return AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
-            ->whereIn('status', ['active', 'approved'])
+            ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::APPROVED->value])
             ->with(['student', 'subject', 'sessions'])
             ->get()
             ->map(function ($subscription) {
@@ -123,7 +125,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
 
         return InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
-            ->whereIn('status', ['active', 'published'])
+            ->whereIn('status', [InteractiveCourseStatus::ACTIVE->value, InteractiveCourseStatus::PUBLISHED->value])
             ->with(['subject', 'sessions', 'enrollments'])
             ->get()
             ->map(function ($course) {

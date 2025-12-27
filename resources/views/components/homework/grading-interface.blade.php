@@ -270,7 +270,7 @@
                         تحديث التقييم
                     </button>
 
-                    @if($submission->submission_status !== 'returned')
+                    @if($submission->submission_status !== \App\Enums\HomeworkSubmissionStatus::RETURNED)
                         <button
                             type="submit"
                             name="action"

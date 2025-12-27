@@ -158,18 +158,9 @@
                                 @endif
 
                                 @if($course->assignedTeacher->education_level)
-                                @php
-                                    $educationLevelArabic = match($course->assignedTeacher->education_level) {
-                                        'diploma' => 'دبلوم',
-                                        'bachelor' => 'بكالوريوس',
-                                        'master' => 'ماجستير',
-                                        'phd' => 'دكتوراه',
-                                        default => $course->assignedTeacher->education_level
-                                    };
-                                @endphp
                                 <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm bg-gray-50 rounded-lg px-2 py-1.5 sm:bg-transparent sm:p-0">
                                     <i class="ri-book-line text-blue-500"></i>
-                                    <span class="text-gray-900 font-medium">{{ $educationLevelArabic }}</span>
+                                    <span class="text-gray-900 font-medium">{{ $course->assignedTeacher->education_level_in_arabic }}</span>
                                 </div>
                                 @endif
 
@@ -457,10 +448,8 @@
                                     <span class="text-sm text-gray-700">حالة الدفع</span>
                                 </div>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    {{ $enrollment->payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                                       ($enrollment->payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                    {{ $enrollment->payment_status === 'paid' ? 'مدفوع' :
-                                       ($enrollment->payment_status === 'pending' ? 'قيد الانتظار' : $enrollment->payment_status) }}
+                                    {{ $enrollment->payment_status->badgeClasses() }}">
+                                    {{ $enrollment->payment_status->label() }}
                                 </span>
                             </div>
                         @endif

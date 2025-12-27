@@ -99,11 +99,11 @@
                         class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('education_level') border-red-500 ring-2 ring-red-200 @enderror"
                     >
                         <option value="">اختر المؤهل التعليمي</option>
-                        <option value="diploma" {{ old('education_level') == 'diploma' ? 'selected' : '' }}>دبلوم</option>
-                        <option value="bachelor" {{ old('education_level') == 'bachelor' ? 'selected' : '' }}>بكالوريوس</option>
-                        <option value="master" {{ old('education_level') == 'master' ? 'selected' : '' }}>ماجستير</option>
-                        <option value="phd" {{ old('education_level') == 'phd' ? 'selected' : '' }}>دكتوراه</option>
-                        <option value="other" {{ old('education_level') == 'other' ? 'selected' : '' }}>أخرى</option>
+                        @foreach(\App\Enums\EducationalQualification::cases() as $qualification)
+                            <option value="{{ $qualification->value }}" {{ old('education_level') == $qualification->value ? 'selected' : '' }}>
+                                {{ $qualification->label() }}
+                            </option>
+                        @endforeach
                     </select>
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="ri-arrow-down-s-line text-gray-400"></i>

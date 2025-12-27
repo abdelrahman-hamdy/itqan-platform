@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,6 +67,7 @@ class Payment extends Model
     ];
 
     protected $casts = [
+        'status' => PaymentStatus::class,
         'amount' => 'decimal:2',
         'exchange_rate' => 'decimal:4',
         'amount_in_base_currency' => 'decimal:2',
@@ -109,23 +111,23 @@ class Payment extends Model
     // Scopes
     public function scopeSuccessful($query)
     {
-        return $query->where('status', 'completed')
+        return $query->where('status', PaymentStatus::COMPLETED->value)
                     ->where('payment_status', 'paid');
     }
 
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', PaymentStatus::PENDING->value);
     }
 
     public function scopeFailed($query)
     {
-        return $query->where('status', 'failed');
+        return $query->where('status', PaymentStatus::FAILED->value);
     }
 
     public function scopeRefunded($query)
     {
-        return $query->where('status', 'refunded');
+        return $query->where('status', PaymentStatus::REFUNDED->value);
     }
 
     public function scopeByMethod($query, $method)
@@ -221,22 +223,22 @@ class Payment extends Model
 
     public function getIsSuccessfulAttribute(): bool
     {
-        return $this->status === 'completed' && $this->payment_status === 'paid';
+        return $this->status === PaymentStatus::COMPLETED && $this->payment_status === 'paid';
     }
 
     public function getIsPendingAttribute(): bool
     {
-        return $this->status === 'pending';
+        return $this->status === PaymentStatus::PENDING;
     }
 
     public function getIsFailedAttribute(): bool
     {
-        return $this->status === 'failed';
+        return $this->status === PaymentStatus::FAILED;
     }
 
     public function getIsRefundedAttribute(): bool
     {
-        return in_array($this->status, ['refunded', 'partially_refunded']);
+        return in_array($this->status, [PaymentStatus::REFUNDED, PaymentStatus::PARTIALLY_REFUNDED]);
     }
 
     public function getCanRefundAttribute(): bool
@@ -259,7 +261,7 @@ class Payment extends Model
     public function markAsPending(): self
     {
         $this->update([
-            'status' => 'pending',
+            'status' => PaymentStatus::PENDING,
             'payment_status' => 'pending'
         ]);
 
@@ -269,7 +271,7 @@ class Payment extends Model
     public function markAsProcessing(): self
     {
         $this->update([
-            'status' => 'processing',
+            'status' => PaymentStatus::PROCESSING,
             'payment_status' => 'processing',
             'processed_at' => now()
         ]);
@@ -280,7 +282,7 @@ class Payment extends Model
     public function markAsCompleted(array $gatewayData = []): self
     {
         $this->update([
-            'status' => 'completed',
+            'status' => PaymentStatus::COMPLETED,
             'payment_status' => 'paid',
             'confirmed_at' => now(),
             'gateway_response' => $gatewayData,
@@ -299,7 +301,7 @@ class Payment extends Model
     public function markAsFailed(?string $reason = null, array $gatewayData = []): self
     {
         $this->update([
-            'status' => 'failed',
+            'status' => PaymentStatus::FAILED,
             'payment_status' => 'failed',
             'failure_reason' => $reason,
             'gateway_response' => $gatewayData
@@ -311,7 +313,7 @@ class Payment extends Model
     public function cancel(?string $reason = null): self
     {
         $this->update([
-            'status' => 'cancelled',
+            'status' => PaymentStatus::CANCELLED,
             'payment_status' => 'cancelled',
             'failure_reason' => $reason
         ]);
@@ -330,7 +332,7 @@ class Payment extends Model
         }
 
         $totalRefunded = ($this->refund_amount ?? 0) + $amount;
-        $status = $totalRefunded >= $this->amount ? 'refunded' : 'partially_refunded';
+        $status = $totalRefunded >= $this->amount ? PaymentStatus::REFUNDED : PaymentStatus::PARTIALLY_REFUNDED;
 
         $this->update([
             'status' => $status,
@@ -443,7 +445,7 @@ class Payment extends Model
     public static function getTotalRevenue(int $academyId, string $period = 'all'): float
     {
         $query = self::where('academy_id', $academyId)
-                    ->where('status', 'completed');
+                    ->where('status', PaymentStatus::COMPLETED->value);
 
         switch ($period) {
             case 'today':
@@ -468,11 +470,11 @@ class Payment extends Model
     {
         return [
             'total_payments' => self::where('academy_id', $academyId)->count(),
-            'successful_payments' => self::where('academy_id', $academyId)->where('status', 'completed')->count(),
-            'pending_payments' => self::where('academy_id', $academyId)->where('status', 'pending')->count(),
-            'failed_payments' => self::where('academy_id', $academyId)->where('status', 'failed')->count(),
-            'total_revenue' => self::where('academy_id', $academyId)->where('status', 'completed')->sum('amount'),
-            'total_refunded' => self::where('academy_id', $academyId)->whereIn('status', ['refunded', 'partially_refunded'])->sum('refund_amount'),
+            'successful_payments' => self::where('academy_id', $academyId)->where('status', PaymentStatus::COMPLETED->value)->count(),
+            'pending_payments' => self::where('academy_id', $academyId)->where('status', PaymentStatus::PENDING->value)->count(),
+            'failed_payments' => self::where('academy_id', $academyId)->where('status', PaymentStatus::FAILED->value)->count(),
+            'total_revenue' => self::where('academy_id', $academyId)->where('status', PaymentStatus::COMPLETED->value)->sum('amount'),
+            'total_refunded' => self::where('academy_id', $academyId)->whereIn('status', [PaymentStatus::REFUNDED->value, PaymentStatus::PARTIALLY_REFUNDED->value])->sum('refund_amount'),
             'this_month_revenue' => self::getTotalRevenue($academyId, 'this_month'),
             'this_week_revenue' => self::getTotalRevenue($academyId, 'this_week'),
             'today_revenue' => self::getTotalRevenue($academyId, 'today')

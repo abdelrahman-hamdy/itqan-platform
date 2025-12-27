@@ -71,17 +71,13 @@
                     <i class="ri-information-line text-gray-600 ml-2"></i>
                     <span class="text-sm text-gray-700">حالة الاشتراك</span>
                 </div>
-                <span class="text-sm font-bold 
-                    @if($lesson->status === 'active') text-green-600
-                    @elseif($lesson->status === 'paused') text-yellow-600
-                    @elseif($lesson->status === 'completed') text-blue-600
-                    @elseif($lesson->status === 'cancelled') text-red-600
+                <span class="text-sm font-bold
+                    @if($lesson->status === \App\Enums\LessonStatus::ACTIVE) text-green-600
+                    @elseif($lesson->status === \App\Enums\LessonStatus::PENDING) text-yellow-600
+                    @elseif($lesson->status === \App\Enums\LessonStatus::COMPLETED) text-blue-600
+                    @elseif($lesson->status === \App\Enums\LessonStatus::CANCELLED) text-red-600
                     @else text-gray-600 @endif">
-                    @if($lesson->status === 'active') نشط
-                    @elseif($lesson->status === 'paused') متوقف
-                    @elseif($lesson->status === 'completed') مكتمل
-                    @elseif($lesson->status === 'cancelled') ملغي
-                    @else {{ $lesson->status }} @endif
+                    {{ $lesson->status->label() }}
                 </span>
             </div>
 

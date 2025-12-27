@@ -75,18 +75,11 @@
                 <span class="text-sm font-bold 
                     @if(($isAcademic ? $subscription->status : $subscription->status) === 'active') text-green-600
                     @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'paused') text-yellow-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'expired') text-blue-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'cancelled') text-red-600
-                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'suspended') text-orange-600
+                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === \App\Enums\SubscriptionStatus::EXPIRED) text-blue-600
+                    @elseif(($isAcademic ? $subscription->status : $subscription->status) === \App\Enums\SubscriptionStatus::CANCELLED) text-red-600
                     @else text-gray-600 @endif">
                     @php $status = $isAcademic ? $subscription->status : $subscription->status; @endphp
-                    @if($status === 'active') نشط
-                    @elseif($status === 'paused') متوقف
-                    @elseif($status === 'expired') منتهي
-                    @elseif($status === 'cancelled') ملغي
-                    @elseif($status === 'suspended') موقف
-                    @elseif($status === 'pending') في الانتظار
-                    @else {{ $status }} @endif
+                    {{ $status->label() }}
                 </span>
             </div>
 
