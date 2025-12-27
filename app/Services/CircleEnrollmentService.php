@@ -43,8 +43,17 @@ class CircleEnrollmentService
             DB::transaction(function () use ($circle, $user) {
                 $academy = $user->academy;
 
+                // Lock the circle row to prevent race conditions during enrollment
+                // This ensures only one enrollment can happen at a time for this circle
+                $lockedCircle = QuranCircle::lockForUpdate()->find($circle->id);
+
+                // Double-check capacity after acquiring lock
+                if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
+                    throw new \RuntimeException('الحلقة ممتلئة. يرجى اختيار حلقة أخرى.');
+                }
+
                 // Enroll student in circle
-                $circle->students()->attach($user->id, [
+                $lockedCircle->students()->attach($user->id, [
                     'enrolled_at' => now(),
                     'status' => EnrollmentStatus::ENROLLED->value,
                     'attendance_count' => 0,
@@ -57,31 +66,31 @@ class CircleEnrollmentService
                 QuranSubscription::create([
                     'academy_id' => $academy->id,
                     'student_id' => $user->id,
-                    'quran_teacher_id' => $circle->quran_teacher_id,
+                    'quran_teacher_id' => $lockedCircle->quran_teacher_id,
                     'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
                     'subscription_type' => 'group',
-                    'total_sessions' => $circle->sessions_per_month ?? 8,
+                    'total_sessions' => $lockedCircle->sessions_per_month ?? 8,
                     'sessions_used' => 0,
-                    'sessions_remaining' => $circle->sessions_per_month ?? 8,
-                    'total_price' => $circle->monthly_fee ?? 0,
+                    'sessions_remaining' => $lockedCircle->sessions_per_month ?? 8,
+                    'total_price' => $lockedCircle->monthly_fee ?? 0,
                     'discount_amount' => 0,
-                    'final_price' => $circle->monthly_fee ?? 0,
-                    'currency' => $circle->currency ?? 'SAR',
+                    'final_price' => $lockedCircle->monthly_fee ?? 0,
+                    'currency' => $lockedCircle->currency ?? 'SAR',
                     'billing_cycle' => 'monthly',
-                    'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
+                    'payment_status' => ($lockedCircle->monthly_fee && $lockedCircle->monthly_fee > 0) ? 'pending' : 'paid',
                     'status' => SubscriptionStatus::ACTIVE->value,
-                    'memorization_level' => $circle->memorization_level ?? 'beginner',
+                    'memorization_level' => $lockedCircle->memorization_level ?? 'beginner',
                     'starts_at' => now(),
-                    'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
+                    'next_payment_at' => ($lockedCircle->monthly_fee && $lockedCircle->monthly_fee > 0) ? now()->addMonth() : null,
                     'auto_renew' => true,
                 ]);
 
-                // Update circle enrollment count
-                $circle->increment('enrolled_students');
+                // Update circle enrollment count atomically
+                $lockedCircle->increment('enrolled_students');
 
-                // Check if circle is now full
-                if ($circle->enrolled_students >= $circle->max_students) {
-                    $circle->update(['enrollment_status' => 'full']);
+                // Check if circle is now full using fresh count
+                if ($lockedCircle->fresh()->enrolled_students >= $lockedCircle->max_students) {
+                    $lockedCircle->update(['enrollment_status' => 'full']);
                 }
             });
 
@@ -123,13 +132,16 @@ class CircleEnrollmentService
             DB::transaction(function () use ($circle, $user) {
                 $academy = $user->academy;
 
+                // Lock the circle row to prevent race conditions
+                $lockedCircle = QuranCircle::lockForUpdate()->find($circle->id);
+
                 // Remove student from circle
-                $circle->students()->detach($user->id);
+                $lockedCircle->students()->detach($user->id);
 
                 // Cancel the group subscription if it exists
                 $subscription = QuranSubscription::where('student_id', $user->id)
                     ->where('academy_id', $academy->id)
-                    ->where('quran_teacher_id', $circle->quran_teacher_id)
+                    ->where('quran_teacher_id', $lockedCircle->quran_teacher_id)
                     ->where('subscription_type', 'group')
                     ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
                     ->first();
@@ -138,12 +150,12 @@ class CircleEnrollmentService
                     $subscription->cancel('Student left the circle');
                 }
 
-                // Update circle enrollment count
-                $circle->decrement('enrolled_students');
+                // Update circle enrollment count atomically
+                $lockedCircle->decrement('enrolled_students');
 
                 // If circle was full, open it for enrollment
-                if ($circle->enrollment_status === 'full') {
-                    $circle->update(['enrollment_status' => 'open']);
+                if ($lockedCircle->enrollment_status === 'full') {
+                    $lockedCircle->update(['enrollment_status' => 'open']);
                 }
             });
 

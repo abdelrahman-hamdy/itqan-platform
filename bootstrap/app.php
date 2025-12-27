@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'control-participants' => \App\Http\Middleware\CanControlParticipants::class,
             'redirect.authenticated.public' => \App\Http\Middleware\RedirectAuthenticatedPublicViews::class,
             'child.selection' => \App\Http\Middleware\ChildSelectionMiddleware::class,
+            'parent.readonly' => \App\Http\Middleware\ParentReadOnlyMiddleware::class,
 
             // API Middleware
             'api.resolve.academy' => \App\Http\Middleware\Api\ResolveAcademy::class,
