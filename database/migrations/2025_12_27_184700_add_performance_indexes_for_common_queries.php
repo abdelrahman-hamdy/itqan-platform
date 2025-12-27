@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -13,6 +14,21 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Check if an index exists on a table (MySQL compatible).
+     */
+    private function indexExists(string $table, string $indexName): bool
+    {
+        $database = config('database.connections.mysql.database');
+        $result = DB::select(
+            "SELECT COUNT(*) as count FROM information_schema.statistics
+             WHERE table_schema = ? AND table_name = ? AND index_name = ?",
+            [$database, $table, $indexName]
+        );
+
+        return $result[0]->count > 0;
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -20,15 +36,11 @@ return new class extends Migration
         // Index for subscription queries (student_id + academy_id is a common filter)
         if (Schema::hasTable('quran_subscriptions')) {
             Schema::table('quran_subscriptions', function (Blueprint $table) {
-                // Check if index exists before adding
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexes = $sm->listTableIndexes('quran_subscriptions');
-
-                if (!isset($indexes['quran_subscriptions_student_academy_idx'])) {
+                if (! $this->indexExists('quran_subscriptions', 'quran_subscriptions_student_academy_idx')) {
                     $table->index(['student_id', 'academy_id'], 'quran_subscriptions_student_academy_idx');
                 }
 
-                if (!isset($indexes['quran_subscriptions_teacher_idx'])) {
+                if (! $this->indexExists('quran_subscriptions', 'quran_subscriptions_teacher_idx')) {
                     $table->index('quran_teacher_id', 'quran_subscriptions_teacher_idx');
                 }
             });
@@ -36,15 +48,12 @@ return new class extends Migration
 
         if (Schema::hasTable('academic_subscriptions')) {
             Schema::table('academic_subscriptions', function (Blueprint $table) {
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexes = $sm->listTableIndexes('academic_subscriptions');
-
-                if (!isset($indexes['academic_subscriptions_student_academy_idx'])) {
+                if (! $this->indexExists('academic_subscriptions', 'academic_subscriptions_student_academy_idx')) {
                     $table->index(['student_id', 'academy_id'], 'academic_subscriptions_student_academy_idx');
                 }
 
-                if (!isset($indexes['academic_subscriptions_teacher_idx'])) {
-                    $table->index('academic_teacher_id', 'academic_subscriptions_teacher_idx');
+                if (! $this->indexExists('academic_subscriptions', 'academic_subscriptions_teacher_idx')) {
+                    $table->index('teacher_id', 'academic_subscriptions_teacher_idx');
                 }
             });
         }
@@ -52,10 +61,7 @@ return new class extends Migration
         // Index for session queries (teacher + month + status is common for dashboard stats)
         if (Schema::hasTable('quran_sessions')) {
             Schema::table('quran_sessions', function (Blueprint $table) {
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexes = $sm->listTableIndexes('quran_sessions');
-
-                if (!isset($indexes['quran_sessions_teacher_month_status_idx'])) {
+                if (! $this->indexExists('quran_sessions', 'quran_sessions_teacher_month_status_idx')) {
                     $table->index(['quran_teacher_id', 'session_month', 'status'], 'quran_sessions_teacher_month_status_idx');
                 }
             });
@@ -63,10 +69,7 @@ return new class extends Migration
 
         if (Schema::hasTable('academic_sessions')) {
             Schema::table('academic_sessions', function (Blueprint $table) {
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexes = $sm->listTableIndexes('academic_sessions');
-
-                if (!isset($indexes['academic_sessions_teacher_status_idx'])) {
+                if (! $this->indexExists('academic_sessions', 'academic_sessions_teacher_status_idx')) {
                     $table->index(['academic_teacher_id', 'status'], 'academic_sessions_teacher_status_idx');
                 }
             });
@@ -75,14 +78,11 @@ return new class extends Migration
         // Index for earnings queries (academy + month is common for payout calculations)
         if (Schema::hasTable('teacher_earnings')) {
             Schema::table('teacher_earnings', function (Blueprint $table) {
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexes = $sm->listTableIndexes('teacher_earnings');
-
-                if (!isset($indexes['teacher_earnings_academy_month_idx'])) {
+                if (! $this->indexExists('teacher_earnings', 'teacher_earnings_academy_month_idx')) {
                     $table->index(['academy_id', 'earning_month'], 'teacher_earnings_academy_month_idx');
                 }
 
-                if (!isset($indexes['teacher_earnings_payout_idx'])) {
+                if (! $this->indexExists('teacher_earnings', 'teacher_earnings_payout_idx')) {
                     $table->index('payout_id', 'teacher_earnings_payout_idx');
                 }
             });
@@ -91,14 +91,11 @@ return new class extends Migration
         // Index for payments table (user_id + academy_id is common for parent/student payment queries)
         if (Schema::hasTable('payments')) {
             Schema::table('payments', function (Blueprint $table) {
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexes = $sm->listTableIndexes('payments');
-
-                if (!isset($indexes['payments_user_academy_idx'])) {
+                if (! $this->indexExists('payments', 'payments_user_academy_idx')) {
                     $table->index(['user_id', 'academy_id'], 'payments_user_academy_idx');
                 }
 
-                if (!isset($indexes['payments_status_idx'])) {
+                if (! $this->indexExists('payments', 'payments_status_idx')) {
                     $table->index('status', 'payments_status_idx');
                 }
             });
@@ -107,10 +104,7 @@ return new class extends Migration
         // Index for chat groups (circle_id for unique constraint checking)
         if (Schema::hasTable('chat_groups')) {
             Schema::table('chat_groups', function (Blueprint $table) {
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexes = $sm->listTableIndexes('chat_groups');
-
-                if (!isset($indexes['chat_groups_quran_circle_unique'])) {
+                if (! $this->indexExists('chat_groups', 'chat_groups_quran_circle_unique')) {
                     // Use unique index for idempotency
                     $table->unique('quran_circle_id', 'chat_groups_quran_circle_unique');
                 }
@@ -125,47 +119,69 @@ return new class extends Migration
     {
         if (Schema::hasTable('quran_subscriptions')) {
             Schema::table('quran_subscriptions', function (Blueprint $table) {
-                $table->dropIndex('quran_subscriptions_student_academy_idx');
-                $table->dropIndex('quran_subscriptions_teacher_idx');
+                if ($this->indexExists('quran_subscriptions', 'quran_subscriptions_student_academy_idx')) {
+                    $table->dropIndex('quran_subscriptions_student_academy_idx');
+                }
+                if ($this->indexExists('quran_subscriptions', 'quran_subscriptions_teacher_idx')) {
+                    $table->dropIndex('quran_subscriptions_teacher_idx');
+                }
             });
         }
 
         if (Schema::hasTable('academic_subscriptions')) {
             Schema::table('academic_subscriptions', function (Blueprint $table) {
-                $table->dropIndex('academic_subscriptions_student_academy_idx');
-                $table->dropIndex('academic_subscriptions_teacher_idx');
+                if ($this->indexExists('academic_subscriptions', 'academic_subscriptions_student_academy_idx')) {
+                    $table->dropIndex('academic_subscriptions_student_academy_idx');
+                }
+                if ($this->indexExists('academic_subscriptions', 'academic_subscriptions_teacher_idx')) {
+                    $table->dropIndex('academic_subscriptions_teacher_idx');
+                }
             });
         }
 
         if (Schema::hasTable('quran_sessions')) {
             Schema::table('quran_sessions', function (Blueprint $table) {
-                $table->dropIndex('quran_sessions_teacher_month_status_idx');
+                if ($this->indexExists('quran_sessions', 'quran_sessions_teacher_month_status_idx')) {
+                    $table->dropIndex('quran_sessions_teacher_month_status_idx');
+                }
             });
         }
 
         if (Schema::hasTable('academic_sessions')) {
             Schema::table('academic_sessions', function (Blueprint $table) {
-                $table->dropIndex('academic_sessions_teacher_status_idx');
+                if ($this->indexExists('academic_sessions', 'academic_sessions_teacher_status_idx')) {
+                    $table->dropIndex('academic_sessions_teacher_status_idx');
+                }
             });
         }
 
         if (Schema::hasTable('teacher_earnings')) {
             Schema::table('teacher_earnings', function (Blueprint $table) {
-                $table->dropIndex('teacher_earnings_academy_month_idx');
-                $table->dropIndex('teacher_earnings_payout_idx');
+                if ($this->indexExists('teacher_earnings', 'teacher_earnings_academy_month_idx')) {
+                    $table->dropIndex('teacher_earnings_academy_month_idx');
+                }
+                if ($this->indexExists('teacher_earnings', 'teacher_earnings_payout_idx')) {
+                    $table->dropIndex('teacher_earnings_payout_idx');
+                }
             });
         }
 
         if (Schema::hasTable('payments')) {
             Schema::table('payments', function (Blueprint $table) {
-                $table->dropIndex('payments_user_academy_idx');
-                $table->dropIndex('payments_status_idx');
+                if ($this->indexExists('payments', 'payments_user_academy_idx')) {
+                    $table->dropIndex('payments_user_academy_idx');
+                }
+                if ($this->indexExists('payments', 'payments_status_idx')) {
+                    $table->dropIndex('payments_status_idx');
+                }
             });
         }
 
         if (Schema::hasTable('chat_groups')) {
             Schema::table('chat_groups', function (Blueprint $table) {
-                $table->dropUnique('chat_groups_quran_circle_unique');
+                if ($this->indexExists('chat_groups', 'chat_groups_quran_circle_unique')) {
+                    $table->dropUnique('chat_groups_quran_circle_unique');
+                }
             });
         }
     }
