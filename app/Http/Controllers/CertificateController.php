@@ -7,6 +7,10 @@ use App\Services\CertificateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class CertificateController extends Controller
 {
@@ -20,7 +24,7 @@ class CertificateController extends Controller
     /**
      * Display a listing of student's certificates
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $academy = $request->get('academy') ?? session('current_academy');
@@ -51,7 +55,7 @@ class CertificateController extends Controller
     /**
      * Download certificate PDF
      */
-    public function download(string $subdomain, string $certificate)
+    public function download(string $subdomain, string $certificate): Response|RedirectResponse
     {
         $certificate = Certificate::findOrFail($certificate);
 
@@ -68,7 +72,7 @@ class CertificateController extends Controller
     /**
      * View certificate in browser
      */
-    public function view(string $subdomain, string $certificate)
+    public function view(string $subdomain, string $certificate): Response|RedirectResponse
     {
         $certificate = Certificate::findOrFail($certificate);
 
@@ -85,7 +89,7 @@ class CertificateController extends Controller
     /**
      * Preview certificate (for teachers/admins)
      */
-    public function preview(Request $request)
+    public function preview(Request $request): Response|JsonResponse
     {
         // Authorization - only teachers and admins
         if (!Auth::user()->hasAnyRole(['teacher', 'quran_teacher', 'academic_teacher', 'admin', 'super_admin'])) {
@@ -121,7 +125,7 @@ class CertificateController extends Controller
     /**
      * Request certificate for interactive course (student action)
      */
-    public function requestForInteractiveCourse(Request $request)
+    public function requestForInteractiveCourse(Request $request): RedirectResponse
     {
         $user = Auth::user();
 

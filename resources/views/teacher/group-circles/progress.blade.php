@@ -537,11 +537,9 @@
                                 الحالة
                             </span>
                             <span class="font-medium px-3 py-1 rounded-full text-sm
-                                {{ $circle->status === 'active' ? 'bg-green-100 text-green-800' : 
-                                   ($circle->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                {{ $circle->status === 'active' ? 'نشط' : 
-                                   ($circle->status === 'pending' ? 'في الانتظار' : 
-                                   ($circle->status === 'completed' ? 'مكتمل' : $circle->status)) }}
+                                {{ $circle->status === \App\Enums\SubscriptionStatus::ACTIVE ? 'bg-green-100 text-green-800' :
+                                   ($circle->status === \App\Enums\SubscriptionStatus::PENDING ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
+                                {{ $circle->status->label() }}
                             </span>
                         </div>
                         

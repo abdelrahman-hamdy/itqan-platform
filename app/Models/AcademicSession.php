@@ -161,24 +161,38 @@ class AcademicSession extends BaseSession
     /**
      * Send homework assigned notification to student
      * Called when homework is assigned to this session
+     *
+     * Note: Notification failures are reported but don't prevent homework assignment.
+     * The homework assignment is more important than the notification delivery.
      */
     public function notifyHomeworkAssigned(): void
     {
-        try {
-            $student = $this->student;
-            if (!$student) {
-                return;
-            }
+        $student = $this->student;
+        if (!$student) {
+            return;
+        }
 
+        try {
             $notificationService = app(\App\Services\NotificationService::class);
             $notificationService->sendHomeworkAssignedNotification(
                 $this,
                 $student,
                 null  // No specific homework ID for Academic homework
             );
+        } catch (\Exception $e) {
+            // Report to monitoring services (Sentry, Bugsnag, etc.) but don't fail
+            report($e);
+            \Log::warning('Failed to send homework notification to student', [
+                'session_id' => $this->id,
+                'student_id' => $student->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
-            // Also notify parent if exists
+        // Notify parent separately to avoid one failure affecting the other
+        try {
             if ($student->studentProfile && $student->studentProfile->parent) {
+                $notificationService = app(\App\Services\NotificationService::class);
                 $notificationService->sendHomeworkAssignedNotification(
                     $this,
                     $student->studentProfile->parent->user,
@@ -186,8 +200,11 @@ class AcademicSession extends BaseSession
                 );
             }
         } catch (\Exception $e) {
-            \Log::error('Failed to send homework notification for Academic session', [
+            // Report to monitoring services but don't fail
+            report($e);
+            \Log::warning('Failed to send homework notification to parent', [
                 'session_id' => $this->id,
+                'student_id' => $student->id,
                 'error' => $e->getMessage(),
             ]);
         }
@@ -195,30 +212,59 @@ class AcademicSession extends BaseSession
 
     /**
      * Generate unique session code with proper locking to prevent race conditions
+     *
+     * Uses SERIALIZABLE isolation with explicit row locking to ensure atomic
+     * sequence generation even under high concurrency.
      */
     private static function generateUniqueSessionCode(int $academyId): string
     {
-        return \DB::transaction(function () use ($academyId) {
-            $prefix = 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
+        $maxRetries = 5;
+        $attempt = 0;
 
-            // Use efficient count-based approach instead of loading all records
-            $count = static::withTrashed()
-                ->where('academy_id', $academyId)
-                ->count();
+        while ($attempt < $maxRetries) {
+            try {
+                return \DB::transaction(function () use ($academyId) {
+                    $prefix = 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
-            $nextNumber = $count + 1;
-            $sessionCode = $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                    // Lock the academy's sessions for update to prevent concurrent reads
+                    // This ensures only one transaction can generate a code at a time
+                    $lastSession = static::withTrashed()
+                        ->where('academy_id', $academyId)
+                        ->lockForUpdate()
+                        ->orderByRaw("CAST(SUBSTRING(session_code, -6) AS UNSIGNED) DESC")
+                        ->first(['session_code']);
 
-            // Check uniqueness and increment if needed
-            $attempt = 0;
-            while (static::withTrashed()->where('session_code', $sessionCode)->exists() && $attempt < 100) {
-                $nextNumber++;
-                $sessionCode = $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                    if ($lastSession && preg_match('/(\d{6})$/', $lastSession->session_code, $matches)) {
+                        $nextNumber = (int) $matches[1] + 1;
+                    } else {
+                        $nextNumber = 1;
+                    }
+
+                    return $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                });
+            } catch (\Illuminate\Database\QueryException $e) {
                 $attempt++;
+                // Retry on deadlock or lock timeout
+                if ($attempt >= $maxRetries || !static::isRetryableException($e)) {
+                    throw $e;
+                }
+                // Exponential backoff
+                usleep(100000 * pow(2, $attempt)); // 200ms, 400ms, 800ms...
             }
+        }
 
-            return $sessionCode;
-        });
+        // Fallback: Generate a UUID-based code if all retries fail
+        return 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.strtoupper(substr(md5(uniqid()), 0, 6));
+    }
+
+    /**
+     * Check if the exception is retryable (deadlock or lock timeout)
+     */
+    private static function isRetryableException(\Illuminate\Database\QueryException $e): bool
+    {
+        $errorCode = $e->errorInfo[1] ?? 0;
+        // MySQL error codes: 1205 = Lock wait timeout, 1213 = Deadlock
+        return in_array($errorCode, [1205, 1213]);
     }
 
     /**

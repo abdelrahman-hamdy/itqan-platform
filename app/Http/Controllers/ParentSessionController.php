@@ -8,6 +8,8 @@ use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 /**
  * Parent Session Controller
@@ -38,7 +40,7 @@ class ParentSessionController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function upcoming(Request $request)
+    public function upcoming(Request $request): RedirectResponse
     {
         $subdomain = $request->route('subdomain') ?? Auth::user()->academy?->subdomain ?? 'itqan-academy';
 
@@ -51,7 +53,7 @@ class ParentSessionController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function history(Request $request)
+    public function history(Request $request): RedirectResponse
     {
         $subdomain = $request->route('subdomain') ?? Auth::user()->academy?->subdomain ?? 'itqan-academy';
 
@@ -66,7 +68,7 @@ class ParentSessionController extends Controller
      * @param string|int $sessionId
      * @return \Illuminate\View\View
      */
-    public function show(Request $request, string $sessionType, string|int $sessionId)
+    public function show(Request $request, string $sessionType, string|int $sessionId): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;

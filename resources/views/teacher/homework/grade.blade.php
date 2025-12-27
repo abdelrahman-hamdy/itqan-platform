@@ -48,11 +48,11 @@
 
                                 <!-- Submission Status Badge -->
                                 <span class="inline-flex items-center px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-medium
-                                    {{ $submission->submission_status === 'not_submitted' ? 'bg-gray-100 text-gray-800' :
-                                       ($submission->submission_status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                                       (in_array($submission->submission_status, ['submitted', 'late']) ? 'bg-blue-100 text-blue-800' :
+                                    {{ $submission->submission_status === \App\Enums\HomeworkSubmissionStatus::NOT_STARTED ? 'bg-gray-100 text-gray-800' :
+                                       ($submission->submission_status === \App\Enums\HomeworkSubmissionStatus::DRAFT ? 'bg-yellow-100 text-yellow-800' :
+                                       (in_array($submission->submission_status, [\App\Enums\HomeworkSubmissionStatus::SUBMITTED, \App\Enums\HomeworkSubmissionStatus::LATE]) ? 'bg-blue-100 text-blue-800' :
                                        'bg-green-100 text-green-800')) }}">
-                                    {{ $submission->submission_status_text }}
+                                    {{ $submission->submission_status->label() }}
                                 </span>
 
                                 @if($submission->is_late)

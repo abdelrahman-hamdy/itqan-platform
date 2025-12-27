@@ -19,10 +19,12 @@ use App\Enums\SubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Enums\EducationalQualification;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class TeacherProfileController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $user = Auth::user();
         $academy = $user->academy;
@@ -51,7 +53,7 @@ class TeacherProfileController extends Controller
         ]));
     }
 
-    public function earnings(Request $request)
+    public function earnings(Request $request): View
     {
         $user = Auth::user();
         $teacherProfile = $this->getTeacherProfile($user);
@@ -121,7 +123,7 @@ class TeacherProfileController extends Controller
         ]);
     }
 
-    public function schedule()
+    public function schedule(): RedirectResponse
     {
         // Redirect to the teacher profile page
         $subdomain = request()->route('subdomain') ?? 'itqan-academy';
@@ -129,7 +131,7 @@ class TeacherProfileController extends Controller
         return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
     }
 
-    public function students()
+    public function students(): View
     {
         $user = Auth::user();
         $teacherProfile = $this->getTeacherProfile($user);
@@ -151,7 +153,7 @@ class TeacherProfileController extends Controller
         ]);
     }
 
-    public function showStudent($subdomain, User $student)
+    public function showStudent($subdomain, User $student): View
     {
         $user = Auth::user();
         $teacherProfile = $this->getTeacherProfile($user);
@@ -280,7 +282,7 @@ class TeacherProfileController extends Controller
         return $progressData;
     }
 
-    public function edit()
+    public function edit(): View
     {
         $user = Auth::user();
         $teacherProfile = $this->getTeacherProfile($user);
@@ -294,7 +296,7 @@ class TeacherProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request)
+    public function update(Request $request): RedirectResponse
     {
         $user = Auth::user();
         $teacherProfile = $this->getTeacherProfile($user);

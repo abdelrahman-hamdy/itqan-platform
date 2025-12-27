@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use App\Services\CalendarService;
 use App\Services\AcademyContextService;
@@ -24,7 +25,7 @@ class StudentCalendarController extends Controller
     /**
      * Show the student calendar page
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
         

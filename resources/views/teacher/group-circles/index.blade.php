@@ -106,7 +106,7 @@
                 ],
             ];
 
-            if ($circle->status === 'active') {
+            if ($circle->status === \App\Enums\SubscriptionStatus::ACTIVE) {
                 $actions[] = [
                     'href' => route('teacher.group-circles.progress', ['subdomain' => request()->route('subdomain'), 'circle' => $circle->id]),
                     'icon' => 'ri-bar-chart-line',

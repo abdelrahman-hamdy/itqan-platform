@@ -8,6 +8,8 @@ use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Parent Payment Controller
@@ -41,7 +43,7 @@ class ParentPaymentController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -97,7 +99,7 @@ class ParentPaymentController extends Controller
      * @param int $paymentId
      * @return \Illuminate\View\View
      */
-    public function show(Request $request, int $paymentId)
+    public function show(Request $request, int $paymentId): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -125,7 +127,7 @@ class ParentPaymentController extends Controller
      * @param int $paymentId
      * @return \Symfony\Component\HttpFoundation\StreamedResponse
      */
-    public function downloadReceipt(Request $request, int $paymentId)
+    public function downloadReceipt(Request $request, int $paymentId): StreamedResponse
     {
         $user = Auth::user();
         $parent = $user->parentProfile;

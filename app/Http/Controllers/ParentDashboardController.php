@@ -7,6 +7,9 @@ use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 
 /**
  * Parent Dashboard Controller
@@ -41,7 +44,7 @@ class ParentDashboardController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -68,7 +71,7 @@ class ParentDashboardController extends Controller
      * @param int $childId
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function selectChild(Request $request, int $childId)
+    public function selectChild(Request $request, int $childId): RedirectResponse
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -101,7 +104,7 @@ class ParentDashboardController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function childDetail(Request $request)
+    public function childDetail(Request $request): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -134,7 +137,7 @@ class ParentDashboardController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function selectChildSession(Request $request)
+    public function selectChildSession(Request $request): JsonResponse
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -182,7 +185,7 @@ class ParentDashboardController extends Controller
      * @param int $childId
      * @return \Illuminate\Http\JsonResponse
      */
-    public function switchChild(Request $request, int $childId)
+    public function switchChild(Request $request, int $childId): JsonResponse
     {
         $user = Auth::user();
         $parent = $user->parentProfile;

@@ -109,8 +109,8 @@
                                     {{ $submission->homework->title ?? 'واجب أكاديمي' }}
                                 </h3>
                                 <span class="inline-flex items-center px-2 py-0.5 md:py-1 rounded text-xs font-medium
-                                    {{ $submission->submission_status === 'late' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' }}">
-                                    {{ $submission->submission_status_text }}
+                                    {{ $submission->submission_status === \App\Enums\HomeworkSubmissionStatus::LATE ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' }}">
+                                    {{ $submission->submission_status->label() }}
                                 </span>
                             </div>
 

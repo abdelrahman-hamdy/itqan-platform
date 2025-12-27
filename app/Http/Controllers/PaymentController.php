@@ -10,13 +10,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 
 class PaymentController extends Controller
 {
     /**
      * Show payment form for course enrollment
      */
-    public function create(RecordedCourse $course)
+    public function create(RecordedCourse $course): View|RedirectResponse
     {
         if (! Auth::check()) {
             $subdomain = request()->route('subdomain') ?? 'itqan-academy';
@@ -64,7 +67,7 @@ class PaymentController extends Controller
     /**
      * Process payment
      */
-    public function store(Request $request, RecordedCourse $course)
+    public function store(Request $request, RecordedCourse $course): JsonResponse
     {
         if (! Auth::check()) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -150,7 +153,7 @@ class PaymentController extends Controller
     /**
      * Show payment success page
      */
-    public function success(Payment $payment)
+    public function success(Payment $payment): View
     {
         if (! Auth::check() || $payment->user_id !== Auth::id()) {
             abort(403);
@@ -164,7 +167,7 @@ class PaymentController extends Controller
     /**
      * Show payment failed page
      */
-    public function failed(Payment $payment)
+    public function failed(Payment $payment): View
     {
         if (! Auth::check() || $payment->user_id !== Auth::id()) {
             abort(403);
@@ -178,7 +181,7 @@ class PaymentController extends Controller
     /**
      * Process refund request
      */
-    public function refund(Request $request, Payment $payment)
+    public function refund(Request $request, Payment $payment): JsonResponse
     {
         $this->authorize('refund', $payment);
 
@@ -214,7 +217,7 @@ class PaymentController extends Controller
     /**
      * Show user's payment history
      */
-    public function history()
+    public function history(): View|RedirectResponse
     {
         if (! Auth::check()) {
             $subdomain = request()->route('subdomain') ?? 'itqan-academy';
@@ -235,7 +238,7 @@ class PaymentController extends Controller
     /**
      * Download payment receipt
      */
-    public function downloadReceipt(Payment $payment)
+    public function downloadReceipt(Payment $payment): RedirectResponse
     {
         if (! Auth::check() || $payment->user_id !== Auth::id()) {
             abort(403);
@@ -258,7 +261,7 @@ class PaymentController extends Controller
     /**
      * Get payment methods for academy
      */
-    public function getPaymentMethods(Academy $academy)
+    public function getPaymentMethods(Academy $academy): JsonResponse
     {
         // This would return available payment methods based on academy settings
         $methods = [

@@ -17,9 +17,12 @@ use App\Services\ParentDataService;
 use App\Services\Reports\AcademicReportService;
 use App\Services\Reports\InteractiveCourseReportService;
 use App\Services\Reports\QuranReportService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 /**
  * Parent Report Controller
@@ -52,7 +55,7 @@ class ParentReportController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function progressReport(Request $request)
+    public function progressReport(Request $request): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -323,7 +326,7 @@ class ParentReportController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function attendanceReport(Request $request)
+    public function attendanceReport(Request $request): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -653,7 +656,7 @@ class ParentReportController extends Controller
     /**
      * Quran Individual Circle Report - detailed report for parent viewing child's circle
      */
-    public function quranIndividualReport(Request $request, $subdomain, QuranIndividualCircle $circle)
+    public function quranIndividualReport(Request $request, $subdomain, QuranIndividualCircle $circle): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -682,7 +685,7 @@ class ParentReportController extends Controller
     /**
      * Academic Subscription Report - detailed report for parent viewing child's subscription
      */
-    public function academicSubscriptionReport(Request $request, $subdomain, AcademicSubscription $subscription)
+    public function academicSubscriptionReport(Request $request, $subdomain, AcademicSubscription $subscription): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -711,7 +714,7 @@ class ParentReportController extends Controller
     /**
      * Interactive Course Report - detailed report for parent viewing child's course
      */
-    public function interactiveCourseReport(Request $request, $subdomain, InteractiveCourse $course)
+    public function interactiveCourseReport(Request $request, $subdomain, InteractiveCourse $course): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;

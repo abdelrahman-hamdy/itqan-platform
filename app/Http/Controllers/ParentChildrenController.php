@@ -8,13 +8,15 @@ use App\Enums\RelationshipType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class ParentChildrenController extends Controller
 {
     /**
      * Display parent's children and add child form
      */
-    public function index()
+    public function index(): View
     {
         $parent = Auth::user()->parentProfile;
 
@@ -31,7 +33,7 @@ class ParentChildrenController extends Controller
     /**
      * Add a new child to parent account
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'student_code' => 'required|string',
@@ -84,7 +86,7 @@ class ParentChildrenController extends Controller
     /**
      * Remove a child from parent account
      */
-    public function destroy(StudentProfile $student)
+    public function destroy(StudentProfile $student): RedirectResponse
     {
         $parent = Auth::user()->parentProfile;
 

@@ -2,11 +2,24 @@
 
 ## Summary
 - Total bugs found: 28
-- Total bugs fixed: 26
-- Deferred (need discussion): 2 (see DEFERRED_PROBLEMS.md)
+- Total bugs fixed: 28
+- Deferred (need discussion): 0 (all resolved - see DEFERRED_PROBLEMS.md)
 - PHPStan Level 1 errors remaining: 259 (mostly missing relationships on models)
 
 ## Fixed Bugs
+
+### 2025-12-22 - Refactored Quran Session Evaluation API (Problem 1 from DEFERRED_PROBLEMS.md)
+- **Files:**
+  - `app/Http/Controllers/Api/V1/Teacher/Quran/SessionController.php`
+  - `app/Http/Controllers/Api/V1/Teacher/Quran/CircleController.php`
+  - `app/Http/Controllers/Api/V1/Teacher/StudentController.php`
+  - `app/Http/Controllers/Api/V1/ParentApi/SessionController.php`
+- **Error:** API referenced non-existent `memorization_rating` and `tajweed_rating` columns on QuranSession model. Data was silently lost.
+- **Fix:** Refactored all 4 controllers to use `StudentSessionReport` model:
+  - Changed scale from 1-5 to 0-10 (matching model)
+  - Removed tajweed evaluation completely (deprecated)
+  - API fields renamed: `memorization_degree`, `revision_degree`
+  - Evaluations now properly persisted to database
 
 ### 2025-12-22 - Removed deprecated TestCronJobsCommand
 - **File:** `app/Console/Commands/TestCronJobsCommand.php`

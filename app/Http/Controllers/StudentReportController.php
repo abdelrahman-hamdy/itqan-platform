@@ -13,13 +13,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Enums\SessionStatus;
+use Illuminate\Http\JsonResponse;
 
 class StudentReportController extends Controller
 {
     /**
      * Store a new student report
      */
-    public function store(Request $request, $subdomain, $type)
+    public function store(Request $request, $subdomain, $type): JsonResponse
     {
         try {
             // Validate report type
@@ -127,7 +128,7 @@ class StudentReportController extends Controller
     /**
      * Update an existing student report
      */
-    public function update(Request $request, $subdomain, $type, $reportId)
+    public function update(Request $request, $subdomain, $type, $reportId): JsonResponse
     {
         try {
             // Validate report type

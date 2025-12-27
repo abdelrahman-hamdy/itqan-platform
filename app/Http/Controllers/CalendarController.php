@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Services\CalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Enums\SessionStatus;
@@ -21,7 +23,7 @@ class CalendarController extends Controller
     /**
      * Show calendar page for authenticated user
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $view = $request->get('view', 'month');
@@ -198,7 +200,7 @@ class CalendarController extends Controller
     /**
      * Export calendar events
      */
-    public function export(Request $request)
+    public function export(Request $request): Response
     {
         $user = Auth::user();
         
@@ -224,7 +226,7 @@ class CalendarController extends Controller
     /**
      * Helper methods
      */
-    protected function getStartDate(Carbon $date, string $view): Carbon
+    private function getStartDate(Carbon $date, string $view): Carbon
     {
         return match ($view) {
             'day' => $date->copy()->startOfDay(),
@@ -234,7 +236,7 @@ class CalendarController extends Controller
         };
     }
 
-    protected function getEndDate(Carbon $date, string $view): Carbon
+    private function getEndDate(Carbon $date, string $view): Carbon
     {
         return match ($view) {
             'day' => $date->copy()->endOfDay(),
@@ -244,7 +246,7 @@ class CalendarController extends Controller
         };
     }
 
-    protected function exportAsICS($events, $user)
+    private function exportAsICS($events, $user): Response
     {
         $ics = "BEGIN:VCALENDAR\r\n";
         $ics .= "VERSION:2.0\r\n";
@@ -272,7 +274,7 @@ class CalendarController extends Controller
             ->header('Content-Disposition', 'attachment; filename="calendar.ics"');
     }
 
-    protected function exportAsCSV($events, $user)
+    private function exportAsCSV($events, $user): Response
     {
         $csv = "التاريخ,الوقت,العنوان,النوع,الحالة,المدة,رابط الاجتماع\n";
         

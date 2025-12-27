@@ -81,14 +81,8 @@
             <x-profile.select-input
                 label="المؤهل التعليمي"
                 name="education_level"
-                :value="$teacherProfile->education_level ?? 'bachelor'"
-                :options="[
-                    'diploma' => 'دبلوم',
-                    'bachelor' => 'بكالوريوس',
-                    'master' => 'ماجستير',
-                    'phd' => 'دكتوراه',
-                    'other' => 'أخرى'
-                ]"
+                :value="$teacherProfile->education_level?->value ?? 'bachelor'"
+                :options="\App\Enums\EducationalQualification::options()"
                 placeholder="اختر المؤهل التعليمي" />
 
             <!-- University -->
