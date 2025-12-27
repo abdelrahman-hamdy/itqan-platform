@@ -7,17 +7,19 @@
 ])
 
 @php
+    use App\Enums\SessionStatus;
+
     // Helper function to get status value (handles both string and enum)
     $getStatusValue = function($session) {
         return is_object($session->status) ? $session->status->value : $session->status;
     };
-    
+
     $totalSessions = $sessions->count();
     $comingSessions = $sessions->filter(function($session) use ($getStatusValue) {
-        return in_array($getStatusValue($session), ['scheduled', 'ready', 'ongoing']);
+        return in_array($getStatusValue($session), [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value]);
     });
     $passedSessions = $sessions->filter(function($session) use ($getStatusValue) {
-        return in_array($getStatusValue($session), ['completed', 'cancelled']);
+        return in_array($getStatusValue($session), [SessionStatus::COMPLETED->value, SessionStatus::CANCELLED->value]);
     });
 @endphp
 
@@ -140,56 +142,56 @@
                         (object)[
                             'id' => 9991,
                             'title' => 'جلسة مكتملة - للتجربة',
-                            'status' => 'completed',
+                            'status' => \App\Enums\SessionStatus::COMPLETED->value,
                             'scheduled_at' => now()->subHours(2),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9992,
                             'title' => 'جلسة جارية - للتجربة',
-                            'status' => 'ongoing',
+                            'status' => \App\Enums\SessionStatus::ONGOING->value,
                             'scheduled_at' => now()->subMinutes(15),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9993,
                             'title' => 'جلسة جاهزة - للتجربة',
-                            'status' => 'ready',
+                            'status' => \App\Enums\SessionStatus::READY->value,
                             'scheduled_at' => now()->addMinutes(5),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9994,
                             'title' => 'جلسة مجدولة (في التحضير) - للتجربة',
-                            'status' => 'scheduled',
+                            'status' => \App\Enums\SessionStatus::SCHEDULED->value,
                             'scheduled_at' => now()->addMinutes(12), // Within 15 minutes
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9995,
                             'title' => 'جلسة مجدولة - للتجربة',
-                            'status' => 'scheduled',
+                            'status' => \App\Enums\SessionStatus::SCHEDULED->value,
                             'scheduled_at' => now()->addHours(3),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9996,
                             'title' => 'جلسة ملغاة - للتجربة',
-                            'status' => 'cancelled',
+                            'status' => \App\Enums\SessionStatus::CANCELLED->value,
                             'scheduled_at' => now()->addDays(1),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9997,
                             'title' => 'جلسة غير مجدولة - للتجربة',
-                            'status' => 'unscheduled',
+                            'status' => \App\Enums\SessionStatus::UNSCHEDULED->value,
                             'scheduled_at' => null,
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9998,
                             'title' => 'جلسة غائب - للتجربة',
-                            'status' => 'absent',
+                            'status' => \App\Enums\SessionStatus::ABSENT->value,
                             'scheduled_at' => now()->subHours(5),
                             'duration_minutes' => 60,
                         ],

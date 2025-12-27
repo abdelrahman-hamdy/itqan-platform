@@ -5,8 +5,13 @@ namespace App\Livewire;
 use App\Models\QuizAssignment;
 use App\Services\QuizService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Livewire\Component;
+use App\Enums\SessionStatus;
 
+/**
+ * @property Collection $quizzes
+ */
 class QuizzesWidget extends Component
 {
     public Model $assignable;

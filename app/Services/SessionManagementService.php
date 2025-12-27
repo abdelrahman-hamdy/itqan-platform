@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Enums\SessionStatus;
 
 class SessionManagementService
 {
@@ -58,8 +59,8 @@ class SessionManagementService
             'quran_subscription_id' => $circle->subscription_id,
             'session_code' => $this->generateSessionCode('IND', $circle->id, $scheduledAt),
             'session_type' => 'individual',
-            'status' => 'scheduled',
-            'title' => $title ?? "جلسة فردية - {$circle->student->name}",
+            'status' => SessionStatus::SCHEDULED,
+            'title' => $title,
             'description' => $description ?? 'جلسة تحفيظ قرآن فردية',
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => $durationMinutes,
@@ -108,8 +109,8 @@ class SessionManagementService
             'circle_id' => $circle->id,
             'session_code' => $this->generateSessionCode('GRP', $circle->id, $scheduledAt),
             'session_type' => 'group',
-            'status' => 'scheduled',
-            'title' => $title ?? "جلسة جماعية - {$circle->name_ar}",
+            'status' => SessionStatus::SCHEDULED,
+            'title' => $title,
             'description' => $description ?? 'جلسة تحفيظ قرآن جماعية',
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => $durationMinutes,
@@ -229,7 +230,7 @@ class SessionManagementService
     {
         $totalSessions = $circle->total_sessions;
         $usedSessions = $circle->sessions()
-            ->whereIn('status', ['completed', 'scheduled', 'in_progress'])
+            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, 'in_progress'])
             ->count();
 
         return max(0, $totalSessions - $usedSessions);
@@ -259,11 +260,11 @@ class SessionManagementService
 
             'completed_sessions_this_month' => QuranSession::where('quran_teacher_id', $teacherId)
                 ->where('session_month', $currentMonth)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->count(),
 
             'scheduled_sessions_this_week' => QuranSession::where('quran_teacher_id', $teacherId)
-                ->where('status', 'scheduled')
+                ->where('status', SessionStatus::SCHEDULED->value)
                 ->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])
                 ->count(),
 
@@ -297,10 +298,10 @@ class SessionManagementService
             'month' => $monthStart->format('Y-m'),
             'total_sessions' => $sessions->count(),
             'max_sessions' => $maxSessions,
-            'completed_sessions' => $sessions->where('status', 'completed')->count(),
-            'scheduled_sessions' => $sessions->where('status', 'scheduled')->count(),
-            'cancelled_sessions' => $sessions->where('status', 'cancelled')->count(),
-            'progress_percentage' => $maxSessions > 0 ? round(($sessions->where('status', 'completed')->count() / $maxSessions) * 100, 1) : 0,
+            'completed_sessions' => $sessions->where('status', SessionStatus::COMPLETED->value)->count(),
+            'scheduled_sessions' => $sessions->where('status', SessionStatus::SCHEDULED->value)->count(),
+            'cancelled_sessions' => $sessions->where('status', SessionStatus::CANCELLED->value)->count(),
+            'progress_percentage' => $maxSessions > 0 ? round(($sessions->where('status', SessionStatus::COMPLETED->value)->count() / $maxSessions) * 100, 1) : 0,
         ];
     }
 
@@ -313,7 +314,7 @@ class SessionManagementService
         $conflict = QuranSession::where('quran_teacher_id', $teacherId)
             ->where(function ($query) use ($scheduledAt, $endTime) {
                 // Check if new session overlaps with existing sessions
-                $query->where(function ($q) use ($scheduledAt, $endTime) {
+                $query->where(function ($q) use ($scheduledAt) {
                     // Existing session starts before new session and ends after new session starts
                     $q->where('scheduled_at', '<=', $scheduledAt)
                         ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$scheduledAt]);
@@ -323,7 +324,7 @@ class SessionManagementService
                         ->where('scheduled_at', '<', $endTime);
                 });
             })
-            ->whereIn('status', ['scheduled', 'in_progress'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, 'in_progress'])
             ->exists();
 
         if ($conflict) {

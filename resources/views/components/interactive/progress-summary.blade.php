@@ -11,7 +11,7 @@
         ->where('student_id', $studentId)
         ->get();
 
-    $sessionsAttended = $attendanceRecords->whereIn('attendance_status', ['present', 'late'])->count();
+    $sessionsAttended = $attendanceRecords->whereIn('attendance_status', ['attended', 'late'])->count();
     $completedSessions = $sessions->where('status', 'completed')->count();
 
     // Get session reports for homework data

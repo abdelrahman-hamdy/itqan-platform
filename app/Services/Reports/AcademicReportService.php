@@ -5,6 +5,7 @@ namespace App\Services\Reports;
 use App\DTOs\Reports\{AttendanceDTO, PerformanceDTO, ProgressDTO, StatDTO};
 use App\Models\AcademicSubscription;
 use Illuminate\Support\Collection;
+use App\Enums\SessionStatus;
 
 /**
  * Academic Report Service
@@ -72,7 +73,7 @@ class AcademicReportService extends BaseReportService
         $totalPlanned = $subscription->total_sessions ?? 0;
         $completed = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
-            return $status === 'completed';
+            return $status === SessionStatus::COMPLETED;
         })->count();
 
         $completionRate = $totalPlanned > 0 ? round(($completed / $totalPlanned) * 100, 2) : 0;

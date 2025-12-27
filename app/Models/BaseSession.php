@@ -49,6 +49,7 @@ use Illuminate\Support\Str;
  * @property string|null $session_notes
  * @property string|null $teacher_feedback
  * @property string|null $cancellation_reason
+ * @property string|null $cancellation_type
  * @property int|null $cancelled_by
  * @property Carbon|null $cancelled_at
  * @property string|null $reschedule_reason
@@ -57,6 +58,10 @@ use Illuminate\Support\Str;
  * @property int|null $created_by
  * @property int|null $updated_by
  * @property int|null $scheduled_by
+ * @property object|null $meeting Virtual meeting accessor (data stored on session)
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
  */
 abstract class BaseSession extends Model implements MeetingCapable
 {
@@ -98,8 +103,9 @@ abstract class BaseSession extends Model implements MeetingCapable
         'session_notes',
         'teacher_feedback',
 
-        // Cancellation fields
+        // Cancellation fields (includes cancellation_type used by CountsTowardsSubscription trait)
         'cancellation_reason',
+        'cancellation_type',
         'cancelled_by',
         'cancelled_at',
 
@@ -168,6 +174,67 @@ abstract class BaseSession extends Model implements MeetingCapable
     public function meetingAttendances(): HasMany
     {
         return $this->hasMany(MeetingAttendance::class, 'session_id');
+    }
+
+    /**
+     * Virtual meeting object accessor
+     * Returns an object with meeting properties for API compatibility
+     * Since meeting data is stored directly on sessions, not in a separate model
+     */
+    public function getMeetingAttribute(): ?object
+    {
+        if (!$this->meeting_room_name) {
+            return null;
+        }
+
+        return (object) [
+            'id' => $this->meeting_id,
+            'room_name' => $this->meeting_room_name,
+            'meeting_link' => $this->meeting_link,
+            'status' => $this->getMeetingStatus(),
+            'platform' => $this->meeting_platform ?? 'livekit',
+            'expires_at' => $this->meeting_expires_at,
+            'created_at' => $this->meeting_created_at ?? $this->created_at,
+        ];
+    }
+
+    /**
+     * Get meeting status based on session state
+     */
+    protected function getMeetingStatus(): string
+    {
+        if (!$this->meeting_room_name) {
+            return 'not_created';
+        }
+
+        if ($this->meeting_expires_at && $this->meeting_expires_at->isPast()) {
+            return 'expired';
+        }
+
+        $status = $this->status instanceof \App\Enums\SessionStatus
+            ? $this->status->value
+            : $this->status;
+
+        return match ($status) {
+            SessionStatus::ONGOING->value => 'active',
+            SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value => 'ended',
+            SessionStatus::CANCELLED->value => 'cancelled',
+            default => 'ready',
+        };
+    }
+
+    /**
+     * Stub relationship for larastan compatibility
+     * Meeting data is stored directly on sessions (no separate model)
+     * Use getMeetingAttribute() accessor instead
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function meeting(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        // This is a stub relationship for larastan - meeting data is on the session itself
+        // Return a HasOne that always returns null
+        return $this->hasOne(self::class, 'id', 'id')->whereRaw('0 = 1');
     }
 
     /**
@@ -680,14 +747,6 @@ abstract class BaseSession extends Model implements MeetingCapable
         return in_array($this->status, [SessionStatus::READY, SessionStatus::ONGOING]);
     }
 
-    /**
-     * Get the meeting session type identifier (MeetingCapable interface)
-     * Alias for getMeetingType() for backward compatibility
-     */
-    public function getMeetingSessionType(): string
-    {
-        return $this->getMeetingType();
-    }
 
     /**
      * Get all participants who should have access to this meeting (MeetingCapable interface)
@@ -704,6 +763,14 @@ abstract class BaseSession extends Model implements MeetingCapable
      * Must be implemented by each child class
      */
     abstract public function getMeetingType(): string;
+
+    /**
+     * Get the session type identifier for meeting purposes (MeetingCapable interface)
+     */
+    public function getMeetingSessionType(): string
+    {
+        return $this->getMeetingType();
+    }
 
     /**
      * Get all participants for this session
@@ -799,11 +866,11 @@ abstract class BaseSession extends Model implements MeetingCapable
      */
     protected function getGracePeriodMinutes(): int
     {
-        // Try to get academy settings
+        // Try to get academy settings through proper relationship
         $academy = $this->academy ?? Academy::find($this->academy_id);
 
-        if ($academy && isset($academy->academic_settings['meeting_settings']['default_late_tolerance_minutes'])) {
-            return (int) $academy->academic_settings['meeting_settings']['default_late_tolerance_minutes'];
+        if ($academy && $academy->settings) {
+            return $academy->settings->default_late_tolerance_minutes ?? 15;
         }
 
         // Fallback to default

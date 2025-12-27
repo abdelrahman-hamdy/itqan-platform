@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 class CronJobLogger
 {
@@ -200,7 +201,7 @@ class CronJobLogger
     /**
      * Simple tail implementation for reading last N lines of a file
      */
-    private static function tail(string $filepath, int $lines = 100): array
+    public static function tail(string $filepath, int $lines = 100): array
     {
         if (!file_exists($filepath)) {
             return [];

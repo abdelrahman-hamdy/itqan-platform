@@ -25,6 +25,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\AttendanceStatus;
+use App\Enums\SubscriptionStatus;
 
 /**
  * Quran Session Resource for Teacher Panel
@@ -279,18 +281,18 @@ class QuranSessionResource extends BaseTeacherResource
                 BadgeColumn::make('attendance_status')
                     ->label('الحضور')
                     ->colors([
-                        'success' => 'attended',
-                        'danger' => 'absent',
-                        'warning' => 'late',
-                        'info' => 'leaved',
+                        'success' => AttendanceStatus::ATTENDED->value,
+                        'danger' => AttendanceStatus::ABSENT->value,
+                        'warning' => AttendanceStatus::LATE->value,
+                        'info' => AttendanceStatus::LEAVED->value,
                         'gray' => 'pending',
                     ])
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'attended' => 'حاضر',
-                        'absent' => 'غائب',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
-                        'pending' => 'في الانتظار',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::ABSENT->value => 'غائب',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                         null => 'غير محدد',
                         default => $state,
                     }),
@@ -322,11 +324,11 @@ class QuranSessionResource extends BaseTeacherResource
                 SelectFilter::make('attendance_status')
                     ->label('الحضور')
                     ->options([
-                        'attended' => 'حاضر',
-                        'absent' => 'غائب',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
-                        'pending' => 'في الانتظار',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::ABSENT->value => 'غائب',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                     ]),
 
                 Filter::make('today')
@@ -358,10 +360,10 @@ class QuranSessionResource extends BaseTeacherResource
                         ->label('بدء الجلسة')
                         ->icon('heroicon-o-play')
                         ->color('success')
-                        ->visible(fn (QuranSession $record): bool => $record->status === 'scheduled')
+                        ->visible(fn (QuranSession $record): bool => $record->status === SessionStatus::SCHEDULED->value)
                         ->action(function (QuranSession $record) {
                             $record->update([
-                                'status' => 'in_progress',
+                                'status' => SessionStatus::ONGOING->value,
                                 'started_at' => now(),
                             ]);
                         }),
@@ -369,10 +371,10 @@ class QuranSessionResource extends BaseTeacherResource
                         ->label('إنهاء الجلسة')
                         ->icon('heroicon-o-check')
                         ->color('success')
-                        ->visible(fn (QuranSession $record): bool => $record->status === 'in_progress')
+                        ->visible(fn (QuranSession $record): bool => $record->status === SessionStatus::ONGOING->value)
                         ->action(function (QuranSession $record) {
                             $record->update([
-                                'status' => 'completed',
+                                'status' => SessionStatus::COMPLETED->value,
                                 'ended_at' => now(),
                                 'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
                             ]);

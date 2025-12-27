@@ -6,6 +6,7 @@ use App\Contracts\RecordingCapable;
 use App\Models\SessionRecording;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Enums\SessionStatus;
 
 /**
  * RecordingService
@@ -329,16 +330,16 @@ class RecordingService
 
         return [
             'total_count' => $recordings->count(),
-            'completed_count' => $recordings->where('status', 'completed')->count(),
+            'completed_count' => $recordings->where('status', SessionStatus::COMPLETED->value)->count(),
             'recording_count' => $recordings->where('status', 'recording')->count(),
             'processing_count' => $recordings->where('status', 'processing')->count(),
             'failed_count' => $recordings->where('status', 'failed')->count(),
-            'total_size_bytes' => $recordings->where('status', 'completed')->sum('file_size'),
-            'total_size_formatted' => $this->formatBytes($recordings->where('status', 'completed')->sum('file_size')),
-            'total_duration_seconds' => $recordings->where('status', 'completed')->sum('duration'),
-            'total_duration_formatted' => $this->formatDuration($recordings->where('status', 'completed')->sum('duration')),
-            'average_file_size_bytes' => $recordings->where('status', 'completed')->avg('file_size'),
-            'average_duration_seconds' => $recordings->where('status', 'completed')->avg('duration'),
+            'total_size_bytes' => $recordings->where('status', SessionStatus::COMPLETED->value)->sum('file_size'),
+            'total_size_formatted' => $this->formatBytes($recordings->where('status', SessionStatus::COMPLETED->value)->sum('file_size')),
+            'total_duration_seconds' => $recordings->where('status', SessionStatus::COMPLETED->value)->sum('duration'),
+            'total_duration_formatted' => $this->formatDuration($recordings->where('status', SessionStatus::COMPLETED->value)->sum('duration')),
+            'average_file_size_bytes' => $recordings->where('status', SessionStatus::COMPLETED->value)->avg('file_size'),
+            'average_duration_seconds' => $recordings->where('status', SessionStatus::COMPLETED->value)->avg('duration'),
         ];
     }
 

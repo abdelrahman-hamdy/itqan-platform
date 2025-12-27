@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SubscriptionStatus;
 use App\Models\QuranSubscription;
 use App\Models\Payment;
 use App\Models\Academy;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 class QuranSubscriptionPaymentController extends Controller
 {
@@ -143,7 +145,7 @@ class QuranSubscriptionPaymentController extends Controller
                 if ($gatewayResult['success']) {
                     // Mark payment as completed
                     $payment->update([
-                        'status' => 'completed',
+                        'status' => SessionStatus::COMPLETED,
                         'payment_status' => 'completed',
                         'gateway_transaction_id' => $gatewayResult['data']['transaction_id'] ?? null,
                         'receipt_number' => $gatewayResult['data']['receipt_number'] ?? null,
@@ -156,7 +158,7 @@ class QuranSubscriptionPaymentController extends Controller
                     // Update subscription
                     $subscription->update([
                         'payment_status' => 'current',
-                        'status' => 'active',
+                        'status' => SubscriptionStatus::ACTIVE,
                         'last_payment_at' => now(),
                         'last_payment_amount' => $totalAmount,
                     ]);

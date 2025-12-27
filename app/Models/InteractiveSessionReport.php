@@ -38,6 +38,10 @@ class InteractiveSessionReport extends BaseSessionReport
         'manually_evaluated',
         'override_reason',
 
+        // Homework tracking fields (unified homework system)
+        'homework_submitted_at',
+        'homework_submission_id',
+
         // Interactive-specific field (unified with Academic)
         'homework_degree',
     ];
@@ -57,6 +61,9 @@ class InteractiveSessionReport extends BaseSessionReport
         'evaluated_at' => 'datetime',
         'is_calculated' => 'boolean',
         'manually_evaluated' => 'boolean',
+
+        // Homework tracking casts
+        'homework_submitted_at' => 'datetime',
 
         // Interactive-specific cast (0-10 scale, 1 decimal)
         'homework_degree' => 'decimal:1',
@@ -84,11 +91,12 @@ class InteractiveSessionReport extends BaseSessionReport
     }
 
     /**
-     * Interactive sessions use 10 minutes grace period (default)
+     * Interactive sessions use grace period from academy settings
+     * InteractiveCourseSession gets academy through course relationship
      */
     protected function getGracePeriodMinutes(): int
     {
-        return 10; // Default 10 minutes grace period for interactive sessions
+        return $this->session?->course?->academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
     // ========================================

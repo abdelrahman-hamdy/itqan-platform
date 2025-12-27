@@ -2,6 +2,8 @@
 
 namespace App\Filament\Teacher\Widgets;
 
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Filament\Shared\Widgets\BaseFullCalendarWidget;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
@@ -88,7 +90,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
 
         return $query
             ->with(['circle', 'individualCircle', 'individualCircle.subscription', 'individualCircle.subscription.package', 'student', 'trialRequest'])
-            ->whereIn('status', ['scheduled', 'ready', 'ongoing', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->get()
             ->map(function (QuranSession $session) use ($timezone) {
                 return $this->mapQuranSessionToEvent($session, $timezone);
@@ -110,7 +112,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
 
         return $query
             ->with(['subscription.student', 'student', 'interactiveCourseSession'])
-            ->whereIn('status', ['scheduled', 'ready', 'ongoing', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->get()
             ->map(function (AcademicSession $session) use ($timezone) {
                 return $this->mapAcademicSessionToEvent($session, $timezone);
@@ -133,7 +135,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
 
         return $query
             ->with(['course', 'course.subject'])
-            ->whereIn('status', ['scheduled', 'ready', 'ongoing', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->get()
             ->map(function (InteractiveCourseSession $session) use ($timezone) {
                 return $this->mapInteractiveCourseSessionToEvent($session, $timezone);
@@ -172,7 +174,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
 
         // Add strikethrough class for passed sessions
         $classNames = '';
-        if ($isPassed && $session->status !== 'ongoing') {
+        if ($isPassed && $session->status !== SessionStatus::ONGOING->value) {
             $classNames = 'event-passed';
         }
 
@@ -238,7 +240,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
 
         // Add strikethrough class for passed sessions
         $classNames = '';
-        if ($isPassed && $session->status !== 'ongoing') {
+        if ($isPassed && $session->status !== SessionStatus::ONGOING->value) {
             $classNames = 'event-passed';
         }
 
@@ -291,12 +293,12 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
 
         $scheduledAt = $session->scheduled_at;
         $isPassed = $scheduledAt < Carbon::now($timezone);
-        $status = $session->status ?? 'scheduled';
+        $status = $session->status ?? SessionStatus::SCHEDULED->value;
         $color = $this->getSessionColor('interactive_course', $status, true);
 
         // Add strikethrough class for passed sessions
         $classNames = '';
-        if ($isPassed && $status !== 'ongoing') {
+        if ($isPassed && $status !== SessionStatus::ONGOING->value) {
             $classNames = 'event-passed';
         }
 
@@ -592,7 +594,6 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
             $isQuran = $session instanceof QuranSession;
             $isCourse = $session instanceof InteractiveCourseSession;
 
-            // Get scheduled_at (all session types now use scheduled_at consistently)
             $scheduledAt = $session->scheduled_at;
 
             // Convert to academy timezone for display
@@ -604,7 +605,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
 
             $statusEnum = $session->status instanceof \App\Enums\SessionStatus
                 ? $session->status
-                : \App\Enums\SessionStatus::tryFrom($session->status ?? 'scheduled');
+                : \App\Enums\SessionStatus::tryFrom($session->status ?? SessionStatus::SCHEDULED->value);
 
             $sessionData = [
                 'type' => $isQuran ? 'quran' : ($isCourse ? 'course' : 'academic'),
@@ -617,7 +618,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
                 'color' => '',
                 'eventId' => '',
                 'canEdit' => false,
-                'status' => $statusEnum?->value ?? 'scheduled',
+                'status' => $statusEnum?->value ?? SessionStatus::SCHEDULED->value,
                 'statusLabel' => $statusEnum?->label() ?? 'مجدولة',
                 'statusColor' => $statusEnum?->hexColor() ?? '#3B82F6',
             ];
@@ -666,14 +667,6 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
 
         // Mount the action to show the modal
         $this->mountAction('viewDaySessions');
-    }
-
-    /**
-     * Edit session from day list (legacy method - kept for compatibility)
-     */
-    public function editSessionFromList(string $eventId): void
-    {
-        $this->mountAction('editSession', ['event' => ['id' => $eventId]]);
     }
 
     /**
@@ -919,7 +912,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
         $subscription = $circle->subscription;
 
         // Check if subscription is active
-        if ($subscription->status !== 'active') {
+        if ($subscription->status !== SubscriptionStatus::ACTIVE->value) {
             Notification::make()
                 ->title('غير مسموح')
                 ->body('الاشتراك غير نشط. لا يمكن تحريك الجلسة.')
@@ -985,7 +978,7 @@ class TeacherCalendarWidget extends BaseFullCalendarWidget
         }
 
         // Check if subscription is active
-        if ($subscription->status !== 'active') {
+        if ($subscription->status !== SubscriptionStatus::ACTIVE->value) {
             Notification::make()
                 ->title('غير مسموح')
                 ->body('الاشتراك غير نشط. لا يمكن تحريك الجلسة.')

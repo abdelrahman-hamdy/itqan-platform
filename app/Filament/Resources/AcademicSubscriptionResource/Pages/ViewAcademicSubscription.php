@@ -5,6 +5,8 @@ namespace App\Filament\Resources\AcademicSubscriptionResource\Pages;
 use App\Filament\Resources\AcademicSubscriptionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class ViewAcademicSubscription extends ViewRecord
 {
@@ -26,11 +28,11 @@ class ViewAcademicSubscription extends ViewRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->action(fn () => $this->record->update([
-                    'status' => 'active',
+                    'status' => SubscriptionStatus::ACTIVE->value,
                     'payment_status' => 'current',
                     'last_payment_at' => now(),
                 ]))
-                ->visible(fn () => $this->record->status === 'pending'),
+                ->visible(fn () => $this->record->status === SubscriptionStatus::PENDING->value),
             Actions\Action::make('pause')
                 ->label('إيقاف مؤقت')
                 ->icon('heroicon-o-pause-circle')
@@ -42,12 +44,12 @@ class ViewAcademicSubscription extends ViewRecord
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
-                        'status' => 'paused',
+                        'status' => SubscriptionStatus::PAUSED->value,
                         'paused_at' => now(),
                         'pause_reason' => $data['pause_reason'],
                     ]);
                 })
-                ->visible(fn () => $this->record->status === 'active'),
+                ->visible(fn () => $this->record->status === SubscriptionStatus::ACTIVE->value),
             Actions\Action::make('resume')
                 ->label('استئناف الاشتراك')
                 ->icon('heroicon-o-play-circle')
@@ -59,13 +61,13 @@ class ViewAcademicSubscription extends ViewRecord
                     $newEndDate = $this->record->end_date?->addDays($pausedDuration);
 
                     $this->record->update([
-                        'status' => 'active',
+                        'status' => SubscriptionStatus::ACTIVE->value,
                         'end_date' => $newEndDate,
                         'paused_at' => null,
                         'pause_reason' => null,
                     ]);
                 })
-                ->visible(fn () => $this->record->status === 'paused'),
+                ->visible(fn () => $this->record->status === SubscriptionStatus::PAUSED->value),
             Actions\Action::make('cancel')
                 ->label('إلغاء الاشتراك')
                 ->icon('heroicon-o-x-circle')
@@ -78,7 +80,7 @@ class ViewAcademicSubscription extends ViewRecord
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
-                        'status' => 'cancelled',
+                        'status' => SubscriptionStatus::CANCELLED->value,
                         'cancelled_at' => now(),
                         'cancellation_reason' => $data['cancellation_reason'],
                         'auto_renewal' => false,
@@ -87,10 +89,10 @@ class ViewAcademicSubscription extends ViewRecord
                     // Cancel any upcoming sessions
                     $this->record->academicSessions()
                         ->whereDate('scheduled_at', '>', now())
-                        ->where('status', 'scheduled')
-                        ->update(['status' => 'cancelled']);
+                        ->where('status', SessionStatus::SCHEDULED->value)
+                        ->update(['status' => SessionStatus::CANCELLED->value]);
                 })
-                ->visible(fn () => !in_array($this->record->status, ['cancelled', 'expired'])),
+                ->visible(fn () => !in_array($this->record->status, [SubscriptionStatus::CANCELLED->value, SubscriptionStatus::EXPIRED->value])),
         ];
     }
 }

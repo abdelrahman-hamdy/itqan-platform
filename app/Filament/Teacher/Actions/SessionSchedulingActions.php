@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SubscriptionStatus;
 
 class SessionSchedulingActions
 {
@@ -40,14 +41,14 @@ class SessionSchedulingActions
 
                         if ($type === 'individual') {
                             return QuranIndividualCircle::where('quran_teacher_id', Auth::id())
-                                ->whereIn('status', ['pending', 'active'])
+                                ->whereIn('status', [SubscriptionStatus::PENDING->value, SubscriptionStatus::ACTIVE->value])
                                 ->with('student')
                                 ->get()
                                 ->pluck('student.name', 'id')
                                 ->toArray();
                         } else {
                             return QuranCircle::where('quran_teacher_id', Auth::id())
-                                ->where('status', 'active')
+                                ->where('status', SubscriptionStatus::ACTIVE->value)
                                 ->pluck('name_ar', 'id')
                                 ->toArray();
                         }
@@ -320,14 +321,14 @@ class SessionSchedulingActions
 
                         if ($type === 'individual') {
                             return QuranIndividualCircle::where('quran_teacher_id', Auth::id())
-                                ->whereIn('status', ['pending', 'active'])
+                                ->whereIn('status', [SubscriptionStatus::PENDING->value, SubscriptionStatus::ACTIVE->value])
                                 ->with('student')
                                 ->get()
                                 ->pluck('student.name', 'id')
                                 ->toArray();
                         } else {
                             return QuranCircle::where('quran_teacher_id', Auth::id())
-                                ->where('status', 'active')
+                                ->where('status', SubscriptionStatus::ACTIVE->value)
                                 ->pluck('name', 'id')
                                 ->toArray();
                         }
@@ -400,7 +401,7 @@ class SessionSchedulingActions
                                                 ->toArray();
                                         } else {
                                             return QuranCircle::where('quran_teacher_id', Auth::id())
-                                                ->where('status', 'active')
+                                                ->where('status', SubscriptionStatus::ACTIVE->value)
                                                 ->pluck('name', 'id')
                                                 ->toArray();
                                         }
@@ -437,7 +438,7 @@ class SessionSchedulingActions
                                                 ->toArray();
                                         } else {
                                             return QuranCircle::where('quran_teacher_id', Auth::id())
-                                                ->where('status', 'active')
+                                                ->where('status', SubscriptionStatus::ACTIVE->value)
                                                 ->pluck('name', 'id')
                                                 ->toArray();
                                         }

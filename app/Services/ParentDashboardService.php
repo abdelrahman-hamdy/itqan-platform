@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\Certificate;
 use App\Models\ParentProfile;
@@ -54,27 +56,27 @@ class ParentDashboardService
 
         // Total active subscriptions across all children
         $activeSubscriptions = \App\Models\QuranSubscription::whereIn('student_id', $childUserIds)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $activeSubscriptions += \App\Models\AcademicSubscription::whereIn('student_id', $childUserIds)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $activeSubscriptions += \App\Models\CourseSubscription::whereIn('student_id', $childUserIds)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Upcoming sessions (next 7 days)
         $upcomingSessions = QuranSession::whereIn('student_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->whereBetween('scheduled_at', [now(), now()->addDays(7)])
             ->count();
 
         $upcomingSessions += AcademicSession::whereIn('student_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->whereBetween('scheduled_at', [now(), now()->addDays(7)])
             ->count();
 
@@ -116,7 +118,7 @@ class ParentDashboardService
         // Get Quran sessions
         $quranSessions = QuranSession::whereIn('student_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->whereBetween('scheduled_at', [now(), now()->addDays($days)])
             ->with(['quranTeacher', 'student.user', 'individualCircle', 'circle'])
             ->orderBy('scheduled_at', 'asc')
@@ -125,7 +127,7 @@ class ParentDashboardService
         // Get Academic sessions
         $academicSessions = AcademicSession::whereIn('student_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->whereBetween('scheduled_at', [now(), now()->addDays($days)])
             ->with(['academicTeacher', 'student.user', 'academicIndividualLesson'])
             ->orderBy('scheduled_at', 'asc')
@@ -157,7 +159,7 @@ class ParentDashboardService
         // Recent completed sessions
         $recentSessions = QuranSession::whereIn('student_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->with(['student'])
             ->orderBy('scheduled_at', 'desc')
             ->limit(5)
@@ -177,7 +179,7 @@ class ParentDashboardService
         // Recent academic sessions
         $recentAcademicSessions = AcademicSession::whereIn('student_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->with(['student'])
             ->orderBy('scheduled_at', 'desc')
             ->limit(5)
@@ -217,7 +219,7 @@ class ParentDashboardService
         // Recent payments
         $recentPayments = Payment::whereIn('user_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get()

@@ -6,6 +6,7 @@ use App\Models\Academy;
 use App\Models\QuranCircle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class UnifiedQuranCircleController extends Controller
 {
@@ -189,7 +190,7 @@ class UnifiedQuranCircleController extends Controller
                 $pastSessions = $circle->sessions()
                     ->with(['quranTeacher'])
                     ->where('scheduled_at', '<=', $now)
-                    ->where('status', 'completed')
+                    ->where('status', SessionStatus::COMPLETED->value)
                     ->orderBy('scheduled_at', 'desc')
                     ->take(5)
                     ->get();

@@ -11,6 +11,7 @@ use App\Models\TeacherEarning;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Enums\SessionStatus;
 
 class EarningsController extends Controller
 {
@@ -74,7 +75,7 @@ class EarningsController extends Controller
 
                 if ($quranTeacherId) {
                     $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
-                        ->where('status', 'completed')
+                        ->where('status', SessionStatus::COMPLETED->value)
                         ->get();
 
                     $quranEarnings = $quranSessions->count() * ($user->quranTeacherProfile?->hourly_rate ?? 50);
@@ -97,7 +98,7 @@ class EarningsController extends Controller
 
                 if ($academicTeacherId) {
                     $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                        ->where('status', 'completed')
+                        ->where('status', SessionStatus::COMPLETED->value)
                         ->get();
 
                     $academicEarnings = $academicSessions->count() * ($user->academicTeacherProfile?->hourly_rate ?? 60);
@@ -170,7 +171,7 @@ class EarningsController extends Controller
 
                 if ($quranTeacherId) {
                     $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
-                        ->where('status', 'completed')
+                        ->where('status', SessionStatus::COMPLETED->value)
                         ->whereBetween('scheduled_at', [$startDate, $endDate])
                         ->with(['student.user'])
                         ->orderBy('scheduled_at', 'desc')
@@ -183,7 +184,7 @@ class EarningsController extends Controller
                             'description' => 'جلسة قرآنية - ' . ($session->student?->user?->name ?? 'طالب'),
                             'amount' => $hourlyRate,
                             'currency' => 'SAR',
-                            'status' => 'completed',
+                            'status' => SessionStatus::COMPLETED,
                             'session_id' => $session->id,
                             'date' => $session->scheduled_at?->toDateString(),
                             'created_at' => $session->scheduled_at?->toISOString(),
@@ -198,7 +199,7 @@ class EarningsController extends Controller
 
                 if ($academicTeacherId) {
                     $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                        ->where('status', 'completed')
+                        ->where('status', SessionStatus::COMPLETED->value)
                         ->whereBetween('scheduled_at', [$startDate, $endDate])
                         ->with(['student.user', 'academicSubscription'])
                         ->orderBy('scheduled_at', 'desc')
@@ -212,7 +213,7 @@ class EarningsController extends Controller
                                 ' - ' . ($session->student?->user?->name ?? 'طالب'),
                             'amount' => $hourlyRate,
                             'currency' => 'SAR',
-                            'status' => 'completed',
+                            'status' => SessionStatus::COMPLETED,
                             'session_id' => $session->id,
                             'date' => $session->scheduled_at?->toDateString(),
                             'created_at' => $session->scheduled_at?->toISOString(),

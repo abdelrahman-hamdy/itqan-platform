@@ -132,7 +132,7 @@
     }
 @endphp
 
-<div class="border border-gray-200 rounded-lg p-4 transition-colors">
+<div id="student-card-{{ $student->id }}" class="border border-gray-200 rounded-lg p-4 transition-colors" data-student-id="{{ $student->id }}" data-report-id="{{ $report?->id ?? '' }}">
     <!-- Header with Avatar, Name, and Attendance Status -->
     <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
@@ -149,7 +149,7 @@
         </div>
         
         <!-- Attendance Status (floated to absolute left/right in RTL) -->
-        <div class="flex items-center">
+        <div id="student-attendance-{{ $student->id }}" class="flex items-center">
             @if($statusEnum)
                 {{-- Calculated status using enum --}}
                 <span class="inline-flex items-center px-3 py-1.5 {{ $statusEnum->badgeClass() }} rounded-full text-sm font-semibold">
@@ -169,7 +169,7 @@
                     <i class="ri-logout-box-line ml-1"></i>
                     غادر الجلسة
                 </span>
-            @elseif((is_object($session->status) ? $session->status->value : $session->status) === 'completed' && !$isCalculated)
+            @elseif((is_object($session->status) ? $session->status->value : $session->status) === \App\Enums\SessionStatus::COMPLETED->value && !$isCalculated)
                 {{-- Session completed but not calculated yet --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
                     <i class="ri-loader-4-line animate-spin ml-1"></i>
@@ -186,6 +186,7 @@
     </div>
     
     <!-- Student Report Data -->
+    <div id="student-report-data-{{ $student->id }}">
     @if($report && !empty($infoItems))
         <div class="bg-white border border-gray-300 rounded-lg mb-3 p-3">
             <!-- Live Data Indicator -->
@@ -287,7 +288,7 @@
                 <span>تم حساب الحضور - لم يتم إضافة تقييم للطالب بعد</span>
             </div>
         </div>
-    @elseif((is_object($session->status) ? $session->status->value : $session->status) === 'completed')
+    @elseif((is_object($session->status) ? $session->status->value : $session->status) === \App\Enums\SessionStatus::COMPLETED->value)
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
             <div class="flex items-center text-blue-700 text-sm">
                 <i class="ri-loader-4-line animate-spin ml-2"></i>
@@ -302,12 +303,13 @@
             </div>
         </div>
     @endif
-    
+    </div>
+
     <!-- Action Buttons -->
     <div class="flex items-center justify-end gap-2">
-        <button class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onclick="editStudentReport({{ $student->id }}, {{ $report?->id ?? 'null' }})">
+        <button id="student-edit-btn-{{ $student->id }}" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onclick="editStudentReport({{ $student->id }}, {{ $report?->id ?? 'null' }})">
             <i class="ri-edit-line ml-1"></i>
-            {{ $report ? 'تعديل التقرير' : 'إنشاء تقرير' }}
+            <span id="student-edit-btn-text-{{ $student->id }}">{{ $report ? 'تعديل التقرير' : 'إنشاء تقرير' }}</span>
         </button>
         
         @if($showChat)

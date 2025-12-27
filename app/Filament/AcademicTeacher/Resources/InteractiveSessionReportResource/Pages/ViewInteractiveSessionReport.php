@@ -62,10 +62,10 @@ class ViewInteractiveSessionReport extends ViewRecord
                                         }
                                     })
                                     ->color(fn (?string $state): string => match ($state) {
-                                        'attended' => 'success',
-                                        'late' => 'warning',
-                                        'leaved' => 'info',
-                                        'absent' => 'danger',
+                                        AttendanceStatus::ATTENDED->value => 'success',
+                                        AttendanceStatus::LATE->value => 'warning',
+                                        AttendanceStatus::LEAVED->value => 'info',
+                                        AttendanceStatus::ABSENT->value => 'danger',
                                         default => 'gray',
                                     }),
                                 Infolists\Components\TextEntry::make('actual_attendance_minutes')

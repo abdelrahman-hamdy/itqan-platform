@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class SessionController extends Controller
 {
@@ -149,7 +150,7 @@ class SessionController extends Controller
         $quranSessions = QuranSession::where('student_id', $user->id)
             ->where('scheduled_at', '>', $now)
             ->where('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['quranTeacher'])
             ->orderBy('scheduled_at')
             ->limit(20)
@@ -163,7 +164,7 @@ class SessionController extends Controller
         $academicSessions = AcademicSession::where('student_id', $user->id)
             ->where('scheduled_at', '>', $now)
             ->where('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['academicTeacher.user', 'academicSubscription'])
             ->orderBy('scheduled_at')
             ->limit(20)
@@ -179,7 +180,7 @@ class SessionController extends Controller
         })
             ->where('scheduled_at', '>', $now)
             ->where('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['course.assignedTeacher.user'])
             ->orderBy('scheduled_at')
             ->limit(20)
@@ -292,14 +293,14 @@ class SessionController extends Controller
             case 'quran':
                 $session = QuranSession::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->where('status', 'completed')
+                    ->where('status', SessionStatus::COMPLETED->value)
                     ->first();
                 break;
 
             case 'academic':
                 $session = AcademicSession::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->where('status', 'completed')
+                    ->where('status', SessionStatus::COMPLETED->value)
                     ->first();
                 break;
 
@@ -308,7 +309,7 @@ class SessionController extends Controller
                     ->whereHas('course.enrollments', function ($q) use ($user) {
                         $q->where('user_id', $user->id);
                     })
-                    ->where('status', 'completed')
+                    ->where('status', SessionStatus::COMPLETED->value)
                     ->first();
                 break;
         }
@@ -536,6 +537,6 @@ class SessionController extends Controller
         $status = $session->status->value ?? $session->status;
 
         return $now->between($joinStart, $joinEnd)
-            && !in_array($status, ['cancelled', 'completed']);
+            && !in_array($status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
     }
 }

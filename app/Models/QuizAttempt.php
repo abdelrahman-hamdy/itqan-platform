@@ -46,17 +46,37 @@ class QuizAttempt extends Model
         return $this->belongsTo(QuizAssignment::class, 'quiz_assignment_id');
     }
 
-    public function student(): BelongsTo
+    /**
+     * Alias for assignment() relationship
+     */
+    public function quizAssignment(): BelongsTo
     {
-        return $this->belongsTo(StudentProfile::class, 'student_id');
+        return $this->assignment();
     }
 
     /**
-     * Alias for student() relationship for backwards compatibility
+     * Get the quiz through the assignment (accessor)
      */
-    public function studentProfile(): BelongsTo
+    public function getQuizAttribute(): ?Quiz
     {
-        return $this->student();
+        return $this->assignment?->quiz;
+    }
+
+    /**
+     * Eager load quiz through assignment
+     * Note: This is a "fake" relationship for eager loading support
+     */
+    public function quiz(): BelongsTo
+    {
+        // Return a relationship that will work with eager loading
+        // The actual quiz is accessed via assignment.quiz
+        return $this->belongsTo(Quiz::class, 'id', 'id')
+            ->whereRaw('0 = 1'); // Never matches - use accessor instead
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(StudentProfile::class, 'student_id');
     }
 
     // ========================================

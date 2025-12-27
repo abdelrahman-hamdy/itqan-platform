@@ -26,6 +26,8 @@ use Filament\Forms\Components\Select;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class QuranTrialRequestResource extends BaseTeacherResource
 {
@@ -129,12 +131,12 @@ class QuranTrialRequestResource extends BaseTeacherResource
                             Select::make('status')
                                 ->label('حالة الطلب')
                                 ->options([
-                                    'pending' => 'في الانتظار',
+                                    SubscriptionStatus::PENDING->value => 'في الانتظار',
                                     'approved' => 'موافق عليه',
-                                    'scheduled' => 'مجدول',
-                                    'completed' => 'مكتمل',
+                                    SessionStatus::SCHEDULED->value => 'مجدول',
+                                    SessionStatus::COMPLETED->value => 'مكتمل',
                                     'rejected' => 'مرفوض',
-                                    'cancelled' => 'ملغي',
+                                    SessionStatus::CANCELLED->value => 'ملغي',
                                     'no_show' => 'لم يحضر',
                                 ])
                                 ->required()
@@ -275,22 +277,22 @@ class QuranTrialRequestResource extends BaseTeacherResource
             BadgeColumn::make('status')
                 ->label('الحالة')
                 ->formatStateUsing(fn (string $state): string => match ($state) {
-                    'pending' => 'في الانتظار',
+                    SubscriptionStatus::PENDING->value => 'في الانتظار',
                     'approved' => 'موافق عليه',
-                    'scheduled' => 'مجدول',
-                    'completed' => 'مكتمل',
+                    SessionStatus::SCHEDULED->value => 'مجدول',
+                    SessionStatus::COMPLETED->value => 'مكتمل',
                     'rejected' => 'مرفوض',
-                    'cancelled' => 'ملغي',
+                    SessionStatus::CANCELLED->value => 'ملغي',
                     'no_show' => 'لم يحضر',
                     default => $state,
                 })
                 ->color(fn (string $state): string => match ($state) {
-                    'pending' => 'warning',
+                    SubscriptionStatus::PENDING->value => 'warning',
                     'approved' => 'success',
-                    'scheduled' => 'info',
-                    'completed' => 'primary',
+                    SessionStatus::SCHEDULED->value => 'info',
+                    SessionStatus::COMPLETED->value => 'primary',
                     'rejected' => 'danger',
-                    'cancelled' => 'gray',
+                    SessionStatus::CANCELLED->value => 'gray',
                     'no_show' => 'danger',
                     default => 'gray',
                 }),
@@ -319,12 +321,12 @@ class QuranTrialRequestResource extends BaseTeacherResource
             SelectFilter::make('status')
                 ->label('حالة الطلب')
                 ->options([
-                    'pending' => 'في الانتظار',
+                    SubscriptionStatus::PENDING->value => 'في الانتظار',
                     'approved' => 'موافق عليه',
-                    'scheduled' => 'مجدول',
-                    'completed' => 'مكتمل',
+                    SessionStatus::SCHEDULED->value => 'مجدول',
+                    SessionStatus::COMPLETED->value => 'مكتمل',
                     'rejected' => 'مرفوض',
-                    'cancelled' => 'ملغي',
+                    SessionStatus::CANCELLED->value => 'ملغي',
                     'no_show' => 'لم يحضر',
                 ]),
 

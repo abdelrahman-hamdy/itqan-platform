@@ -9,6 +9,8 @@ use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class QuickActionsWidget extends Widget
 {
@@ -40,13 +42,13 @@ class QuickActionsWidget extends Widget
         // Get today's upcoming session
         $todaySession = QuranSession::where('quran_teacher_id', $teacher->id)
             ->whereDate('scheduled_at', today())
-            ->whereIn('status', ['scheduled', 'ready'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
             ->orderBy('scheduled_at')
             ->first();
 
         // Get pending trial requests count
         $pendingTrials = QuranTrialRequest::where('teacher_id', $teacher->id)
-            ->where('status', 'pending')
+            ->where('status', SubscriptionStatus::PENDING->value)
             ->count();
 
         return [

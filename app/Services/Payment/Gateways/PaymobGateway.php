@@ -12,6 +12,7 @@ use App\Services\Payment\DTOs\WebhookPayload;
 use App\Services\Payment\Exceptions\PaymentException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Paymob payment gateway implementation using Unified Intention API.

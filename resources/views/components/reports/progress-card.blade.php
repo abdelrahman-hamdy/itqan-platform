@@ -14,8 +14,8 @@
     $lifetimePagesMemorized = $progress['lifetime_pages_memorized'] ?? null;
     $lifetimeSessionsCompleted = $progress['lifetime_sessions_completed'] ?? null;
 
-    // Calculate Quran completion percentage (604 pages total)
-    $totalQuranPages = 604;
+    // Calculate Quran completion percentage (use config for total pages)
+    $totalQuranPages = config('quran.total_pages', 604);
     $quranCompletionPercentage = $pagesMemorized > 0 ? min(100, round(($pagesMemorized / $totalQuranPages) * 100, 1)) : 0;
 @endphp
 

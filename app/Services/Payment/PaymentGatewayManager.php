@@ -6,6 +6,7 @@ use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Services\Payment\Gateways\PaymobGateway;
 use Illuminate\Support\Manager;
 use InvalidArgumentException;
+use App\Enums\SessionStatus;
 
 /**
  * Payment Gateway Manager following Laravel's Manager pattern.

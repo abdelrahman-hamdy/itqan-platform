@@ -2,10 +2,12 @@
 
 namespace App\Services\Scheduling\Validators;
 
+use App\Enums\SubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 /**
  * Validator for Academic Individual Lessons (Subscription-Based)
@@ -202,7 +204,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
     public function getSchedulingStatus(): array
     {
         // Check subscription status first
-        if (!$this->subscription || $this->subscription->status !== 'active') {
+        if (!$this->subscription || $this->subscription->status !== SubscriptionStatus::ACTIVE) {
             return [
                 'status' => 'inactive',
                 'message' => 'الاشتراك غير نشط',
@@ -238,7 +240,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
         // Get future scheduled sessions
         $futureScheduled = $this->subscription->sessions()
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->where('scheduled_at', '>', now())
             ->count();
 
@@ -281,7 +283,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
         // Calculate used sessions
         $usedSessions = $this->subscription->sessions()
-            ->whereIn('status', ['completed', 'scheduled', 'in_progress'])
+            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $usedSessions);

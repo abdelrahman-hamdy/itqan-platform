@@ -8,6 +8,8 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class UnifiedAcademicTeacherController extends Controller
 {
@@ -36,7 +38,7 @@ class UnifiedAcademicTeacherController extends Controller
             // Get student's academic subscriptions
             $subscriptions = AcademicSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->whereIn('status', ['active', 'pending'])
+                ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
                 ->with(['academicTeacher', 'academicPackage', 'sessions'])
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -199,7 +201,7 @@ class UnifiedAcademicTeacherController extends Controller
             $mySubscription = AcademicSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
                 ->where('teacher_id', $teacher->id)
-                ->where('status', 'active')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->first();
         }
 

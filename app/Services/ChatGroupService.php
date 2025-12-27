@@ -11,6 +11,7 @@ use App\Models\InteractiveCourse;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use App\Enums\SessionStatus;
 
 class ChatGroupService
 {

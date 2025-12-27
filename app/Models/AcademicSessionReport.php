@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * - notes: Teacher notes (inherited from base)
  *
  * Simplified to match Interactive Session Reports structure.
+ *
+ * @property float|null $homework_degree
  */
 class AcademicSessionReport extends BaseSessionReport
 {
@@ -38,6 +41,10 @@ class AcademicSessionReport extends BaseSessionReport
         'manually_evaluated',
         'override_reason',
 
+        // Homework tracking fields (unified homework system)
+        'homework_submitted_at',
+        'homework_submission_id',
+
         // Academic-specific field (unified with Interactive)
         'homework_degree',                  // Homework quality (0-10)
     ];
@@ -57,6 +64,9 @@ class AcademicSessionReport extends BaseSessionReport
         'evaluated_at' => 'datetime',
         'is_calculated' => 'boolean',
         'manually_evaluated' => 'boolean',
+
+        // Homework tracking casts
+        'homework_submitted_at' => 'datetime',
 
         // Academic-specific cast (0-10 scale, 1 decimal)
         'homework_degree' => 'decimal:1',
@@ -84,11 +94,11 @@ class AcademicSessionReport extends BaseSessionReport
     }
 
     /**
-     * Academic sessions use 15 minutes grace period (default)
+     * Academic sessions use grace period from academy settings
      */
     protected function getGracePeriodMinutes(): int
     {
-        return 15; // Default 15 minutes grace period for academic sessions
+        return $this->session?->academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
     // ========================================
@@ -134,15 +144,8 @@ class AcademicSessionReport extends BaseSessionReport
         $this->update($data);
     }
 
-    /**
-     * Get homework submission from polymorphic relationship
-     */
-    public function homeworkSubmission()
-    {
-        return $this->hasOne(HomeworkSubmission::class, 'submitable_id')
-            ->where('submitable_type', AcademicSession::class)
-            ->where('student_id', $this->student_id);
-    }
+    // Note: homeworkSubmission() relationship is inherited from BaseSessionReport
+    // It uses homework_submission_id foreign key for direct linking
 
     // ========================================
     // Additional Scopes
@@ -183,9 +186,9 @@ class AcademicSessionReport extends BaseSessionReport
             ];
         }
 
-        $attended = $reports->whereIn('attendance_status', ['attended', 'leaved'])->count();
-        $absent = $reports->where('attendance_status', 'absent')->count();
-        $late = $reports->where('attendance_status', 'late')->count();
+        $attended = $reports->whereIn('attendance_status', [AttendanceStatus::ATTENDED->value, AttendanceStatus::LEAVED->value])->count();
+        $absent = $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count();
+        $late = $reports->where('attendance_status', AttendanceStatus::LATE->value)->count();
 
         return [
             'total_sessions' => $totalSessions,

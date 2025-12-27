@@ -72,7 +72,7 @@ class AcademicSubscription extends BaseSubscription
         // Session request reference
         'session_request_id',
 
-        // Package reference (kept for backward compatibility)
+        // Package reference
         'academic_package_id',
 
         // Subscription type
@@ -100,15 +100,15 @@ class AcademicSubscription extends BaseSubscription
         'student_notes',
         'teacher_notes',
 
-        // Legacy amount fields (for backward compatibility)
+        // Amount fields
         'monthly_amount',
         'final_monthly_amount',
 
-        // Legacy date fields (controller uses these instead of starts_at/ends_at)
+        // Date fields
         'start_date',
         'end_date',
 
-        // Additional fields used by controller
+        // Additional fields
         'auto_renewal',
         'renewal_reminder_days',
         'pause_days_remaining',
@@ -132,7 +132,7 @@ class AcademicSubscription extends BaseSubscription
     public function getCasts(): array
     {
         return array_merge(parent::getCasts(), [
-            // Subscription dates (legacy fields - kept for backward compatibility)
+            // Subscription dates
             'start_date' => 'datetime',
             'end_date' => 'datetime',
 
@@ -158,10 +158,10 @@ class AcademicSubscription extends BaseSubscription
      * Default attributes
      */
     protected $attributes = [
-        'status' => 'pending',
-        'payment_status' => 'pending',
+        'status' => SubscriptionStatus::PENDING->value,
+        'payment_status' => SubscriptionPaymentStatus::PENDING->value,
         'currency' => 'SAR',
-        'billing_cycle' => 'monthly',
+        'billing_cycle' => BillingCycle::MONTHLY->value,
         'auto_renew' => true,
         'progress_percentage' => 0,
         'certificate_issued' => false,
@@ -232,6 +232,14 @@ class AcademicSubscription extends BaseSubscription
     public function academicPackage(): BelongsTo
     {
         return $this->belongsTo(AcademicPackage::class, 'academic_package_id');
+    }
+
+    /**
+     * Alias for academicPackage (for API compatibility)
+     */
+    public function package(): BelongsTo
+    {
+        return $this->academicPackage();
     }
 
     /**

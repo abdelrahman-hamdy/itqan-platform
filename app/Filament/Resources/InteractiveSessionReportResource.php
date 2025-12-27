@@ -94,7 +94,7 @@ class InteractiveSessionReportResource extends Resource
                         Forms\Components\Select::make('attendance_status')
                             ->label('حالة الحضور')
                             ->options(AttendanceStatus::options())
-                            ->default('absent')
+                            ->default(AttendanceStatus::ABSENT->value)
                             ->required(),
                         Forms\Components\TextInput::make('attendance_percentage')
                             ->label('نسبة الحضور')
@@ -169,10 +169,10 @@ class InteractiveSessionReportResource extends Resource
                     ->label('الحضور')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
-                        'attended' => 'success',
-                        'late' => 'warning',
-                        'leaved' => 'info',
-                        'absent' => 'danger',
+                        AttendanceStatus::ATTENDED->value => 'success',
+                        AttendanceStatus::LATE->value => 'warning',
+                        AttendanceStatus::LEAVED->value => 'info',
+                        AttendanceStatus::ABSENT->value => 'danger',
                         default => 'gray',
                     })
                     ->formatStateUsing(function (?string $state): string {

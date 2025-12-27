@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
+use App\Enums\SessionStatus;
 
 /**
  * Academic Subscription Details Service

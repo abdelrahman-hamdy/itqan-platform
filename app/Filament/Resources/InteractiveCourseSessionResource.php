@@ -13,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Enums\SessionStatus;
 
 class InteractiveCourseSessionResource extends Resource
 {
@@ -99,7 +100,7 @@ class InteractiveCourseSessionResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('حالة الجلسة')
                             ->options(\App\Enums\SessionStatus::options())
-                            ->default('scheduled')
+                            ->default(SessionStatus::SCHEDULED->value)
                             ->required(),
                     ])->columns(2),
 
@@ -237,7 +238,7 @@ class InteractiveCourseSessionResource extends Resource
                         ->visible(fn (InteractiveCourseSession $record): bool =>
                             $record->status instanceof \App\Enums\SessionStatus
                                 ? in_array($record->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])
-                                : in_array($record->status, ['scheduled', 'ready']))
+                                : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
                         ->action(function (InteractiveCourseSession $record) {
                             $record->markAsOngoing();
                         }),
@@ -248,7 +249,7 @@ class InteractiveCourseSessionResource extends Resource
                         ->visible(fn (InteractiveCourseSession $record): bool =>
                             $record->status instanceof \App\Enums\SessionStatus
                                 ? $record->status === \App\Enums\SessionStatus::ONGOING
-                                : $record->status === 'ongoing')
+                                : $record->status === SessionStatus::ONGOING->value)
                         ->action(function (InteractiveCourseSession $record) {
                             $record->markAsCompleted();
                         }),
@@ -259,7 +260,7 @@ class InteractiveCourseSessionResource extends Resource
                         ->visible(fn (InteractiveCourseSession $record): bool =>
                             $record->status instanceof \App\Enums\SessionStatus
                                 ? in_array($record->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])
-                                : in_array($record->status, ['scheduled', 'ready']))
+                                : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
                         ->requiresConfirmation()
                         ->action(function (InteractiveCourseSession $record) {
                             $record->markAsCancelled('ألغيت بواسطة المدير', auth()->id());

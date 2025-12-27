@@ -48,6 +48,16 @@ use Illuminate\Support\Str;
  * @property int|null $student_id
  * @property string $session_type 'individual', 'group', or 'trial'
  * @property bool $subscription_counted Flag to prevent double-counting
+ * @property string|null $lesson_content
+ * @property bool|null $homework_assigned
+ * @property string|null $homework_details
+ * @property string|null $cancellation_type
+ * @property string|null $rescheduling_note
+ * @property float|null $recitation_quality Legacy quality metric
+ * @property float|null $tajweed_accuracy Legacy quality metric
+ * @property int|null $mistakes_count Legacy quality metric
+ * @property float|null $overall_rating Legacy quality metric
+ * @property array|null $lesson_objectives Legacy field
  *
  * @see BaseSession Parent class with common session fields
  * @see CountsTowardsSubscription Trait for subscription logic
@@ -192,6 +202,30 @@ class QuranSession extends BaseSession
         return $this->hasMany(StudentSessionReport::class, 'session_id');
     }
 
+    /**
+     * Alias for studentReports relationship (for API compatibility)
+     */
+    public function reports(): HasMany
+    {
+        return $this->studentReports();
+    }
+
+    /**
+     * Get first student report (for individual sessions)
+     */
+    public function studentReport(): HasOne
+    {
+        return $this->hasOne(StudentSessionReport::class, 'session_id');
+    }
+
+    /**
+     * Alias for quranTeacher (for API compatibility)
+     */
+    public function teacher(): BelongsTo
+    {
+        return $this->quranTeacher();
+    }
+
 
     /**
      * New homework system relationship
@@ -222,7 +256,7 @@ class QuranSession extends BaseSession
 
     public function scopeMissed($query)
     {
-        return $query->where('status', 'missed');
+        return $query->where('status', SessionStatus::ABSENT);
     }
 
     public function scopeThisWeek($query)
@@ -340,10 +374,15 @@ class QuranSession extends BaseSession
                 return false;
             }
 
+            // Validate that we're not completing before start time
+            if ($session->started_at && now()->lt($session->started_at)) {
+                return false; // Cannot complete before start
+            }
+
             $updateData = array_merge([
                 'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'attendance_status' => 'attended',
+                'attendance_status' => AttendanceStatus::ATTENDED->value,
             ], $additionalData);
 
             $session->update($updateData);
@@ -354,7 +393,7 @@ class QuranSession extends BaseSession
             }
 
             // Record attendance for students
-            $session->recordSessionAttendance('attended');
+            $session->recordSessionAttendance(AttendanceStatus::ATTENDED->value);
 
             // Update subscription usage (this also uses transactions internally)
             $session->updateSubscriptionUsage();
@@ -369,7 +408,7 @@ class QuranSession extends BaseSession
     /**
      * Mark session as cancelled
      */
-    public function markAsCancelled(?string $reason = null, ?string $cancelledBy = null): bool
+    public function markAsCancelled(?string $reason = null, ?int $cancelledBy = null): bool
     {
         if (! $this->status->canCancel()) {
             return false;
@@ -382,8 +421,8 @@ class QuranSession extends BaseSession
             'cancelled_at' => now(),
         ]);
 
-        // Record attendance as cancelled (doesn't count towards subscription)
-        $this->recordSessionAttendance('cancelled');
+        // Record attendance as absent for cancelled sessions (doesn't count towards subscription)
+        $this->recordSessionAttendance(AttendanceStatus::ABSENT->value);
 
         return true;
     }
@@ -403,12 +442,12 @@ class QuranSession extends BaseSession
         $this->update([
             'status' => SessionStatus::ABSENT,
             'ended_at' => now(),
-            'attendance_status' => 'absent',
+            'attendance_status' => AttendanceStatus::ABSENT->value,
             'attendance_notes' => $reason,
         ]);
 
         // Record attendance as absent (counts towards subscription)
-        $this->recordSessionAttendance('absent');
+        $this->recordSessionAttendance(AttendanceStatus::ABSENT->value);
 
         // Update circle progress
         if ($this->individualCircle) {
@@ -434,7 +473,7 @@ class QuranSession extends BaseSession
                 'teacher_id' => $this->quran_teacher_id,
                 'academy_id' => $this->academy_id,
             ], [
-                'attendance_status' => 'absent', // Default to absent until meeting data is available
+                'attendance_status' => AttendanceStatus::ABSENT->value, // Default to absent until meeting data is available
                 'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);
@@ -448,7 +487,7 @@ class QuranSession extends BaseSession
                     'teacher_id' => $this->quran_teacher_id,
                     'academy_id' => $this->academy_id,
                 ], [
-                    'attendance_status' => 'absent', // Default to absent until meeting data is available
+                    'attendance_status' => AttendanceStatus::ABSENT->value, // Default to absent until meeting data is available
                     'is_calculated' => true,
                     'evaluated_at' => now(),
                 ]);
@@ -580,12 +619,12 @@ class QuranSession extends BaseSession
 
     public function scopeAttended($query)
     {
-        return $query->where('attendance_status', 'attended');
+        return $query->where('attendance_status', AttendanceStatus::ATTENDED->value);
     }
 
     public function scopeAbsent($query)
     {
-        return $query->where('attendance_status', 'absent');
+        return $query->where('attendance_status', AttendanceStatus::ABSENT->value);
     }
 
     public function scopeByTeacher($query, $teacherId)
@@ -874,8 +913,6 @@ class QuranSession extends BaseSession
         return self::create($makeupData);
     }
 
-    // Note: recordProgress() method removed - Progress is now calculated
-    // dynamically from session reports using the QuranReportService
 
     // Common meeting methods (generateMeetingLink, getMeetingInfo, isMeetingValid,
     // getMeetingJoinUrl, generateParticipantToken, getRoomInfo, endMeeting,
@@ -1016,7 +1053,7 @@ class QuranSession extends BaseSession
     {
         return self::create(array_merge($data, [
             'session_code' => self::generateSessionCode($data['academy_id']),
-            'status' => 'scheduled',
+            'status' => SessionStatus::SCHEDULED->value,
             'is_makeup_session' => false,
         ]));
     }
@@ -1221,10 +1258,10 @@ class QuranSession extends BaseSession
 
         return [
             'total_students' => $attendances->count(),
-            'present_count' => $attendances->where('attendance_status', 'attended')->count(),
-            'late_count' => $attendances->where('attendance_status', 'late')->count(),
-            'absent_count' => $attendances->where('attendance_status', 'absent')->count(),
-            'left_early_count' => $attendances->where('attendance_status', 'leaved')->count(),
+            'present_count' => $attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
+            'late_count' => $attendances->where('attendance_status', AttendanceStatus::LATE->value)->count(),
+            'absent_count' => $attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
+            'left_early_count' => $attendances->where('attendance_status', AttendanceStatus::LEAVED->value)->count(),
             'auto_tracked_count' => $attendances->where('auto_tracked', true)->count(),
             'manually_overridden_count' => $attendances->where('manually_overridden', true)->count(),
             'average_participation' => $attendances->whereNotNull('participation_score')->avg('participation_score') ?? 0,

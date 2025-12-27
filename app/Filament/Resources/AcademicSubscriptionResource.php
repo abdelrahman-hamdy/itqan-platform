@@ -15,6 +15,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class AcademicSubscriptionResource extends Resource
 {
@@ -169,24 +171,24 @@ class AcademicSubscriptionResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('حالة الاشتراك')
                             ->options([
-                                'active' => 'نشط',
-                                'paused' => 'معلق',
+                                SubscriptionStatus::ACTIVE->value => 'نشط',
+                                SubscriptionStatus::PAUSED->value => 'معلق',
                                 'suspended' => 'موقوف',
-                                'cancelled' => 'ملغي',
-                                'expired' => 'منتهي',
+                                SessionStatus::CANCELLED->value => 'ملغي',
+                                SubscriptionStatus::EXPIRED->value => 'منتهي',
                             ])
-                            ->default('active')
+                            ->default(SubscriptionStatus::ACTIVE->value)
                             ->required(),
                         
                         Forms\Components\Select::make('payment_status')
                             ->label('حالة الدفع')
                             ->options([
                                 'current' => 'محدث',
-                                'pending' => 'في الانتظار',
+                                SubscriptionStatus::PENDING->value => 'في الانتظار',
                                 'overdue' => 'متأخر',
                                 'failed' => 'فشل',
                             ])
-                            ->default('pending')
+                            ->default(SubscriptionStatus::PENDING->value)
                             ->required(),
                         
                         Forms\Components\Toggle::make('auto_renewal')
@@ -271,18 +273,18 @@ class AcademicSubscriptionResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'active' => 'نشط',
-                        'paused' => 'معلق',
+                        SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SubscriptionStatus::PAUSED->value => 'معلق',
                         'suspended' => 'موقوف',
-                        'cancelled' => 'ملغي',
-                        'expired' => 'منتهي',
+                        SessionStatus::CANCELLED->value => 'ملغي',
+                        SubscriptionStatus::EXPIRED->value => 'منتهي',
                     ]),
                 
                 Tables\Filters\SelectFilter::make('payment_status')
                     ->label('حالة الدفع')
                     ->options([
                         'current' => 'محدث',
-                        'pending' => 'في الانتظار',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                         'overdue' => 'متأخر',
                         'failed' => 'فشل',
                     ]),

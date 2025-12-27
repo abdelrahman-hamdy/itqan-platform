@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -112,7 +115,7 @@ class ParentReportController extends Controller
                 ->get();
 
             $totalSessions = $sessions->count();
-            $completedSessions = $sessions->where('status', 'completed')->count();
+            $completedSessions = $sessions->where('status', SessionStatus::COMPLETED->value)->count();
             $attendanceRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0;
 
             // Get average performance from session reports
@@ -153,7 +156,7 @@ class ParentReportController extends Controller
                 ->get();
 
             $totalSessions = $sessions->count();
-            $completedSessions = $sessions->where('status', 'completed')->count();
+            $completedSessions = $sessions->where('status', SessionStatus::COMPLETED->value)->count();
             $attendanceRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0;
 
             // Get average performance from homework
@@ -374,7 +377,7 @@ class ParentReportController extends Controller
             ->get();
 
         $quranTotal = $quranSessions->count();
-        $quranCompleted = $quranSessions->where('status', 'completed')->count();
+        $quranCompleted = $quranSessions->where('status', SessionStatus::COMPLETED->value)->count();
         $quranAttendanceRate = $quranTotal > 0 ? round(($quranCompleted / $quranTotal) * 100) : 0;
 
         // Get Academic sessions (AcademicSession.student_id references User.id)
@@ -383,18 +386,18 @@ class ParentReportController extends Controller
             ->get();
 
         $academicTotal = $academicSessions->count();
-        $academicCompleted = $academicSessions->where('status', 'completed')->count();
+        $academicCompleted = $academicSessions->where('status', SessionStatus::COMPLETED->value)->count();
         $academicAttendanceRate = $academicTotal > 0 ? round(($academicCompleted / $academicTotal) * 100) : 0;
 
         // Get active subscription counts (subscription.student_id references User.id)
         $quranActiveSubscriptions = \App\Models\QuranSubscription::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $academicActiveSubscriptions = \App\Models\AcademicSubscription::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Get course enrollments (CourseSubscription.student_id references User.id)
@@ -456,7 +459,7 @@ class ParentReportController extends Controller
             ],
             'courses' => [
                 'total_enrollments' => $courseEnrollments->count(),
-                'completed_courses' => $courseEnrollments->where('status', 'completed')->count(),
+                'completed_courses' => $courseEnrollments->where('status', SessionStatus::COMPLETED->value)->count(),
                 'average_progress' => $courseEnrollments->avg('progress_percentage') ?? 0,
             ],
             'recent_activity' => [],
@@ -503,7 +506,7 @@ class ParentReportController extends Controller
         $quranSessions = \App\Models\QuranSession::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->where(function ($query) {
-                $query->where('status', 'completed')
+                $query->where('status', SessionStatus::COMPLETED->value)
                     ->orWhereNotNull('attendance_status');
             })
             ->get();
@@ -512,7 +515,7 @@ class ParentReportController extends Controller
         $academicSessions = \App\Models\AcademicSession::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->where(function ($query) {
-                $query->where('status', 'completed')
+                $query->where('status', SessionStatus::COMPLETED->value)
                     ->orWhereNotNull('attendance_status');
             })
             ->get();
@@ -523,11 +526,11 @@ class ParentReportController extends Controller
         // Calculate Quran attendance stats
         $quranTotal = $quranSessions->count();
         $quranPresent = $quranSessions->filter(function ($session) use ($getStatusValue) {
-            // Present if: completed AND (no attendance_status OR attendance_status is present/attended)
+            // Present if: completed AND (no attendance_status OR attendance_status is attended/late)
             $statusValue = $getStatusValue($session->status);
             if ($statusValue === 'completed') {
-                $attStatus = strtolower($session->attendance_status ?? 'present');
-                return in_array($attStatus, ['present', 'attended', 'late', '']) || is_null($session->attendance_status);
+                $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
+                return in_array($attStatus, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, '']) || is_null($session->attendance_status);
             }
             return false;
         })->count();
@@ -536,22 +539,22 @@ class ParentReportController extends Controller
             // Absent if session status is 'absent' OR attendance_status indicates absence
             if ($statusValue === 'absent') return true;
             $attStatus = strtolower($session->attendance_status ?? '');
-            return in_array($attStatus, ['absent', 'no_show', 'missed']);
+            return $attStatus === AttendanceStatus::ABSENT->value;
         })->count();
         $quranLate = $quranSessions->filter(function ($session) {
             $attStatus = strtolower($session->attendance_status ?? '');
-            return $attStatus === 'late';
+            return $attStatus === AttendanceStatus::LATE->value;
         })->count();
         $quranAttendanceRate = $quranTotal > 0 ? round(($quranPresent / $quranTotal) * 100) : 0;
 
         // Calculate Academic attendance stats
         $academicTotal = $academicSessions->count();
         $academicPresent = $academicSessions->filter(function ($session) use ($getStatusValue) {
-            // Present if: completed AND (no attendance_status OR attendance_status is present/attended)
+            // Present if: completed AND (no attendance_status OR attendance_status is attended/late)
             $statusValue = $getStatusValue($session->status);
             if ($statusValue === 'completed') {
-                $attStatus = strtolower($session->attendance_status ?? 'present');
-                return in_array($attStatus, ['present', 'attended', 'late', 'scheduled', '']) || is_null($session->attendance_status);
+                $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
+                return in_array($attStatus, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, '']) || is_null($session->attendance_status);
             }
             return false;
         })->count();
@@ -560,11 +563,11 @@ class ParentReportController extends Controller
             // Absent if session status is 'absent' OR attendance_status indicates absence
             if ($statusValue === 'absent') return true;
             $attStatus = strtolower($session->attendance_status ?? '');
-            return in_array($attStatus, ['absent', 'no_show', 'missed']);
+            return $attStatus === AttendanceStatus::ABSENT->value;
         })->count();
         $academicLate = $academicSessions->filter(function ($session) {
             $attStatus = strtolower($session->attendance_status ?? '');
-            return $attStatus === 'late';
+            return $attStatus === AttendanceStatus::LATE->value;
         })->count();
         $academicAttendanceRate = $academicTotal > 0 ? round(($academicPresent / $academicTotal) * 100) : 0;
 

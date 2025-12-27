@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Contracts\RecordingCapable;
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use App\Traits\HasRecording;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,7 +34,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     ];
 
     protected $attributes = [
-        'status' => 'scheduled',
+        'status' => SessionStatus::SCHEDULED->value,
         'attendance_count' => 0,
         'homework_assigned' => false,
     ];
@@ -67,9 +69,25 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Note: academy() relationship is inherited from BaseSession
-     * It uses belongsTo(Academy::class) with the academy_id column
+     * Virtual academy_id accessor
+     * InteractiveCourseSession doesn't have an academy_id column, so we get it from the course
+     * This ensures compatibility with BaseSession which expects academy_id
      */
+    public function getAcademyIdAttribute(): ?int
+    {
+        return $this->course?->academy_id;
+    }
+
+    /**
+     * Override academy() relationship to use virtual academy_id
+     * BaseSession expects this relationship but InteractiveCourseSession gets academy through course
+     */
+    public function academy(): BelongsTo
+    {
+        // Use course relationship to get academy
+        return $this->belongsTo(Academy::class, 'academy_id')
+            ->where('id', $this->course?->academy_id);
+    }
 
     /**
      * العلاقة مع الدورة التفاعلية
@@ -104,19 +122,19 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * الواجبات المنزلية لهذه الجلسة
+     * Unified homework submission system (polymorphic)
      */
-    public function homework(): HasMany
+    public function homeworkSubmissions(): \Illuminate\Database\Eloquent\Relations\MorphMany
     {
-        return $this->hasMany(InteractiveCourseHomework::class, 'session_id');
+        return $this->morphMany(HomeworkSubmission::class, 'submitable');
     }
 
     /**
-     * Unified homework submission system (polymorphic)
+     * Alias for homeworkSubmissions (for API compatibility)
      */
-    public function homeworkSubmissions()
+    public function submissions(): \Illuminate\Database\Eloquent\Relations\MorphMany
     {
-        return $this->morphMany(HomeworkSubmission::class, 'submitable');
+        return $this->homeworkSubmissions();
     }
 
     /**
@@ -125,7 +143,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function presentStudents(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-                    ->where('attendance_status', 'attended');
+                    ->where('attendance_status', AttendanceStatus::ATTENDED->value);
     }
 
     /**
@@ -134,7 +152,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function absentStudents(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-                    ->where('attendance_status', 'absent');
+                    ->where('attendance_status', AttendanceStatus::ABSENT->value);
     }
 
     /**
@@ -143,7 +161,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function lateStudents(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-                    ->where('attendance_status', 'late');
+                    ->where('attendance_status', AttendanceStatus::LATE->value);
     }
 
     // Common scopes (scheduled, completed, cancelled, ongoing, today, upcoming, past)
@@ -168,14 +186,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         return $this->status->label();
     }
 
-    /**
-     * الحصول على وقت الجلسة المكتمل
-     * Alias for scheduled_at for backward compatibility
-     */
-    public function getScheduledDateTimeAttribute(): ?Carbon
-    {
-        return $this->scheduled_at;
-    }
 
     /**
      * الحصول على وقت انتهاء الجلسة
@@ -222,7 +232,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     /**
      * Mark session as ongoing
      * Called when teacher starts the session
-     * Alias: start() for backward compatibility
      */
     public function markAsOngoing(): bool
     {
@@ -239,17 +248,8 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Backward compatibility alias
-     */
-    public function start(): bool
-    {
-        return $this->markAsOngoing();
-    }
-
-    /**
      * Mark session as completed
      * Updates attendance counts and session records
-     * Alias: complete() for backward compatibility
      */
     public function markAsCompleted(array $additionalData = []): bool
     {
@@ -265,10 +265,15 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
                 return false;
             }
 
+            // Validate that we're not completing before start time
+            if ($session->started_at && now()->lt($session->started_at)) {
+                return false; // Cannot complete before start
+            }
+
             $updateData = array_merge([
                 'status' => \App\Enums\SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'attendance_status' => 'attended',
+                'attendance_status' => \App\Enums\AttendanceStatus::ATTENDED->value,
             ], $additionalData);
 
             $session->update($updateData);
@@ -284,17 +289,8 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Backward compatibility alias
-     */
-    public function complete(): bool
-    {
-        return $this->markAsCompleted();
-    }
-
-    /**
      * Mark session as cancelled
      * Does not affect course completion
-     * Alias: cancel() for backward compatibility
      */
     public function markAsCancelled(?string $reason = null, ?int $cancelledBy = null): bool
     {
@@ -313,20 +309,12 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Backward compatibility alias
-     */
-    public function cancel(): bool
-    {
-        return $this->markAsCancelled();
-    }
-
-    /**
      * تحديث عدد الحضور
      */
     public function updateAttendanceCount(): void
     {
         $this->update([
-            'attendance_count' => $this->attendances()->where('attendance_status', 'attended')->count()
+            'attendance_count' => $this->attendances()->where('attendance_status', AttendanceStatus::ATTENDED->value)->count()
         ]);
     }
 
@@ -372,8 +360,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             'description' => $this->description,
             'session_number' => $this->session_number,
             'scheduled_at' => $this->scheduled_at?->format('Y-m-d H:i'),
-            'scheduled_date' => $this->scheduled_at?->format('Y-m-d'), // Backward compatibility
-            'scheduled_time' => $this->scheduled_at?->format('H:i'), // Backward compatibility
             'duration_minutes' => $this->duration_minutes,
             'status' => $this->status,
             'status_in_arabic' => $this->status_in_arabic,

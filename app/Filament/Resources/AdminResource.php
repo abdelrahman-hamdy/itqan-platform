@@ -43,7 +43,7 @@ class AdminResource extends BaseResource
                 // 2. Academy-specific admins for the selected academy
                 $query->where(function ($q) use ($academyId) {
                     $q->whereNull('academy_id') // Super admins
-                      ->orWhere('academy_id', $academyId); // Academy admins for selected academy
+                      ->orWhere('academy_id', $academyId);
                 });
             }
             // If no academy context, show all admins
@@ -206,9 +206,9 @@ class AdminResource extends BaseResource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'active' => 'نشط',
+                        SubscriptionStatus::ACTIVE->value => 'نشط',
                         'inactive' => 'غير نشط',
-                        'pending' => 'في الانتظار',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                     ]),
             ])
             ->actions([

@@ -7,6 +7,7 @@ use App\Models\QuizAttempt;
 use App\Services\QuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class QuizController extends Controller
 {

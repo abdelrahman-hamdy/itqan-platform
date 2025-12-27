@@ -121,4 +121,31 @@ class SupervisorProfile extends Model
             $q->where('academy_id', $academyId);
         });
     }
+
+    /**
+     * Check if supervisor can access a specific department
+     * Defaults to true (can access all departments) when no department is specified
+     */
+    public function canAccessDepartment(string $department): bool
+    {
+        // If no department is set, default to 'general' which can access everything
+        $supervisorDepartment = $this->department ?? 'general';
+
+        // General supervisors can access all departments
+        if ($supervisorDepartment === 'general') {
+            return true;
+        }
+
+        // Otherwise, check if the department matches
+        return $supervisorDepartment === $department;
+    }
+
+    /**
+     * Get the department attribute
+     * Returns 'general' by default if not set
+     */
+    public function getDepartmentAttribute(): string
+    {
+        return $this->attributes['department'] ?? 'general';
+    }
 }

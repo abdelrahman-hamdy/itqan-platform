@@ -104,12 +104,6 @@ class CourseReview extends Model
         return $this->morphTo();
     }
 
-    // Backward compatibility - alias for old code
-    public function course(): BelongsTo
-    {
-        return $this->belongsTo(RecordedCourse::class, 'reviewable_id');
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

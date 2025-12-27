@@ -51,12 +51,14 @@
         </h4>
         @if($attendance)
             <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
-                {{ $attendance->status === 'present' ? 'bg-green-100 text-green-800 border border-green-200' :
+                {{ $attendance->status === 'attended' ? 'bg-green-100 text-green-800 border border-green-200' :
                    ($attendance->status === 'late' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                   'bg-red-100 text-red-800 border border-red-200') }}">
-                <i class="{{ $attendance->status === 'present' ? 'ri-checkbox-circle-line' :
-                           ($attendance->status === 'late' ? 'ri-time-line' : 'ri-close-circle-line') }} mr-1"></i>
-                {{ ucfirst($attendance->status) }}
+                   ($attendance->status === 'leaved' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                   'bg-red-100 text-red-800 border border-red-200')) }}">
+                <i class="{{ $attendance->status === 'attended' ? 'ri-checkbox-circle-line' :
+                           ($attendance->status === 'late' ? 'ri-time-line' :
+                           ($attendance->status === 'leaved' ? 'ri-logout-box-line' : 'ri-close-circle-line')) }} mr-1"></i>
+                {{ match($attendance->status) { 'attended' => 'حاضر', 'late' => 'متأخر', 'leaved' => 'غادر مبكراً', 'absent' => 'غائب', default => $attendance->status } }}
             </span>
 
             @if($attendance->duration_minutes)

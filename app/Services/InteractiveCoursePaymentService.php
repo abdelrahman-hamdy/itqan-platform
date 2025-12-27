@@ -6,6 +6,7 @@ use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\InteractiveCourseSession;
 use Illuminate\Support\Collection;
+use App\Enums\SessionStatus;
 
 class InteractiveCoursePaymentService
 {
@@ -99,7 +100,7 @@ class InteractiveCoursePaymentService
      */
     protected function getCompletedSessionsCount(InteractiveCourse $course, array $options = []): int
     {
-        $query = $course->sessions()->where('status', 'completed');
+        $query = $course->sessions()->where('status', SessionStatus::COMPLETED->value);
 
         // If date range is specified, filter by session date
         if (isset($options['from_date'])) {
@@ -179,7 +180,7 @@ class InteractiveCoursePaymentService
             // Session metrics
             'total_sessions' => $course->total_sessions,
             'completed_sessions' => $completedSessionsCount,
-            'scheduled_sessions' => $course->sessions()->where('status', 'scheduled')->count(),
+            'scheduled_sessions' => $course->sessions()->where('status', SessionStatus::SCHEDULED->value)->count(),
 
             // Teacher payment details
             'teacher_payment_config' => [

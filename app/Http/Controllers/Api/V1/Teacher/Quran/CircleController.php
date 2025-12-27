@@ -9,6 +9,7 @@ use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class CircleController extends Controller
 {
@@ -87,7 +88,7 @@ class CircleController extends Controller
         $circle = QuranIndividualCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
             ->with(['student.user', 'subscription', 'sessions' => function ($q) {
-                $q->orderBy('scheduled_at', 'desc')->limit(10);
+                $q->with('reports')->orderBy('scheduled_at', 'desc')->limit(10);
             }])
             ->first();
 
@@ -120,13 +121,17 @@ class CircleController extends Controller
                     'end_date' => $circle->subscription->end_date?->toDateString(),
                 ] : null,
                 'schedule' => $circle->schedule ?? [],
-                'recent_sessions' => $circle->sessions->map(fn($s) => [
-                    'id' => $s->id,
-                    'scheduled_at' => $s->scheduled_at?->toISOString(),
-                    'status' => $s->status->value ?? $s->status,
-                    'memorization_rating' => $s->memorization_rating,
-                    'tajweed_rating' => $s->tajweed_rating,
-                ])->toArray(),
+                'recent_sessions' => $circle->sessions->map(function ($s) {
+                    $report = $s->reports?->first();
+                    return [
+                        'id' => $s->id,
+                        'scheduled_at' => $s->scheduled_at?->toISOString(),
+                        'status' => $s->status->value ?? $s->status,
+                        'memorization_degree' => $report?->new_memorization_degree,
+                        'revision_degree' => $report?->reservation_degree,
+                        'overall_performance' => $report?->overall_performance,
+                    ];
+                })->toArray(),
                 'progress' => [
                     'current_surah' => $circle->current_surah,
                     'current_page' => $circle->current_page,
@@ -259,7 +264,7 @@ class CircleController extends Controller
             return $this->notFound(__('Circle not found.'));
         }
 
-        $students = $circle->students->map(function ($student) use ($id) {
+        $students = $circle->students->map(function ($student) {
             $subscription = $student->subscriptions->first();
 
             return [

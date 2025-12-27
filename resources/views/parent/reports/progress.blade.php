@@ -1,4 +1,6 @@
 @php
+use App\Enums\SubscriptionStatus;
+
     $subdomain = $subdomain ?? request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
@@ -237,10 +239,10 @@
                                                                 $statusValue = $item['status'] instanceof \BackedEnum ? $item['status']->value : $item['status'];
                                                             @endphp
                                                             <span class="px-2 py-0.5 text-xs font-bold rounded-full
-                                                                {{ $statusValue === 'active' ? 'bg-green-100 text-green-700' : '' }}
-                                                                {{ $statusValue === 'paused' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                {{ in_array($statusValue, ['inactive', 'expired', 'cancelled']) ? 'bg-gray-100 text-gray-600' : '' }}
-                                                                {{ $statusValue === 'completed' ? 'bg-blue-100 text-blue-700' : '' }}">
+                                                                {{ $statusValue === SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
+                                                                {{ $statusValue === SubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                {{ in_array($statusValue, [SubscriptionStatus::EXPIRED->value, SubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
+                                                                {{ $statusValue === SubscriptionStatus::COMPLETED->value ? 'bg-blue-100 text-blue-700' : '' }}">
                                                                 {{ $item['status_label'] }}
                                                             </span>
                                                         </div>
@@ -319,10 +321,10 @@
                                                                 $statusValue = $item['status'] instanceof \BackedEnum ? $item['status']->value : $item['status'];
                                                             @endphp
                                                             <span class="px-2 py-0.5 text-xs font-bold rounded-full
-                                                                {{ $statusValue === 'active' ? 'bg-green-100 text-green-700' : '' }}
-                                                                {{ $statusValue === 'paused' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                {{ in_array($statusValue, ['inactive', 'expired', 'cancelled']) ? 'bg-gray-100 text-gray-600' : '' }}
-                                                                {{ $statusValue === 'completed' ? 'bg-blue-100 text-blue-700' : '' }}">
+                                                                {{ $statusValue === SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
+                                                                {{ $statusValue === SubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                {{ in_array($statusValue, [SubscriptionStatus::EXPIRED->value, SubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
+                                                                {{ $statusValue === SubscriptionStatus::COMPLETED->value ? 'bg-blue-100 text-blue-700' : '' }}">
                                                                 {{ $item['status_label'] }}
                                                             </span>
                                                         </div>
@@ -397,10 +399,10 @@
                                                                 $statusValue = $item['status'] instanceof \BackedEnum ? $item['status']->value : $item['status'];
                                                             @endphp
                                                             <span class="px-2 py-0.5 text-xs font-bold rounded-full
-                                                                {{ $statusValue === 'active' ? 'bg-green-100 text-green-700' : '' }}
-                                                                {{ $statusValue === 'paused' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                {{ in_array($statusValue, ['inactive', 'expired', 'cancelled']) ? 'bg-gray-100 text-gray-600' : '' }}
-                                                                {{ $statusValue === 'completed' ? 'bg-blue-100 text-blue-700' : '' }}">
+                                                                {{ $statusValue === SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-700' : '' }}
+                                                                {{ $statusValue === SubscriptionStatus::PAUSED->value ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                {{ in_array($statusValue, [SubscriptionStatus::EXPIRED->value, SubscriptionStatus::CANCELLED->value]) ? 'bg-gray-100 text-gray-600' : '' }}
+                                                                {{ $statusValue === SubscriptionStatus::COMPLETED->value ? 'bg-blue-100 text-blue-700' : '' }}">
                                                                 {{ $item['status_label'] }}
                                                             </span>
                                                         </div>

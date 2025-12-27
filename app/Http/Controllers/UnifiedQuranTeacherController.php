@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class UnifiedQuranTeacherController extends Controller
 {
@@ -112,7 +114,7 @@ class UnifiedQuranTeacherController extends Controller
                 $teacher->is_subscribed = $teacher->my_subscription !== null;
 
                 $activeStudents = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
-                    ->where('status', 'active')
+                    ->where('status', SubscriptionStatus::ACTIVE->value)
                     ->distinct('student_id')
                     ->count();
 
@@ -201,7 +203,7 @@ class UnifiedQuranTeacherController extends Controller
             $mySubscription = QuranSubscription::where('academy_id', $academy->id)
                 ->where('student_id', $user->id)
                 ->where('quran_teacher_id', $teacher->user_id)
-                ->whereIn('status', ['active', 'pending'])
+                ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
                 ->first();
         }
 
@@ -439,7 +441,7 @@ class UnifiedQuranTeacherController extends Controller
             $existingSubscription = QuranSubscription::where('academy_id', $academy->id)
                 ->where('student_id', $user->id)
                 ->where('quran_teacher_id', $teacher->id)
-                ->whereIn('status', ['active', 'pending'])
+                ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
                 ->whereIn('payment_status', ['paid', 'current', 'pending'])
                 ->first();
 

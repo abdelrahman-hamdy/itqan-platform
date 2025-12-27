@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class QuranIndividualCircleController extends Controller
 {
@@ -91,19 +92,24 @@ class QuranIndividualCircleController extends Controller
                 $query->orderBy('scheduled_at');
             },
             'scheduledSessions' => function ($query) {
-                $query->whereIn('status', ['scheduled', 'in_progress'])->orderBy('scheduled_at');
+                $query->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])->orderBy('scheduled_at');
             },
             'completedSessions' => function ($query) {
-                $query->where('status', 'completed')->orderBy('ended_at', 'desc');
+                $query->where('status', SessionStatus::COMPLETED->value)->orderBy('ended_at', 'desc');
             },
         ]);
 
         $upcomingSessions = $circleModel->sessions()
-            ->whereIn('status', ['scheduled', 'in_progress', 'unscheduled', 'ongoing', 'ready'])
+            ->whereIn('status', [
+                SessionStatus::SCHEDULED->value,
+                SessionStatus::ONGOING->value,
+                SessionStatus::UNSCHEDULED->value,
+                SessionStatus::READY->value
+            ])
             ->where(function ($query) {
                 $query->where('scheduled_at', '>', now())
                     ->orWhereNull('scheduled_at') // Include unscheduled sessions
-                    ->orWhereIn('status', ['ongoing', 'ready']); // Include ongoing and ready sessions regardless of time
+                    ->orWhereIn('status', [SessionStatus::ONGOING->value, SessionStatus::READY->value]); // Include ongoing and ready sessions regardless of time
             })
             ->orderByRaw('scheduled_at IS NULL') // Put scheduled sessions first
             ->orderBy('scheduled_at')
@@ -111,7 +117,11 @@ class QuranIndividualCircleController extends Controller
             ->get();
 
         $pastSessions = $circleModel->sessions()
-            ->whereIn('status', ['completed', 'cancelled', 'no_show', 'absent'])
+            ->whereIn('status', [
+                SessionStatus::COMPLETED->value,
+                SessionStatus::CANCELLED->value,
+                SessionStatus::ABSENT->value
+            ])
             ->orderBy('scheduled_at', 'desc')
             ->get();
 

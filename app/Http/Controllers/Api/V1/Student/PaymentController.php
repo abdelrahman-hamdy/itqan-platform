@@ -7,6 +7,7 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class PaymentController extends Controller
 {
@@ -57,7 +58,7 @@ class PaymentController extends Controller
             ],
             'summary' => [
                 'total_paid' => Payment::where('user_id', $user->id)
-                    ->where('status', 'completed')
+                    ->where('status', SessionStatus::COMPLETED->value)
                     ->sum('amount'),
                 'total_pending' => Payment::where('user_id', $user->id)
                     ->where('status', 'pending')
@@ -109,7 +110,7 @@ class PaymentController extends Controller
                 'gateway_response' => $payment->gateway_response,
                 'paid_at' => $payment->paid_at?->toISOString(),
                 'created_at' => $payment->created_at->toISOString(),
-                'receipt_url' => $payment->status === 'completed'
+                'receipt_url' => $payment->status === SessionStatus::COMPLETED
                     ? route('api.v1.student.payments.receipt', ['id' => $payment->id])
                     : null,
             ],
@@ -129,7 +130,7 @@ class PaymentController extends Controller
 
         $payment = Payment::where('id', $id)
             ->where('user_id', $user->id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->first();
 
         if (!$payment) {

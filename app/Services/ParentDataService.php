@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\Certificate;
@@ -112,7 +114,7 @@ class ParentDataService
         // Get upcoming Quran sessions
         $quranSessions = QuranSession::where('student_id', $userId)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->where('scheduled_at', '>=', now())
             ->with(['quranTeacher', 'individualCircle', 'circle'])
             ->orderBy('scheduled_at', 'asc')
@@ -121,7 +123,7 @@ class ParentDataService
         // Get upcoming Academic sessions
         $academicSessions = AcademicSession::where('student_id', $userId)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->where('scheduled_at', '>=', now())
             ->with(['academicTeacher', 'academicIndividualLesson'])
             ->orderBy('scheduled_at', 'asc')
@@ -207,7 +209,7 @@ class ParentDataService
 
         $quranSessionsCompleted = QuranSession::where('student_id', $userId)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->count();
 
         $academicSessionsTotal = AcademicSession::where('student_id', $userId)
@@ -216,7 +218,7 @@ class ParentDataService
 
         $academicSessionsCompleted = AcademicSession::where('student_id', $userId)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->count();
 
         // Calculate attendance rate
@@ -268,15 +270,15 @@ class ParentDataService
         $userId = $child->user_id;
 
         $quranCount = QuranSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $academicCount = AcademicSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $courseCount = CourseSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         return $quranCount + $academicCount + $courseCount;
@@ -304,12 +306,12 @@ class ParentDataService
         $userId = $child->user_id;
 
         $quranCount = QuranSession::where('student_id', $userId)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->where('scheduled_at', '>=', now())
             ->count();
 
         $academicCount = AcademicSession::where('student_id', $userId)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->where('scheduled_at', '>=', now())
             ->count();
 

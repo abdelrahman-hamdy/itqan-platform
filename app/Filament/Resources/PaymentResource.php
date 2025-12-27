@@ -12,6 +12,8 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class PaymentResource extends Resource
 {
@@ -165,12 +167,12 @@ class PaymentResource extends Resource
                             ->label('الحالة')
                             ->required()
                             ->options([
-                                'pending' => 'في الانتظار',
+                                SubscriptionStatus::PENDING->value => 'في الانتظار',
                                 'processing' => 'قيد المعالجة',
-                                'completed' => 'مكتمل',
+                                SessionStatus::COMPLETED->value => 'مكتمل',
                                 'failed' => 'فشل',
-                                'cancelled' => 'ملغي',
-                                'refunded' => 'مسترد',
+                                SessionStatus::CANCELLED->value => 'ملغي',
+                                SubscriptionStatus::REFUNDED->value => 'مسترد',
                                 'partially_refunded' => 'مسترد جزئياً',
                             ])
                             ->default('pending'),
@@ -179,11 +181,11 @@ class PaymentResource extends Resource
                             ->label('حالة الدفع')
                             ->required()
                             ->options([
-                                'pending' => 'في الانتظار',
+                                SubscriptionStatus::PENDING->value => 'في الانتظار',
                                 'processing' => 'قيد المعالجة',
                                 'paid' => 'مدفوع',
                                 'failed' => 'فشل',
-                                'cancelled' => 'ملغي',
+                                SessionStatus::CANCELLED->value => 'ملغي',
                             ])
                             ->default('pending'),
 
@@ -309,20 +311,20 @@ class PaymentResource extends Resource
                     ->label('الحالة')
                     ->badge()
                     ->formatStateUsing(fn ($state) => match($state) {
-                        'pending' => 'في الانتظار',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                         'processing' => 'قيد المعالجة',
-                        'completed' => 'مكتمل',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
                         'failed' => 'فشل',
-                        'cancelled' => 'ملغي',
-                        'refunded' => 'مسترد',
+                        SessionStatus::CANCELLED->value => 'ملغي',
+                        SubscriptionStatus::REFUNDED->value => 'مسترد',
                         'partially_refunded' => 'مسترد جزئياً',
                         default => $state
                     })
                     ->color(fn ($state) => match($state) {
-                        'pending' => 'warning',
+                        SubscriptionStatus::PENDING->value => 'warning',
                         'processing' => 'info',
-                        'completed' => 'success',
-                        'failed', 'cancelled' => 'danger',
+                        SessionStatus::COMPLETED->value => 'success',
+                        'failed', SessionStatus::CANCELLED->value => 'danger',
                         'refunded', 'partially_refunded' => 'gray',
                         default => 'gray'
                     }),
@@ -348,12 +350,12 @@ class PaymentResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'pending' => 'في الانتظار',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                         'processing' => 'قيد المعالجة',
-                        'completed' => 'مكتمل',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
                         'failed' => 'فشل',
-                        'cancelled' => 'ملغي',
-                        'refunded' => 'مسترد',
+                        SessionStatus::CANCELLED->value => 'ملغي',
+                        SubscriptionStatus::REFUNDED->value => 'مسترد',
                     ])
                     ->multiple(),
 

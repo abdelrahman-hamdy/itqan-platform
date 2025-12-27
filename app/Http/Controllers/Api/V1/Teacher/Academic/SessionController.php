@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class SessionController extends Controller
 {
@@ -212,8 +213,6 @@ class SessionController extends Controller
                     'session_number' => $interactiveSession->session_number,
                     'description' => $interactiveSession->description,
                     'scheduled_at' => $interactiveSession->scheduled_at?->toISOString(),
-                    'scheduled_date' => $interactiveSession->scheduled_at?->toDateString(), // Backward compatibility
-                    'scheduled_time' => $interactiveSession->scheduled_at?->format('H:i'), // Backward compatibility
                     'duration_minutes' => $interactiveSession->duration_minutes ?? 60,
                     'status' => $interactiveSession->status->value ?? $interactiveSession->status,
                     'meeting_link' => $interactiveSession->meeting_link,
@@ -251,11 +250,11 @@ class SessionController extends Controller
         }
 
         $statusValue = $session->status->value ?? $session->status;
-        if ($statusValue === 'completed') {
+        if ($statusValue === SessionStatus::COMPLETED->value) {
             return $this->error(__('Session is already completed.'), 400, 'ALREADY_COMPLETED');
         }
 
-        if ($statusValue === 'cancelled') {
+        if ($statusValue === SessionStatus::CANCELLED->value) {
             return $this->error(__('Cannot complete a cancelled session.'), 400, 'SESSION_CANCELLED');
         }
 
@@ -275,7 +274,7 @@ class SessionController extends Controller
         DB::beginTransaction();
         try {
             $session->update([
-                'status' => 'completed',
+                'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
                 'homework' => $request->homework ?? $session->homework,
                 'lesson_content' => $request->lesson_content ?? $session->lesson_content,
@@ -304,7 +303,7 @@ class SessionController extends Controller
             return $this->success([
                 'session' => [
                     'id' => $session->id,
-                    'status' => 'completed',
+                    'status' => SessionStatus::COMPLETED,
                     'ended_at' => $session->ended_at->toISOString(),
                 ],
             ], __('Session completed successfully'));
@@ -339,11 +338,11 @@ class SessionController extends Controller
         }
 
         $statusValue = $session->status->value ?? $session->status;
-        if ($statusValue === 'completed') {
+        if ($statusValue === SessionStatus::COMPLETED->value) {
             return $this->error(__('Cannot cancel a completed session.'), 400, 'SESSION_COMPLETED');
         }
 
-        if ($statusValue === 'cancelled') {
+        if ($statusValue === SessionStatus::CANCELLED->value) {
             return $this->error(__('Session is already cancelled.'), 400, 'ALREADY_CANCELLED');
         }
 
@@ -356,7 +355,7 @@ class SessionController extends Controller
         }
 
         $session->update([
-            'status' => 'cancelled',
+            'status' => SessionStatus::CANCELLED,
             'cancellation_reason' => $request->reason,
             'cancelled_at' => now(),
             'cancelled_by' => $user->id,
@@ -365,7 +364,7 @@ class SessionController extends Controller
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'status' => 'cancelled',
+                'status' => SessionStatus::CANCELLED,
                 'cancellation_reason' => $request->reason,
             ],
         ], __('Session cancelled successfully'));

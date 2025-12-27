@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\MeetingCapable;
+use App\Enums\AttendanceStatus;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +11,33 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * MeetingAttendance Model
+ *
+ * Tracks attendance for LiveKit meetings across all session types.
+ *
+ * @property int $id
+ * @property int $session_id
+ * @property int $user_id
+ * @property string|null $user_type
+ * @property string $session_type
+ * @property \Carbon\Carbon|null $first_join_time
+ * @property \Carbon\Carbon|null $last_leave_time
+ * @property \Carbon\Carbon|null $last_heartbeat_at
+ * @property int|null $total_duration_minutes
+ * @property array|null $join_leave_cycles
+ * @property \Carbon\Carbon|null $attendance_calculated_at
+ * @property string|null $attendance_status
+ * @property float|null $attendance_percentage
+ * @property int|null $session_duration_minutes
+ * @property \Carbon\Carbon|null $session_start_time
+ * @property \Carbon\Carbon|null $session_end_time
+ * @property int|null $join_count
+ * @property int|null $leave_count
+ * @property bool $is_calculated
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ */
 class MeetingAttendance extends Model
 {
     use AttendanceCalculatorTrait;
@@ -62,7 +90,6 @@ class MeetingAttendance extends Model
             return $this->belongsTo(AcademicSession::class, 'session_id');
         }
 
-        // Default to QuranSession for backwards compatibility
         return $this->belongsTo(QuranSession::class, 'session_id');
     }
 
@@ -276,16 +303,9 @@ class MeetingAttendance extends Model
             return false;
         }
 
-        // Get circle configuration for this session
-        $circle = $session->session_type === 'individual'
-            ? $session->individualCircle
-            : $session->circle;
-
-        if (! $circle) {
-            return false;
-        }
-
-        $graceMinutes = $circle->late_join_grace_period_minutes ?? 15;
+        // Get grace period from academy settings
+        $academy = $this->getAcademyForSession($session);
+        $graceMinutes = $academy?->settings?->default_late_tolerance_minutes ?? 15;
         $sessionDuration = $session->duration_minutes ?? 60;
         $sessionStartTime = $session->scheduled_at;
 
@@ -343,6 +363,20 @@ class MeetingAttendance extends Model
     }
 
     /**
+     * Get academy for a session based on its type
+     * Different session types have different paths to academy
+     */
+    private function getAcademyForSession($session): ?Academy
+    {
+        // For InteractiveCourseSession, academy is accessed via course
+        if ($session instanceof \App\Models\InteractiveCourseSession) {
+            return $session->course?->academy;
+        }
+        // For QuranSession and AcademicSession, academy is direct
+        return $session->academy;
+    }
+
+    /**
      * Check if user is currently in the meeting based on database cycles
      * SOURCE OF TRUTH: Database cycles (created by manual join API or webhooks)
      * This is FAST and doesn't hit external APIs on every check
@@ -384,14 +418,6 @@ class MeetingAttendance extends Model
         return false; // No open cycles
     }
 
-    /**
-     * OLD METHOD - Kept for backwards compatibility but now just redirects to isCurrentlyInMeeting
-     */
-    private function verifyLiveKitPresence(): bool
-    {
-        // All verification now done in isCurrentlyInMeeting() by querying LiveKit directly
-        return $this->isCurrentlyInMeeting();
-    }
 
     /**
      * Auto-close cycle after verifying user is not in LiveKit
@@ -711,22 +737,22 @@ class MeetingAttendance extends Model
      */
     public function scopePresent($query)
     {
-        return $query->where('attendance_status', 'attended');
+        return $query->where('attendance_status', AttendanceStatus::ATTENDED->value);
     }
 
     public function scopeAbsent($query)
     {
-        return $query->where('attendance_status', 'absent');
+        return $query->where('attendance_status', AttendanceStatus::ABSENT->value);
     }
 
     public function scopeLate($query)
     {
-        return $query->where('attendance_status', 'late');
+        return $query->where('attendance_status', AttendanceStatus::LATE->value);
     }
 
     public function scopePartial($query)
     {
-        return $query->where('attendance_status', 'leaved');
+        return $query->where('attendance_status', AttendanceStatus::LEAVED->value);
     }
 
     public function scopeCalculated($query)
@@ -764,7 +790,7 @@ class MeetingAttendance extends Model
             'join_count' => 0,
             'leave_count' => 0,
             'total_duration_minutes' => 0,
-            'attendance_status' => 'absent',
+            'attendance_status' => AttendanceStatus::ABSENT->value,
             'attendance_percentage' => 0,
             'is_calculated' => false,
         ]);
@@ -802,7 +828,7 @@ class MeetingAttendance extends Model
             'join_count' => 0,
             'leave_count' => 0,
             'total_duration_minutes' => 0,
-            'attendance_status' => 'absent',
+            'attendance_status' => AttendanceStatus::ABSENT->value,
             'attendance_percentage' => 0,
             'is_calculated' => false,
         ]);

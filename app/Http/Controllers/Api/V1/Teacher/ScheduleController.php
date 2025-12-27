@@ -10,6 +10,7 @@ use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Enums\SessionStatus;
 
 class ScheduleController extends Controller
 {
@@ -109,7 +110,7 @@ class ScheduleController extends Controller
             if ($quranTeacherId) {
                 $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
                     ->whereBetween('scheduled_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-                    ->whereNotIn('status', ['cancelled'])
+                    ->whereNotIn('status', [SessionStatus::CANCELLED->value])
                     ->with(['student.user', 'individualCircle', 'circle'])
                     ->get();
 
@@ -137,7 +138,7 @@ class ScheduleController extends Controller
                 // Academic sessions
                 $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
                     ->whereBetween('scheduled_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-                    ->whereNotIn('status', ['cancelled'])
+                    ->whereNotIn('status', [SessionStatus::CANCELLED->value])
                     ->with(['student.user', 'academicSubscription'])
                     ->get();
 
@@ -161,7 +162,7 @@ class ScheduleController extends Controller
 
                 $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $courseIds)
                     ->whereBetween('scheduled_at', [$startDate, $endDate])
-                    ->whereNotIn('status', ['cancelled'])
+                    ->whereNotIn('status', [SessionStatus::CANCELLED->value])
                     ->with(['course'])
                     ->get();
 

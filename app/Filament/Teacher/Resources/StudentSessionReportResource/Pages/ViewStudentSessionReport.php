@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use App\Enums\AttendanceStatus;
 
 class ViewStudentSessionReport extends ViewRecord
 {
@@ -60,19 +61,19 @@ class ViewStudentSessionReport extends ViewRecord
                                     ->label('حالة الحضور')
                                     ->formatStateUsing(function (string $state): string {
                                         return match ($state) {
-                                            'attended' => 'حاضر',
-                                            'late' => 'متأخر',
-                                            'leaved' => 'غادر مبكراً',
-                                            'absent' => 'غائب',
+                                            AttendanceStatus::ATTENDED->value => 'حاضر',
+                                            AttendanceStatus::LATE->value => 'متأخر',
+                                            AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                                            AttendanceStatus::ABSENT->value => 'غائب',
                                             default => $state,
                                         };
                                     })
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {
-                                        'attended' => 'success',
-                                        'late' => 'warning',
-                                        'leaved' => 'info',
-                                        'absent' => 'danger',
+                                        AttendanceStatus::ATTENDED->value => 'success',
+                                        AttendanceStatus::LATE->value => 'warning',
+                                        AttendanceStatus::LEAVED->value => 'info',
+                                        AttendanceStatus::ABSENT->value => 'danger',
                                         default => 'gray',
                                     }),
                             ]),

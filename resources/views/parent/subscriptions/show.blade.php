@@ -1,4 +1,6 @@
 @php
+use App\Enums\SessionStatus;
+
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
@@ -51,10 +53,10 @@
                     </div>
                 </div>
                 <span class="self-start px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full flex-shrink-0
-                    {{ $subscription->status === 'active' ? 'bg-green-100 text-green-800' : '' }}
-                    {{ $subscription->status === 'expired' ? 'bg-red-100 text-red-800' : '' }}
-                    {{ $subscription->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}">
-                    {{ $subscription->status === 'active' ? 'نشط' : ($subscription->status === 'expired' ? 'منتهي' : 'قيد الانتظار') }}
+                    {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-800' : '' }}
+                    {{ $subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'bg-red-100 text-red-800' : '' }}
+                    {{ $subscription->status === \App\Enums\SubscriptionStatus::PENDING->value ? 'bg-yellow-100 text-yellow-800' : '' }}">
+                    {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'نشط' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'منتهي' : 'قيد الانتظار') }}
                 </span>
             </div>
         </div>
@@ -219,10 +221,10 @@
                                             </div>
                                         </div>
                                         <span class="px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-bold rounded-full flex-shrink-0
-                                            {{ $session->status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
-                                            {{ $session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : '' }}
-                                            {{ $session->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
-                                            {{ $session->status === 'completed' ? 'مكتملة' : ($session->status === 'scheduled' ? 'مجدولة' : 'ملغاة') }}
+                                            {{ $session->status === SessionStatus::COMPLETED->value ? 'bg-green-100 text-green-800' : '' }}
+                                            {{ $session->status === SessionStatus::SCHEDULED->value ? 'bg-blue-100 text-blue-800' : '' }}
+                                            {{ $session->status === SessionStatus::CANCELLED->value ? 'bg-red-100 text-red-800' : '' }}">
+                                            {{ $session->status === SessionStatus::COMPLETED->value ? 'مكتملة' : ($session->status === SessionStatus::SCHEDULED->value ? 'مجدولة' : 'ملغاة') }}
                                         </span>
                                     </div>
                                 </div>
@@ -267,12 +269,12 @@
                 </div>
 
                 <!-- Subscription Status -->
-                <div class="bg-gradient-to-br {{ $subscription->status === 'active' ? 'from-green-500 to-green-600' : ($subscription->status === 'expired' ? 'from-red-500 to-red-600' : 'from-yellow-500 to-yellow-600') }} rounded-lg md:rounded-xl shadow-lg p-4 md:p-6 text-white">
+                <div class="bg-gradient-to-br {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'from-green-500 to-green-600' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'from-red-500 to-red-600' : 'from-yellow-500 to-yellow-600') }} rounded-lg md:rounded-xl shadow-lg p-4 md:p-6 text-white">
                     <h3 class="text-sm md:text-lg font-bold mb-3 md:mb-4">حالة الاشتراك</h3>
                     <div class="text-center">
-                        <i class="ri-{{ $subscription->status === 'active' ? 'checkbox-circle' : ($subscription->status === 'expired' ? 'close-circle' : 'time') }}-line text-4xl md:text-6xl mb-2 md:mb-3 opacity-80"></i>
+                        <i class="ri-{{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'checkbox-circle' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'close-circle' : 'time') }}-line text-4xl md:text-6xl mb-2 md:mb-3 opacity-80"></i>
                         <p class="text-xl md:text-2xl font-bold">
-                            {{ $subscription->status === 'active' ? 'نشط' : ($subscription->status === 'expired' ? 'منتهي' : 'قيد الانتظار') }}
+                            {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'نشط' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'منتهي' : 'قيد الانتظار') }}
                         </p>
                     </div>
                 </div>

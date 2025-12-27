@@ -4,6 +4,7 @@ namespace App\Services\Payment;
 
 use App\Enums\PaymentResultStatus;
 use InvalidArgumentException;
+use App\Enums\SessionStatus;
 
 /**
  * State machine for payment status transitions.

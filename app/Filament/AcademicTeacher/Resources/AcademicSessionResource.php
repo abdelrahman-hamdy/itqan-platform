@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Services\AcademyContextService;
 use App\Enums\SessionStatus;
+use App\Enums\AttendanceStatus;
 
 class AcademicSessionResource extends BaseAcademicTeacherResource
 {
@@ -222,18 +223,18 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                 Tables\Columns\BadgeColumn::make('attendance_status')
                     ->label('الحضور')
                     ->colors([
-                        'secondary' => 'scheduled',
-                        'success' => 'attended',
-                        'danger' => 'absent',
-                        'warning' => 'late',
-                        'primary' => 'leaved',
+                        'secondary' => SessionStatus::SCHEDULED->value,
+                        'success' => AttendanceStatus::ATTENDED->value,
+                        'danger' => AttendanceStatus::ABSENT->value,
+                        'warning' => AttendanceStatus::LATE->value,
+                        'primary' => AttendanceStatus::LEAVED->value,
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'scheduled' => 'مجدولة',
-                        'attended' => 'حاضر',
-                        'absent' => 'غائب',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
+                        SessionStatus::SCHEDULED->value => 'مجدولة',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::ABSENT->value => 'غائب',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
                         default => $state,
                     }),
 
@@ -257,11 +258,11 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                 Tables\Filters\SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options([
-                        'scheduled' => 'مجدولة',
-                        'attended' => 'حاضر',
-                        'absent' => 'غائب',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
+                        SessionStatus::SCHEDULED->value => 'مجدولة',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::ABSENT->value => 'غائب',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
                     ]),
 
                 Tables\Filters\SelectFilter::make('student_id')
@@ -294,10 +295,10 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         ->visible(fn (AcademicSession $record): bool =>
                             $record->status instanceof \App\Enums\SessionStatus
                                 ? $record->status === \App\Enums\SessionStatus::SCHEDULED
-                                : $record->status === 'scheduled')
+                                : $record->status === SessionStatus::SCHEDULED->value)
                         ->action(function (AcademicSession $record) {
                             $record->update([
-                                'status' => \App\Enums\SessionStatus::ONGOING,
+                                'status' => SessionStatus::ONGOING->value,
                                 'started_at' => now(),
                             ]);
                         }),
@@ -308,13 +309,13 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         ->visible(fn (AcademicSession $record): bool =>
                             $record->status instanceof \App\Enums\SessionStatus
                                 ? $record->status === \App\Enums\SessionStatus::ONGOING
-                                : $record->status === 'ongoing')
+                                : $record->status === SessionStatus::ONGOING->value)
                         ->action(function (AcademicSession $record) {
                             $record->update([
-                                'status' => \App\Enums\SessionStatus::COMPLETED,
+                                'status' => SessionStatus::COMPLETED->value,
                                 'ended_at' => now(),
                                 'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
-                                'attendance_status' => 'attended',
+                                'attendance_status' => AttendanceStatus::ATTENDED->value,
                             ]);
                             // Update subscription usage
                             $record->updateSubscriptionUsage();

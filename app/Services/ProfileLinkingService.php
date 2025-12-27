@@ -10,6 +10,7 @@ use App\Models\SupervisorProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
+use App\Enums\SessionStatus;
 
 class ProfileLinkingService
 {
@@ -60,7 +61,6 @@ class ProfileLinkingService
             'user_type' => $userType,
             'status' => 'active',
             'active_status' => true,
-            'role' => $this->mapUserTypeToRole($userType), // Keep for backward compatibility
             'email_verified_at' => now(), // Auto-verify since profile was created by admin
         ]);
 
@@ -144,22 +144,6 @@ class ProfileLinkingService
 
         // For other profiles, use current academy context or default
         return AcademyContextService::getCurrentAcademyId() ?? AcademyContextService::getDefaultAcademy()?->id ?? 2;
-    }
-
-    /**
-     * Map user type to role (for backward compatibility)
-     */
-    private function mapUserTypeToRole(string $userType): string
-    {
-        return match ($userType) {
-            'student' => 'student',
-            'quran_teacher' => 'teacher',
-            'academic_teacher' => 'teacher',
-            'parent' => 'parent',
-            'supervisor' => 'supervisor',
-            'admin' => 'admin',
-            default => 'student',
-        };
     }
 
     /**

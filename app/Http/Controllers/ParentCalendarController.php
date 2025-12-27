@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 /**
  * Parent Calendar Controller
@@ -150,9 +151,9 @@ class ParentCalendarController extends Controller
                 // CalendarService returns 'total_events' and 'by_status' array
                 $totalStats['total'] += $stats['total_events'] ?? 0;
                 $byStatus = $stats['by_status'] ?? [];
-                $totalStats['scheduled'] += $byStatus['scheduled'] ?? 0;
-                $totalStats['completed'] += $byStatus['completed'] ?? 0;
-                $totalStats['cancelled'] += $byStatus['cancelled'] ?? 0;
+                $totalStats['scheduled'] += $byStatus[SessionStatus::SCHEDULED->value] ?? 0;
+                $totalStats['completed'] += $byStatus[SessionStatus::COMPLETED->value] ?? 0;
+                $totalStats['cancelled'] += $byStatus[SessionStatus::CANCELLED->value] ?? 0;
             }
         }
 

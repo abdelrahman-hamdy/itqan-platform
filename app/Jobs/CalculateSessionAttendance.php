@@ -172,10 +172,10 @@ class CalculateSessionAttendance implements ShouldQueue
     /**
      * Calculate total duration from join/leave cycles
      *
-     * 🔥 FIX: Only count time within session's original start/end times
+     * Only count time within session's original start/end times:
      * - Preparation time (before session start) is excluded
      * - Buffer time (after session end) is excluded
-     * - Supports BOTH webhook format and manual format for backwards compatibility
+     * - Supports both webhook format and manual format
      *
      * @param array $cycles Join/leave event pairs
      * @param Carbon $sessionStart Session's scheduled start time
@@ -188,7 +188,7 @@ class CalculateSessionAttendance implements ShouldQueue
         $lastJoinTime = null;
 
         foreach ($cycles as $cycle) {
-            // 🔥 NEW: Detect format - webhook format vs manual format
+            // Detect format - webhook format vs manual format
             $isWebhookFormat = isset($cycle['type']);
             $isManualFormat = isset($cycle['joined_at']);
 
@@ -200,12 +200,12 @@ class CalculateSessionAttendance implements ShouldQueue
                     $joinTime = is_string($lastJoinTime) ? Carbon::parse($lastJoinTime) : $lastJoinTime;
                     $leaveTime = is_string($cycle['timestamp']) ? Carbon::parse($cycle['timestamp']) : $cycle['timestamp'];
 
-                    // 🔥 Clip join time to session start (ignore preparation time)
+                    // Clip join time to session start (ignore preparation time)
                     if ($joinTime->lt($sessionStart)) {
                         $joinTime = $sessionStart->copy();
                     }
 
-                    // 🔥 Clip leave time to session end (ignore buffer time)
+                    // Clip leave time to session end (ignore buffer time)
                     if ($leaveTime->gt($sessionEnd)) {
                         $leaveTime = $sessionEnd->copy();
                     }
@@ -224,12 +224,12 @@ class CalculateSessionAttendance implements ShouldQueue
                     $joinTime = is_string($cycle['joined_at']) ? Carbon::parse($cycle['joined_at']) : $cycle['joined_at'];
                     $leaveTime = is_string($cycle['left_at']) ? Carbon::parse($cycle['left_at']) : $cycle['left_at'];
 
-                    // 🔥 Clip join time to session start (ignore preparation time)
+                    // Clip join time to session start (ignore preparation time)
                     if ($joinTime->lt($sessionStart)) {
                         $joinTime = $sessionStart->copy();
                     }
 
-                    // 🔥 Clip leave time to session end (ignore buffer time)
+                    // Clip leave time to session end (ignore buffer time)
                     if ($leaveTime->gt($sessionEnd)) {
                         $leaveTime = $sessionEnd->copy();
                     }
@@ -257,7 +257,7 @@ class CalculateSessionAttendance implements ShouldQueue
     /**
      * Determine attendance status based on join time and duration
      *
-     * 🔥 NEW LOGIC:
+     * Logic:
      * - attended: joined before tolerance + stayed >= 50%
      * - late: joined after tolerance + stayed >= 50%
      * - leaved: stayed < 50% (regardless of join time)
@@ -306,7 +306,6 @@ class CalculateSessionAttendance implements ShouldQueue
                 'student_id' => $attendance->user_id,
             ]);
 
-            // 🔥 FIX: Include teacher_id and academy_id from session
             $teacherId = $session->teacher_id ?? $session->quran_teacher_id ?? null;
             $academyId = $session->academy_id ?? $session->quran_circle->academy_id ?? 1; // Default to academy 1
 

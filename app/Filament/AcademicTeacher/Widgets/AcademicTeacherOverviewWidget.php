@@ -3,6 +3,7 @@
 namespace App\Filament\AcademicTeacher\Widgets;
 
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
@@ -73,7 +74,7 @@ class AcademicTeacherOverviewWidget extends BaseWidget
 
         // Active individual lessons (students)
         $activeIndividualLessons = AcademicIndividualLesson::where('academic_teacher_id', $teacherProfile->id)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Active interactive courses

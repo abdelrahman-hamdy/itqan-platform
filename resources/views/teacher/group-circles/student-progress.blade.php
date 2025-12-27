@@ -209,13 +209,13 @@
                                 <div class="flex items-start gap-3 md:gap-4">
                                     <!-- Status Indicator -->
                                     <div class="flex flex-col items-center flex-shrink-0">
-                                        @if($attendance && $attendance->attendance_status === 'attended')
+                                        @if($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::ATTENDED->value)
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
                                             <span class="text-[10px] md:text-xs text-green-600 font-bold">حضر</span>
-                                        @elseif($attendance && $attendance->attendance_status === 'late')
+                                        @elseif($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::LATE->value)
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-yellow-500 rounded-full mb-0.5 md:mb-1"></div>
                                             <span class="text-[10px] md:text-xs text-yellow-600 font-bold">متأخر</span>
-                                        @elseif($attendance && $attendance->attendance_status === 'absent')
+                                        @elseif($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::ABSENT->value)
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full mb-0.5 md:mb-1"></div>
                                             <span class="text-[10px] md:text-xs text-red-600 font-bold">غائب</span>
                                         @else
@@ -456,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 date: '{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at, 'Y-m-d') : '' }}',
                 recitation_quality: {{ $attendance ? ($attendance->recitation_quality ?? 0) : 0 }},
                 tajweed_accuracy: {{ $attendance ? ($attendance->tajweed_accuracy ?? 0) : 0 }},
-                attended: {{ $attendance ? ($attendance->attendance_status === 'attended' ? 1 : 0) : 0 }}
+                attended: {{ $attendance ? ($attendance->attendance_status === \App\Enums\AttendanceStatus::ATTENDED->value ? 1 : 0) : 0 }}
             }{{ !$loop->last ? ',' : '' }}
         @endforeach
     ];

@@ -7,9 +7,11 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use App\Models\StudentProfile;
+use App\Models\StudentSessionReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class StudentController extends Controller
 {
@@ -169,11 +171,15 @@ class StudentController extends Controller
                 ->where('student_id', $studentUserId)
                 ->get();
 
+            // Get evaluation averages from StudentSessionReport
+            $sessionIds = $quranSessions->pluck('id');
+            $reports = StudentSessionReport::whereIn('session_id', $sessionIds)->get();
+
             $quranStats = [
                 'total_sessions' => $quranSessions->count(),
-                'completed_sessions' => $quranSessions->where('status', 'completed')->count(),
-                'average_memorization_rating' => round($quranSessions->avg('memorization_rating') ?? 0, 1),
-                'average_tajweed_rating' => round($quranSessions->avg('tajweed_rating') ?? 0, 1),
+                'completed_sessions' => $quranSessions->where('status', SessionStatus::COMPLETED->value)->count(),
+                'average_memorization_degree' => round($reports->avg('new_memorization_degree') ?? 0, 1),
+                'average_revision_degree' => round($reports->avg('reservation_degree') ?? 0, 1),
             ];
         }
 
@@ -185,7 +191,7 @@ class StudentController extends Controller
 
             $academicStats = [
                 'total_sessions' => $academicSessions->count(),
-                'completed_sessions' => $academicSessions->where('status', 'completed')->count(),
+                'completed_sessions' => $academicSessions->where('status', SessionStatus::COMPLETED->value)->count(),
             ];
         }
 
@@ -236,7 +242,10 @@ class StudentController extends Controller
         $validator = Validator::make($request->all(), [
             'session_type' => ['required', 'in:quran,academic'],
             'session_id' => ['required', 'integer'],
-            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            // Quran uses 0-10 scale, Academic uses 1-5 scale
+            'memorization_degree' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:10'],
+            'revision_degree' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:10'],
+            'rating' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:5'], // For Academic
             'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
@@ -263,16 +272,22 @@ class StudentController extends Controller
                 return $this->notFound(__('Session not found.'));
             }
 
-            // TODO: DEFERRED - QuranSessionReport model doesn't exist
-            // See DEFERRED_PROBLEMS.md for details
-            // \App\Models\QuranSessionReport::updateOrCreate(
-            //     ['quran_session_id' => $session->id],
-            //     [
-            //         'rating' => $request->rating,
-            //         'notes' => $request->notes,
-            //         'teacher_feedback' => $request->feedback,
-            //     ]
-            // );
+            // Create or update StudentSessionReport for Quran evaluations
+            StudentSessionReport::updateOrCreate(
+                [
+                    'session_id' => $session->id,
+                    'student_id' => $studentUserId,
+                ],
+                [
+                    'teacher_id' => $user->id,
+                    'academy_id' => $session->academy_id,
+                    'new_memorization_degree' => $request->memorization_degree,
+                    'reservation_degree' => $request->revision_degree,
+                    'notes' => $request->notes ?? $request->feedback,
+                    'evaluated_at' => now(),
+                    'manually_evaluated' => true,
+                ]
+            );
         } else {
             $academicTeacherId = $user->academicTeacherProfile?->id;
 

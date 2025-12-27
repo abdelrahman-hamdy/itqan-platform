@@ -5,13 +5,13 @@ namespace App\Services;
 use App\Models\AcademicHomework;
 use App\Models\AcademicSession;
 use App\Models\HomeworkSubmission;
-use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * UnifiedHomeworkService
@@ -23,6 +23,11 @@ use Illuminate\Support\Facades\Log;
  *
  * This service normalizes data from different sources into a unified format
  * for consistent display in student homework dashboards.
+ *
+ * IMPORTANT: Uses unified HomeworkSubmission model for all submission tracking.
+ * - Academic: submitable = AcademicHomework
+ * - Interactive: submitable = InteractiveCourseSession (session has homework fields)
+ * - Quran: View-only, no HomeworkSubmission (evaluated via session report)
  */
 class UnifiedHomeworkService
 {
@@ -160,31 +165,34 @@ class UnifiedHomeworkService
 
     /**
      * Get Interactive Course homework for student
+     *
+     * UPDATED: Now uses InteractiveCourseSession directly instead of legacy
+     * InteractiveCourseHomework model. The session contains homework assignment
+     * fields (homework_description, homework_file, homework_assigned).
      */
     private function getInteractiveHomework(int $studentId, int $academyId, ?string $status): Collection
     {
-        $query = InteractiveCourseHomework::query()
-            ->whereHas('session.course', function ($q) use ($academyId) {
+        // Query sessions that have homework assigned
+        $query = InteractiveCourseSession::query()
+            ->where('homework_assigned', true)
+            ->whereHas('course', function ($q) use ($academyId) {
                 $q->where('academy_id', $academyId);
             })
-            ->whereHas('session.course.enrollments', function ($q) use ($studentId) {
+            ->whereHas('course.enrollments', function ($q) use ($studentId) {
                 $q->where('student_id', $studentId);
             })
             ->with([
-                'session.course.assignedTeacher',
+                'course.assignedTeacher',
+                'course',
             ]);
 
-        $homework = $query->get();
+        $sessions = $query->get();
 
-        return $homework->map(function ($hw) use ($studentId) {
-            // Get or create submission record
-            $submission = $this->getOrCreateSubmission(
-                $hw,
-                $studentId,
-                'interactive'
-            );
+        return $sessions->map(function ($session) use ($studentId) {
+            // Get or create submission record for the session
+            $submission = $this->getOrCreateInteractiveSubmission($session, $studentId);
 
-            return $this->formatInteractiveHomework($hw, $submission);
+            return $this->formatInteractiveSessionHomework($session, $submission);
         })->filter(function ($item) use ($status) {
             return $this->matchesStatus($item, $status);
         });
@@ -283,28 +291,32 @@ class UnifiedHomeworkService
     }
 
     /**
-     * Format Interactive homework to unified structure
+     * Format Interactive session homework to unified structure
+     *
+     * Uses InteractiveCourseSession directly (not legacy InteractiveCourseHomework)
      */
-    private function formatInteractiveHomework(
-        InteractiveCourseHomework $homework,
+    private function formatInteractiveSessionHomework(
+        InteractiveCourseSession $session,
         HomeworkSubmission $submission
     ): array {
-        $teacher = $homework->session?->course?->assignedTeacher;
+        $teacher = $session->course?->assignedTeacher;
+        $dueDate = $session->scheduled_at?->addDays(7); // Default due date: 1 week after session
 
         return [
             // Identification
-            'id' => $homework->id,
+            'id' => $session->id,
             'type' => 'interactive',
             'submission_id' => $submission->id,
 
             // Content
-            'title' => $homework->title,
-            'description' => $homework->description,
+            'title' => "واجب: " . ($session->title ?? 'محاضرة'),
+            'description' => $session->homework_description,
             'instructions' => null,
+            'homework_file' => $session->homework_file,
 
             // Timing
-            'due_date' => $homework->due_date,
-            'created_at' => $homework->created_at,
+            'due_date' => $dueDate,
+            'created_at' => $session->created_at,
 
             // Submission Info
             'submission_status' => $submission->submission_status,
@@ -326,12 +338,12 @@ class UnifiedHomeworkService
             // Progress
             'progress_percentage' => $submission->progress_percentage,
             'can_submit' => $submission->canSubmit(),
-            'hours_until_due' => $homework->due_date ? now()->diffInHours($homework->due_date, false) : null,
+            'hours_until_due' => $dueDate ? now()->diffInHours($dueDate, false) : null,
 
             // Course/Session/Teacher Info
-            'session_id' => $homework->session_id,
-            'session_title' => $homework->session?->title ?? 'محاضرة',
-            'course_title' => $homework->session?->course?->title ?? 'دورة تفاعلية',
+            'session_id' => $session->id,
+            'session_title' => $session->title ?? 'محاضرة',
+            'course_title' => $session->course?->title ?? 'دورة تفاعلية',
             'teacher_name' => $teacher?->name ?? 'غير محدد',
             'teacher_avatar' => $teacher?->avatar ?? null,
             'teacher_gender' => $teacher?->gender ?? 'male',
@@ -339,11 +351,11 @@ class UnifiedHomeworkService
 
             // Links
             'view_url' => route('student.homework.view', [
-                'id' => $homework->id,
+                'id' => $session->id,
                 'type' => 'interactive',
             ]),
             'submit_url' => $submission->canSubmit()
-                ? route('student.homework.submit', ['id' => $homework->id, 'type' => 'interactive'])
+                ? route('student.homework.submit', ['id' => $session->id, 'type' => 'interactive'])
                 : null,
         ];
     }
@@ -502,6 +514,8 @@ class UnifiedHomeworkService
 
     /**
      * Get or create submission record for homework
+     *
+     * Used for Academic homework where submitable = AcademicHomework
      */
     private function getOrCreateSubmission(
         $homework,
@@ -515,12 +529,43 @@ class UnifiedHomeworkService
                 'student_id' => $studentId,
             ],
             [
-                'academy_id' => $homework->academy_id ?? $homework->session->course->academy_id,
+                'academy_id' => $homework->academy_id ?? $homework->session->course->academy_id ?? null,
                 'homework_type' => $type,
                 'due_date' => $homework->due_date,
                 'submission_status' => 'not_started',
                 'status' => 'pending',
                 'max_score' => $homework->max_score ?? 100,
+            ]
+        );
+
+        return $submission;
+    }
+
+    /**
+     * Get or create submission record for Interactive session homework
+     *
+     * Uses InteractiveCourseSession as the submitable (not legacy InteractiveCourseHomework)
+     */
+    private function getOrCreateInteractiveSubmission(
+        InteractiveCourseSession $session,
+        int $studentId
+    ): HomeworkSubmission {
+        // Default due date: 1 week after session
+        $dueDate = $session->scheduled_at?->addDays(7);
+
+        $submission = HomeworkSubmission::firstOrCreate(
+            [
+                'submitable_type' => InteractiveCourseSession::class,
+                'submitable_id' => $session->id,
+                'student_id' => $studentId,
+            ],
+            [
+                'academy_id' => $session->course?->academy_id,
+                'homework_type' => 'interactive',
+                'due_date' => $dueDate,
+                'submission_status' => 'not_started',
+                'status' => 'pending',
+                'max_score' => 100,
             ]
         );
 

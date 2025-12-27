@@ -61,6 +61,9 @@ use Illuminate\Support\Str;
  * @property array|null $metadata
  * @property int|null $created_by
  * @property int|null $updated_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 abstract class BaseSubscription extends Model
 {
@@ -202,10 +205,10 @@ abstract class BaseSubscription extends Model
      * Default attribute values
      */
     protected $attributes = [
-        'status' => 'pending',
-        'payment_status' => 'pending',
+        'status' => SubscriptionStatus::PENDING->value,
+        'payment_status' => SubscriptionPaymentStatus::PENDING->value,
         'currency' => 'SAR',
-        'billing_cycle' => 'monthly',
+        'billing_cycle' => BillingCycle::MONTHLY->value,
         'auto_renew' => true,
         'progress_percentage' => 0,
         'certificate_issued' => false,

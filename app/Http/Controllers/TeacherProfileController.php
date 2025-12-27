@@ -14,6 +14,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class TeacherProfileController extends Controller
 {
@@ -242,7 +243,7 @@ class TeacherProfileController extends Controller
                 ];
 
                 // Add recent sessions to activity (use already loaded sessions)
-                $completedSessions = $circle->sessions->where('status', 'completed')->take(5);
+                $completedSessions = $circle->sessions->where('status', SessionStatus::COMPLETED->value)->take(5);
                 foreach ($completedSessions as $session) {
                     $progressData['recentActivity'][] = [
                         'type' => 'session_completed',
@@ -751,22 +752,6 @@ class TeacherProfileController extends Controller
             ->get();
     }
 
-    /**
-     * Calculate monthly earnings (legacy - kept for backward compatibility)
-     */
-    private function calculateMonthlyEarnings($user, $teacherProfile, $month)
-    {
-        $teacherType = $user->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
-        $teacherId = $teacherProfile->id;
-        $academyId = $user->academy_id;
-
-        [$year, $monthNum] = explode('-', $month);
-
-        return TeacherEarning::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId)
-            ->forMonth((int) $year, (int) $monthNum)
-            ->sum('amount');
-    }
 
     /**
      * Get upcoming sessions

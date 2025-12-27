@@ -4,6 +4,7 @@ namespace App\Services\Calendar;
 
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use Illuminate\Support\Collection;
+use App\Enums\SessionStatus;
 
 /**
  * Strategy interface for calendar session management

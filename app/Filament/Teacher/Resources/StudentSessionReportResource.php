@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Enums\AttendanceStatus;
 use App\Filament\Teacher\Resources\StudentSessionReportResource\Pages;
 use App\Models\StudentSessionReport;
 use App\Services\StudentReportService;
@@ -78,12 +79,13 @@ class StudentSessionReportResource extends Resource
                 Select::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options([
-                        'attended' => 'حاضر',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
-                        'absent' => 'غائب',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::ABSENT->value => 'غائب',
                     ])
-                    ->helperText('اختياري - اتركه فارغاً للاحتفاظ بالحالة المحسوبة تلقائياً'),
+                    ->helperText('اختياري - اتركه فارغاً للاحتفاظ بالحالة المحسوبة تلقائياً')
+                    ->dehydrated(fn (?string $state): bool => filled($state)), // Only include in form data if explicitly set
 
                 Textarea::make('notes')
                     ->label('ملاحظات التقييم')
@@ -126,19 +128,19 @@ class StudentSessionReportResource extends Resource
                     ->label('حالة الحضور')
                     ->formatStateUsing(function (string $state): string {
                         return match ($state) {
-                            'attended' => 'حاضر',
-                            'late' => 'متأخر',
-                            'leaved' => 'غادر مبكراً',
-                            'absent' => 'غائب',
+                            AttendanceStatus::ATTENDED->value => 'حاضر',
+                            AttendanceStatus::LATE->value => 'متأخر',
+                            AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                            AttendanceStatus::ABSENT->value => 'غائب',
                             default => $state,
                         };
                     })
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'attended' => 'success',
-                        'late' => 'warning',
-                        'leaved' => 'info',
-                        'absent' => 'danger',
+                        AttendanceStatus::ATTENDED->value => 'success',
+                        AttendanceStatus::LATE->value => 'warning',
+                        AttendanceStatus::LEAVED->value => 'info',
+                        AttendanceStatus::ABSENT->value => 'danger',
                         default => 'gray',
                     }),
 
@@ -173,10 +175,10 @@ class StudentSessionReportResource extends Resource
                 SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options([
-                        'attended' => 'حاضر',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
-                        'absent' => 'غائب',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::ABSENT->value => 'غائب',
                     ]),
 
                 SelectFilter::make('session_type')
@@ -255,12 +257,13 @@ class StudentSessionReportResource extends Resource
                             Select::make('attendance_status')
                                 ->label('حالة الحضور')
                                 ->options([
-                                    'attended' => 'حاضر',
-                                    'late' => 'متأخر',
-                                    'leaved' => 'غادر مبكراً',
-                                    'absent' => 'غائب',
+                                    AttendanceStatus::ATTENDED->value => 'حاضر',
+                                    AttendanceStatus::LATE->value => 'متأخر',
+                                    AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                                    AttendanceStatus::ABSENT->value => 'غائب',
                                 ])
-                                ->helperText('اختياري - اتركه فارغاً للاحتفاظ بالحالة المحسوبة تلقائياً'),
+                                ->helperText('اختياري - اتركه فارغاً للاحتفاظ بالحالة المحسوبة تلقائياً')
+                                ->dehydrated(fn (?string $state): bool => filled($state)),
 
                             Textarea::make('notes')
                                 ->label('ملاحظات التقييم')

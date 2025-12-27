@@ -2,7 +2,9 @@
 
 namespace App\Services\Traits;
 
+use App\Enums\AttendanceStatus;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 /**
  * Trait AttendanceCalculatorTrait
@@ -39,7 +41,7 @@ trait AttendanceCalculatorTrait
     ): string {
         // If never joined, definitely absent
         if (! $firstJoinTime) {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
 
         // Calculate attendance percentage
@@ -49,7 +51,7 @@ trait AttendanceCalculatorTrait
 
         // Stayed < 50% - left early (regardless of join time)
         if ($attendancePercentage < 50) {
-            return 'leaved';
+            return AttendanceStatus::LEAVED->value;
         }
 
         // Stayed >= 50% - check if late
@@ -58,11 +60,11 @@ trait AttendanceCalculatorTrait
 
         // Stayed >= 50% and joined after tolerance - late
         if ($wasLate) {
-            return 'late';
+            return AttendanceStatus::LATE->value;
         }
 
         // Stayed >= 50% and joined on time - attended
-        return 'attended';
+        return AttendanceStatus::ATTENDED->value;
     }
 
     /**
@@ -115,7 +117,7 @@ trait AttendanceCalculatorTrait
     ): string {
         // No join = absent
         if (! $firstJoinTime) {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
 
         // Calculate attendance percentage
@@ -125,7 +127,7 @@ trait AttendanceCalculatorTrait
 
         // 100% attendance override - anyone who attended full session is marked attended
         if ($attendancePercentage >= 100) {
-            return 'attended';
+            return AttendanceStatus::ATTENDED->value;
         }
 
         // Check if joined within grace period
@@ -135,21 +137,21 @@ trait AttendanceCalculatorTrait
         // If joined after grace time, check if they made up for it
         if (! $joinedWithinGrace) {
             if ($attendancePercentage >= 95) {
-                return 'late'; // Late arrival but excellent attendance
+                return AttendanceStatus::LATE->value; // Late arrival but excellent attendance
             } elseif ($attendancePercentage >= 80) {
-                return 'leaved'; // Late and decent attendance
+                return AttendanceStatus::LEAVED->value; // Late and decent attendance
             } else {
-                return 'absent'; // Late and poor attendance
+                return AttendanceStatus::ABSENT->value; // Late and poor attendance
             }
         }
 
         // Joined on time - standard percentage rules
         if ($attendancePercentage >= 80) {
-            return 'attended';
+            return AttendanceStatus::ATTENDED->value;
         } elseif ($attendancePercentage >= 30) {
-            return 'leaved';
+            return AttendanceStatus::LEAVED->value;
         } else {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
     }
 

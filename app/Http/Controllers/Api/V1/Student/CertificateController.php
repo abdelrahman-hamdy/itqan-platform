@@ -8,6 +8,7 @@ use App\Models\Certificate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Enums\SessionStatus;
 
 class CertificateController extends Controller
 {

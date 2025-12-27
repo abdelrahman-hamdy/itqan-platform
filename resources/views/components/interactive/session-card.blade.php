@@ -2,6 +2,7 @@
 
 @php
     use App\Enums\SessionStatus;
+    use App\Enums\AttendanceStatus;
     $statusColors = [
         SessionStatus::SCHEDULED->value => 'border-blue-300 bg-blue-50',
         SessionStatus::ONGOING->value => 'border-green-400 bg-green-50',
@@ -80,12 +81,22 @@
 
                 {{-- Attendance Badge --}}
                 @if($attendance)
+                    @php
+                        $attendanceStatusValue = is_object($attendance->status) ? $attendance->status->value : $attendance->status;
+                    @endphp
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border
-                        {{ $attendance->status === 'present' ? 'bg-green-100 text-green-700 border-green-300' :
-                           ($attendance->status === 'late' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
-                           'bg-red-100 text-red-700 border-red-300') }}">
+                        {{ $attendanceStatusValue === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-700 border-green-300' :
+                           ($attendanceStatusValue === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
+                           ($attendanceStatusValue === AttendanceStatus::LEAVED->value ? 'bg-orange-100 text-orange-700 border-orange-300' :
+                           'bg-red-100 text-red-700 border-red-300')) }}">
                         <i class="ri-user-follow-line mr-1"></i>
-                        {{ ucfirst($attendance->status) }}
+                        {{ match($attendanceStatusValue) {
+                            AttendanceStatus::ATTENDED->value => 'حاضر',
+                            AttendanceStatus::LATE->value => 'متأخر',
+                            AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                            AttendanceStatus::ABSENT->value => 'غائب',
+                            default => $attendanceStatusValue
+                        } }}
                     </span>
                 @endif
 

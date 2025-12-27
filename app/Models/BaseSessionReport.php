@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use App\Traits\ScopedToAcademy;
 use Carbon\Carbon;
@@ -16,6 +17,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Contains shared attendance tracking, evaluation, and reporting logic.
  *
  * This follows the same pattern as BaseSession (Phase 5) and BaseSessionAttendance (Phase 7).
+ *
+ * @property int $id
+ * @property int $session_id
+ * @property int $student_id
+ * @property int|null $teacher_id
+ * @property int|null $academy_id
+ * @property string|null $notes
+ * @property \Carbon\Carbon|null $meeting_enter_time
+ * @property \Carbon\Carbon|null $meeting_leave_time
+ * @property int|null $actual_attendance_minutes
+ * @property bool $is_late
+ * @property int|null $late_minutes
+ * @property string $attendance_status
+ * @property float|null $attendance_percentage
+ * @property array|null $meeting_events
+ * @property \Carbon\Carbon|null $evaluated_at
+ * @property bool $is_calculated
+ * @property bool $manually_evaluated
+ * @property string|null $override_reason
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
  */
 abstract class BaseSessionReport extends Model
 {
@@ -44,6 +66,9 @@ abstract class BaseSessionReport extends Model
         'is_calculated',
         'manually_evaluated',
         'override_reason',
+        // Homework tracking fields (added for unified homework system)
+        'homework_submitted_at',
+        'homework_submission_id',
     ];
 
     /**
@@ -60,6 +85,8 @@ abstract class BaseSessionReport extends Model
         'evaluated_at' => 'datetime',
         'is_calculated' => 'boolean',
         'manually_evaluated' => 'boolean',
+        // Homework tracking casts
+        'homework_submitted_at' => 'datetime',
     ];
 
     // ========================================
@@ -80,11 +107,13 @@ abstract class BaseSessionReport extends Model
 
     /**
      * Get the grace period threshold for late arrivals in minutes
-     * Can be overridden by child classes for different session types
+     * Uses academy settings, can be overridden by child classes
      */
     protected function getGracePeriodMinutes(): int
     {
-        return 15; // Default 15 minutes grace period
+        // Try to get academy from session relationship
+        $academy = $this->session?->academy;
+        return $academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
     // ========================================
@@ -115,28 +144,37 @@ abstract class BaseSessionReport extends Model
         return $this->belongsTo(Academy::class);
     }
 
+    /**
+     * Relationship with HomeworkSubmission
+     * Links report to the unified homework submission record
+     */
+    public function homeworkSubmission(): BelongsTo
+    {
+        return $this->belongsTo(HomeworkSubmission::class);
+    }
+
     // ========================================
     // Shared Scopes
     // ========================================
 
     public function scopePresent($query)
     {
-        return $query->where('attendance_status', 'attended');
+        return $query->where('attendance_status', AttendanceStatus::ATTENDED->value);
     }
 
     public function scopeAbsent($query)
     {
-        return $query->where('attendance_status', 'absent');
+        return $query->where('attendance_status', AttendanceStatus::ABSENT->value);
     }
 
     public function scopeLate($query)
     {
-        return $query->where('attendance_status', 'late');
+        return $query->where('attendance_status', AttendanceStatus::LATE->value);
     }
 
     public function scopePartial($query)
     {
-        return $query->where('attendance_status', 'leaved');
+        return $query->where('attendance_status', AttendanceStatus::LEAVED->value);
     }
 
     public function scopeEvaluated($query)
@@ -332,7 +370,7 @@ abstract class BaseSessionReport extends Model
 
         // Fallback to real-time calculation if not yet finalized
         if (! $meetingAttendance->first_join_time || ! $this->session) {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
 
         $session = $this->session;

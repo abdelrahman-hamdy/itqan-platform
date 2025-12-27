@@ -300,6 +300,168 @@
         window.location.href = chatUrl;
     }
 
+    // Update student card display after report save (to avoid page reload and preserve LiveKit connection)
+    function updateStudentCardDisplay(studentId, reportData) {
+        // Update attendance badge
+        const attendanceContainer = document.getElementById('student-attendance-' + studentId);
+        if (attendanceContainer && reportData.attendance_status) {
+            const statusMap = {
+                'attended': { label: 'حاضر', class: 'bg-green-100 text-green-800', icon: 'ri-check-line' },
+                'late': { label: 'متأخر', class: 'bg-yellow-100 text-yellow-800', icon: 'ri-time-line' },
+                'leaved': { label: 'غادر مبكراً', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
+                'absent': { label: 'غائب', class: 'bg-red-100 text-red-800', icon: 'ri-close-line' }
+            };
+            const status = statusMap[reportData.attendance_status] || statusMap['attended'];
+            const percentage = reportData.attendance_percentage ? ` (${Math.round(reportData.attendance_percentage)}%)` : '';
+
+            attendanceContainer.innerHTML = `
+                <span class="inline-flex items-center px-3 py-1.5 ${status.class} rounded-full text-sm font-semibold">
+                    <i class="${status.icon} ml-1"></i>
+                    ${status.label}${percentage}
+                </span>
+            `;
+        }
+
+        // Update report data section
+        const reportDataContainer = document.getElementById('student-report-data-' + studentId);
+        if (reportDataContainer) {
+            let infoItems = [];
+
+            // Quran degrees
+            if (reportData.new_memorization_degree !== null && reportData.new_memorization_degree !== undefined) {
+                infoItems.push({
+                    icon: 'ri-book-line text-green-600',
+                    label: 'درجة الحفظ',
+                    value: reportData.new_memorization_degree + '/10',
+                    class: 'bg-green-100 text-green-800'
+                });
+            }
+            if (reportData.reservation_degree !== null && reportData.reservation_degree !== undefined) {
+                infoItems.push({
+                    icon: 'ri-refresh-line text-blue-600',
+                    label: 'درجة المراجعة',
+                    value: reportData.reservation_degree + '/10',
+                    class: 'bg-blue-100 text-blue-800'
+                });
+            }
+            // Academic/Interactive homework degree
+            if (reportData.homework_degree !== null && reportData.homework_degree !== undefined) {
+                infoItems.push({
+                    icon: 'ri-file-list-line text-purple-600',
+                    label: 'درجة الواجب',
+                    value: reportData.homework_degree + '/10',
+                    class: 'bg-purple-100 text-purple-800'
+                });
+            }
+            // Attendance minutes
+            if (reportData.actual_attendance_minutes !== null && reportData.actual_attendance_minutes !== undefined) {
+                infoItems.push({
+                    icon: 'ri-time-line text-purple-600',
+                    label: 'مدة الحضور',
+                    value: reportData.actual_attendance_minutes + ' دقيقة',
+                    class: 'bg-purple-100 text-purple-800'
+                });
+            }
+            // Attendance percentage
+            if (reportData.attendance_percentage !== null && reportData.attendance_percentage !== undefined) {
+                infoItems.push({
+                    icon: 'ri-percent-line text-indigo-600',
+                    label: 'نسبة الحضور',
+                    value: Math.round(reportData.attendance_percentage) + '%',
+                    class: 'bg-indigo-100 text-indigo-800'
+                });
+            }
+
+            if (infoItems.length > 0) {
+                // Split into two columns
+                const leftColumn = infoItems.filter((_, i) => i % 2 === 0);
+                const rightColumn = infoItems.filter((_, i) => i % 2 === 1);
+
+                const generateColumn = (items) => items.map(item => `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="${item.icon} ml-2"></i>
+                            <span class="text-gray-900 text-sm">${item.label}</span>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.class}">
+                            ${item.value}
+                        </span>
+                    </div>
+                `).join('');
+
+                let notesHtml = '';
+                if (reportData.notes) {
+                    notesHtml = `
+                        <div class="mt-3 pt-3 border-t border-gray-200">
+                            <div class="flex items-start">
+                                <i class="ri-sticky-note-line text-amber-600 ml-2 mt-0.5"></i>
+                                <div>
+                                    <span class="text-gray-600 text-xs font-medium">الملاحظات:</span>
+                                    <p class="text-gray-800 text-sm mt-1">${reportData.notes}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                reportDataContainer.innerHTML = `
+                    <div class="bg-white border border-gray-300 rounded-lg mb-3 p-3">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-3">${generateColumn(leftColumn)}</div>
+                            <div class="space-y-3">${generateColumn(rightColumn)}</div>
+                        </div>
+                        ${notesHtml}
+                    </div>
+                `;
+            } else if (reportData.notes) {
+                reportDataContainer.innerHTML = `
+                    <div class="bg-white border border-gray-300 rounded-lg mb-3 p-3">
+                        <div class="flex items-start">
+                            <i class="ri-sticky-note-line text-amber-600 ml-2 mt-0.5"></i>
+                            <div>
+                                <span class="text-gray-600 text-xs font-medium">الملاحظات:</span>
+                                <p class="text-gray-800 text-sm mt-1">${reportData.notes}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Update the edit button text and onclick
+        const editBtnText = document.getElementById('student-edit-btn-text-' + studentId);
+        const editBtn = document.getElementById('student-edit-btn-' + studentId);
+        if (editBtnText) {
+            editBtnText.textContent = 'تعديل التقرير';
+        }
+        if (editBtn && reportData.id) {
+            editBtn.setAttribute('onclick', `editStudentReport(${studentId}, ${reportData.id})`);
+        }
+
+        // Update the student card data attribute
+        const studentCard = document.getElementById('student-card-' + studentId);
+        if (studentCard && reportData.id) {
+            studentCard.setAttribute('data-report-id', reportData.id);
+        }
+
+        // Show a toast notification
+        showReportUpdateNotification();
+    }
+
+    // Show toast notification for report update
+    function showReportUpdateNotification() {
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
+        notification.innerHTML = '<i class="ri-check-line"></i><span>تم تحديث التقرير بنجاح</span>';
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.transition = 'opacity 0.3s';
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const sessionContentForm = document.getElementById('sessionContentForm');
         if (sessionContentForm) {

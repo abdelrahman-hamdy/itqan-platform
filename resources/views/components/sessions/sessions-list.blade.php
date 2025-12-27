@@ -8,6 +8,8 @@
 ])
 
 @php
+    use App\Enums\SessionStatus;
+
     $now = now();
 
     // Helper function to get status value (handles both string and enum)
@@ -15,18 +17,18 @@
         return is_object($session->status) ? $session->status->value : $session->status;
     };
 
-    $ongoingSessions = $sessions->filter(fn($session) => $getStatusValue($session) === 'ongoing')
+    $ongoingSessions = $sessions->filter(fn($session) => $getStatusValue($session) === SessionStatus::ONGOING->value)
         ->sortBy('scheduled_at');
     $upcomingSessions = $sessions->filter(fn($session) =>
         $session->scheduled_at > $now &&
-        in_array($getStatusValue($session), ['scheduled', 'ready'])
+        in_array($getStatusValue($session), [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
     )->sortBy('scheduled_at'); // Sort ASC - closest first
     $unscheduledSessions = $sessions->filter(fn($session) =>
-        $getStatusValue($session) === 'unscheduled'
+        $getStatusValue($session) === SessionStatus::UNSCHEDULED->value
     );
     $pastSessions = $sessions->filter(fn($session) =>
         $session->scheduled_at <= $now &&
-        in_array($getStatusValue($session), ['completed', 'absent'])
+        in_array($getStatusValue($session), [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
     )->sortByDesc('scheduled_at'); // Sort DESC - most recent first
 @endphp
 

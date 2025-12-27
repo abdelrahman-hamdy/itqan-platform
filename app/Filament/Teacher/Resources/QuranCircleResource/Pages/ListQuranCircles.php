@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
+use App\Enums\SubscriptionStatus;
 
 class ListQuranCircles extends ListRecords
 {
@@ -31,7 +32,7 @@ class ListQuranCircles extends ListRecords
     {
         return [
             'all' => Tab::make('جميع الحلقات'),
-            'active' => Tab::make('النشطة')
+            SubscriptionStatus::ACTIVE->value => Tab::make('النشطة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', true)),
             'inactive' => Tab::make('غير نشطة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', false)),

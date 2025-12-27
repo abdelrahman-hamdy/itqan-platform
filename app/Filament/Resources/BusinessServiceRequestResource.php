@@ -10,6 +10,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class BusinessServiceRequestResource extends Resource
 {
@@ -134,13 +136,13 @@ class BusinessServiceRequestResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('حالة الطلب')
                             ->options([
-                                'pending' => 'في الانتظار',
+                                SubscriptionStatus::PENDING->value => 'في الانتظار',
                                 'reviewed' => 'تم المراجعة',
                                 'approved' => 'مقبول',
                                 'rejected' => 'مرفوض',
-                                'completed' => 'مكتمل',
+                                SessionStatus::COMPLETED->value => 'مكتمل',
                             ])
-                            ->default('pending')
+                            ->default(SubscriptionStatus::PENDING->value)
                             ->required(),
 
                         Forms\Components\Textarea::make('admin_notes')
@@ -199,18 +201,18 @@ class BusinessServiceRequestResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
-                        'warning' => 'pending',
+                        'warning' => SubscriptionStatus::PENDING->value,
                         'info' => 'reviewed',
                         'success' => 'approved',
                         'danger' => 'rejected',
-                        'gray' => 'completed',
+                        'gray' => SessionStatus::COMPLETED->value,
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'في الانتظار',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                         'reviewed' => 'تم المراجعة',
                         'approved' => 'مقبول',
                         'rejected' => 'مرفوض',
-                        'completed' => 'مكتمل',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
                         default => $state,
                     }),
 
@@ -223,11 +225,11 @@ class BusinessServiceRequestResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('حالة الطلب')
                     ->options([
-                        'pending' => 'في الانتظار',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                         'reviewed' => 'تم المراجعة',
                         'approved' => 'مقبول',
                         'rejected' => 'مرفوض',
-                        'completed' => 'مكتمل',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
                     ]),
 
                 Tables\Filters\SelectFilter::make('service_category_id')
@@ -272,7 +274,7 @@ class BusinessServiceRequestResource extends Resource
                     ->label('مراجعة')
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->visible(fn (BusinessServiceRequest $record): bool => $record->status === 'pending')
+                    ->visible(fn (BusinessServiceRequest $record): bool => $record->status === SubscriptionStatus::PENDING->value)
                     ->requiresConfirmation()
                     ->modalHeading('تأكيد المراجعة')
                     ->modalDescription('هل تريد وضع علامة مراجعة على هذا الطلب؟')
@@ -289,11 +291,11 @@ class BusinessServiceRequestResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('الحالة الجديدة')
                             ->options([
-                                'pending' => 'في الانتظار',
+                                SubscriptionStatus::PENDING->value => 'في الانتظار',
                                 'reviewed' => 'تم المراجعة',
                                 'approved' => 'مقبول',
                                 'rejected' => 'مرفوض',
-                                'completed' => 'مكتمل',
+                                SessionStatus::COMPLETED->value => 'مكتمل',
                             ])
                             ->required(),
                         Forms\Components\Textarea::make('admin_notes')
@@ -316,7 +318,7 @@ class BusinessServiceRequestResource extends Resource
                         ->modalCancelActionLabel('إلغاء')
                         ->action(function ($records): void {
                             $records->each(function ($record) {
-                                if ($record->status === 'pending') {
+                                if ($record->status === SubscriptionStatus::PENDING->value) {
                                     $record->update(['status' => 'reviewed']);
                                 }
                             });
@@ -368,7 +370,7 @@ class BusinessServiceRequestResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'pending')->count();
+        return static::getModel()::where('status', SubscriptionStatus::PENDING->value)->count();
     }
 
     public static function getNavigationBadgeColor(): ?string

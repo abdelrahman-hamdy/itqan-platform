@@ -15,7 +15,7 @@ class RedirectAuthenticatedPublicViews
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $type = null): Response
+    public function handle(Request $request, Closure $next, ?string $type = null): Response
     {
         // If user is not authenticated, allow access to public view
         if (! Auth::check()) {

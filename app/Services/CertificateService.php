@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use setasign\Fpdi\Tcpdf\Fpdi;
+use App\Enums\SessionStatus;
 
 class CertificateService
 {

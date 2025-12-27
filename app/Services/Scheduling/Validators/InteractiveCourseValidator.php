@@ -6,6 +6,7 @@ use App\Models\InteractiveCourse;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 /**
  * Validator for Interactive Courses (Fixed session count, curriculum-based)
@@ -63,7 +64,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         // Use actual course configuration with fallback
         $totalSessions = $this->course->total_sessions ?? 16;
         $scheduledSessions = $this->course->sessions()
-            ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $scheduledSessions);
@@ -148,7 +149,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         // Use actual course configuration with fallbacks
         $totalSessions = $this->course->total_sessions ?? 16;
         $scheduledSessions = $this->course->sessions()
-            ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->count();
         $remainingSessions = max(0, $totalSessions - $scheduledSessions);
 
@@ -188,7 +189,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         $totalSessions = $this->course->total_sessions ?? 16;
         $durationWeeks = max(1, $this->course->duration_weeks ?? 8);
         $scheduledSessions = $this->course->sessions()
-            ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $scheduledSessions);
@@ -213,7 +214,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
     {
         $totalSessions = max(1, $this->course->total_sessions ?? 16);
         $scheduledSessions = $this->course->sessions()
-            ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $scheduledSessions);
@@ -232,7 +233,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         // Check future scheduled sessions
         $futureScheduled = $this->course->sessions()
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->where('scheduled_at', '>', now())
             ->count();
 

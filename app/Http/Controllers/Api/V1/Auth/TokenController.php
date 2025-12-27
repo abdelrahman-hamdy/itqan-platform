@@ -8,6 +8,7 @@ use App\Http\Resources\Api\V1\User\UserResource;
 use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class TokenController extends Controller
 {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Traits;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 /**
  * Date Range Filter Trait

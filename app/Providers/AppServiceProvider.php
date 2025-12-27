@@ -67,6 +67,17 @@ class AppServiceProvider extends ServiceProvider
             $view->with('hasAcademySelected', AcademyHelper::hasAcademySelected());
         });
 
+        // Register morph map for polymorphic relationships
+        // This ensures consistent database values instead of full class names
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'quran_session' => \App\Models\QuranSession::class,
+            'academic_session' => \App\Models\AcademicSession::class,
+            'interactive_course_session' => \App\Models\InteractiveCourseSession::class,
+            'quran_subscription' => \App\Models\QuranSubscription::class,
+            'academic_subscription' => \App\Models\AcademicSubscription::class,
+            'course_subscription' => \App\Models\CourseSubscription::class,
+        ]);
+
         // Register Media Observer to handle UTF-8 filename sanitization
         Media::observe(MediaObserver::class);
 

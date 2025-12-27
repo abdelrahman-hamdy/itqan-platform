@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api\V1\Teacher\Quran;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
+use App\Models\StudentSessionReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class SessionController extends Controller
 {
@@ -130,22 +132,10 @@ class SessionController extends Controller
                     'recitation' => $session->quran_homework_recitation,
                     'review' => $session->quran_homework_review,
                 ],
-                'evaluation' => [
-                    'memorization_rating' => $session->memorization_rating,
-                    'tajweed_rating' => $session->tajweed_rating,
-                    'current_surah' => $session->current_surah,
-                    'current_page' => $session->current_page,
-                    'verses_memorized' => $session->verses_memorized,
-                    'pages_reviewed' => $session->pages_reviewed,
-                ],
+                'evaluation' => $this->formatEvaluation($session),
                 'notes' => $session->notes,
                 'teacher_notes' => $session->teacher_notes,
-                'report' => $session->reports?->first() ? [
-                    'id' => $session->reports->first()->id,
-                    'rating' => $session->reports->first()->rating,
-                    'notes' => $session->reports->first()->notes,
-                    'teacher_feedback' => $session->reports->first()->teacher_feedback,
-                ] : null,
+                'report' => $this->formatReport($session->reports?->first()),
                 'started_at' => $session->started_at?->toISOString(),
                 'ended_at' => $session->ended_at?->toISOString(),
                 'created_at' => $session->created_at->toISOString(),
@@ -178,17 +168,17 @@ class SessionController extends Controller
         }
 
         $statusValue = $session->status->value ?? $session->status;
-        if ($statusValue === 'completed') {
+        if ($statusValue === SessionStatus::COMPLETED->value) {
             return $this->error(__('Session is already completed.'), 400, 'ALREADY_COMPLETED');
         }
 
-        if ($statusValue === 'cancelled') {
+        if ($statusValue === SessionStatus::CANCELLED->value) {
             return $this->error(__('Cannot complete a cancelled session.'), 400, 'SESSION_CANCELLED');
         }
 
         $validator = Validator::make($request->all(), [
-            'memorization_rating' => ['sometimes', 'integer', 'min:1', 'max:5'],
-            'tajweed_rating' => ['sometimes', 'integer', 'min:1', 'max:5'],
+            'memorization_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
+            'revision_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
             'current_surah' => ['sometimes', 'string', 'max:100'],
             'current_page' => ['sometimes', 'integer', 'min:1', 'max:604'],
             'verses_memorized' => ['sometimes', 'integer', 'min:0'],
@@ -206,10 +196,8 @@ class SessionController extends Controller
         DB::beginTransaction();
         try {
             $session->update([
-                'status' => 'completed',
+                'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'memorization_rating' => $request->memorization_rating ?? $session->memorization_rating,
-                'tajweed_rating' => $request->tajweed_rating ?? $session->tajweed_rating,
                 'current_surah' => $request->current_surah ?? $session->current_surah,
                 'current_page' => $request->current_page ?? $session->current_page,
                 'verses_memorized' => $request->verses_memorized ?? $session->verses_memorized,
@@ -219,6 +207,11 @@ class SessionController extends Controller
                 'quran_homework_recitation' => $request->homework_recitation ?? $session->quran_homework_recitation,
                 'quran_homework_review' => $request->homework_review ?? $session->quran_homework_review,
             ]);
+
+            // Create or update session report with evaluation
+            if ($request->filled('memorization_degree') || $request->filled('revision_degree')) {
+                $this->updateOrCreateReport($session, $user, $request);
+            }
 
             // Update subscription usage
             if (method_exists($session, 'updateSubscriptionUsage')) {
@@ -230,7 +223,7 @@ class SessionController extends Controller
             return $this->success([
                 'session' => [
                     'id' => $session->id,
-                    'status' => 'completed',
+                    'status' => SessionStatus::COMPLETED,
                     'ended_at' => $session->ended_at->toISOString(),
                 ],
             ], __('Session completed successfully'));
@@ -265,11 +258,11 @@ class SessionController extends Controller
         }
 
         $statusValue = $session->status->value ?? $session->status;
-        if ($statusValue === 'completed') {
+        if ($statusValue === SessionStatus::COMPLETED->value) {
             return $this->error(__('Cannot cancel a completed session.'), 400, 'SESSION_COMPLETED');
         }
 
-        if ($statusValue === 'cancelled') {
+        if ($statusValue === SessionStatus::CANCELLED->value) {
             return $this->error(__('Session is already cancelled.'), 400, 'ALREADY_CANCELLED');
         }
 
@@ -282,7 +275,7 @@ class SessionController extends Controller
         }
 
         $session->update([
-            'status' => 'cancelled',
+            'status' => SessionStatus::CANCELLED,
             'cancellation_reason' => $request->reason,
             'cancelled_at' => now(),
             'cancelled_by' => $user->id,
@@ -291,7 +284,7 @@ class SessionController extends Controller
         return $this->success([
             'session' => [
                 'id' => $session->id,
-                'status' => 'cancelled',
+                'status' => SessionStatus::CANCELLED,
                 'cancellation_reason' => $request->reason,
             ],
         ], __('Session cancelled successfully'));
@@ -315,6 +308,7 @@ class SessionController extends Controller
 
         $session = QuranSession::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
+            ->with('reports')
             ->first();
 
         if (!$session) {
@@ -322,8 +316,8 @@ class SessionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'memorization_rating' => ['required', 'integer', 'min:1', 'max:5'],
-            'tajweed_rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'memorization_degree' => ['required', 'numeric', 'min:0', 'max:10'],
+            'revision_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
             'current_surah' => ['sometimes', 'string', 'max:100'],
             'current_page' => ['sometimes', 'integer', 'min:1', 'max:604'],
             'verses_memorized' => ['sometimes', 'integer', 'min:0'],
@@ -338,38 +332,35 @@ class SessionController extends Controller
             return $this->validationError($validator->errors()->toArray());
         }
 
-        $session->update([
-            'memorization_rating' => $request->memorization_rating,
-            'tajweed_rating' => $request->tajweed_rating,
-            'current_surah' => $request->current_surah ?? $session->current_surah,
-            'current_page' => $request->current_page ?? $session->current_page,
-            'verses_memorized' => $request->verses_memorized ?? $session->verses_memorized,
-            'pages_reviewed' => $request->pages_reviewed ?? $session->pages_reviewed,
-            'teacher_notes' => $request->feedback ?? $session->teacher_notes,
-            'quran_homework_memorization' => $request->homework_memorization ?? $session->quran_homework_memorization,
-            'quran_homework_recitation' => $request->homework_recitation ?? $session->quran_homework_recitation,
-            'quran_homework_review' => $request->homework_review ?? $session->quran_homework_review,
-        ]);
+        DB::beginTransaction();
+        try {
+            // Update session progress fields
+            $session->update([
+                'current_surah' => $request->current_surah ?? $session->current_surah,
+                'current_page' => $request->current_page ?? $session->current_page,
+                'verses_memorized' => $request->verses_memorized ?? $session->verses_memorized,
+                'pages_reviewed' => $request->pages_reviewed ?? $session->pages_reviewed,
+                'teacher_notes' => $request->feedback ?? $session->teacher_notes,
+                'quran_homework_memorization' => $request->homework_memorization ?? $session->quran_homework_memorization,
+                'quran_homework_recitation' => $request->homework_recitation ?? $session->quran_homework_recitation,
+                'quran_homework_review' => $request->homework_review ?? $session->quran_homework_review,
+            ]);
 
-        // TODO: DEFERRED - QuranSessionReport model doesn't exist
-        // See DEFERRED_PROBLEMS.md for details
-        // QuranSessionReport::updateOrCreate(
-        //     ['quran_session_id' => $session->id],
-        //     [
-        //         'teacher_feedback' => $request->feedback,
-        //         'memorization_rating' => $request->memorization_rating,
-        //         'tajweed_rating' => $request->tajweed_rating,
-        //         'rating' => round(($request->memorization_rating + $request->tajweed_rating) / 2),
-        //     ]
-        // );
+            // Create or update session report with evaluation degrees
+            $report = $this->updateOrCreateReport($session, $user, $request);
 
-        return $this->success([
-            'session' => [
-                'id' => $session->id,
-                'memorization_rating' => $session->memorization_rating,
-                'tajweed_rating' => $session->tajweed_rating,
-            ],
-        ], __('Evaluation submitted successfully'));
+            DB::commit();
+
+            return $this->success([
+                'session' => [
+                    'id' => $session->id,
+                    'evaluation' => $this->formatEvaluation($session->fresh(['reports'])),
+                ],
+            ], __('Evaluation submitted successfully'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error(__('Failed to submit evaluation.'), 500, 'EVALUATION_FAILED');
+        }
     }
 
     /**
@@ -417,5 +408,65 @@ class SessionController extends Controller
                 'teacher_notes' => $session->teacher_notes,
             ],
         ], __('Notes updated successfully'));
+    }
+
+    /**
+     * Format evaluation data from session and its report.
+     */
+    protected function formatEvaluation(QuranSession $session): array
+    {
+        $report = $session->reports?->first();
+
+        return [
+            'memorization_degree' => $report?->new_memorization_degree,
+            'revision_degree' => $report?->reservation_degree,
+            'overall_performance' => $report?->overall_performance,
+            'current_surah' => $session->current_surah,
+            'current_page' => $session->current_page,
+            'verses_memorized' => $session->verses_memorized,
+            'pages_reviewed' => $session->pages_reviewed,
+            'evaluated_at' => $report?->evaluated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * Format report data.
+     */
+    protected function formatReport(?StudentSessionReport $report): ?array
+    {
+        if (!$report) {
+            return null;
+        }
+
+        return [
+            'id' => $report->id,
+            'memorization_degree' => $report->new_memorization_degree,
+            'revision_degree' => $report->reservation_degree,
+            'overall_performance' => $report->overall_performance,
+            'notes' => $report->notes,
+            'evaluated_at' => $report->evaluated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * Create or update session report with evaluation.
+     */
+    protected function updateOrCreateReport(QuranSession $session, $user, Request $request): StudentSessionReport
+    {
+        return StudentSessionReport::updateOrCreate(
+            [
+                'session_id' => $session->id,
+                'student_id' => $session->student_id,
+            ],
+            [
+                'teacher_id' => $user->id,
+                'academy_id' => $session->academy_id,
+                'new_memorization_degree' => $request->memorization_degree,
+                'reservation_degree' => $request->revision_degree,
+                'notes' => $request->feedback ?? $request->notes,
+                'evaluated_at' => now(),
+                'manually_evaluated' => true,
+            ]
+        );
     }
 }

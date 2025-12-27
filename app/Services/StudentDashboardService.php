@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
@@ -68,7 +70,7 @@ class StudentDashboardService
         $subscriptions = QuranSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
             ->where('subscription_type', 'individual')
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->whereHas('individualCircle', function ($query) {
                 $query->whereNull('deleted_at');
             })

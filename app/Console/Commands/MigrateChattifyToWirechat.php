@@ -149,14 +149,14 @@ class MigrateChattifyToWirechat extends Command
                     'conversation_id' => $conversation->id,
                     'participantable_id' => $user1->id,
                     'participantable_type' => get_class($user1),
-                    'role' => ParticipantRole::MEMBER,
+                    'role' => ParticipantRole::PARTICIPANT,
                 ]);
 
                 Participant::create([
                     'conversation_id' => $conversation->id,
                     'participantable_id' => $user2->id,
                     'participantable_type' => get_class($user2),
-                    'role' => ParticipantRole::MEMBER,
+                    'role' => ParticipantRole::PARTICIPANT,
                 ]);
 
                 // Store mapping for message migration
@@ -228,7 +228,7 @@ class MigrateChattifyToWirechat extends Command
                 foreach ($members as $member) {
                     $user = User::find($member->user_id);
                     if ($user) {
-                        $role = ParticipantRole::MEMBER;
+                        $role = ParticipantRole::PARTICIPANT;
 
                         if ($member->role === 'owner') {
                             $role = ParticipantRole::OWNER;
@@ -311,7 +311,8 @@ class MigrateChattifyToWirechat extends Command
                     if ($chattifyMessage->attachment) {
                         $attachment = json_decode($chattifyMessage->attachment, true);
                         if ($attachment && isset($attachment['type'])) {
-                            $messageType = $attachment['type'] === 'image' ? MessageType::IMAGE : MessageType::FILE;
+                            // WireChat only has TEXT and ATTACHMENT types
+                            $messageType = MessageType::ATTACHMENT;
                         }
                     }
 

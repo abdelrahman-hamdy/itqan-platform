@@ -8,6 +8,7 @@ use App\Models\Certificate;
 use App\Models\ParentStudentRelationship;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class CertificateController extends Controller
 {

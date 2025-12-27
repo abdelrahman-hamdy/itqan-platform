@@ -5,8 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -159,6 +160,64 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
+     * Get individual lessons taught by this teacher
+     */
+    public function privateSessions(): HasMany
+    {
+        return $this->hasMany(AcademicIndividualLesson::class, 'academic_teacher_id');
+    }
+
+    /**
+     * Get subscriptions taught by this teacher
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(AcademicSubscription::class, 'academic_teacher_id');
+    }
+
+    /**
+     * Get sessions taught by this teacher
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(AcademicSession::class, 'academic_teacher_id');
+    }
+
+    /**
+     * Get recorded courses (through creator user)
+     * Note: RecordedCourse doesn't have direct teacher_id, uses created_by
+     */
+    public function recordedCourses(): HasMany
+    {
+        return $this->hasMany(RecordedCourse::class, 'created_by', 'user_id');
+    }
+
+    /**
+     * Get students taught by this teacher (through subscriptions)
+     */
+    public function students(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            User::class,
+            AcademicSubscription::class,
+            'academic_teacher_id', // Foreign key on academic_subscriptions
+            'id',                   // Foreign key on users
+            'id',                   // Local key on academic_teacher_profiles
+            'student_id'           // Local key on academic_subscriptions
+        );
+    }
+
+    /**
+     * Packages relationship (for eager loading)
+     * Returns packages based on package_ids JSON array
+     */
+    public function packages(): BelongsToMany
+    {
+        // Return empty relationship - actual packages come from getPackagesAttribute accessor
+        return $this->belongsToMany(AcademicPackage::class, 'academic_teacher_packages', 'teacher_id', 'package_id');
+    }
+
+    /**
      * Get all reviews for this teacher
      */
     public function reviews(): MorphMany
@@ -207,62 +266,6 @@ class AcademicTeacherProfile extends Model
         return AcademicGradeLevel::whereIn('id', $gradeLevelIds)
                                  ->where('academy_id', $this->academy_id)
                                  ->get();
-    }
-
-    /**
-     * Get subjects as text array for forms (backward compatibility)
-     */
-    public function getSubjectsTextAttribute()
-    {
-        if (empty($this->subject_ids)) {
-            return [];
-        }
-
-        // Ensure subject_ids is an array
-        $subjectIds = $this->subject_ids;
-        if (is_string($subjectIds)) {
-            $subjectIds = json_decode($subjectIds, true) ?: [];
-        }
-        if (!is_array($subjectIds)) {
-            return [];
-        }
-
-        // Get the actual subject names from the database
-        $subjects = AcademicSubject::whereIn('id', $subjectIds)
-                                   ->where('academy_id', $this->academy_id)
-                                   ->pluck('name', 'id')
-                                   ->toArray();
-
-        // Return array of subject names with IDs as keys (for consistent indexing)
-        return $subjects;
-    }
-
-    /**
-     * Get grade levels as text array for forms (backward compatibility)
-     */
-    public function getGradeLevelsTextAttribute()
-    {
-        if (empty($this->grade_level_ids)) {
-            return [];
-        }
-
-        // Ensure grade_level_ids is an array
-        $gradeLevelIds = $this->grade_level_ids;
-        if (is_string($gradeLevelIds)) {
-            $gradeLevelIds = json_decode($gradeLevelIds, true) ?: [];
-        }
-        if (!is_array($gradeLevelIds)) {
-            return [];
-        }
-
-        // Get the actual grade level names from the database
-        $gradeLevels = AcademicGradeLevel::whereIn('id', $gradeLevelIds)
-                                         ->where('academy_id', $this->academy_id)
-                                         ->pluck('name', 'id')
-                                         ->toArray();
-
-        // Return array of grade level names with IDs as keys (for consistent indexing)
-        return $gradeLevels;
     }
 
     /**
@@ -368,17 +371,6 @@ class AcademicTeacherProfile extends Model
     }
 
     public function suspend(?string $reason = null): void
-    {
-        $this->deactivate($reason);
-    }
-
-    // Legacy methods for backward compatibility
-    public function approve(int $approvedBy): void
-    {
-        $this->activate($approvedBy);
-    }
-
-    public function reject(int $rejectedBy, ?string $reason = null): void
     {
         $this->deactivate($reason);
     }

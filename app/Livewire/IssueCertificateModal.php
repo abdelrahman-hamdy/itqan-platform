@@ -13,7 +13,15 @@ use App\Services\CertificateService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use App\Enums\SessionStatus;
 
+/**
+ * @property array $templateStyles
+ * @property bool $isGroup
+ * @property string $studentName
+ * @property string $academyName
+ * @property string $teacherName
+ */
 class IssueCertificateModal extends Component
 {
     public $showModal = false;

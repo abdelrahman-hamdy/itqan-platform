@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Enums\SessionStatus;
 
 class QuranCircleController extends Controller
 {
@@ -231,7 +232,7 @@ class QuranCircleController extends Controller
         // Calculate circle statistics
         $stats = [
             'enrolled_students' => $circle->enrollments()->where('status', 'enrolled')->count(),
-            'completed_students' => $circle->enrollments()->where('status', 'completed')->count(),
+            'completed_students' => $circle->enrollments()->where('status', SessionStatus::COMPLETED->value)->count(),
             'dropped_students' => $circle->enrollments()->where('status', 'dropped')->count(),
             'sessions_completed' => $circle->quranSessions()->completed()->count(),
             'sessions_remaining' => max(0, $circle->total_sessions - $circle->sessions_completed),
@@ -439,7 +440,7 @@ class QuranCircleController extends Controller
             DB::beginTransaction();
 
             $circle->update([
-                'status' => 'completed',
+                'status' => SessionStatus::COMPLETED,
                 'enrollment_status' => 'closed',
                 'actual_end_date' => now(),
                 'completion_rate' => 100,
@@ -453,7 +454,7 @@ class QuranCircleController extends Controller
 
             foreach ($eligibleStudents as $enrollment) {
                 $enrollment->update([
-                    'status' => 'completed',
+                    'status' => SessionStatus::COMPLETED,
                     'completion_date' => now(),
                     'certificate_issued' => true,
                 ]);
@@ -504,7 +505,7 @@ class QuranCircleController extends Controller
             DB::beginTransaction();
 
             $circle->update([
-                'status' => 'cancelled',
+                'status' => SessionStatus::CANCELLED,
                 'enrollment_status' => 'closed',
                 'cancellation_reason' => $request->cancellation_reason,
                 'cancelled_at' => now(),
@@ -518,8 +519,8 @@ class QuranCircleController extends Controller
             // Cancel upcoming sessions
             $circle->quranSessions()
                 ->where('session_date', '>', now())
-                ->where('status', 'scheduled')
-                ->update(['status' => 'cancelled']);
+                ->where('status', SessionStatus::SCHEDULED->value)
+                ->update(['status' => SessionStatus::CANCELLED]);
 
             DB::commit();
 

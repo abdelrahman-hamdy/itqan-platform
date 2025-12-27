@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
+use App\Enums\SubscriptionStatus;
 use App\Models\QuranSubscription;
 use App\Models\AcademicSubscription;
 use App\Services\NotificationService;
@@ -30,7 +31,7 @@ class CheckExpiringSubscriptions extends Command
 
             // Quran Subscriptions
             $quranSubs = QuranSubscription::whereBetween('end_date', [$targetDate, $endDate])
-                ->where('status', 'active')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->with(['student', 'quranCircle'])
                 ->get();
 
@@ -69,7 +70,7 @@ class CheckExpiringSubscriptions extends Command
 
             // Academic Subscriptions
             $academicSubs = AcademicSubscription::whereBetween('end_date', [$targetDate, $endDate])
-                ->where('status', 'active')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->with(['student'])
                 ->get();
 

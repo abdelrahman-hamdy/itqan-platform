@@ -5,6 +5,8 @@
 ])
 
 @php
+    use App\Enums\SubscriptionStatus;
+
     $isAcademic = $lessonType === 'academic';
     $isTeacher = $viewType === 'teacher';
     
@@ -38,12 +40,15 @@
         <div class="flex-1">
             <div class="flex items-center justify-between mb-2">
                 <h1 class="text-3xl font-bold text-gray-900">{{ $lessonName }}</h1>
+                @php
+                    $statusValue = is_object($lesson->status) ? $lesson->status->value : $lesson->status;
+                @endphp
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                    {{ $lesson->status === 'active' || $lesson->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                    {{ $statusValue === SubscriptionStatus::ACTIVE->value || $lesson->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                     @if($isAcademic)
-                        @if($lesson->status === 'active') نشط
-                        @elseif($lesson->status === 'paused') متوقف
-                        @elseif($lesson->status === 'cancelled') ملغي
+                        @if($statusValue === SubscriptionStatus::ACTIVE->value) نشط
+                        @elseif($statusValue === SubscriptionStatus::PAUSED->value) متوقف
+                        @elseif($statusValue === SubscriptionStatus::CANCELLED->value) ملغي
                         @else نشط @endif
                     @else
                         {{ $lesson->status ? 'نشط' : 'غير نشط' }}

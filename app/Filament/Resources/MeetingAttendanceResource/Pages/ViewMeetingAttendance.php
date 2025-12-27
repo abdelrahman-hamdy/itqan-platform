@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
+use App\Enums\AttendanceStatus;
 
 class ViewMeetingAttendance extends ViewRecord
 {
@@ -74,10 +75,10 @@ class ViewMeetingAttendance extends ViewRecord
                             ->label('حالة الحضور')
                             ->badge()
                             ->color(fn (?string $state): string => match ($state) {
-                                'attended' => 'success',
-                                'late' => 'warning',
-                                'leaved' => 'info',
-                                'absent' => 'danger',
+                                AttendanceStatus::ATTENDED->value => 'success',
+                                AttendanceStatus::LATE->value => 'warning',
+                                AttendanceStatus::LEAVED->value => 'info',
+                                AttendanceStatus::ABSENT->value => 'danger',
                                 default => 'gray',
                             }),
                     ])->columns(4),

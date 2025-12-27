@@ -54,7 +54,7 @@ class TrendDataDTO
     }
 
     /**
-     * Convert DTO to array (for backward compatibility)
+     * Convert DTO to array
      *
      * @return array
      */

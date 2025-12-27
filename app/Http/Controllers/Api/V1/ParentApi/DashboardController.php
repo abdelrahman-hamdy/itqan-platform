@@ -14,6 +14,8 @@ use App\Models\QuranSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class DashboardController extends Controller
 {
@@ -107,13 +109,13 @@ class DashboardController extends Controller
         // Quran sessions
         $quranCount = QuranSession::where('student_id', $userId)
             ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', ['cancelled'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value])
             ->count();
 
         // Academic sessions
         $academicCount = AcademicSession::where('student_id', $userId)
             ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', ['cancelled'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value])
             ->count();
 
         // Interactive sessions
@@ -121,7 +123,7 @@ class DashboardController extends Controller
             $q->where('student_id', $userId);
         })
             ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', ['cancelled'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value])
             ->count();
 
         return array_fill(0, $quranCount + $academicCount + $interactiveCount, true);
@@ -135,15 +137,15 @@ class DashboardController extends Controller
         $count = 0;
 
         $count += QuranSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $count += AcademicSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $count += CourseSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         return $count;
@@ -163,7 +165,7 @@ class DashboardController extends Controller
             $quranSessions = QuranSession::where('student_id', $userId)
                 ->where('scheduled_at', '>', $now)
                 ->where('scheduled_at', '<=', $endDate)
-                ->whereNotIn('status', ['cancelled', 'completed'])
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
                 ->with(['student.user', 'quranTeacher'])
                 ->orderBy('scheduled_at')
                 ->limit(3)
@@ -184,7 +186,7 @@ class DashboardController extends Controller
             $academicSessions = AcademicSession::where('student_id', $userId)
                 ->where('scheduled_at', '>', $now)
                 ->where('scheduled_at', '<=', $endDate)
-                ->whereNotIn('status', ['cancelled', 'completed'])
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
                 ->with(['student.user', 'academicTeacher.user', 'academicSubscription'])
                 ->orderBy('scheduled_at')
                 ->limit(3)

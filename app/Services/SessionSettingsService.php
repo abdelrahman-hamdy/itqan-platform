@@ -7,6 +7,7 @@ use App\Models\BaseSession;
 use App\Models\QuranSession;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
+use App\Enums\SessionStatus;
 
 /**
  * Session Settings Service

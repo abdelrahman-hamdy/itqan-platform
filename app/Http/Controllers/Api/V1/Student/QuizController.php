@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class QuizController extends Controller
 {
@@ -79,7 +80,7 @@ class QuizController extends Controller
             'stats' => [
                 'pending' => collect($quizzes)->where('status', 'pending')->count(),
                 'in_progress' => collect($quizzes)->where('status', 'in_progress')->count(),
-                'completed' => collect($quizzes)->where('status', 'completed')->count(),
+                'completed' => collect($quizzes)->where('status', SessionStatus::COMPLETED->value)->count(),
             ],
         ], __('Quizzes retrieved successfully'));
     }
@@ -314,7 +315,7 @@ class QuizController extends Controller
             // Update assignment status
             QuizAssignment::where('quiz_id', $id)
                 ->where('user_id', $user->id)
-                ->update(['status' => 'completed']);
+                ->update(['status' => SessionStatus::COMPLETED]);
 
             return $attempt->fresh();
         });

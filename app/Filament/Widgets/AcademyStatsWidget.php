@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Academy;
 use Filament\Widgets\ChartWidget;
+use App\Enums\SubscriptionStatus;
 
 class AcademyStatsWidget extends ChartWidget
 {
@@ -22,7 +23,7 @@ class AcademyStatsWidget extends ChartWidget
         $maintenanceCount = Academy::where('maintenance_mode', true)->count();
 
         $statusLabels = [
-            'active' => 'نشطة',
+            SubscriptionStatus::ACTIVE->value => 'نشطة',
             'inactive' => 'غير نشطة', 
             'maintenance' => 'تحت الصيانة'
         ];

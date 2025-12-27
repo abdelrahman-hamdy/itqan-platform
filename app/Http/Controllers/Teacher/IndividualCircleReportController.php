@@ -7,6 +7,7 @@ use App\Http\Controllers\Traits\HasDateRangeFilter;
 use App\Models\QuranIndividualCircle;
 use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class IndividualCircleReportController extends Controller
 {

@@ -4,6 +4,8 @@
 ])
 
 @php
+use App\Enums\AttendanceStatus;
+
     $isTeacher = $viewType === 'teacher';
     $student = $subscription->student;
     $attendanceRate = $subscription->attendance_rate ?? 85;
@@ -69,25 +71,25 @@
         $recentAttendance = [
             [
                 'date' => '2024-01-15',
-                'status' => 'attended',
+                'status' => AttendanceStatus::ATTENDED->value,
                 'duration' => 60,
                 'notes' => 'حضر كامل الوقت وشارك بفعالية'
             ],
             [
                 'date' => '2024-01-13',
-                'status' => 'partial',
+                'status' => AttendanceStatus::LEAVED->value,
                 'duration' => 45,
                 'notes' => 'انضم متأخراً 15 دقيقة'
             ],
             [
                 'date' => '2024-01-10',
-                'status' => 'attended',
+                'status' => AttendanceStatus::ATTENDED->value,
                 'duration' => 60,
                 'notes' => 'أداء ممتاز'
             ],
             [
                 'date' => '2024-01-08',
-                'status' => 'absent',
+                'status' => AttendanceStatus::ABSENT->value,
                 'duration' => 0,
                 'notes' => 'لم يحضر - ظروف طارئة'
             ]
@@ -99,9 +101,9 @@
             <div class="flex items-center space-x-3 space-x-reverse">
                 <!-- Status Icon -->
                 <div class="flex-shrink-0">
-                    @if($record['status'] === 'attended')
+                    @if($record['status'] === AttendanceStatus::ATTENDED->value)
                         <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                    @elseif($record['status'] === 'partial')
+                    @elseif($record['status'] === AttendanceStatus::LEAVED->value)
                         <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     @else
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -124,10 +126,10 @@
 
             <!-- Status Badge -->
             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                {{ $record['status'] === 'attended' ? 'bg-green-100 text-green-800' : 
-                   ($record['status'] === 'partial' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                {{ $record['status'] === 'attended' ? 'حضر' : 
-                   ($record['status'] === 'partial' ? 'جزئي' : 'غاب') }}
+                {{ $record['status'] === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
+                   ($record['status'] === AttendanceStatus::LEAVED->value ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                {{ $record['status'] === AttendanceStatus::ATTENDED->value ? 'حضر' :
+                   ($record['status'] === AttendanceStatus::LEAVED->value ? 'غادر مبكراً' : 'غاب') }}
             </span>
         </div>
         @endforeach

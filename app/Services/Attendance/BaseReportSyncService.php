@@ -7,6 +7,7 @@ use App\Models\MeetingAttendance;
 use App\Models\User;
 use App\Services\MeetingAttendanceService;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Base Report Sync Service
@@ -191,7 +192,7 @@ abstract class BaseReportSyncService
         }
 
         // For completed sessions, prioritize session report data
-        if ($statusValue === 'completed' && $sessionReport) {
+        if ($statusValue === SessionStatus::COMPLETED->value && $sessionReport) {
             $attendanceStatus = $sessionReport->attendance_status;
             $attendancePercentage = $sessionReport->attendance_percentage;
             $finalDurationMinutes = $sessionReport->actual_attendance_minutes;

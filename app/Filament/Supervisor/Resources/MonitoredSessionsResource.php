@@ -12,6 +12,8 @@ use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Enums\AttendanceStatus;
+use App\Enums\SubscriptionStatus;
 
 /**
  * Monitored Sessions Resource for Supervisor Panel
@@ -188,18 +190,18 @@ class MonitoredSessionsResource extends BaseSupervisorResource
                 BadgeColumn::make('attendance_status')
                     ->label('الحضور')
                     ->colors([
-                        'success' => 'attended',
-                        'danger' => 'absent',
-                        'warning' => 'late',
-                        'info' => 'leaved',
+                        'success' => AttendanceStatus::ATTENDED->value,
+                        'danger' => AttendanceStatus::ABSENT->value,
+                        'warning' => AttendanceStatus::LATE->value,
+                        'info' => AttendanceStatus::LEAVED->value,
                         'gray' => 'pending',
                     ])
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'attended' => 'حاضر',
-                        'absent' => 'غائب',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
-                        'pending' => 'في الانتظار',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::ABSENT->value => 'غائب',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                         null => 'غير محدد',
                         default => $state,
                     }),

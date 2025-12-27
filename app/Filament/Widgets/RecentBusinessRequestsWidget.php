@@ -7,6 +7,8 @@ use App\Services\AcademyContextService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class RecentBusinessRequestsWidget extends BaseWidget
 {
@@ -58,11 +60,11 @@ class RecentBusinessRequestsWidget extends BaseWidget
                         'gray' => 'completed',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'في الانتظار',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
                         'reviewed' => 'تم المراجعة',
                         'approved' => 'مقبول',
                         'rejected' => 'مرفوض',
-                        'completed' => 'مكتمل',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
                         default => $state,
                     }),
 

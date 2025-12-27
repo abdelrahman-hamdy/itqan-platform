@@ -5,6 +5,8 @@
 ])
 
 @php
+use App\Enums\SessionStatus;
+
     // Helper function to get status value (handles both string and enum)
     $getStatusValue = function($session) {
         return is_object($session->status) ? $session->status->value : $session->status;
@@ -14,7 +16,7 @@
 
     // Check if session is in preparation phase
     $isInPreparation = false;
-    if($statusValue === 'scheduled' && $session->scheduled_at) {
+    if($statusValue === SessionStatus::SCHEDULED->value && $session->scheduled_at) {
         $prepMessage = getMeetingPreparationMessage($session);
         $isInPreparation = $prepMessage['type'] === 'preparing';
     }
@@ -54,28 +56,28 @@
                     <!-- Preparing Meeting State (READY/ONGOING but room not created) -->
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-500 rounded-full mb-0.5 md:mb-1 animate-spin"></div>
                     <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">تجهيز الاجتماع</span>
-                @elseif($statusValue === 'completed')
+                @elseif($statusValue === SessionStatus::COMPLETED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
                     <span class="text-[10px] md:text-xs text-green-600 font-bold">مكتملة</span>
-                @elseif($statusValue === 'ongoing')
+                @elseif($statusValue === SessionStatus::ONGOING->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
                     <span class="text-[10px] md:text-xs text-green-600 font-bold">جارية</span>
-                @elseif($statusValue === 'ready')
+                @elseif($statusValue === SessionStatus::READY->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-green-400 rounded-full mb-0.5 md:mb-1 animate-bounce"></div>
                     <span class="text-[10px] md:text-xs text-green-600 font-bold">جاهزة</span>
-                @elseif($statusValue === 'scheduled' && $isInPreparation)
+                @elseif($statusValue === SessionStatus::SCHEDULED->value && $isInPreparation)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-500 rounded-full mb-0.5 md:mb-1 animate-spin"></div>
                     <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">جاري التحضير</span>
-                @elseif($statusValue === 'scheduled')
+                @elseif($statusValue === SessionStatus::SCHEDULED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-blue-500 rounded-full mb-0.5 md:mb-1 animate-bounce"></div>
                     <span class="text-[10px] md:text-xs text-blue-600 font-bold">مجدولة</span>
-                @elseif($statusValue === 'cancelled')
+                @elseif($statusValue === SessionStatus::CANCELLED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-full mb-0.5 md:mb-1"></div>
                     <span class="text-[10px] md:text-xs text-gray-500 font-bold">ملغاة</span>
-                @elseif($statusValue === 'unscheduled')
+                @elseif($statusValue === SessionStatus::UNSCHEDULED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-400 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
                     <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">غير مجدولة</span>
-                @elseif($statusValue === 'absent')
+                @elseif($statusValue === SessionStatus::ABSENT->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-red-400 rounded-full mb-0.5 md:mb-1"></div>
                     <span class="text-[10px] md:text-xs text-red-700 font-bold">غائب</span>
                 @else
@@ -115,7 +117,7 @@
                         <i class="ri-settings-3-line animate-spin inline-block"></i>
                         جارٍ تجهيز غرفة الاجتماع... يرجى الانتظار
                     </div>
-                @elseif($statusValue === 'scheduled' && $session->scheduled_at)
+                @elseif($statusValue === SessionStatus::SCHEDULED->value && $session->scheduled_at)
                     @php
                         $preparationMessage = getMeetingPreparationMessage($session);
                     @endphp
@@ -125,7 +127,7 @@
                             {{ $preparationMessage['message'] }}
                         </div>
                     @endif
-                @elseif($statusValue === 'ready')
+                @elseif($statusValue === SessionStatus::READY->value)
                     <div class="mt-1.5 md:mt-2 text-[10px] md:text-xs text-green-600 bg-green-50 px-2 py-1 rounded inline-block self-start">
                         <i class="ri-video-line"></i>
                         الاجتماع متاح الآن

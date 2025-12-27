@@ -8,6 +8,7 @@ use App\Models\RecordedCourse;
 use App\Models\StudentProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class ProgressController extends Controller
 {

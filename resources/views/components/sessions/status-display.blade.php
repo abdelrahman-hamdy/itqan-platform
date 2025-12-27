@@ -7,6 +7,8 @@
 ])
 
 @php
+    use App\Enums\SessionStatus;
+
     // Use getStatusDisplayData method for consistent status handling (DRY principle)
     $statusData = method_exists($session, 'getStatusDisplayData')
         ? $session->getStatusDisplayData()
@@ -24,7 +26,7 @@
 
     // Check if session is in preparation phase
     $isInPreparation = false;
-    if($statusValue === 'scheduled' && $session && $session->scheduled_at) {
+    if($statusValue === SessionStatus::SCHEDULED->value && $session && $session->scheduled_at) {
         $prepMessage = getMeetingPreparationMessage($session);
         $isInPreparation = $prepMessage['type'] === 'preparing';
         if($isInPreparation) {
@@ -59,29 +61,29 @@
     </span>
 @elseif($variant === 'indicator')
     <div class="flex flex-col items-center">
-        @if($statusValue === 'completed')
+        @if($statusValue === \App\Enums\SessionStatus::COMPLETED->value)
             <div class="{{ $iconSizeClasses[$size] }} bg-green-500 rounded-full mb-1 animate-pulse"></div>
-        @elseif($statusValue === 'ongoing')
+        @elseif($statusValue === \App\Enums\SessionStatus::ONGOING->value)
             <div class="{{ $iconSizeClasses[$size] }} bg-green-600 rounded-full mb-1 animate-pulse"></div>
-        @elseif($statusValue === 'ready')
+        @elseif($statusValue === \App\Enums\SessionStatus::READY->value)
             <div class="{{ $iconSizeClasses[$size] }} bg-green-400 rounded-full mb-1 animate-bounce"></div>
-        @elseif($statusValue === 'scheduled' && $isInPreparation)
+        @elseif($statusValue === \App\Enums\SessionStatus::SCHEDULED->value && $isInPreparation)
             <div class="{{ $iconSizeClasses[$size] }} bg-amber-500 rounded-full mb-1 animate-spin"></div>
-        @elseif($statusValue === 'scheduled')
+        @elseif($statusValue === \App\Enums\SessionStatus::SCHEDULED->value)
             <div class="{{ $iconSizeClasses[$size] }} bg-blue-500 rounded-full mb-1 animate-bounce"></div>
-        @elseif($statusValue === 'cancelled')
+        @elseif($statusValue === \App\Enums\SessionStatus::CANCELLED->value)
             <div class="{{ $iconSizeClasses[$size] }} bg-gray-400 rounded-full mb-1"></div>
-        @elseif($statusValue === 'absent')
+        @elseif($statusValue === \App\Enums\SessionStatus::ABSENT->value)
             <div class="{{ $iconSizeClasses[$size] }} bg-red-500 rounded-full mb-1"></div>
         @else
             <div class="{{ $iconSizeClasses[$size] }} bg-gray-300 rounded-full mb-1"></div>
         @endif
         @if($showLabel)
-            <span class="{{ $sizeClasses[$size] }} text-{{ $statusValue === 'ongoing' ? 'green' : $statusColor }}-600 font-bold">{{ $statusLabel }}</span>
+            <span class="{{ $sizeClasses[$size] }} text-{{ $statusValue === \App\Enums\SessionStatus::ONGOING->value ? 'green' : $statusColor }}-600 font-bold">{{ $statusLabel }}</span>
         @endif
     </div>
 @elseif($variant === 'text')
-    <span class="{{ $sizeClasses[$size] }} text-{{ $statusValue === 'ongoing' ? 'green' : $statusColor }}-600 font-medium">
+    <span class="{{ $sizeClasses[$size] }} text-{{ $statusValue === \App\Enums\SessionStatus::ONGOING->value ? 'green' : $statusColor }}-600 font-medium">
         @if($showIcon)
             <i class="{{ $statusIcon }} ml-1"></i>
         @endif

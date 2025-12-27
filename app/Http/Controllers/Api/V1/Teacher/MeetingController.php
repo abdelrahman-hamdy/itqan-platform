@@ -11,6 +11,7 @@ use App\Services\LiveKitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class MeetingController extends Controller
 {

@@ -7,6 +7,8 @@ use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 
 /**
  * Quran Circle Report Service
@@ -40,7 +42,7 @@ class QuranCircleReportService
         }
 
         $sessions = $sessionsQuery->get();
-        $completedSessions = $sessions->whereIn('status', ['completed', 'absent']);
+        $completedSessions = $sessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
 
         // Get student session reports
         $sessionReports = DB::table('student_session_reports')
@@ -133,7 +135,7 @@ class QuranCircleReportService
             // Overall circle info
             'overall' => [
                 'created_at' => $circle->created_at,
-                'sessions_completed' => $circle->sessions_completed ?? $sessions->whereIn('status', ['completed'])->count(),
+                'sessions_completed' => $circle->sessions_completed ?? $sessions->whereIn('status', [SessionStatus::COMPLETED->value])->count(),
                 'enrolled_students' => $students->count(),
                 'max_students' => $circle->max_students,
             ],
@@ -170,7 +172,7 @@ class QuranCircleReportService
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        $completedSessions = $allSessions->whereIn('status', ['completed', 'absent']);
+        $completedSessions = $allSessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
 
         // Get student's session reports
         $sessionReports = DB::table('student_session_reports')
@@ -226,18 +228,18 @@ class QuranCircleReportService
             ];
         }
 
-        $attended = $sessionReports->where('attendance_status', 'attended')->count();
-        $absent = $sessionReports->where('attendance_status', 'absent')->count();
+        $attended = $sessionReports->where('attendance_status', AttendanceStatus::ATTENDED->value)->count();
+        $absent = $sessionReports->where('attendance_status', AttendanceStatus::ABSENT->value)->count();
         $late = $sessionReports->where('is_late', true)->count();
 
-        $avgDuration = $sessionReports->where('attendance_status', 'attended')
+        $avgDuration = $sessionReports->where('attendance_status', AttendanceStatus::ATTENDED->value)
             ->avg('actual_attendance_minutes') ?? 0;
 
         // Calculate attendance using points system
         // Attended = 1 point, Late = 0.5 points, Absent = 0 points
         $totalPoints = 0;
         foreach ($sessionReports as $report) {
-            if ($report->attendance_status === 'attended') {
+            if ($report->attendance_status === AttendanceStatus::ATTENDED->value) {
                 $totalPoints += $report->is_late ? 0.5 : 1.0;
             }
             // Absent = 0 points (no addition)
@@ -556,7 +558,7 @@ class QuranCircleReportService
 
             // Calculate attendance points (attended=1, late=0.5, absent=0) * 10 to scale to 0-10
             $attendancePoints = 0;
-            if ($report && $report->attendance_status === 'attended') {
+            if ($report && $report->attendance_status === AttendanceStatus::ATTENDED->value) {
                 $attendancePoints = $report->is_late ? 5 : 10;
             }
             $attendanceData[] = $attendancePoints;

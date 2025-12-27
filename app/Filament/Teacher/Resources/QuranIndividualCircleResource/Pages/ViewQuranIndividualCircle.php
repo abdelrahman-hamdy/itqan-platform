@@ -7,6 +7,8 @@ use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class ViewQuranIndividualCircle extends ViewRecord
 {
@@ -55,17 +57,17 @@ class ViewQuranIndividualCircle extends ViewRecord
                                     ->label('الحالة')
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {
-                                        'active' => 'success',
-                                        'pending' => 'warning',
-                                        'paused' => 'danger',
-                                        'completed' => 'info',
+                                        SubscriptionStatus::ACTIVE->value => 'success',
+                                        SubscriptionStatus::PENDING->value => 'warning',
+                                        SubscriptionStatus::PAUSED->value => 'danger',
+                                        SessionStatus::COMPLETED->value => 'info',
                                         default => 'gray',
                                     })
                                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                                        'active' => 'نشطة',
-                                        'pending' => 'في الانتظار',
-                                        'paused' => 'متوقفة',
-                                        'completed' => 'مكتملة',
+                                        SubscriptionStatus::ACTIVE->value => 'نشطة',
+                                        SubscriptionStatus::PENDING->value => 'في الانتظار',
+                                        SubscriptionStatus::PAUSED->value => 'متوقفة',
+                                        SessionStatus::COMPLETED->value => 'مكتملة',
                                         default => $state,
                                     }),
                             ]),

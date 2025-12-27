@@ -9,6 +9,7 @@ use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use App\Enums\SessionStatus;
 
 /**
  * Service for student search functionality.

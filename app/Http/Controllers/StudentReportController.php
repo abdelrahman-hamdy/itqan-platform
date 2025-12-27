@@ -12,6 +12,7 @@ use App\Models\StudentSessionReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 class StudentReportController extends Controller
 {

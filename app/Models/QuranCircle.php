@@ -11,6 +11,57 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * QuranCircle Model
+ *
+ * Represents a Quran memorization circle (group study session).
+ *
+ * @property int $id
+ * @property int $academy_id
+ * @property int|null $quran_teacher_id
+ * @property string $circle_code
+ * @property string|null $name_ar
+ * @property string|null $name_en
+ * @property string|null $description_ar
+ * @property string|null $description_en
+ * @property string|null $circle_type
+ * @property string|null $specialization
+ * @property string|null $memorization_level
+ * @property string|null $age_group
+ * @property string|null $gender_type
+ * @property int $max_students
+ * @property int $enrolled_students
+ * @property int|null $min_students_to_start
+ * @property int|null $monthly_sessions_count
+ * @property float|null $monthly_fee
+ * @property int|null $sessions_completed
+ * @property bool $status
+ * @property string|null $enrollment_status
+ * @property array|null $learning_objectives
+ * @property \Carbon\Carbon|null $last_session_at
+ * @property \Carbon\Carbon|null $next_session_at
+ * @property bool $recording_enabled
+ * @property bool $attendance_required
+ * @property bool $makeup_sessions_allowed
+ * @property bool $certificates_enabled
+ * @property float|null $avg_rating
+ * @property int|null $total_reviews
+ * @property float|null $completion_rate
+ * @property float|null $dropout_rate
+ * @property string|null $schedule_time
+ * @property array|null $schedule_days
+ * @property int|null $created_by
+ * @property int|null $updated_by
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property int|null $age_range_min Legacy field
+ * @property int|null $age_range_max Legacy field
+ * @property int|null $total_sessions_planned Legacy field
+ * @property \Carbon\Carbon|null $start_date Legacy field
+ * @property \Carbon\Carbon|null $registration_deadline Legacy field
+ * @property int|null $current_students Legacy field alias for enrolled_students
+ */
 class QuranCircle extends Model
 {
     use HasFactory, SoftDeletes;
@@ -117,13 +168,6 @@ class QuranCircle extends Model
         return $this->belongsTo(\App\Models\User::class, 'quran_teacher_id');
     }
 
-    /**
-     * Alias for teacher() - for backward compatibility
-     */
-    public function quranTeacher(): BelongsTo
-    {
-        return $this->teacher();
-    }
 
     public function students(): BelongsToMany
     {
@@ -274,12 +318,10 @@ class QuranCircle extends Model
 
     public function getStatusTextAttribute(): string
     {
-        // Handle boolean status values
         if (is_bool($this->status) || is_numeric($this->status)) {
             return $this->status ? 'نشط' : 'غير نشط';
         }
 
-        // Handle string status values (for backward compatibility)
         $statuses = [
             'planning' => 'قيد التخطيط',
             'pending' => 'في انتظار البداية',

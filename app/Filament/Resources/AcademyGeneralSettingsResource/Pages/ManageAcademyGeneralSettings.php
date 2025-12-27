@@ -16,6 +16,9 @@ use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @property Form $form
+ */
 class ManageAcademyGeneralSettings extends Page implements HasForms
 {
     use InteractsWithForms;

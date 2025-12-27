@@ -8,6 +8,7 @@ use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Session Notification Service

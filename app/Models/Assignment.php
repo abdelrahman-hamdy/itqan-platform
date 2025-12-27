@@ -7,6 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int|null $academy_id
+ * @property int|null $course_id
+ * @property int|null $teacher_id
+ * @property string $title
+ * @property string|null $description
+ * @property string|null $instructions
+ * @property string|null $type
+ * @property float|null $max_score
+ * @property \Carbon\Carbon|null $due_date
+ * @property bool $is_active
+ * @property bool $allow_late_submission
+ * @property float|null $late_penalty_percentage
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ */
 class Assignment extends Model
 {
     use HasFactory;
@@ -56,6 +73,14 @@ class Assignment extends Model
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    /**
+     * Submissions relationship
+     */
+    public function submissions(): HasMany
+    {
+        return $this->hasMany(HomeworkSubmission::class, 'assignment_id');
     }
 
     /**

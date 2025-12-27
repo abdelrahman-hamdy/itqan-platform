@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
 use Illuminate\Database\Eloquent\Builder;
+use App\Enums\SessionStatus;
 
 class ListQuranSessions extends ListRecords
 {
@@ -31,10 +32,10 @@ class ListQuranSessions extends ListRecords
                     now()->startOfWeek(),
                     now()->endOfWeek()
                 ])),
-            'scheduled' => Tab::make('مجدولة')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'scheduled')),
-            'completed' => Tab::make('مكتملة')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'completed')),
+            SessionStatus::SCHEDULED->value => Tab::make('مجدولة')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', SessionStatus::SCHEDULED->value)),
+            SessionStatus::COMPLETED->value => Tab::make('مكتملة')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', SessionStatus::COMPLETED->value)),
         ];
     }
 }

@@ -9,6 +9,7 @@ use App\Services\CalendarService;
 use App\Services\AcademyContextService;
 use App\Models\Academy;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 class StudentCalendarController extends Controller
 {

@@ -32,9 +32,7 @@ class TestDataChannelCommand extends Command
             $this->info("Found session: {$session->title}");
 
             // Find a teacher user (first user with teacher role)
-            $teacher = User::whereHas('roles', function ($query) {
-                $query->where('name', 'quran_teacher');
-            })->first();
+            $teacher = User::where('user_type', 'quran_teacher')->first();
 
             if (! $teacher) {
                 $this->error('No teacher user found');

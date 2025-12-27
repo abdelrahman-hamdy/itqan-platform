@@ -32,6 +32,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class StudentProfileController extends Controller
 {
@@ -58,7 +60,7 @@ class StudentProfileController extends Controller
         // Get academic private sessions (still inline for now)
         $academicPrivateSessions = AcademicSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->with(['academicTeacher', 'academicPackage'])
             ->get();
 
@@ -453,7 +455,7 @@ class StudentProfileController extends Controller
             })->take(10);
 
             $pastSessions = $allSessions->where('scheduled_at', '<=', $now)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->sortByDesc('scheduled_at')
                 ->take(5);
         }
@@ -728,7 +730,7 @@ class StudentProfileController extends Controller
 
             // Count active students from subscriptions
             $activeStudents = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
-                ->where('status', 'active')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->distinct('student_id')
                 ->count();
 

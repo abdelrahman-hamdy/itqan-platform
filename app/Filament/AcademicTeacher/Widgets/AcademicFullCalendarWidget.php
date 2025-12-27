@@ -83,7 +83,7 @@ class AcademicFullCalendarWidget extends BaseFullCalendarWidget
 
         return $query
             ->with(['course', 'course.subject'])
-            ->whereIn('status', ['scheduled', 'ready', 'ongoing', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->get()
             ->map(function (InteractiveCourseSession $session) use ($timezone) {
                 return $this->mapInteractiveCourseSessionToEvent($session, $timezone);
@@ -149,7 +149,7 @@ class AcademicFullCalendarWidget extends BaseFullCalendarWidget
         $sessionNumber = $session->session_number ? "جلسة {$session->session_number}" : '';
         $title = "{$courseTitle} - {$sessionNumber}";
 
-        $status = $session->status instanceof \App\Enums\SessionStatus ? $session->status->value : ($session->status ?? 'scheduled');
+        $status = $session->status instanceof \App\Enums\SessionStatus ? $session->status->value : ($session->status ?? SessionStatus::SCHEDULED->value);
         $color = $this->getSessionColor('interactive_course', $status, true);
 
         // Convert UTC time to academy timezone for display
@@ -264,7 +264,7 @@ class AcademicFullCalendarWidget extends BaseFullCalendarWidget
 
             $statusEnum = $session->status instanceof \App\Enums\SessionStatus
                 ? $session->status
-                : \App\Enums\SessionStatus::tryFrom($session->status ?? 'scheduled');
+                : \App\Enums\SessionStatus::tryFrom($session->status ?? SessionStatus::SCHEDULED->value);
 
             $sessionData = [
                 'type' => $isCourse ? 'course' : 'academic',
@@ -277,7 +277,7 @@ class AcademicFullCalendarWidget extends BaseFullCalendarWidget
                 'color' => '',
                 'eventId' => '',
                 'canEdit' => false,
-                'status' => $statusEnum?->value ?? 'scheduled',
+                'status' => $statusEnum?->value ?? SessionStatus::SCHEDULED->value,
                 'statusLabel' => $statusEnum?->label() ?? 'مجدولة',
                 'statusColor' => $statusEnum?->hexColor() ?? '#3B82F6',
             ];

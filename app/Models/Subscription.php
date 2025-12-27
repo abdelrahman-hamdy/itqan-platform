@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SubscriptionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -75,7 +76,7 @@ class Subscription extends Model
     // Scopes
     public function scopeActive($query)
     {
-        return $query->where('status', 'active')
+        return $query->where('status', SubscriptionStatus::ACTIVE->value)
                     ->where('expires_at', '>', now());
     }
 
@@ -86,13 +87,13 @@ class Subscription extends Model
 
     public function scopeExpiringSoon($query, $days = 7)
     {
-        return $query->where('status', 'active')
+        return $query->where('status', SubscriptionStatus::ACTIVE->value)
                     ->whereBetween('expires_at', [now(), now()->addDays($days)]);
     }
 
     public function scopeCancelled($query)
     {
-        return $query->where('status', 'cancelled');
+        return $query->where('status', SubscriptionStatus::CANCELLED->value);
     }
 
     public function scopeSuspended($query)
@@ -182,8 +183,8 @@ class Subscription extends Model
 
     public function getIsActiveAttribute(): bool
     {
-        return $this->status === 'active' && 
-               $this->expires_at && 
+        return $this->status === SubscriptionStatus::ACTIVE->value &&
+               $this->expires_at &&
                $this->expires_at->isFuture();
     }
 
@@ -194,8 +195,8 @@ class Subscription extends Model
 
     public function getIsInTrialAttribute(): bool
     {
-        return $this->status === 'trial' && 
-               $this->trial_ends_at && 
+        return $this->status === 'trial' &&
+               $this->trial_ends_at &&
                $this->trial_ends_at->isFuture();
     }
 
@@ -212,7 +213,7 @@ class Subscription extends Model
     public function activate(): self
     {
         $this->update([
-            'status' => 'active',
+            'status' => SubscriptionStatus::ACTIVE->value,
             'starts_at' => now(),
             'payment_status' => 'paid'
         ]);
@@ -223,7 +224,7 @@ class Subscription extends Model
     public function cancel(?string $reason = null): self
     {
         $this->update([
-            'status' => 'cancelled',
+            'status' => SubscriptionStatus::CANCELLED->value,
             'cancelled_at' => now(),
             'cancellation_reason' => $reason,
             'auto_renew' => false
@@ -246,7 +247,7 @@ class Subscription extends Model
     public function resume(): self
     {
         $this->update([
-            'status' => 'active',
+            'status' => SubscriptionStatus::ACTIVE->value,
             'suspended_at' => null,
             'suspended_reason' => null
         ]);
@@ -256,12 +257,12 @@ class Subscription extends Model
 
     public function renew(int $months = 1): self
     {
-        $newExpiryDate = $this->expires_at && $this->expires_at->isFuture() 
+        $newExpiryDate = $this->expires_at && $this->expires_at->isFuture()
             ? $this->expires_at->addMonths($months)
             : now()->addMonths($months);
 
         $this->update([
-            'status' => 'active',
+            'status' => SubscriptionStatus::ACTIVE->value,
             'expires_at' => $newExpiryDate,
             'last_payment_at' => now(),
             'next_payment_at' => $this->calculateNextPaymentDate()
@@ -272,7 +273,7 @@ class Subscription extends Model
 
     public function extend(int $days): self
     {
-        $newExpiryDate = $this->expires_at && $this->expires_at->isFuture() 
+        $newExpiryDate = $this->expires_at && $this->expires_at->isFuture()
             ? $this->expires_at->addDays($days)
             : now()->addDays($days);
 
@@ -299,7 +300,7 @@ class Subscription extends Model
     {
         if ($this->status === 'trial') {
             $this->update([
-                'status' => 'expired',
+                'status' => SubscriptionStatus::EXPIRED->value,
                 'trial_ends_at' => now()
             ]);
         }

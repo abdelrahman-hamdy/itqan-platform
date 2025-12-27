@@ -6,6 +6,7 @@ use App\Models\MeetingAttendance;
 use App\Models\MeetingAttendanceEvent;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Attendance Event Service
@@ -271,11 +272,11 @@ class AttendanceEventService
     private function dispatchAttendanceUpdate(int $sessionId, int $userId): void
     {
         try {
-            // Dispatch Livewire event to update the AttendanceStatus component
-            event(new \Livewire\Event('attendance-updated', [
-                'sessionId' => $sessionId,
-                'userId' => $userId,
-            ]));
+            // Broadcast attendance update event using Laravel broadcasting
+            // This will be received by Livewire components listening for the event
+            broadcast(new \App\Events\AttendanceUpdated($sessionId, $userId, [
+                'updated_at' => now()->toIso8601String(),
+            ]))->toOthers();
         } catch (\Exception $e) {
             // Silent fail - don't break attendance recording if event dispatch fails
             Log::debug('Failed to dispatch attendance update event', [

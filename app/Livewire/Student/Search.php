@@ -5,6 +5,7 @@ namespace App\Livewire\Student;
 use App\Services\SearchService;
 use Livewire\Component;
 use Livewire\Attributes\Url;
+use App\Enums\SessionStatus;
 
 class Search extends Component
 {

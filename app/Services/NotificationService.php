@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\NotificationCategory;
 use App\Enums\NotificationType;
 use App\Models\User;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 class NotificationService
 {
@@ -324,9 +326,10 @@ class NotificationService
     {
         $session = $attendance->attendanceable;
         $type = match($status) {
-            'present' => NotificationType::ATTENDANCE_MARKED_PRESENT,
-            'absent' => NotificationType::ATTENDANCE_MARKED_ABSENT,
-            'late' => NotificationType::ATTENDANCE_MARKED_LATE,
+            AttendanceStatus::ATTENDED->value => NotificationType::ATTENDANCE_MARKED_PRESENT,
+            AttendanceStatus::ABSENT->value => NotificationType::ATTENDANCE_MARKED_ABSENT,
+            AttendanceStatus::LATE->value => NotificationType::ATTENDANCE_MARKED_LATE,
+            AttendanceStatus::LEAVED->value => NotificationType::ATTENDANCE_MARKED_LATE, // Left early treated as late for notifications
             default => NotificationType::ATTENDANCE_MARKED_PRESENT,
         };
 

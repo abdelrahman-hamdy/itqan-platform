@@ -3,6 +3,7 @@
 namespace App\Services\Calendar;
 
 use InvalidArgumentException;
+use App\Enums\SessionStatus;
 
 /**
  * Factory for creating session strategy instances

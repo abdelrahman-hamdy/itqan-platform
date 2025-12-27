@@ -12,6 +12,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 /**
  * Quran Individual Circle Resource for Teacher Panel
@@ -115,43 +117,6 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('إعدادات الاجتماعات')
-                    ->description('إعدادات توقيت الاجتماعات والحضور للجلسات الفردية')
-                    ->schema([
-                        Forms\Components\Grid::make(3)
-                            ->schema([
-                                Forms\Components\TextInput::make('preparation_minutes')
-                                    ->label('وقت تحضير الاجتماع (دقيقة)')
-                                    ->helperText('الوقت قبل بداية الجلسة لإنشاء الاجتماع')
-                                    ->numeric()
-                                    ->minValue(5)
-                                    ->maxValue(30)
-                                    ->default(15)
-                                    ->required()
-                                    ->suffix('دقيقة'),
-
-                                Forms\Components\TextInput::make('ending_buffer_minutes')
-                                    ->label('وقت إضافي بعد انتهاء الجلسة (دقيقة)')
-                                    ->helperText('الوقت الإضافي لبقاء الاجتماع مفتوح بعد انتهاء الجلسة')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->maxValue(15)
-                                    ->default(5)
-                                    ->required()
-                                    ->suffix('دقيقة'),
-
-                                Forms\Components\TextInput::make('late_join_grace_period_minutes')
-                                    ->label('فترة السماح للانضمام المتأخر (دقيقة)')
-                                    ->helperText('الوقت المسموح للطالب للانضمام بعد بداية الجلسة دون اعتباره متأخراً')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->maxValue(30)
-                                    ->default(15)
-                                    ->required()
-                                    ->suffix('دقيقة'),
-                            ]),
-                    ]),
-
                 Forms\Components\Section::make('ملاحظات')
                     ->schema([
                         Forms\Components\Textarea::make('teacher_notes')
@@ -234,20 +199,20 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'في الانتظار',
-                        'active' => 'نشط',
-                        'completed' => 'مكتمل',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
+                        SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
                         'suspended' => 'معلق',
-                        'cancelled' => 'ملغي',
+                        SessionStatus::CANCELLED->value => 'ملغي',
                         default => $state,
                     })
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'active' => 'success',
-                        'completed' => 'info',
+                        SubscriptionStatus::PENDING->value => 'warning',
+                        SubscriptionStatus::ACTIVE->value => 'success',
+                        SessionStatus::COMPLETED->value => 'info',
                         'suspended' => 'danger',
-                        'cancelled' => 'gray',
+                        SessionStatus::CANCELLED->value => 'gray',
                         default => 'gray',
                     }),
             ])
@@ -255,11 +220,11 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'pending' => 'في الانتظار',
-                        'active' => 'نشط',
-                        'completed' => 'مكتمل',
+                        SubscriptionStatus::PENDING->value => 'في الانتظار',
+                        SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
                         'suspended' => 'معلق',
-                        'cancelled' => 'ملغي',
+                        SessionStatus::CANCELLED->value => 'ملغي',
                     ]),
                 Tables\Filters\SelectFilter::make('specialization')
                     ->label('التخصص')

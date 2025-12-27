@@ -3,9 +3,11 @@
 namespace App\Services\Reports;
 
 use App\DTOs\Reports\{AttendanceDTO, PerformanceDTO, ProgressDTO, StatDTO, TrendDataDTO};
+use App\Enums\AttendanceStatus;
 use App\Models\{QuranCircle, QuranIndividualCircle, User};
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Enums\SessionStatus;
 
 /**
  * Quran Report Service
@@ -36,7 +38,7 @@ class QuranReportService extends BaseReportService
         }
 
         $sessions = $sessionsQuery->get();
-        $completedSessions = $sessions->whereIn('status', ['completed', 'absent']);
+        $completedSessions = $sessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
 
         // Get student session reports
         $sessionReports = DB::table('student_session_reports')
@@ -64,10 +66,6 @@ class QuranReportService extends BaseReportService
             'trends' => $trendsDTO,
             'statsCards' => $statsCards,
 
-            // Raw data for backward compatibility
-            'sessions' => $sessions,
-            'session_reports' => $sessionReports,
-
             // Overall circle info
             'overall' => [
                 'started_at' => $circle->started_at,
@@ -76,9 +74,6 @@ class QuranReportService extends BaseReportService
                 'sessions_remaining' => $circle->sessions_remaining,
                 'progress_percentage' => $circle->progress_percentage ?? 0,
             ],
-
-            // Homework stats (backward compatibility)
-            'homework' => $this->calculateHomeworkStatsForStudent($student, $sessions),
         ];
     }
 
@@ -137,7 +132,7 @@ class QuranReportService extends BaseReportService
             // Overall circle info
             'overall' => [
                 'created_at' => $circle->created_at,
-                'sessions_completed' => $circle->sessions_completed ?? $sessions->whereIn('status', ['completed'])->count(),
+                'sessions_completed' => $circle->sessions_completed ?? $sessions->whereIn('status', [SessionStatus::COMPLETED->value])->count(),
                 'enrolled_students' => $students->count(),
                 'max_students' => $circle->max_students,
             ],
@@ -173,7 +168,7 @@ class QuranReportService extends BaseReportService
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        $completedSessions = $allSessions->whereIn('status', ['completed', 'absent']);
+        $completedSessions = $allSessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
 
         // Get student's session reports
         $sessionReports = DB::table('student_session_reports')
@@ -199,13 +194,6 @@ class QuranReportService extends BaseReportService
             'attendance' => $attendanceDTO,
             'performance' => $performanceDTO,
             'trends' => $trendsDTO,
-
-            // Raw data for backward compatibility
-            'sessions' => $allSessions,
-            'session_reports' => $sessionReports,
-
-            // Progress data (kept as array for backward compatibility)
-            'progress' => $this->calculateProgressStatsForStudent($student, $completedSessions, $sessionReports),
         ];
     }
 
@@ -233,11 +221,22 @@ class QuranReportService extends BaseReportService
             );
         }
 
-        $attended = $sessionReports->where('attendance_status', 'attended')->count();
-        $absent = $sessionReports->where('attendance_status', 'absent')->count();
-        $late = $sessionReports->where('is_late', true)->count();
+        $attended = $sessionReports->filter(function ($report) {
+            $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+            return $status === AttendanceStatus::ATTENDED->value;
+        })->count();
 
-        $avgDuration = $sessionReports->where('attendance_status', 'attended')
+        $absent = $sessionReports->filter(function ($report) {
+            $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+            return $status === AttendanceStatus::ABSENT->value;
+        })->count();
+
+        $late = $sessionReports->filter(function ($report) {
+            $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+            return $status === AttendanceStatus::LATE->value;
+        })->count();
+
+        $avgDuration = $sessionReports->where('attendance_status', AttendanceStatus::ATTENDED->value)
             ->avg('actual_attendance_minutes') ?? 0;
 
         // Calculate attendance using points system
@@ -376,7 +375,7 @@ class QuranReportService extends BaseReportService
 
             // Calculate attendance points (attended=1, late=0.5, absent=0) * 10 to scale to 0-10
             $attendancePoints = 0;
-            if ($report && $report->attendance_status === 'attended') {
+            if ($report && $report->attendance_status === AttendanceStatus::ATTENDED->value) {
                 $attendancePoints = $report->is_late ? 5 : 10;
             }
             $attendanceData[] = $attendancePoints;
@@ -425,157 +424,11 @@ class QuranReportService extends BaseReportService
                 icon: 'ri-book-open-line'
             ),
             new StatDTO(
-                label: 'الصفحات المُراجعة',
-                value: $this->calculatePagesReviewed($circle),
-                color: 'blue',
-                icon: 'ri-refresh-line'
-            ),
-            new StatDTO(
                 label: 'تقييمي العام',
                 value: number_format($performance->averageOverall, 1) . '/10',
                 color: $performance->getColorClass(),
                 icon: 'ri-star-line'
             ),
-        ];
-    }
-
-    /**
-     * Calculate pages reviewed (estimation)
-     *
-     * @param QuranIndividualCircle $circle
-     * @return int
-     */
-    protected function calculatePagesReviewed(QuranIndividualCircle $circle): int
-    {
-        // This is a simplified calculation - could be enhanced with actual data
-        return 0; // Placeholder
-    }
-
-    /**
-     * Calculate progress statistics for student in group circle
-     * (Kept for backward compatibility)
-     *
-     * @param User $student
-     * @param Collection $completedSessions
-     * @param Collection $sessionReports
-     * @return array
-     */
-    protected function calculateProgressStatsForStudent(User $student, Collection $completedSessions, Collection $sessionReports): array
-    {
-        $avgMemorization = $sessionReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?? 0;
-        $avgReservation = $sessionReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?? 0;
-
-        // Calculate overall performance
-        $overallPerformance = 0;
-        $count = 0;
-        if ($avgMemorization > 0) {
-            $overallPerformance += $avgMemorization;
-            $count++;
-        }
-        if ($avgReservation > 0) {
-            $overallPerformance += $avgReservation;
-            $count++;
-        }
-        $averageOverallPerformance = $count > 0 ? round($overallPerformance / $count, 1) : 0;
-
-        // Estimate pages memorized
-        $sessionsWithMemorization = $sessionReports->whereNotNull('new_memorization_degree')
-            ->where('new_memorization_degree', '>', 0)
-            ->count();
-
-        $estimatedPagesPerSession = $avgMemorization > 0 ? ($avgMemorization / 10) : 0.5;
-        $totalPagesMemorized = round($sessionsWithMemorization * $estimatedPagesPerSession, 1);
-
-        $averagePagesPerSession = $sessionsWithMemorization > 0 ?
-            round($totalPagesMemorized / $sessionsWithMemorization, 2) : 0;
-
-        // Calculate pages reviewed
-        $sessionsWithReview = $sessionReports->whereNotNull('reservation_degree')
-            ->where('reservation_degree', '>', 0)
-            ->count();
-        $estimatedPagesReviewed = $sessionsWithReview * 3;
-
-        // Calculate overall assessment
-        $totalGrades = [];
-        foreach ($sessionReports as $report) {
-            if ($report->new_memorization_degree > 0) {
-                $totalGrades[] = $report->new_memorization_degree;
-            }
-            if ($report->reservation_degree > 0) {
-                $totalGrades[] = $report->reservation_degree;
-            }
-        }
-        $overallAssessment = count($totalGrades) > 0 ? round(array_sum($totalGrades) / count($totalGrades), 1) : 0;
-
-        return [
-            'pages_memorized' => round($totalPagesMemorized, 1),
-            'pages_reviewed' => $estimatedPagesReviewed,
-            'average_memorization_degree' => round($avgMemorization, 1),
-            'average_reservation_degree' => round($avgReservation, 1),
-            'average_overall_performance' => $averageOverallPerformance,
-            'overall_assessment' => $overallAssessment,
-            'sessions_evaluated' => $sessionReports->whereNotNull('new_memorization_degree')->count(),
-            'average_pages_per_session' => $averagePagesPerSession,
-        ];
-    }
-
-    /**
-     * Calculate homework statistics for specific student
-     * (Kept for backward compatibility)
-     *
-     * @param User $student
-     * @param Collection $sessions
-     * @return array
-     */
-    protected function calculateHomeworkStatsForStudent(User $student, Collection $sessions): array
-    {
-        $totalAssigned = 0;
-        $totalCompleted = 0;
-        $totalScores = [];
-
-        // Get student's session reports
-        $sessionReports = DB::table('student_session_reports')
-            ->whereIn('session_id', $sessions->pluck('id'))
-            ->where('student_id', $student->id)
-            ->get()
-            ->keyBy('session_id');
-
-        foreach ($sessions as $session) {
-            $homework = $session->sessionHomework;
-
-            if ($homework && ($homework->has_new_memorization || $homework->has_review || $homework->has_comprehensive_review)) {
-                $totalAssigned++;
-
-                $report = $sessionReports->get($session->id);
-                if ($report) {
-                    $hasGrades = ($report->new_memorization_degree > 0) || ($report->reservation_degree > 0);
-
-                    if ($hasGrades) {
-                        $totalCompleted++;
-
-                        $scores = [];
-                        if ($homework->has_new_memorization && $report->new_memorization_degree > 0) {
-                            $scores[] = $report->new_memorization_degree;
-                        }
-                        if (($homework->has_review || $homework->has_comprehensive_review) && $report->reservation_degree > 0) {
-                            $scores[] = $report->reservation_degree;
-                        }
-
-                        if (count($scores) > 0) {
-                            $totalScores[] = array_sum($scores) / count($scores);
-                        }
-                    }
-                }
-            }
-        }
-
-        return [
-            'total_assigned' => $totalAssigned,
-            'completed' => $totalCompleted,
-            'in_progress' => 0,
-            'not_started' => max(0, $totalAssigned - $totalCompleted),
-            'completion_rate' => $totalAssigned > 0 ? round(($totalCompleted / $totalAssigned) * 100, 1) : 0,
-            'average_score' => count($totalScores) > 0 ? round(array_sum($totalScores) / count($totalScores), 1) : 0,
         ];
     }
 

@@ -6,6 +6,7 @@ use App\Models\QuranSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 class QuranSessionController extends Controller
 {
@@ -205,7 +206,7 @@ class QuranSessionController extends Controller
             return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة'], 404);
         }
 
-        if ($session->status === 'completed') {
+        if ($session->status === SessionStatus::COMPLETED) {
             return response()->json(['success' => false, 'message' => 'الجلسة مكتملة بالفعل'], 400);
         }
 
@@ -469,7 +470,7 @@ class QuranSessionController extends Controller
         // Query for sessions - handle both individual and group sessions
         $session = QuranSession::where('id', $sessionId)
             ->where('academy_id', $academy->id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->where(function ($query) use ($user) {
                 // Individual sessions: direct student_id match
                 $query->where('student_id', $user->id)

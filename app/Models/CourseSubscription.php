@@ -235,6 +235,25 @@ class CourseSubscription extends BaseSubscription
     }
 
     /**
+     * Alias for student() relationship (for API compatibility)
+     */
+    public function user(): BelongsTo
+    {
+        return $this->student();
+    }
+
+    /**
+     * Course relationship - returns the appropriate course model
+     * Note: This is a "fake" relationship for PHPStan compatibility
+     * Use getCourseAttribute() accessor for actual usage
+     */
+    public function course(): BelongsTo
+    {
+        // Return recorded course by default - accessor handles polymorphism
+        return $this->belongsTo(RecordedCourse::class, 'recorded_course_id');
+    }
+
+    /**
      * Get the user who enrolled the student
      */
     public function enrolledBy(): BelongsTo

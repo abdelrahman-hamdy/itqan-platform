@@ -14,6 +14,8 @@ use App\Models\QuranSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class DashboardController extends Controller
 {
@@ -93,7 +95,7 @@ class DashboardController extends Controller
         // Note: quranTeacher relationship returns User directly, not QuranTeacherProfile
         $quranSessions = QuranSession::where('student_id', $userId)
             ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['quranTeacher', 'individualCircle', 'circle'])
             ->orderBy('scheduled_at')
             ->get();
@@ -108,7 +110,7 @@ class DashboardController extends Controller
         // Academic sessions
         $academicSessions = AcademicSession::where('student_id', $userId)
             ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['academicTeacher.user', 'academicSubscription'])
             ->orderBy('scheduled_at')
             ->get();
@@ -125,7 +127,7 @@ class DashboardController extends Controller
             $q->where('student_id', $userId);
         })
             ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['course.assignedTeacher.user'])
             ->orderBy('scheduled_at')
             ->get();
@@ -158,7 +160,7 @@ class DashboardController extends Controller
         $quranSessions = QuranSession::where('student_id', $userId)
             ->whereDate('scheduled_at', '>', $today)
             ->whereDate('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['quranTeacher'])
             ->orderBy('scheduled_at')
             ->limit(5)
@@ -175,7 +177,7 @@ class DashboardController extends Controller
         $academicSessions = AcademicSession::where('student_id', $userId)
             ->whereDate('scheduled_at', '>', $today)
             ->whereDate('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['academicTeacher.user'])
             ->orderBy('scheduled_at')
             ->limit(5)
@@ -194,7 +196,7 @@ class DashboardController extends Controller
         })
             ->whereDate('scheduled_at', '>', $today)
             ->whereDate('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
             ->with(['course.assignedTeacher.user'])
             ->orderBy('scheduled_at')
             ->limit(5)
@@ -223,15 +225,15 @@ class DashboardController extends Controller
         $count = 0;
 
         $count += QuranSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $count += AcademicSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         $count += CourseSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->count();
 
         return $count;
@@ -346,6 +348,6 @@ class DashboardController extends Controller
         $joinEnd = $sessionTime->copy()->addMinutes($duration);
 
         return $now->between($joinStart, $joinEnd)
-            && !in_array($session->status->value ?? $session->status, ['cancelled', 'completed']);
+            && !in_array($session->status->value ?? $session->status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
     }
 }

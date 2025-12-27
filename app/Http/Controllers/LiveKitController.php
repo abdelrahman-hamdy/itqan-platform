@@ -10,6 +10,7 @@ use App\Services\RoomPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 class LiveKitController extends Controller
 {
@@ -237,6 +238,11 @@ class LiveKitController extends Controller
                 'participants' => $participants,
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'messages' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Failed to get room participants', [
                 'error' => $e->getMessage(),
@@ -271,6 +277,11 @@ class LiveKitController extends Controller
                 ],
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'messages' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Failed to get room permissions', [
                 'error' => $e->getMessage(),

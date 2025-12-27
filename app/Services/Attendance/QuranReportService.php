@@ -7,6 +7,7 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
+use App\Enums\SessionStatus;
 
 /**
  * Quran Report Service
@@ -85,15 +86,11 @@ class QuranReportService extends BaseReportSyncService
     }
 
     /**
-     * Get grace period for the specific session type
+     * Get grace period from academy settings
      */
     protected function getGracePeriodForSession($session): int
     {
-        $circle = $session->session_type === 'individual'
-            ? $session->individualCircle
-            : $session->circle;
-
-        return $circle?->late_join_grace_period_minutes ?? 15; // Default 15 minutes
+        return $session->academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
     // ========================================

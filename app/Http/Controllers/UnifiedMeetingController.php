@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class UnifiedMeetingController extends Controller
 {
@@ -192,7 +193,7 @@ class UnifiedMeetingController extends Controller
             // 🔥 FIX: Only update session status, NOT attendance
             // Attendance will be recorded by LiveKit webhooks (source of truth)
             if ($session->status->value === 'ready' || $session->status->value === 'scheduled') {
-                $session->update(['status' => 'ongoing']);
+                $session->update(['status' => SessionStatus::ONGOING]);
                 Log::info('Session status updated to ongoing on participant join', [
                     'session_id' => $session->id,
                     'session_type' => $sessionType,

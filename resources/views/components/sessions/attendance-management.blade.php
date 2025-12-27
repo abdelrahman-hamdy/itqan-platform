@@ -4,11 +4,16 @@
     'viewType' => 'teacher'
 ])
 
+@php
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
+@endphp
+
 <!-- Attendance Management Section -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">إدارة حضور الطلاب</h3>
-        @if($session->status === \App\Enums\SessionStatus::ONGOING || $session->status === \App\Enums\SessionStatus::COMPLETED)
+        @if($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED)
             <div class="flex items-center space-x-2 space-x-reverse">
                 <button id="markAllPresentBtn" 
                         class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
@@ -29,7 +34,7 @@
             @foreach($students as $student)
                 @php
                     $attendance = $session->attendances->where('student_id', $student->id)->first();
-                    $attendanceStatus = $attendance ? $attendance->attendance_status : 'absent';
+                    $attendanceStatus = $attendance ? $attendance->attendance_status : AttendanceStatus::ABSENT->value;
                 @endphp
                 
                 <div class="border border-gray-200 rounded-lg p-4 student-attendance-row" data-student-id="{{ $student->id }}">
@@ -49,29 +54,29 @@
                         
                         <!-- Attendance Status -->
                         <div class="flex items-center space-x-4 space-x-reverse">
-                            @if($session->status === \App\Enums\SessionStatus::ONGOING || $session->status === \App\Enums\SessionStatus::COMPLETED)
+                            @if($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED)
                                 <!-- Attendance Options -->
                                 <div class="flex items-center space-x-2 space-x-reverse">
                                     <label class="flex items-center">
-                                        <input type="radio" name="attendance_{{ $student->id }}" value="present" 
+                                        <input type="radio" name="attendance_{{ $student->id }}" value="{{ AttendanceStatus::ATTENDED->value }}"
                                                class="text-green-600 focus:ring-green-500 attendance-radio"
-                                               {{ $attendanceStatus === 'present' ? 'checked' : '' }}
+                                               {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'checked' : '' }}
                                                data-student-id="{{ $student->id }}">
                                         <span class="mr-2 text-sm font-medium text-green-600">حاضر</span>
                                     </label>
-                                    
+
                                     <label class="flex items-center">
-                                        <input type="radio" name="attendance_{{ $student->id }}" value="late" 
+                                        <input type="radio" name="attendance_{{ $student->id }}" value="{{ AttendanceStatus::LATE->value }}"
                                                class="text-yellow-600 focus:ring-yellow-500 attendance-radio"
-                                               {{ $attendanceStatus === 'late' ? 'checked' : '' }}
+                                               {{ $attendanceStatus === AttendanceStatus::LATE->value ? 'checked' : '' }}
                                                data-student-id="{{ $student->id }}">
                                         <span class="mr-2 text-sm font-medium text-yellow-600">متأخر</span>
                                     </label>
-                                    
+
                                     <label class="flex items-center">
-                                        <input type="radio" name="attendance_{{ $student->id }}" value="absent" 
+                                        <input type="radio" name="attendance_{{ $student->id }}" value="{{ AttendanceStatus::ABSENT->value }}"
                                                class="text-red-600 focus:ring-red-500 attendance-radio"
-                                               {{ $attendanceStatus === 'absent' ? 'checked' : '' }}
+                                               {{ $attendanceStatus === AttendanceStatus::ABSENT->value ? 'checked' : '' }}
                                                data-student-id="{{ $student->id }}">
                                         <span class="mr-2 text-sm font-medium text-red-600">غائب</span>
                                     </label>
@@ -79,17 +84,17 @@
                             @else
                                 <!-- Display Status for Scheduled Sessions -->
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                    {{ $attendanceStatus === 'present' ? 'bg-green-100 text-green-800' : 
-                                       ($attendanceStatus === 'late' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                    {{ $attendanceStatus === 'present' ? 'حاضر' : ($attendanceStatus === 'late' ? 'متأخر' : 'غير محدد') }}
+                                    {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
+                                       ($attendanceStatus === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
+                                    {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'حاضر' : ($attendanceStatus === AttendanceStatus::LATE->value ? 'متأخر' : 'غير محدد') }}
                                 </span>
                             @endif
                         </div>
                     </div>
                     
                     <!-- Expanded Details (shown for ongoing/completed sessions) -->
-                    @if(($session->status === 'ongoing' || $session->status === 'completed') && $attendanceStatus !== 'absent')
-                        <div class="mt-4 pt-4 border-t border-gray-200 attendance-details" style="{{ $attendanceStatus === 'absent' ? 'display: none;' : '' }}">
+                    @if(($session->status === SessionStatus::ONGOING->value || $session->status === SessionStatus::COMPLETED->value) && $attendanceStatus !== AttendanceStatus::ABSENT->value)
+                        <div class="mt-4 pt-4 border-t border-gray-200 attendance-details" style="{{ $attendanceStatus === AttendanceStatus::ABSENT->value ? 'display: none;' : '' }}">
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <!-- Join/Leave Times -->
                                 <div>
@@ -146,15 +151,15 @@
                 </div>
             @endforeach
         </div>
-        
-        @if($session->status === \App\Enums\SessionStatus::ONGOING || $session->status === \App\Enums\SessionStatus::COMPLETED)
+
+        @if($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED)
             <div class="mt-6 pt-4 border-t border-gray-200">
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-gray-600">
                         <span id="attendanceStats">
-                            حاضر: <span class="font-medium text-green-600">{{ $session->attendances->where('attendance_status', 'present')->count() }}</span> |
-                            متأخر: <span class="font-medium text-yellow-600">{{ $session->attendances->where('attendance_status', 'late')->count() }}</span> |
-                            غائب: <span class="font-medium text-red-600">{{ $session->attendances->where('attendance_status', 'absent')->count() }}</span>
+                            حاضر: <span class="font-medium text-green-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count() }}</span> |
+                            متأخر: <span class="font-medium text-yellow-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::LATE->value)->count() }}</span> |
+                            غائب: <span class="font-medium text-red-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count() }}</span>
                         </span>
                     </div>
                     
@@ -187,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mark all present
     markAllPresentBtn?.addEventListener('click', function() {
-        document.querySelectorAll('input[type="radio"][value="present"]').forEach(radio => {
+        document.querySelectorAll('input[type="radio"][value="attended"]').forEach(radio => {
             radio.checked = true;
             toggleAttendanceDetails(radio);
         });
@@ -227,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update attendance statistics
     function updateAttendanceStats() {
-        const presentCount = document.querySelectorAll('input[type="radio"][value="present"]:checked').length;
+        const presentCount = document.querySelectorAll('input[type="radio"][value="attended"]:checked').length;
         const lateCount = document.querySelectorAll('input[type="radio"][value="late"]:checked').length;
         const absentCount = document.querySelectorAll('input[type="radio"][value="absent"]:checked').length;
         

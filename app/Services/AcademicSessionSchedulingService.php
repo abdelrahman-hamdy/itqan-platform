@@ -53,7 +53,7 @@ class AcademicSessionSchedulingService
             'academic_subscription_id' => $subscription->id,
             'student_id' => $subscription->student_id,
             'session_type' => 'individual',
-            'status' => 'scheduled',
+            'status' => SessionStatus::SCHEDULED,
             'is_scheduled' => true,
             'title' => $title,
             'description' => $description,
@@ -134,10 +134,10 @@ class AcademicSessionSchedulingService
     private function getSessionColor(string $status): string
     {
         return match ($status) {
-            'scheduled' => '#3B82F6', // Blue
-            'ongoing' => '#10B981',   // Green
-            'completed' => '#6B7280', // Gray
-            'cancelled' => '#EF4444', // Red
+            SessionStatus::SCHEDULED->value => '#3B82F6', // Blue
+            SessionStatus::ONGOING->value => '#10B981',   // Green
+            SessionStatus::COMPLETED->value => '#6B7280', // Gray
+            SessionStatus::CANCELLED->value => '#EF4444', // Red
             'rescheduled' => '#F59E0B', // Amber
             default => '#6B7280',
         };

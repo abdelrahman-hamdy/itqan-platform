@@ -6,6 +6,7 @@ use App\Models\Certificate;
 use App\Services\CertificateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class CertificateController extends Controller
 {

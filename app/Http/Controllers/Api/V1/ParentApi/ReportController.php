@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
+use App\Enums\AttendanceStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -14,6 +15,8 @@ use App\Models\QuranSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class ReportController extends Controller
 {
@@ -220,7 +223,7 @@ class ReportController extends Controller
 
         // Build detailed report
         $sessions = $subscription->sessions ?? collect();
-        $completedSessions = $sessions->where('status', 'completed');
+        $completedSessions = $sessions->where('status', SessionStatus::COMPLETED->value);
         $upcomingSessions = $sessions->whereIn('status', ['scheduled', 'live']);
 
         $report = [
@@ -255,14 +258,7 @@ class ReportController extends Controller
                     ? round(($completedSessions->count() / $subscription->sessions_count) * 100, 1)
                     : 0,
             ],
-            'attendance' => [
-                'total_scheduled' => $sessions->count(),
-                'attended' => $completedSessions->where('attended', true)->count(),
-                'missed' => $completedSessions->where('attended', false)->count(),
-                'attendance_rate' => $completedSessions->count() > 0
-                    ? round(($completedSessions->where('attended', true)->count() / $completedSessions->count()) * 100, 1)
-                    : 0,
-            ],
+            'attendance' => $this->calculateSubscriptionAttendance($subscription, $type, $completedSessions),
             'recent_sessions' => $completedSessions->sortByDesc('scheduled_at')->take(5)->map(fn($s) => [
                 'id' => $s->id,
                 'scheduled_at' => $s->scheduled_at?->toISOString(),
@@ -289,17 +285,17 @@ class ReportController extends Controller
     protected function getQuranProgress(int $studentUserId): array
     {
         $subscriptions = QuranSubscription::where('student_id', $studentUserId)->get();
-        $activeSubscriptions = $subscriptions->where('status', 'active')->count();
+        $activeSubscriptions = $subscriptions->where('status', SubscriptionStatus::ACTIVE->value)->count();
 
         $completedSessions = QuranSession::where('student_id', $studentUserId)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->count();
 
         $totalSessions = QuranSession::where('student_id', $studentUserId)->count();
 
         // Get memorization stats if available
         $recentSession = QuranSession::where('student_id', $studentUserId)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->orderBy('scheduled_at', 'desc')
             ->first();
 
@@ -320,10 +316,10 @@ class ReportController extends Controller
     protected function getAcademicProgress(int $studentUserId): array
     {
         $subscriptions = AcademicSubscription::where('student_id', $studentUserId)->get();
-        $activeSubscriptions = $subscriptions->where('status', 'active')->count();
+        $activeSubscriptions = $subscriptions->where('status', SubscriptionStatus::ACTIVE->value)->count();
 
         $completedSessions = AcademicSession::where('student_id', $studentUserId)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->count();
 
         $totalSessions = AcademicSession::where('student_id', $studentUserId)->count();
@@ -349,8 +345,8 @@ class ReportController extends Controller
             ->with(['interactiveCourse', 'recordedCourse'])
             ->get();
 
-        $activeEnrollments = $enrollments->where('status', 'active')->count();
-        $completedEnrollments = $enrollments->where('status', 'completed')->count();
+        $activeEnrollments = $enrollments->where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $completedEnrollments = $enrollments->where('status', SubscriptionStatus::COMPLETED->value)->count();
 
         $completedSessions = $enrollments->sum('completed_sessions');
         $totalSessions = $enrollments->sum(fn($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);
@@ -368,44 +364,123 @@ class ReportController extends Controller
     }
 
     /**
-     * Calculate overall attendance rate.
+     * Calculate subscription attendance from session reports.
      */
-    protected function calculateOverallAttendanceRate(int $studentUserId): float
+    protected function calculateSubscriptionAttendance($subscription, string $type, $completedSessions): array
     {
-        $quranCompleted = QuranSession::where('student_id', $studentUserId)
-            ->where('status', 'completed')
-            ->count();
+        $studentId = $subscription->student_id;
+        $sessionIds = $completedSessions->pluck('id');
 
-        $academicCompleted = AcademicSession::where('student_id', $studentUserId)
-            ->where('status', 'completed')
-            ->count();
-
-        $total = $quranCompleted + $academicCompleted;
-
-        if ($total === 0) {
-            return 0;
+        if ($type === 'quran') {
+            $reports = \App\Models\StudentSessionReport::whereIn('session_id', $sessionIds)
+                ->where('student_id', $studentId)
+                ->get();
+        } else {
+            $reports = \App\Models\AcademicSessionReport::whereIn('session_id', $sessionIds)
+                ->where('student_id', $studentId)
+                ->get();
         }
 
-        // For simplicity, assuming completed = attended
-        // In a real implementation, check actual attendance records
-        return 100.0;
+        $total = $reports->count();
+
+        $attended = $reports->filter(function ($report) {
+            $status = $report->attendance_status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            }
+            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+        })->count();
+
+        $missed = $reports->filter(function ($report) {
+            $status = $report->attendance_status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            }
+            return $status === SessionStatus::ABSENT;
+        })->count();
+
+        return [
+            'total_scheduled' => $total,
+            'attended' => $attended,
+            'missed' => $missed,
+            'attendance_rate' => $total > 0
+                ? round(($attended / $total) * 100, 1)
+                : 0,
+        ];
     }
 
     /**
-     * Get session attendance stats.
+     * Calculate overall attendance rate from actual session reports.
+     */
+    protected function calculateOverallAttendanceRate(int $studentUserId): float
+    {
+        // Get Quran session attendance from reports
+        $quranReports = \App\Models\StudentSessionReport::where('student_id', $studentUserId)
+            ->whereHas('session', function ($q) {
+                $q->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
+            })
+            ->get();
+
+        // Get Academic session attendance from reports
+        $academicReports = \App\Models\AcademicSessionReport::where('student_id', $studentUserId)
+            ->whereHas('session', function ($q) {
+                $q->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
+            })
+            ->get();
+
+        $totalReports = $quranReports->count() + $academicReports->count();
+
+        if ($totalReports === 0) {
+            return 0;
+        }
+
+        // Count attended (includes late) from reports
+        $quranAttended = $quranReports->filter(function ($report) {
+            $status = $report->attendance_status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            }
+            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+        })->count();
+
+        $academicAttended = $academicReports->filter(function ($report) {
+            $status = $report->attendance_status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            }
+            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+        })->count();
+
+        $totalAttended = $quranAttended + $academicAttended;
+
+        return round(($totalAttended / $totalReports) * 100, 1);
+    }
+
+    /**
+     * Get session attendance stats from actual report data.
      */
     protected function getSessionAttendance(string $type, int $studentUserId, Carbon $startDate, Carbon $endDate): array
     {
         if ($type === 'quran') {
             $sessions = QuranSession::where('student_id', $studentUserId)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
-                ->whereIn('status', ['completed', 'cancelled'])
+                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+                ->with('reports')
                 ->get();
+
+            $reports = $sessions->flatMap(function ($session) use ($studentUserId) {
+                return $session->reports->where('student_id', $studentUserId);
+            });
         } elseif ($type === 'academic') {
             $sessions = AcademicSession::where('student_id', $studentUserId)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
-                ->whereIn('status', ['completed', 'cancelled'])
+                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+                ->with('reports')
                 ->get();
+
+            $reports = $sessions->flatMap(function ($session) use ($studentUserId) {
+                return $session->reports->where('student_id', $studentUserId);
+            });
         } else {
             // Course sessions - check enrollments
             $enrolledCourseIds = CourseSubscription::where('student_id', $studentUserId)
@@ -414,19 +489,39 @@ class ReportController extends Controller
 
             $sessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
-                ->whereIn('status', ['completed', 'cancelled'])
+                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+                ->with('studentReports')
                 ->get();
+
+            $reports = $sessions->flatMap(function ($session) use ($studentUserId) {
+                return $session->studentReports->where('student_id', $studentUserId);
+            });
         }
 
-        $total = $sessions->count();
-        $completed = $sessions->where('status', 'completed')->count();
-        $cancelled = $sessions->where('status', 'cancelled')->count();
+        $total = $reports->count();
+
+        // Count actual attendance from reports
+        $attended = $reports->filter(function ($report) {
+            $status = $report->attendance_status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            }
+            return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
+        })->count();
+
+        $missed = $reports->filter(function ($report) {
+            $status = $report->attendance_status;
+            if ($status instanceof \BackedEnum) {
+                $status = $status->value;
+            }
+            return $status === SessionStatus::ABSENT;
+        })->count();
 
         return [
             'total' => $total,
-            'attended' => $completed, // Simplified: completed = attended
-            'missed' => $cancelled,
-            'attendance_rate' => $total > 0 ? round(($completed / $total) * 100, 1) : 0,
+            'attended' => $attended,
+            'missed' => $missed,
+            'attendance_rate' => $total > 0 ? round(($attended / $total) * 100, 1) : 0,
         ];
     }
 }

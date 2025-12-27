@@ -8,6 +8,7 @@ use App\Models\InteractiveCourse;
 use App\Models\CourseSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class CourseController extends Controller
 {
@@ -36,7 +37,7 @@ class CourseController extends Controller
         } elseif ($filter === 'completed') {
             // Get completed courses
             $completedCourseIds = CourseSubscription::where('user_id', $user->id)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->pluck('course_id');
 
             $query = InteractiveCourse::whereIn('id', $completedCourseIds);
@@ -197,8 +198,6 @@ class CourseController extends Controller
                     'title' => $session->title,
                     'description' => $session->description,
                     'scheduled_at' => $session->scheduled_at?->toISOString(),
-                    'scheduled_date' => $session->scheduled_at?->toDateString(), // Backward compatibility
-                    'scheduled_time' => $session->scheduled_at?->format('H:i'), // Backward compatibility
                     'duration_minutes' => $session->duration_minutes,
                     'status' => $session->status->value ?? $session->status,
                     'is_live' => $session->status->value === 'live',

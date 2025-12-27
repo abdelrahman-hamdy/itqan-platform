@@ -43,11 +43,12 @@ class ProgressDTO
      * Create DTO for Quran progress (pages/papers)
      *
      * @param float $pagesMemorized Pages memorized
-     * @param int $totalPages Total Quran pages (default 604)
+     * @param int|null $totalPages Total Quran pages (defaults to config value)
      * @return self
      */
-    public static function forQuranProgress(float $pagesMemorized, int $totalPages = 604): self
+    public static function forQuranProgress(float $pagesMemorized, ?int $totalPages = null): self
     {
+        $totalPages = $totalPages ?? config('quran.total_pages', 604);
         $percentage = $totalPages > 0 ? round(($pagesMemorized / $totalPages) * 100, 2) : 0;
 
         return new self(

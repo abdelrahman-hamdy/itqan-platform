@@ -6,6 +6,7 @@ use App\Services\ParentDashboardService;
 use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 /**
  * Parent Dashboard Controller

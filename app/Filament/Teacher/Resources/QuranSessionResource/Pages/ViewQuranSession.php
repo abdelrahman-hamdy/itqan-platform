@@ -9,6 +9,8 @@ use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use App\Enums\AttendanceStatus;
+use App\Enums\SubscriptionStatus;
 
 class ViewQuranSession extends ViewRecord
 {
@@ -93,18 +95,18 @@ class ViewQuranSession extends ViewRecord
                             ->label('حالة الحضور')
                             ->badge()
                             ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                'attended' => 'حاضر',
-                                'absent' => 'غائب',
-                                'late' => 'متأخر',
-                                'leaved' => 'غادر مبكراً',
-                                'pending' => 'في الانتظار',
+                                AttendanceStatus::ATTENDED->value => 'حاضر',
+                                AttendanceStatus::ABSENT->value => 'غائب',
+                                AttendanceStatus::LATE->value => 'متأخر',
+                                AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                                SubscriptionStatus::PENDING->value => 'في الانتظار',
                                 default => 'غير محدد',
                             })
                             ->color(fn (?string $state): string => match ($state) {
-                                'attended' => 'success',
-                                'absent' => 'danger',
-                                'late' => 'warning',
-                                'leaved' => 'info',
+                                AttendanceStatus::ATTENDED->value => 'success',
+                                AttendanceStatus::ABSENT->value => 'danger',
+                                AttendanceStatus::LATE->value => 'warning',
+                                AttendanceStatus::LEAVED->value => 'info',
                                 default => 'gray',
                             }),
                     ]),

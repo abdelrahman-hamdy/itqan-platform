@@ -15,6 +15,8 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Illuminate\Database\Eloquent\Builder;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 /**
  * Academic Individual Lesson Resource for Admin Panel
@@ -123,12 +125,12 @@ class AcademicIndividualLessonResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('حالة الدرس')
                             ->options([
-                                'pending' => 'قيد الانتظار',
-                                'active' => 'نشط',
-                                'completed' => 'مكتمل',
-                                'cancelled' => 'ملغي',
+                                SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                                SubscriptionStatus::ACTIVE->value => 'نشط',
+                                SessionStatus::COMPLETED->value => 'مكتمل',
+                                SessionStatus::CANCELLED->value => 'ملغي',
                             ])
-                            ->default('pending')
+                            ->default(SubscriptionStatus::PENDING->value)
                             ->required(),
 
                         Forms\Components\TextInput::make('progress_percentage')
@@ -237,16 +239,16 @@ class AcademicIndividualLessonResource extends Resource
                 BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
-                        'warning' => 'pending',
-                        'success' => 'active',
-                        'gray' => 'completed',
-                        'danger' => 'cancelled',
+                        'warning' => SubscriptionStatus::PENDING->value,
+                        'success' => SubscriptionStatus::ACTIVE->value,
+                        'gray' => SessionStatus::COMPLETED->value,
+                        'danger' => SessionStatus::CANCELLED->value,
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'قيد الانتظار',
-                        'active' => 'نشط',
-                        'completed' => 'مكتمل',
-                        'cancelled' => 'ملغي',
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                        SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
+                        SessionStatus::CANCELLED->value => 'ملغي',
                         default => $state,
                     }),
 
@@ -267,10 +269,10 @@ class AcademicIndividualLessonResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'pending' => 'قيد الانتظار',
-                        'active' => 'نشط',
-                        'completed' => 'مكتمل',
-                        'cancelled' => 'ملغي',
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                        SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
+                        SessionStatus::CANCELLED->value => 'ملغي',
                     ]),
 
                 Tables\Filters\SelectFilter::make('academic_teacher_id')
@@ -293,11 +295,11 @@ class AcademicIndividualLessonResource extends Resource
 
                 Tables\Filters\Filter::make('active')
                     ->label('النشطة فقط')
-                    ->query(fn (Builder $query): Builder => $query->where('status', 'active')),
+                    ->query(fn (Builder $query): Builder => $query->where('status', SubscriptionStatus::ACTIVE->value)),
 
                 Tables\Filters\Filter::make('completed')
                     ->label('المكتملة')
-                    ->query(fn (Builder $query): Builder => $query->where('status', 'completed')),
+                    ->query(fn (Builder $query): Builder => $query->where('status', SessionStatus::COMPLETED->value)),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()

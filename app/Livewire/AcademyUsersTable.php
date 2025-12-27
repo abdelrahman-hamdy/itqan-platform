@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Enums\SessionStatus;
 
 class AcademyUsersTable extends Component
 {

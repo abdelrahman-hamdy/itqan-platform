@@ -3,6 +3,7 @@
 namespace App\Services\Payment\DTOs;
 
 use App\Models\Payment;
+use App\Enums\SessionStatus;
 
 /**
  * Data Transfer Object for creating a payment intent.

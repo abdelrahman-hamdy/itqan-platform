@@ -3,6 +3,8 @@
 namespace App\Services\Reports;
 
 use App\DTOs\Reports\{AttendanceDTO, PerformanceDTO, ProgressDTO, StatDTO, StudentReportRowDTO};
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use App\Models\{InteractiveCourse, Student};
 use Illuminate\Support\Collection;
 
@@ -72,7 +74,7 @@ class InteractiveCourseReportService extends BaseReportService
     {
         $completedSessions = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
-            return $status === 'completed';
+            return $status === SessionStatus::COMPLETED->value;
         })->count();
 
         $allReports = $sessions->flatMap(function ($session) {
@@ -82,12 +84,12 @@ class InteractiveCourseReportService extends BaseReportService
         $totalAttendanceRecords = $allReports->count();
         $attendedRecords = $allReports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
-            return in_array($status, ['attended', 'present', 'late']);
+            return in_array($status, [AttendanceStatus::ATTENDED->value, 'present', AttendanceStatus::LATE->value]);
         })->count();
 
         $lateRecords = $allReports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
-            return $status === 'late';
+            return $status === AttendanceStatus::LATE->value;
         })->count();
 
         $attendanceRate = $totalAttendanceRecords > 0
@@ -139,7 +141,7 @@ class InteractiveCourseReportService extends BaseReportService
 
         $completedSessions = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
-            return $status === 'completed';
+            return $status === SessionStatus::COMPLETED->value;
         })->count();
 
         return [
@@ -170,12 +172,12 @@ class InteractiveCourseReportService extends BaseReportService
 
             $completedSessions = $course->sessions->filter(function ($session) {
                 $status = $this->normalizeAttendanceStatus($session->status ?? '');
-                return $status === 'completed';
+                return $status === SessionStatus::COMPLETED->value;
             })->count();
 
             $attendedSessions = $studentReports->filter(function ($report) {
                 $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
-                return in_array($status, ['attended', 'present', 'late']);
+                return in_array($status, [AttendanceStatus::ATTENDED->value, 'present', AttendanceStatus::LATE->value]);
             })->count();
 
             $attendanceRate = $completedSessions > 0
@@ -212,7 +214,7 @@ class InteractiveCourseReportService extends BaseReportService
     {
         $completedSessions = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
-            return $status === 'completed';
+            return $status === SessionStatus::COMPLETED->value;
         })->count();
 
         $attendance = $this->calculateCourseAttendance($sessions, $enrollments);
@@ -272,7 +274,7 @@ class InteractiveCourseReportService extends BaseReportService
     {
         $completedSessions = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
-            return $status === 'completed';
+            return $status === SessionStatus::COMPLETED->value;
         })->count();
 
         return $this->calculateAttendanceFromReports($reports, $completedSessions);
@@ -307,7 +309,7 @@ class InteractiveCourseReportService extends BaseReportService
     {
         $attendedSessions = $reports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
-            return in_array($status, ['attended', 'present', 'late']);
+            return in_array($status, [AttendanceStatus::ATTENDED->value, 'present', AttendanceStatus::LATE->value]);
         })->count();
 
         $totalSessions = $course->sessions->count();

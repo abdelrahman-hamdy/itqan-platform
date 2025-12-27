@@ -4,6 +4,7 @@
 ])
 
 @php
+use App\Enums\SessionStatus;
     $isTeacher = $viewType === 'teacher';
     
     // Detect session type - check if it's an AcademicSession or QuranSession
@@ -103,11 +104,11 @@
                     <div class="text-2xl font-bold text-blue-600">{{ $session->circle->students->count() ?? 0 }}</div>
                     <div class="text-sm text-gray-600">الطلاب المسجلين</div>
                 </div>
-                
-                @if($session->status === \App\Enums\SessionStatus::COMPLETED)
+
+                @if($session->status === SessionStatus::COMPLETED)
                 <div class="text-center">
                     <div class="text-2xl font-bold text-green-600">
-                        {{ $session->attendances->where('attendance_status', 'present')->count() ?? 0 }}
+                        {{ $session->attendances->where('attendance_status', \App\Enums\AttendanceStatus::ATTENDED->value)->count() ?? 0 }}
                     </div>
                     <div class="text-sm text-gray-600">الحضور</div>
                 </div>

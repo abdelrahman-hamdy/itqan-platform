@@ -7,6 +7,38 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * SessionRequest Model
+ *
+ * @property int $id
+ * @property int $academy_id
+ * @property int $student_id
+ * @property int|null $teacher_id
+ * @property int|null $subject_id
+ * @property int|null $grade_level_id
+ * @property string $request_code
+ * @property int|null $sessions_per_week
+ * @property float|null $hourly_rate
+ * @property float|null $total_monthly_cost
+ * @property bool $is_trial_request
+ * @property string $status
+ * @property array|null $proposed_schedule
+ * @property array|null $current_proposal
+ * @property string|null $initial_message
+ * @property string|null $teacher_response
+ * @property string|null $latest_message
+ * @property \Carbon\Carbon|null $last_activity_at
+ * @property bool $trial_session_completed
+ * @property \Carbon\Carbon|null $trial_session_date
+ * @property string|null $trial_session_feedback
+ * @property \Carbon\Carbon|null $teacher_responded_at
+ * @property \Carbon\Carbon|null $agreed_at
+ * @property \Carbon\Carbon|null $payment_completed_at
+ * @property \Carbon\Carbon|null $expires_at
+ * @property int|null $created_subscription_id
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ */
 class SessionRequest extends Model
 {
     use HasFactory;

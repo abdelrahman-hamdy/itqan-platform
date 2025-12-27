@@ -190,10 +190,10 @@ if (! function_exists('getMeetingPreparationMessage')) {
      */
     function getMeetingPreparationMessage($session, ?int $preparationMinutes = null): array
     {
-        // Handle Carbon time directly (backward compatibility)
+        // Handle Carbon time directly
         if ($session instanceof \Carbon\Carbon) {
             $sessionTime = $session;
-            $prepMinutes = $preparationMinutes ?? 10; // Use provided or default
+            $prepMinutes = $preparationMinutes ?? 10;
         }
         // Handle session model
         elseif (is_object($session) && method_exists($session, 'getStatusDisplayData')) {

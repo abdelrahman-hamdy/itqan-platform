@@ -5,6 +5,8 @@ namespace App\Filament\Resources\QuranSubscriptionResource\Pages;
 use App\Filament\Resources\QuranSubscriptionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class ViewQuranSubscription extends ViewRecord
 {
@@ -26,11 +28,11 @@ class ViewQuranSubscription extends ViewRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->action(fn () => $this->record->update([
-                    'status' => 'active',
+                    'status' => SubscriptionStatus::ACTIVE->value,
                     'payment_status' => 'paid',
                     'last_payment_at' => now(),
                 ]))
-                ->visible(fn () => $this->record->status === 'pending'),
+                ->visible(fn () => $this->record->status === SubscriptionStatus::PENDING->value),
             Actions\Action::make('pause')
                 ->label('إيقاف مؤقت')
                 ->icon('heroicon-o-pause-circle')
@@ -42,12 +44,12 @@ class ViewQuranSubscription extends ViewRecord
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
-                        'status' => 'paused',
+                        'status' => SubscriptionStatus::PAUSED->value,
                         'paused_at' => now(),
                         'pause_reason' => $data['pause_reason'],
                     ]);
                 })
-                ->visible(fn () => $this->record->status === 'active'),
+                ->visible(fn () => $this->record->status === SubscriptionStatus::ACTIVE->value),
             Actions\Action::make('resume')
                 ->label('استئناف الاشتراك')
                 ->icon('heroicon-o-play-circle')
@@ -59,13 +61,13 @@ class ViewQuranSubscription extends ViewRecord
                     $newExpiryDate = $this->record->expires_at->addDays($pausedDuration);
                     
                     $this->record->update([
-                        'status' => 'active',
+                        'status' => SubscriptionStatus::ACTIVE->value,
                         'expires_at' => $newExpiryDate,
                         'paused_at' => null,
                         'pause_reason' => null,
                     ]);
                 })
-                ->visible(fn () => $this->record->status === 'paused'),
+                ->visible(fn () => $this->record->status === SubscriptionStatus::PAUSED->value),
             Actions\Action::make('cancel')
                 ->label('إلغاء الاشتراك')
                 ->icon('heroicon-o-x-circle')
@@ -78,19 +80,19 @@ class ViewQuranSubscription extends ViewRecord
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
-                        'status' => 'cancelled',
+                        'status' => SubscriptionStatus::CANCELLED->value,
                         'cancelled_at' => now(),
                         'cancellation_reason' => $data['cancellation_reason'],
                         'auto_renew' => false,
                     ]);
-                    
+
                     // Cancel any upcoming sessions
                     $this->record->quranSessions()
                         ->where('session_date', '>', now())
-                        ->where('status', 'scheduled')
-                        ->update(['status' => 'cancelled']);
+                        ->where('status', SessionStatus::SCHEDULED->value)
+                        ->update(['status' => SessionStatus::CANCELLED->value]);
                 })
-                ->visible(fn () => !in_array($this->record->status, ['cancelled', 'expired'])),
+                ->visible(fn () => !in_array($this->record->status, [SubscriptionStatus::CANCELLED->value, SubscriptionStatus::EXPIRED->value])),
             Actions\Action::make('renew')
                 ->label('تجديد الاشتراك')
                 ->icon('heroicon-o-arrow-path')
@@ -107,7 +109,7 @@ class ViewQuranSubscription extends ViewRecord
                     };
                     
                     $this->record->update([
-                        'status' => 'active',
+                        'status' => SubscriptionStatus::ACTIVE->value,
                         'payment_status' => 'paid',
                         'expires_at' => $newExpiryDate,
                         'last_payment_at' => now(),
@@ -117,7 +119,7 @@ class ViewQuranSubscription extends ViewRecord
                         'is_trial_active' => false,
                     ]);
                 })
-                ->visible(fn () => in_array($this->record->status, ['expired', 'active'])),
+                ->visible(fn () => in_array($this->record->status, [SubscriptionStatus::EXPIRED->value, SubscriptionStatus::ACTIVE->value])),
         ];
     }
 } 

@@ -29,6 +29,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
 use App\Services\AcademyContextService;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class QuranTrialRequestResource extends BaseResource
 {
@@ -418,8 +420,8 @@ class QuranTrialRequestResource extends BaseResource
                                     ->formatStateUsing(fn (string $state): string => QuranTrialRequest::STATUSES[$state] ?? $state)
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {
-                                        'pending' => 'warning',
-                                        'approved', 'scheduled', 'completed' => 'success',
+                                        SubscriptionStatus::PENDING->value => 'warning',
+                                        'approved', 'scheduled', SessionStatus::COMPLETED->value => 'success',
                                         'rejected', 'cancelled', 'no_show' => 'danger',
                                         default => 'gray',
                                     }),

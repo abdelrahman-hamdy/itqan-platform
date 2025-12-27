@@ -207,7 +207,7 @@ trait FormatsCalendarData
                 'icon' => '✅',
                 'bgColor' => 'bg-green-50',
             ],
-            'scheduled' => [
+            SessionStatus::SCHEDULED->value => [
                 'label' => 'مجدولة',
                 'color' => 'text-green-600',
                 'icon' => '✅',

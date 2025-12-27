@@ -156,7 +156,7 @@
     $filterStatus = request('status');
     $filterType = request('type');
 
-    if ($filterStatus === 'active') {
+    if ($filterStatus === \App\Enums\SubscriptionStatus::ACTIVE->value) {
         $allSubscriptions = $allSubscriptions->filter(fn($s) => $s['is_active']);
     } elseif ($filterStatus === 'inactive') {
         $allSubscriptions = $allSubscriptions->filter(fn($s) => !$s['is_active']);

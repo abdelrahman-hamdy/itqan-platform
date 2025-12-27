@@ -5,6 +5,7 @@
 ])
 
 @php
+use App\Enums\AttendanceStatus;
     $studentCount = is_countable($students) ? count($students) : $students->count();
 @endphp
 
@@ -54,11 +55,11 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($attendance)
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                    {{ $attendance->status === 'present' ? 'bg-green-100 text-green-800' :
-                                       ($attendance->status === 'late' ? 'bg-yellow-100 text-yellow-800' :
-                                       'bg-red-100 text-red-800') }}">
-                                    {{ $attendance->status === 'present' ? 'حاضر' :
-                                       ($attendance->status === 'late' ? 'متأخر' : 'غائب') }}
+                                    {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
+                                       ($attendance->status === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' :
+                                       ($attendance->status === AttendanceStatus::LEAVED->value ? 'bg-orange-100 text-orange-800' :
+                                       'bg-red-100 text-red-800')) }}">
+                                    {{ match($attendance->status) { AttendanceStatus::ATTENDED->value => 'حاضر', AttendanceStatus::LATE->value => 'متأخر', AttendanceStatus::LEAVED->value => 'غادر مبكراً', default => 'غائب' } }}
                                 </span>
                             @else
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">

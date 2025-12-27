@@ -4,6 +4,7 @@ namespace App\Services\Scheduling\Validators;
 
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 /**
  * Interface for schedule validators

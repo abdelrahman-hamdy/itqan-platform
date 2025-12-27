@@ -1,5 +1,8 @@
+@php
+    use App\Enums\SessionStatus;
+@endphp
 <div
-    @if($status === 'completed' && !$showProgress)
+    @if($status === SessionStatus::COMPLETED->value && !$showProgress)
         wire:poll.30s="updateAttendanceStatus"
     @endif
     class="attendance-status bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 shadow-sm"
@@ -42,7 +45,7 @@
     @endif
 
     <!-- Detailed Times (after session ends) -->
-    @if($status === 'completed' && $firstJoin)
+    @if($status === SessionStatus::COMPLETED->value && $firstJoin)
         <div class="mt-3 pt-3 border-t border-gray-200">
             <div class="grid grid-cols-2 gap-2 text-xs">
                 <div>

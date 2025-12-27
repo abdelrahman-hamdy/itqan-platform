@@ -5,6 +5,7 @@ namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class CreateQuranSession extends CreateRecord
 {
@@ -22,7 +23,7 @@ class CreateQuranSession extends CreateRecord
         $data['session_code'] = 'QS-'.$user->academy_id.'-'.now()->format('Ymd').'-'.str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
         // Set default status
-        $data['status'] = $data['status'] ?? 'scheduled';
+        $data['status'] = $data['status'] ?? SessionStatus::SCHEDULED->value;
 
         return $data;
     }

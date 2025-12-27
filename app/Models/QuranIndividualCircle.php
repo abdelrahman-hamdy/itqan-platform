@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -124,12 +126,12 @@ class QuranIndividualCircle extends Model
 
     public function scheduledSessions(): HasMany
     {
-        return $this->sessions()->whereIn('status', ['scheduled', 'in_progress']);
+        return $this->sessions()->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING]);
     }
 
     public function completedSessions(): HasMany
     {
-        return $this->sessions()->whereIn('status', ['completed', 'absent']);
+        return $this->sessions()->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT]);
     }
 
     public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
@@ -158,7 +160,7 @@ class QuranIndividualCircle extends Model
     // Scopes
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', SubscriptionStatus::ACTIVE->value);
     }
 
     public function scopeForTeacher($query, $teacherId)
@@ -201,7 +203,7 @@ class QuranIndividualCircle extends Model
     {
         $scheduled = $this->scheduledSessions()->count();
         $completed = $this->completedSessions()->count();
-        $unscheduled = $this->sessions()->where('status', 'unscheduled')->count();
+        $unscheduled = $this->sessions()->where('status', SessionStatus::UNSCHEDULED)->count();
 
         $this->update([
             'sessions_scheduled' => $scheduled,
@@ -225,12 +227,12 @@ class QuranIndividualCircle extends Model
         // Update status based on progress
         if ($completedSessions >= $this->total_sessions) {
             $this->update([
-                'status' => 'completed',
+                'status' => SubscriptionStatus::COMPLETED->value,
                 'completed_at' => now(),
             ]);
-        } elseif ($completedSessions > 0 && $this->status === 'pending') {
+        } elseif ($completedSessions > 0 && $this->status === SubscriptionStatus::PENDING->value) {
             $this->update([
-                'status' => 'active',
+                'status' => SubscriptionStatus::ACTIVE->value,
                 'started_at' => $this->completedSessions()->oldest('started_at')->first()?->started_at,
             ]);
         }

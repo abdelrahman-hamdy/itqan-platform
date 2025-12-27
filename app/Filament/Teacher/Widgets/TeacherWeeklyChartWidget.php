@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Widgets;
 
+use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
@@ -43,7 +44,7 @@ class TeacherWeeklyChartWidget extends ChartWidget
             // Count completed sessions for this day
             $completedCount = QuranSession::where('quran_teacher_id', $teacher->id)
                 ->whereDate('scheduled_at', $date)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->count();
             $completedData[] = $completedCount;
 

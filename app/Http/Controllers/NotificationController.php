@@ -6,6 +6,7 @@ use App\Enums\NotificationCategory;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Enums\SessionStatus;
 
 class NotificationController extends Controller
 {

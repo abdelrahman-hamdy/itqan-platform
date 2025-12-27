@@ -2,6 +2,8 @@
 
 namespace App\Filament\Teacher\Widgets;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use App\Models\QuranSession;
 use Filament\Facades\Filament;
 use Filament\Support\Enums\FontWeight;
@@ -82,23 +84,23 @@ class RecentSessionsWidget extends BaseWidget
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
-                        'warning' => 'scheduled',
-                        'info' => 'ongoing',
-                        'success' => 'completed',
-                        'danger' => 'cancelled',
-                        'gray' => 'absent',
+                        'warning' => SessionStatus::SCHEDULED->value,
+                        'info' => SessionStatus::ONGOING->value,
+                        'success' => SessionStatus::COMPLETED->value,
+                        'danger' => SessionStatus::CANCELLED->value,
+                        'gray' => AttendanceStatus::ABSENT->value,
                     ])
                     ->formatStateUsing(function ($state): string {
                         $statusValue = $state instanceof \App\Enums\SessionStatus ? $state->value : (string) $state;
 
                         return match ($statusValue) {
-                            'unscheduled' => 'غير مجدولة',
-                            'scheduled' => 'مجدولة',
-                            'ready' => 'جاهزة للبدء',
-                            'ongoing' => 'جارية',
-                            'completed' => 'مكتملة',
-                            'cancelled' => 'ملغية',
-                            'absent' => 'غياب الطالب',
+                            SessionStatus::UNSCHEDULED->value => 'غير مجدولة',
+                            SessionStatus::SCHEDULED->value => 'مجدولة',
+                            SessionStatus::READY->value => 'جاهزة للبدء',
+                            SessionStatus::ONGOING->value => 'جارية',
+                            SessionStatus::COMPLETED->value => 'مكتملة',
+                            SessionStatus::CANCELLED->value => 'ملغية',
+                            AttendanceStatus::ABSENT->value => 'غياب الطالب',
                             default => $statusValue,
                         };
                     }),

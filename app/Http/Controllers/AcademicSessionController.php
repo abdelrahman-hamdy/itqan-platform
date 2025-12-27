@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AttendanceStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Services\Attendance\AcademicReportService;
@@ -9,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Enums\SessionStatus;
 
 class AcademicSessionController extends Controller
 {
@@ -162,7 +164,7 @@ class AcademicSessionController extends Controller
             [
                 'teacher_id' => $session->academic_teacher_id,
                 'academy_id' => $session->academy_id,
-                'attendance_status' => 'absent',
+                'attendance_status' => AttendanceStatus::ABSENT->value,
                 'is_calculated' => true,
             ]
         );
@@ -264,7 +266,7 @@ class AcademicSessionController extends Controller
             [
                 'teacher_id' => $session->academic_teacher_id,
                 'academy_id' => $session->academy_id,
-                'attendance_status' => 'absent',
+                'attendance_status' => AttendanceStatus::ABSENT->value,
                 'is_calculated' => true,
             ]
         );
@@ -381,9 +383,9 @@ class AcademicSessionController extends Controller
         ]);
 
         // Update timestamps based on status
-        if ($validated['status'] === 'ongoing' && ! $session->started_at) {
+        if ($validated['status'] === SessionStatus::ONGOING->value && ! $session->started_at) {
             $validated['started_at'] = now();
-        } elseif ($validated['status'] === 'completed' && ! $session->ended_at) {
+        } elseif ($validated['status'] === SessionStatus::COMPLETED->value && ! $session->ended_at) {
             $validated['ended_at'] = now();
             if ($session->started_at) {
                 $validated['actual_duration_minutes'] = $session->started_at->diffInMinutes(now());
@@ -431,7 +433,7 @@ class AcademicSessionController extends Controller
             'rescheduled_to' => $validated['new_scheduled_at'],
             'scheduled_at' => $validated['new_scheduled_at'],
             'reschedule_reason' => $validated['reschedule_reason'],
-            'status' => 'rescheduled',
+            'status' => SessionStatus::SCHEDULED,
         ]);
 
         return response()->json([
@@ -468,7 +470,7 @@ class AcademicSessionController extends Controller
         ]);
 
         $session->update([
-            'status' => 'cancelled',
+            'status' => SessionStatus::CANCELLED,
             'cancellation_reason' => $validated['cancellation_reason'],
             'cancelled_by' => $user->id,
             'cancelled_at' => now(),

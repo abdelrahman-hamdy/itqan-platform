@@ -9,6 +9,7 @@ use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class UnifiedInteractiveCourseController extends Controller
 {
@@ -193,7 +194,7 @@ class UnifiedInteractiveCourseController extends Controller
             $teacherData = [
                 'total_students' => $course->enrollments->count(),
                 'total_sessions' => $course->sessions->count(),
-                'completed_sessions' => $course->sessions->where('status', 'completed')->count(),
+                'completed_sessions' => $course->sessions->where('status', SessionStatus::COMPLETED->value)->count(),
                 'upcoming_sessions' => $course->sessions->where('scheduled_at', '>', now())->count(),
             ];
         }

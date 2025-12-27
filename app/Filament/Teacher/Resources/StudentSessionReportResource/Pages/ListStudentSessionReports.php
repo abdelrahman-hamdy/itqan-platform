@@ -6,6 +6,7 @@ use App\Filament\Teacher\Resources\StudentSessionReportResource;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
+use App\Enums\AttendanceStatus;
 
 class ListStudentSessionReports extends ListRecords
 {
@@ -38,9 +39,9 @@ class ListStudentSessionReports extends ListRecords
                     $subQuery->where('session_type', 'group');
                 })),
             'present' => Tab::make('الحاضرون')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('attendance_status', 'attended')),
-            'absent' => Tab::make('الغائبون')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('attendance_status', 'absent')),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('attendance_status', AttendanceStatus::ATTENDED->value)),
+            AttendanceStatus::ABSENT->value => Tab::make('الغائبون')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('attendance_status', AttendanceStatus::ABSENT->value)),
             'manual' => Tab::make('مقيم يدوياً')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('is_calculated', false)),
         ];

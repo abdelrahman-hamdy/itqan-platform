@@ -90,6 +90,32 @@ class RecordedCourse extends Model implements HasMedia
         return $this->hasMany(CourseSection::class)->orderBy('order');
     }
 
+    /**
+     * Alias for sections (for API compatibility - chapters = sections)
+     */
+    public function chapters(): HasMany
+    {
+        return $this->sections();
+    }
+
+    /**
+     * Get the teacher/instructor who created this course
+     * Note: Recorded courses don't have a direct teacher assignment
+     * The creator is often the teacher
+     */
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Alias for teacher (instructor = teacher for recorded courses)
+     */
+    public function instructor(): BelongsTo
+    {
+        return $this->teacher();
+    }
+
     public function lessons(): HasMany
     {
         return $this->hasMany(Lesson::class);

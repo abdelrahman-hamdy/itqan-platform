@@ -7,6 +7,7 @@ use App\Models\QuranSession;
 use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 /**
  * Parent Session Controller
@@ -124,7 +125,7 @@ class ParentSessionController extends Controller
                 ->count();
             $completedSessions = QuranSession::where('student_id', $studentId)
                 ->where('academy_id', $parent->academy_id)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->count();
         } elseif ($sessionType === 'academic' && $studentId) {
             $totalSessions = AcademicSession::where('student_id', $studentId)
@@ -132,7 +133,7 @@ class ParentSessionController extends Controller
                 ->count();
             $completedSessions = AcademicSession::where('student_id', $studentId)
                 ->where('academy_id', $parent->academy_id)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->count();
         }
 

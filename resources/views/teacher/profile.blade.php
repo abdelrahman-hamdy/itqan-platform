@@ -150,7 +150,7 @@
                   'iconBgColor' => 'bg-purple-100',
                   'iconColor' => 'text-purple-600',
                   'progress' => $subscription->progress_percentage ?? 0,
-                  'status' => $subscription->status === 'active' ? 'active' : 'pending',
+                  'status' => (is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'active' : 'pending',
                   'link' => route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id])
                 ];
               })->filter()->toArray(),
@@ -188,7 +188,7 @@
                   'icon' => 'ri-user-3-line',
                   'iconBgColor' => 'bg-orange-100',
                   'iconColor' => 'text-orange-600',
-                  'status' => $subscription->status === 'active' ? 'active' : ($subscription->status === 'pending' ? 'pending' : 'completed'),
+                  'status' => (is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'active' : ((is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SubscriptionStatus::PENDING->value ? 'pending' : 'completed'),
                   'progress' => $subscription->completion_rate ?? 0,
                   'link' => route('teacher.academic.lessons.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'lesson' => $subscription->id])
                 ];
@@ -199,7 +199,7 @@
               ],
               'stats' => [
                 ['icon' => 'ri-user-3-line', 'value' => $privateLessons->count() . ' درس خاص'],
-                ['icon' => 'ri-calendar-line', 'value' => $privateLessons->where('status', 'active')->count() . ' درس نشط']
+                ['icon' => 'ri-calendar-line', 'value' => $privateLessons->filter(fn($l) => (is_object($l->status) ? $l->status->value : $l->status) === \App\Enums\SubscriptionStatus::ACTIVE->value)->count() . ' درس نشط']
               ],
               'emptyTitle' => 'لا توجد دروس خاصة',
               'emptyDescription' => 'ستظهر الدروس الخاصة مع الطلاب هنا عند حجزها',

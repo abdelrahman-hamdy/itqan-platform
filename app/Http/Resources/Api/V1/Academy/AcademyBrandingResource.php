@@ -2,9 +2,13 @@
 
 namespace App\Http\Resources\Api\V1\Academy;
 
+use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin Academy
+ */
 class AcademyBrandingResource extends JsonResource
 {
     /**

@@ -172,6 +172,15 @@ class QuranTeacherProfile extends Model
     }
 
     /**
+     * Get the packages this teacher can offer
+     * Note: QuranTeacherProfile doesn't have packages - returns empty collection for API compatibility
+     */
+    public function packages(): \Illuminate\Support\Collection
+    {
+        return collect();
+    }
+
+    /**
      * Get all reviews for this teacher
      */
     public function reviews(): MorphMany
@@ -299,17 +308,6 @@ class QuranTeacherProfile extends Model
     }
 
     public function suspend(?string $reason = null): void
-    {
-        $this->deactivate($reason);
-    }
-
-    // Legacy methods for backward compatibility
-    public function approve(int $approvedBy): void
-    {
-        $this->activate($approvedBy);
-    }
-
-    public function reject(int $rejectedBy, ?string $reason = null): void
     {
         $this->deactivate($reason);
     }

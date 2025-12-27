@@ -468,8 +468,8 @@ Route::get('/api/sessions/{session}/attendance-status', function (Request $reque
             // Enhanced status for completed sessions
             if (! $hasEverJoined) {
                 $attendanceStatus = 'not_attended'; // Never joined
-            } elseif ($duration > 0 && $attendanceStatus === 'partial') {
-                $attendanceStatus = 'partial_attendance'; // Joined but insufficient time
+            } elseif ($duration > 0 && ($attendanceStatus === 'leaved' || $attendanceStatus === 'partial')) {
+                $attendanceStatus = 'partial_attendance'; // Left early or partial attendance
             }
 
             $status = [

@@ -38,6 +38,9 @@ use Illuminate\Support\Facades\DB;
  * @property bool $is_trial_active
  * @property int|null $current_surah
  * @property string|null $memorization_level
+ * @property int|null $quran_circle_id
+ * @property \Carbon\Carbon|null $start_date
+ * @property \Carbon\Carbon|null $end_date
  */
 class QuranSubscription extends BaseSubscription
 {
@@ -56,7 +59,7 @@ class QuranSubscription extends BaseSubscription
         // Teacher reference
         'quran_teacher_id',
 
-        // Package reference (kept for backward compatibility, but data is snapshotted)
+        // Package reference
         'package_id',
 
         // Subscription type
@@ -116,10 +119,10 @@ class QuranSubscription extends BaseSubscription
      * Default attributes
      */
     protected $attributes = [
-        'status' => 'pending',
-        'payment_status' => 'pending',
+        'status' => SubscriptionStatus::PENDING->value,
+        'payment_status' => SubscriptionPaymentStatus::PENDING->value,
         'currency' => 'SAR',
-        'billing_cycle' => 'monthly',
+        'billing_cycle' => BillingCycle::MONTHLY->value,
         'auto_renew' => true,
         'progress_percentage' => 0,
         'certificate_issued' => false,
@@ -167,42 +170,6 @@ class QuranSubscription extends BaseSubscription
     }
 
     /**
-     * Get the Quran teacher with profile data as a simple object
-     * @deprecated Use quranTeacher relationship instead
-     */
-    public function getQuranTeacherInfoAttribute()
-    {
-        if (!$this->quran_teacher_id) {
-            return null;
-        }
-
-        $user = User::find($this->quran_teacher_id);
-        if (!$user) {
-            return null;
-        }
-
-        $teacherProfile = $user->quranTeacherProfile;
-
-        return (object) [
-            'id' => $teacherProfile?->id ?? $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'user_type' => $user->user_type,
-            'full_name' => $user->name,
-            'user' => $user,
-            'teaching_experience_years' => $teacherProfile?->teaching_experience_years,
-            'bio_arabic' => $teacherProfile?->bio_arabic,
-            'bio_english' => $teacherProfile?->bio_english,
-            'educational_qualification' => $teacherProfile?->educational_qualification,
-            'avatar' => $user->avatar,
-            'teacher_code' => $teacherProfile?->teacher_code,
-            'rating' => $teacherProfile?->rating ?? 0,
-            'total_students' => $teacherProfile?->total_students ?? 0,
-            'total_sessions' => $teacherProfile?->total_sessions ?? 0,
-        ];
-    }
-
-    /**
      * Get the original package (for reference only - data is snapshotted)
      */
     public function package(): BelongsTo
@@ -224,6 +191,22 @@ class QuranSubscription extends BaseSubscription
     public function individualCircle(): HasOne
     {
         return $this->hasOne(QuranIndividualCircle::class, 'subscription_id');
+    }
+
+    /**
+     * Get the Quran circle (for group subscriptions)
+     */
+    public function quranCircle(): BelongsTo
+    {
+        return $this->belongsTo(QuranCircle::class, 'quran_circle_id');
+    }
+
+    /**
+     * Alias for quranCircle (for API compatibility)
+     */
+    public function circle(): BelongsTo
+    {
+        return $this->quranCircle();
     }
 
     /**
@@ -566,7 +549,7 @@ class QuranSubscription extends BaseSubscription
             'total_sessions' => $this->total_sessions,
             'sessions_remaining' => $this->sessions_remaining,
             'default_duration_minutes' => $this->session_duration_minutes ?? 45,
-            'status' => $this->isActive() ? 'active' : 'pending',
+            'status' => $this->isActive() ? SubscriptionStatus::ACTIVE->value : SubscriptionStatus::PENDING->value,
             'created_by' => $this->created_by,
         ]);
     }
@@ -581,10 +564,10 @@ class QuranSubscription extends BaseSubscription
         }
 
         $circleStatus = match ($this->status) {
-            SubscriptionStatus::ACTIVE => 'active',
-            SubscriptionStatus::CANCELLED => 'cancelled',
-            SubscriptionStatus::COMPLETED => 'completed',
-            default => 'pending',
+            SubscriptionStatus::ACTIVE => SubscriptionStatus::ACTIVE->value,
+            SubscriptionStatus::CANCELLED => SubscriptionStatus::CANCELLED->value,
+            SubscriptionStatus::COMPLETED => SubscriptionStatus::COMPLETED->value,
+            default => SubscriptionStatus::PENDING->value,
         };
 
         $this->individualCircle->update([
@@ -689,8 +672,8 @@ class QuranSubscription extends BaseSubscription
             if ($subscription->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL) {
                 $circle = $subscription->createIndividualCircle();
 
-                if ($circle && $subscription->isActive() && $circle->status !== 'active') {
-                    $circle->update(['status' => 'active']);
+                if ($circle && $subscription->isActive() && $circle->status !== SubscriptionStatus::ACTIVE->value) {
+                    $circle->update(['status' => SubscriptionStatus::ACTIVE->value]);
                 }
             }
 

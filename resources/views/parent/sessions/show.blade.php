@@ -1,4 +1,7 @@
 @php
+use App\Enums\SessionStatus;
+use App\Enums\AttendanceStatus;
+
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
@@ -39,11 +42,11 @@
                     </div>
                 </div>
                 <span class="self-start px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full flex-shrink-0
-                    {{ $session->status === 'scheduled' ? 'bg-blue-100 text-blue-800' : '' }}
-                    {{ $session->status === 'live' ? 'bg-green-100 text-green-800' : '' }}
-                    {{ $session->status === 'completed' ? 'bg-gray-100 text-gray-800' : '' }}
-                    {{ $session->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
-                    {{ $session->status === 'scheduled' ? 'مجدولة' : ($session->status === 'live' ? 'جارية' : ($session->status === 'completed' ? 'مكتملة' : 'ملغاة')) }}
+                    {{ $session->status === SessionStatus::SCHEDULED->value ? 'bg-blue-100 text-blue-800' : '' }}
+                    {{ $session->status === SessionStatus::ONGOING->value ? 'bg-green-100 text-green-800' : '' }}
+                    {{ $session->status === SessionStatus::COMPLETED->value ? 'bg-gray-100 text-gray-800' : '' }}
+                    {{ $session->status === SessionStatus::CANCELLED->value ? 'bg-red-100 text-red-800' : '' }}">
+                    {{ $session->status === SessionStatus::SCHEDULED->value ? 'مجدولة' : ($session->status === SessionStatus::ONGOING->value ? 'جارية' : ($session->status === SessionStatus::COMPLETED->value ? 'مكتملة' : 'ملغاة')) }}
                 </span>
             </div>
         </div>
@@ -76,7 +79,7 @@
                             <div class="min-w-0">
                                 <p class="text-xs md:text-sm text-gray-500">المدة</p>
                                 <p class="font-bold text-sm md:text-base text-gray-900">{{ $session->duration_minutes }} دقيقة</p>
-                                @if($session->status === 'completed' && $session->actual_duration_minutes)
+                                @if($session->status === SessionStatus::COMPLETED->value && $session->actual_duration_minutes)
                                     <p class="text-xs md:text-sm text-gray-600">المدة الفعلية: {{ $session->actual_duration_minutes }} دقيقة</p>
                                 @endif
                             </div>
@@ -113,7 +116,7 @@
                 </div>
 
                 <!-- Quran-specific Content -->
-                @if($session instanceof \App\Models\QuranSession && $session->status === 'completed')
+                @if($session instanceof \App\Models\QuranSession && $session->status === SessionStatus::COMPLETED->value)
                     <div class="bg-white rounded-lg md:rounded-xl shadow">
                         <div class="p-4 md:p-6 border-b border-gray-200">
                             <h2 class="text-base md:text-xl font-bold text-gray-900">تفاصيل الحفظ والمراجعة</h2>
@@ -157,7 +160,7 @@
                 @endif
 
                 <!-- Academic-specific Content -->
-                @if(!($session instanceof \App\Models\QuranSession) && $session->status === 'completed')
+                @if(!($session instanceof \App\Models\QuranSession) && $session->status === SessionStatus::COMPLETED->value)
                     @if($session->lesson_topic || $session->learning_outcomes)
                         <div class="bg-white rounded-lg md:rounded-xl shadow">
                             <div class="p-4 md:p-6 border-b border-gray-200">
@@ -200,7 +203,7 @@
                 @endif
 
                 <!-- Teacher Notes -->
-                @if($session->teacher_notes && $session->status === 'completed')
+                @if($session->teacher_notes && $session->status === SessionStatus::COMPLETED->value)
                     <div class="bg-white rounded-lg md:rounded-xl shadow">
                         <div class="p-4 md:p-6 border-b border-gray-200">
                             <h2 class="text-base md:text-xl font-bold text-gray-900">ملاحظات المعلم</h2>
@@ -212,7 +215,7 @@
                 @endif
 
                 <!-- Cancellation Reason -->
-                @if($session->status === 'cancelled' && $session->cancellation_reason)
+                @if($session->status === SessionStatus::CANCELLED->value && $session->cancellation_reason)
                     <div class="bg-red-50 border border-red-200 rounded-lg p-4 md:p-6">
                         <div class="flex items-start gap-2.5 md:gap-3">
                             <i class="ri-error-warning-line text-xl md:text-2xl text-red-600 flex-shrink-0"></i>
@@ -234,10 +237,10 @@
                             <h3 class="text-sm md:text-lg font-bold text-gray-900">حالة الحضور</h3>
                         </div>
                         <div class="p-4 md:p-6 space-y-3 md:space-y-4">
-                            <div class="text-center p-3 md:p-4 rounded-lg {{ $attendance->status === 'present' ? 'bg-green-100' : ($attendance->status === 'absent' ? 'bg-red-100' : 'bg-yellow-100') }}">
-                                <i class="ri-user-{{ $attendance->status === 'present' ? 'check' : ($attendance->status === 'absent' ? 'unfollow' : 'clock') }}-line text-3xl md:text-4xl mb-1.5 md:mb-2 {{ $attendance->status === 'present' ? 'text-green-600' : ($attendance->status === 'absent' ? 'text-red-600' : 'text-yellow-600') }}"></i>
-                                <p class="font-bold text-sm md:text-lg {{ $attendance->status === 'present' ? 'text-green-900' : ($attendance->status === 'absent' ? 'text-red-900' : 'text-yellow-900') }}">
-                                    {{ $attendance->status === 'present' ? 'حاضر' : ($attendance->status === 'absent' ? 'غائب' : 'متأخر') }}
+                            <div class="text-center p-3 md:p-4 rounded-lg {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'bg-green-100' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'bg-red-100' : ($attendance->status === AttendanceStatus::LEAVED->value ? 'bg-orange-100' : 'bg-yellow-100')) }}">
+                                <i class="ri-user-{{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'check' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'unfollow' : ($attendance->status === AttendanceStatus::LEAVED->value ? 'minus' : 'clock')) }}-line text-3xl md:text-4xl mb-1.5 md:mb-2 {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'text-green-600' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'text-red-600' : ($attendance->status === AttendanceStatus::LEAVED->value ? 'text-orange-600' : 'text-yellow-600')) }}"></i>
+                                <p class="font-bold text-sm md:text-lg {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'text-green-900' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'text-red-900' : ($attendance->status === AttendanceStatus::LEAVED->value ? 'text-orange-900' : 'text-yellow-900')) }}">
+                                    {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'حاضر' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'غائب' : ($attendance->status === AttendanceStatus::LEAVED->value ? 'غادر مبكراً' : 'متأخر')) }}
                                 </p>
                             </div>
 

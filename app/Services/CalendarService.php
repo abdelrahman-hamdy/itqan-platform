@@ -11,6 +11,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
+use App\Enums\SessionStatus;
 
 class CalendarService
 {
@@ -569,7 +570,7 @@ class CalendarService
                     $subQuery->where('scheduled_at', '<', $startTime)
                         ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$startTime]);
                 });
-        })->where('status', '!=', 'cancelled');
+        })->where('status', '!=', SessionStatus::CANCELLED->value);
 
         if ($user->isQuranTeacher()) {
             $query->where('quran_teacher_id', $user->id);
@@ -599,7 +600,7 @@ class CalendarService
             // Check for time conflicts using scheduled_at datetime
             $q->where('scheduled_at', '>=', $startTime)
                 ->where('scheduled_at', '<=', $endTime);
-        })->where('status', '!=', 'cancelled');
+        })->where('status', '!=', SessionStatus::CANCELLED->value);
 
         if ($user->isAcademicTeacher()) {
             $profile = $user->academicTeacherProfile;
@@ -649,7 +650,7 @@ class CalendarService
                         $subQuery->where('scheduled_at', '<', $startTime)
                             ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$startTime]);
                     });
-            })->where('status', '!=', 'cancelled');
+            })->where('status', '!=', SessionStatus::CANCELLED->value);
 
         if ($excludeType === 'circle_session' && $excludeId) {
             $query->where('id', '!=', $excludeId);

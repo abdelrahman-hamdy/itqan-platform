@@ -476,12 +476,12 @@ class LiveKitWebhookController extends Controller
                 $this->tryStartAutoRecording($session, $roomName);
             }
 
-        } catch (\Illuminate\Database\UniqueConstraintException $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
             // Duplicate webhook - safely ignore
             Log::info('Duplicate join webhook ignored', [
                 'event_id' => $data['id'],
                 'session_id' => $session->id,
-                'user_id' => $userId ?? null,
+                'user_id' => $userId,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to handle participant joined event', [

@@ -6,6 +6,7 @@ use App\Models\QuranSession;
 use App\Models\QuranSessionHomework;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Quran Homework Service

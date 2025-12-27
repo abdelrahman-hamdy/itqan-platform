@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Auth;
  *
  * Single calendar implementation for all teacher types (Quran, Academic)
  * Uses strategy pattern to handle type-specific logic
+ *
+ * @property \Illuminate\Support\Collection $schedulableItems
  */
 class UnifiedTeacherCalendar extends Page
 {
@@ -369,7 +371,7 @@ class UnifiedTeacherCalendar extends Page
 
             Forms\Components\TextInput::make('session_count')
                 ->label('عدد الجلسات المطلوب إنشاؤها')
-                ->helperText(function () use ($item, $validator) {
+                ->helperText(function () use ($item) {
                     if (!$item) {
                         return 'حدد عدد الجلسات التي تريد جدولتها';
                     }
@@ -384,7 +386,7 @@ class UnifiedTeacherCalendar extends Page
                 ->numeric()
                 ->required()
                 ->minValue(1)
-                ->maxValue(function () use ($item, $validator) {
+                ->maxValue(function () use ($item) {
                     if (!$item) {
                         return 100;
                     }

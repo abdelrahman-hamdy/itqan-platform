@@ -15,6 +15,8 @@ use App\Models\RecordedCourse;
 use App\Models\TeacherReview;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class ReviewService
 {
@@ -34,7 +36,7 @@ class ReviewService
         // Check if student has subscription with this teacher
         $hasSubscription = QuranSubscription::where('student_id', $student->id)
             ->where('quran_teacher_id', $teacher->user_id)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->exists();
 
         if (!$hasSubscription) {
@@ -66,7 +68,7 @@ class ReviewService
         // Check if student has subscription with this teacher
         $hasSubscription = AcademicSubscription::where('student_id', $student->id)
             ->where('teacher_id', $teacher->id)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->exists();
 
         if (!$hasSubscription) {
@@ -117,7 +119,7 @@ class ReviewService
         // Check if student has subscription to this course
         $hasSubscription = CourseSubscription::where('student_id', $student->id)
             ->where('recorded_course_id', $course->id)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->exists();
 
         if (!$hasSubscription) {
@@ -149,7 +151,7 @@ class ReviewService
         // Check CourseSubscription first
         $hasSubscription = CourseSubscription::where('student_id', $student->id)
             ->where('interactive_course_id', $course->id)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->exists();
 
         // Also check InteractiveCourseEnrollment

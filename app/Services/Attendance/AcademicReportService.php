@@ -8,6 +8,7 @@ use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
 use App\Models\MeetingAttendance;
 use App\Models\User;
+use App\Enums\SessionStatus;
 
 /**
  * Academic Report Service
@@ -55,8 +56,8 @@ class AcademicReportService extends BaseReportSyncService
         // Academic sessions typically require 80% attendance to be considered "present"
         $requiredPercentage = 80;
 
-        // Fixed 15 minutes grace period for academic sessions
-        $graceTimeMinutes = 15;
+        // Get grace period from academy settings
+        $graceTimeMinutes = $session->academy?->settings?->default_late_tolerance_minutes ?? 15;
 
         // Check if student was late (joined after session start)
         $sessionStart = $session->scheduled_at;
@@ -247,7 +248,7 @@ class AcademicReportService extends BaseReportSyncService
     {
         $sessions = $subscription->sessions()->with('studentReports')->get();
         $completedSessions = $sessions->filter(function ($session) {
-            return $session->status?->value === 'completed' || $session->status === 'completed';
+            return $session->status?->value === SessionStatus::COMPLETED->value || $session->status === SessionStatus::COMPLETED;
         });
 
         $totalCompleted = $completedSessions->count();
@@ -279,9 +280,9 @@ class AcademicReportService extends BaseReportSyncService
                 $status = $status->value;
             }
 
-            if (in_array($status, ['attended', 'leaved'])) {
+            if (in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LEAVED->value])) {
                 $attended++;
-            } elseif ($status === 'late') {
+            } elseif ($status === AttendanceStatus::LATE->value) {
                 $late++;
                 $attended++; // Late counts as attended
             } else {
@@ -309,7 +310,7 @@ class AcademicReportService extends BaseReportSyncService
         $totalSessions = $sessions->count();
 
         $completedSessions = $sessions->filter(function ($session) {
-            return $session->status?->value === 'completed' || $session->status === 'completed';
+            return $session->status?->value === SessionStatus::COMPLETED->value || $session->status === SessionStatus::COMPLETED;
         })->count();
 
         // Calculate homework metrics

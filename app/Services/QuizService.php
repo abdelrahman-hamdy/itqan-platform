@@ -9,6 +9,8 @@ use App\Models\QuizQuestion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class QuizService
 {
@@ -90,7 +92,7 @@ class QuizService
             })
             ->get();
 
-        return $assignments->map(function ($assignment) use ($studentId) {
+        return $assignments->map(function ($assignment) {
             $completedAttempts = $assignment->attempts->filter(fn($a) => $a->isCompleted())->count();
             $bestScore = $assignment->attempts->filter(fn($a) => $a->isCompleted())->max('score');
             $passed = $assignment->attempts->filter(fn($a) => $a->passed)->isNotEmpty();
@@ -218,7 +220,7 @@ class QuizService
         // 1. Quran Circles (group) - from circle_students pivot table (uses users.id)
         $quranCircleIds = \DB::table('quran_circle_students')
             ->where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->pluck('circle_id');
         foreach ($quranCircleIds as $id) {
             $assignableIds->push(['type' => \App\Models\QuranCircle::class, 'id' => $id]);
@@ -240,7 +242,7 @@ class QuizService
 
         // 3b. Academic Subscriptions (uses users.id) - private lessons subscriptions
         $academicSubIds = \App\Models\AcademicSubscription::where('student_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->pluck('id');
         foreach ($academicSubIds as $id) {
             $assignableIds->push(['type' => \App\Models\AcademicSubscription::class, 'id' => $id]);
@@ -257,7 +259,7 @@ class QuizService
         // 5. Recorded Courses - from active enrollments (uses users.id)
         $recordedCourseIds = \DB::table('course_enrollments')
             ->where('user_id', $userId)
-            ->where('status', 'active')
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->pluck('course_id');
         foreach ($recordedCourseIds as $id) {
             $assignableIds->push(['type' => \App\Models\RecordedCourse::class, 'id' => $id]);
@@ -289,7 +291,7 @@ class QuizService
 
         $assignments = $query->get();
 
-        return $assignments->map(function ($assignment) use ($studentId) {
+        return $assignments->map(function ($assignment) {
             $completedAttempts = $assignment->attempts->filter(fn($a) => $a->isCompleted())->count();
             $bestScore = $assignment->attempts->filter(fn($a) => $a->isCompleted())->max('score');
             $passed = $assignment->attempts->filter(fn($a) => $a->passed)->isNotEmpty();
@@ -349,18 +351,18 @@ class QuizService
         return match ($type) {
             \App\Models\QuranCircle::class => $assignable->subscriptions()
                 ->where('student_id', $studentId)
-                ->where('status', 'active')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->exists(),
             \App\Models\QuranIndividualCircle::class => $assignable->student_id === $studentId,
             \App\Models\AcademicIndividualLesson::class => $assignable->subscription?->student_id === $studentId,
-            \App\Models\AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->status === 'active',
+            \App\Models\AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->status === SubscriptionStatus::ACTIVE,
             \App\Models\InteractiveCourse::class => $assignable->enrollments()
                 ->where('student_id', $studentId)
                 ->where('enrollment_status', 'active')
                 ->exists(),
             \App\Models\RecordedCourse::class => $assignable->enrollments()
                 ->where('user_id', auth()->id())
-                ->where('status', 'active')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->exists(),
             default => false,
         };

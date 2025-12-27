@@ -13,6 +13,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class AcademicIndividualLessonResource extends Resource
 {
@@ -100,12 +102,12 @@ class AcademicIndividualLessonResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('حالة الدرس')
                             ->options([
-                                'pending' => 'قيد الانتظار',
-                                'active' => 'نشط',
-                                'completed' => 'مكتمل',
-                                'cancelled' => 'ملغي',
+                                SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                                SubscriptionStatus::ACTIVE->value => 'نشط',
+                                SessionStatus::COMPLETED->value => 'مكتمل',
+                                SessionStatus::CANCELLED->value => 'ملغي',
                             ])
-                            ->default('pending')
+                            ->default(SubscriptionStatus::PENDING->value)
                             ->required(),
 
                         Forms\Components\Toggle::make('recording_enabled')
@@ -190,16 +192,16 @@ class AcademicIndividualLessonResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
-                        'warning' => 'pending',
-                        'success' => 'active',
-                        'gray' => 'completed',
-                        'danger' => 'cancelled',
+                        'warning' => SubscriptionStatus::PENDING->value,
+                        'success' => SubscriptionStatus::ACTIVE->value,
+                        'gray' => SessionStatus::COMPLETED->value,
+                        'danger' => SessionStatus::CANCELLED->value,
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'قيد الانتظار',
-                        'active' => 'نشط',
-                        'completed' => 'مكتمل',
-                        'cancelled' => 'ملغي',
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                        SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
+                        SessionStatus::CANCELLED->value => 'ملغي',
                         default => $state,
                     }),
 
@@ -213,10 +215,10 @@ class AcademicIndividualLessonResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'pending' => 'قيد الانتظار',
-                        'active' => 'نشط',
-                        'completed' => 'مكتمل',
-                        'cancelled' => 'ملغي',
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                        SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SessionStatus::COMPLETED->value => 'مكتمل',
+                        SessionStatus::CANCELLED->value => 'ملغي',
                     ]),
 
                 Tables\Filters\SelectFilter::make('academic_subject_id')

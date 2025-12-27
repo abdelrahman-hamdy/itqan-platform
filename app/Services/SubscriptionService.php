@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * SubscriptionService
@@ -341,15 +342,15 @@ class SubscriptionService
             $typeStats = [
                 'total' => $modelClass::where('academy_id', $academyId)->count(),
                 'active' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::ACTIVE)->count(),
+                    ->where('status', SubscriptionStatus::ACTIVE->value)->count(),
                 'pending' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::PENDING)->count(),
+                    ->where('status', SubscriptionStatus::PENDING->value)->count(),
                 'expired' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::EXPIRED)->count(),
+                    ->where('status', SubscriptionStatus::EXPIRED->value)->count(),
                 'cancelled' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::CANCELLED)->count(),
+                    ->where('status', SubscriptionStatus::CANCELLED->value)->count(),
                 'completed' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::COMPLETED)->count(),
+                    ->where('status', SubscriptionStatus::COMPLETED->value)->count(),
                 'revenue' => $modelClass::where('academy_id', $academyId)
                     ->where('payment_status', SubscriptionPaymentStatus::PAID)
                     ->sum('final_price') ?? 0,

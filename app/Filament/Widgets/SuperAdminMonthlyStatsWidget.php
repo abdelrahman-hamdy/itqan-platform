@@ -12,6 +12,8 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class SuperAdminMonthlyStatsWidget extends BaseWidget
 {
@@ -45,8 +47,8 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
     private function getGlobalMonthlyStats(): array
     {
         // Active Subscriptions
-        $activeQuranSubs = QuranSubscription::where('status', 'active')->count();
-        $activeAcademicSubs = AcademicSubscription::where('status', 'active')->count();
+        $activeQuranSubs = QuranSubscription::where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $activeAcademicSubs = AcademicSubscription::where('status', SubscriptionStatus::ACTIVE->value)->count();
         $totalActiveSubs = $activeQuranSubs + $activeAcademicSubs;
 
         // This Month Sessions
@@ -118,8 +120,8 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
     private function getAcademyMonthlyStats($academy): array
     {
         // Active Subscriptions for academy
-        $activeQuranSubs = QuranSubscription::where('academy_id', $academy->id)->where('status', 'active')->count();
-        $activeAcademicSubs = AcademicSubscription::where('academy_id', $academy->id)->where('status', 'active')->count();
+        $activeQuranSubs = QuranSubscription::where('academy_id', $academy->id)->where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $activeAcademicSubs = AcademicSubscription::where('academy_id', $academy->id)->where('status', SubscriptionStatus::ACTIVE->value)->count();
         $totalActiveSubs = $activeQuranSubs + $activeAcademicSubs;
 
         // This Month Sessions for academy
@@ -135,13 +137,13 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
 
         // Revenue - This Month for academy
         $thisMonthRevenue = Payment::where('academy_id', $academy->id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('amount');
 
         $lastMonthRevenue = Payment::where('academy_id', $academy->id)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->sum('amount');

@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class HomeworkController extends Controller
 {
@@ -38,7 +39,7 @@ class HomeworkController extends Controller
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        $homework = $sessions->map(function ($session) use ($user, $status) {
+        $homework = $sessions->map(function ($session) use ($status) {
             $submission = $session->homeworkSubmissions->first();
             $isSubmitted = $submission !== null;
             $isGraded = $submission && $submission->grade !== null;

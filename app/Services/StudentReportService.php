@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Enums\SessionStatus;
 
 class StudentReportService
 {
@@ -42,7 +44,7 @@ class StudentReportService
     {
         if (! $meetingAttendance) {
             return [
-                'attendance_status' => 'absent',
+                'attendance_status' => AttendanceStatus::ABSENT->value,
                 'meeting_enter_time' => null,
                 'meeting_leave_time' => null,
                 'actual_attendance_minutes' => 0,
@@ -109,33 +111,33 @@ class StudentReportService
         int $maxLateMinutes
     ): string {
         if ($actualMinutes === 0) {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
 
         $attendancePercentage = ($actualMinutes / $sessionDuration) * 100;
 
         // If too late, mark as absent
         if ($lateMinutes > $maxLateMinutes) {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
 
         // If attended less than 30%, mark as absent
         if ($attendancePercentage < 30) {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
 
         // If attended 30-50%, mark as left early (leaved)
         if ($attendancePercentage < 50) {
-            return 'leaved';
+            return AttendanceStatus::LEAVED->value;
         }
 
         // If late but attended well, mark as late
         if ($isLate && $attendancePercentage >= 50) {
-            return 'late';
+            return AttendanceStatus::LATE->value;
         }
 
         // If attended 50%+ and not late, mark as attended
-        return 'attended';
+        return AttendanceStatus::ATTENDED->value;
     }
 
     /**
@@ -214,10 +216,10 @@ class StudentReportService
 
         return [
             'total_students' => $reports->count(),
-            'attended_count' => $reports->where('attendance_status', 'attended')->count(),
-            'late_count' => $reports->where('attendance_status', 'late')->count(),
-            'absent_count' => $reports->where('attendance_status', 'absent')->count(),
-            'leaved_count' => $reports->where('attendance_status', 'leaved')->count(),
+            'attended_count' => $reports->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
+            'late_count' => $reports->where('attendance_status', AttendanceStatus::LATE->value)->count(),
+            'absent_count' => $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
+            'leaved_count' => $reports->where('attendance_status', AttendanceStatus::LEAVED->value)->count(),
             'auto_calculated_count' => $reports->where('is_calculated', true)->count(),
             'manually_evaluated_count' => $reports->where('manually_evaluated', true)->count(),
             'avg_attendance_percentage' => $reports->avg('attendance_percentage') ?: 0,
@@ -236,12 +238,16 @@ class StudentReportService
             ->whereIn('session_id', $sessionIds)
             ->get();
 
-        $attendedReports = $reports->whereIn('attendance_status', ['attended', 'late', 'leaved']);
+        $attendedReports = $reports->whereIn('attendance_status', [
+            AttendanceStatus::ATTENDED->value,
+            AttendanceStatus::LATE->value,
+            AttendanceStatus::LEAVED->value
+        ]);
 
         return [
             'total_sessions' => $reports->count(),
             'attended_sessions' => $attendedReports->count(),
-            'missed_sessions' => $reports->where('attendance_status', 'absent')->count(),
+            'missed_sessions' => $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
             'attendance_rate' => $reports->count() > 0 ?
                 ($attendedReports->count() / $reports->count()) * 100 : 0,
             'avg_memorization_degree' => $reports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0,

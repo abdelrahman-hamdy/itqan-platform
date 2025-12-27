@@ -18,6 +18,9 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Exceptions\Halt;
 
+/**
+ * @property Form $form
+ */
 class AcademyDesignSettings extends Page implements HasForms
 {
     use InteractsWithForms;

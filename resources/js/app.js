@@ -119,3 +119,22 @@ if (!window.Alpine) {
     // Stop checking after 5 seconds
     setTimeout(() => clearInterval(checkAlpine), 5000);
 }
+
+// ========================================
+// Centralized Attendance Status Helper
+// ========================================
+// Single source of truth for attendance status display
+// Matches backend AttendanceStatus enum in app/Enums/AttendanceStatus.php
+window.AttendanceStatus = {
+    statuses: {
+        'attended': { label: 'حاضر', class: 'bg-green-100 text-green-800', icon: 'ri-check-line' },
+        'late': { label: 'متأخر', class: 'bg-yellow-100 text-yellow-800', icon: 'ri-time-line' },
+        'leaved': { label: 'غادر مبكراً', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
+        'absent': { label: 'غائب', class: 'bg-red-100 text-red-800', icon: 'ri-close-line' }
+    },
+    getLabel: (status) => window.AttendanceStatus.statuses[status]?.label || status,
+    getBadgeClass: (status) => window.AttendanceStatus.statuses[status]?.class || 'bg-gray-100 text-gray-800',
+    getIcon: (status) => window.AttendanceStatus.statuses[status]?.icon || 'ri-question-line',
+    getAllStatuses: () => Object.keys(window.AttendanceStatus.statuses),
+    isValid: (status) => status in window.AttendanceStatus.statuses
+};

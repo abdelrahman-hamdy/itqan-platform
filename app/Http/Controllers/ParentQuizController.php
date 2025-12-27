@@ -6,6 +6,7 @@ use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Services\QuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 /**
  * Parent Quiz Controller

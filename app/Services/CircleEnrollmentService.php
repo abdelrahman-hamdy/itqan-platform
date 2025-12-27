@@ -7,6 +7,7 @@ use App\Models\QuranSubscription;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Service for handling student enrollment in Quran circles.

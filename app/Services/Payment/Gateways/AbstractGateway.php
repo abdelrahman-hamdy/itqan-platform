@@ -6,6 +6,7 @@ use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Enums\PaymentFlowType;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Abstract base class for payment gateway implementations.

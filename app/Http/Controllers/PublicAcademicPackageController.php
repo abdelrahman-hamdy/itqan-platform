@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class PublicAcademicPackageController extends Controller
 {
@@ -348,7 +349,7 @@ class PublicAcademicPackageController extends Controller
                 'request_data' => $request->all(),
                 'subject_name' => $subjectName ?? 'NULL',
                 'grade_level_name' => $gradeLevelName ?? 'NULL',
-                'price' => $price ?? 'NULL',
+                'price' => $price,
                 'subscription_data_preview' => [
                     'academy_id' => $academy->id,
                     'student_id' => $user->id,
@@ -564,7 +565,7 @@ class PublicAcademicPackageController extends Controller
                 $defaultPackageIds = json_decode($defaultPackageIds, true) ?: [];
             }
             
-            if (is_array($defaultPackageIds) && !empty($defaultPackageIds)) {
+            if (is_array($defaultPackageIds) && count($defaultPackageIds) > 0) {
                 return $defaultPackageIds;
             }
         }

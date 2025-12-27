@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BusinessServiceCategory;
+use App\Enums\SessionStatus;
 
 class PlatformController extends Controller
 {

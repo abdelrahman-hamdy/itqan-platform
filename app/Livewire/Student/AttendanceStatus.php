@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use App\Enums\SessionStatus;
 
 class AttendanceStatus extends Component
 {
@@ -19,7 +20,7 @@ class AttendanceStatus extends Component
     public $userId;
 
     // Attendance data
-    public $status = 'loading'; // loading, waiting, preparation, in_meeting, completed
+    public $status = 'loading'; // loading, waiting, preparation, in_meeting, completed (these are UI states, not enum values)
     public $attendanceText = 'جاري التحميل...';
     public $attendanceTime = '--';
     public $duration = 0;
@@ -165,10 +166,10 @@ class AttendanceStatus extends Component
 
                 // Set dot color based on status
                 $dotColors = [
-                    'attended' => 'bg-green-500',
-                    'late' => 'bg-yellow-500',
-                    'leaved' => 'bg-orange-500',
-                    'absent' => 'bg-red-500',
+                    AttendanceStatusEnum::ATTENDED->value => 'bg-green-500',
+                    AttendanceStatusEnum::LATE->value => 'bg-yellow-500',
+                    AttendanceStatusEnum::LEAVED->value => 'bg-orange-500',
+                    AttendanceStatusEnum::ABSENT->value => 'bg-red-500',
                 ];
                 $this->dotColor = $dotColors[$statusEnum->value] ?? 'bg-gray-500';
 

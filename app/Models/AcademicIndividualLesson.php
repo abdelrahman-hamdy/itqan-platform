@@ -44,9 +44,6 @@ class AcademicIndividualLesson extends Model
         'learning_objectives',
         'notes',
         'teacher_notes',
-        'preparation_minutes',
-        'ending_buffer_minutes',
-        'late_join_grace_period_minutes',
         'created_by',
         'updated_by',
     ];
@@ -65,9 +62,6 @@ class AcademicIndividualLesson extends Model
         'sessions_completed' => 'integer',
         'sessions_remaining' => 'integer',
         'default_duration_minutes' => 'integer',
-        'preparation_minutes' => 'integer',
-        'ending_buffer_minutes' => 'integer',
-        'late_join_grace_period_minutes' => 'integer',
     ];
 
     protected $attributes = [
@@ -79,9 +73,6 @@ class AcademicIndividualLesson extends Model
         'progress_percentage' => 0,
         'default_duration_minutes' => 60,
         'recording_enabled' => false,
-        'preparation_minutes' => 5,
-        'ending_buffer_minutes' => 5,
-        'late_join_grace_period_minutes' => 10,
     ];
 
     /**
@@ -121,6 +112,14 @@ class AcademicIndividualLesson extends Model
     public function academicSubscription(): BelongsTo
     {
         return $this->belongsTo(AcademicSubscription::class);
+    }
+
+    /**
+     * Alias for academicSubscription (for API compatibility)
+     */
+    public function subscription(): BelongsTo
+    {
+        return $this->academicSubscription();
     }
 
     public function academicSubject(): BelongsTo

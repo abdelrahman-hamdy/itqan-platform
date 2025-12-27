@@ -12,6 +12,7 @@ use App\Services\Payment\PaymentGatewayManager;
 use App\Services\Payment\PaymentStateMachine;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Orchestration service for payment operations.
@@ -59,7 +60,6 @@ class PaymentService
             // Update payment record
             $this->updatePaymentFromResult($payment, $result, $gatewayName);
 
-            // Return legacy format for backward compatibility
             return $this->formatResultForLegacy($result, $gateway);
         } catch (PaymentException $e) {
             Log::channel('payments')->error('Payment processing error', [

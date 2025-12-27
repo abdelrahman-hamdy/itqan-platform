@@ -116,9 +116,13 @@ class AcademicHomework extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    public function submissions(): HasMany
+    /**
+     * Get unified homework submissions (polymorphic)
+     * This is the primary submission relationship for the unified homework system
+     */
+    public function submissions(): \Illuminate\Database\Eloquent\Relations\MorphMany
     {
-        return $this->hasMany(AcademicHomeworkSubmission::class, 'academic_homework_id');
+        return $this->morphMany(HomeworkSubmission::class, 'submitable');
     }
 
     public function creator(): BelongsTo
@@ -331,7 +335,10 @@ class AcademicHomework extends Model
         ]);
     }
 
-    public function getSubmissionForStudent(int $studentId): ?AcademicHomeworkSubmission
+    /**
+     * Get unified HomeworkSubmission for a student
+     */
+    public function getSubmissionForStudent(int $studentId): ?HomeworkSubmission
     {
         return $this->submissions()->where('student_id', $studentId)->first();
     }

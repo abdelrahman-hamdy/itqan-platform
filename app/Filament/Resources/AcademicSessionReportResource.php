@@ -166,10 +166,10 @@ class AcademicSessionReportResource extends Resource
                     ->label('Attendance')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
-                        'attended' => 'success',
-                        'late' => 'warning',
-                        'leaved' => 'info',
-                        'absent' => 'danger',
+                        AttendanceStatus::ATTENDED->value => 'success',
+                        AttendanceStatus::LATE->value => 'warning',
+                        AttendanceStatus::LEAVED->value => 'info',
+                        AttendanceStatus::ABSENT->value => 'danger',
                         default => 'gray',
                     })
                     ->formatStateUsing(function (?string $state): string {

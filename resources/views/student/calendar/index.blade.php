@@ -497,11 +497,17 @@
 
         // Update stats based on current month's events
         function updateStats() {
+            const SessionStatus = {
+                SCHEDULED: 'scheduled',
+                COMPLETED: 'completed',
+                CANCELLED: 'cancelled'
+            };
+
             const stats = {
                 total: eventsData.length,
-                scheduled: eventsData.filter(e => e.status === 'scheduled').length,
-                completed: eventsData.filter(e => e.status === 'completed').length,
-                cancelled: eventsData.filter(e => e.status === 'cancelled').length
+                scheduled: eventsData.filter(e => e.status === SessionStatus.SCHEDULED).length,
+                completed: eventsData.filter(e => e.status === SessionStatus.COMPLETED).length,
+                cancelled: eventsData.filter(e => e.status === SessionStatus.CANCELLED).length
             };
 
             document.getElementById('stat-total').textContent = stats.total;
@@ -675,11 +681,18 @@
 
         // Get status text color for white background badges
         function getStatusTextColor(status) {
+            const SessionStatus = {
+                SCHEDULED: 'scheduled',
+                ONGOING: 'ongoing',
+                COMPLETED: 'completed',
+                CANCELLED: 'cancelled'
+            };
+
             const colorMap = {
-                'scheduled': 'text-blue-700',
-                'ongoing': 'text-yellow-700',
-                'completed': 'text-green-700',
-                'cancelled': 'text-red-700'
+                [SessionStatus.SCHEDULED]: 'text-blue-700',
+                [SessionStatus.ONGOING]: 'text-yellow-700',
+                [SessionStatus.COMPLETED]: 'text-green-700',
+                [SessionStatus.CANCELLED]: 'text-red-700'
             };
             return colorMap[status] || 'text-gray-700';
         }
@@ -760,13 +773,20 @@
         }
 
         function getStatusInfo(status) {
-            const statusMap = {
-                'scheduled': { label: 'مجدولة', icon: 'ri-calendar-check-line', class: 'bg-blue-100 text-blue-700' },
-                'ongoing': { label: 'جارية الآن', icon: 'ri-live-line', class: 'bg-yellow-100 text-yellow-700' },
-                'completed': { label: 'مكتملة', icon: 'ri-checkbox-circle-line', class: 'bg-green-100 text-green-700' },
-                'cancelled': { label: 'ملغاة', icon: 'ri-close-circle-line', class: 'bg-red-100 text-red-700' }
+            const SessionStatus = {
+                SCHEDULED: 'scheduled',
+                ONGOING: 'ongoing',
+                COMPLETED: 'completed',
+                CANCELLED: 'cancelled'
             };
-            return statusMap[status] || statusMap['scheduled'];
+
+            const statusMap = {
+                [SessionStatus.SCHEDULED]: { label: 'مجدولة', icon: 'ri-calendar-check-line', class: 'bg-blue-100 text-blue-700' },
+                [SessionStatus.ONGOING]: { label: 'جارية الآن', icon: 'ri-live-line', class: 'bg-yellow-100 text-yellow-700' },
+                [SessionStatus.COMPLETED]: { label: 'مكتملة', icon: 'ri-checkbox-circle-line', class: 'bg-green-100 text-green-700' },
+                [SessionStatus.CANCELLED]: { label: 'ملغاة', icon: 'ri-close-circle-line', class: 'bg-red-100 text-red-700' }
+            };
+            return statusMap[status] || statusMap[SessionStatus.SCHEDULED];
         }
 
         // Initialize on page load

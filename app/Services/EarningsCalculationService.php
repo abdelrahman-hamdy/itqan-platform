@@ -132,8 +132,6 @@ class EarningsCalculationService
             ->first();
 
         if (!$attendance) {
-            // If no attendance record, assume teacher attended for backwards compatibility
-            // This handles sessions before attendance tracking was implemented
             return true;
         }
 

@@ -8,6 +8,7 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class TeacherController extends Controller
 {
@@ -92,7 +93,7 @@ class TeacherController extends Controller
             ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
-            ->with(['user', 'packages'])
+            ->with(['user'])
             ->first();
 
         if (!$teacher) {

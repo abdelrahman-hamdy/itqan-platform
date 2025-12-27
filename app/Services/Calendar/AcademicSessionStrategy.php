@@ -14,6 +14,7 @@ use App\Services\SessionManagementService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 /**
  * Academic teacher session strategy
@@ -78,10 +79,10 @@ class AcademicSessionStrategy implements SessionStrategyInterface
                 $allSessions = $subscription->sessions;
                 $totalSessions = $allSessions->count();
                 $scheduledSessions = $allSessions->filter(function ($session) {
-                    return $session->status->value === 'scheduled' && !is_null($session->scheduled_at);
+                    return $session->status->value === SessionStatus::SCHEDULED->value && !is_null($session->scheduled_at);
                 })->count();
                 $unscheduledSessions = $allSessions->filter(function ($session) {
-                    return $session->status->value === 'unscheduled' || is_null($session->scheduled_at);
+                    return $session->status->value === SessionStatus::UNSCHEDULED->value || is_null($session->scheduled_at);
                 })->count();
 
                 $status = 'not_scheduled';
@@ -126,7 +127,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
             ->with(['subject', 'sessions', 'enrollments'])
             ->get()
             ->map(function ($course) {
-                $scheduledSessions = $course->sessions()->whereIn('status', ['scheduled', 'in_progress', 'completed'])->count();
+                $scheduledSessions = $course->sessions()->whereIn('status', [SessionStatus::SCHEDULED->value, 'in_progress', SessionStatus::COMPLETED->value])->count();
                 $totalSessions = $course->total_sessions;
                 $remainingSessions = max(0, $totalSessions - $scheduledSessions);
                 $enrolledStudents = $course->enrollments()->where('enrollment_status', 'enrolled')->count();
@@ -197,7 +198,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
         // Get unscheduled sessions
         $unscheduledSessions = $subscription->sessions()
             ->where(function ($query) {
-                $query->where('status', 'unscheduled')
+                $query->where('status', SessionStatus::UNSCHEDULED->value)
                     ->orWhereNull('scheduled_at');
             })
             ->orderBy('created_at', 'asc')
@@ -224,7 +225,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
             if (isset($sessionDates[$index])) {
                 $session->update([
                     'scheduled_at' => $sessionDates[$index],
-                    'status' => 'scheduled',
+                    'status' => SessionStatus::SCHEDULED,
                 ]);
                 $scheduledCount++;
             }
@@ -271,7 +272,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
                 'title' => $course->title . ' - جلسة ' . $newSessionNumber,
                 'scheduled_at' => $sessionDate,
                 'duration_minutes' => $course->session_duration_minutes ?? 60,
-                'status' => 'scheduled',
+                'status' => SessionStatus::SCHEDULED,
             ]);
             $createdCount++;
         }

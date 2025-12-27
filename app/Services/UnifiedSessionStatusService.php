@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Events\SessionCompletedEvent;
 use App\Models\AcademicSession;
@@ -321,7 +322,7 @@ class UnifiedSessionStatusService
         $session->update([
             'status' => SessionStatus::ABSENT,
             'ended_at' => now(),
-            'attendance_status' => 'absent',
+            'attendance_status' => AttendanceStatus::ABSENT->value,
         ]);
 
         // Mark as absent in meeting attendance
@@ -506,7 +507,7 @@ class UnifiedSessionStatusService
             ->first();
 
         if ($studentReport) {
-            if ($studentReport->attendance_status === 'absent') {
+            if ($studentReport->attendance_status === AttendanceStatus::ABSENT->value) {
                 $session->update(['status' => SessionStatus::ABSENT]);
                 Log::info('Individual session marked as ABSENT based on StudentSessionReport', [
                     'session_id' => $session->id,
@@ -525,7 +526,7 @@ class UnifiedSessionStatusService
             ->where('user_type', 'student')
             ->first();
 
-        if ($studentAttendance && $studentAttendance->attendance_status === 'absent') {
+        if ($studentAttendance && $studentAttendance->attendance_status === AttendanceStatus::ABSENT->value) {
             $session->update(['status' => SessionStatus::ABSENT]);
             Log::info('Individual session marked as ABSENT based on MeetingAttendance (fallback)', [
                 'session_id' => $session->id,
@@ -559,7 +560,7 @@ class UnifiedSessionStatusService
                 'user_id' => $session->student_id,
                 'user_type' => 'student',
                 'session_type' => $this->settingsService->isIndividualSession($session) ? 'individual' : 'group',
-                'attendance_status' => 'absent',
+                'attendance_status' => AttendanceStatus::ABSENT->value,
                 'attendance_percentage' => 0,
                 'total_duration_minutes' => 0,
                 'is_calculated' => true,
@@ -567,7 +568,7 @@ class UnifiedSessionStatusService
             ]);
         } else {
             $attendance->update([
-                'attendance_status' => 'absent',
+                'attendance_status' => AttendanceStatus::ABSENT->value,
                 'is_calculated' => true,
                 'attendance_calculated_at' => now(),
             ]);

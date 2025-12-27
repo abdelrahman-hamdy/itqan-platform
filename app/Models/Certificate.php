@@ -88,6 +88,14 @@ class Certificate extends Model
     }
 
     /**
+     * Alias for certificateable (handles common typo without 'e')
+     */
+    public function certificatable(): MorphTo
+    {
+        return $this->certificateable();
+    }
+
+    /**
      * Get the download URL for the certificate
      */
     public function getDownloadUrlAttribute(): string

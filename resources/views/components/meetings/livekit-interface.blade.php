@@ -10,33 +10,22 @@
 ])
 
 @php
-    // Detect session type - check if it's an AcademicSession, InteractiveCourseSession, or QuranSession
+    // Detect session type
     $isAcademicSession = $session instanceof \App\Models\AcademicSession;
     $isInteractiveCourseSession = $session instanceof \App\Models\InteractiveCourseSession;
 
-    // Get configuration for meeting timing based on session type
-    if ($isAcademicSession) {
-        // Academic sessions have different configuration approach
-        $preparationMinutes = 15; // Default for academic sessions
-        $endingBufferMinutes = 5;
-        $graceMinutes = 15;
-        $circle = null; // Academic sessions don't have circles
-    } elseif ($isInteractiveCourseSession) {
-        // Interactive course sessions use course configuration
-        $preparationMinutes = $session->course?->preparation_minutes ?? 15;
-        $endingBufferMinutes = $session->course?->buffer_minutes ?? 5;
-        $graceMinutes = $session->course?->late_tolerance_minutes ?? 15;
-        $circle = null; // Interactive sessions don't have circles
+    // Get academy for this session - all session types use academy settings
+    if ($isInteractiveCourseSession) {
+        $academy = $session->course?->academy;
     } else {
-        // Quran sessions use circle configuration
-        $circle = $session->session_type === 'individual'
-            ? $session->individualCircle
-            : $session->circle;
-
-        $preparationMinutes = $circle?->preparation_minutes ?? 15;
-        $endingBufferMinutes = $circle?->ending_buffer_minutes ?? 5;
-        $graceMinutes = $circle?->late_join_grace_period_minutes ?? 15;
+        $academy = $session->academy;
     }
+
+    // Get meeting timing from academy settings (single source of truth)
+    $academySettings = $academy?->settings;
+    $preparationMinutes = $academySettings?->default_preparation_minutes ?? 10;
+    $endingBufferMinutes = $academySettings?->default_buffer_minutes ?? 5;
+    $graceMinutes = $academySettings?->default_late_tolerance_minutes ?? 15;
 
     // Check if session has a meeting room (based on meeting_room_name or meeting_link)
     $hasMeetingRoom = !empty($session->meeting_room_name) || !empty($session->meeting_link);
@@ -1610,8 +1599,19 @@
             }
         }
 
+        // Enum constants for JavaScript
+        const SessionStatus = {
+            SCHEDULED: 'scheduled',
+            READY: 'ready',
+            ONGOING: 'ongoing',
+            COMPLETED: 'completed',
+            CANCELLED: 'cancelled',
+            IN_PROGRESS: 'in_progress',
+            LIVE: 'live'
+        };
+
         // CRITICAL FIX: Stop timer when session is completed
-        if (status === 'completed' && window.sessionTimer) {
+        if (status === SessionStatus.COMPLETED && window.sessionTimer) {
             console.log('⏰ Session completed - stopping timer');
             window.sessionTimer.stop();
             
@@ -1734,9 +1734,11 @@
             
             // Update status text
             const statusLabels = {
-                'present': 'حاضر',
+                'attended': 'حاضر',
+                'present': 'حاضر',  // Legacy support
                 'late': 'متأخر',
-                'partial': 'حضور جزئي',
+                'leaved': 'غادر مبكراً',
+                'partial': 'غادر مبكراً',  // Legacy support
                 'absent': 'غائب'
             };
             
@@ -1766,20 +1768,29 @@
             // Update dot color
             if (dotElement) {
                 dotElement.className = 'attendance-dot w-3 h-3 rounded-full transition-all duration-300';
-                
+
+                const AttendanceStatus = {
+                    ATTENDED: 'attended',
+                    PRESENT: 'present',
+                    LATE: 'late',
+                    LEAVED: 'leaved',
+                    PARTIAL: 'partial',
+                    ABSENT: 'absent'
+                };
+
                 if (isInMeeting) {
                     dotElement.classList.add('bg-green-500', 'animate-pulse');
-                } else if (data.attendance_status === 'present') {
+                } else if (data.attendance_status === AttendanceStatus.ATTENDED || data.attendance_status === AttendanceStatus.PRESENT) {
                     dotElement.classList.add('bg-green-400');
-                } else if (data.attendance_status === 'late') {
+                } else if (data.attendance_status === AttendanceStatus.LATE) {
                     dotElement.classList.add('bg-yellow-400');
-                } else if (data.attendance_status === 'partial') {
+                } else if (data.attendance_status === AttendanceStatus.LEAVED || data.attendance_status === AttendanceStatus.PARTIAL) {
                     dotElement.classList.add('bg-orange-400');
                 } else {
                     dotElement.classList.add('bg-gray-400');
                 }
             }
-            
+
             console.log('📊 Attendance status updated:', data);
         })
         .catch(error => {
@@ -3156,10 +3167,26 @@ document.addEventListener('DOMContentLoaded', function() {
             let dotColor = 'bg-gray-400';
             let containerColor = 'from-gray-50 to-gray-100';
             let borderColor = 'border-gray-200';
+            const SessionStatus = {
+                SCHEDULED: 'scheduled',
+                COMPLETED: 'completed'
+            };
+
+            const AttendanceStatus = {
+                ATTENDED: 'attended',
+                PRESENT: 'present',
+                LATE: 'late',
+                LEAVED: 'leaved',
+                PARTIAL: 'partial',
+                PARTIAL_ATTENDANCE: 'partial_attendance',
+                NOT_ATTENDED: 'not_attended',
+                NOT_JOINED_YET: 'not_joined_yet'
+            };
+
             let iconClass = 'ri-user-line';
-            
+
             // Handle different session states and attendance statuses
-            if (session_state === 'scheduled' && attendance_status === 'not_started') {
+            if (session_state === SessionStatus.SCHEDULED && attendance_status === 'not_started') {
                 // Session hasn't started yet
                 statusText = 'الجلسة لم تبدأ بعد';
                 if (minutes_until_start && minutes_until_start > 0) {
@@ -3172,33 +3199,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 borderColor = 'border-blue-200';
                 iconClass = 'ri-time-line';
                 
-            } else if (session_state === 'completed') {
+            } else if (session_state === SessionStatus.COMPLETED) {
                 // Session has ended - show final status
-                if (attendance_status === 'not_attended' || (!has_ever_joined && duration_minutes === 0)) {
+                if (attendance_status === AttendanceStatus.NOT_ATTENDED || (!has_ever_joined && duration_minutes === 0)) {
                     statusText = 'لم تحضر الجلسة';
                     timeText = 'الجلسة انتهت';
                     dotColor = 'bg-red-400';
                     containerColor = 'from-red-50 to-pink-50';
                     borderColor = 'border-red-200';
                     iconClass = 'ri-close-circle-line';
-                    
-                } else if (attendance_status === 'partial_attendance' || attendance_status === 'partial') {
-                    statusText = 'حضور جزئي';
+
+                } else if (attendance_status === AttendanceStatus.LEAVED || attendance_status === AttendanceStatus.PARTIAL_ATTENDANCE || attendance_status === AttendanceStatus.PARTIAL) {
+                    statusText = 'غادر مبكراً';
                     timeText = `حضرت ${duration_minutes} دقيقة (${attendance_percentage}%)`;
                     dotColor = 'bg-orange-400';
                     containerColor = 'from-orange-50 to-red-50';
                     borderColor = 'border-orange-200';
-                    iconClass = 'ri-time-line';
-                    
-                } else if (attendance_status === 'present') {
+                    iconClass = 'ri-logout-box-line';
+
+                } else if (attendance_status === AttendanceStatus.ATTENDED || attendance_status === AttendanceStatus.PRESENT) {
                     statusText = 'حضرت الجلسة';
                     timeText = `${duration_minutes} دقيقة (${attendance_percentage}%)`;
                     dotColor = 'bg-green-400';
                     containerColor = 'from-green-50 to-emerald-50';
                     borderColor = 'border-green-200';
                     iconClass = 'ri-check-circle-line';
-                    
-                } else if (attendance_status === 'late') {
+
+                } else if (attendance_status === AttendanceStatus.LATE) {
                     statusText = 'حضرت متأخراً';
                     timeText = `${duration_minutes} دقيقة (${attendance_percentage}%)`;
                     dotColor = 'bg-yellow-400';
@@ -3224,7 +3251,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 borderColor = 'border-green-200';
                 iconClass = 'ri-live-line';
                 
-            } else if (attendance_status === 'not_joined_yet') {
+            } else if (attendance_status === AttendanceStatus.NOT_JOINED_YET) {
                 // Session is ongoing but user hasn't joined
                 statusText = 'لم تنضم بعد';
                 timeText = 'الجلسة جارية الآن';
@@ -3232,20 +3259,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 containerColor = 'from-orange-50 to-yellow-50';
                 borderColor = 'border-orange-200';
                 iconClass = 'ri-notification-line';
-                
+
             } else if (duration_minutes > 0) {
                 // User has attended but is not currently in meeting
                 const statusLabels = {
-                    'present': 'حاضر',
+                    'attended': 'حاضر',
+                    'present': 'حاضر',  // Legacy support
                     'late': 'متأخر',
-                    'partial': 'حضور جزئي',
+                    'leaved': 'غادر مبكراً',
+                    'partial': 'غادر مبكراً',  // Legacy support
                     'absent': 'غائب'
                 };
-                
+
                 statusText = statusLabels[attendance_status] || 'غير محدد';
                 timeText = `${duration_minutes} دقيقة - انضم ${join_count} مرة`;
-                
-                if (attendance_status === 'present') {
+
+                if (attendance_status === 'attended' || attendance_status === 'present') {
                     dotColor = 'bg-green-400';
                     containerColor = 'from-green-50 to-emerald-50';
                     borderColor = 'border-green-200';
@@ -3255,11 +3284,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     containerColor = 'from-yellow-50 to-amber-50';
                     borderColor = 'border-yellow-200';
                     iconClass = 'ri-time-line';
-                } else if (attendance_status === 'partial') {
+                } else if (attendance_status === 'leaved' || attendance_status === 'partial') {
                     dotColor = 'bg-orange-400';
                     containerColor = 'from-orange-50 to-red-50';
                     borderColor = 'border-orange-200';
-                    iconClass = 'ri-time-line';
+                    iconClass = 'ri-logout-box-line';
                 }
                 
             } else {

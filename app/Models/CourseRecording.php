@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RecordingStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,7 @@ class CourseRecording extends Model
         'metadata' => 'array',
         'duration' => 'integer',
         'file_size' => 'integer',
+        'status' => RecordingStatus::class,
     ];
 
     protected $attributes = [

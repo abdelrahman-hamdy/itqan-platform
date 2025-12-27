@@ -143,6 +143,22 @@ class InteractiveCourse extends Model
         return $this->belongsTo(AcademicTeacherProfile::class, 'assigned_teacher_id');
     }
 
+    /**
+     * Alias for assignedTeacher (for API compatibility)
+     */
+    public function teacher(): BelongsTo
+    {
+        return $this->assignedTeacher();
+    }
+
+    /**
+     * Alias for subject (category is another name for subject in course context)
+     */
+    public function category(): BelongsTo
+    {
+        return $this->subject();
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

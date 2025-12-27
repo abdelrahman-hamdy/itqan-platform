@@ -7,6 +7,7 @@ use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\User;
+use App\Enums\SessionStatus;
 
 /**
  * Interactive Report Service
@@ -53,8 +54,8 @@ class InteractiveReportService extends BaseReportSyncService
         // Interactive sessions require 80% attendance to be considered "present"
         $requiredPercentage = 80;
 
-        // 10 minutes grace period for interactive sessions (shorter than academic/quran)
-        $graceTimeMinutes = 10;
+        // Get grace period from academy settings (via course relationship)
+        $graceTimeMinutes = $session->course?->academy?->settings?->default_late_tolerance_minutes ?? 15;
 
         // Check if student was late (joined after session start)
         $sessionStart = $session->scheduled_at;
@@ -210,7 +211,7 @@ class InteractiveReportService extends BaseReportSyncService
     {
         $sessions = $course->sessions()->with('studentReports')->get();
         $completedSessions = $sessions->filter(function ($session) {
-            return $session->status?->value === 'completed' || $session->status === 'completed';
+            return $session->status === SessionStatus::COMPLETED;
         });
 
         $totalCompleted = $completedSessions->count();
@@ -241,9 +242,9 @@ class InteractiveReportService extends BaseReportSyncService
                     $status = $status->value;
                 }
 
-                if (in_array($status, ['attended', 'leaved'])) {
+                if (in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LEAVED->value])) {
                     $attended++;
-                } elseif ($status === 'late') {
+                } elseif ($status === AttendanceStatus::LATE->value) {
                     $late++;
                     $attended++; // Late counts as attended
                 } else {
@@ -280,7 +281,7 @@ class InteractiveReportService extends BaseReportSyncService
         $totalSessions = $sessions->count();
 
         $completedSessions = $sessions->filter(function ($session) {
-            return $session->status?->value === 'completed' || $session->status === 'completed';
+            return $session->status === SessionStatus::COMPLETED;
         })->count();
 
         // Calculate homework metrics

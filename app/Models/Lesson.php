@@ -163,8 +163,16 @@ class Lesson extends Model implements HasMedia
             ->exists();
     }
 
+    /**
+     * Get comments/reviews for this lesson
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(CourseReview::class, 'lesson_id');
+    }
+
     // Methods
-    public function markAsWatched(User $user, ?int $watchTimeSeconds = null): LessonProgress
+    public function markAsWatched(User $user, ?int $watchTimeSeconds = null): StudentProgress
     {
         $progress = $this->progress()->updateOrCreate(
             ['user_id' => $user->id],

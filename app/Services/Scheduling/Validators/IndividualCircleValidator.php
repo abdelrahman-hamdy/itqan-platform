@@ -2,11 +2,13 @@
 
 namespace App\Services\Scheduling\Validators;
 
+use App\Enums\SubscriptionStatus;
 use App\Models\QuranIndividualCircle;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use App\Services\SessionManagementService;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 /**
  * Validator for Individual Quran Circles (Subscription-based)
@@ -89,7 +91,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             return ValidationResult::error('لا يوجد اشتراك نشط لهذه الحلقة');
         }
 
-        if ($subscription->status !== 'active') {
+        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
             return ValidationResult::error('الاشتراك غير نشط. يجب تفعيل الاشتراك أولاً');
         }
 
@@ -168,7 +170,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
     {
         $subscription = $this->circle->subscription;
 
-        if (!$subscription || $subscription->status !== 'active') {
+        if (!$subscription || $subscription->status !== SubscriptionStatus::ACTIVE) {
             return [
                 'status' => 'inactive',
                 'message' => 'الاشتراك غير نشط',
@@ -188,7 +190,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         $totalSessions = $subscription->total_sessions;
         $scheduledSessions = $this->circle->sessions()
-            ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->count();
         $remaining = $totalSessions - $scheduledSessions;
 
@@ -203,7 +205,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         $timezone = AcademyContextService::getTimezone();
         $futureScheduled = $this->circle->sessions()
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->where('scheduled_at', '>', Carbon::now($timezone))
             ->count();
 
@@ -239,7 +241,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             // Calculate remaining based on circle's total_sessions field
             $totalSessions = $this->circle->total_sessions ?? 0;
             $usedSessions = $this->circle->sessions()
-                ->whereIn('status', ['completed', 'scheduled', 'in_progress'])
+                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
                 ->count();
             $remainingSessions = max(0, $totalSessions - $usedSessions);
 

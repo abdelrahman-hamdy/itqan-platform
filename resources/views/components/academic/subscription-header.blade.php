@@ -4,9 +4,12 @@
 ])
 
 @php
+    use App\Enums\SubscriptionStatus;
+
     $student = $subscription->student;
     $teacher = $subscription->teacher;
     $isTeacher = $viewType === 'teacher';
+    $statusValue = is_object($subscription->status) ? $subscription->status->value : $subscription->status;
 @endphp
 
 <!-- Enhanced Academic Subscription Header -->
@@ -23,10 +26,10 @@
                     @endif
                 </h1>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                    {{ $subscription->status === 'active' ? 'bg-green-100 text-green-800' : 
-                       ($subscription->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                    {{ $subscription->status === 'active' ? 'نشط' : 
-                       ($subscription->status === 'pending' ? 'قيد الانتظار' : 'مكتمل') }}
+                    {{ $statusValue === SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-800' :
+                       ($statusValue === SubscriptionStatus::PENDING->value ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
+                    {{ $statusValue === SubscriptionStatus::ACTIVE->value ? 'نشط' :
+                       ($statusValue === SubscriptionStatus::PENDING->value ? 'قيد الانتظار' : 'مكتمل') }}
                 </span>
             </div>
             

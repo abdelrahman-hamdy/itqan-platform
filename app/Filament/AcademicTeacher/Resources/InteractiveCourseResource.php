@@ -13,6 +13,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
+use App\Enums\InteractiveCourseStatus;
 
 class InteractiveCourseResource extends BaseAcademicTeacherResource
 {
@@ -261,16 +264,16 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
     public static function table(Table $table): Table
     {
         return $table
-            ->columns(static::getAcademicTeacherTableColumns())
-            ->filters(static::getAcademicTeacherTableFilters())
-            ->actions(static::getAcademicTeacherTableActions())
-            ->bulkActions(static::supportsBulkActions() ? static::getAcademicTeacherBulkActions() : []);
+            ->columns(static::getTableColumns())
+            ->filters(static::getTableFilters())
+            ->actions(static::getTableActions())
+            ->bulkActions(static::supportsBulkActions() ? static::getBulkActions() : []);
     }
 
     /**
      * Get table columns customized for academic teachers
      */
-    protected static function getAcademicTeacherTableColumns(): array
+    protected static function getTableColumns(): array
     {
         return [
             Tables\Columns\TextColumn::make('course_code')
@@ -350,7 +353,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
     /**
      * Get table filters for academic teachers
      */
-    protected static function getAcademicTeacherTableFilters(): array
+    protected static function getTableFilters(): array
     {
         return [
             Tables\Filters\SelectFilter::make('status')
@@ -374,9 +377,9 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
 
             Tables\Filters\Filter::make('upcoming')
                 ->label('دورات قادمة')
-                ->query(fn (Builder $query): Builder => 
+                ->query(fn (Builder $query): Builder =>
                     $query->where('start_date', '>=', now())
-                          ->where('status', '!=', 'cancelled')
+                          ->where('status', '!=', InteractiveCourseStatus::CANCELLED->value)
                 ),
         ];
     }
@@ -384,7 +387,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
     /**
      * Get table actions for academic teachers
      */
-    protected static function getAcademicTeacherTableActions(): array
+    protected static function getTableActions(): array
     {
         return [
             Tables\Actions\ViewAction::make()
@@ -432,7 +435,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
     /**
      * Get bulk actions for academic teachers
      */
-    protected static function getAcademicTeacherBulkActions(): array
+    protected static function getBulkActions(): array
     {
         return [
             Tables\Actions\BulkAction::make('update_status')

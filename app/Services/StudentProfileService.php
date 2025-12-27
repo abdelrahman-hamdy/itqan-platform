@@ -7,6 +7,7 @@ use App\Models\StudentProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Enums\SessionStatus;
 
 /**
  * Service for managing student profiles.

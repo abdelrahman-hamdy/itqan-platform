@@ -10,6 +10,7 @@ use App\Models\QuranSession;
 use App\Services\LiveKitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class MeetingTokenController extends Controller
 {
@@ -214,7 +215,7 @@ class MeetingTokenController extends Controller
         $status = $session->status->value ?? $session->status;
 
         return $now->between($joinStart, $joinEnd)
-            && !in_array($status, ['cancelled', 'completed']);
+            && !in_array($status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
     }
 
     /**

@@ -16,6 +16,9 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use App\Services\AcademyContextService;
 
+/**
+ * @property Form $form
+ */
 class PlatformSettingsPage extends Page implements HasForms
 {
     use InteractsWithForms;

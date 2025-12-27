@@ -249,7 +249,8 @@
                         newMemField.classList.add('hidden');
                     }
 
-                    if (homework.has_review) {
+                    // Show review field if either regular review OR comprehensive review is assigned
+                    if (homework.has_review || homework.has_comprehensive_review) {
                         reviewField.classList.remove('hidden');
                     } else {
                         reviewField.classList.add('hidden');
@@ -373,13 +374,23 @@
 
                 if (result.success) {
                     showNotification('تم حفظ التقييم بنجاح', 'success');
-                    window.dispatchEvent(new CustomEvent('close-evaluation-modal'));
-                    document.body.style.overflow = '';
 
-                    // Reload page to show updated data
+                    // Update the student card in place instead of reloading (to preserve LiveKit connection)
+                    const studentId = data.student_id;
+                    if (result.report && typeof updateStudentCardDisplay === 'function') {
+                        updateStudentCardDisplay(studentId, result.report);
+                    }
+
+                    // Update the local cache if it exists
+                    if (typeof window.currentReportData !== 'undefined') {
+                        window.currentReportData = result.report;
+                    }
+
+                    // Close modal after short delay
                     setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
+                        window.dispatchEvent(new CustomEvent('close-evaluation-modal'));
+                        document.body.style.overflow = '';
+                    }, 800);
                 } else {
                     showNotification(result.message || 'خطأ في حفظ التقييم', 'error');
                 }

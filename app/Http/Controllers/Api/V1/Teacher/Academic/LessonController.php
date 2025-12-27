@@ -7,6 +7,7 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicIndividualLesson;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class LessonController extends Controller
 {

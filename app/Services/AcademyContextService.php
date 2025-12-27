@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Support\Facades\Session;
+use App\Enums\SessionStatus;
 
 class AcademyContextService
 {

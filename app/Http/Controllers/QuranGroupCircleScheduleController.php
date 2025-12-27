@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\User;
@@ -303,7 +305,7 @@ class QuranGroupCircleScheduleController extends Controller
         // Get upcoming sessions
         $upcomingSessions = $circle->sessions()
             ->where('scheduled_at', '>=', now())
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->orderBy('scheduled_at')
             ->limit(10)
             ->get();
@@ -355,7 +357,7 @@ class QuranGroupCircleScheduleController extends Controller
                 'description' => $request->description,
                 'scheduled_at' => Carbon::parse($request->scheduled_at),
                 'duration_minutes' => $request->duration_minutes ?: $circle->default_duration_minutes ?: 60,
-                'status' => 'scheduled',
+                'status' => SessionStatus::SCHEDULED,
                 'is_auto_generated' => false,
                 'academy_id' => $circle->academy_id,
             ]);
@@ -439,13 +441,13 @@ class QuranGroupCircleScheduleController extends Controller
 
         // Get detailed session statistics for attendance analysis
         $totalSessions = $circle->sessions->count();
-        $completedSessions = $circle->sessions->where('status', 'completed');
-        $scheduledSessions = $circle->sessions->where('status', 'scheduled');
+        $completedSessions = $circle->sessions->where('status', SessionStatus::COMPLETED->value);
+        $scheduledSessions = $circle->sessions->where('status', SessionStatus::SCHEDULED->value);
 
         // Enhanced attendance analysis with different statuses
-        $attendedSessions = $completedSessions->where('attendance_status', 'attended')->count();
-        $lateSessions = $completedSessions->where('attendance_status', 'late')->count();
-        $absentSessions = $completedSessions->where('attendance_status', 'absent')->count();
+        $attendedSessions = $completedSessions->where('attendance_status', AttendanceStatus::ATTENDED->value)->count();
+        $lateSessions = $completedSessions->where('attendance_status', AttendanceStatus::LATE->value)->count();
+        $absentSessions = $completedSessions->where('attendance_status', AttendanceStatus::ABSENT->value)->count();
         $leftEarlySessions = $completedSessions->where('attendance_status', 'left_early')->count();
 
         // For sessions without explicit attendance_status, assume attended if completed
@@ -477,7 +479,7 @@ class QuranGroupCircleScheduleController extends Controller
             'scheduled_sessions' => $scheduledSessions->count(),
             'upcoming_sessions' => $circle->sessions()
                 ->where('scheduled_at', '>=', now())
-                ->where('status', 'scheduled')
+                ->where('status', SessionStatus::SCHEDULED->value)
                 ->count(),
 
             // Group circle specific metrics
@@ -512,7 +514,7 @@ class QuranGroupCircleScheduleController extends Controller
      */
     private function calculateGroupConsistencyScore($circle): float
     {
-        $sessions = $circle->sessions()->where('status', 'completed')->orderBy('scheduled_at')->get();
+        $sessions = $circle->sessions()->where('status', SessionStatus::COMPLETED->value)->orderBy('scheduled_at')->get();
 
         if ($sessions->count() < 2) {
             return 0;
@@ -520,7 +522,7 @@ class QuranGroupCircleScheduleController extends Controller
 
         $completionPattern = $sessions->map(function ($session) {
             // Score based on session completion and quality
-            $baseScore = $session->status === 'completed' ? 1.0 : 0.0;
+            $baseScore = $session->status === SessionStatus::COMPLETED ? 1.0 : 0.0;
 
             // Bonus for quality metrics
             if ($session->recitation_quality > 0) {
@@ -547,7 +549,7 @@ class QuranGroupCircleScheduleController extends Controller
 
         $scheduledSessions = $circle->sessions()->where('status', '!=', 'template')->get();
         $completedOnTime = $scheduledSessions->filter(function ($session) {
-            return $session->status === 'completed' &&
+            return $session->status === SessionStatus::COMPLETED &&
                    (! $session->started_at || $session->started_at->lte($session->scheduled_at->addMinutes(15)));
         })->count();
 
@@ -573,16 +575,16 @@ class QuranGroupCircleScheduleController extends Controller
 
         $stats = [
             'total_sessions_generated' => $circle->sessions()->where('is_auto_generated', true)->count(),
-            'completed_sessions' => $circle->sessions()->where('status', 'completed')->count(),
+            'completed_sessions' => $circle->sessions()->where('status', SessionStatus::COMPLETED->value)->count(),
             'upcoming_sessions' => $circle->sessions()
                 ->where('scheduled_at', '>=', now())
-                ->where('status', 'scheduled')
+                ->where('status', SessionStatus::SCHEDULED->value)
                 ->count(),
-            'cancelled_sessions' => $circle->sessions()->where('status', 'cancelled')->count(),
+            'cancelled_sessions' => $circle->sessions()->where('status', SessionStatus::CANCELLED->value)->count(),
             'enrolled_students' => $circle->enrolled_students,
-            'attendance_rate' => $circle->sessions()->where('status', 'completed')->count() > 0
-                ? ($circle->sessions()->where('attendance_status', 'attended')->count() /
-                   $circle->sessions()->where('status', 'completed')->count()) * 100
+            'attendance_rate' => $circle->sessions()->where('status', SessionStatus::COMPLETED->value)->count() > 0
+                ? ($circle->sessions()->where('attendance_status', AttendanceStatus::ATTENDED->value)->count() /
+                   $circle->sessions()->where('status', SessionStatus::COMPLETED->value)->count()) * 100
                 : 0,
             'schedule_active' => $circle->schedule && $circle->schedule->is_active,
             'last_generated_at' => $circle->schedule?->last_generated_at?->format('Y-m-d H:i'),
@@ -625,14 +627,18 @@ class QuranGroupCircleScheduleController extends Controller
             ->whereIn('session_id', $sessions->pluck('id'))
             ->get();
 
-        $attendedReports = $studentReports->whereIn('attendance_status', ['attended', 'late', 'leaved']);
+        $attendedReports = $studentReports->whereIn('attendance_status', [
+            AttendanceStatus::ATTENDED->value,
+            AttendanceStatus::LATE->value,
+            AttendanceStatus::LEAVED->value
+        ]);
 
         $stats = [
             'total_sessions' => $circle->sessions()->count(),
             'attended_sessions' => $attendedReports->count(),
-            'missed_sessions' => $studentReports->where('attendance_status', 'absent')->count(),
-            'attendance_rate' => $sessions->where('status', 'completed')->count() > 0 ?
-                ($attendedReports->count() / $sessions->where('status', 'completed')->count()) * 100 : 0,
+            'missed_sessions' => $studentReports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
+            'attendance_rate' => $sessions->where('status', SessionStatus::COMPLETED->value)->count() > 0 ?
+                ($attendedReports->count() / $sessions->where('status', SessionStatus::COMPLETED->value)->count()) * 100 : 0,
             'avg_memorization_degree' => $studentReports->whereNotNull('new_memorization_degree')->avg('new_memorization_degree') ?: 0,
             'avg_reservation_degree' => $studentReports->whereNotNull('reservation_degree')->avg('reservation_degree') ?: 0,
             'avg_attendance_percentage' => $studentReports->avg('attendance_percentage') ?: 0,

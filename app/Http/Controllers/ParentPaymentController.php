@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 /**
  * Parent Payment Controller
@@ -77,7 +78,7 @@ class ParentPaymentController extends Controller
                 ->count(),
             'successful_payments' => Payment::whereIn('user_id', $childUserIds)
                 ->where('academy_id', $parent->academy_id)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->count(),
         ];
 

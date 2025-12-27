@@ -3,8 +3,10 @@
 namespace App\Services\Reports;
 
 use App\DTOs\Reports\AttendanceDTO;
+use App\Enums\AttendanceStatus;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 /**
  * Base Report Service
@@ -17,18 +19,34 @@ abstract class BaseReportService
     /**
      * Calculate attendance statistics from session reports
      *
+     * Uses standard counting: attended + late = total attendance
+     * For points-based calculation (late=0.5), use calculatePointsBasedAttendanceRate()
+     *
      * @param Collection $reports Collection of session reports
      * @param int $totalSessions Total number of sessions
      * @return AttendanceDTO
      */
     protected function calculateAttendanceFromReports(Collection $reports, int $totalSessions): AttendanceDTO
     {
-        $attended = $reports->whereIn('attendance_status', ['attended', 'present'])->count();
-        $late = $reports->where('attendance_status', 'late')->count();
-        $absent = $reports->where('attendance_status', 'absent')->count();
+        $attended = $reports->filter(function ($report) {
+            $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+            return $status === AttendanceStatus::ATTENDED->value;
+        })->count();
 
+        $late = $reports->filter(function ($report) {
+            $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+            return $status === AttendanceStatus::LATE->value;
+        })->count();
+
+        $absent = $reports->filter(function ($report) {
+            $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+            return $status === AttendanceStatus::ABSENT->value;
+        })->count();
+
+        // Late students are counted as attended for attendance rate
+        $totalAttended = $attended + $late;
         $attendanceRate = $totalSessions > 0
-            ? round(($attended / $totalSessions) * 100, 2)
+            ? round(($totalAttended / $totalSessions) * 100, 2)
             : 0;
 
         $avgDuration = $reports->avg('actual_attendance_minutes') ?? 0;
@@ -112,8 +130,8 @@ abstract class BaseReportService
                 : $report->attendance_status;
 
             return match ($status) {
-                'attended', 'present' => 1,
-                'late' => 0.5,
+                AttendanceStatus::ATTENDED->value => 1,
+                AttendanceStatus::LATE->value => 0.5,
                 default => 0,
             };
         });

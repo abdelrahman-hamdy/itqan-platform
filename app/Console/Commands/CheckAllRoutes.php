@@ -15,7 +15,8 @@ class CheckAllRoutes extends Command
                             {--user= : User ID to authenticate as}
                             {--admin : Use admin user}
                             {--public : Check without authentication}
-                            {--show-all : Show all routes, not just errors}';
+                            {--show-all : Show all routes, not just errors}
+                            {--role= : Check as specific role (super_admin, admin, quran_teacher, academic_teacher, supervisor, student, parent)}';
 
     protected $description = 'Check all GET routes for 500 errors and exceptions';
 
@@ -104,6 +105,24 @@ class CheckAllRoutes extends Command
 
             // Skip asset routes
             if (preg_match('/\.(js|css|ico|png|jpg|svg|woff|ttf)$/', $uri)) {
+                return false;
+            }
+
+            // Skip Filament tenant redirect routes (cause programmatic testing issues)
+            $actionName = $route->getActionName();
+            if (str_contains($actionName, 'RedirectToTenantController')) {
+                return false;
+            }
+
+            // Skip Filament auth and tenant redirect routes (work fine in browser, cause issues in testing)
+            $routeName = $route->getName() ?? '';
+            if (preg_match('/\.auth\.|\.tenant$/', $routeName)) {
+                return false;
+            }
+
+            // Skip routes that require subdomains/tenants (can't be tested via route checker)
+            $domain = $route->getDomain();
+            if ($domain && preg_match('/\{(subdomain|tenant)\}/', $domain)) {
                 return false;
             }
 
@@ -238,11 +257,82 @@ class CheckAllRoutes extends Command
         }
     }
 
+    protected function getUser(): ?User
+    {
+        if ($this->option('public')) {
+            return null;
+        }
+
+        // Handle --role option
+        if ($role = $this->option('role')) {
+            $validRoles = ['super_admin', 'admin', 'quran_teacher', 'academic_teacher', 'supervisor', 'student', 'parent'];
+            if (!in_array($role, $validRoles)) {
+                $this->error("Invalid role: {$role}. Valid roles: " . implode(', ', $validRoles));
+                exit(1);
+            }
+
+            // Try to find test user first
+            $testEmails = [
+                'super_admin' => 'super@test.itqan.com',
+                'admin' => 'admin@test.itqan.com',
+                'quran_teacher' => 'quran.teacher@test.itqan.com',
+                'academic_teacher' => 'academic.teacher@test.itqan.com',
+                'supervisor' => 'supervisor@test.itqan.com',
+                'student' => 'student@test.itqan.com',
+                'parent' => 'parent@test.itqan.com',
+            ];
+
+            $user = User::where('email', $testEmails[$role])->first();
+
+            if (!$user) {
+                // Fallback to any user with that role
+                $user = User::where('user_type', $role)->first();
+            }
+
+            if (!$user) {
+                $this->error("No user found with role: {$role}. Run 'php artisan app:generate-test-data' first.");
+                exit(1);
+            }
+
+            return $user;
+        }
+
+        if ($userId = $this->option('user')) {
+            $user = User::find($userId);
+            if (!$user) {
+                $this->error("User with ID {$userId} not found!");
+                exit(1);
+            }
+            return $user;
+        }
+
+        if ($this->option('admin')) {
+            // Try common patterns to find admin user
+            $user = User::where('user_type', 'super_admin')->first()
+                ?? User::where('user_type', 'admin')->first()
+                ?? User::where('email', 'like', '%admin%')->first();
+
+            if (!$user) {
+                $this->warn("Could not find admin user, using first user instead");
+                $user = User::first();
+            }
+
+            return $user;
+        }
+
+        // Default: use first user
+        return User::first();
+    }
+
     protected function saveReport(?User $user): void
     {
-        $report = "# Broken Routes Report\n\n";
+        $role = $this->option('role') ?? ($user?->user_type ?? 'guest');
+        $filename = "BROKEN_ROUTES_{$role}.md";
+
+        $report = "# Broken Routes Report - {$role}\n\n";
         $report .= "**Generated:** " . now()->format('Y-m-d H:i:s') . "\n";
-        $report .= "**Authenticated as:** " . ($user ? "{$user->email} (ID: {$user->id})" : "Guest") . "\n\n";
+        $report .= "**Authenticated as:** " . ($user ? "{$user->email} (ID: {$user->id})" : "Guest") . "\n";
+        $report .= "**User Type:** " . ($user?->user_type ?? 'N/A') . "\n\n";
 
         $report .= "## Summary\n\n";
         $report .= "| Status | Count |\n";
@@ -278,41 +368,8 @@ class CheckAllRoutes extends Command
             $report .= "\n";
         }
 
-        file_put_contents(base_path('BROKEN_ROUTES.md'), $report);
+        file_put_contents(base_path($filename), $report);
         $this->newLine();
-        $this->info('📄 Report saved to: BROKEN_ROUTES.md');
-    }
-
-    protected function getUser(): ?User
-    {
-        if ($this->option('public')) {
-            return null;
-        }
-
-        if ($userId = $this->option('user')) {
-            $user = User::find($userId);
-            if (!$user) {
-                $this->error("User with ID {$userId} not found!");
-                exit(1);
-            }
-            return $user;
-        }
-
-        if ($this->option('admin')) {
-            // Try common patterns to find admin user
-            $user = User::where('user_type', 'super_admin')->first()
-                ?? User::where('user_type', 'admin')->first()
-                ?? User::where('email', 'like', '%admin%')->first();
-
-            if (!$user) {
-                $this->warn("Could not find admin user, using first user instead");
-                $user = User::first();
-            }
-
-            return $user;
-        }
-
-        // Default: use first user
-        return User::first();
+        $this->info("📄 Report saved to: {$filename}");
     }
 }

@@ -7,6 +7,7 @@ use App\Models\BusinessServiceRequest;
 use App\Models\PortfolioItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class BusinessServiceController extends Controller
 {

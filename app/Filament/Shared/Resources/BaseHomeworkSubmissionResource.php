@@ -9,6 +9,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Enums\SubscriptionStatus;
 
 /**
  * Base Homework Submission Resource
@@ -168,7 +169,7 @@ abstract class BaseHomeworkSubmissionResource extends Resource
         $schema[] = Forms\Components\Select::make('status')
             ->label('الحالة')
             ->options([
-                'pending' => 'قيد المراجعة',
+                SubscriptionStatus::PENDING->value => 'قيد المراجعة',
                 'graded' => 'تم التصحيح',
                 'returned' => 'تم الإرجاع',
             ])
@@ -225,13 +226,13 @@ abstract class BaseHomeworkSubmissionResource extends Resource
                 ->label('الحالة')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
-                    'pending' => 'warning',
+                    SubscriptionStatus::PENDING->value => 'warning',
                     'graded' => 'success',
                     'returned' => 'info',
                     default => 'gray',
                 })
                 ->formatStateUsing(fn (string $state): string => match ($state) {
-                    'pending' => 'قيد المراجعة',
+                    SubscriptionStatus::PENDING->value => 'قيد المراجعة',
                     'graded' => 'تم التصحيح',
                     'returned' => 'تم الإرجاع',
                     default => $state,
@@ -283,7 +284,7 @@ abstract class BaseHomeworkSubmissionResource extends Resource
             Tables\Filters\SelectFilter::make('status')
                 ->label('الحالة')
                 ->options([
-                    'pending' => 'قيد المراجعة',
+                    SubscriptionStatus::PENDING->value => 'قيد المراجعة',
                     'graded' => 'تم التصحيح',
                     'returned' => 'تم الإرجاع',
                 ]),

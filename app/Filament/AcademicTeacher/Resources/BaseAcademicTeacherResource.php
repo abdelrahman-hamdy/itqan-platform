@@ -13,14 +13,6 @@ use Illuminate\Database\Eloquent\Builder;
 abstract class BaseAcademicTeacherResource extends SharedBaseTeacherResource
 {
     /**
-     * Alias for getCurrentTeacherAcademy() to maintain backward compatibility
-     */
-    protected static function getCurrentAcademy(): ?\App\Models\Academy
-    {
-        return static::getCurrentTeacherAcademy();
-    }
-
-    /**
      * Override to add Academic teacher specific query scoping
      * This method adds additional filtering specific to Academic teachers
      */
@@ -74,21 +66,5 @@ abstract class BaseAcademicTeacherResource extends SharedBaseTeacherResource
 
         // Allow parent's default check (academy-based)
         return parent::canEdit($record);
-    }
-
-    /**
-     * Alias for modifyFormForTeachers() to maintain backward compatibility
-     */
-    protected static function modifyFormForAcademicTeachers(array $schema): array
-    {
-        return static::modifyFormForTeachers($schema);
-    }
-
-    /**
-     * Alias for getTeacherTableColumns() to maintain backward compatibility
-     */
-    protected static function getAcademicTeacherTableColumns(): array
-    {
-        return [];
     }
 }

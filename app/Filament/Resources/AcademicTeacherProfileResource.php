@@ -15,6 +15,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use App\Services\AcademyContextService;
 use Filament\Notifications\Notification;
+use App\Enums\SubscriptionStatus;
 
 class AcademicTeacherProfileResource extends BaseResource
 {
@@ -285,7 +286,6 @@ class AcademicTeacherProfileResource extends BaseResource
                                     ->where('is_active', true)
                                     ->orderBy('sort_order')
                                     ->orderBy('name_ar')
-                                    ->get()
                                     ->pluck('name_ar', 'id')
                                     ->toArray();
                                 
@@ -363,11 +363,11 @@ class AcademicTeacherProfileResource extends BaseResource
                         Forms\Components\Select::make('approval_status')
                             ->label('حالة الموافقة')
                             ->options([
-                                'pending' => 'قيد الانتظار',
+                                SubscriptionStatus::PENDING->value => 'قيد الانتظار',
                                 'approved' => 'موافق عليه',
                                 'rejected' => 'مرفوض',
                             ])
-                            ->default('pending')
+                            ->default(SubscriptionStatus::PENDING->value)
                             ->required()
                             ->helperText('يجب أن يكون المدرس موافق عليه ونشط ليظهر للطلاب'),
                         Forms\Components\DateTimePicker::make('approved_at')
@@ -437,18 +437,18 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->label('حالة الموافقة')
                     ->formatStateUsing(fn (?string $state): string => match($state) {
                         'approved' => 'موافق عليه',
-                        'pending' => 'قيد الانتظار',
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
                         'rejected' => 'مرفوض',
                         default => 'قيد الانتظار'
                     })
                     ->colors([
                         'success' => 'approved',
-                        'warning' => 'pending',
+                        'warning' => SubscriptionStatus::PENDING->value,
                         'danger' => 'rejected',
                     ])
                     ->icon(fn (?string $state): string => match($state) {
                         'approved' => 'heroicon-o-check-circle',
-                        'pending' => 'heroicon-o-clock',
+                        SubscriptionStatus::PENDING->value => 'heroicon-o-clock',
                         'rejected' => 'heroicon-o-x-circle',
                         default => 'heroicon-o-question-mark-circle'
                     }),
@@ -470,7 +470,7 @@ class AcademicTeacherProfileResource extends BaseResource
                 Tables\Filters\SelectFilter::make('approval_status')
                     ->label('حالة الموافقة')
                     ->options([
-                        'pending' => 'قيد الانتظار',
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
                         'approved' => 'موافق عليه',
                         'rejected' => 'مرفوض',
                     ]),

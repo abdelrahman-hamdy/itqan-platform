@@ -7,6 +7,7 @@ use App\Models\InteractiveCourse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class AcademicIndividualLessonController extends Controller
 {
@@ -92,13 +93,17 @@ class AcademicIndividualLessonController extends Controller
 
         // Get sessions for this subscription (matching Quran circle pattern)
         $upcomingSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', ['scheduled', 'ongoing'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
             ->orderBy('scheduled_at')
             ->with(['student', 'academicTeacher'])
             ->get();
 
         $pastSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', ['completed', 'absent', 'cancelled', 'expired'])
+            ->whereIn('status', [
+                SessionStatus::COMPLETED->value,
+                SessionStatus::ABSENT->value,
+                SessionStatus::CANCELLED->value
+            ])
             ->orderBy('scheduled_at', 'desc')
             ->with(['student', 'academicTeacher'])
             ->get();
@@ -136,15 +141,15 @@ class AcademicIndividualLessonController extends Controller
             'academicSubject',
             'academicGradeLevel',
             'sessions' => function ($query) {
-                $query->where('status', 'completed')->orderBy('ended_at', 'desc');
+                $query->where('status', SessionStatus::COMPLETED->value)->orderBy('ended_at', 'desc');
             },
         ]);
 
         // Calculate progress statistics
         $stats = [
             'total_sessions' => $lessonModel->sessions()->count(),
-            'completed_sessions' => $lessonModel->sessions()->where('status', 'completed')->count(),
-            'average_grade' => $lessonModel->sessions()->where('status', 'completed')->avg('session_grade'),
+            'completed_sessions' => $lessonModel->sessions()->where('status', SessionStatus::COMPLETED->value)->count(),
+            'average_grade' => $lessonModel->sessions()->where('status', SessionStatus::COMPLETED->value)->avg('session_grade'),
             'attendance_rate' => 0,
         ];
 

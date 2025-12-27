@@ -8,6 +8,7 @@ use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Enums\SessionStatus;
 
 class CourseController extends Controller
 {
@@ -126,8 +127,6 @@ class CourseController extends Controller
                     'title' => $session->title,
                     'description' => $session->description,
                     'scheduled_at' => $session->scheduled_at?->toISOString(),
-                    'scheduled_date' => $session->scheduled_at?->toDateString(), // Backward compatibility
-                    'scheduled_time' => $session->scheduled_at?->format('H:i'), // Backward compatibility
                     'duration_minutes' => $session->duration_minutes,
                     'status' => $session->status->value ?? $session->status,
                 ])->toArray(),

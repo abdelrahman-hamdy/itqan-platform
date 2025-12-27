@@ -122,7 +122,7 @@
                 <!-- Quran-specific fields -->
                 <div id="quran_fields" class="space-y-4" style="display: none;">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                        <div id="quran_memorization_field">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 <i class="ri-book-line ml-1"></i>
                                 درجة الحفظ الجديد (0-10)
@@ -132,7 +132,7 @@
                                    class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary"
                                    placeholder="0.0">
                         </div>
-                        <div>
+                        <div id="quran_review_field">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 <i class="ri-refresh-line ml-1"></i>
                                 درجة المراجعة (0-10)
@@ -142,6 +142,11 @@
                                    class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary"
                                    placeholder="0.0">
                         </div>
+                    </div>
+                    <!-- No homework info message (shown when neither memorization nor review is assigned) -->
+                    <div id="quran_no_homework_message" class="hidden p-4 bg-gray-50 rounded-xl text-gray-600 text-sm text-center">
+                        <i class="ri-information-line ml-1"></i>
+                        لم يتم تعيين واجب لهذه الجلسة
                     </div>
                 </div>
 
@@ -277,6 +282,9 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
     if (reportType === 'quran') {
         quranFields.style.display = 'block';
         modalTitle.textContent = 'تعديل تقرير حلقة القرآن';
+
+        // Fetch homework configuration and conditionally show/hide degree fields
+        fetchQuranHomeworkConfig(sessionId);
     } else if (reportType === 'interactive') {
         interactiveFields.style.display = 'block';
         modalTitle.textContent = 'تعديل تقرير الكورس التفاعلي';
@@ -337,6 +345,63 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
 
     // Body overflow handled by Alpine.js open state
     document.body.style.overflow = 'hidden';
+}
+
+// Fetch homework configuration for Quran sessions and conditionally show/hide degree fields
+function fetchQuranHomeworkConfig(sessionId) {
+    const memField = document.getElementById('quran_memorization_field');
+    const reviewField = document.getElementById('quran_review_field');
+    const noHomeworkMsg = document.getElementById('quran_no_homework_message');
+
+    // Default: show both fields until we know better (fallback behavior)
+    memField.style.display = 'block';
+    reviewField.style.display = 'block';
+    noHomeworkMsg.classList.add('hidden');
+
+    // Try to fetch homework config
+    fetch(`/teacher/sessions/${sessionId}/homework`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.homework) {
+            const homework = data.homework;
+
+            // Show/hide memorization field based on has_new_memorization
+            if (homework.has_new_memorization) {
+                memField.style.display = 'block';
+            } else {
+                memField.style.display = 'none';
+            }
+
+            // Show/hide review field based on has_review OR has_comprehensive_review
+            if (homework.has_review || homework.has_comprehensive_review) {
+                reviewField.style.display = 'block';
+            } else {
+                reviewField.style.display = 'none';
+            }
+
+            // If neither is assigned, show the no homework message
+            if (!homework.has_new_memorization && !homework.has_review && !homework.has_comprehensive_review) {
+                noHomeworkMsg.classList.remove('hidden');
+            }
+        } else {
+            // No homework found - hide all degree fields and show message
+            memField.style.display = 'none';
+            reviewField.style.display = 'none';
+            noHomeworkMsg.classList.remove('hidden');
+        }
+    })
+    .catch(error => {
+        console.warn('Could not fetch homework config:', error);
+        // On error, show both fields as fallback (original behavior)
+        memField.style.display = 'block';
+        reviewField.style.display = 'block';
+        noHomeworkMsg.classList.add('hidden');
+    });
 }
 
 function closeReportModal() {
@@ -415,10 +480,35 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
             `;
             messageDiv.classList.remove('hidden');
 
-            // Reload page after short delay
+            // Update the student card in place instead of reloading (to preserve LiveKit connection)
+            const studentId = data.student_id;
+            if (result.report && typeof updateStudentCardDisplay === 'function') {
+                updateStudentCardDisplay(studentId, result.report);
+            }
+
+            // Update the local reports cache if it exists
+            if (typeof window.getReportData === 'function' || typeof reports !== 'undefined') {
+                const reportId = result.report?.id || data.report_id;
+                if (typeof reports !== 'undefined' && reports) {
+                    reports[studentId] = {
+                        id: reportId,
+                        attendance_status: result.report?.attendance_status || data.attendance_status || '',
+                        manually_evaluated: !!data.attendance_status,
+                        attendance_percentage: result.report?.attendance_percentage || null,
+                        actual_attendance_minutes: result.report?.actual_attendance_minutes || null,
+                        new_memorization_degree: result.report?.new_memorization_degree ?? data.new_memorization_degree ?? null,
+                        reservation_degree: result.report?.reservation_degree ?? data.reservation_degree ?? null,
+                        homework_degree: result.report?.homework_degree ?? data.homework_degree ?? null,
+                        notes: result.report?.notes || data.notes || ''
+                    };
+                }
+            }
+
+            // Close modal after short delay
             setTimeout(() => {
-                window.location.reload();
-            }, 1000);
+                window.dispatchEvent(new CustomEvent('close-report-modal'));
+                document.body.style.overflow = 'auto';
+            }, 800);
         } else {
             // Show error message
             messageDiv.className = 'bg-red-50 border border-red-200 rounded-lg p-4';

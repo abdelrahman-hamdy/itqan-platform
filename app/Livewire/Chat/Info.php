@@ -2,8 +2,14 @@
 
 namespace App\Livewire\Chat;
 
+use Illuminate\Support\Collection;
 use Namu\WireChat\Livewire\Chat\Info as BaseInfo;
+use App\Enums\SessionStatus;
 
+/**
+ * @property Collection $mediaAttachments
+ * @property Collection $fileAttachments
+ */
 class Info extends BaseInfo
 {
     public function getMediaAttachmentsProperty()

@@ -3,6 +3,7 @@
 namespace App\Services\Payment\Exceptions;
 
 use Exception;
+use App\Enums\SessionStatus;
 
 /**
  * Exception for webhook validation failures.

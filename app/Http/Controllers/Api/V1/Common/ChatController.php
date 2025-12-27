@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Namu\WireChat\Models\Conversation;
 use Namu\WireChat\Models\Message;
+use App\Enums\SessionStatus;
 
 class ChatController extends Controller
 {
@@ -61,7 +62,7 @@ class ChatController extends Controller
                         'id' => $conversation->lastMessage->id,
                         'body' => $conversation->lastMessage->body,
                         'type' => $conversation->lastMessage->type,
-                        'is_mine' => $conversation->lastMessage->senderable_id === $user->id,
+                        'is_mine' => $conversation->lastMessage->sendable_id === $user->id,
                         'created_at' => $conversation->lastMessage->created_at->toISOString(),
                     ] : null,
                     'unread_count' => $conversation->unread_count ?? 0,
@@ -115,8 +116,8 @@ class ChatController extends Controller
             if ($request->filled('message')) {
                 $message = Message::create([
                     'conversation_id' => $existingConversation->id,
-                    'senderable_id' => $user->id,
-                    'senderable_type' => User::class,
+                    'sendable_id' => $user->id,
+                    'sendable_type' => User::class,
                     'body' => $request->message,
                     'type' => 'text',
                 ]);
@@ -150,8 +151,8 @@ class ChatController extends Controller
         if ($request->filled('message')) {
             Message::create([
                 'conversation_id' => $conversation->id,
-                'senderable_id' => $user->id,
-                'senderable_type' => User::class,
+                'sendable_id' => $user->id,
+                'sendable_type' => User::class,
                 'body' => $request->message,
                 'type' => 'text',
             ]);
@@ -231,7 +232,7 @@ class ChatController extends Controller
         }
 
         $messages = Message::where('conversation_id', $id)
-            ->with(['senderable'])
+            ->with(['sendable'])
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 50));
 
@@ -241,12 +242,12 @@ class ChatController extends Controller
                 'body' => $message->body,
                 'type' => $message->type,
                 'attachments' => $message->attachments ?? [],
-                'is_mine' => $message->senderable_id === $user->id,
+                'is_mine' => $message->sendable_id === $user->id,
                 'sender' => [
-                    'id' => $message->senderable_id,
-                    'name' => $message->senderable?->name,
-                    'avatar' => $message->senderable?->avatar
-                        ? asset('storage/' . $message->senderable->avatar)
+                    'id' => $message->sendable_id,
+                    'name' => $message->sendable?->name,
+                    'avatar' => $message->sendable?->avatar
+                        ? asset('storage/' . $message->sendable->avatar)
                         : null,
                 ],
                 'created_at' => $message->created_at->toISOString(),
@@ -294,8 +295,8 @@ class ChatController extends Controller
 
         $messageData = [
             'conversation_id' => $conversation->id,
-            'senderable_id' => $user->id,
-            'senderable_type' => User::class,
+            'sendable_id' => $user->id,
+            'sendable_type' => User::class,
             'type' => 'text',
         ];
 
@@ -355,25 +356,13 @@ class ChatController extends Controller
             return $this->notFound(__('Conversation not found.'));
         }
 
-        // Mark all messages as read
-        $unreadMessages = Message::where('conversation_id', $id)
-            ->whereDoesntHave('reads', function ($q) use ($user) {
-                $q->where('readable_id', $user->id)
-                    ->where('readable_type', User::class);
-            })
-            ->get();
-
-        foreach ($unreadMessages as $message) {
-            $message->reads()->create([
-                'readable_id' => $user->id,
-                'readable_type' => User::class,
-                'read_at' => now(),
-            ]);
-        }
+        // Mark conversation as read using WireChat's API
+        $unreadCount = $conversation->unreadMessagesCount($user);
+        $conversation->markAsRead($user);
 
         return $this->success([
             'marked' => true,
-            'count' => $unreadMessages->count(),
+            'count' => $unreadCount,
         ], __('Conversation marked as read'));
     }
 
@@ -387,18 +376,13 @@ class ChatController extends Controller
     {
         $user = $request->user();
 
-        $conversationIds = Conversation::whereHas('participants', function ($q) use ($user) {
+        // Get all conversations for the user and sum their unread counts
+        $conversations = Conversation::whereHas('participants', function ($q) use ($user) {
             $q->where('participantable_id', $user->id)
                 ->where('participantable_type', User::class);
-        })->pluck('id');
+        })->get();
 
-        $unreadCount = Message::whereIn('conversation_id', $conversationIds)
-            ->whereDoesntHave('reads', function ($q) use ($user) {
-                $q->where('readable_id', $user->id)
-                    ->where('readable_type', User::class);
-            })
-            ->where('senderable_id', '!=', $user->id)
-            ->count();
+        $unreadCount = $conversations->sum(fn($conv) => $conv->unreadMessagesCount($user));
 
         return $this->success([
             'unread_count' => $unreadCount,

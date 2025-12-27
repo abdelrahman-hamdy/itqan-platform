@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\Traits\CountsTowardsSubscription;
 use Carbon\Carbon;
@@ -95,10 +96,10 @@ class AcademicSession extends BaseSession
 
     protected $attributes = [
         'session_type' => 'individual',
-        'status' => 'scheduled',
+        'status' => SessionStatus::SCHEDULED->value,
         'duration_minutes' => 60,
         'meeting_auto_generated' => true,
-        'attendance_status' => 'scheduled',
+        'attendance_status' => AttendanceStatus::ABSENT->value,  // Fixed: 'scheduled' is not a valid attendance status
         'participants_count' => 0,
         'subscription_counted' => false,
         'recording_enabled' => false,
@@ -272,9 +273,31 @@ class AcademicSession extends BaseSession
     /**
      * Unified homework submission system (polymorphic)
      */
-    public function homeworkSubmissions()
+    public function homeworkSubmissions(): \Illuminate\Database\Eloquent\Relations\MorphMany
     {
         return $this->morphMany(HomeworkSubmission::class, 'submitable');
+    }
+
+    /**
+     * Alias for academicTeacher (for API compatibility)
+     * Returns the teacher profile, not the User
+     */
+    public function teacher(): BelongsTo
+    {
+        return $this->academicTeacher();
+    }
+
+    /**
+     * Get the subject through the subscription or individual lesson
+     */
+    public function subject(): BelongsTo
+    {
+        // Subject comes through the academic subscription
+        return $this->belongsTo(AcademicSubject::class, 'subject_id')
+            ->withDefault(function () {
+                // Fallback: try to get from subscription if direct FK doesn't exist
+                return $this->academicSubscription?->academicSubject;
+            });
     }
 
     /**
@@ -348,11 +371,11 @@ class AcademicSession extends BaseSession
         $status = $this->status instanceof SessionStatus ? $this->status->value : $this->status;
 
         return match ($status) {
-            'scheduled' => 'blue',
-            'ongoing' => 'green',
-            'completed' => 'gray',
-            'cancelled' => 'red',
-            'absent' => 'amber',
+            SessionStatus::SCHEDULED->value => 'blue',
+            SessionStatus::ONGOING->value => 'green',
+            SessionStatus::COMPLETED->value => 'gray',
+            SessionStatus::CANCELLED->value => 'red',
+            SessionStatus::ABSENT->value => 'amber',
             default => 'gray'
         };
     }
@@ -483,8 +506,12 @@ class AcademicSession extends BaseSession
     public function isUserParticipant(User $user): bool
     {
         // Teacher is always a participant in their sessions
-        if ($user->user_type === 'academic_teacher' && $this->academic_teacher_id === $user->id) {
-            return true;
+        // Note: academic_teacher_id references AcademicTeacherProfile.id, not User.id
+        if ($user->user_type === 'academic_teacher') {
+            $profile = $user->academicTeacherProfile;
+            if ($profile && $profile->id === $this->academic_teacher_id) {
+                return true;
+            }
         }
 
         // Student is a participant if they're enrolled in this session
@@ -551,7 +578,7 @@ class AcademicSession extends BaseSession
             ], [
                 'teacher_id' => $this->academic_teacher_id,
                 'academy_id' => $this->academy_id,
-                'attendance_status' => 'absent', // Default to absent until meeting data is available
+                'attendance_status' => AttendanceStatus::ABSENT->value, // Default to absent until meeting data is available
                 'is_calculated' => true,
                 'evaluated_at' => now(),
             ]);
@@ -568,7 +595,8 @@ class AcademicSession extends BaseSession
      */
     public function markAsOngoing(): bool
     {
-        if (!in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY])) {
+        // Use enum's canStart() method for consistent status validation
+        if (!$this->status->canStart()) {
             return false;
         }
 
@@ -598,10 +626,15 @@ class AcademicSession extends BaseSession
                 return false;
             }
 
+            // Validate that we're not completing before start time
+            if ($session->started_at && now()->lt($session->started_at)) {
+                return false; // Cannot complete before start
+            }
+
             $updateData = array_merge([
                 'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'attendance_status' => 'present',
+                'attendance_status' => AttendanceStatus::ATTENDED->value,
             ], $additionalData);
 
             $session->update($updateData);
@@ -662,7 +695,7 @@ class AcademicSession extends BaseSession
         $this->update([
             'status' => SessionStatus::ABSENT,
             'ended_at' => now(),
-            'attendance_status' => 'absent',
+            'attendance_status' => AttendanceStatus::ABSENT->value,
             'cancellation_reason' => $reason, // Store absence reason in cancellation_reason field
         ]);
 

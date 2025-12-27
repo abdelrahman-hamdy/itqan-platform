@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +16,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * and manual override capabilities.
  *
  * This follows the same pattern as BaseSession (from Phase 5) to eliminate code duplication.
+ *
+ * @property int $id
+ * @property int $session_id
+ * @property int $student_id
+ * @property string $attendance_status
+ * @property \Carbon\Carbon|null $join_time
+ * @property \Carbon\Carbon|null $leave_time
+ * @property \Carbon\Carbon|null $auto_join_time
+ * @property \Carbon\Carbon|null $auto_leave_time
+ * @property int|null $auto_duration_minutes
+ * @property bool $auto_tracked
+ * @property bool $manually_overridden
+ * @property int|null $overridden_by
+ * @property \Carbon\Carbon|null $overridden_at
+ * @property string|null $override_reason
+ * @property array|null $meeting_events
+ * @property float|null $participation_score
+ * @property string|null $notes
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
  */
 abstract class BaseSessionAttendance extends Model
 {
@@ -26,6 +48,7 @@ abstract class BaseSessionAttendance extends Model
     protected static array $baseFillable = [
         'session_id',
         'student_id',
+        'academy_id',  // Required for tenant scoping
         'attendance_status',
         'join_time',
         'leave_time',
@@ -72,7 +95,7 @@ abstract class BaseSessionAttendance extends Model
      * Default attributes
      */
     protected $attributes = [
-        'attendance_status' => 'absent',
+        'attendance_status' => AttendanceStatus::ABSENT->value,
     ];
 
     // ========================================
@@ -126,17 +149,17 @@ abstract class BaseSessionAttendance extends Model
 
     public function scopePresent($query)
     {
-        return $query->where('attendance_status', 'attended');
+        return $query->where('attendance_status', AttendanceStatus::ATTENDED->value);
     }
 
     public function scopeAbsent($query)
     {
-        return $query->where('attendance_status', 'absent');
+        return $query->where('attendance_status', AttendanceStatus::ABSENT->value);
     }
 
     public function scopeLate($query)
     {
-        return $query->where('attendance_status', 'late');
+        return $query->where('attendance_status', AttendanceStatus::LATE->value);
     }
 
     public function scopeToday($query)
@@ -189,10 +212,10 @@ abstract class BaseSessionAttendance extends Model
     public function getAttendanceStatusInArabicAttribute(): string
     {
         return match ($this->attendance_status) {
-            'attended' => 'حاضر',
-            'absent' => 'غائب',
-            'late' => 'متأخر',
-            'leaved' => 'غادر مبكراً',
+            AttendanceStatus::ATTENDED->value => 'حاضر',
+            AttendanceStatus::ABSENT->value => 'غائب',
+            AttendanceStatus::LATE->value => 'متأخر',
+            AttendanceStatus::LEAVED->value => 'غادر مبكراً',
             default => 'غير معروفة'
         };
     }
@@ -214,7 +237,7 @@ abstract class BaseSessionAttendance extends Model
      */
     public function getAttendedFullSessionAttribute(): bool
     {
-        if ($this->attendance_status !== 'attended') {
+        if ($this->attendance_status !== AttendanceStatus::ATTENDED->value) {
             return false;
         }
 
@@ -311,7 +334,7 @@ abstract class BaseSessionAttendance extends Model
      */
     public function recordJoin(): bool
     {
-        if ($this->attendance_status === 'attended' && $this->join_time) {
+        if ($this->attendance_status === AttendanceStatus::ATTENDED->value && $this->join_time) {
             return false; // Already joined
         }
 
@@ -320,7 +343,7 @@ abstract class BaseSessionAttendance extends Model
         $lateThreshold = $this->getLateThresholdMinutes();
         $lateTime = $sessionStartTime->copy()->addMinutes($lateThreshold);
 
-        $attendanceStatus = $now->isAfter($lateTime) ? 'late' : 'attended';
+        $attendanceStatus = $now->isAfter($lateTime) ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
 
         $this->update([
             'attendance_status' => $attendanceStatus,
@@ -382,7 +405,7 @@ abstract class BaseSessionAttendance extends Model
     public function calculateAttendanceFromMeetingEvents(): string
     {
         if (! $this->meeting_events || empty($this->meeting_events)) {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
 
         $joinTime = $this->auto_join_time;
@@ -390,7 +413,7 @@ abstract class BaseSessionAttendance extends Model
         $sessionStart = $this->session->scheduled_at;
 
         if (! $joinTime) {
-            return 'absent';
+            return AttendanceStatus::ABSENT->value;
         }
 
         // Check if late
@@ -398,16 +421,16 @@ abstract class BaseSessionAttendance extends Model
         $minutesLate = $joinTime->diffInMinutes($sessionStart, false);
 
         if ($minutesLate > $lateThreshold) {
-            return 'late';
+            return AttendanceStatus::LATE->value;
         }
 
         // Check if left early
         $expectedEnd = $sessionStart->copy()->addMinutes($this->session->duration_minutes);
         if ($leaveTime && $leaveTime->isBefore($expectedEnd->subMinutes(10))) {
-            return 'leaved';
+            return AttendanceStatus::LEAVED->value;
         }
 
-        return 'attended';
+        return AttendanceStatus::ATTENDED->value;
     }
 
     /**
@@ -483,8 +506,8 @@ abstract class BaseSessionAttendance extends Model
      */
     public function canJoinSession(): bool
     {
-        return $this->session->status === 'ongoing' &&
-               $this->attendance_status === 'absent';
+        return $this->session->status === SessionStatus::ONGOING &&
+               $this->attendance_status === AttendanceStatus::ABSENT->value;
     }
 
     /**
@@ -492,7 +515,7 @@ abstract class BaseSessionAttendance extends Model
      */
     public function canLeaveSession(): bool
     {
-        return $this->attendance_status === 'attended' &&
+        return $this->attendance_status === AttendanceStatus::ATTENDED->value &&
                $this->join_time &&
                ! $this->leave_time;
     }

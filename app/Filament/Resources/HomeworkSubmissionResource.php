@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Enums\SubscriptionStatus;
 
 class HomeworkSubmissionResource extends Resource
 {
@@ -71,7 +72,7 @@ class HomeworkSubmissionResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('الحالة')
                             ->options([
-                                'pending' => 'قيد المراجعة',
+                                SubscriptionStatus::PENDING->value => 'قيد المراجعة',
                                 'graded' => 'تم التصحيح',
                                 'returned' => 'تم الإرجاع',
                             ])
@@ -150,13 +151,13 @@ class HomeworkSubmissionResource extends Resource
                     ->label('الحالة')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
+                        SubscriptionStatus::PENDING->value => 'warning',
                         'graded' => 'success',
                         'returned' => 'info',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'قيد المراجعة',
+                        SubscriptionStatus::PENDING->value => 'قيد المراجعة',
                         'graded' => 'تم التصحيح',
                         'returned' => 'تم الإرجاع',
                         default => $state,
@@ -204,7 +205,7 @@ class HomeworkSubmissionResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'pending' => 'قيد المراجعة',
+                        SubscriptionStatus::PENDING->value => 'قيد المراجعة',
                         'graded' => 'تم التصحيح',
                         'returned' => 'تم الإرجاع',
                     ]),

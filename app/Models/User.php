@@ -24,6 +24,30 @@ use Namu\WireChat\Traits\Chatable;
 
 // Course and Circle Models
 
+/**
+ * User Model
+ *
+ * @property int $id
+ * @property int|null $academy_id
+ * @property string|null $first_name
+ * @property string|null $last_name
+ * @property string|null $name
+ * @property string|null $email
+ * @property string|null $phone
+ * @property string $user_type
+ * @property bool $active_status
+ * @property \Carbon\Carbon|null $email_verified_at
+ * @property \Carbon\Carbon|null $phone_verified_at
+ * @property \Carbon\Carbon|null $last_login_at
+ * @property string|null $avatar
+ * @property \Carbon\Carbon|null $profile_completed_at
+ * @property array|null $meeting_preferences
+ * @property bool|null $auto_create_meetings
+ * @property int|null $meeting_prep_minutes
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ */
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     use HasFactory, Notifiable, HasApiTokens, Chatable, SoftDeletes;

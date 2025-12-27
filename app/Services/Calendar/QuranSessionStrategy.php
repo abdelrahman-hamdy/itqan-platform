@@ -2,6 +2,7 @@
 
 namespace App\Services\Calendar;
 
+use App\Enums\SubscriptionStatus;
 use App\Filament\Teacher\Widgets\ColorIndicatorsWidget;
 use App\Filament\Teacher\Widgets\TeacherCalendarWidget;
 use App\Models\QuranCircle;
@@ -17,6 +18,7 @@ use App\Services\SessionManagementService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 /**
  * Quran teacher session strategy
@@ -89,7 +91,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
 
                 $upcomingSessions = $circle->sessions()
                     ->where('scheduled_at', '>', now())
-                    ->whereIn('status', ['scheduled', 'ready', 'ongoing'])
+                    ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value])
                     ->count();
 
                 $currentMonthSessions = $circle->sessions()
@@ -148,7 +150,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
             ->get()
             ->map(function ($circle) {
                 $subscription = $circle->subscription;
-                $scheduledSessions = $circle->sessions()->whereIn('status', ['scheduled', 'ready', 'ongoing', 'completed'])->count();
+                $scheduledSessions = $circle->sessions()->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])->count();
                 $totalSessions = $circle->total_sessions;
                 $remainingSessions = max(0, $totalSessions - $scheduledSessions);
 
@@ -326,7 +328,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
             throw new \Exception('لا يمكن جدولة جلسات لحلقة بدون اشتراك صالح');
         }
 
-        if ($circle->subscription->status !== 'active') {
+        if ($circle->subscription->status !== SubscriptionStatus::ACTIVE) {
             throw new \Exception('الاشتراك غير نشط. يجب تفعيل الاشتراك لجدولة الجلسات');
         }
 

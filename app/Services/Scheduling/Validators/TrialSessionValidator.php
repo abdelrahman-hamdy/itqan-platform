@@ -5,6 +5,7 @@ namespace App\Services\Scheduling\Validators;
 use App\Models\QuranTrialRequest;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
+use App\Enums\SessionStatus;
 
 /**
  * Validator for Trial Sessions (Simplest - exactly 1 session)
@@ -61,11 +62,11 @@ class TrialSessionValidator implements ScheduleValidatorInterface
         }
 
         // Check if trial request is still valid
-        if ($this->trialRequest->status === 'cancelled') {
+        if ($this->trialRequest->status === SessionStatus::CANCELLED) {
             return ValidationResult::error('لا يمكن جدولة جلسة لطلب تجريبي ملغي');
         }
 
-        if ($this->trialRequest->status === 'completed') {
+        if ($this->trialRequest->status === SessionStatus::COMPLETED) {
             return ValidationResult::error('تم إكمال هذا الطلب التجريبي بالفعل');
         }
 
@@ -111,17 +112,17 @@ class TrialSessionValidator implements ScheduleValidatorInterface
     {
         // Check if trial request already has a scheduled session
         $hasScheduledSession = $this->trialRequest->trialSessions()
-            ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->exists();
 
         if ($hasScheduledSession) {
             $session = $this->trialRequest->trialSessions()
-                ->whereIn('status', ['scheduled', 'in_progress', 'completed'])
+                ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
                 ->first();
 
-            if ($session->status === 'completed') {
+            if ($session->status === SessionStatus::COMPLETED) {
                 return [
-                    'status' => 'completed',
+                    'status' => SessionStatus::COMPLETED,
                     'message' => 'تم إكمال الجلسة التجريبية',
                     'color' => 'gray',
                     'can_schedule' => false,
@@ -130,7 +131,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             }
 
             return [
-                'status' => 'scheduled',
+                'status' => SessionStatus::SCHEDULED,
                 'message' => "مجدولة: {$session->scheduled_at->format('Y/m/d H:i')}",
                 'color' => 'green',
                 'can_schedule' => false,

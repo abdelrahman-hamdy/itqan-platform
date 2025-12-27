@@ -2,6 +2,7 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Enums\AttendanceStatus;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\RelationManagers;
 use App\Models\AcademicSessionReport;
@@ -80,15 +81,17 @@ class AcademicSessionReportResource extends Resource
                         Forms\Components\Select::make('attendance_status')
                             ->label('تعديل حالة الحضور')
                             ->options([
-                                'attended' => 'حاضر',
-                                'late' => 'متأخر',
-                                'leaved' => 'غادر مبكراً',
-                                'absent' => 'غائب',
+                                AttendanceStatus::ATTENDED->value => 'حاضر',
+                                AttendanceStatus::LATE->value => 'متأخر',
+                                AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                                AttendanceStatus::ABSENT->value => 'غائب',
                             ])
-                            ->helperText('قم بالتغيير فقط إذا كان حساب الحضور التلقائي غير صحيح'),
+                            ->helperText('قم بالتغيير فقط إذا كان حساب الحضور التلقائي غير صحيح - اتركه فارغاً للاحتفاظ بالقيمة الحالية')
+                            ->dehydrated(fn (?string $state): bool => filled($state)), // Only include in form data if explicitly set
                         Forms\Components\Toggle::make('manually_evaluated')
                             ->label('تحديد كتقييم يدوي')
-                            ->helperText('حدد هذا إذا كنت تقوم بتعديل الحضور التلقائي'),
+                            ->helperText('حدد هذا إذا كنت تقوم بتعديل الحضور التلقائي')
+                            ->dehydrated(fn (bool $state): bool => $state === true), // Only include if explicitly enabled
                         Forms\Components\Textarea::make('override_reason')
                             ->label('سبب التعديل')
                             ->placeholder('اشرح سبب تعديل الحضور التلقائي...')
@@ -96,7 +99,7 @@ class AcademicSessionReportResource extends Resource
                             ->columnSpanFull(),
                     ])->columns(2)
                     ->collapsed()
-                    ->description('افتح هذا القسم فقط إذا كنت بحاجة إلى تصحيح الحضور يدوياً'),
+                    ->description('افتح هذا القسم فقط إذا كنت بحاجة إلى تصحيح الحضور يدوياً - الترك فارغاً يحافظ على القيم التلقائية'),
             ]);
     }
 
@@ -128,17 +131,17 @@ class AcademicSessionReportResource extends Resource
                     ->label('الحضور')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'attended' => 'حاضر',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
-                        'absent' => 'غائب',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::ABSENT->value => 'غائب',
                         default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
-                        'attended' => 'success',
-                        'late' => 'warning',
-                        'leaved' => 'info',
-                        'absent' => 'danger',
+                        AttendanceStatus::ATTENDED->value => 'success',
+                        AttendanceStatus::LATE->value => 'warning',
+                        AttendanceStatus::LEAVED->value => 'info',
+                        AttendanceStatus::ABSENT->value => 'danger',
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('actual_attendance_minutes')
@@ -165,10 +168,10 @@ class AcademicSessionReportResource extends Resource
                 Tables\Filters\SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options([
-                        'attended' => 'حاضر',
-                        'late' => 'متأخر',
-                        'leaved' => 'غادر مبكراً',
-                        'absent' => 'غائب',
+                        AttendanceStatus::ATTENDED->value => 'حاضر',
+                        AttendanceStatus::LATE->value => 'متأخر',
+                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::ABSENT->value => 'غائب',
                     ]),
                 Tables\Filters\Filter::make('has_homework_grade')
                     ->label('تم تقييم الواجب')

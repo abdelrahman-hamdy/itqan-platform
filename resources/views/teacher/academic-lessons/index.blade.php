@@ -4,6 +4,8 @@
 
 @section('content')
 @php
+    use App\Enums\SubscriptionStatus;
+
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
     $breadcrumbs = [
@@ -12,11 +14,11 @@
 
     $filterOptions = [
         '' => 'جميع الاشتراكات',
-        'active' => 'نشطة',
-        'pending' => 'في انتظار الدفع',
-        'expired' => 'منتهية',
-        'completed' => 'مكتملة',
-        'cancelled' => 'ملغية',
+        SubscriptionStatus::ACTIVE->value => 'نشطة',
+        SubscriptionStatus::PENDING->value => 'في انتظار الدفع',
+        SubscriptionStatus::EXPIRED->value => 'منتهية',
+        SubscriptionStatus::COMPLETED->value => 'مكتملة',
+        SubscriptionStatus::CANCELLED->value => 'ملغية',
     ];
 
     $stats = [
@@ -31,21 +33,21 @@
             'icon' => 'ri-play-circle-line',
             'bgColor' => 'bg-green-100',
             'iconColor' => 'text-green-600',
-            'value' => $subscriptions->filter(fn($s) => $s->status?->value === 'active' || $s->status === 'active')->count(),
+            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SubscriptionStatus::ACTIVE->value || $s->status === SubscriptionStatus::ACTIVE->value)->count(),
             'label' => 'اشتراكات نشطة',
         ],
         [
             'icon' => 'ri-time-line',
             'bgColor' => 'bg-yellow-100',
             'iconColor' => 'text-yellow-600',
-            'value' => $subscriptions->filter(fn($s) => $s->status?->value === 'pending' || $s->status === 'pending')->count(),
+            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SubscriptionStatus::PENDING->value || $s->status === SubscriptionStatus::PENDING->value)->count(),
             'label' => 'في انتظار الدفع',
         ],
         [
             'icon' => 'ri-check-double-line',
             'bgColor' => 'bg-violet-100',
             'iconColor' => 'text-violet-600',
-            'value' => $subscriptions->filter(fn($s) => $s->status?->value === 'completed' || $s->status === 'completed')->count(),
+            'value' => $subscriptions->filter(fn($s) => $s->status?->value === SubscriptionStatus::COMPLETED->value || $s->status === SubscriptionStatus::COMPLETED->value)->count(),
             'label' => 'مكتملة',
         ],
     ];
@@ -72,11 +74,11 @@
             // Handle both enum and string status
             $statusValue = is_object($subscription->status) ? $subscription->status->value : $subscription->status;
             $statusConfig = match($statusValue) {
-                'active' => ['class' => 'bg-green-100 text-green-800', 'text' => 'نشط'],
-                'pending' => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => 'في انتظار الدفع'],
-                'expired' => ['class' => 'bg-red-100 text-red-800', 'text' => 'منتهي'],
-                'completed' => ['class' => 'bg-violet-100 text-violet-800', 'text' => 'مكتمل'],
-                'cancelled' => ['class' => 'bg-gray-100 text-gray-800', 'text' => 'ملغي'],
+                SubscriptionStatus::ACTIVE->value => ['class' => 'bg-green-100 text-green-800', 'text' => 'نشط'],
+                SubscriptionStatus::PENDING->value => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => 'في انتظار الدفع'],
+                SubscriptionStatus::EXPIRED->value => ['class' => 'bg-red-100 text-red-800', 'text' => 'منتهي'],
+                SubscriptionStatus::COMPLETED->value => ['class' => 'bg-violet-100 text-violet-800', 'text' => 'مكتمل'],
+                SubscriptionStatus::CANCELLED->value => ['class' => 'bg-gray-100 text-gray-800', 'text' => 'ملغي'],
                 default => ['class' => 'bg-gray-100 text-gray-800', 'text' => $statusValue ?? 'غير محدد']
             };
 
@@ -103,7 +105,7 @@
             ];
 
             // Chat action for active subscriptions
-            if ($statusValue === 'active' && $subscription->student) {
+            if ($statusValue === SubscriptionStatus::ACTIVE->value && $subscription->student) {
                 $studentUser = ($subscription->student instanceof \App\Models\User) ? $subscription->student : ($subscription->student->user ?? null);
                 if ($studentUser) {
                     $actions[] = [

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Traits;
 
+use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use Illuminate\Support\Facades\Auth;
@@ -62,12 +63,12 @@ trait ManagesSessionStatistics
         $completedThisMonth = QuranSession::where('quran_teacher_id', $userId)
             ->whereMonth('scheduled_at', now()->month)
             ->whereYear('scheduled_at', now()->year)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->count();
 
         // Get pending/unscheduled sessions
         $pendingSessions = QuranSession::where('quran_teacher_id', $userId)
-            ->where('status', 'pending')
+            ->where('status', SessionStatus::UNSCHEDULED->value)
             ->count();
 
         return $this->formatStatistics($todaySessions, $upcomingSessions, $completedThisMonth, $pendingSessions);
@@ -102,12 +103,12 @@ trait ManagesSessionStatistics
         $completedThisMonth = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
             ->whereMonth('scheduled_at', now()->month)
             ->whereYear('scheduled_at', now()->year)
-            ->where('status', 'completed')
+            ->where('status', SessionStatus::COMPLETED->value)
             ->count();
 
         // Get pending/unscheduled sessions
         $pendingSessions = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
-            ->where('status', 'pending')
+            ->where('status', SessionStatus::UNSCHEDULED->value)
             ->count();
 
         return $this->formatStatistics($todaySessions, $upcomingSessions, $completedThisMonth, $pendingSessions);

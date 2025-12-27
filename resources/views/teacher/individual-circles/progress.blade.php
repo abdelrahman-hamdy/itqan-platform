@@ -327,16 +327,16 @@
                                         <!-- Attendance Status Indicator -->
                                         <div class="flex flex-col items-center flex-shrink-0">
                                             @if($session->status === App\Enums\SessionStatus::COMPLETED)
-                                                @if($session->attendance_status === 'attended')
+                                                @if($session->attendance_status === \App\Enums\AttendanceStatus::ATTENDED->value)
                                                     <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
                                                     <span class="text-xs text-green-600 font-bold">حضر</span>
-                                                @elseif($session->attendance_status === 'late')
+                                                @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LATE->value)
                                                     <div class="w-4 h-4 bg-yellow-500 rounded-full mb-1"></div>
                                                     <span class="text-xs text-yellow-600 font-bold">متأخر</span>
-                                                @elseif($session->attendance_status === 'left_early')
+                                                @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LEAVED->value)
                                                     <div class="w-4 h-4 bg-orange-500 rounded-full mb-1"></div>
                                                     <span class="text-xs text-orange-600 font-bold">غادر مبكراً</span>
-                                                @elseif($session->attendance_status === 'absent')
+                                                @elseif($session->attendance_status === \App\Enums\AttendanceStatus::ABSENT->value)
                                                     <div class="w-4 h-4 bg-red-500 rounded-full mb-1"></div>
                                                     <span class="text-xs text-red-600 font-bold">غائب</span>
                                                 @else
@@ -408,20 +408,20 @@
                                         <div class="flex flex-row md:flex-col items-center md:items-end gap-2">
                                             <!-- Status Badge -->
                                             <span class="inline-flex items-center px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-medium
-                                                {{ $session->status === App\Enums\SessionStatus::COMPLETED ? 
-                                                    ($session->attendance_status === 'attended' ? 'bg-green-100 text-green-800' :
-                                                     ($session->attendance_status === 'late' ? 'bg-yellow-100 text-yellow-800' :
-                                                      ($session->attendance_status === 'absent' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'))) :
-                                                   ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 
+                                                {{ $session->status === App\Enums\SessionStatus::COMPLETED ?
+                                                    ($session->attendance_status === \App\Enums\AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
+                                                     ($session->attendance_status === \App\Enums\AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' :
+                                                      ($session->attendance_status === \App\Enums\AttendanceStatus::ABSENT->value ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'))) :
+                                                   ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' :
                                                    ($session->status === App\Enums\SessionStatus::CANCELLED ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')) }}">
                                                 @if($session->status === App\Enums\SessionStatus::COMPLETED)
-                                                    @if($session->attendance_status === 'attended')
+                                                    @if($session->attendance_status === \App\Enums\AttendanceStatus::ATTENDED->value)
                                                         <i class="ri-check-double-line ml-1"></i> حضر وأكمل
-                                                    @elseif($session->attendance_status === 'late')
+                                                    @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LATE->value)
                                                         <i class="ri-time-line ml-1"></i> حضر متأخراً
-                                                    @elseif($session->attendance_status === 'left_early')
+                                                    @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LEAVED->value)
                                                         <i class="ri-logout-box-line ml-1"></i> غادر مبكراً
-                                                    @elseif($session->attendance_status === 'absent')
+                                                    @elseif($session->attendance_status === \App\Enums\AttendanceStatus::ABSENT->value)
                                                         <i class="ri-close-line ml-1"></i> غائب
                                                     @else
                                                         <i class="ri-check-line ml-1"></i> مكتملة

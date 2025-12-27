@@ -9,6 +9,7 @@ use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Enums\SessionStatus;
 
 class PaymentController extends Controller
 {

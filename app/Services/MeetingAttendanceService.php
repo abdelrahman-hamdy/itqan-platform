@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\MeetingCapable;
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\MeetingAttendance;
 use App\Models\User;
@@ -290,7 +291,7 @@ class MeetingAttendanceService
                                 $this->notificationService->sendAttendanceMarkedNotification(
                                     $attendance,
                                     $user,
-                                    $attendance->attendance_status ?? 'present'
+                                    $attendance->attendance_status ?? AttendanceStatus::ATTENDED->value
                                 );
 
                                 // Also notify parents
@@ -298,11 +299,12 @@ class MeetingAttendanceService
                                     $parents = $this->parentNotificationService->getParentsForStudent($user);
 
                                     foreach ($parents as $parent) {
-                                        $status = $attendance->attendance_status ?? 'present';
+                                        $status = $attendance->attendance_status ?? AttendanceStatus::ATTENDED->value;
                                         $notificationType = match($status) {
-                                            'present' => \App\Enums\NotificationType::ATTENDANCE_MARKED_PRESENT,
-                                            'absent' => \App\Enums\NotificationType::ATTENDANCE_MARKED_ABSENT,
-                                            'late' => \App\Enums\NotificationType::ATTENDANCE_MARKED_LATE,
+                                            AttendanceStatus::ATTENDED->value => \App\Enums\NotificationType::ATTENDANCE_MARKED_PRESENT,
+                                            AttendanceStatus::ABSENT->value => \App\Enums\NotificationType::ATTENDANCE_MARKED_ABSENT,
+                                            AttendanceStatus::LATE->value => \App\Enums\NotificationType::ATTENDANCE_MARKED_LATE,
+                                            AttendanceStatus::LEAVED->value => \App\Enums\NotificationType::ATTENDANCE_MARKED_LATE, // Left early treated as late for notifications
                                             default => \App\Enums\NotificationType::ATTENDANCE_MARKED_PRESENT,
                                         };
 
@@ -327,7 +329,7 @@ class MeetingAttendanceService
                                                 'session_id' => $attendance->session_id,
                                                 'status' => $status,
                                             ],
-                                            $status === 'absent' // Mark absent as important
+                                            $status === AttendanceStatus::ABSENT->value // Mark absent as important
                                         );
                                     }
                                 } catch (\Exception $e) {
@@ -467,10 +469,10 @@ class MeetingAttendanceService
 
         $stats = [
             'total_participants' => $attendances->count(),
-            'present' => $attendances->where('attendance_status', 'attended')->count(),
-            'late' => $attendances->where('attendance_status', 'late')->count(),
-            'partial' => $attendances->where('attendance_status', 'leaved')->count(),
-            'absent' => $attendances->where('attendance_status', 'absent')->count(),
+            'present' => $attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
+            'late' => $attendances->where('attendance_status', AttendanceStatus::LATE->value)->count(),
+            'partial' => $attendances->where('attendance_status', AttendanceStatus::LEAVED->value)->count(),
+            'absent' => $attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
             'average_attendance_percentage' => 0,
             'total_meeting_duration' => 0,
         ];

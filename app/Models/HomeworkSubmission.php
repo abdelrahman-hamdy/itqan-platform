@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\HomeworkSubmissionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,8 +24,6 @@ class HomeworkSubmission extends Model
         // Submission Content
         'submission_text',
         'submission_files',
-        'file_path', // Backward compatibility
-        'content', // Backward compatibility
 
         // Timing
         'due_date',
@@ -33,7 +32,6 @@ class HomeworkSubmission extends Model
         'days_late',
 
         // Grading & Scoring
-        'grade', // Backward compatibility (0-10)
         'score',
         'max_score',
         'score_percentage',
@@ -43,7 +41,6 @@ class HomeworkSubmission extends Model
         'graded_by',
 
         // Status & Progress
-        'status', // Backward compatibility
         'submission_status',
         'progress_percentage',
 
@@ -72,6 +69,7 @@ class HomeworkSubmission extends Model
         'is_late' => 'boolean',
         'days_late' => 'integer',
         'revision_count' => 'integer',
+        'submission_status' => HomeworkSubmissionStatus::class,
     ];
 
     // ========================================
@@ -93,6 +91,14 @@ class HomeworkSubmission extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
+    }
+
+    /**
+     * Alias for student() relationship (for API compatibility)
+     */
+    public function user(): BelongsTo
+    {
+        return $this->student();
     }
 
     /**
@@ -206,12 +212,6 @@ class HomeworkSubmission extends Model
             ->whereIn('submission_status', ['not_started', 'draft']);
     }
 
-    // Backward compatibility scopes (using old status field)
-    public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
     // ========================================
     // Methods
     // ========================================
@@ -231,9 +231,8 @@ class HomeworkSubmission extends Model
             'is_late' => $isLate,
             'days_late' => $daysLate,
             'submission_status' => $isLate ? 'late' : 'submitted',
-            'status' => 'submitted', // Backward compatibility
             'progress_percentage' => 100,
-            'auto_save_content' => null, // Clear draft on submission
+            'auto_save_content' => null,
             'last_auto_save_at' => null,
         ]);
 
@@ -264,7 +263,7 @@ class HomeworkSubmission extends Model
     /**
      * Grade the homework submission
      */
-    public function grade(float $score, ?string $feedback = null, int $gradedBy, ?float $maxScore = null): self
+    public function grade(float $score, int $gradedBy, ?string $feedback = null, ?float $maxScore = null): self
     {
         $maxScore = $maxScore ?? $this->max_score ?? 100;
 
@@ -280,12 +279,10 @@ class HomeworkSubmission extends Model
             'max_score' => $maxScore,
             'score_percentage' => $scorePercentage,
             'grade_letter' => $gradeLetter,
-            'grade' => ($score / $maxScore) * 10, // Backward compatibility (0-10 scale)
             'teacher_feedback' => $feedback,
             'graded_by' => $gradedBy,
             'graded_at' => now(),
             'submission_status' => 'graded',
-            'status' => 'graded', // Backward compatibility
         ]);
 
         return $this;
@@ -496,11 +493,6 @@ class HomeworkSubmission extends Model
                 $submission->submission_status = 'not_started';
             }
 
-            // Backward compatibility
-            if (empty($submission->status)) {
-                $submission->status = 'pending';
-            }
-
             // Set default max_score if not provided
             if (empty($submission->max_score)) {
                 $submission->max_score = 100;
@@ -509,26 +501,6 @@ class HomeworkSubmission extends Model
             // Initialize progress
             if ($submission->progress_percentage === null) {
                 $submission->progress_percentage = 0;
-            }
-        });
-
-        // Auto-update backward compatibility fields
-        static::updating(function ($submission) {
-            // Sync old 'status' field with new 'submission_status'
-            if ($submission->isDirty('submission_status')) {
-                $newStatus = $submission->submission_status;
-                $submission->status = match($newStatus) {
-                    'not_started', 'draft' => 'pending',
-                    'submitted', 'late', 'resubmitted' => 'submitted',
-                    'graded' => 'graded',
-                    'returned' => 'pending',
-                    default => 'pending',
-                };
-            }
-
-            // Sync old 'content' field with new 'submission_text'
-            if ($submission->isDirty('submission_text')) {
-                $submission->content = $submission->submission_text;
             }
         });
     }

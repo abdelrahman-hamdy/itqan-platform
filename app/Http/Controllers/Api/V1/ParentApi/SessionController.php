@@ -12,6 +12,7 @@ use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Enums\SessionStatus;
 
 class SessionController extends Controller
 {
@@ -255,7 +256,7 @@ class SessionController extends Controller
             // Quran sessions
             $quranSessions = QuranSession::where('student_id', $studentUserId)
                 ->whereDate('scheduled_at', $today)
-                ->whereNotIn('status', ['cancelled'])
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value])
                 ->with(['quranTeacher'])
                 ->get();
 
@@ -266,7 +267,7 @@ class SessionController extends Controller
             // Academic sessions
             $academicSessions = AcademicSession::where('student_id', $studentUserId)
                 ->whereDate('scheduled_at', $today)
-                ->whereNotIn('status', ['cancelled'])
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value])
                 ->with(['academicTeacher.user', 'academicSubscription'])
                 ->get();
 
@@ -280,7 +281,7 @@ class SessionController extends Controller
 
             $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->whereDate('scheduled_at', $today)
-                ->whereNotIn('status', ['cancelled'])
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value])
                 ->with(['course.assignedTeacher.user'])
                 ->get();
 
@@ -332,7 +333,7 @@ class SessionController extends Controller
             // Quran sessions
             $quranSessions = QuranSession::where('student_id', $studentUserId)
                 ->where('scheduled_at', '>', $now)
-                ->whereNotIn('status', ['cancelled', 'completed'])
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
                 ->with(['quranTeacher'])
                 ->orderBy('scheduled_at')
                 ->limit($limit)
@@ -345,7 +346,7 @@ class SessionController extends Controller
             // Academic sessions
             $academicSessions = AcademicSession::where('student_id', $studentUserId)
                 ->where('scheduled_at', '>', $now)
-                ->whereNotIn('status', ['cancelled', 'completed'])
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
                 ->with(['academicTeacher.user', 'academicSubscription'])
                 ->orderBy('scheduled_at')
                 ->limit($limit)
@@ -361,7 +362,7 @@ class SessionController extends Controller
 
             $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->where('scheduled_at', '>', $now)
-                ->whereNotIn('status', ['cancelled', 'completed'])
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
                 ->with(['course.assignedTeacher.user'])
                 ->orderBy('scheduled_at')
                 ->limit($limit)
@@ -458,13 +459,13 @@ class SessionController extends Controller
                 'progress' => [
                     'current_surah' => $session->current_surah,
                     'current_page' => $session->current_page,
-                    'memorization_rating' => $session->memorization_rating,
-                    'tajweed_rating' => $session->tajweed_rating,
                 ],
-                'report' => $session->reports?->first() ? [
-                    'rating' => $session->reports->first()->rating,
+                'evaluation' => $session->reports?->first() ? [
+                    'memorization_degree' => $session->reports->first()->new_memorization_degree,
+                    'revision_degree' => $session->reports->first()->reservation_degree,
+                    'overall_performance' => $session->reports->first()->overall_performance,
                     'notes' => $session->reports->first()->notes,
-                    'teacher_feedback' => $session->reports->first()->teacher_feedback,
+                    'evaluated_at' => $session->reports->first()->evaluated_at?->toISOString(),
                 ] : null,
                 'meeting_link' => $session->meeting_link,
                 'started_at' => $session->started_at?->toISOString(),

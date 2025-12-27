@@ -2,6 +2,7 @@
 
 namespace App\Filament\AcademicTeacher\Widgets;
 
+use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use Filament\Widgets\ChartWidget;
@@ -59,14 +60,14 @@ class AcademicWeeklyChartWidget extends ChartWidget
             // Count completed sessions (both types) for this day
             $completedAcademic = AcademicSession::where('academic_teacher_id', $teacher->id)
                 ->whereDate('scheduled_at', $date)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->count();
 
             $completedCourse = InteractiveCourseSession::whereHas('course', function ($q) use ($teacher) {
                 $q->where('assigned_teacher_id', $teacher->id);
             })
                 ->whereDate('scheduled_at', $date)
-                ->where('status', 'completed')
+                ->where('status', SessionStatus::COMPLETED->value)
                 ->count();
 
             $completedData[] = $completedAcademic + $completedCourse;

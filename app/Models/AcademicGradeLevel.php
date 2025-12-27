@@ -9,6 +9,34 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Traits\ScopedToAcademy;
 
+/**
+ * @property int $id
+ * @property int|null $academy_id
+ * @property string $name
+ * @property string|null $name_en
+ * @property string|null $description
+ * @property string|null $description_en
+ * @property bool $is_active
+ * @property int|null $created_by
+ * @property string|null $notes
+ * @property string|null $education_system
+ * @property string|null $assessment_system
+ * @property array|null $grading_scale
+ * @property float|null $pass_percentage
+ * @property int|null $level_number
+ * @property string|null $target_age_group
+ * @property int|null $total_subjects
+ * @property int|null $core_subjects_count
+ * @property int|null $elective_subjects_count
+ * @property int|null $total_credit_hours
+ * @property int|null $min_credit_hours
+ * @property int|null $max_credit_hours
+ * @property array|null $graduation_requirements
+ * @property array|null $learning_outcomes
+ * @property array|null $skill_requirements
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ */
 class AcademicGradeLevel extends Model
 {
     use HasFactory, ScopedToAcademy;

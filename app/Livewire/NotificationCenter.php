@@ -4,9 +4,15 @@ namespace App\Livewire;
 
 use App\Enums\NotificationCategory;
 use App\Services\NotificationService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use App\Enums\SessionStatus;
 
+/**
+ * @property Collection $notifications
+ * @property array $categories
+ */
 class NotificationCenter extends Component
 {
     public $selectedCategory = null;

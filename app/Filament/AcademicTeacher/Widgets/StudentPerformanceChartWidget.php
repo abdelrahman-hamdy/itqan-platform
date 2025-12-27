@@ -6,6 +6,7 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\AttendanceStatus;
 
 class StudentPerformanceChartWidget extends ChartWidget
 {
@@ -99,7 +100,11 @@ class StudentPerformanceChartWidget extends ChartWidget
             // Calculate attendance rate
             $totalReports = $periodReports->count();
             if ($totalReports > 0) {
-                $attended = $periodReports->whereIn('attendance_status', ['attended', 'late', 'leaved'])->count();
+                $attended = $periodReports->whereIn('attendance_status', [
+                    AttendanceStatus::ATTENDED->value,
+                    AttendanceStatus::LATE->value,
+                    AttendanceStatus::LEAVED->value
+                ])->count();
                 $attendanceRates[] = round(($attended / $totalReports) * 100, 1);
             } else {
                 $attendanceRates[] = 0;

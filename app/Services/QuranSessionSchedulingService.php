@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\SessionStatus;
 
 class QuranSessionSchedulingService
 {
@@ -44,7 +45,7 @@ class QuranSessionSchedulingService
         // Update the template session to be scheduled
         $templateSession->update([
             'scheduled_at' => $scheduledAt,
-            'status' => 'scheduled',
+            'status' => SessionStatus::SCHEDULED,
             'is_scheduled' => true,
             'teacher_scheduled_at' => now(),
             'scheduled_by' => Auth::id(),
@@ -113,14 +114,14 @@ class QuranSessionSchedulingService
         $sessionEnd = $scheduledAt->copy()->addMinutes($durationMinutes);
         
         return QuranSession::where('quran_teacher_id', $teacherId)
-            ->where('status', 'scheduled')
+            ->where('status', SessionStatus::SCHEDULED->value)
             ->where(function ($query) use ($scheduledAt, $sessionEnd) {
-                $query->where(function ($q) use ($scheduledAt, $sessionEnd) {
+                $query->where(function ($q) use ($scheduledAt) {
                     // New session starts during existing session
                     $q->where('scheduled_at', '<=', $scheduledAt)
                       ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$scheduledAt]);
-                })->orWhere(function ($q) use ($scheduledAt, $sessionEnd) {
-                    // New session ends during existing session  
+                })->orWhere(function ($q) use ($sessionEnd) {
+                    // New session ends during existing session
                     $q->where('scheduled_at', '<', $sessionEnd)
                       ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) >= ?', [$sessionEnd]);
                 })->orWhere(function ($q) use ($scheduledAt, $sessionEnd) {
@@ -197,7 +198,7 @@ class QuranSessionSchedulingService
         // Get teacher's existing sessions for the date
         $existingSessions = QuranSession::where('quran_teacher_id', $teacherId)
             ->whereDate('scheduled_at', $date)
-            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', SessionStatus::CANCELLED->value)
             ->get(['scheduled_at', 'duration_minutes']);
 
         // Define working hours (can be made configurable per teacher)

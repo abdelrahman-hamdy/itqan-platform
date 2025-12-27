@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\AttendanceStatus;
 use App\Models\StudentSessionReport;
 use Illuminate\Support\Facades\DB;
 
@@ -64,9 +65,9 @@ class StudentSessionReportObserver
             ->where('student_session_reports.student_id', $report->student_id)
             ->selectRaw('
                 COUNT(*) as total_sessions,
-                SUM(CASE WHEN student_session_reports.attendance_status = ? THEN 1 ELSE 0 END) as attended,
+                SUM(CASE WHEN student_session_reports.attendance_status IN (?, ?) THEN 1 ELSE 0 END) as attended,
                 SUM(CASE WHEN student_session_reports.attendance_status = ? THEN 1 ELSE 0 END) as missed
-            ', ['present', 'absent'])
+            ', [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, AttendanceStatus::ABSENT->value])
             ->first();
 
         // Update pivot table
@@ -105,5 +106,14 @@ class StudentSessionReportObserver
     {
         // Treat restoration like an update
         $this->updated($report);
+    }
+
+    /**
+     * Update circle progress after session report changes
+     * @param StudentSessionReport $report
+     */
+    protected function updateCircleProgress(StudentSessionReport $report): void
+    {
+        // Progress tracking is now handled by QuranCircleReportService
     }
 }

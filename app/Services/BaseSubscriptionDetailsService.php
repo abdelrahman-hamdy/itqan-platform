@@ -6,6 +6,7 @@ use App\Enums\BillingCycle;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Models\BaseSubscription;
+use App\Enums\SessionStatus;
 
 /**
  * Base Subscription Details Service
@@ -99,12 +100,12 @@ abstract class BaseSubscriptionDetailsService
 
         // Handle legacy string values
         return match($status) {
-            'active' => 'bg-green-100 text-green-800',
-            'pending' => 'bg-yellow-100 text-yellow-800',
-            'paused' => 'bg-blue-100 text-blue-800',
-            'cancelled' => 'bg-red-100 text-red-800',
-            'expired' => 'bg-gray-100 text-gray-800',
-            'completed' => 'bg-purple-100 text-purple-800',
+            SubscriptionStatus::ACTIVE->value => 'bg-green-100 text-green-800',
+            SubscriptionStatus::PENDING->value => 'bg-yellow-100 text-yellow-800',
+            SubscriptionStatus::PAUSED->value => 'bg-blue-100 text-blue-800',
+            SubscriptionStatus::CANCELLED->value => 'bg-red-100 text-red-800',
+            SubscriptionStatus::EXPIRED->value => 'bg-gray-100 text-gray-800',
+            SubscriptionStatus::COMPLETED->value => 'bg-purple-100 text-purple-800',
             default => 'bg-gray-100 text-gray-800',
         };
     }
@@ -162,12 +163,12 @@ abstract class BaseSubscriptionDetailsService
 
         // Handle legacy string values
         return match($status) {
-            'active' => 'نشط',
-            'pending' => 'في الانتظار',
-            'paused' => 'متوقف مؤقتاً',
-            'cancelled' => 'ملغي',
-            'expired' => 'منتهي',
-            'completed' => 'مكتمل',
+            SubscriptionStatus::ACTIVE->value => 'نشط',
+            SubscriptionStatus::PENDING->value => 'في الانتظار',
+            SubscriptionStatus::PAUSED->value => 'متوقف مؤقتاً',
+            SubscriptionStatus::CANCELLED->value => 'ملغي',
+            SubscriptionStatus::EXPIRED->value => 'منتهي',
+            SubscriptionStatus::COMPLETED->value => 'مكتمل',
             default => 'غير معروف',
         };
     }
@@ -206,7 +207,7 @@ abstract class BaseSubscriptionDetailsService
         // Check if status is active (handle both enum and legacy string)
         $isActive = $subscription->status instanceof SubscriptionStatus
             ? $subscription->status === SubscriptionStatus::ACTIVE
-            : $subscription->status === 'active';
+            : $subscription->status === SubscriptionStatus::ACTIVE->value;
 
         if (!$isActive) {
             return false;
@@ -248,7 +249,7 @@ abstract class BaseSubscriptionDetailsService
         // Check if status is active (handle both enum and legacy string)
         $isActive = $subscription->status instanceof SubscriptionStatus
             ? $subscription->status === SubscriptionStatus::ACTIVE
-            : $subscription->status === 'active';
+            : $subscription->status === SubscriptionStatus::ACTIVE->value;
 
         if (!$isActive) {
             return null;

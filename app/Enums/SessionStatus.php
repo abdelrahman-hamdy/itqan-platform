@@ -97,7 +97,7 @@ enum SessionStatus: string
      */
     public function canCancel(): bool
     {
-        return $this === self::SCHEDULED || $this === self::READY;
+        return $this === self::SCHEDULED || $this === self::READY || $this === self::ONGOING;
     }
 
     /**
@@ -106,6 +106,26 @@ enum SessionStatus: string
     public function canReschedule(): bool
     {
         return $this === self::SCHEDULED || $this === self::READY;
+    }
+
+    /**
+     * Check if session is currently active/ongoing
+     */
+    public function isActive(): bool
+    {
+        return $this === self::ONGOING;
+    }
+
+    /**
+     * Check if session is in a final state (completed, cancelled, or absent)
+     */
+    public function isFinal(): bool
+    {
+        return in_array($this, [
+            self::COMPLETED,
+            self::CANCELLED,
+            self::ABSENT,
+        ]);
     }
 
     /**

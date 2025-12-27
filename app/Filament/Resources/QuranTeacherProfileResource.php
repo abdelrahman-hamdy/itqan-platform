@@ -14,6 +14,7 @@ use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\BadgeColumn;
+use App\Enums\SubscriptionStatus;
 
 class QuranTeacherProfileResource extends BaseResource
 {
@@ -238,11 +239,11 @@ class QuranTeacherProfileResource extends BaseResource
                         Forms\Components\Select::make('approval_status')
                             ->label('حالة الموافقة')
                             ->options([
-                                'pending' => 'قيد الانتظار',
+                                SubscriptionStatus::PENDING->value => 'قيد الانتظار',
                                 'approved' => 'موافق عليه',
                                 'rejected' => 'مرفوض',
                             ])
-                            ->default('pending')
+                            ->default(SubscriptionStatus::PENDING->value)
                             ->required()
                             ->helperText('يجب أن يكون المعلم موافق عليه ونشط ليظهر للطلاب'),
                         Forms\Components\Toggle::make('offers_trial_sessions')
@@ -312,18 +313,18 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label('حالة الموافقة')
                     ->formatStateUsing(fn (?string $state): string => match($state) {
                         'approved' => 'موافق عليه',
-                        'pending' => 'قيد الانتظار',
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
                         'rejected' => 'مرفوض',
                         default => 'قيد الانتظار'
                     })
                     ->colors([
                         'success' => 'approved',
-                        'warning' => 'pending',
+                        'warning' => SubscriptionStatus::PENDING->value,
                         'danger' => 'rejected',
                     ])
                     ->icon(fn (?string $state): string => match($state) {
                         'approved' => 'heroicon-o-check-circle',
-                        'pending' => 'heroicon-o-clock',
+                        SubscriptionStatus::PENDING->value => 'heroicon-o-clock',
                         'rejected' => 'heroicon-o-x-circle',
                         default => 'heroicon-o-question-mark-circle'
                     }),
@@ -410,7 +411,7 @@ class QuranTeacherProfileResource extends BaseResource
                 Tables\Filters\SelectFilter::make('approval_status')
                     ->label('حالة الموافقة')
                     ->options([
-                        'pending' => 'قيد الانتظار',
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
                         'approved' => 'موافق عليه',
                         'rejected' => 'مرفوض',
                     ]),

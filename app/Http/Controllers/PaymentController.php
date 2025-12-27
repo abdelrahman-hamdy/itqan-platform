@@ -9,6 +9,7 @@ use App\Models\RecordedCourse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Enums\SessionStatus;
 
 class PaymentController extends Controller
 {

@@ -8,6 +8,7 @@ use App\Models\QuranSubscription;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use App\Enums\SessionStatus;
 
 /**
  * Service for managing student subscriptions.
@@ -192,11 +193,11 @@ class StudentSubscriptionService
         return [
             'quran' => QuranSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', 'active')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->count(),
             'academic' => AcademicSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', 'active')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->count(),
         ];
     }

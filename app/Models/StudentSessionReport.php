@@ -36,6 +36,10 @@ class StudentSessionReport extends BaseSessionReport
         'manually_evaluated',
         'override_reason',
 
+        // Homework tracking fields (unified homework system)
+        'homework_submitted_at',
+        'homework_submission_id',
+
         // Quran-specific fields
         'new_memorization_degree',
         'reservation_degree',
@@ -56,6 +60,9 @@ class StudentSessionReport extends BaseSessionReport
         'evaluated_at' => 'datetime',
         'is_calculated' => 'boolean',
         'manually_evaluated' => 'boolean',
+
+        // Homework tracking casts
+        'homework_submitted_at' => 'datetime',
 
         // Quran-specific casts
         'new_memorization_degree' => 'decimal:1',
@@ -92,21 +99,12 @@ class StudentSessionReport extends BaseSessionReport
     }
 
     /**
-     * Quran sessions use configurable grace period from circle settings
+     * Quran sessions use grace period from academy settings
      * Falls back to 15 minutes if not configured
      */
     protected function getGracePeriodMinutes(): int
     {
-        $session = $this->session;
-        if (! $session) {
-            return 15;
-        }
-
-        $circle = $session->session_type === 'individual'
-            ? $session->individualCircle
-            : $session->circle;
-
-        return $circle?->late_join_grace_period_minutes ?? 15;
+        return $this->session?->academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
     // ========================================
