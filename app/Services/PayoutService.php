@@ -366,16 +366,28 @@ class PayoutService
      */
     public function getTeacherPayoutStats(string $teacherType, int $teacherId, int $academyId): array
     {
-        $payouts = TeacherPayout::forTeacher($teacherType, $teacherId)
+        // Use database aggregation for counts and sums instead of loading all records
+        $stats = TeacherPayout::forTeacher($teacherType, $teacherId)
             ->where('academy_id', $academyId)
-            ->get();
+            ->selectRaw('
+                COUNT(*) as total_payouts,
+                SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_paid,
+                SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_pending,
+                SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_approved
+            ', [PayoutStatus::PAID->value, PayoutStatus::PENDING->value, PayoutStatus::APPROVED->value])
+            ->first();
+
+        $lastPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->orderByDesc('payout_month')
+            ->first();
 
         return [
-            'total_payouts' => $payouts->count(),
-            'total_paid' => $payouts->where('status', PayoutStatus::PAID->value)->sum('total_amount'),
-            'total_pending' => $payouts->where('status', PayoutStatus::PENDING->value)->sum('total_amount'),
-            'total_approved' => $payouts->where('status', PayoutStatus::APPROVED->value)->sum('total_amount'),
-            'last_payout' => $payouts->sortByDesc('payout_month')->first(),
+            'total_payouts' => (int) ($stats->total_payouts ?? 0),
+            'total_paid' => (float) ($stats->total_paid ?? 0),
+            'total_pending' => (float) ($stats->total_pending ?? 0),
+            'total_approved' => (float) ($stats->total_approved ?? 0),
+            'last_payout' => $lastPayout,
         ];
     }
 
@@ -439,16 +451,17 @@ class PayoutService
 
     /**
      * Get the User model for a teacher based on payout type
+     * Uses eager loading to prevent N+1 queries
      */
     protected function getTeacherUser(TeacherPayout $payout): ?User
     {
         if ($payout->teacher_type === 'quran_teacher') {
-            $profile = QuranTeacherProfile::find($payout->teacher_id);
+            $profile = QuranTeacherProfile::with('user')->find($payout->teacher_id);
             return $profile?->user;
         }
 
         if ($payout->teacher_type === 'academic_teacher') {
-            $profile = AcademicTeacherProfile::find($payout->teacher_id);
+            $profile = AcademicTeacherProfile::with('user')->find($payout->teacher_id);
             return $profile?->user;
         }
 

@@ -199,7 +199,8 @@ class StudentReportService
     protected function getSessionStudents(QuranSession $session): Collection
     {
         if ($session->session_type === 'group' && $session->circle) {
-            return $session->circle->students;
+            // Eager load user relationship to prevent N+1 queries
+            return $session->circle->students()->with('user')->get()->pluck('user')->filter();
         } elseif ($session->session_type === 'individual' && $session->student_id) {
             return collect([User::find($session->student_id)])->filter();
         }

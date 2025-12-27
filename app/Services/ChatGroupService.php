@@ -50,16 +50,18 @@ class ChatGroupService
             }
             
             // Add all enrolled students as members
+            // Eager load users to prevent N+1 queries
+            $circle->load('students.user');
             foreach ($circle->students as $student) {
                 if ($student->user) {
                     $this->addMember($group, $student->user, ChatGroup::ROLE_MEMBER);
                 }
             }
-            
+
             return $group;
         });
     }
-    
+
     /**
      * Create a chat group for an Individual Quran Session
      */
@@ -189,16 +191,18 @@ class ChatGroupService
             }
             
             // Add all enrolled students as members
+            // Eager load users to prevent N+1 queries
+            $course->load('enrolledStudents.user');
             foreach ($course->enrolledStudents as $student) {
                 if ($student->user) {
                     $this->addMember($group, $student->user, ChatGroup::ROLE_MEMBER);
                 }
             }
-            
+
             return $group;
         });
     }
-    
+
     /**
      * Create a chat group for a Recorded Course
      */
@@ -235,16 +239,18 @@ class ChatGroupService
             }
             
             // Add all enrolled students as members
+            // Eager load users to prevent N+1 queries
+            $course->load('enrolledStudents.user');
             foreach ($course->enrolledStudents as $student) {
                 if ($student->user) {
                     $this->addMember($group, $student->user, ChatGroup::ROLE_MEMBER);
                 }
             }
-            
+
             return $group;
         });
     }
-    
+
     /**
      * Create an announcement group for academy
      */
@@ -388,13 +394,14 @@ class ChatGroupService
             $expectedMemberIds[] = $circle->teacher->user_id;
         }
         
-        // Students
+        // Students - eager load to prevent N+1
+        $circle->load('students.user');
         foreach ($circle->students as $student) {
             if ($student->user) {
                 $expectedMemberIds[] = $student->user_id;
             }
         }
-        
+
         // Add new members
         $toAdd = array_diff($expectedMemberIds, $currentMemberIds);
         foreach ($toAdd as $userId) {
