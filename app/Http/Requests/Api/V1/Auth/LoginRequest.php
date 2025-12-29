@@ -2,20 +2,16 @@
 
 namespace App\Http\Requests\Api\V1\Auth;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Http\Requests\Api\BaseApiFormRequest;
 
-class LoginRequest extends FormRequest
+/**
+ * Login Request
+ *
+ * Validates user login credentials for API authentication.
+ * Extends BaseApiFormRequest for consistent error response format.
+ */
+class LoginRequest extends BaseApiFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -26,7 +22,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:6'],
-            'device_name' => ['sometimes', 'string', 'max:255'],
+            'device_name' => ['sometimes', 'string', 'max:255', 'regex:/^[\w\s\-\.\(\)]+$/'],
             'fcm_token' => ['sometimes', 'nullable', 'string', 'max:500'],
         ];
     }
@@ -43,28 +39,22 @@ class LoginRequest extends FormRequest
             'email.email' => __('يرجى إدخال بريد إلكتروني صالح'),
             'password.required' => __('كلمة المرور مطلوبة'),
             'password.min' => __('كلمة المرور يجب أن تكون :min أحرف على الأقل'),
+            'device_name.regex' => __('اسم الجهاز يحتوي على أحرف غير صالحة'),
         ];
     }
 
     /**
-     * Handle a failed validation attempt.
+     * Get custom attributes for validator errors.
      *
-     * @param  Validator  $validator
-     * @return void
-     *
-     * @throws HttpResponseException
+     * @return array<string, string>
      */
-    protected function failedValidation(Validator $validator): void
+    public function attributes(): array
     {
-        throw new HttpResponseException(response()->json([
-            'success' => false,
-            'message' => __('Validation failed'),
-            'error_code' => 'VALIDATION_ERROR',
-            'errors' => $validator->errors(),
-            'meta' => [
-                'timestamp' => now()->toISOString(),
-                'api_version' => 'v1',
-            ],
-        ], 422));
+        return [
+            'email' => __('البريد الإلكتروني'),
+            'password' => __('كلمة المرور'),
+            'device_name' => __('اسم الجهاز'),
+            'fcm_token' => __('رمز الإشعارات'),
+        ];
     }
 }

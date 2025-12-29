@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\MeetingCommandEvent;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\AcknowledgeMeetingMessageRequest;
 use App\Http\Requests\GrantMicrophoneToStudentRequest;
 use App\Http\Requests\SendTeacherCommandRequest;
@@ -45,7 +45,7 @@ class MeetingDataChannelController extends Controller
                 $request->input('targets', [])
             );
 
-            return $this->successResponse($result, 'Command sent successfully');
+            return $this->success($result, 'Command sent successfully');
         } catch (\Exception $e) {
             Log::error('Failed to send teacher command', [
                 'session_id' => $session->id,
@@ -53,7 +53,7 @@ class MeetingDataChannelController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('Failed to send command');
+            return $this->serverError('Failed to send command');
         }
     }
 
@@ -72,7 +72,7 @@ class MeetingDataChannelController extends Controller
                 $request->input('response_data', [])
             );
 
-            return $this->successResponse(null, 'Acknowledgment recorded');
+            return $this->success(null, 'Acknowledgment recorded');
         } catch (\Exception $e) {
             Log::error('Failed to record acknowledgment', [
                 'session_id' => $session->id,
@@ -80,7 +80,7 @@ class MeetingDataChannelController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('Failed to record acknowledgment');
+            return $this->serverError('Failed to record acknowledgment');
         }
     }
 
@@ -97,7 +97,7 @@ class MeetingDataChannelController extends Controller
                 Auth::user()
             );
 
-            return $this->successResponse($state);
+            return $this->success($state);
         } catch (\Exception $e) {
             Log::error('Failed to get meeting state', [
                 'session_id' => $session->id,
@@ -105,7 +105,7 @@ class MeetingDataChannelController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('Failed to get meeting state');
+            return $this->serverError('Failed to get meeting state');
         }
     }
 
@@ -122,7 +122,7 @@ class MeetingDataChannelController extends Controller
 
             $commandsData = Redis::get($stateKey);
             if (! $commandsData) {
-                return $this->successResponse([
+                return $this->success([
                     'commands' => [],
                 ]);
             }
@@ -143,7 +143,7 @@ class MeetingDataChannelController extends Controller
                 return empty($command['targets']) || in_array($userIdentifier, $command['targets']);
             });
 
-            return $this->successResponse([
+            return $this->success([
                 'commands' => array_values($relevantCommands),
                 'server_time' => now()->toISOString(),
             ]);
@@ -153,7 +153,7 @@ class MeetingDataChannelController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->successResponse([
+            return $this->success([
                 'commands' => [],
             ]);
         }
@@ -253,9 +253,9 @@ class MeetingDataChannelController extends Controller
         try {
             $result = $this->dataChannelService->muteAllStudents($session, Auth::user());
 
-            return $this->successResponse($result, 'All students muted successfully');
+            return $this->success($result, 'All students muted successfully');
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to mute all students');
+            return $this->serverError('Failed to mute all students');
         }
     }
 
@@ -266,9 +266,9 @@ class MeetingDataChannelController extends Controller
         try {
             $result = $this->dataChannelService->allowStudentMicrophones($session, Auth::user());
 
-            return $this->successResponse($result, 'Student microphones allowed successfully');
+            return $this->success($result, 'Student microphones allowed successfully');
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to allow student microphones');
+            return $this->serverError('Failed to allow student microphones');
         }
     }
 
@@ -279,9 +279,9 @@ class MeetingDataChannelController extends Controller
         try {
             $result = $this->dataChannelService->clearAllHandRaises($session, Auth::user());
 
-            return $this->successResponse($result, 'All hand raises cleared successfully');
+            return $this->success($result, 'All hand raises cleared successfully');
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to clear hand raises');
+            return $this->serverError('Failed to clear hand raises');
         }
     }
 
@@ -298,9 +298,9 @@ class MeetingDataChannelController extends Controller
                 $student
             );
 
-            return $this->successResponse($result, 'Microphone permission granted successfully');
+            return $this->success($result, 'Microphone permission granted successfully');
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to grant microphone permission');
+            return $this->serverError('Failed to grant microphone permission');
         }
     }
 
@@ -319,13 +319,13 @@ class MeetingDataChannelController extends Controller
             $commandData = Redis::get($commandKey);
 
             if (! $commandData) {
-                return $this->notFoundResponse('Command not found');
+                return $this->notFound('Command not found');
             }
 
             $command = json_decode($commandData, true);
             $expectedCount = $session->students()->count() + 1; // +1 for teacher
 
-            return $this->successResponse([
+            return $this->success([
                 'message_id' => $messageId,
                 'command' => $command['command'],
                 'sent_at' => $command['timestamp'],
@@ -337,7 +337,7 @@ class MeetingDataChannelController extends Controller
                 }, $acks),
             ]);
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to get delivery status');
+            return $this->serverError('Failed to get delivery status');
         }
     }
 
@@ -363,11 +363,11 @@ class MeetingDataChannelController extends Controller
             // Test WebSocket broadcast
             broadcast(new MeetingCommandEvent($session, $testData));
 
-            return $this->successResponse([
+            return $this->success([
                 'test_id' => $testData['message_id'],
             ], 'Connectivity test sent');
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Connectivity test failed');
+            return $this->serverError('Connectivity test failed');
         }
     }
 }

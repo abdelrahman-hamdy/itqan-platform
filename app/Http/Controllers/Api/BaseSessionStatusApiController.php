@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -25,7 +25,7 @@ abstract class BaseSessionStatusApiController extends Controller
      */
     protected function unauthenticatedResponse(): JsonResponse
     {
-        return $this->customResponse([
+        return $this->success([
             'message' => 'يجب تسجيل الدخول لعرض حالة الجلسة',
             'status' => 'unauthenticated',
             'can_join' => false,
@@ -87,7 +87,7 @@ abstract class BaseSessionStatusApiController extends Controller
             $preparationMinutes
         );
 
-        return $this->successResponse([
+        return $this->success([
             'status' => $statusValue,
             'message' => $message,
             'button_text' => $buttonText,
@@ -184,7 +184,7 @@ abstract class BaseSessionStatusApiController extends Controller
             ->first();
 
         if ($attendance) {
-            return $this->successResponse([
+            return $this->success([
                 'has_attendance' => true,
                 'attendance_status' => $attendance->attendance_status,
                 'first_join_time' => $attendance->first_join_time?->toISOString(),
@@ -194,7 +194,7 @@ abstract class BaseSessionStatusApiController extends Controller
             ]);
         }
 
-        return $this->successResponse([
+        return $this->success([
             'has_attendance' => false,
             'attendance_status' => null,
             'message' => 'لم يتم تسجيل حضور بعد',

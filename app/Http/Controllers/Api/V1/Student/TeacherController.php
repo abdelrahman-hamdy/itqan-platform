@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
@@ -68,13 +69,7 @@ class TeacherController extends Controller
                 'specializations' => $teacher->specializations ?? [],
                 'hourly_rate' => $teacher->hourly_rate,
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $teachers->currentPage(),
-                'per_page' => $teachers->perPage(),
-                'total' => $teachers->total(),
-                'total_pages' => $teachers->lastPage(),
-                'has_more' => $teachers->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($teachers),
         ], __('Teachers retrieved successfully'));
     }
 
@@ -198,13 +193,7 @@ class TeacherController extends Controller
                 'total_students' => $teacher->total_students ?? 0,
                 'hourly_rate' => $teacher->hourly_rate,
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $teachers->currentPage(),
-                'per_page' => $teachers->perPage(),
-                'total' => $teachers->total(),
-                'total_pages' => $teachers->lastPage(),
-                'has_more' => $teachers->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($teachers),
         ], __('Teachers retrieved successfully'));
     }
 

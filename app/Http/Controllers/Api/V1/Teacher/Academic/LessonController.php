@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher\Academic;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicIndividualLesson;
 use Illuminate\Http\JsonResponse;
@@ -65,13 +66,7 @@ class LessonController extends Controller
                 'schedule' => $lesson->schedule ?? [],
                 'created_at' => $lesson->created_at->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $lessons->currentPage(),
-                'per_page' => $lessons->perPage(),
-                'total' => $lessons->total(),
-                'total_pages' => $lessons->lastPage(),
-                'has_more' => $lessons->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($lessons),
         ], __('Lessons retrieved successfully'));
     }
 

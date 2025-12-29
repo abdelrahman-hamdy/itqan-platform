@@ -23,51 +23,51 @@ class HomeworkSubmissionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->resource->id,
 
             // Homework reference
-            'homework_id' => $this->homework_id,
+            'homework_id' => $this->resource->homework_id,
 
             // Student
             'student' => $this->whenLoaded('student', [
-                'id' => $this->student?->id,
-                'name' => $this->student?->user?->name,
-                'student_code' => $this->student?->student_code,
+                'id' => $this->resource->student?->id,
+                'name' => $this->resource->student?->user?->name,
+                'student_code' => $this->resource->student?->student_code,
             ]),
 
             // Submission content
-            'content' => $this->content,
-            'notes' => $this->notes,
+            'content' => $this->resource->content,
+            'notes' => $this->resource->notes,
 
             // Files
             'attachment_url' => $this->when(
-                $this->attachment_path,
-                fn() => $this->getFileUrl($this->attachment_path)
+                $this->resource->attachment_path,
+                fn() => $this->getFileUrl($this->resource->attachment_path)
             ),
 
             // Status
             'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
+                'value' => $this->resource->status->value,
+                'label' => $this->resource->status->label(),
+                'color' => $this->resource->status->color(),
             ],
 
             // Grading
-            'grade' => $this->grade,
-            'feedback' => $this->feedback,
-            'graded_at' => $this->graded_at?->toISOString(),
+            'grade' => $this->resource->grade,
+            'feedback' => $this->resource->feedback,
+            'graded_at' => $this->resource->graded_at?->toISOString(),
             'graded_by' => $this->whenLoaded('gradedBy', [
-                'id' => $this->gradedBy?->id,
-                'name' => $this->gradedBy?->name,
+                'id' => $this->resource->gradedBy?->id,
+                'name' => $this->resource->gradedBy?->name,
             ]),
 
             // Timing
-            'submitted_at' => $this->submitted_at?->toISOString(),
-            'is_late' => $this->is_late,
+            'submitted_at' => $this->resource->submitted_at?->toISOString(),
+            'is_late' => $this->resource->is_late,
 
             // Timestamps
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
+            'created_at' => $this->resource->created_at->toISOString(),
+            'updated_at' => $this->resource->updated_at->toISOString(),
         ];
     }
 

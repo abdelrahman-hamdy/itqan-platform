@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\User;
 
+use App\Http\Helpers\ImageHelper;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,7 +26,10 @@ class UserResource extends JsonResource
             'last_name' => $this->last_name,
             'full_name' => $this->name,
             'phone' => $this->phone,
+            // Legacy field for backward compatibility
             'avatar_url' => $this->getAvatarUrl(),
+            // New structured avatar with size variants for mobile optimization
+            'avatar' => $this->getAvatarVariants(),
             'user_type' => $this->user_type,
             'user_type_label' => $this->getUserTypeLabel(),
             'is_active' => $this->isActive(),
@@ -34,6 +38,7 @@ class UserResource extends JsonResource
             'profile_completed' => $this->hasCompletedProfile(),
             'last_login_at' => $this->last_login_at?->toISOString(),
             'created_at' => $this->created_at->toISOString(),
+            'updated_at' => $this->updated_at->toISOString(),
 
             // Academy info
             'academy' => [
@@ -48,25 +53,57 @@ class UserResource extends JsonResource
     }
 
     /**
-     * Get avatar URL
+     * Get avatar URL (legacy single URL)
      */
     protected function getAvatarUrl(): ?string
     {
+        $avatarPath = $this->getAvatarPath();
+
+        if ($avatarPath && str_starts_with($avatarPath, 'http')) {
+            return $avatarPath;
+        }
+
+        if ($avatarPath) {
+            return asset('storage/' . $avatarPath);
+        }
+
+        // Generate default avatar
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=0ea5e9&color=fff';
+    }
+
+    /**
+     * Get avatar variants for mobile optimization
+     *
+     * Returns structured object with different sizes:
+     * - thumb: 100px - for lists, small icons
+     * - small: 200px - for compact displays
+     * - medium: 400px - for standard displays
+     * - large: 800px - for full-screen/profile pages
+     * - original: full resolution
+     */
+    protected function getAvatarVariants(): array
+    {
+        $avatarPath = $this->getAvatarPath();
+
+        return ImageHelper::getAvatarUrls($avatarPath, $this->name);
+    }
+
+    /**
+     * Get raw avatar path from user or profile
+     */
+    private function getAvatarPath(): ?string
+    {
         if ($this->avatar) {
-            if (str_starts_with($this->avatar, 'http')) {
-                return $this->avatar;
-            }
-            return asset('storage/' . $this->avatar);
+            return $this->avatar;
         }
 
         // Check profile for avatar
         $profile = $this->resource->getProfile();
         if ($profile && isset($profile->avatar) && $profile->avatar) {
-            return asset('storage/' . $profile->avatar);
+            return $profile->avatar;
         }
 
-        // Generate default avatar
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=0ea5e9&color=fff';
+        return null;
     }
 
     /**

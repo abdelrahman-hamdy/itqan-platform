@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\ParentStudentRelationship;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
@@ -156,7 +156,7 @@ abstract class BaseParentReportController extends Controller
         $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
-            return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
+            return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
         return [$user, $parentProfile];

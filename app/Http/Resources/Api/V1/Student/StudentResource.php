@@ -23,59 +23,59 @@ class StudentResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'student_code' => $this->student_code,
+            'id' => $this->resource->id,
+            'student_code' => $this->resource->student_code,
 
             // User information
             'user' => $this->whenLoaded('user', [
-                'id' => $this->user?->id,
-                'email' => $this->user?->email,
-                'first_name' => $this->user?->first_name,
-                'last_name' => $this->user?->last_name,
-                'full_name' => $this->user?->name,
-                'phone' => $this->user?->phone,
+                'id' => $this->resource->user?->id,
+                'email' => $this->resource->user?->email,
+                'first_name' => $this->resource->user?->first_name,
+                'last_name' => $this->resource->user?->last_name,
+                'full_name' => $this->resource->user?->name,
+                'phone' => $this->resource->user?->phone,
                 'avatar_url' => $this->getAvatarUrl(),
             ]),
 
             // Personal information
-            'birth_date' => $this->birth_date?->format('Y-m-d'),
-            'age' => $this->birth_date?->age,
-            'gender' => $this->gender,
-            'nationality' => $this->nationality,
+            'birth_date' => $this->resource->birth_date?->format('Y-m-d'),
+            'age' => $this->resource->birth_date?->age,
+            'gender' => $this->resource->gender,
+            'nationality' => $this->resource->nationality,
 
             // Academic information
             'grade_level' => $this->whenLoaded('gradeLevel', [
-                'id' => $this->gradeLevel?->id,
-                'name' => $this->gradeLevel?->name,
+                'id' => $this->resource->gradeLevel?->id,
+                'name' => $this->resource->gradeLevel?->name,
             ]),
 
             // Parent information
             'parent' => $this->whenLoaded('parentProfile', [
-                'id' => $this->parentProfile?->id,
-                'name' => $this->parentProfile?->user?->name,
-                'email' => $this->parentProfile?->user?->email,
-                'phone' => $this->parentProfile?->user?->phone,
+                'id' => $this->resource->parentProfile?->id,
+                'name' => $this->resource->parentProfile?->user?->name,
+                'email' => $this->resource->parentProfile?->user?->email,
+                'phone' => $this->resource->parentProfile?->user?->phone,
             ]),
 
             // Enrollment
-            'enrollment_date' => $this->enrollment_date?->format('Y-m-d'),
+            'enrollment_date' => $this->resource->enrollment_date?->format('Y-m-d'),
 
             // Academy
             'academy' => $this->whenLoaded('academy', [
-                'id' => $this->academy?->id,
-                'name' => $this->academy?->name,
-                'subdomain' => $this->academy?->subdomain,
+                'id' => $this->resource->academy?->id,
+                'name' => $this->resource->academy?->name,
+                'subdomain' => $this->resource->subdomain,
             ]),
 
             // Subscriptions
             'active_subscriptions_count' => $this->when(
-                $this->relationLoaded('quranSubscriptions') || $this->relationLoaded('academicSubscriptions'),
+                $this->resource->relationLoaded('quranSubscriptions') || $this->resource->relationLoaded('academicSubscriptions'),
                 fn() => $this->getActiveSubscriptionsCount()
             ),
 
             // Timestamps
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
+            'created_at' => $this->resource->created_at->toISOString(),
+            'updated_at' => $this->resource->updated_at->toISOString(),
         ];
     }
 
@@ -84,21 +84,21 @@ class StudentResource extends JsonResource
      */
     protected function getAvatarUrl(): ?string
     {
-        if ($this->avatar) {
-            if (str_starts_with($this->avatar, 'http')) {
-                return $this->avatar;
+        if ($this->resource->avatar) {
+            if (str_starts_with($this->resource->avatar, 'http')) {
+                return $this->resource->avatar;
             }
-            return asset('storage/' . $this->avatar);
+            return asset('storage/' . $this->resource->avatar);
         }
 
-        if ($this->user?->avatar) {
-            if (str_starts_with($this->user->avatar, 'http')) {
-                return $this->user->avatar;
+        if ($this->resource->user?->avatar) {
+            if (str_starts_with($this->resource->user->avatar, 'http')) {
+                return $this->resource->user->avatar;
             }
-            return asset('storage/' . $this->user->avatar);
+            return asset('storage/' . $this->resource->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->user?->name ?? 'Student') . '&background=10b981&color=fff';
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->user?->name ?? 'Student') . '&background=10b981&color=fff';
     }
 
     /**
@@ -108,12 +108,12 @@ class StudentResource extends JsonResource
     {
         $count = 0;
 
-        if ($this->relationLoaded('quranSubscriptions')) {
-            $count += $this->quranSubscriptions->where('status', 'active')->count();
+        if ($this->resource->relationLoaded('quranSubscriptions')) {
+            $count += $this->resource->quranSubscriptions->where('status', 'active')->count();
         }
 
-        if ($this->relationLoaded('academicSubscriptions')) {
-            $count += $this->academicSubscriptions->where('status', 'active')->count();
+        if ($this->resource->relationLoaded('academicSubscriptions')) {
+            $count += $this->resource->academicSubscriptions->where('status', 'active')->count();
         }
 
         return $count;

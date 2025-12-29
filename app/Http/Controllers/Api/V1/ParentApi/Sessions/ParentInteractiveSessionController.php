@@ -28,19 +28,13 @@ class ParentInteractiveSessionController extends BaseParentSessionController
         $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
-            return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
+            return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
         $children = $this->getChildren($parentProfile->id, $request->get('child_id'));
 
         if ($children->isEmpty()) {
-            return $this->success(['sessions' => [], 'pagination' => [
-                'current_page' => 1,
-                'per_page' => 15,
-                'total' => 0,
-                'total_pages' => 0,
-                'has_more' => false,
-            ]], __('No sessions found.'));
+            return $this->success(['sessions' => [], 'pagination' => PaginationHelper::fromArray(0, 1, 15)], __('No sessions found.'));
         }
 
         $sessions = [];
@@ -106,7 +100,7 @@ class ParentInteractiveSessionController extends BaseParentSessionController
         $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
-            return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
+            return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
         $childUserIds = $this->getChildUserIds($parentProfile->id);
@@ -150,7 +144,7 @@ class ParentInteractiveSessionController extends BaseParentSessionController
         $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
-            return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
+            return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
         $today = Carbon::today();
@@ -201,7 +195,7 @@ class ParentInteractiveSessionController extends BaseParentSessionController
         $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
-            return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
+            return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
         $now = now();

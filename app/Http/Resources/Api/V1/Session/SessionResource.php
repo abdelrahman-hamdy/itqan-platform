@@ -26,70 +26,70 @@ class SessionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->resource->id,
             'type' => $this->getMorphClass(),
-            'session_code' => $this->session_code,
-            'title' => $this->title,
-            'description' => $this->description,
+            'session_code' => $this->resource->session_code,
+            'title' => $this->resource->title,
+            'description' => $this->resource->description,
 
             // Status
             'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-                'icon' => $this->status->icon(),
+                'value' => $this->resource->status->value,
+                'label' => $this->resource->status->label(),
+                'color' => $this->resource->status->color(),
+                'icon' => $this->resource->status->icon(),
             ],
 
             // Scheduling
-            'scheduled_at' => $this->scheduled_at?->toISOString(),
-            'started_at' => $this->started_at?->toISOString(),
-            'ended_at' => $this->ended_at?->toISOString(),
-            'duration_minutes' => $this->duration_minutes,
-            'actual_duration_minutes' => $this->actual_duration_minutes,
+            'scheduled_at' => $this->resource->scheduled_at?->toISOString(),
+            'started_at' => $this->resource->started_at?->toISOString(),
+            'ended_at' => $this->resource->ended_at?->toISOString(),
+            'duration_minutes' => $this->resource->duration_minutes,
+            'actual_duration_minutes' => $this->resource->actual_duration_minutes,
 
             // Meeting data
-            'meeting' => $this->when($this->meeting_link, [
-                'link' => $this->meeting_link,
-                'room_name' => $this->meeting_room_name,
-                'platform' => $this->meeting_platform,
-                'password' => $this->when($this->meeting_password, $this->meeting_password),
-                'expires_at' => $this->meeting_expires_at?->toISOString(),
-                'auto_generated' => $this->meeting_auto_generated,
+            // SECURITY: meeting_password removed - use /api/v1/common/meetings/token endpoint instead
+            'meeting' => $this->when($this->resource->meeting_link, [
+                'link' => $this->resource->meeting_link,
+                'room_name' => $this->resource->meeting_room_name,
+                'platform' => $this->resource->meeting_platform,
+                'expires_at' => $this->resource->meeting_expires_at?->toISOString(),
+                'auto_generated' => $this->resource->meeting_auto_generated,
             ]),
 
             // Attendance
-            'attendance_status' => $this->attendance_status,
-            'participants_count' => $this->participants_count,
+            'attendance_status' => $this->resource->attendance_status,
+            'participants_count' => $this->resource->participants_count,
 
             // Feedback
-            'session_notes' => $this->session_notes,
-            'teacher_feedback' => $this->teacher_feedback,
+            'session_notes' => $this->resource->session_notes,
+            'teacher_feedback' => $this->resource->teacher_feedback,
 
             // Cancellation
-            'cancelled_at' => $this->cancelled_at?->toISOString(),
-            'cancellation_reason' => $this->when($this->cancelled_at, $this->cancellation_reason),
-            'cancellation_type' => $this->when($this->cancelled_at, $this->cancellation_type),
+            'cancelled_at' => $this->resource->cancelled_at?->toISOString(),
+            'cancellation_reason' => $this->when($this->resource->cancelled_at, $this->resource->cancellation_reason),
+            'cancellation_type' => $this->when($this->resource->cancelled_at, $this->resource->cancellation_type),
 
             // Rescheduling
-            'rescheduled_from' => $this->rescheduled_from?->toISOString(),
-            'rescheduled_to' => $this->rescheduled_to?->toISOString(),
-            'reschedule_reason' => $this->when($this->rescheduled_from, $this->reschedule_reason),
+            'rescheduled_from' => $this->resource->rescheduled_from?->toISOString(),
+            'rescheduled_to' => $this->resource->rescheduled_to?->toISOString(),
+            'reschedule_reason' => $this->when($this->resource->rescheduled_from, $this->resource->reschedule_reason),
 
             // Academy
             'academy' => $this->whenLoaded('academy', [
-                'id' => $this->academy?->id,
-                'name' => $this->academy?->name,
-                'subdomain' => $this->academy?->subdomain,
+                'id' => $this->resource->academy?->id,
+                'name' => $this->resource->academy?->name,
+                'subdomain' => $this->resource->academy?->subdomain,
             ]),
 
             // Attendances (polymorphic)
             'attendances' => $this->whenLoaded('attendances', fn() =>
-                \App\Http\Resources\Api\V1\Attendance\AttendanceResource::collection($this->attendances)
+                \App\Http\Resources\Api\V1\Attendance\AttendanceResource::collection($this->resource->attendances)
             ),
 
             // Timestamps
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
+            'created_at' => $this->resource->created_at->toISOString(),
+            'updated_at' => $this->resource->updated_at->toISOString(),
         ];
     }
 }

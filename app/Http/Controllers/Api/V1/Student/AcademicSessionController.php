@@ -50,13 +50,7 @@ class AcademicSessionController extends BaseStudentSessionController
 
         return $this->success([
             'sessions' => $paginatedSessions,
-            'pagination' => [
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => $total,
-                'total_pages' => ceil($total / $perPage),
-                'has_more' => ($page * $perPage) < $total,
-            ],
+            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
         ], __('Academic sessions retrieved successfully'));
     }
 

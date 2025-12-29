@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\ParentStudentRelationship;
 use App\Models\Payment;
@@ -85,13 +86,7 @@ class PaymentController extends Controller
                 'paid_at' => $payment->paid_at?->toISOString(),
                 'created_at' => $payment->created_at->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $payments->currentPage(),
-                'per_page' => $payments->perPage(),
-                'total' => $payments->total(),
-                'total_pages' => $payments->lastPage(),
-                'has_more' => $payments->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($payments),
         ], __('Payments retrieved successfully'));
     }
 

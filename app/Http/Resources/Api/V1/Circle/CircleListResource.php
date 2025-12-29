@@ -26,12 +26,12 @@ class CircleListResource extends JsonResource
         $isIndividual = $this->resource instanceof QuranIndividualCircle;
 
         return [
-            'id' => $this->id,
+            'id' => $this->resource->id,
             'type' => $isIndividual ? 'individual' : 'group',
-            'circle_name' => $this->circle_name,
-            'teacher_name' => $this->quranTeacher?->user?->name,
-            'is_active' => $this->is_active,
-            'students_count' => $isIndividual ? 1 : $this->current_students,
+            'circle_name' => $this->resource->circle_name,
+            'teacher_name' => $this->resource->quranTeacher?->user?->name,
+            'is_active' => $this->resource->is_active,
+            'students_count' => $isIndividual ? 1 : $this->resource->current_students,
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\ParentStudentRelationship;
 use App\Models\Quiz;
@@ -101,13 +102,7 @@ class QuizController extends Controller
 
         return $this->success([
             'quiz_results' => array_values($quizResults),
-            'pagination' => [
-                'current_page' => (int) $page,
-                'per_page' => (int) $perPage,
-                'total' => $total,
-                'total_pages' => ceil($total / $perPage),
-                'has_more' => ($page * $perPage) < $total,
-            ],
+            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
         ], __('Quiz results retrieved successfully'));
     }
 
@@ -173,13 +168,7 @@ class QuizController extends Controller
                 'created_at' => $attempt->created_at->toISOString(),
             ])->toArray(),
             'stats' => $this->getChildQuizStats($student->id),
-            'pagination' => [
-                'current_page' => $attempts->currentPage(),
-                'per_page' => $attempts->perPage(),
-                'total' => $attempts->total(),
-                'total_pages' => $attempts->lastPage(),
-                'has_more' => $attempts->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($attempts),
         ], __('Child quiz results retrieved successfully'));
     }
 

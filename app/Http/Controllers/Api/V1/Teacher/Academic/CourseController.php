@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher\Academic;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
@@ -58,13 +59,7 @@ class CourseController extends Controller
                 'end_date' => $course->end_date?->toDateString(),
                 'created_at' => $course->created_at->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $courses->currentPage(),
-                'per_page' => $courses->perPage(),
-                'total' => $courses->total(),
-                'total_pages' => $courses->lastPage(),
-                'has_more' => $courses->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($courses),
         ], __('Courses retrieved successfully'));
     }
 
@@ -188,13 +183,7 @@ class CourseController extends Controller
                 'completed_sessions' => $enrollment->completed_sessions ?? 0,
                 'enrolled_at' => $enrollment->created_at->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $enrollments->currentPage(),
-                'per_page' => $enrollments->perPage(),
-                'total' => $enrollments->total(),
-                'total_pages' => $enrollments->lastPage(),
-                'has_more' => $enrollments->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($enrollments),
         ], __('Course students retrieved successfully'));
     }
 }

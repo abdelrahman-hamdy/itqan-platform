@@ -23,41 +23,41 @@ class QuizResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->resource->id,
 
             // Quiz details
-            'title' => $this->title,
-            'description' => $this->description,
-            'instructions' => $this->instructions,
+            'title' => $this->resource->title,
+            'description' => $this->resource->description,
+            'instructions' => $this->resource->instructions,
 
             // Quiz configuration
-            'total_questions' => $this->total_questions,
-            'total_marks' => (float) $this->total_marks,
-            'passing_marks' => (float) $this->passing_marks,
-            'duration_minutes' => $this->duration_minutes,
+            'total_questions' => $this->resource->total_questions,
+            'total_marks' => (float) $this->resource->total_marks,
+            'passing_marks' => (float) $this->resource->passing_marks,
+            'duration_minutes' => $this->resource->duration_minutes,
 
             // Difficulty
-            'difficulty_level' => $this->when($this->difficulty_level, [
-                'value' => $this->difficulty_level?->value,
-                'label' => $this->difficulty_level?->label(),
+            'difficulty_level' => $this->when($this->resource->difficulty_level, [
+                'value' => $this->resource->difficulty_level?->value,
+                'label' => $this->resource->difficulty_level?->label(),
             ]),
 
             // Settings
-            'is_published' => $this->is_published,
-            'shuffle_questions' => $this->shuffle_questions,
-            'show_correct_answers' => $this->show_correct_answers,
-            'allow_retake' => $this->allow_retake,
-            'max_attempts' => $this->max_attempts,
+            'is_published' => $this->resource->is_published,
+            'shuffle_questions' => $this->resource->shuffle_questions,
+            'show_correct_answers' => $this->resource->show_correct_answers,
+            'allow_retake' => $this->resource->allow_retake,
+            'max_attempts' => $this->resource->max_attempts,
 
             // Quizzable (polymorphic - lesson/course/session)
             'quizzable' => [
-                'type' => $this->quizzable_type,
-                'id' => $this->quizzable_id,
+                'type' => $this->resource->quizzable_type,
+                'id' => $this->resource->quizzable_id,
             ],
 
             // Questions
             'questions' => $this->whenLoaded('questions', function () {
-                return $this->questions->map(fn($question) => [
+                return $this->resource->questions->map(fn($question) => [
                     'id' => $question->id,
                     'question_text' => $question->question_text,
                     'question_type' => $question->question_type,
@@ -69,19 +69,19 @@ class QuizResource extends JsonResource
 
             // Creator
             'created_by' => $this->whenLoaded('creator', [
-                'id' => $this->creator?->id,
-                'name' => $this->creator?->name,
+                'id' => $this->resource->creator?->id,
+                'name' => $this->resource->creator?->name,
             ]),
 
             // Attempts count
             'attempts_count' => $this->when(
                 $this->relationLoaded('attempts'),
-                fn() => $this->attempts->count()
+                fn() => $this->resource->attempts->count()
             ),
 
             // Timestamps
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
+            'created_at' => $this->resource->created_at->toISOString(),
+            'updated_at' => $this->resource->updated_at->toISOString(),
         ];
     }
 }

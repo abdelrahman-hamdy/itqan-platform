@@ -36,53 +36,53 @@ class InteractiveSessionResource extends SessionResource
 
         return array_merge($baseArray, [
             // Scheduling (different from base sessions)
-            'scheduled_date' => $this->scheduled_date?->format('Y-m-d'),
-            'scheduled_time' => $this->scheduled_time,
+            'scheduled_date' => $this->resource->scheduled_date?->format('Y-m-d'),
+            'scheduled_time' => $this->resource->scheduled_time,
 
             // Course
             'course' => $this->whenLoaded('course', [
-                'id' => $this->course?->id,
-                'title' => $this->course?->title,
-                'title_en' => $this->course?->title_en,
-                'course_code' => $this->course?->course_code,
+                'id' => $this->resource->course?->id,
+                'title' => $this->resource->course?->title,
+                'title_en' => $this->resource->course?->title_en,
+                'course_code' => $this->resource->course?->course_code,
                 'status' => [
-                    'value' => $this->course?->status?->value,
-                    'label' => $this->course?->status?->label(),
+                    'value' => $this->resource->course?->status?->value,
+                    'label' => $this->resource->course?->status?->label(),
                 ],
-                'enrollments_count' => $this->course?->enrollments_count,
+                'enrollments_count' => $this->resource->course?->enrollments_count,
             ]),
 
             // Teacher (via course)
             'teacher' => $this->when(
-                $this->relationLoaded('course') && $this->course?->relationLoaded('assignedTeacher'),
-                fn() => new TeacherListResource($this->course->assignedTeacher)
+                $this->relationLoaded('course') && $this->resource->course?->relationLoaded('assignedTeacher'),
+                fn() => new TeacherListResource($this->resource->course->assignedTeacher)
             ),
 
             // Session content
-            'lesson_title' => $this->lesson_title,
-            'lesson_description' => $this->lesson_description,
-            'content_materials' => $this->content_materials,
+            'lesson_title' => $this->resource->lesson_title,
+            'lesson_description' => $this->resource->lesson_description,
+            'content_materials' => $this->resource->content_materials,
 
             // Homework
             'homework' => [
-                'assigned' => $this->homework_assigned,
-                'description' => $this->when($this->homework_assigned, $this->homework_description),
-                'due_date' => $this->when($this->homework_assigned, $this->homework_due_date?->format('Y-m-d')),
+                'assigned' => $this->resource->homework_assigned,
+                'description' => $this->when($this->resource->homework_assigned, $this->resource->homework_description),
+                'due_date' => $this->when($this->resource->homework_assigned, $this->resource->homework_due_date?->format('Y-m-d')),
                 'file_url' => $this->when(
-                    $this->homework_assigned && $this->homework_file,
-                    fn() => $this->getFileUrl($this->homework_file)
+                    $this->resource->homework_assigned && $this->resource->homework_file,
+                    fn() => $this->getFileUrl($this->resource->homework_file)
                 ),
             ],
 
             // Recording
             'recording' => [
-                'enabled' => $this->recording_enabled,
-                'url' => $this->when($this->recording_url, $this->recording_url),
-                'available_until' => $this->recording_available_until?->toISOString(),
+                'enabled' => $this->resource->recording_enabled,
+                'url' => $this->when($this->resource->recording_url, $this->resource->recording_url),
+                'available_until' => $this->resource->recording_available_until?->toISOString(),
             ],
 
             // Session metadata
-            'session_order' => $this->session_order,
+            'session_order' => $this->resource->session_order,
         ]);
     }
 

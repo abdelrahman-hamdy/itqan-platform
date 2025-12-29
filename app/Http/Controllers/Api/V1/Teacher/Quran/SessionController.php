@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher\Quran;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
@@ -71,13 +72,7 @@ class SessionController extends Controller
                 'status' => $session->status->value ?? $session->status,
                 'meeting_link' => $session->meeting_link,
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $sessions->currentPage(),
-                'per_page' => $sessions->perPage(),
-                'total' => $sessions->total(),
-                'total_pages' => $sessions->lastPage(),
-                'has_more' => $sessions->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($sessions),
         ], __('Sessions retrieved successfully'));
     }
 

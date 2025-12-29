@@ -23,67 +23,67 @@ class HomeworkResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->resource->id,
 
             // Assignment details
-            'title' => $this->title,
-            'description' => $this->description,
-            'instructions' => $this->instructions,
+            'title' => $this->resource->title,
+            'description' => $this->resource->description,
+            'instructions' => $this->resource->instructions,
 
             // Files
             'attachment_url' => $this->when(
-                $this->attachment_path,
-                fn() => $this->getFileUrl($this->attachment_path)
+                $this->resource->attachment_path,
+                fn() => $this->getFileUrl($this->resource->attachment_path)
             ),
 
             // Status
             'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
+                'value' => $this->resource->status->value,
+                'label' => $this->resource->status->label(),
+                'color' => $this->resource->status->color(),
             ],
 
             // Assignable (polymorphic - session)
             'session' => [
-                'type' => $this->assignable_type,
-                'id' => $this->assignable_id,
+                'type' => $this->resource->assignable_type,
+                'id' => $this->resource->assignable_id,
             ],
 
             // Due date
-            'due_date' => $this->due_date?->toISOString(),
+            'due_date' => $this->resource->due_date?->toISOString(),
 
             // Student
             'student' => $this->whenLoaded('student', [
-                'id' => $this->student?->id,
-                'name' => $this->student?->user?->name,
-                'student_code' => $this->student?->student_code,
+                'id' => $this->resource->student?->id,
+                'name' => $this->resource->student?->user?->name,
+                'student_code' => $this->resource->student?->student_code,
             ]),
 
             // Teacher
             'teacher' => $this->whenLoaded('assignedBy', [
-                'id' => $this->assignedBy?->id,
-                'name' => $this->assignedBy?->name,
+                'id' => $this->resource->assignedBy?->id,
+                'name' => $this->resource->assignedBy?->name,
             ]),
 
             // Submission
             'submission' => $this->whenLoaded('submission', function () {
-                return new HomeworkSubmissionResource($this->submission);
+                return new HomeworkSubmissionResource($this->resource->submission);
             }),
 
             // Grading
-            'grade' => $this->grade,
-            'max_grade' => $this->max_grade,
-            'feedback' => $this->feedback,
-            'graded_at' => $this->graded_at?->toISOString(),
+            'grade' => $this->resource->grade,
+            'max_grade' => $this->resource->max_grade,
+            'feedback' => $this->resource->feedback,
+            'graded_at' => $this->resource->graded_at?->toISOString(),
             'graded_by' => $this->whenLoaded('gradedBy', [
-                'id' => $this->gradedBy?->id,
-                'name' => $this->gradedBy?->name,
+                'id' => $this->resource->gradedBy?->id,
+                'name' => $this->resource->gradedBy?->name,
             ]),
 
             // Timestamps
-            'assigned_at' => $this->assigned_at?->toISOString(),
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
+            'assigned_at' => $this->resource->assigned_at?->toISOString(),
+            'created_at' => $this->resource->created_at->toISOString(),
+            'updated_at' => $this->resource->updated_at->toISOString(),
         ];
     }
 

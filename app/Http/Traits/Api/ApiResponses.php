@@ -2,9 +2,13 @@
 
 namespace App\Http\Traits\Api;
 
+use App\Enums\Api\ErrorCode;
+use App\Http\Helpers\PaginationHelper;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
 trait ApiResponses
@@ -30,18 +34,29 @@ trait ApiResponses
 
     /**
      * Return an error response
+     *
+     * @param string $message Error message
+     * @param int $status HTTP status code
+     * @param string|ErrorCode|null $errorCode Error code (string or ErrorCode enum)
+     * @param array $errors Additional errors
+     * @param array $meta Additional metadata
      */
     protected function error(
         string $message,
         int $status = 400,
-        ?string $errorCode = null,
+        string|ErrorCode|null $errorCode = null,
         array $errors = [],
         array $meta = []
     ): JsonResponse {
+        // Convert ErrorCode enum to string value
+        $codeValue = $errorCode instanceof ErrorCode
+            ? $errorCode->value
+            : ($errorCode ?? $this->getErrorCodeFromStatus($status));
+
         $response = [
             'success' => false,
             'message' => $message,
-            'error_code' => $errorCode ?? $this->getErrorCodeFromStatus($status),
+            'error_code' => $codeValue,
             'errors' => $errors,
             'meta' => array_merge($this->getBaseMeta(), $meta),
         ];
@@ -50,7 +65,32 @@ trait ApiResponses
     }
 
     /**
-     * Return a paginated response
+     * Return an error response using ErrorCode enum (preferred method)
+     *
+     * Uses the enum's httpStatus() for status code and label() for message if not provided.
+     *
+     * @param ErrorCode $errorCode The error code enum
+     * @param string|null $message Custom message (uses enum label if null)
+     * @param array $errors Additional errors
+     * @param array $meta Additional metadata
+     */
+    protected function errorWithCode(
+        ErrorCode $errorCode,
+        ?string $message = null,
+        array $errors = [],
+        array $meta = []
+    ): JsonResponse {
+        return $this->error(
+            message: $message ?? $errorCode->label(),
+            status: $errorCode->httpStatus(),
+            errorCode: $errorCode,
+            errors: $errors,
+            meta: $meta
+        );
+    }
+
+    /**
+     * Return a paginated response from ResourceCollection
      */
     protected function paginated(
         ResourceCollection $collection,
@@ -63,15 +103,71 @@ trait ApiResponses
             'message' => $message,
             'data' => $collection->resolve(),
             'meta' => $this->getBaseMeta(),
-            'pagination' => [
-                'current_page' => $paginator->currentPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'total_pages' => $paginator->lastPage(),
-                'has_more' => $paginator->hasMorePages(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($paginator),
+        ]);
+    }
+
+    /**
+     * Return a paginated response from LengthAwarePaginator
+     */
+    protected function paginatedFromQuery(
+        LengthAwarePaginator $paginator,
+        string $message = 'Success',
+        ?callable $transformer = null
+    ): JsonResponse {
+        $items = $transformer
+            ? collect($paginator->items())->map($transformer)->values()->all()
+            : $paginator->items();
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $items,
+            'meta' => $this->getBaseMeta(),
+            'pagination' => PaginationHelper::fromPaginator($paginator),
+        ]);
+    }
+
+    /**
+     * Return a paginated response from array/collection with manual pagination
+     *
+     * Use this when you have an array or collection that needs manual slicing
+     */
+    protected function paginatedFromArray(
+        array $items,
+        int $total,
+        int $page,
+        int $perPage,
+        string $message = 'Success'
+    ): JsonResponse {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $items,
+            'meta' => $this->getBaseMeta(),
+            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
+        ]);
+    }
+
+    /**
+     * Paginate an array and return response
+     *
+     * Convenience method that handles slicing and pagination in one call
+     */
+    protected function paginateArray(
+        $items,
+        Request $request,
+        string $message = 'Success',
+        ?int $perPage = null
+    ): JsonResponse {
+        $result = PaginationHelper::paginateArray($items, $request, $perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $result['items'],
+            'meta' => $this->getBaseMeta(),
+            'pagination' => $result['pagination'],
         ]);
     }
 
@@ -163,6 +259,52 @@ trait ApiResponses
             'request_id' => request()->header('X-Request-ID', (string) Str::uuid()),
             'api_version' => 'v1',
         ];
+    }
+
+    /**
+     * Get meta with last_updated for cacheable resources
+     *
+     * Used for mobile apps to determine if cached data is still fresh.
+     *
+     * @param \DateTimeInterface|string|null $lastUpdated Last modification timestamp
+     * @return array Meta array with last_updated field
+     */
+    protected function getMetaWithLastUpdated($lastUpdated = null): array
+    {
+        $meta = $this->getBaseMeta();
+
+        if ($lastUpdated) {
+            $meta['last_updated'] = $lastUpdated instanceof \DateTimeInterface
+                ? $lastUpdated->format('c')
+                : $lastUpdated;
+        }
+
+        return $meta;
+    }
+
+    /**
+     * Return a cacheable success response with last_updated timestamp
+     *
+     * @param mixed $data Response data
+     * @param string $message Success message
+     * @param \DateTimeInterface|string|null $lastUpdated Last modification timestamp
+     * @param int $status HTTP status code
+     * @return JsonResponse
+     */
+    protected function successCacheable(
+        mixed $data = null,
+        string $message = 'Success',
+        $lastUpdated = null,
+        int $status = 200
+    ): JsonResponse {
+        $response = [
+            'success' => true,
+            'message' => $message,
+            'data' => $data,
+            'meta' => $this->getMetaWithLastUpdated($lastUpdated),
+        ];
+
+        return response()->json($response, $status);
     }
 
     /**

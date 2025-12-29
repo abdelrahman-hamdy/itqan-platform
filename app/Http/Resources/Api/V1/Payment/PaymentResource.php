@@ -23,55 +23,55 @@ class PaymentResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'payment_code' => $this->payment_code,
+            'id' => $this->resource->id,
+            'payment_code' => $this->resource->payment_code,
 
             // Payable (polymorphic)
             'payable' => [
-                'type' => $this->payable_type,
-                'id' => $this->payable_id,
+                'type' => $this->resource->payable_type,
+                'id' => $this->resource->payable_id,
             ],
 
             // Amount
-            'amount' => (float) $this->amount,
-            'currency' => $this->currency,
+            'amount' => (float) $this->resource->amount,
+            'currency' => $this->resource->currency,
 
             // Status
             'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
+                'value' => $this->resource->status->value,
+                'label' => $this->resource->status->label(),
+                'color' => $this->resource->status->color(),
             ],
 
             // Payment method
-            'payment_method' => $this->payment_method,
-            'payment_gateway' => $this->payment_gateway,
+            'payment_method' => $this->resource->payment_method,
+            'payment_gateway' => $this->resource->payment_gateway,
 
             // Transaction details
-            'transaction_id' => $this->transaction_id,
+            'transaction_id' => $this->resource->transaction_id,
             'gateway_response' => $this->when(
                 $request->user()?->isAdmin() ?? false,
-                $this->gateway_response
+                $this->resource->gateway_response
             ),
 
             // User
             'user' => $this->whenLoaded('user', [
-                'id' => $this->user?->id,
-                'name' => $this->user?->name,
-                'email' => $this->user?->email,
+                'id' => $this->resource->user?->id,
+                'name' => $this->resource->user?->name,
+                'email' => $this->resource->user?->email,
             ]),
 
             // Dates
-            'paid_at' => $this->paid_at?->toISOString(),
-            'refunded_at' => $this->refunded_at?->toISOString(),
+            'paid_at' => $this->resource->paid_at?->toISOString(),
+            'refunded_at' => $this->resource->refunded_at?->toISOString(),
 
             // Refund
-            'refund_amount' => $this->refund_amount ? (float) $this->refund_amount : null,
-            'refund_reason' => $this->when($this->refunded_at, $this->refund_reason),
+            'refund_amount' => $this->resource->refund_amount ? (float) $this->resource->refund_amount : null,
+            'refund_reason' => $this->when($this->resource->refunded_at, $this->resource->refund_reason),
 
             // Timestamps
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
+            'created_at' => $this->resource->created_at->toISOString(),
+            'updated_at' => $this->resource->updated_at->toISOString(),
         ];
     }
 }

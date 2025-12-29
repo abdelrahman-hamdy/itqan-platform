@@ -45,15 +45,21 @@ class EnsureUserBelongsToAcademy
 
         // Verify user belongs to the academy
         if ($user->academy_id !== $academy->id) {
+            // Log detailed info server-side for debugging (not exposed to client)
+            \Log::warning('API: Academy mismatch detected', [
+                'user_id' => $user->id,
+                'user_academy_id' => $user->academy_id,
+                'requested_academy_id' => $academy->id,
+                'ip' => request()->ip(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => __('You do not have access to this academy'),
-                'error_code' => 'ACADEMY_MISMATCH',
+                'message' => __('Access denied'),
+                'error_code' => 'FORBIDDEN',
                 'meta' => [
                     'timestamp' => now()->toISOString(),
                     'api_version' => 'v1',
-                    'user_academy_id' => $user->academy_id,
-                    'requested_academy_id' => $academy->id,
                 ],
             ], 403);
         }

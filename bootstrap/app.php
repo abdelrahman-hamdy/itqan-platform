@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web([
+            \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\ContentSecurityPolicy::class,
             \App\Http\Middleware\ResolveTenantFromSubdomain::class,
             \App\Http\Middleware\CheckMaintenanceMode::class,
@@ -43,6 +44,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.is.teacher' => \App\Http\Middleware\Api\EnsureUserIsTeacher::class,
             'api.is.quran-teacher' => \App\Http\Middleware\Api\EnsureUserIsQuranTeacher::class,
             'api.is.academic-teacher' => \App\Http\Middleware\Api\EnsureUserIsAcademicTeacher::class,
+            'api.deprecated' => \App\Http\Middleware\Api\DeprecatedRoute::class,
+            'api.cache' => \App\Http\Middleware\Api\CacheHeaders::class,
         ]);
 
         // CRITICAL: Exclude webhook endpoints from CSRF protection

@@ -3,42 +3,36 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Resources\Api\V1\Student\DashboardResource;
-use App\Models\AcademicSubscription;
-use App\Models\CourseSubscription;
-use App\Models\QuranSession;
 use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
-use App\Models\QuranSubscription;
-use App\Services\SessionFetchingService;
+use App\Services\Unified\UnifiedSessionFetchingService;
+use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 
 /**
  * Student Dashboard API Controller
  *
- * Demonstrates usage of the standardized ApiResponseService via ApiResponses trait.
  * Provides dashboard data including sessions, subscriptions, and quick stats.
+ * Uses unified services for consistent data fetching across session and subscription types.
  */
 class DashboardController extends Controller
 {
     use ApiResponses;
 
     public function __construct(
-        protected SessionFetchingService $sessionFetchingService
+        protected UnifiedSessionFetchingService $sessionService,
+        protected UnifiedSubscriptionFetchingService $subscriptionService
     ) {
     }
 
     /**
      * Get student dashboard data.
      *
-     * Demonstrates ApiResponseService usage:
-     * - notFoundResponse() for missing student profile
-     * - successResponse() for successful data retrieval
+     * Uses unified services for session and subscription fetching.
      *
      * @param Request $request
      * @return JsonResponse
@@ -47,24 +41,19 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $academy = $request->attributes->get('academy') ?? current_academy();
+        $academyId = $academy?->id;
         $studentProfile = $user->studentProfile()->first();
 
-        // Example: Using notFoundResponse() method from ApiResponses trait
         if (!$studentProfile) {
-            return $this->notFoundResponse(__('Student profile not found.'));
+            return $this->notFound(__('Student profile not found.'));
         }
 
-        // Get today's date
-        $today = Carbon::today();
+        // Use unified session service for consistent data format
+        $todaySessions = $this->sessionService->getToday([$user->id], $academyId);
+        $upcomingSessions = $this->sessionService->getUpcoming([$user->id], $academyId, 7);
 
-        // Get today's sessions across all types
-        $todaySessions = $this->sessionFetchingService->getTodaySessions($user->id, $today);
-
-        // Get upcoming sessions (next 7 days, excluding today)
-        $upcomingSessions = $this->sessionFetchingService->getUpcomingSessions($user->id, $today);
-
-        // Get active subscriptions count
-        $activeSubscriptions = $this->getActiveSubscriptionsCount($user->id);
+        // Use unified subscription service
+        $subscriptionCounts = $this->subscriptionService->countByStatus($user->id, $academyId);
 
         // Get recent homework/quizzes count
         $pendingHomework = $this->getPendingHomeworkCount($user->id);
@@ -75,9 +64,9 @@ class DashboardController extends Controller
 
         // Get quick stats
         $stats = [
-            'today_sessions' => count($todaySessions),
-            'upcoming_sessions' => count($upcomingSessions),
-            'active_subscriptions' => $activeSubscriptions,
+            'today_sessions' => $todaySessions->count(),
+            'upcoming_sessions' => $upcomingSessions->count(),
+            'active_subscriptions' => $subscriptionCounts['active'],
             'pending_homework' => $pendingHomework,
             'pending_quizzes' => $pendingQuizzes,
             'unread_notifications' => $unreadNotifications,
@@ -92,38 +81,14 @@ class DashboardController extends Controller
                 'grade_level' => $studentProfile->gradeLevel?->name,
             ],
             'stats' => $stats,
-            'today_sessions' => $this->formatSessionsForDashboard($todaySessions),
-            'upcoming_sessions' => $this->formatSessionsForDashboard($upcomingSessions),
+            'today_sessions' => $this->formatUnifiedSessionsForApi($todaySessions),
+            'upcoming_sessions' => $this->formatUnifiedSessionsForApi($upcomingSessions),
         ];
 
-        // Example: Using successResponse() method from ApiResponses trait
-        // Automatically includes success flag, message, and data in standardized format
-        return $this->successResponse(
+        return $this->success(
             data: $dashboardData,
             message: __('Dashboard data retrieved successfully')
         );
-    }
-
-    /**
-     * Get active subscriptions count.
-     */
-    protected function getActiveSubscriptionsCount(int $userId): int
-    {
-        $count = 0;
-
-        $count += QuranSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
-
-        $count += AcademicSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
-
-        $count += CourseSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
-
-        return $count;
     }
 
     /**
@@ -131,7 +96,6 @@ class DashboardController extends Controller
      */
     protected function getPendingHomeworkCount(int $userId): int
     {
-        // Get academic sessions with pending homework
         return AcademicSession::where('student_id', $userId)
             ->whereNotNull('homework')
             ->where('homework', '!=', '')
@@ -155,86 +119,27 @@ class DashboardController extends Controller
     }
 
     /**
-     * Format sessions for dashboard display.
+     * Format unified sessions for API response.
+     *
+     * The unified service already provides normalized data, we just need
+     * to transform it to the API response format.
      */
-    protected function formatSessionsForDashboard(array $sessions): array
+    protected function formatUnifiedSessionsForApi(\Illuminate\Support\Collection $sessions): array
     {
-        return array_map(function ($item) {
-            $session = $item['session'];
-            $type = $item['type'];
-
-            $baseData = [
-                'id' => $session->id,
-                'type' => $type,
-                'title' => $this->getSessionTitle($session, $type),
-                'status' => $session->status->value ?? $session->status,
-                'duration_minutes' => $session->duration_minutes ?? 45,
-                'can_join' => $this->canJoinSession($session, $type),
+        return $sessions->map(function ($session) {
+            return [
+                'id' => $session['id'],
+                'type' => $session['type'],
+                'title' => $session['title'],
+                'status' => $session['status'],
+                'duration_minutes' => $session['duration_minutes'],
+                'can_join' => $session['can_join'],
+                'scheduled_at' => $session['scheduled_at']?->toISOString(),
+                'teacher' => $session['teacher_name'] ? [
+                    'name' => $session['teacher_name'],
+                    'avatar' => $session['teacher_avatar'],
+                ] : null,
             ];
-
-            // Add scheduled time (all session types now use scheduled_at)
-            $baseData['scheduled_at'] = $session->scheduled_at?->toISOString();
-
-            // Add teacher info
-            $teacher = $this->getTeacherFromSession($session, $type);
-            if ($teacher) {
-                $baseData['teacher'] = [
-                    'id' => $teacher->id,
-                    'name' => $teacher->name,
-                    'avatar' => $teacher->avatar ? asset('storage/' . $teacher->avatar) : null,
-                ];
-            }
-
-            return $baseData;
-        }, $sessions);
-    }
-
-    /**
-     * Get session title.
-     */
-    protected function getSessionTitle($session, string $type): string
-    {
-        return match ($type) {
-            'quran' => $session->title ?? 'جلسة قرآنية',
-            'academic' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-            'interactive' => $session->title ?? $session->course?->title ?? 'جلسة تفاعلية',
-            default => 'جلسة',
-        };
-    }
-
-    /**
-     * Get teacher from session.
-     */
-    protected function getTeacherFromSession($session, string $type)
-    {
-        return match ($type) {
-            // quranTeacher returns User directly (not QuranTeacherProfile)
-            'quran' => $session->quranTeacher,
-            // academicTeacher returns AcademicTeacherProfile, so we need ->user
-            'academic' => $session->academicTeacher?->user,
-            'interactive' => $session->course?->assignedTeacher?->user,
-            default => null,
-        };
-    }
-
-    /**
-     * Check if student can join session.
-     */
-    protected function canJoinSession($session, string $type): bool
-    {
-        $now = now();
-        $sessionTime = $session->scheduled_at;
-
-        if (!$sessionTime) {
-            return false;
-        }
-
-        // Can join 10 minutes before until session end
-        $joinStart = $sessionTime->copy()->subMinutes(10);
-        $duration = $session->duration_minutes ?? 45;
-        $joinEnd = $sessionTime->copy()->addMinutes($duration);
-
-        return $now->between($joinStart, $joinEnd)
-            && !in_array($session->status->value ?? $session->status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
+        })->toArray();
     }
 }

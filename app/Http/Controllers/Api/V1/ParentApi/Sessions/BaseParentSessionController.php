@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Api\V1\ParentApi\Sessions;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Helpers\PaginationHelper;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\ParentStudentRelationship;
 use Illuminate\Http\JsonResponse;
 
@@ -97,7 +98,7 @@ abstract class BaseParentSessionController extends Controller
         $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {
-            return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
+            return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
         if ($childId) {
@@ -106,7 +107,7 @@ abstract class BaseParentSessionController extends Controller
                 ->exists();
 
             if (!$hasAccess) {
-                return $this->error(__('Child not found or access denied.'), 403, 'CHILD_ACCESS_DENIED');
+                return $this->error(__('Child not found or access denied.'), 403, ['code' => 'CHILD_ACCESS_DENIED']);
             }
         }
 
@@ -150,13 +151,7 @@ abstract class BaseParentSessionController extends Controller
 
         return [
             'sessions' => $items,
-            'pagination' => [
-                'current_page' => (int) $page,
-                'per_page' => (int) $perPage,
-                'total' => $total,
-                'total_pages' => ceil($total / $perPage),
-                'has_more' => ($page * $perPage) < $total,
-            ],
+            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
         ];
     }
 }

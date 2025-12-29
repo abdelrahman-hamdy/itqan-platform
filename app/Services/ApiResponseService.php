@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Http\Helpers\PaginationHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -171,7 +172,9 @@ class ApiResponseService
     }
 
     /**
-     * Paginated response with meta information
+     * Paginated response with standardized pagination structure
+     *
+     * Uses PaginationHelper for consistent pagination format across all endpoints.
      *
      * @param LengthAwarePaginator $paginator Paginator instance
      * @param string $message Success message
@@ -183,14 +186,7 @@ class ApiResponseService
             'success' => true,
             'message' => $message ?: __('Data retrieved successfully'),
             'data' => $paginator->items(),
-            'meta' => [
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($paginator),
         ];
 
         return response()->json($response, 200);

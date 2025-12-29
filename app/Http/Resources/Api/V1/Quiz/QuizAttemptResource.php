@@ -23,78 +23,78 @@ class QuizAttemptResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'attempt_number' => $this->attempt_number,
+            'id' => $this->resource->id,
+            'attempt_number' => $this->resource->attempt_number,
 
             // Quiz reference
             'quiz' => $this->whenLoaded('quiz', function () {
                 return [
-                    'id' => $this->quiz?->id,
-                    'title' => $this->quiz?->title,
-                    'total_marks' => (float) $this->quiz?->total_marks,
-                    'passing_marks' => (float) $this->quiz?->passing_marks,
+                    'id' => $this->resource->quiz?->id,
+                    'title' => $this->resource->quiz?->title,
+                    'total_marks' => (float) $this->resource->quiz?->total_marks,
+                    'passing_marks' => (float) $this->resource->quiz?->passing_marks,
                 ];
             }),
 
             // Student
             'student' => $this->whenLoaded('student', [
-                'id' => $this->student?->id,
-                'name' => $this->student?->user?->name,
-                'student_code' => $this->student?->student_code,
+                'id' => $this->resource->student?->id,
+                'name' => $this->resource->student?->user?->name,
+                'student_code' => $this->resource->student?->student_code,
             ]),
 
             // Timing
-            'started_at' => $this->started_at?->toISOString(),
-            'completed_at' => $this->completed_at?->toISOString(),
-            'time_taken_minutes' => $this->time_taken_minutes,
+            'started_at' => $this->resource->started_at?->toISOString(),
+            'completed_at' => $this->resource->completed_at?->toISOString(),
+            'time_taken_minutes' => $this->resource->time_taken_minutes,
             'time_remaining_minutes' => $this->when(
-                !$this->completed_at && $this->quiz?->duration_minutes,
+                !$this->resource->completed_at && $this->resource->quiz?->duration_minutes,
                 fn() => $this->calculateRemainingTime()
             ),
 
             // Scoring
             'score' => [
-                'marks_obtained' => (float) $this->marks_obtained,
-                'total_marks' => (float) $this->total_marks,
-                'percentage' => (float) $this->percentage,
-                'passed' => $this->passed,
-                'grade' => $this->grade,
+                'marks_obtained' => (float) $this->resource->marks_obtained,
+                'total_marks' => (float) $this->resource->total_marks,
+                'percentage' => (float) $this->resource->percentage,
+                'passed' => $this->resource->passed,
+                'grade' => $this->resource->grade,
             ],
 
             // Status
-            'status' => $this->status,
-            'is_completed' => $this->completed_at !== null,
+            'status' => $this->resource->status,
+            'is_completed' => $this->resource->completed_at !== null,
 
             // Answers (conditionally shown)
             'answers' => $this->when(
-                $this->completed_at || $request->user()?->isTeacher(),
-                $this->answers
+                $this->resource->completed_at || $request->user()?->isTeacher(),
+                $this->resource->answers
             ),
 
             // Feedback
-            'feedback' => $this->feedback,
-            'teacher_comments' => $this->teacher_comments,
+            'feedback' => $this->resource->feedback,
+            'teacher_comments' => $this->resource->teacher_comments,
 
             // Auto-grading
-            'auto_graded' => $this->auto_graded,
-            'graded_at' => $this->graded_at?->toISOString(),
+            'auto_graded' => $this->resource->auto_graded,
+            'graded_at' => $this->resource->graded_at?->toISOString(),
             'graded_by' => $this->whenLoaded('gradedBy', [
-                'id' => $this->gradedBy?->id,
-                'name' => $this->gradedBy?->name,
+                'id' => $this->resource->gradedBy?->id,
+                'name' => $this->resource->gradedBy?->name,
             ]),
 
             // Question statistics
             'statistics' => [
-                'total_questions' => $this->total_questions,
-                'correct_answers' => $this->correct_answers,
-                'incorrect_answers' => $this->incorrect_answers,
-                'unanswered' => $this->unanswered,
-                'accuracy_percentage' => $this->accuracy_percentage,
+                'total_questions' => $this->resource->total_questions,
+                'correct_answers' => $this->resource->correct_answers,
+                'incorrect_answers' => $this->resource->incorrect_answers,
+                'unanswered' => $this->resource->unanswered,
+                'accuracy_percentage' => $this->resource->accuracy_percentage,
             ],
 
             // Timestamps
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
+            'created_at' => $this->resource->created_at->toISOString(),
+            'updated_at' => $this->resource->updated_at->toISOString(),
         ];
     }
 
@@ -105,12 +105,12 @@ class QuizAttemptResource extends JsonResource
      */
     protected function calculateRemainingTime(): ?int
     {
-        if (!$this->started_at || !$this->quiz?->duration_minutes) {
+        if (!$this->resource->started_at || !$this->resource->quiz?->duration_minutes) {
             return null;
         }
 
-        $elapsedMinutes = now()->diffInMinutes($this->started_at);
-        $remaining = $this->quiz->duration_minutes - $elapsedMinutes;
+        $elapsedMinutes = now()->diffInMinutes($this->resource->started_at);
+        $remaining = $this->resource->quiz->duration_minutes - $elapsedMinutes;
 
         return max(0, $remaining);
     }

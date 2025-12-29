@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\HomeworkSubmission;
@@ -96,13 +97,7 @@ class HomeworkController extends Controller
 
         return $this->success([
             'homework' => array_values($homework),
-            'pagination' => [
-                'current_page' => (int) $page,
-                'per_page' => (int) $perPage,
-                'total' => $total,
-                'total_pages' => ceil($total / $perPage),
-                'has_more' => ($page * $perPage) < $total,
-            ],
+            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
         ], __('Homework retrieved successfully'));
     }
 
@@ -378,13 +373,7 @@ class HomeworkController extends Controller
                 'submitted_at' => $sub->submitted_at?->toISOString(),
                 'graded_at' => $sub->graded_at?->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $submissions->currentPage(),
-                'per_page' => $submissions->perPage(),
-                'total' => $submissions->total(),
-                'total_pages' => $submissions->lastPage(),
-                'has_more' => $submissions->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($submissions),
         ], __('Submissions retrieved successfully'));
     }
 

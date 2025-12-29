@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourseSession;
@@ -13,17 +13,26 @@ use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
-use App\Services\AcademicAttendanceService;
+use App\Services\Attendance\AcademicReportService;
+use App\Services\Attendance\QuranReportService;
+use App\Services\Attendance\InteractiveReportService;
 use App\Services\LiveKitService;
-use App\Services\UnifiedAttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Unified API Controller for general session status endpoints
+ * Mobile API Controller for unified session status endpoints
  *
- * Handles polymorphic session status with smart resolution across all session types
+ * Handles polymorphic session status with smart resolution across all session types.
+ * Used by mobile API routes (routes/api.php) under /api/sessions/* prefix.
+ *
+ * Features:
+ * - Smart session type resolution (Academic, Quran, Interactive)
+ * - Unified response format for mobile app consumption
+ * - Auto-completion of expired sessions
+ *
+ * @see SessionStatusApiController for web-specific endpoints
  */
 class UnifiedSessionStatusApiController extends Controller
 {
@@ -83,7 +92,7 @@ class UnifiedSessionStatusApiController extends Controller
             $preparationMinutes
         );
 
-        return $this->successResponse([
+        return $this->success([
             'status' => $session->status instanceof SessionStatus
                 ? $session->status->value
                 : $session->status,
@@ -144,7 +153,7 @@ class UnifiedSessionStatusApiController extends Controller
 
         // Before session
         if ($isBeforeSession) {
-            return $this->successResponse([
+            return $this->success([
                 'is_currently_in_meeting' => false,
                 'attendance_status' => 'not_started',
                 'attendance_percentage' => '0.00',
@@ -165,7 +174,7 @@ class UnifiedSessionStatusApiController extends Controller
      */
     private function unauthenticatedResponse(): JsonResponse
     {
-        return $this->customResponse([
+        return $this->success([
             'message' => 'يجب تسجيل الدخول لعرض حالة الجلسة',
             'status' => 'unauthenticated',
             'can_join' => false,
@@ -415,7 +424,7 @@ class UnifiedSessionStatusApiController extends Controller
                 $attendanceStatus = 'partial_attendance';
             }
 
-            return $this->successResponse([
+            return $this->success([
                 'is_currently_in_meeting' => false,
                 'attendance_status' => $attendanceStatus,
                 'attendance_percentage' => number_format($sessionReport->attendance_percentage ?? 0, 2),
@@ -429,7 +438,7 @@ class UnifiedSessionStatusApiController extends Controller
             ]);
         }
 
-        return $this->successResponse([
+        return $this->success([
             'is_currently_in_meeting' => false,
             'attendance_status' => $hasEverJoined ? 'not_enough_time' : 'not_attended',
             'attendance_percentage' => '0.00',
@@ -467,13 +476,17 @@ class UnifiedSessionStatusApiController extends Controller
      */
     private function buildActiveAttendanceResponse($session, $user, bool $hasEverJoined, bool $isDuringSession, string $statusValue): JsonResponse
     {
+        // Resolve the appropriate service based on session type
         if ($session instanceof AcademicSession) {
-            $service = app(AcademicAttendanceService::class);
-            $status = $service->getCurrentAttendanceStatus($session, $user);
+            $service = app(AcademicReportService::class);
+        } elseif ($session instanceof InteractiveCourseSession) {
+            $service = app(InteractiveReportService::class);
         } else {
-            $service = app(UnifiedAttendanceService::class);
-            $status = $service->getCurrentAttendanceStatus($session, $user);
+            // QuranSession
+            $service = app(QuranReportService::class);
         }
+
+        $status = $service->getCurrentAttendanceStatus($session, $user);
 
         $status['session_state'] = $isDuringSession ? 'ongoing' : 'scheduled';
         $status['has_ever_joined'] = $hasEverJoined;
@@ -482,6 +495,6 @@ class UnifiedSessionStatusApiController extends Controller
             $status['attendance_status'] = 'not_joined_yet';
         }
 
-        return $this->successResponse($status);
+        return $this->success($status);
     }
 }

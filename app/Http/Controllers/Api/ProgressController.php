@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\Lesson;
 use App\Models\RecordedCourse;
 use App\Models\StudentProgress;
@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use App\Http\Requests\UpdateLessonProgressRequest;
 
 class ProgressController extends Controller
 {
@@ -23,7 +24,7 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $course = RecordedCourse::findOrFail($courseId);
@@ -36,7 +37,7 @@ class ProgressController extends Controller
 
         $progressPercentage = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
 
-        return $this->successResponse([
+        return $this->success([
             'progress_percentage' => $progressPercentage,
             'completed_lessons' => $completedLessons,
             'total_lessons' => $totalLessons,
@@ -51,13 +52,13 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $lesson = Lesson::findOrFail($lessonId);
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
 
-        return $this->successResponse([
+        return $this->success([
             'progress' => [
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
@@ -71,19 +72,13 @@ class ProgressController extends Controller
     /**
      * Update lesson progress
      */
-    public function updateLessonProgress(Request $request, $courseId, $lessonId): JsonResponse
+    public function updateLessonProgress(UpdateLessonProgressRequest $request, $courseId, $lessonId): JsonResponse
     {
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
-
-        $request->validate([
-            'current_time' => 'required|numeric|min:0',
-            'total_time' => 'required|numeric|min:0',
-            'progress_percentage' => 'required|numeric|min:0|max:100',
-        ]);
 
         $lesson = Lesson::findOrFail($lessonId);
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
@@ -93,7 +88,7 @@ class ProgressController extends Controller
             (int) $request->total_time
         );
 
-        return $this->successResponse([
+        return $this->success([
             'progress' => [
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
@@ -110,14 +105,14 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $lesson = Lesson::findOrFail($lessonId);
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
         $progress->markAsCompleted();
 
-        return $this->successResponse([
+        return $this->success([
             'progress' => [
                 'is_completed' => true,
                 'completed_at' => $progress->completed_at,
@@ -133,7 +128,7 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $lesson = Lesson::findOrFail($lessonId);
@@ -152,7 +147,7 @@ class ProgressController extends Controller
             $message = 'Lesson marked as complete';
         }
 
-        return $this->successResponse([
+        return $this->success([
             'progress' => [
                 'is_completed' => $progress->is_completed,
                 'progress_percentage' => $progress->progress_percentage,

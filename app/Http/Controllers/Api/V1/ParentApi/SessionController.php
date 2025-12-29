@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\CourseSubscription;
@@ -144,13 +145,7 @@ class SessionController extends Controller
 
         return $this->success([
             'sessions' => $sessions,
-            'pagination' => [
-                'current_page' => (int) $page,
-                'per_page' => (int) $perPage,
-                'total' => $total,
-                'total_pages' => ceil($total / $perPage),
-                'has_more' => ($page * $perPage) < $total,
-            ],
+            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
         ], __('Sessions retrieved successfully'));
     }
 

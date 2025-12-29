@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Common;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -69,13 +70,7 @@ class ChatController extends Controller
                     'updated_at' => $conversation->updated_at->toISOString(),
                 ];
             })->toArray(),
-            'pagination' => [
-                'current_page' => $conversations->currentPage(),
-                'per_page' => $conversations->perPage(),
-                'total' => $conversations->total(),
-                'total_pages' => $conversations->lastPage(),
-                'has_more' => $conversations->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($conversations),
         ], __('Conversations retrieved successfully'));
     }
 
@@ -252,13 +247,7 @@ class ChatController extends Controller
                 ],
                 'created_at' => $message->created_at->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $messages->currentPage(),
-                'per_page' => $messages->perPage(),
-                'total' => $messages->total(),
-                'total_pages' => $messages->lastPage(),
-                'has_more' => $messages->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($messages),
         ], __('Messages retrieved successfully'));
     }
 

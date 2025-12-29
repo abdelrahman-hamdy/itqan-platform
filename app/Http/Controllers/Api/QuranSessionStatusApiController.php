@@ -43,7 +43,7 @@ class QuranSessionStatusApiController extends BaseSessionStatusApiController
     public function attendance(Request $request, int $sessionId): JsonResponse
     {
         if (! auth()->check()) {
-            return $this->unauthorizedResponse('Unauthenticated');
+            return $this->unauthorized('Unauthenticated');
         }
 
         $session = QuranSession::with('meetingAttendances')->findOrFail($sessionId);

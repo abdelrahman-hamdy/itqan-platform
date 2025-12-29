@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Common;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,13 +45,7 @@ class NotificationController extends Controller
                 'created_at' => $notification->created_at->toISOString(),
                 'action_url' => $notification->data['action_url'] ?? null,
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $notifications->currentPage(),
-                'per_page' => $notifications->perPage(),
-                'total' => $notifications->total(),
-                'total_pages' => $notifications->lastPage(),
-                'has_more' => $notifications->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($notifications),
         ], __('Notifications retrieved successfully'));
     }
 

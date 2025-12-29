@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -50,7 +50,7 @@ class DashboardController extends Controller
         ];
 
         // Example: Using successResponse() from ApiResponses trait
-        return $this->successResponse(
+        return $this->success(
             data: $dashboardData,
             message: __('Dashboard data retrieved successfully')
         );

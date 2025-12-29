@@ -27,69 +27,69 @@ class TeacherResource extends JsonResource
         $isQuranTeacher = $this->resource instanceof QuranTeacherProfile;
 
         return [
-            'id' => $this->id,
-            'teacher_code' => $this->teacher_code,
+            'id' => $this->resource->id,
+            'teacher_code' => $this->resource->teacher_code,
             'type' => $isQuranTeacher ? 'quran' : 'academic',
 
             // Status
-            'is_active' => $this->is_active,
+            'is_active' => $this->resource->is_active,
             'approval_status' => [
-                'value' => $this->approval_status->value,
-                'label' => $this->approval_status->label(),
+                'value' => $this->resource->approval_status->value,
+                'label' => $this->resource->approval_status->label(),
             ],
 
             // User information
             'user' => $this->whenLoaded('user', [
-                'id' => $this->user?->id,
-                'email' => $this->user?->email,
-                'first_name' => $this->user?->first_name,
-                'last_name' => $this->user?->last_name,
-                'full_name' => $this->user?->name,
-                'phone' => $this->user?->phone,
+                'id' => $this->resource->user?->id,
+                'email' => $this->resource->user?->email,
+                'first_name' => $this->resource->user?->first_name,
+                'last_name' => $this->resource->user?->last_name,
+                'full_name' => $this->resource->user?->name,
+                'phone' => $this->resource->user?->phone,
                 'avatar_url' => $this->getAvatarUrl(),
             ]),
 
             // Profile
-            'bio_arabic' => $this->bio_arabic,
-            'bio_english' => $this->bio_english,
+            'bio_arabic' => $this->resource->bio_arabic,
+            'bio_english' => $this->resource->bio_english,
 
             // Qualifications
             'educational_qualification' => $this->when(
                 $isQuranTeacher,
                 fn() => [
-                    'value' => $this->educational_qualification?->value,
-                    'label' => $this->educational_qualification?->label(),
+                    'value' => $this->resource->educational_qualification?->value,
+                    'label' => $this->resource->educational_qualification?->label(),
                 ]
             ),
-            'education_level' => $this->when(!$isQuranTeacher, $this->education_level),
-            'teaching_experience_years' => $this->teaching_experience_years,
+            'education_level' => $this->when(!$isQuranTeacher, $this->resource->education_level),
+            'teaching_experience_years' => $this->resource->teaching_experience_years,
 
             // Pricing
             'pricing' => [
-                'session_price_individual' => (float) $this->session_price_individual,
-                'session_price_group' => $isQuranTeacher ? (float) $this->session_price_group : null,
-                'currency' => $this->academy?->currency?->value ?? 'SAR',
+                'session_price_individual' => (float) $this->resource->session_price_individual,
+                'session_price_group' => $isQuranTeacher ? (float) $this->resource->session_price_group : null,
+                'currency' => $this->resource->academy?->currency?->value ?? 'SAR',
             ],
 
             // Statistics
             'statistics' => [
-                'rating' => $this->rating ? (float) $this->rating : null,
-                'total_reviews' => $this->total_reviews ?? 0,
-                'total_students' => $this->total_students ?? 0,
-                'total_sessions' => $this->total_sessions ?? 0,
+                'rating' => $this->resource->rating ? (float) $this->resource->rating : null,
+                'total_reviews' => $this->resource->total_reviews ?? 0,
+                'total_students' => $this->resource->total_students ?? 0,
+                'total_sessions' => $this->resource->total_sessions ?? 0,
             ],
 
             // Academic-specific
             'subjects' => $this->when(
                 !$isQuranTeacher && $this->relationLoaded('academicSubjects'),
-                fn() => $this->academicSubjects->map(fn($subject) => [
+                fn() => $this->resource->academicSubjects->map(fn($subject) => [
                     'id' => $subject->id,
                     'name' => $subject->name,
                 ])
             ),
             'grade_levels' => $this->when(
                 !$isQuranTeacher && $this->relationLoaded('gradeLevels'),
-                fn() => $this->gradeLevels->map(fn($level) => [
+                fn() => $this->resource->gradeLevels->map(fn($level) => [
                     'id' => $level->id,
                     'name' => $level->name,
                 ])
@@ -97,14 +97,14 @@ class TeacherResource extends JsonResource
 
             // Academy
             'academy' => $this->whenLoaded('academy', [
-                'id' => $this->academy?->id,
-                'name' => $this->academy?->name,
-                'subdomain' => $this->academy?->subdomain,
+                'id' => $this->resource->academy?->id,
+                'name' => $this->resource->academy?->name,
+                'subdomain' => $this->resource->academy?->subdomain,
             ]),
 
             // Timestamps
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
+            'created_at' => $this->resource->created_at->toISOString(),
+            'updated_at' => $this->resource->updated_at->toISOString(),
         ];
     }
 
@@ -113,20 +113,20 @@ class TeacherResource extends JsonResource
      */
     protected function getAvatarUrl(): ?string
     {
-        if ($this->avatar) {
-            if (str_starts_with($this->avatar, 'http')) {
-                return $this->avatar;
+        if ($this->resource->avatar) {
+            if (str_starts_with($this->resource->avatar, 'http')) {
+                return $this->resource->avatar;
             }
-            return asset('storage/' . $this->avatar);
+            return asset('storage/' . $this->resource->avatar);
         }
 
-        if ($this->user?->avatar) {
-            if (str_starts_with($this->user->avatar, 'http')) {
-                return $this->user->avatar;
+        if ($this->resource->user?->avatar) {
+            if (str_starts_with($this->resource->user->avatar, 'http')) {
+                return $this->resource->user->avatar;
             }
-            return asset('storage/' . $this->user->avatar);
+            return asset('storage/' . $this->resource->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->user?->name ?? 'Teacher') . '&background=0ea5e9&color=fff';
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->user?->name ?? 'Teacher') . '&background=0ea5e9&color=fff';
     }
 }

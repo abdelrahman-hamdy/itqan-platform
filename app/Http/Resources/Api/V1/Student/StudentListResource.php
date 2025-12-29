@@ -24,11 +24,11 @@ class StudentListResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'student_code' => $this->student_code,
-            'name' => $this->user?->name,
+            'id' => $this->resource->id,
+            'student_code' => $this->resource->student_code,
+            'name' => $this->resource->user?->name,
             'avatar_url' => $this->getAvatarUrl(),
-            'grade_level' => $this->gradeLevel?->name,
+            'grade_level' => $this->resource->gradeLevel?->name,
         ];
     }
 
@@ -37,20 +37,20 @@ class StudentListResource extends JsonResource
      */
     protected function getAvatarUrl(): ?string
     {
-        if ($this->avatar) {
-            if (str_starts_with($this->avatar, 'http')) {
-                return $this->avatar;
+        if ($this->resource->avatar) {
+            if (str_starts_with($this->resource->avatar, 'http')) {
+                return $this->resource->avatar;
             }
-            return asset('storage/' . $this->avatar);
+            return asset('storage/' . $this->resource->avatar);
         }
 
-        if ($this->user?->avatar) {
-            if (str_starts_with($this->user->avatar, 'http')) {
-                return $this->user->avatar;
+        if ($this->resource->user?->avatar) {
+            if (str_starts_with($this->resource->user->avatar, 'http')) {
+                return $this->resource->user->avatar;
             }
-            return asset('storage/' . $this->user->avatar);
+            return asset('storage/' . $this->resource->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->user?->name ?? 'Student') . '&background=10b981&color=fff';
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->user?->name ?? 'Student') . '&background=10b981&color=fff';
     }
 }

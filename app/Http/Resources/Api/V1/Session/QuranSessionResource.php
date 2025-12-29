@@ -29,59 +29,59 @@ class QuranSessionResource extends SessionResource
     {
         return array_merge(parent::toArray($request), [
             // Session type
-            'session_type' => $this->session_type,
+            'session_type' => $this->resource->session_type,
 
             // Teacher
             'teacher' => $this->whenLoaded('quranTeacher', function () {
-                return new TeacherListResource($this->quranTeacher);
+                return new TeacherListResource($this->resource->quranTeacher);
             }),
 
             // Student (for individual sessions)
             'student' => $this->when(
-                $this->session_type === 'individual' && $this->relationLoaded('student'),
-                fn() => new StudentListResource($this->student)
+                $this->resource->session_type === 'individual' && $this->relationLoaded('student'),
+                fn() => new StudentListResource($this->resource->student)
             ),
 
             // Circle information
             'circle' => $this->whenLoaded('circle', [
-                'id' => $this->circle?->id,
-                'name' => $this->circle?->circle_name,
+                'id' => $this->resource->circle?->id,
+                'name' => $this->resource->circle?->circle_name,
                 'type' => 'group',
             ]),
             'individual_circle' => $this->whenLoaded('individualCircle', [
-                'id' => $this->individualCircle?->id,
-                'name' => $this->individualCircle?->circle_name,
+                'id' => $this->resource->individualCircle?->id,
+                'name' => $this->resource->individualCircle?->circle_name,
                 'type' => 'individual',
             ]),
 
             // Quran progress
             'quran_progress' => [
-                'current_surah' => $this->current_surah,
-                'current_page' => $this->current_page,
+                'current_surah' => $this->resource->current_surah,
+                'current_page' => $this->resource->current_page,
             ],
 
             // Lesson content
-            'lesson_content' => $this->lesson_content,
+            'lesson_content' => $this->resource->lesson_content,
 
             // Homework
             'homework' => [
-                'assigned' => $this->homework_assigned,
-                'details' => $this->when($this->homework_assigned, $this->homework_details),
+                'assigned' => $this->resource->homework_assigned,
+                'details' => $this->when($this->resource->homework_assigned, $this->resource->homework_details),
             ],
 
             // Subscription
             'subscription' => $this->whenLoaded('quranSubscription', [
-                'id' => $this->quranSubscription?->id,
-                'subscription_code' => $this->quranSubscription?->subscription_code,
+                'id' => $this->resource->quranSubscription?->id,
+                'subscription_code' => $this->resource->quranSubscription?->subscription_code,
                 'status' => [
-                    'value' => $this->quranSubscription?->status?->value,
-                    'label' => $this->quranSubscription?->status?->label(),
+                    'value' => $this->resource->quranSubscription?->status?->value,
+                    'label' => $this->resource->quranSubscription?->status?->label(),
                 ],
             ]),
 
             // Subscription counting
-            'subscription_counted' => $this->subscription_counted,
-            'monthly_session_number' => $this->monthly_session_number,
+            'subscription_counted' => $this->resource->subscription_counted,
+            'monthly_session_number' => $this->resource->monthly_session_number,
         ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Certificate;
 use App\Models\ParentStudentRelationship;
@@ -82,13 +83,7 @@ class CertificateController extends Controller
 
         return $this->success([
             'certificates' => array_values($certificates),
-            'pagination' => [
-                'current_page' => (int) $page,
-                'per_page' => (int) $perPage,
-                'total' => $total,
-                'total_pages' => ceil($total / $perPage),
-                'has_more' => ($page * $perPage) < $total,
-            ],
+            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
         ], __('Certificates retrieved successfully'));
     }
 
@@ -209,13 +204,7 @@ class CertificateController extends Controller
                 'thumbnail_url' => $cert->thumbnail_url ? asset('storage/' . $cert->thumbnail_url) : null,
                 'download_url' => $cert->file_path ? route('certificates.download', $cert->id) : null,
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $certificates->currentPage(),
-                'per_page' => $certificates->perPage(),
-                'total' => $certificates->total(),
-                'total_pages' => $certificates->lastPage(),
-                'has_more' => $certificates->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($certificates),
         ], __('Child certificates retrieved successfully'));
     }
 }

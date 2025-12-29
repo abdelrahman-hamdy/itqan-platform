@@ -3,42 +3,34 @@
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
-use App\Models\AcademicSession;
-use App\Models\AcademicSubscription;
-use App\Models\CourseSubscription;
-use App\Models\InteractiveCourseSession;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\ParentStudentRelationship;
-use App\Models\QuranSession;
-use App\Models\QuranSubscription;
-use App\Services\SessionFetchingService;
+use App\Services\Unified\UnifiedSessionFetchingService;
+use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 
 /**
  * Parent Dashboard API Controller
  *
- * Demonstrates usage of the standardized ApiResponseService via ApiResponses trait.
  * Provides parent dashboard with children data, sessions, and subscriptions.
+ * Uses unified services for consistent data fetching across session and subscription types.
  */
 class DashboardController extends Controller
 {
     use ApiResponses;
 
     public function __construct(
-        protected SessionFetchingService $sessionFetchingService
+        protected UnifiedSessionFetchingService $sessionService,
+        protected UnifiedSubscriptionFetchingService $subscriptionService
     ) {
     }
 
     /**
      * Get parent dashboard data.
      *
-     * Demonstrates ApiResponseService usage:
-     * - notFoundResponse() for missing parent profile
-     * - successResponse() with structured data
+     * Uses unified services for session and subscription fetching.
      *
      * @param Request $request
      * @return JsonResponse
@@ -46,14 +38,13 @@ class DashboardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $academy = $request->attributes->get('academy') ?? current_academy();
+        $academyId = $academy?->id;
 
-        // Use explicit relationship query instead of property access
-        // Property access was returning null due to relationship caching issues
         $parentProfile = $user->parentProfile()->first();
 
-        // Example: Using notFoundResponse() from ApiResponses trait
         if (!$parentProfile) {
-            return $this->notFoundResponse(__('Parent profile not found.'));
+            return $this->notFound(__('Parent profile not found.'));
         }
 
         // Get all linked children
@@ -61,15 +52,38 @@ class DashboardController extends Controller
             ->with(['student.user', 'student.gradeLevel'])
             ->get();
 
-        $childrenData = $children->map(function ($relationship) {
+        // Collect all child user IDs
+        $childIds = $children->pluck('student.user.id')->filter()->toArray();
+        $studentIds = $children->pluck('student.id')->toArray();
+        $allIds = array_unique(array_merge($childIds, $studentIds));
+
+        // Batch fetch today's sessions for all children (prevents N+1)
+        $allTodaySessions = $this->sessionService->getToday($allIds, $academyId);
+
+        // Group today's sessions by student for quick lookup
+        $sessionsByStudent = $allTodaySessions->groupBy(function ($session) {
+            return $session['student_id'] ?? $session['user_id'] ?? null;
+        });
+
+        // Batch fetch subscription counts for all children (prevents N+1)
+        $subscriptionCountsByStudent = [];
+        foreach ($allIds as $studentId) {
+            $counts = $this->subscriptionService->countByStatus($studentId, $academyId);
+            $subscriptionCountsByStudent[$studentId] = $counts;
+        }
+
+        // Build children data with pre-fetched data (no N+1)
+        $childrenData = $children->map(function ($relationship) use ($sessionsByStudent, $subscriptionCountsByStudent) {
             $student = $relationship->student;
             $studentUser = $student->user;
+            $userId = $studentUser?->id ?? $student->id;
 
-            // Get today's sessions for this child
-            $todaySessions = $this->sessionFetchingService->getTodaySessionsCount($studentUser?->id ?? $student->id);
-
-            // Get active subscriptions
-            $activeSubscriptions = $this->getChildActiveSubscriptions($studentUser?->id ?? $student->id);
+            // Lookup pre-fetched data
+            $studentSessions = $sessionsByStudent->get($userId, collect())
+                ->merge($sessionsByStudent->get($student->id, collect()));
+            $subscriptionCounts = $subscriptionCountsByStudent[$userId]
+                ?? $subscriptionCountsByStudent[$student->id]
+                ?? ['active' => 0];
 
             return [
                 'id' => $student->id,
@@ -79,24 +93,20 @@ class DashboardController extends Controller
                 'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : null,
                 'grade_level' => $student->gradeLevel?->name,
                 'relationship' => $relationship->relationship_type,
-                'today_sessions_count' => $todaySessions,
-                'active_subscriptions_count' => $activeSubscriptions,
+                'today_sessions_count' => $studentSessions->count(),
+                'active_subscriptions_count' => $subscriptionCounts['active'],
             ];
         })->toArray();
 
-        // Get all children's upcoming sessions
-        $childIds = $children->pluck('student.user.id')->filter()->toArray();
-        $studentIds = $children->pluck('student.id')->toArray();
-        $allIds = array_unique(array_merge($childIds, $studentIds));
-
-        $upcomingSessions = $this->sessionFetchingService->getAllChildrenUpcomingSessions($allIds);
+        // Get all children's upcoming sessions using unified service
+        $upcomingSessions = $this->sessionService->getUpcoming($allIds, $academyId, 7);
 
         // Get summary stats
         $stats = [
             'total_children' => count($childrenData),
             'total_today_sessions' => collect($childrenData)->sum('today_sessions_count'),
             'total_active_subscriptions' => collect($childrenData)->sum('active_subscriptions_count'),
-            'upcoming_sessions' => count($upcomingSessions),
+            'upcoming_sessions' => $upcomingSessions->count(),
         ];
 
         $dashboardData = [
@@ -107,36 +117,29 @@ class DashboardController extends Controller
             ],
             'children' => $childrenData,
             'stats' => $stats,
-            'upcoming_sessions' => array_slice($upcomingSessions, 0, 5),
+            'upcoming_sessions' => $this->formatUpcomingSessionsForApi($upcomingSessions->take(5)),
         ];
 
-        // Example: Using successResponse() from ApiResponses trait
-        // Returns standardized format: {success: true, message: "...", data: {...}}
-        return $this->successResponse(
+        return $this->success(
             data: $dashboardData,
             message: __('Dashboard data retrieved successfully')
         );
     }
 
     /**
-     * Get active subscriptions count for a child.
+     * Format upcoming sessions for API response.
      */
-    protected function getChildActiveSubscriptions(int $userId): int
+    protected function formatUpcomingSessionsForApi(\Illuminate\Support\Collection $sessions): array
     {
-        $count = 0;
-
-        $count += QuranSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
-
-        $count += AcademicSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
-
-        $count += CourseSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
-
-        return $count;
+        return $sessions->map(function ($session) {
+            return [
+                'id' => $session['id'],
+                'type' => $session['type'],
+                'title' => $session['title'],
+                'child_name' => $session['student_name'],
+                'teacher_name' => $session['teacher_name'],
+                'scheduled_at' => $session['scheduled_at']?->toISOString(),
+            ];
+        })->toArray();
     }
 }

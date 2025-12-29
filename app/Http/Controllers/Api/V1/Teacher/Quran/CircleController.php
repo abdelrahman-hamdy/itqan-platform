@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher\Quran;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
@@ -59,13 +60,7 @@ class CircleController extends Controller
                 'schedule' => $circle->schedule ?? [],
                 'created_at' => $circle->created_at->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $circles->currentPage(),
-                'per_page' => $circles->perPage(),
-                'total' => $circles->total(),
-                'total_pages' => $circles->lastPage(),
-                'has_more' => $circles->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($circles),
         ], __('Individual circles retrieved successfully'));
     }
 
@@ -180,13 +175,7 @@ class CircleController extends Controller
                 'schedule' => $circle->schedule ?? [],
                 'created_at' => $circle->created_at->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $circles->currentPage(),
-                'per_page' => $circles->perPage(),
-                'total' => $circles->total(),
-                'total_pages' => $circles->lastPage(),
-                'has_more' => $circles->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($circles),
         ], __('Group circles retrieved successfully'));
     }
 

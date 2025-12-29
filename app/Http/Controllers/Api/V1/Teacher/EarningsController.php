@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\TeacherPayout;
@@ -243,13 +244,7 @@ class EarningsController extends Controller
             ],
             'total_for_period' => $totalAmount,
             'currency' => 'SAR',
-            'pagination' => [
-                'current_page' => (int) $page,
-                'per_page' => (int) $perPage,
-                'total' => $total,
-                'total_pages' => ceil($total / $perPage),
-                'has_more' => ($page * $perPage) < $total,
-            ],
+            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
         ], __('Earnings history retrieved successfully'));
     }
 
@@ -281,13 +276,7 @@ class EarningsController extends Controller
                 'processed_at' => $payout->processed_at?->toISOString(),
                 'created_at' => $payout->created_at->toISOString(),
             ])->toArray(),
-            'pagination' => [
-                'current_page' => $payouts->currentPage(),
-                'per_page' => $payouts->perPage(),
-                'total' => $payouts->total(),
-                'total_pages' => $payouts->lastPage(),
-                'has_more' => $payouts->hasMorePages(),
-            ],
+            'pagination' => PaginationHelper::fromPaginator($payouts),
         ], __('Payouts retrieved successfully'));
     }
 }
