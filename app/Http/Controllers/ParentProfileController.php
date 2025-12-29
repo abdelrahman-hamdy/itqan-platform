@@ -6,9 +6,12 @@ use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 use App\Http\Middleware\ChildSelectionMiddleware;
+use App\Http\Requests\UpdateParentProfileRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 /**
  * Parent Profile Controller
@@ -23,13 +26,15 @@ class ParentProfileController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
+        $this->authorize('viewDashboard', \App\Models\ParentProfile::class);
+
         $user = Auth::user();
         $parent = $user->parentProfile;
 
         if (!$parent) {
-            abort(403, 'لا يمكن الوصول إلى بيانات ولي الأمر');
+            abort(404, 'لم يتم العثور على الملف الشخصي لولي الأمر');
         }
 
         // Get children (from middleware or fallback)
@@ -113,7 +118,7 @@ class ParentProfileController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function edit()
+    public function edit(): View|RedirectResponse
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -135,7 +140,7 @@ class ParentProfileController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request)
+    public function update(UpdateParentProfileRequest $request): RedirectResponse
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -145,17 +150,7 @@ class ParentProfileController extends Controller
                 ->with('error', 'لم يتم العثور على الملف الشخصي لولي الأمر');
         }
 
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'phone_country_code' => 'nullable|string|max:5',
-            'secondary_phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'occupation' => 'nullable|string|max:255',
-            'preferred_contact_method' => 'nullable|in:phone,email,sms,whatsapp',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        $validated = $request->validated();
 
         // Handle avatar upload
         if ($request->hasFile('avatar')) {

@@ -87,13 +87,13 @@
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border
                         {{ $attendanceStatusValue === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-700 border-green-300' :
                            ($attendanceStatusValue === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
-                           ($attendanceStatusValue === AttendanceStatus::LEAVED->value ? 'bg-orange-100 text-orange-700 border-orange-300' :
+                           ($attendanceStatusValue === AttendanceStatus::LEFT->value ? 'bg-orange-100 text-orange-700 border-orange-300' :
                            'bg-red-100 text-red-700 border-red-300')) }}">
                         <i class="ri-user-follow-line mr-1"></i>
                         {{ match($attendanceStatusValue) {
                             AttendanceStatus::ATTENDED->value => 'حاضر',
                             AttendanceStatus::LATE->value => 'متأخر',
-                            AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                            AttendanceStatus::LEFT->value => 'غادر مبكراً',
                             AttendanceStatus::ABSENT->value => 'غائب',
                             default => $attendanceStatusValue
                         } }}

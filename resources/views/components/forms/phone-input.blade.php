@@ -261,7 +261,6 @@ function phoneInputData(fieldName, countryCodeField, countryField, initialCountr
             // Wait for intl-tel-input library to load
             const initPhone = () => {
                 if (!window.intlTelInput) {
-                    console.warn('Waiting for intl-tel-input library...');
                     // Poll every 100ms for up to 5 seconds
                     const maxAttempts = 50;
                     let attempts = 0;
@@ -272,7 +271,6 @@ function phoneInputData(fieldName, countryCodeField, countryField, initialCountr
                             this.initializeIntlTelInput();
                         } else if (attempts >= maxAttempts) {
                             clearInterval(checkInterval);
-                            console.error('intl-tel-input library failed to load after 5 seconds');
                         }
                     }, 100);
                     return;
@@ -426,8 +424,7 @@ function phoneInputData(fieldName, countryCodeField, countryField, initialCountr
         },
 
         updateFormatHint() {
-            // Simplified - no longer displaying hint text
-            // Keep function for backward compatibility
+            // Empty - format hint display feature removed, method stub retained for safety
         },
 
         updateCountryCode() {

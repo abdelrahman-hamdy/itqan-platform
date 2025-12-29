@@ -13,7 +13,7 @@ use App\Enums\SessionStatus;
  * Eliminates duplication across BaseSessionAttendance, BaseSessionReport, and MeetingAttendance.
  *
  * Attendance Rules (50% threshold):
- * - < 50% attendance = 'leaved' (left early)
+ * - < 50% attendance = 'left' (left early)
  * - >= 50% attendance + joined after grace = 'late'
  * - >= 50% attendance + joined on time = 'attended'
  * - No join = 'absent'
@@ -30,7 +30,7 @@ trait AttendanceCalculatorTrait
      * @param  int  $sessionDurationMinutes  Total session duration
      * @param  int  $actualAttendanceMinutes  How long user actually attended
      * @param  int  $graceMinutes  Grace period for late arrivals (default 15)
-     * @return string  One of: 'attended', 'late', 'leaved', 'absent'
+     * @return string  One of: 'attended', 'late', 'left', 'absent'
      */
     protected function calculateAttendanceStatus(
         ?Carbon $firstJoinTime,
@@ -51,7 +51,7 @@ trait AttendanceCalculatorTrait
 
         // Stayed < 50% - left early (regardless of join time)
         if ($attendancePercentage < 50) {
-            return AttendanceStatus::LEAVED->value;
+            return AttendanceStatus::LEFT->value;
         }
 
         // Stayed >= 50% - check if late
@@ -139,7 +139,7 @@ trait AttendanceCalculatorTrait
             if ($attendancePercentage >= 95) {
                 return AttendanceStatus::LATE->value; // Late arrival but excellent attendance
             } elseif ($attendancePercentage >= 80) {
-                return AttendanceStatus::LEAVED->value; // Late and decent attendance
+                return AttendanceStatus::LEFT->value; // Late and decent attendance
             } else {
                 return AttendanceStatus::ABSENT->value; // Late and poor attendance
             }
@@ -149,7 +149,7 @@ trait AttendanceCalculatorTrait
         if ($attendancePercentage >= 80) {
             return AttendanceStatus::ATTENDED->value;
         } elseif ($attendancePercentage >= 30) {
-            return AttendanceStatus::LEAVED->value;
+            return AttendanceStatus::LEFT->value;
         } else {
             return AttendanceStatus::ABSENT->value;
         }

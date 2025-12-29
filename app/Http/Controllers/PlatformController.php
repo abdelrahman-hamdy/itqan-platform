@@ -10,7 +10,7 @@ class PlatformController extends Controller
     /**
      * Show the platform landing page
      */
-    public function home()
+    public function home(): \Illuminate\View\View
     {
         // Fetch first 9 active service categories
         $services = BusinessServiceCategory::active()
@@ -24,7 +24,7 @@ class PlatformController extends Controller
     /**
      * Show the platform about page
      */
-    public function about()
+    public function about(): \Illuminate\View\View
     {
         return view('platform.about');
     }
@@ -32,7 +32,7 @@ class PlatformController extends Controller
     /**
      * Show the platform features page
      */
-    public function features()
+    public function features(): \Illuminate\View\View
     {
         return view('platform.features');
     }
@@ -40,7 +40,7 @@ class PlatformController extends Controller
     /**
      * Show the platform contact page
      */
-    public function contact()
+    public function contact(): \Illuminate\View\View
     {
         return view('platform.contact');
     }

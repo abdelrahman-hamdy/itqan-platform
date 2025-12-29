@@ -168,7 +168,7 @@ class AttendanceStatus extends Component
                 $dotColors = [
                     AttendanceStatusEnum::ATTENDED->value => 'bg-green-500',
                     AttendanceStatusEnum::LATE->value => 'bg-yellow-500',
-                    AttendanceStatusEnum::LEAVED->value => 'bg-orange-500',
+                    AttendanceStatusEnum::LEFT->value => 'bg-orange-500',
                     AttendanceStatusEnum::ABSENT->value => 'bg-red-500',
                 ];
                 $this->dotColor = $dotColors[$statusEnum->value] ?? 'bg-gray-500';

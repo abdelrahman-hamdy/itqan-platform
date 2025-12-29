@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\Payment\PaymentGatewayInterface;
+use App\Contracts\PaymentServiceInterface;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Services\Payment\DTOs\PaymentIntent;
@@ -20,11 +21,12 @@ use App\Enums\SessionStatus;
  * This service acts as the main entry point for payment processing,
  * delegating to specific gateway implementations via the PaymentGatewayManager.
  */
-class PaymentService
+class PaymentService implements PaymentServiceInterface
 {
     public function __construct(
         private PaymentGatewayManager $gatewayManager,
         private PaymentStateMachine $stateMachine,
+        private NotificationService $notificationService,
     ) {}
 
     /**
@@ -60,7 +62,7 @@ class PaymentService
             // Update payment record
             $this->updatePaymentFromResult($payment, $result, $gatewayName);
 
-            return $this->formatResultForLegacy($result, $gateway);
+            return $this->formatResultAsArray($result, $gateway);
         } catch (PaymentException $e) {
             Log::channel('payments')->error('Payment processing error', [
                 'payment_id' => $payment->id,
@@ -76,16 +78,43 @@ class PaymentService
                 'error' => $e->getErrorMessageAr(),
                 'error_code' => $e->getErrorCode(),
             ];
-        } catch (\Exception $e) {
-            Log::channel('payments')->error('Payment processing exception', [
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::channel('payments')->error('Database error during payment processing', [
                 'payment_id' => $payment->id,
                 'gateway' => $payment->payment_gateway,
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'خطأ في قاعدة البيانات',
+                'error_code' => 'DATABASE_ERROR',
+            ];
+        } catch (\InvalidArgumentException $e) {
+            Log::channel('payments')->error('Invalid payment data', [
+                'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
 
             return [
                 'success' => false,
-                'error' => 'حدث خطأ أثناء معالجة الدفع',
+                'error' => 'بيانات الدفع غير صحيحة',
+                'error_code' => 'INVALID_DATA',
+            ];
+        } catch (\Throwable $e) {
+            Log::channel('payments')->critical('Unexpected payment processing error', [
+                'payment_id' => $payment->id,
+                'gateway' => $payment->payment_gateway,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            report($e);
+
+            return [
+                'success' => false,
+                'error' => 'حدث خطأ غير متوقع أثناء معالجة الدفع',
+                'error_code' => 'UNEXPECTED_ERROR',
             ];
         }
     }
@@ -118,15 +147,41 @@ class PaymentService
             }
 
             return $result;
-        } catch (\Exception $e) {
-            Log::channel('payments')->error('Subscription renewal failed', [
+        } catch (PaymentException $e) {
+            Log::channel('payments')->error('Payment error during subscription renewal', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+                'code' => $e->getErrorCode(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getErrorMessageAr(),
+                'error_code' => $e->getErrorCode(),
+            ];
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::channel('payments')->error('Database error during subscription renewal', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
 
             return [
                 'success' => false,
+                'error' => 'خطأ في قاعدة البيانات',
+                'error_code' => 'DATABASE_ERROR',
+            ];
+        } catch (\Throwable $e) {
+            Log::channel('payments')->critical('Unexpected error during subscription renewal', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            report($e);
+
+            return [
+                'success' => false,
                 'error' => 'فشل في تجديد الاشتراك تلقائياً',
+                'error_code' => 'RENEWAL_FAILED',
             ];
         }
     }
@@ -325,8 +380,6 @@ class PaymentService
                 return;
             }
 
-            $notificationService = app(NotificationService::class);
-
             if ($result->isSuccessful()) {
                 // Prepare notification data for successful payment
                 $notificationData = [
@@ -353,10 +406,10 @@ class PaymentService
                     }
                 }
 
-                $notificationService->sendPaymentSuccessNotification($user, $notificationData);
+                $this->notificationService->sendPaymentSuccessNotification($user, $notificationData);
             } elseif ($result->isFailed()) {
                 // Send failure notification
-                $notificationService->send(
+                $this->notificationService->send(
                     $user,
                     \App\Enums\NotificationType::PAYMENT_FAILED,
                     [
@@ -369,7 +422,12 @@ class PaymentService
                     true  // Mark as important
                 );
             }
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('Payment notification failed - related model not found', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        } catch (\Throwable $e) {
             Log::error('Failed to send payment notification', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
@@ -378,9 +436,9 @@ class PaymentService
     }
 
     /**
-     * Format PaymentResult for legacy array format.
+     * Format PaymentResult DTO as array for controller response.
      */
-    private function formatResultForLegacy(PaymentResult $result, PaymentGatewayInterface $gateway): array
+    private function formatResultAsArray(PaymentResult $result, PaymentGatewayInterface $gateway): array
     {
         if ($result->isSuccessful()) {
             return [

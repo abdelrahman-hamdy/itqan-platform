@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use App\Enums\SessionStatus;
+use App\Http\Requests\UpdateLessonSettingsRequest;
 
 class AcademicIndividualLessonController extends Controller
 {
+    use ApiResponses;
     public function __construct()
     {
         $this->middleware('auth');
@@ -19,13 +23,11 @@ class AcademicIndividualLessonController extends Controller
     /**
      * Display individual lessons (subscriptions) for the academic teacher
      */
-    public function index(Request $request, $subdomain = null)
+    public function index(Request $request, $subdomain = null): View
     {
-        $user = Auth::user();
+        $this->authorize('viewAny', \App\Models\AcademicIndividualLesson::class);
 
-        if (! $user->isAcademicTeacher()) {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
-        }
+        $user = Auth::user();
 
         // Get teacher profile
         $teacherProfile = $user->academicTeacherProfile;
@@ -49,7 +51,7 @@ class AcademicIndividualLessonController extends Controller
     /**
      * Show individual lesson details (using AcademicSubscription)
      */
-    public function show($subdomain, $lesson)
+    public function show($subdomain, $lesson): View
     {
         $user = Auth::user();
 
@@ -71,14 +73,16 @@ class AcademicIndividualLessonController extends Controller
         $isTeacher = false;
         $isStudent = false;
 
+        // Authorization check using the newly created AcademicSubscription model instance
+        // Note: Using AcademicSubscription instead of AcademicIndividualLesson
+        $this->authorize('view', $subscription);
+
         if ($user->user_type === 'academic_teacher' && (int) $subscription->teacher_id === (int) $user->academicTeacherProfile?->id) {
             $userRole = 'teacher';
             $isTeacher = true;
         } elseif ($user->user_type === 'student' && (int) $subscription->student_id === (int) $user->id) {
             $userRole = 'student';
             $isStudent = true;
-        } else {
-            abort(403, 'غير مسموح لك بالوصول لهذا الدرس');
         }
 
         $subscription->load([
@@ -121,20 +125,11 @@ class AcademicIndividualLessonController extends Controller
     /**
      * Show progress report for academic lesson
      */
-    public function progressReport($subdomain, $lesson)
+    public function progressReport($subdomain, $lesson): View
     {
-        $user = Auth::user();
         $lessonModel = AcademicIndividualLesson::findOrFail($lesson);
 
-        // Check permissions
-        if ($user->isAcademicTeacher()) {
-            $teacherProfile = $user->academicTeacherProfile;
-            if (! $teacherProfile || (int) $lessonModel->academic_teacher_id !== (int) $teacherProfile->id) {
-                abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
-            }
-        } else {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
-        }
+        $this->authorize('viewReport', $lessonModel);
 
         $lessonModel->load([
             'student',
@@ -163,47 +158,36 @@ class AcademicIndividualLessonController extends Controller
     /**
      * Update lesson settings
      */
-    public function updateSettings(Request $request, $subdomain, $lesson): JsonResponse
+    public function updateSettings(UpdateLessonSettingsRequest $request, $subdomain, $lesson): JsonResponse
     {
         $user = Auth::user();
         $lessonModel = AcademicIndividualLesson::findOrFail($lesson);
 
         // Check permissions
-        if (! $user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
-        }
-
         $teacherProfile = $user->academicTeacherProfile;
         if (! $teacherProfile || (int) $lessonModel->academic_teacher_id !== (int) $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بتعديل هذا الدرس'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بتعديل هذا الدرس');
         }
 
-        $validated = $request->validate([
-            'default_duration_minutes' => 'nullable|integer|min:30|max:180',
-            'preferred_times' => 'nullable|array',
-            'notes' => 'nullable|string|max:1000',
-            'teacher_notes' => 'nullable|string|max:1000',
-        ]);
+        $validated = $request->validated();
 
         $lessonModel->update($validated);
 
-        return response()->json([
+        return $this->customResponse([
             'success' => true,
             'message' => 'تم تحديث إعدادات الدرس بنجاح',
             'lesson' => $lessonModel->fresh(),
-        ]);
+        ], true, 200);
     }
 
     /**
      * Display interactive courses assigned to the academic teacher
      */
-    public function interactiveCoursesIndex(Request $request, $subdomain = null)
+    public function interactiveCoursesIndex(Request $request, $subdomain = null): View
     {
-        $user = Auth::user();
+        $this->authorize('viewAny', \App\Models\InteractiveCourse::class);
 
-        if (! $user->isAcademicTeacher()) {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
-        }
+        $user = Auth::user();
 
         // Get teacher profile
         $teacherProfile = $user->academicTeacherProfile;

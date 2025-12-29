@@ -4,75 +4,103 @@ namespace App\Contracts;
 
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
- * Interface for calendar services.
+ * Calendar Service Interface
  *
- * This interface defines the contract for calendar operations including
- * event retrieval, availability checking, and conflict detection.
+ * Defines the contract for calendar service operations including event retrieval,
+ * conflict checking, availability management, and calendar statistics.
  */
 interface CalendarServiceInterface
 {
     /**
-     * Get calendar events for a user within a date range.
+     * Get unified calendar for user with optional filters
      *
-     * @param User $user The user
-     * @param Carbon $startDate Start of the date range
-     * @param Carbon $endDate End of the date range
-     * @param array $filters Optional filters (session_type, status, etc.)
-     * @return array List of calendar events
+     * Retrieves all calendar events for a user within a date range, including:
+     * - Quran sessions (individual and circle)
+     * - Academic sessions
+     * - Interactive course sessions
+     * - Break times and unavailable periods
+     *
+     * @param User $user The user to fetch calendar for
+     * @param Carbon $startDate Start of date range
+     * @param Carbon $endDate End of date range
+     * @param array $filters Optional filters (types, status, search)
+     * @return Collection Collection of formatted calendar events
      */
-    public function getEvents(User $user, Carbon $startDate, Carbon $endDate, array $filters = []): array;
+    public function getUserCalendar(
+        User $user,
+        Carbon $startDate,
+        Carbon $endDate,
+        array $filters = []
+    ): Collection;
 
     /**
-     * Get available time slots for scheduling.
+     * Check for scheduling conflicts when creating/updating events
      *
-     * @param User $user The user (typically a teacher)
-     * @param Carbon $date The date to check
-     * @param int $durationMinutes Required duration in minutes
-     * @param array $constraints Additional constraints
-     * @return array List of available time slots
+     * Checks if the proposed time slot conflicts with existing sessions,
+     * courses, or circles for the specified user.
+     *
+     * @param User $user The user to check conflicts for
+     * @param Carbon $startTime Proposed event start time
+     * @param Carbon $endTime Proposed event end time
+     * @param string|null $excludeType Type of event to exclude from check (e.g., 'quran_session')
+     * @param int|null $excludeId ID of specific event to exclude from check
+     * @return Collection Collection of conflicting events
      */
-    public function getAvailableSlots(User $user, Carbon $date, int $durationMinutes = 60, array $constraints = []): array;
+    public function checkConflicts(
+        User $user,
+        Carbon $startTime,
+        Carbon $endTime,
+        ?string $excludeType = null,
+        ?int $excludeId = null
+    ): Collection;
 
     /**
-     * Check for scheduling conflicts.
+     * Get available time slots for user on a specific date
      *
-     * @param User $user The user
-     * @param Carbon $startTime Proposed start time
-     * @param Carbon $endTime Proposed end time
-     * @param int|null $excludeSessionId Session ID to exclude from conflict check
-     * @return array List of conflicting events (empty if no conflicts)
+     * Generates available time slots within working hours that don't conflict
+     * with existing events.
+     *
+     * @param User $user The user to find availability for
+     * @param Carbon $date The date to check availability
+     * @param int $durationMinutes Duration of desired time slot in minutes
+     * @param array $workingHours Array of start and end time strings (e.g., ['09:00', '17:00'])
+     * @return Collection Collection of available time slots
      */
-    public function checkConflicts(User $user, Carbon $startTime, Carbon $endTime, ?int $excludeSessionId = null): array;
+    public function getAvailableSlots(
+        User $user,
+        Carbon $date,
+        int $durationMinutes = 60,
+        array $workingHours = ['09:00', '17:00']
+    ): Collection;
 
     /**
-     * Get weekly availability pattern for a user.
+     * Get teacher availability for the entire week
      *
-     * @param User $user The user
-     * @param Carbon|null $referenceDate Reference date for the week
-     * @return array Weekly availability data
+     * Returns a comprehensive view of teacher availability across a week,
+     * including available slots, booked sessions, and statistics.
+     *
+     * @param User $teacher The teacher to get availability for
+     * @param Carbon $weekStart Start date of the week
+     * @return array Array of availability data indexed by day name
      */
-    public function getWeeklyAvailability(User $user, ?Carbon $referenceDate = null): array;
+    public function getTeacherWeeklyAvailability(User $teacher, Carbon $weekStart): array;
 
     /**
-     * Get calendar statistics for a user.
+     * Get calendar statistics for a specific month
      *
-     * @param User $user The user
-     * @param Carbon $startDate Start of the period
-     * @param Carbon $endDate End of the period
-     * @return array Statistics data (completed, cancelled, etc.)
-     */
-    public function getStatistics(User $user, Carbon $startDate, Carbon $endDate): array;
-
-    /**
-     * Export calendar events to a specific format.
+     * Provides statistical analysis of calendar events including:
+     * - Total events count
+     * - Events by type and status
+     * - Weekly breakdown
+     * - Busiest day
+     * - Total hours
      *
-     * @param User $user The user
-     * @param Carbon $startDate Start date
-     * @param Carbon $endDate End date
-     * @param string $format Export format ('ics', 'csv', 'json')
-     * @return string The exported data
+     * @param User $user The user to get statistics for
+     * @param Carbon $month The month to analyze
+     * @return array Array of statistical data
      */
-    public function export(User $user, Carbon $startDate, Carbon $endDate, string $format = 'ics'): string;
+    public function getCalendarStats(User $user, Carbon $month): array;
 }

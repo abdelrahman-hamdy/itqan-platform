@@ -42,19 +42,19 @@ export function initStickySidebar() {
                 sidebar._stickySidebarDestroy = () => {
                     try {
                         instance.destroy();
-                    } catch (error) {
-                        console.error('[Sticky Sidebar] Error destroying instance:', error);
+                    } catch {
+                        // Silent fail - sidebar will be re-initialized on next navigation
                     }
                 };
-            } catch (error) {
-                console.error('[Sticky Sidebar] Error initializing sidebar:', error);
+            } catch {
+                // Silent fail - sidebar may not work but page remains functional
             }
         });
 
         // Store instances for later cleanup
         return instances;
-    } catch (error) {
-        console.error('[Sticky Sidebar] Fatal error during initialization:', error);
+    } catch {
+        // Silent fail - return empty array, page continues working
         return [];
     }
 }
@@ -71,8 +71,8 @@ document.addEventListener('livewire:navigated', () => {
             sidebar._stickySidebarDestroy?.();
         });
         initStickySidebar();
-    } catch (error) {
-        console.error('[Sticky Sidebar] Error during Livewire navigation:', error);
+    } catch {
+        // Silent fail - sidebar will work on next navigation
     }
 });
 

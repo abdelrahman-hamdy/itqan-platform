@@ -126,9 +126,9 @@ class StudentReportService
             return AttendanceStatus::ABSENT->value;
         }
 
-        // If attended 30-50%, mark as left early (leaved)
+        // If attended 30-50%, mark as left early (left)
         if ($attendancePercentage < 50) {
-            return AttendanceStatus::LEAVED->value;
+            return AttendanceStatus::LEFT->value;
         }
 
         // If late but attended well, mark as late
@@ -220,7 +220,7 @@ class StudentReportService
             'attended_count' => $reports->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
             'late_count' => $reports->where('attendance_status', AttendanceStatus::LATE->value)->count(),
             'absent_count' => $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
-            'leaved_count' => $reports->where('attendance_status', AttendanceStatus::LEAVED->value)->count(),
+            'left_count' => $reports->where('attendance_status', AttendanceStatus::LEFT->value)->count(),
             'auto_calculated_count' => $reports->where('is_calculated', true)->count(),
             'manually_evaluated_count' => $reports->where('manually_evaluated', true)->count(),
             'avg_attendance_percentage' => $reports->avg('attendance_percentage') ?: 0,
@@ -242,7 +242,7 @@ class StudentReportService
         $attendedReports = $reports->whereIn('attendance_status', [
             AttendanceStatus::ATTENDED->value,
             AttendanceStatus::LATE->value,
-            AttendanceStatus::LEAVED->value
+            AttendanceStatus::LEFT->value
         ]);
 
         return [

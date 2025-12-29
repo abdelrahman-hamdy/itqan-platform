@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Requests\GetAvailableTimeSlotsRequest;
+use App\Http\Requests\UpdateIndividualCircleSettingsRequest;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Services\QuranSessionSchedulingService;
@@ -11,9 +14,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
 
 class QuranIndividualCircleController extends Controller
 {
+    use ApiResponses;
     private QuranSessionSchedulingService $schedulingService;
     private QuranCircleReportService $reportService;
 
@@ -29,13 +34,12 @@ class QuranIndividualCircleController extends Controller
     /**
      * Display individual circles for the teacher
      */
-    public function index(Request $request, $subdomain = null)
+    public function index(Request $request, $subdomain = null): View
     {
         $user = Auth::user();
 
-        if (! $user->isQuranTeacher()) {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
-        }
+        // Authorize viewing circles
+        $this->authorize('viewAny', QuranIndividualCircle::class);
 
         $circles = QuranIndividualCircle::where('quran_teacher_id', $user->id)
             ->where('academy_id', $user->academy_id)
@@ -52,7 +56,7 @@ class QuranIndividualCircleController extends Controller
     /**
      * Show individual circle details
      */
-    public function show($subdomain, $circle)
+    public function show($subdomain, $circle): View
     {
         $user = Auth::user();
 
@@ -74,14 +78,15 @@ class QuranIndividualCircleController extends Controller
         $isTeacher = false;
         $isStudent = false;
 
+        // Authorize viewing the circle
+        $this->authorize('view', $circleModel);
+
         if ($user->user_type === 'quran_teacher' && (int) $circleModel->quran_teacher_id === (int) $user->id) {
             $userRole = 'teacher';
             $isTeacher = true;
         } elseif ($user->user_type === 'student' && (int) $circleModel->student_id === (int) $user->id) {
             $userRole = 'student';
             $isStudent = true;
-        } else {
-            abort(403, 'غير مسموح لك بالوصول لهذه الحلقة');
         }
 
         $circleModel->load([
@@ -136,7 +141,7 @@ class QuranIndividualCircleController extends Controller
     /**
      * Get available time slots for scheduling
      */
-    public function getAvailableTimeSlots(Request $request, $circle): JsonResponse
+    public function getAvailableTimeSlots(GetAvailableTimeSlotsRequest $request, $circle): JsonResponse
     {
         $user = Auth::user();
 
@@ -145,13 +150,8 @@ class QuranIndividualCircleController extends Controller
 
         // Check ownership - user should be the teacher of this circle
         if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
-            return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
+            return $this->forbiddenResponse('غير مسموح');
         }
-
-        $request->validate([
-            'date' => 'required|date|after_or_equal:today',
-            'duration' => 'integer|min:15|max:240',
-        ]);
 
         $date = Carbon::parse($request->date);
         $duration = $request->duration ?? $circleModel->default_duration_minutes;
@@ -162,7 +162,7 @@ class QuranIndividualCircleController extends Controller
             $duration
         );
 
-        return response()->json([
+        return $this->customResponse([
             'success' => true,
             'date' => $date->format('Y-m-d'),
             'available_slots' => $availableSlots,
@@ -172,7 +172,7 @@ class QuranIndividualCircleController extends Controller
     /**
      * Update circle settings
      */
-    public function updateSettings(Request $request, $circle): JsonResponse
+    public function updateSettings(UpdateIndividualCircleSettingsRequest $request, $circle): JsonResponse
     {
         $user = Auth::user();
 
@@ -181,18 +181,8 @@ class QuranIndividualCircleController extends Controller
 
         // Check ownership - user should be the teacher of this circle
         if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
-            return response()->json(['success' => false, 'message' => 'غير مسموح'], 403);
+            return $this->forbiddenResponse('غير مسموح');
         }
-
-        $request->validate([
-            'default_duration_minutes' => 'integer|min:15|max:240',
-            'preferred_times' => 'array',
-            'meeting_link' => 'nullable|url',
-            'meeting_id' => 'nullable|string|max:100',
-            'meeting_password' => 'nullable|string|max:50',
-            'recording_enabled' => 'boolean',
-            'notes' => 'nullable|string',
-        ]);
 
         try {
             $circleModel->update($request->only([
@@ -205,23 +195,17 @@ class QuranIndividualCircleController extends Controller
                 'notes',
             ]));
 
-            return response()->json([
-                'success' => true,
-                'message' => 'تم تحديث إعدادات الحلقة بنجاح',
-            ]);
+            return $this->successResponse(null, 'تم تحديث إعدادات الحلقة بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ في تحديث الإعدادات: '.$e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ في تحديث الإعدادات: '.$e->getMessage());
         }
     }
 
     /**
      * Generate comprehensive progress report for the circle
      */
-    public function progressReport($subdomain, $circle)
+    public function progressReport($subdomain, $circle): View
     {
         $user = Auth::user();
 
@@ -229,10 +213,8 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::where('academy_id', $user->academy_id)
             ->findOrFail($circle);
 
-        // Check ownership - user should be the teacher of this circle
-        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
-            abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
-        }
+        // Authorize viewing the circle (includes teacher ownership check)
+        $this->authorize('view', $circleModel);
 
         // Load comprehensive data for enhanced progress tracking
         $circleModel->load([

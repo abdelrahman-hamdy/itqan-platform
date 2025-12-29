@@ -176,7 +176,8 @@
                                             @if($child->user_id)
                                                 <button
                                                     type="button"
-                                                    onclick="viewChildDashboard('{{ $child->id }}')"
+                                                    x-data
+                                                    @click="viewChildDashboard('{{ $child->id }}', $event)"
                                                     class="min-h-[44px] flex-1 sm:flex-none px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1"
                                                     title="عرض لوحة التحكم"
                                                 >
@@ -196,7 +197,8 @@
                                                 @method('DELETE')
                                                 <button
                                                     type="button"
-                                                    onclick="confirmRemoveChild('{{ $child->id }}', '{{ $child->full_name }}')"
+                                                    x-data
+                                                    @click="confirmRemoveChild('{{ $child->id }}', '{{ $child->full_name }}')"
                                                     class="min-h-[44px] w-full px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1"
                                                     title="إلغاء الربط"
                                                 >
@@ -231,10 +233,11 @@
     @push('scripts')
     <script>
     // Function to select a child and navigate to dashboard
-    function viewChildDashboard(childId) {
+    function viewChildDashboard(childId, event) {
+        const button = event.target.closest('button');
         // Show loading state
-        event.target.disabled = true;
-        event.target.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> <span>جاري التحميل...</span>';
+        button.disabled = true;
+        button.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> <span>جاري التحميل...</span>';
 
         // Call the select-child API
         fetch('{{ route("parent.select-child", ["subdomain" => $subdomain]) }}', {
@@ -253,17 +256,16 @@
                 window.location.href = '{{ route("parent.dashboard", ["subdomain" => $subdomain]) }}';
             } else {
                 // Reset button on error
-                event.target.disabled = false;
-                event.target.innerHTML = '<i class="ri-eye-line"></i> <span>عرض</span>';
-                alert('حدث خطأ أثناء تحديد الطالب. يرجى المحاولة مرة أخرى.');
+                button.disabled = false;
+                button.innerHTML = '<i class="ri-eye-line"></i> <span>عرض</span>';
+                window.toast?.error('حدث خطأ أثناء تحديد الطالب. يرجى المحاولة مرة أخرى.');
             }
         })
         .catch(error => {
-            console.error('Error selecting child:', error);
             // Reset button on error
-            event.target.disabled = false;
-            event.target.innerHTML = '<i class="ri-eye-line"></i> <span>عرض</span>';
-            alert('حدث خطأ أثناء تحديد الطالب. يرجى المحاولة مرة أخرى.');
+            button.disabled = false;
+            button.innerHTML = '<i class="ri-eye-line"></i> <span>عرض</span>';
+            window.toast?.error('حدث خطأ أثناء تحديد الطالب. يرجى المحاولة مرة أخرى.');
         });
     }
 
@@ -283,7 +285,6 @@
                 }
             });
         } else {
-            console.error('confirmAction function not available yet');
             // Fallback to native confirm
             if (confirm('هل أنت متأكد من إلغاء ربط ' + childName + ' من حسابك؟')) {
                 document.getElementById('remove-child-form-' + childId).submit();

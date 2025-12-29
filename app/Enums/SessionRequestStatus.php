@@ -2,6 +2,21 @@
 
 namespace App\Enums;
 
+/**
+ * Session Request Status Enum
+ *
+ * Tracks the lifecycle of session scheduling requests.
+ *
+ * States:
+ * - PENDING: Request submitted, awaiting teacher response
+ * - AGREED: Teacher agreed to the request
+ * - PAID: Payment received for the session
+ * - SCHEDULED: Session has been scheduled
+ * - EXPIRED: Request expired without response
+ * - CANCELLED: Request was cancelled
+ *
+ * @see \App\Models\SessionRequest
+ */
 enum SessionRequestStatus: string
 {
     case PENDING = 'pending';
@@ -12,18 +27,11 @@ enum SessionRequestStatus: string
     case CANCELLED = 'cancelled';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => __('قيد الانتظار'),
-            self::AGREED => __('تم الموافقة'),
-            self::PAID => __('مدفوع'),
-            self::SCHEDULED => __('مجدول'),
-            self::EXPIRED => __('منتهي الصلاحية'),
-            self::CANCELLED => __('ملغي'),
-        };
+        return __('enums.session_request_status.' . $this->value);
     }
 
     /**
@@ -72,5 +80,13 @@ enum SessionRequestStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

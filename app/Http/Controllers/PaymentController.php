@@ -6,6 +6,9 @@ use App\Models\Academy;
 use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Models\RecordedCourse;
+use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
+use App\Http\Requests\ProcessPaymentRefundRequest;
+use App\Http\Controllers\Traits\ApiResponses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 
 class PaymentController extends Controller
 {
+    use ApiResponses;
     /**
      * Show payment form for course enrollment
      */
@@ -26,6 +30,8 @@ class PaymentController extends Controller
 
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
+
+        $this->authorize('create', Payment::class);
 
         $user = Auth::user();
 
@@ -67,22 +73,13 @@ class PaymentController extends Controller
     /**
      * Process payment
      */
-    public function store(Request $request, RecordedCourse $course): JsonResponse
+    public function store(ProcessCourseEnrollmentPaymentRequest $request, RecordedCourse $course): JsonResponse
     {
-        if (! Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+        $this->authorize('create', Payment::class);
 
         $user = Auth::user();
 
-        $validated = $request->validate([
-            'payment_method' => 'required|in:credit_card,mada,stc_pay,bank_transfer',
-            'card_number' => 'required_if:payment_method,credit_card,mada|string',
-            'expiry_month' => 'required_if:payment_method,credit_card,mada|integer|min:1|max:12',
-            'expiry_year' => 'required_if:payment_method,credit_card,mada|integer|min:2024',
-            'cvv' => 'required_if:payment_method,credit_card,mada|string|size:3',
-            'cardholder_name' => 'required_if:payment_method,credit_card,mada|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         // Get enrollment
         $enrollment = CourseSubscription::where('student_id', $user->id)
@@ -91,9 +88,7 @@ class PaymentController extends Controller
             ->first();
 
         if (! $enrollment) {
-            return response()->json([
-                'error' => 'لم يتم العثور على طلب التسجيل',
-            ], 404);
+            return $this->notFoundResponse('لم يتم العثور على طلب التسجيل');
         }
 
         $finalPrice = $course->discount_price ?? $course->price;
@@ -137,16 +132,14 @@ class PaymentController extends Controller
                 }
             });
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'message' => 'تم الدفع بنجاح',
                 'redirect_url' => route('courses.learn', $course),
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'فشل في عملية الدفع: '.$e->getMessage(),
-            ], 400);
+            return $this->errorResponse('فشل في عملية الدفع: '.$e->getMessage(), 400);
         }
     }
 
@@ -155,9 +148,7 @@ class PaymentController extends Controller
      */
     public function success(Payment $payment): View
     {
-        if (! Auth::check() || $payment->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('view', $payment);
 
         $payment->load(['subscription', 'user']);
 
@@ -169,9 +160,7 @@ class PaymentController extends Controller
      */
     public function failed(Payment $payment): View
     {
-        if (! Auth::check() || $payment->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('view', $payment);
 
         $payment->load(['subscription', 'user']);
 
@@ -181,14 +170,11 @@ class PaymentController extends Controller
     /**
      * Process refund request
      */
-    public function refund(Request $request, Payment $payment): JsonResponse
+    public function refund(ProcessPaymentRefundRequest $request, Payment $payment): JsonResponse
     {
         $this->authorize('refund', $payment);
 
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01|max:'.$payment->refundable_amount,
-            'reason' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             DB::transaction(function () use ($payment, $validated) {
@@ -202,15 +188,10 @@ class PaymentController extends Controller
                 }
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'تم معالجة طلب الاسترداد بنجاح',
-            ]);
+            return $this->successResponse(null, 'تم معالجة طلب الاسترداد بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'فشل في معالجة الاسترداد: '.$e->getMessage(),
-            ], 400);
+            return $this->errorResponse('فشل في معالجة الاسترداد: '.$e->getMessage(), 400);
         }
     }
 
@@ -224,6 +205,8 @@ class PaymentController extends Controller
 
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
+
+        $this->authorize('viewAny', Payment::class);
 
         $user = Auth::user();
 
@@ -240,9 +223,7 @@ class PaymentController extends Controller
      */
     public function downloadReceipt(Payment $payment): RedirectResponse
     {
-        if (! Auth::check() || $payment->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('downloadReceipt', $payment);
 
         if (! $payment->is_successful) {
             abort(404, 'لا يمكن تحميل إيصال لدفعة غير مكتملة');
@@ -287,10 +268,7 @@ class PaymentController extends Controller
             ],
         ];
 
-        return response()->json([
-            'success' => true,
-            'methods' => $methods,
-        ]);
+        return $this->successResponse(['methods' => $methods]);
     }
 
     /**

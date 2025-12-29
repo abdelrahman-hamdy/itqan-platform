@@ -140,1074 +140,13 @@
     }
 @endphp
 
-<!-- INLINE STYLES AND SCRIPTS - GUARANTEED TO LOAD -->
+<!-- External Resources -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer">
-
-<style>
-    /* Custom CSS for meeting interface */
-    .meeting-focus-enter {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-
-    .meeting-focus-enter-active {
-        opacity: 1;
-        transform: scale(1);
-        transition: opacity 300ms ease-out, transform 300ms ease-out;
-    }
-
-    .meeting-focus-exit {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    .meeting-focus-exit-active {
-        opacity: 0;
-        transform: scale(0.95);
-        transition: opacity 300ms ease-in, transform 300ms ease-in;
-    }
-
-    /* Smooth video transitions */
-    .video-transition {
-        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* CRITICAL FIX: Smooth loading overlay transitions */
-    #loadingOverlay {
-        transition: opacity 500ms ease-out, visibility 500ms ease-out;
-        pointer-events: auto;
-        backdrop-filter: blur(2px);
-        -webkit-backdrop-filter: blur(2px);
-    }
-
-    #loadingOverlay.fade-out {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    /* Smooth meeting interface transitions */
-    #meetingInterface {
-        transition: opacity 400ms ease-in;
-    }
-
-    #meetingInterface.fade-in {
-        opacity: 1 !important;
-    }
-
-    /* Ensure meeting interface is visible by default */
-    #meetingInterface:not(.fade-in) {
-        opacity: 1;
-    }
-
-    /* Loading spinner enhancement */
-    #loadingOverlay .animate-spin {
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    /* Focus area styling - removed (focusArea deprecated) */
-    
-    /* Meeting Timer Styles */
-    .countdown-timer {
-        min-height: 120px;
-        transition: all 0.3s ease-in-out;
-    }
-    
-    .countdown-timer.waiting {
-        background: linear-gradient(135deg, #fff3cd, #fef3c7);
-        border-color: #f59e0b;
-        color: #92400e;
-    }
-    
-    .countdown-timer.active {
-        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-        border-color: #059669;
-        color: #065f46;
-    }
-    
-    .countdown-timer.overtime {
-        background: linear-gradient(135deg, #fee2e2, #fecaca);
-        border-color: #dc2626;
-        color: #991b1b;
-    }
-    
-    .countdown-timer.offline {
-        background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-        border-color: #6b7280;
-        color: #374151;
-    }
-    
-    .timer-display {
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-
-    /* Horizontal participants layout */
-    #horizontalParticipants {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-    }
-
-    #horizontalParticipants::-webkit-scrollbar {
-        height: 8px;
-    }
-
-    #horizontalParticipants::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    #horizontalParticipants::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.5);
-        border-radius: 4px;
-    }
-
-    #horizontalParticipants::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(156, 163, 175, 0.7);
-    }
-
-    /* Participant hover effects */
-    .participant-hover {
-        transition: all 200ms ease-in-out;
-    }
-
-    .participant-hover:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-
-    /* Focus indicator */
-    .focus-indicator {
-        position: relative;
-    }
-
-    /* Hand raise indicator overlay on participant tiles */
-    .hand-raise-indicator {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 32px;
-        height: 32px;
-        border-radius: 9999px;
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 30;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        border: 2px solid white;
-        animation: handRaisePulse 2s ease-in-out infinite;
-        transition: all 0.3s ease;
-    }
-
-    .hand-raise-indicator:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-    }
-
-    .hand-raise-indicator i {
-        color: white;
-        font-size: 14px;
-        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-    }
-
-    @keyframes handRaisePulse {
-        0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        50% {
-            transform: scale(1.05);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-        }
-    }
-
-    .hand-raise-indicator svg {
-        width: 18px;
-        height: 18px;
-        fill: #111827;
-    }
-
-    .hand-raise-indicator .fa-hand {
-        font-size: 16px;
-        color: #111827;
-    }
-
-    .focus-indicator::after {
-        content: '';
-        position: absolute;
-        inset: -4px;
-        border: 2px solid #60a5fa;
-        border-radius: 8px;
-        opacity: 0.75;
-        animation: focusPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes focusPulse {
-
-        0%,
-        100% {
-            opacity: 0.75;
-        }
-
-        50% {
-            opacity: 0.4;
-        }
-    }
-
-    /* Focus Mode Overlay - Full Video Area Coverage */
-    #focusOverlay {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        z-index: 22 !important;
-        backdrop-filter: blur(4px);
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    #closeFocusBtn {
-        position: absolute !important;
-        top: 16px !important;
-        right: 16px !important;
-        z-index: 60 !important;
-        pointer-events: auto !important;
-        cursor: pointer !important;
-    }
-
-    /* Focus Mode Container - Updated for CSS-first approach */
-    #focusedVideoContainer {
-        /* Styles now handled by .focused-video-container class */
-    }
-
-    /* Participant video hover effects */
-    .participant-video {
-        cursor: pointer;
-        transition: transform 0.3s ease;
-    }
-
-    .participant-video:hover {
-        transform: scale(1.02);
-    }
-
-    /* Scale animations */
-    .scale-0 {
-        transform: scale(0);
-    }
-
-    .scale-100 {
-        transform: scale(1);
-    }
-
-    /* Focus mode active state */
-    .focus-mode-active {
-        position: relative;
-    }
-
-    .focus-mode-active #videoGrid {
-        pointer-events: none;
-    }
-
-    .focus-mode-active #videoGrid>* {
-        pointer-events: auto;
-    }
-
-    /* CSS Classes for Focus Mode */
-    .participant-video.focus-mode-active {
-        position: absolute !important;
-        z-index: 60 !important;
-        transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .participant-video.focus-mode-transitioning {
-        transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .participant-video.focused {
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 90% !important;
-        max-width: 900px !important;
-        height: 90% !important;
-        max-height: 80vh !important;
-        z-index: 60 !important;
-        transition: all 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-        margin: 0 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
-    }
-
-    .participant-video.focused video {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-        border-radius: 12px !important;
-    }
-
-    /* Video Area - Updated for CSS-first approach */
-    #videoArea {
-        /* Styles now handled by .video-area class */
-    }
-
-    /* Ensure the main content area takes full height */
-    #meetingInterface {
-        height: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-    }
-
-    /* Ensure the grid container takes remaining space */
-    #meetingInterface>.grid {
-        flex: 1 !important;
-        min-height: 0 !important;
-        display: grid !important;
-        grid-template-rows: 1fr !important;
-    }
-
-    /* Video Grid - Updated for CSS-first approach */
-    #videoGrid {
-        /* Styles now handled by .video-grid class */
-    }
-
-    /* Focus mode active state - Updated for CSS-first approach */
-    #videoArea.focus-mode-active {
-        /* Styles now handled by .video-area.focus-mode-active class */
-    }
-
-    /* Placeholder styling */
-    .placeholder-overlay {
-        backdrop-filter: blur(2px);
-        background: linear-gradient(135deg, rgba(31, 41, 55, 0.8), rgba(55, 65, 81, 0.8));
-    }
-
-    /* Focused video - Updated for CSS-first approach */
-    #focusedVideoContainer video {
-        /* Styles now handled by .focused-video-container video class */
-    }
-
-    /* Enhanced participant interactions */
-    .participant-clickable {
-        cursor: pointer;
-        user-select: none;
-    }
-
-    .participant-clickable:active {
-        transform: scale(0.98);
-    }
-
-    /* Smooth focus transitions */
-    .focus-transition {
-        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Focus area entrance animation */
-    @keyframes focusAreaEnter {
-        from {
-            opacity: 0;
-            transform: scale(0.9) translateY(-20px);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-    }
-
-    .focus-area-enter {
-        animation: focusAreaEnter 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-
-    /* Element movement transitions */
-    .element-move-transition {
-        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Grid element styling */
-    .grid-element {
-        position: relative;
-        border-radius: 8px;
-        overflow: hidden;
-        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-        aspect-ratio: 16/9;
-    }
-
-    /* Smooth element movement */
-    .element-moving {
-        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Horizontal layout improvements */
-    .horizontal-scroll-smooth {
-        scroll-behavior: smooth;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-    }
-
-    .horizontal-scroll-smooth::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    .horizontal-scroll-smooth::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .horizontal-scroll-smooth::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.5);
-        border-radius: 3px;
-    }
-
-    .horizontal-scroll-smooth::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(156, 163, 175, 0.7);
-    }
-
-    /* Loading states */
-    .focus-loading {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .focus-loading::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-        animation: loadingShimmer 1.5s infinite;
-    }
-
-    @keyframes loadingShimmer {
-        0% {
-            left: -100%;
-        }
-
-        100% {
-            left: 100%;
-        }
-    }
-
-    /* ===== UNIFIED RESPONSIVE VIDEO GRID SYSTEM ===== */
-
-    /* Meeting Interface - Dynamic height will be set by JavaScript */
-    #livekitMeetingInterface {
-        transition: all 300ms ease-in-out;
-    }
-
-    /* Fullscreen mode styling */
-    #livekitMeetingInterface.fullscreen-mode {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 9999 !important;
-    }
-
-    /* ===== MAIN VIDEO GRID LAYOUT ===== */
-
-    /* Base Grid Configuration */
-    #videoGrid {
-        display: grid !important;
-        gap: 1rem;
-        padding: 1rem;
-        width: 100%;
-        height: 100%;
-        place-items: center;
-        align-content: center;
-        justify-content: center;
-        grid-auto-rows: minmax(180px, 1fr);
-        max-width: 1600px;
-        margin: 0 auto;
-        overflow: hidden;
-    }
-
-    /* Grid Layout Rules Based on Participant Count */
-
-    /* 1 Participant - Single centered video */
-    #videoGrid[data-participants="1"] {
-        grid-template-columns: 1fr;
-        max-width: 800px;
-    }
-
-    #videoGrid[data-participants="1"] .participant-video {
-        width: 100%;
-        max-width: 700px;
-        aspect-ratio: 16/9;
-        min-height: 300px;
-        max-height: 500px;
-    }
-
-    /* 2 Participants - Side by side */
-    #videoGrid[data-participants="2"] {
-        grid-template-columns: repeat(2, 1fr);
-        max-width: 1200px;
-    }
-
-    #videoGrid[data-participants="2"] .participant-video {
-        width: 100%;
-        aspect-ratio: 16/9;
-        min-height: 250px;
-        max-height: 400px;
-    }
-
-    /* 3-4 Participants - 2x2 grid */
-    #videoGrid[data-participants="3"],
-    #videoGrid[data-participants="4"] {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: repeat(2, 1fr);
-        max-width: 1200px;
-    }
-
-    #videoGrid[data-participants="3"] .participant-video,
-    #videoGrid[data-participants="4"] .participant-video {
-        width: 100%;
-        aspect-ratio: 16/9;
-        min-height: 200px;
-        max-height: 350px;
-    }
-
-    /* 5-6 Participants - 3x2 grid */
-    #videoGrid[data-participants="5"],
-    #videoGrid[data-participants="6"] {
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(2, 1fr);
-        max-width: 1400px;
-    }
-
-    #videoGrid[data-participants="5"] .participant-video,
-    #videoGrid[data-participants="6"] .participant-video {
-        width: 100%;
-        aspect-ratio: 16/9;
-        min-height: 180px;
-        max-height: 300px;
-    }
-
-    /* 7-9 Participants - 3x3 grid */
-    #videoGrid[data-participants="7"],
-    #videoGrid[data-participants="8"],
-    #videoGrid[data-participants="9"] {
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(3, 1fr);
-        max-width: 1400px;
-    }
-
-    #videoGrid[data-participants="7"] .participant-video,
-    #videoGrid[data-participants="8"] .participant-video,
-    #videoGrid[data-participants="9"] .participant-video {
-        width: 100%;
-        aspect-ratio: 16/9;
-        min-height: 160px;
-        max-height: 280px;
-    }
-
-    /* 10-12 Participants - 4x3 grid */
-    #videoGrid[data-participants="10"],
-    #videoGrid[data-participants="11"],
-    #videoGrid[data-participants="12"] {
-        grid-template-columns: repeat(4, 1fr);
-        grid-template-rows: repeat(3, 1fr);
-        max-width: 1600px;
-    }
-
-    #videoGrid[data-participants="10"] .participant-video,
-    #videoGrid[data-participants="11"] .participant-video,
-    #videoGrid[data-participants="12"] .participant-video {
-        width: 100%;
-        aspect-ratio: 16/9;
-        min-height: 140px;
-        max-height: 250px;
-    }
-
-    /* 13+ Participants - Auto-fit responsive grid */
-    #videoGrid[data-participants^="1"]:not([data-participants="1"]):not([data-participants="10"]):not([data-participants="11"]):not([data-participants="12"]),
-    #videoGrid[data-participants^="2"]:not([data-participants="2"]),
-    #videoGrid[data-participants^="3"]:not([data-participants="3"]):not([data-participants="4"]):not([data-participants="5"]):not([data-participants="6"]):not([data-participants="7"]):not([data-participants="8"]):not([data-participants="9"]) {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        grid-auto-rows: minmax(140px, 180px);
-        gap: 0.75rem;
-    }
-
-    /* Focus Layout State */
-    .video-layout-focus #videoGrid {
-        display: none;
-    }
-
-    .video-layout-focus #horizontalParticipants {
-        display: flex !important;
-    }
-
-    /* Sidebar Open State Adjustments */
-    .video-layout-sidebar-open #videoGrid {
-        gap: 0.75rem;
-        padding: 0.75rem;
-        max-width: calc(100vw - 400px);
-    }
-
-    .video-layout-sidebar-open #videoGrid[data-participants="1"] {
-        max-width: 600px;
-    }
-
-    .video-layout-sidebar-open #videoGrid[data-participants="2"] {
-        max-width: 900px;
-    }
-
-    .video-layout-sidebar-open #videoGrid[data-participants="3"],
-    .video-layout-sidebar-open #videoGrid[data-participants="4"] {
-        max-width: 1000px;
-    }
-
-    /* ===== FOCUS AREA STYLING REMOVED (focusArea deprecated) ===== */
-
-    /* ===== HORIZONTAL PARTICIPANTS (FOCUS MODE) ===== */
-
-    #horizontalParticipants {
-        height: 120px;
-        background: rgb(31, 41, 55);
-        border-radius: 0.5rem;
-        overflow-x: auto;
-        overflow-y: hidden;
-        gap: 0.75rem;
-        padding: 0.75rem;
-        scroll-behavior: smooth;
-    }
-
-    .horizontal-participant {
-        flex-shrink: 0;
-        width: 200px;
-        height: 90px;
-        aspect-ratio: 16/9;
-        border-radius: 0.5rem;
-        overflow: hidden;
-        cursor: pointer;
-        transition: all 200ms ease-in-out;
-    }
-
-    .horizontal-participant:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-
-
-    /* ===== HORIZONTAL PARTICIPANTS RESPONSIVE ADJUSTMENTS ===== */
-
-    @media (max-width: 768px) {
-        .horizontal-participant {
-            width: 160px;
-            height: 90px;
-        }
-    }
-
-    /* ===== ANIMATIONS & TRANSITIONS ===== */
-
-    .video-layout-transition {
-        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .focus-enter-animation {
-        animation: focusEnter 400ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes focusEnter {
-        from {
-            opacity: 0;
-            transform: scale(0.9) translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-    }
-
-    /* ===== SCROLLBAR STYLING ===== */
-
-    #horizontalParticipants::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    #horizontalParticipants::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    #horizontalParticipants::-webkit-scrollbar-thumb {
-        background: rgba(156, 163, 175, 0.5);
-        border-radius: 3px;
-    }
-
-    #horizontalParticipants::-webkit-scrollbar-thumb:hover {
-        background: rgba(156, 163, 175, 0.7);
-    }
-
-    /* Focus area entrance animation */
-    @keyframes focusAreaEnter {
-        from {
-            opacity: 0;
-            transform: scale(0.9) translateY(-20px);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-    }
-
-    .focus-area-enter {
-        animation: focusAreaEnter 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-
-    /* Element movement transitions */
-    .element-move-transition {
-        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Focus indicator with pulse animation */
-    .focus-indicator {
-        position: relative;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
-        animation: focusPulse 2s infinite;
-    }
-
-    @keyframes focusPulse {
-
-        0%,
-        100% {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
-        }
-
-        50% {
-            box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.3);
-        }
-    }
-
-    /* Clickable participant styling */
-    .participant-clickable {
-        cursor: pointer;
-        user-select: none;
-    }
-
-    /* Focus transition effects */
-    .focus-transition {
-        transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-
-
-
-
-    /* Base Participant Video Styling */
-    .participant-video {
-        transition: all 0.3s ease;
-        background: rgb(31, 41, 55);
-        border: 1px solid rgb(55, 65, 81);
-        border-radius: 0.5rem;
-        overflow: hidden;
-        cursor: pointer;
-        position: relative;
-        box-sizing: border-box;
-    }
-
-    .participant-video:hover {
-        border-color: rgb(59, 130, 246);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .participant-video video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    /* ===== RESPONSIVE BREAKPOINTS ===== */
-
-    /* Tablet Breakpoint (1024px and below) */
-    @media (max-width: 1024px) {
-        #videoGrid {
-            gap: 0.75rem;
-            padding: 0.75rem;
-        }
-
-        /* Adjust 5-6 participants to 2x3 on smaller screens */
-        #videoGrid[data-participants="5"],
-        #videoGrid[data-participants="6"] {
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            max-width: 1000px;
-        }
-
-        /* Adjust 7-9 participants to 3x3 on smaller screens */
-        #videoGrid[data-participants="7"],
-        #videoGrid[data-participants="8"],
-        #videoGrid[data-participants="9"] {
-            grid-template-columns: repeat(3, 1fr);
-            max-width: 1200px;
-        }
-
-        /* Adjust 10-12 participants to 3x4 on smaller screens */
-        #videoGrid[data-participants="10"],
-        #videoGrid[data-participants="11"],
-        #videoGrid[data-participants="12"] {
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(4, 1fr);
-            max-width: 1200px;
-        }
-    }
-
-    /* Mobile Landscape and Small Tablet (768px and below) */
-    @media (max-width: 768px) {
-        #videoGrid {
-            gap: 0.5rem;
-            padding: 0.5rem;
-        }
-
-        /* 3-4 participants remain 2x2 */
-        #videoGrid[data-participants="3"],
-        #videoGrid[data-participants="4"] {
-            grid-template-columns: repeat(2, 1fr);
-            max-width: 100%;
-        }
-
-        /* 5-6 participants become 2x3 */
-        #videoGrid[data-participants="5"],
-        #videoGrid[data-participants="6"] {
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            max-width: 100%;
-        }
-
-        /* 7+ participants use auto-fit grid */
-        #videoGrid[data-participants="7"],
-        #videoGrid[data-participants="8"],
-        #videoGrid[data-participants="9"],
-        #videoGrid[data-participants="10"],
-        #videoGrid[data-participants="11"],
-        #videoGrid[data-participants="12"] {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            grid-template-rows: auto;
-            max-width: 100%;
-        }
-
-        /* Reduce min heights for mobile */
-        .participant-video {
-            min-height: 120px !important;
-            max-height: 250px !important;
-        }
-    }
-
-    /* Mobile Portrait (640px and below) */
-    @media (max-width: 640px) {
-        #videoGrid {
-            gap: 0.25rem;
-            padding: 0.25rem;
-        }
-
-        /* Single participant takes more space */
-        #videoGrid[data-participants="1"] {
-            max-width: 100%;
-        }
-
-        #videoGrid[data-participants="1"] .participant-video {
-            max-width: 100%;
-            min-height: 200px;
-            max-height: 300px;
-        }
-
-        /* 2 participants become stacked on very small screens */
-        #videoGrid[data-participants="2"] {
-            grid-template-columns: 1fr;
-            grid-template-rows: repeat(2, 1fr);
-            max-width: 100%;
-        }
-
-        /* 3+ participants use 2 columns max */
-        #videoGrid[data-participants="3"],
-        #videoGrid[data-participants="4"],
-        #videoGrid[data-participants="5"],
-        #videoGrid[data-participants="6"],
-        #videoGrid[data-participants="7"],
-        #videoGrid[data-participants="8"],
-        #videoGrid[data-participants="9"],
-        #videoGrid[data-participants="10"],
-        #videoGrid[data-participants="11"],
-        #videoGrid[data-participants="12"] {
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: auto;
-            max-width: 100%;
-        }
-
-        /* Further reduce heights for small screens */
-        .participant-video {
-            min-height: 100px !important;
-            max-height: 180px !important;
-        }
-    }
-
-    /* Fullscreen support */
-    .meeting-fullscreen {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        z-index: 9999 !important;
-        background: #111827 !important;
-    }
-
-    .meeting-fullscreen #videoGrid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
-        padding: 2rem !important;
-        gap: 1.5rem !important;
-    }
-
-    .meeting-fullscreen .participant-video {
-        min-width: 250px !important;
-        min-height: 180px !important;
-    }
-
-    /* ===== CONTROL BUTTON HOVER FIXES ===== */
-    /* Fix: Camera and mic buttons should keep red color when off, not turn grey on hover */
-    #toggleMic.mic-off:hover,
-    #toggleCamera.camera-off:hover {
-        background-color: #dc2626 !important; /* Keep red color on hover when off */
-        transform: scale(1.05);
-    }
-
-    #toggleMic.mic-off,
-    #toggleCamera.camera-off {
-        background-color: #dc2626; /* Red when off */
-        color: white;
-    }
-
-    /* ===== TOOLTIP STYLES ===== */
-    .control-tooltip {
-        position: absolute;
-        bottom: 120%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.9);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        white-space: nowrap;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        z-index: 99999;
-        pointer-events: none;
-        animation: tooltipBounce 0.3s ease-out;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    .control-tooltip::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 5px solid transparent;
-        border-top-color: rgba(0, 0, 0, 0.9);
-    }
-
-    .control-button:hover .control-tooltip {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-50%) translateY(-4px);
-        animation: tooltipBounce 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes tooltipBounce {
-        0% {
-            opacity: 0;
-            transform: translateX(-50%) translateY(4px) scale(0.8);
-        }
-        60% {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-6px) scale(1.05);
-        }
-        100% {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-4px) scale(1);
-        }
-    }
-
-    /* Control button base styles */
-    .control-button {
-        position: relative;
-        z-index: 25;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .control-button:hover {
-        transform: scale(1.05);
-    }
-
-    .control-button:active {
-        transform: scale(0.95);
-    }
-
-    /* Ensure meeting controls always appear above fullscreen content */
-    .meeting-fullscreen #leaveMeeting,
-    .meeting-fullscreen #fullscreenBtn,
-    .meeting-fullscreen .meeting-control-button {
-        z-index: 99999 !important;
-        position: relative !important;
-    }
-
-    /* Ensure confirmation modals appear above fullscreen */
-    #leaveConfirmModal {
-        z-index: 99999 !important;
-    }
-
-
-
-    /* Focus loading state */
-    .focus-loading {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .focus-loading::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-        animation: loadingShimmer 1.5s infinite;
-    }
-
-    @keyframes loadingShimmer {
-        0% {
-            left: -100%;
-        }
-
-        100% {
-            left: 100%;
-        }
-    }
-</style>
+<!-- Meeting interface CSS is loaded via resources/css/meeting-interface.css through Vite -->
 
 <!-- LiveKit JavaScript SDK - SPECIFIC WORKING VERSION -->
 <script>
-    console.log('🔄 Loading LiveKit SDK...');
+    // Loading LiveKit SDK
 
     function loadLiveKitScript() {
         return new Promise((resolve, reject) => {
@@ -1217,7 +156,7 @@
             script.crossOrigin = 'anonymous';
 
             script.onload = () => {
-                console.log('✅ LiveKit script loaded');
+                // LiveKit script loaded
                 // Check for various possible global names
                 setTimeout(() => {
                     const possibleNames = ['LiveKit', 'LiveKitClient', 'LivekitClient', 'livekit'];
@@ -1227,23 +166,21 @@
                         if (typeof window[name] !== 'undefined') {
                             livekitFound = window[name];
                             window.LiveKit = livekitFound; // Normalize to LiveKit
-                            console.log(`✅ LiveKit found as global: ${name}`);
+                            // LiveKit found
                             break;
                         }
                     }
 
                     if (livekitFound) {
-                        console.log('✅ LiveKit SDK available');
+                        // LiveKit SDK available
                         resolve();
                     } else {
-                        console.error('❌ LiveKit global not found. Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('live')));
                         reject(new Error('LiveKit global not found'));
                     }
                 }, 200);
             };
 
             script.onerror = (error) => {
-                console.error('❌ Failed to load LiveKit script:', error);
                 reject(new Error('Failed to load LiveKit script'));
             };
 
@@ -1257,10 +194,9 @@
 
 <!-- Load LiveKit Classes in Correct Order -->
 <script>
-    console.log('🔄 Loading Modular LiveKit system...');
-
     // Track loading states
     let scriptsLoaded = {
+        api: false,
         dataChannel: false,
         connection: false,
         tracks: false,
@@ -1270,11 +206,12 @@
         index: false
     };
 
+    // Store interval IDs for cleanup (prevents memory leaks)
+    let sessionStatusPollingInterval = null;
+
     function checkAllScriptsLoaded() {
         const allLoaded = Object.values(scriptsLoaded).every(loaded => loaded);
         if (allLoaded) {
-            console.log('✅ All LiveKit classes loaded, initializing system...');
-            
             // Store session configuration
             window.sessionId = '{{ $session->id }}';
             window.sessionType = '{{ $isAcademicSession ? 'academic' : ($isInteractiveCourseSession ? 'interactive' : 'quran') }}';
@@ -1284,10 +221,6 @@
                     name: '{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}'
                 }
             };
-
-
-            
-            console.log('✅ Modular LiveKit system ready!');
         }
     }
 
@@ -1296,21 +229,18 @@
             const script = document.createElement('script');
             script.src = src;
             script.onload = () => {
-                console.log(`✅ ${name} loaded`);
                 scriptsLoaded[name] = true;
                 checkAllScriptsLoaded();
                 resolve();
             };
-            script.onerror = (error) => {
-                console.error(`❌ Failed to load ${name}:`, error);
-                reject(error);
-            };
+            script.onerror = reject;
             document.head.appendChild(script);
         });
     }
 
-    // CRITICAL FIX: Load session timer FIRST, then other scripts
+    // Load LiveKit scripts in order: API helper first, then session timer, then modules
     Promise.resolve()
+        .then(() => loadScript('{{ asset("js/livekit/api.js") }}?v={{ time() }}', 'api'))
         .then(() => loadScript('{{ asset("js/session-timer.js") }}?v={{ time() }}', 'sessionTimer'))
         .then(() => loadScript('{{ asset("js/livekit/data-channel.js") }}?v={{ time() }}', 'dataChannel'))
         .then(() => loadScript('{{ asset("js/livekit/connection.js") }}?v={{ time() }}', 'connection'))
@@ -1319,8 +249,8 @@
         .then(() => loadScript('{{ asset("js/livekit/controls.js") }}?v={{ time() }}', 'controls'))
         .then(() => loadScript('{{ asset("js/livekit/layout.js") }}?v={{ time() }}', 'layout'))
         .then(() => loadScript('{{ asset("js/livekit/index.js") }}?v={{ time() }}', 'index'))
-        .catch(error => {
-            console.error('❌ Failed to load scripts:', error);
+        .catch(() => {
+            // Silent fail - LiveKit scripts loading error
         });
 
     // CRITICAL FIX: Initialize Smart Session Timer with immediate loading and display
@@ -1337,12 +267,10 @@
             displayElementId: 'time-display',
             
             onPhaseChange: function(newPhase, oldPhase) {
-                console.log('⏰ Phase changed:', oldPhase, '→', newPhase);
                 updateSessionPhaseUI(newPhase);
-                
+
                 // AUTO-TERMINATION: End meeting when time expires
                 if (newPhase === 'ended' && oldPhase !== 'ended') {
-                    console.log('🔴 Session time expired - auto-terminating meeting');
                     autoTerminateMeeting();
                 }
             },
@@ -1353,22 +281,17 @@
         };
 
         if (typeof SmartSessionTimer !== 'undefined') {
-            console.log('⏰ SmartSessionTimer available - initializing immediately');
             window.sessionTimer = new SmartSessionTimer(timerConfig);
         } else {
-            console.warn('⏰ SmartSessionTimer not available - loading script first');
             loadScript('{{ asset("js/session-timer.js") }}', 'sessionTimer').then(() => {
-                // Immediate initialization after script loads
-                console.log('⏰ Timer script loaded - initializing SmartSessionTimer');
                 window.sessionTimer = new SmartSessionTimer(timerConfig);
-            }).catch(error => {
-                console.error('❌ Failed to load session timer:', error);
+            }).catch(() => {
+                // Silent fail - timer will not work
             });
         }
     }
 
-    // CRITICAL: Initialize timer immediately - don't wait for anything else
-    console.log('⏰ Initializing session timer immediately...');
+    // Initialize timer immediately
     initializeSessionTimer();
     @endif
 
@@ -1376,26 +299,22 @@
      * Auto-terminate meeting when time expires
      */
     function autoTerminateMeeting() {
-        console.log('🔴 Auto-terminating meeting - time expired');
-        
         // Show notification to user
         if (typeof showNotification !== 'undefined') {
             showNotification('⏰ انتهى وقت الجلسة وتم إنهاؤها تلقائياً', 'info');
         }
-        
+
         // Disconnect from LiveKit room if connected
         if (window.room && window.room.state === 'connected') {
-            console.log('🔴 Disconnecting from LiveKit room');
             try {
                 window.room.disconnect();
-            } catch (error) {
-                console.error('Error disconnecting from room:', error);
+            } catch {
+                // Silent fail - room disconnect error
             }
         }
-        
+
         // Record attendance leave if tracking
         if (window.attendanceTracker && window.attendanceTracker.isTracking) {
-            console.log('🔴 Recording final attendance leave');
             window.attendanceTracker.recordLeave();
         }
         
@@ -1438,7 +357,6 @@
             `;
         }
         
-        console.log('✅ Meeting auto-termination completed');
     }
 
     // Initialize Attendance Status Tracking (only for students)
@@ -1487,12 +405,11 @@
             case 'ended':
                 headerElement.classList.add('bg-gradient-to-r', 'from-gray-50', 'to-slate-50');
                 if (statusMessage) statusMessage.textContent = 'انتهت الجلسة';
-                
-                // CRITICAL FIX: Stop timer when session ends
+
+                // Stop timer when session ends
                 if (window.sessionTimer) {
-                    console.log('⏰ Stopping session timer - session ended');
                     window.sessionTimer.stop();
-                    
+
                     // Set timer display to 00:00
                     const timeDisplay = document.getElementById('time-display');
                     if (timeDisplay) {
@@ -1509,10 +426,8 @@
         // This can be expanded for more detailed progress tracking
     }
 
-    // CRITICAL FIX: Disable old attendance tracking initialization
+    // Disabled - AutoAttendanceTracker handles all attendance tracking now
     function initializeAttendanceTracking() {
-        console.log('📊 Old initializeAttendanceTracking() called - skipping (AutoAttendanceTracker handles this now)');
-        // AutoAttendanceTracker handles all attendance tracking now
         // No automatic API calls on page load
     }
 
@@ -1520,7 +435,16 @@
     function initializeSessionStatusPolling() {
         // Check session status every 10 seconds for real-time button updates
         checkSessionStatus();
-        setInterval(checkSessionStatus, 10000);
+        // Store interval ID for cleanup on page unload (prevents memory leak)
+        sessionStatusPollingInterval = setInterval(checkSessionStatus, 10000);
+    }
+
+    // Stop session status polling (for cleanup)
+    function stopSessionStatusPolling() {
+        if (sessionStatusPollingInterval) {
+            clearInterval(sessionStatusPollingInterval);
+            sessionStatusPollingInterval = null;
+        }
     }
 
     // Check initial session status (for when page loads on a completed session)
@@ -1529,7 +453,6 @@
         const sessionStatus = '{{ is_object($session->status) && method_exists($session->status, 'value') ? $session->status->value : (is_object($session->status) ? $session->status->name : $session->status) }}';
         
         if (sessionStatus === 'completed') {
-            console.log('⏰ Session is already completed - stopping timer immediately');
             
             // Stop timer if it exists
             if (window.sessionTimer) {
@@ -1553,10 +476,8 @@
             .then(response => response.json())
             .then(data => {
                 updateSessionStatusUI(data);
-                console.log('📊 Session status updated:', data);
             })
             .catch(error => {
-                console.warn('⚠️ Failed to check session status:', error);
             });
     }
 
@@ -1612,7 +533,6 @@
 
         // CRITICAL FIX: Stop timer when session is completed
         if (status === SessionStatus.COMPLETED && window.sessionTimer) {
-            console.log('⏰ Session completed - stopping timer');
             window.sessionTimer.stop();
             
             // Mark timer as permanently stopped to prevent restart
@@ -1666,7 +586,6 @@
             
             // Handle authentication errors
             if (response.status === 401) {
-                console.warn('🔑 Authentication failed, attempting to refresh...');
                 
                 // Try to refresh CSRF token
                 await refreshCSRFToken();
@@ -1684,7 +603,6 @@
             
             return response;
         } catch (error) {
-            console.error('🔥 Fetch error:', error);
             throw error;
         }
     }
@@ -1702,13 +620,10 @@
             if (response.ok) {
                 const data = await response.json();
                 document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', data.token);
-                console.log('🔑 CSRF token refreshed successfully');
             }
         } catch (error) {
-            console.warn('⚠️ Failed to refresh CSRF token:', error);
             // Fallback: reload page if token refresh fails repeatedly
             if (window.tokenRefreshAttempts > 2) {
-                console.log('🔄 Multiple token refresh failures, reloading page...');
                 window.location.reload();
             }
             window.tokenRefreshAttempts = (window.tokenRefreshAttempts || 0) + 1;
@@ -1718,7 +633,6 @@
     // CRITICAL FIX: Disable old attendance tracking function
     // This function was causing attendance tracking on page load
     function updateAttendanceStatus() {
-        console.log('📊 Old updateAttendanceStatus() called - skipping (AutoAttendanceTracker handles this now)');
         return; // Do nothing - AutoAttendanceTracker handles all attendance tracking
         
         /* OLD CODE DISABLED - was causing page load attendance tracking
@@ -1737,7 +651,7 @@
                 'attended': 'حاضر',
                 'present': 'حاضر',  // Legacy support
                 'late': 'متأخر',
-                'leaved': 'غادر مبكراً',
+                'left': 'غادر مبكراً',
                 'partial': 'غادر مبكراً',  // Legacy support
                 'absent': 'غائب'
             };
@@ -1773,7 +687,7 @@
                     ATTENDED: 'attended',
                     PRESENT: 'present',
                     LATE: 'late',
-                    LEAVED: 'leaved',
+                    LEFT: 'left',
                     PARTIAL: 'partial',
                     ABSENT: 'absent'
                 };
@@ -1784,17 +698,15 @@
                     dotElement.classList.add('bg-green-400');
                 } else if (data.attendance_status === AttendanceStatus.LATE) {
                     dotElement.classList.add('bg-yellow-400');
-                } else if (data.attendance_status === AttendanceStatus.LEAVED || data.attendance_status === AttendanceStatus.PARTIAL) {
+                } else if (data.attendance_status === AttendanceStatus.LEFT || data.attendance_status === AttendanceStatus.PARTIAL) {
                     dotElement.classList.add('bg-orange-400');
                 } else {
                     dotElement.classList.add('bg-gray-400');
                 }
             }
 
-            console.log('📊 Attendance status updated:', data);
         })
         .catch(error => {
-            console.warn('⚠️ Failed to update attendance status:', error);
         });
         */ // END OF DISABLED CODE
     }
@@ -1811,12 +723,10 @@
 
         function handleNetworkOffline() {
             isOnline = false;
-            console.log('🔌 Network disconnected');
             showNetworkStatus('غير متصل بالشبكة', 'offline');
         }
 
         function handleNetworkOnline() {
-            console.log('🔌 Network reconnected');
             isOnline = true;
             showNetworkStatus('إعادة الاتصال...', 'reconnecting');
             
@@ -1836,7 +746,6 @@
             }
 
             reconnectAttempts++;
-            console.log(`🔄 Reconnection attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
 
             try {
                 // Refresh CSRF token first
@@ -1853,7 +762,6 @@
 
                 // Try to reconnect LiveKit if room exists
                 if (window.room && window.room.state === 'disconnected') {
-                    console.log('🎥 Attempting to reconnect LiveKit room...');
                     
                     // Check if we have an active meeting and try to rejoin
                     const connectionStatus = document.getElementById('connectionStatus');
@@ -1880,7 +788,6 @@
                 // CRITICAL FIX: Hide loading overlay after successful reconnection
                 const loadingOverlay = document.getElementById('loadingOverlay');
                 if (loadingOverlay && loadingOverlay.style.display !== 'none') {
-                    console.log('🔄 Hiding loading overlay after reconnection');
                     loadingOverlay.classList.add('fade-out');
                     setTimeout(() => {
                         loadingOverlay.style.display = 'none';
@@ -1891,10 +798,8 @@
                 showNetworkStatus('متصل', 'online');
                 reconnectAttempts = 0; // Reset on successful reconnection
                 
-                console.log('✅ Reconnection successful');
 
             } catch (error) {
-                console.warn(`⚠️ Reconnection attempt ${reconnectAttempts} failed:`, error);
                 
                 if (reconnectAttempts < maxReconnectAttempts) {
                     // Exponential backoff
@@ -2050,101 +955,13 @@
 
             <!-- Right Column: Controls & Status -->
             <div class="lg:w-80 space-y-4">
-                <!-- Enhanced Attendance Status (Only for students) -->
+                <!-- Attendance Status (Only for students) -->
                 @if($userType === 'student')
-                <div class="attendance-status bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 shadow-sm" id="attendance-status">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="attendance-indicator flex items-center gap-2">
-                            <span class="attendance-dot w-3 h-3 rounded-full bg-gray-400 transition-all duration-300"></span>
-                            <i class="attendance-icon ri-user-line text-lg text-gray-600"></i>
-                            <h3 class="text-sm font-semibold text-gray-900">حالة الحضور</h3>
-                        </div>
-                    </div>
-                    <div class="attendance-details">
-                        <div class="attendance-text text-sm text-gray-700 font-medium mb-1">جاري التحميل...</div>
-                        <div class="attendance-time text-xs text-gray-500">--</div>
-                    </div>
-                    
-                    <!-- Optional: Progress bar for attendance percentage -->
-                    <div class="mt-3 hidden" id="attendance-progress">
-                        <div class="flex justify-between items-center text-xs text-gray-600 mb-1">
-                            <span>نسبة الحضور</span>
-                            <span class="attendance-percentage">0%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 0%" id="attendance-progress-bar"></div>
-                        </div>
-                    </div>
-                </div>
+                <x-meetings.attendance-status :sessionId="$session->id" />
                 @endif
 
                 <!-- System Status -->
-                <div class="system-status bg-gray-50 rounded-lg p-4">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <i class="ri-shield-check-line text-gray-600"></i>
-                        حالة النظام
-                    </h3>
-                    <div class="space-y-3">
-                        <!-- Camera Permission -->
-                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center" id="camera-status-icon">
-                                    <i class="ri-camera-line text-gray-400"></i>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">كاميرا المتصفح</div>
-                                    <div class="text-xs text-gray-600" id="camera-status-text">جاري التحقق...</div>
-                                </div>
-                            </div>
-                            <button id="camera-permission-btn" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors hidden">
-                                منح الإذن
-                            </button>
-                        </div>
-
-                        <!-- Microphone Permission -->
-                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center" id="mic-status-icon">
-                                    <i class="ri-mic-line text-gray-400"></i>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">ميكروفون المتصفح</div>
-                                    <div class="text-xs text-gray-600" id="mic-status-text">جاري التحقق...</div>
-                                </div>
-                            </div>
-                            <button id="mic-permission-btn" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors hidden">
-                                منح الإذن
-                            </button>
-                        </div>
-
-                        <!-- Network Status -->
-                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center" id="network-status-icon">
-                                    <i class="ri-wifi-line text-gray-400"></i>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">حالة الاتصال</div>
-                                    <div class="text-xs text-gray-600" id="network-status-text">جاري التحقق...</div>
-                                </div>
-                            </div>
-                            <div class="text-xs text-gray-500" id="network-speed"></div>
-                        </div>
-
-                        <!-- Browser Compatibility -->
-                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center" id="browser-status-icon">
-                                    <i class="ri-global-line text-gray-400"></i>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">توافق المتصفح</div>
-                                    <div class="text-xs text-gray-600" id="browser-status-text">جاري التحقق...</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <x-meetings.system-status :userType="$userType" />
 
             </div>
         </div>
@@ -2255,7 +1072,6 @@ function cancelSession(sessionId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showNotification('حدث خطأ أثناء إلغاء الجلسة', 'error');
     });
 }
@@ -2282,7 +1098,6 @@ function markStudentAbsent(sessionId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showNotification('حدث خطأ أثناء تسجيل غياب الطالب', 'error');
     });
 }
@@ -2309,40 +1124,17 @@ function completeSession(sessionId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showNotification('حدث خطأ أثناء إنهاء الجلسة', 'error');
     });
 }
 
 function showNotification(message, type = 'info', duration = 5000) {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 transform translate-x-full transition-transform duration-300`;
-    
-    const colors = {
-        success: 'bg-green-500 text-white',
-        error: 'bg-red-500 text-white',
-        warning: 'bg-yellow-500 text-white',
-        info: 'bg-blue-500 text-white'
-    };
-    
-    notification.className += ` ${colors[type] || colors.info}`;
-    
-    notification.innerHTML = `
-        <div class="flex items-center justify-between">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 hover:opacity-70">
-                <i class="ri-close-line"></i>
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.classList.remove('translate-x-full'), 100);
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        setTimeout(() => notification.remove(), 300);
-    }, duration);
+    // Use unified toast system if available, fallback to basic notification
+    if (window.toast) {
+        window.toast.show({ type: type, message: message, duration: duration });
+    } else {
+        // Fallback for when toast system isn't loaded yet
+    }
 }
 </script>
 @endif
@@ -2381,8 +1173,8 @@ function showNotification(message, type = 'info', duration = 5000) {
                 </div>
 
                 <!-- Right side - Fullscreen button -->
-                <button id="fullscreenBtn" class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 z-1 relative">
-                    <i id="fullscreenIcon" class="ri-fullscreen-line text-lg text-white"></i>
+                <button id="fullscreenBtn" aria-label="ملء الشاشة" class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 z-1 relative">
+                    <i id="fullscreenIcon" class="ri-fullscreen-line text-lg text-white" aria-hidden="true"></i>
                     <span id="fullscreenText" class="hidden sm:inline">ملء الشاشة</span>
                 </button>
             </div>
@@ -2406,270 +1198,29 @@ function showNotification(message, type = 'info', duration = 5000) {
                     </div>
                 </div>
 
-                <!-- Sidebar -->
-                <div id="meetingSidebar" class="absolute top-0 right-0 bottom-0 w-96 bg-gray-800 border-l border-gray-700 flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out z-40">
-                    <!-- Sidebar Header -->
-                    <div class="bg-gray-700 px-4 py-3 flex items-center justify-between border-b border-gray-600">
-                        <h3 id="sidebarTitle" class="text-white font-semibold">الدردشة</h3>
-                        <button id="closeSidebarBtn" class="text-gray-300 hover:text-white transition-colors">
-                            <i class="ri-close-line text-xl"></i>
-                        </button>
-                    </div>
-
-                    <!-- Sidebar Content -->
-                    <div class="flex-1 overflow-hidden">
-                        <!-- Chat Panel -->
-                        <div id="chatContent" class="h-full flex flex-col">
-                            <!-- Chat Messages -->
-                            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
-                                <!-- Messages will be added here dynamically -->
-                            </div>
-
-                            <!-- Chat Input -->
-                            <div class="p-4 border-t border-gray-600">
-                                <div class="flex gap-2">
-                                    <input
-                                        type="text"
-                                        id="chatMessageInput"
-                                        placeholder="اكتب رسالة..."
-                                        class="flex-1 bg-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        onkeypress="if(event.key==='Enter') window.meeting?.controls?.sendChatMessage()">
-                                    <button
-                                        id="sendChatBtn"
-                                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                                        onclick="window.meeting?.controls?.sendChatMessage()">
-                                        <i class="ri-send-plane-line text-lg"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Participants Panel -->
-                        <div id="participantsContent" class="h-full flex-col hidden">
-                            <div class="flex-1 overflow-y-auto p-4 space-y-2">
-                                <div id="participantsList">
-                                    <!-- Participants will be added here dynamically -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Raised Hands Panel (Teachers Only) -->
-                        @if($userType === 'quran_teacher')
-                        <div id="raisedHandsContent" class="h-full flex-col hidden">
-                            <!-- Raised Hands Queue -->
-                            <div class="flex-1 overflow-y-auto p-4">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h4 class="text-white font-medium">الأيدي المرفوعة</h4>
-                                    <div class="flex items-center gap-2">
-                                        <span id="raisedHandsCount" class="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">0</span>
-                                        <button id="clearAllRaisedHandsBtn" 
-                                                onclick="window.meeting?.controls?.clearAllRaisedHands()" 
-                                                class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded transition-colors hidden"
-                                                title="إخفاء جميع الأيدي المرفوعة">
-                                            ✋ إخفاء الكل
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div id="raisedHandsList" class="space-y-3">
-                                    <!-- Empty state -->
-                                    <div id="noRaisedHandsMessage" class="text-center text-gray-400 py-8">
-                                        <i class="ri-hand-heart-line text-5xl mx-auto mb-4 text-gray-500 block"></i>
-                                        <p>لا يوجد طلاب رفعوا أيديهم</p>
-                                    </div>
-                                    <!-- Raised hands will be added here dynamically -->
-                                </div>
-                            </div>
-                        </div>
-                        @endif
-
-                        <!-- Settings Panel -->
-                        <div id="settingsContent" class="h-full flex-col hidden">
-                            <div class="flex-1 overflow-y-auto p-4 space-y-4">
-                                @if($userType === 'quran_teacher')
-                                <!-- Teacher Controls - Simplified Design -->
-                                <div class="bg-gray-700 rounded-lg p-4">
-                                    <h4 class="text-white font-medium mb-4">التحكم في الطلاب</h4>
-                                    <div class="space-y-4">
-                                        <!-- Microphone Control -->
-                                        <div class="flex items-center justify-between py-3 border-b border-gray-600">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                                                    <i class="ri-mic-line text-white text-xl"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="text-white font-medium text-sm">السماح بالميكروفون</p>
-                                                    <p class="text-gray-400 text-xs">السماح للطلاب بإستخدام الميكروفون</p>
-                                                </div>
-                                            </div>
-                                            <label class="relative inline-flex items-center cursor-pointer">
-                                                <input type="checkbox" id="toggleAllStudentsMicSwitch" class="sr-only peer">
-                                                <div class="w-11 h-6 bg-gray-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                                            </label>
-                                        </div>
-
-                                        <!-- Camera Control -->
-                                        <div class="flex items-center justify-between py-3">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
-                                                    <i class="ri-vidicon-line text-white text-xl"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="text-white font-medium text-sm">السماح بالكاميرا</p>
-                                                    <p class="text-gray-400 text-xs">السماح للطلاب بإستخدام الكاميرا</p>
-                                                </div>
-                                            </div>
-                                            <label class="relative inline-flex items-center cursor-pointer">
-                                                <input type="checkbox" id="toggleAllStudentsCameraSwitch" class="sr-only peer">
-                                                <div class="w-11 h-6 bg-gray-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                @else
-                                <!-- Student Settings - Device Selection -->
-                                <div class="bg-gray-700 rounded-lg p-4">
-                                    <h4 class="text-white font-medium mb-3">إعدادات الكاميرا</h4>
-                                    <div class="space-y-2">
-                                        <div>
-                                            <label class="text-gray-300 text-sm">الكاميرا</label>
-                                            <select id="cameraSelect" class="w-full mt-1 bg-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                                <option>جاري التحميل...</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="text-gray-300 text-sm">الجودة</label>
-                                            <select id="videoQualitySelect" class="w-full mt-1 bg-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                                <option value="low">منخفضة (480p)</option>
-                                                <option value="medium" selected>متوسطة (720p)</option>
-                                                <option value="high">عالية (1080p)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="bg-gray-700 rounded-lg p-4">
-                                    <h4 class="text-white font-medium mb-3">إعدادات الميكروفون</h4>
-                                    <div class="space-y-2">
-                                        <div>
-                                            <label class="text-gray-300 text-sm">الميكروفون</label>
-                                            <select id="microphoneSelect" class="w-full mt-1 bg-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                                <option>جاري التحميل...</option>
-                                            </select>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-300 text-sm">كتم الصوت عند الدخول</span>
-                                            <input type="checkbox" id="muteonJoinCheckbox" class="rounded">
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <x-meetings.sidebar-panels :userType="$userType" />
             </div>
 
-            <!-- Control Bar - Always at bottom -->
-            <div class="control-bar bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-4 py-4 flex items-center justify-center gap-2 sm:gap-4 shadow-lg flex-wrap sm:flex-nowrap z-11">
-                <!-- Microphone Button -->
-                <button id="toggleMic" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
-                    <i class="ri-mic-line text-xl"></i>
-                    <div class="control-tooltip">إيقاف/تشغيل الميكروفون</div>
-                </button>
-
-                <!-- Camera Button -->
-                <button id="toggleCamera" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
-                    <i class="ri-vidicon-line text-xl"></i>
-                    <div class="control-tooltip">إيقاف/تشغيل الكاميرا</div>
-                </button>
-
-                @if($userType === 'quran_teacher')
-                <!-- Screen Share Button (Teachers Only) -->
-                <button id="toggleScreenShare" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
-                    <i class="ri-share-box-line text-xl"></i>
-                    <div class="control-tooltip">مشاركة الشاشة</div>
-                </button>
-                @endif
-
-                @if($userType !== 'quran_teacher')
-                <!-- Hand Raise Button -->
-                <button id="toggleHandRaise" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95">
-                    <i class="ri-hand text-white text-xl"></i>
-                    <div class="control-tooltip">رفع اليد</div>
-                </button>
-                @endif
-
-                <!-- Chat Button -->
-                <button id="toggleChat" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
-                    <i class="ri-chat-3-line text-xl"></i>
-                    <div class="control-tooltip">إظهار/إخفاء الدردشة</div>
-                </button>
-
-                <!-- Participants Button -->
-                <button id="toggleParticipants" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
-                    <i class="ri-group-line text-xl"></i>
-                    <div class="control-tooltip">إظهار/إخفاء المشاركين</div>
-                </button>
-
-                @if($userType === 'quran_teacher')
-                <!-- Raised Hands Button (Teachers Only) -->
-                <button id="toggleRaisedHands" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95 relative">
-                    <i class="ri-hand text-white text-xl"></i>
-                    <!-- Notification Badge -->
-                    <div id="raisedHandsNotificationBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold hidden">
-                        <span id="raisedHandsBadgeCount">0</span>
-                    </div>
-                    <div class="control-tooltip">إدارة الأيدي المرفوعة</div>
-                </button>
-                @endif
-
-                @php
-                    // Only show recording for Interactive Course sessions (Academic teachers only)
-                    $isInteractiveCourse = ($session->session_type === 'interactive_course' || 
-                                          (isset($session->interactiveCourseSession) && $session->interactiveCourseSession) ||
-                                          (method_exists($session, 'session_type') && $session->session_type === 'interactive_course'));
-                    $showRecording = $userType === 'academic_teacher' && $isInteractiveCourse;
-                @endphp
-                
-                @if($showRecording)
-                <!-- Recording Button (Interactive Courses Only) -->
-                <button id="toggleRecording" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative">
-                    <i class="ri-record-circle-line text-xl" id="recordingIcon"></i>
-                    <div id="recordingIndicator" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse hidden"></div>
-                    <div class="control-tooltip">بدء/إيقاف تسجيل الدورة</div>
-                </button>
-                @endif
-
-                @if($userType === 'quran_teacher')
-                <!-- Settings Button (Teachers Only) -->
-                <button id="toggleSettings" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
-                    <i class="ri-settings-3-line text-xl"></i>
-                    <div class="control-tooltip">الإعدادات</div>
-                </button>
-                @endif
-
-                <!-- Leave Button -->
-                <button id="leaveMeeting" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative meeting-control-button">
-                    <i class="ri-logout-box-line text-xl"></i>
-                    <div class="control-tooltip">مغادرة الجلسة</div>
-                </button>
-            </div>
+            @php
+                // Only show recording for Interactive Course sessions (Academic teachers only)
+                $isInteractiveCourse = ($session->session_type === 'interactive_course' ||
+                                      (isset($session->interactiveCourseSession) && $session->interactiveCourseSession) ||
+                                      (method_exists($session, 'session_type') && $session->session_type === 'interactive_course'));
+                $showRecording = $userType === 'academic_teacher' && $isInteractiveCourse;
+            @endphp
+            <x-meetings.control-bar :userType="$userType" :showRecording="$showRecording" />
         </div>
     </div>
 </div>
 
 <!-- Meeting Initialization Script -->
 <script>
-    console.log('✅ LiveKit Meeting Component Loading...');
 
     // Initialize modular meeting system
     async function initializeMeeting() {
-        console.log('🚀 Initializing modular meeting...');
 
         try {
             // Wait for LiveKit SDK to load
-            console.log('⏳ Waiting for LiveKit SDK...');
             if (window.livekitLoadPromise) {
                 await window.livekitLoadPromise;
             }
@@ -2688,26 +1239,21 @@ function showNotification(message, type = 'info', duration = 5000) {
                 role: '{{ $userType === "quran_teacher" ? "teacher" : "student" }}'
             };
 
-            console.log('✅ Modular meeting configuration:', meetingConfig);
 
             // Set up start button handler
             const startBtn = document.getElementById('startMeetingBtn');
             if (startBtn) {
-                console.log('✅ Meeting button found and ready');
 
                 // Add click handler for modular system
                 startBtn.addEventListener('click', async () => {
-                    console.log('🎯 Start button clicked!');
 
                     // CRITICAL FIX: Check if user is already in the meeting
                     if (window.meeting || startBtn.disabled) {
-                        console.log('⚠️ Meeting already initialized or initializing, ignoring click');
                         return;
                     }
 
                     // CRITICAL FIX: Check if already tracking attendance (user is in meeting)
                     if (attendanceTracker && attendanceTracker.isTracking) {
-                        console.log('⚠️ User already in meeting and attendance is being tracked, ignoring click');
                         return;
                     }
 
@@ -2725,20 +1271,15 @@ function showNotification(message, type = 'info', duration = 5000) {
                         const meetingContainer = document.getElementById('meetingContainer');
                         if (meetingContainer) {
                             meetingContainer.style.display = 'block';
-                            console.log('✅ Meeting container shown');
                         } else {
-                            console.error('❌ Meeting container not found');
                         }
 
                         // Initialize meeting with new modular system
-                        console.log('🚀 Starting modular meeting...');
                         window.meeting = await initializeLiveKitMeeting(meetingConfig);
 
-                        console.log('✅ Modular meeting initialized successfully');
 
                         // CRITICAL FIX: Immediately record join when meeting starts
                         if (attendanceTracker) {
-                            console.log('🎯 Recording join immediately after meeting start');
                             setTimeout(() => {
                                 attendanceTracker.recordJoin();
                             }, 1000);
@@ -2748,7 +1289,6 @@ function showNotification(message, type = 'info', duration = 5000) {
                         if (btnText) btnText.textContent = 'متصل';
 
                     } catch (error) {
-                        console.error('❌ Failed to start meeting:', error);
 
                         // Reset button state
                         startBtn.disabled = false;
@@ -2765,19 +1305,15 @@ function showNotification(message, type = 'info', duration = 5000) {
 
                         // Show user-friendly error
                         const errorMessage = error?.message || 'حدث خطأ غير متوقع';
-                        alert(`فشل في الاتصال بالجلسة: ${errorMessage}`);
+                        window.toast?.error(`فشل في الاتصال بالجلسة: ${errorMessage}`);
                     }
                 });
 
-                console.log('✅ Modular click handler added to start button');
             } else {
-                console.error('❌ Meeting button not found');
             }
 
-            console.log('🎉 Modular meeting system ready!');
 
         } catch (error) {
-            console.error('❌ Meeting initialization failed:', error);
             const btn = document.getElementById('startMeetingBtn');
             const btnText = document.getElementById('meetingBtnText');
             if (btn) btn.disabled = true;
@@ -2791,38 +1327,34 @@ function showNotification(message, type = 'info', duration = 5000) {
 
     // Wait for window load, then initialize
     window.addEventListener('load', function() {
-        console.log('🚀 All resources loaded, starting initialization...');
         initializeMeeting();
     });
 
     // Fallback initialization on DOM ready
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🎯 DOM ready - checking modular system...');
 
         // Ensure initializeLiveKitMeeting is available
         if (typeof window.initializeLiveKitMeeting !== 'function') {
-            console.warn('⚠️ Modular system not yet loaded, will rely on window.load event');
             return;
         }
 
-        console.log('✅ Modular system available on DOM ready');
     });
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', async () => {
+        // Stop session status polling (prevents memory leak)
+        stopSessionStatusPolling();
+
         if (window.meeting && typeof window.meeting.destroy === 'function') {
-            console.log('🧹 Cleaning up meeting on page unload...');
             try {
                 await window.meeting.destroy();
             } catch (error) {
-                console.error('❌ Error during cleanup:', error);
             }
         } else if (window.destroyCurrentMeeting) {
             // Fallback cleanup
             try {
                 await window.destroyCurrentMeeting();
             } catch (error) {
-                console.error('❌ Error during fallback cleanup:', error);
             }
         }
     });
@@ -2839,7 +1371,7 @@ function showNotification(message, type = 'info', duration = 5000) {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // =====================================================
-    // Session Starting Soon Notification (Centralized)
+    // Session Starting Soon Notification (Uses Unified Toast)
     // Shows toast notification when session is starting soon
     // =====================================================
     @if($session->scheduled_at && $session->scheduled_at->isFuture() && $session->scheduled_at->diffInMinutes(now()) <= 15)
@@ -2847,31 +1379,10 @@ document.addEventListener('DOMContentLoaded', function() {
             $timeData = formatTimeRemaining($session->scheduled_at);
         @endphp
         @if(!$timeData['is_past'])
-            (function() {
-                const notification = document.createElement('div');
-                notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 transform translate-x-full transition-transform duration-300 bg-blue-500 text-white';
-                notification.innerHTML = `
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <i class="ri-time-line text-lg"></i>
-                            <span>الجلسة ستبدأ خلال {{ $timeData['formatted'] }}</span>
-                        </div>
-                        <button onclick="this.parentElement.parentElement.remove()" class="hover:opacity-70 flex-shrink-0">
-                            <i class="ri-close-line"></i>
-                        </button>
-                    </div>
-                `;
-                document.body.appendChild(notification);
-
-                // Animate in
-                setTimeout(() => notification.classList.remove('translate-x-full'), 100);
-
-                // Auto-dismiss after 8 seconds
-                setTimeout(() => {
-                    notification.classList.add('translate-x-full');
-                    setTimeout(() => notification.remove(), 300);
-                }, 8000);
-            })();
+            // Use unified toast system for session starting notification
+            if (window.toast) {
+                window.toast.info('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', { duration: 8000 });
+            }
         @endif
     @endif
 
@@ -2889,7 +1400,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.endingBuffer = {{ $endingBufferMinutes ?? 5 }} * 60 * 1000; // milliseconds
 
             if (this.timerElement && this.displayElement) {
-                console.log('🕐 Timer initialized for session at:', this.scheduledAt);
                 this.start();
             }
             @endif
@@ -2987,7 +1497,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize timer
     if (document.getElementById('meetingTimer')) {
         window.meetingTimer = new MeetingTimer();
-        console.log('✅ Meeting timer started');
     }
     
     // Cleanup on page unload
@@ -3020,7 +1529,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // CRITICAL FIX: Initialize DOM elements, show loading state initially
             if (this.statusElement) {
-                console.log('📊 Attendance tracker initialized - will load status shortly');
                 // Show loading state initially (status will be loaded by DOMContentLoaded)
                 this.updateAttendanceUI({
                     is_currently_in_meeting: false,
@@ -3036,7 +1544,6 @@ document.addEventListener('DOMContentLoaded', function() {
          * DISABLED: Attendance now handled by Livewire component via webhooks
          */
         async loadCurrentStatus() {
-            console.log('ℹ️ Attendance status via Livewire - skipping API call');
             return; // DISABLED - Livewire component handles this now
         }
         
@@ -3045,13 +1552,11 @@ document.addEventListener('DOMContentLoaded', function() {
          */
         async recordJoin() {
             if (this.isTracking) {
-                console.log('⚠️ Already tracking attendance, skipping duplicate join');
                 return;
             }
             
             try {
                 // DISABLED: Client-side attendance tracking - Now handled by LiveKit webhooks
-                console.log('ℹ️ Attendance tracking via webhooks - No client-side join needed');
 
                 // Simulate successful response for UI update
                 const data = {
@@ -3062,7 +1567,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (data.success) {
                     this.isTracking = true;
-                    console.log('✅ Meeting join recorded successfully, updating UI...');
                     
                     if (data.attendance_status) {
                         this.updateAttendanceUI(data.attendance_status);
@@ -3072,23 +1576,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // CRITICAL FIX: Start periodic updates only when meeting join is successful
                     if (!this.updateInterval) {
-                        console.log('🔄 Starting attendance tracking periodic updates...');
                         this.startPeriodicUpdates();
                     }
                     
                     // Immediately refresh attendance status
                     setTimeout(() => {
-                        console.log('🔄 Refreshing attendance status after join...');
                         this.loadCurrentStatus();
                     }, 500);
                     
                 } else {
                     this.showNotification('⚠️ ' + (data.message || 'فشل في تسجيل الحضور'), 'warning');
-                    console.warn('Failed to record meeting join:', data);
                 }
                 
             } catch (error) {
-                console.error('Error recording meeting join:', error);
                 this.showNotification('❌ فشل في تسجيل دخولك للجلسة', 'error');
             }
         }
@@ -3100,7 +1600,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!this.isTracking) return; // Only record leave if we recorded join
             
             try {
-                console.log('🎯 Recording meeting leave...');
                 
                 const response = await fetch('/api/meetings/attendance/leave', {
                     method: 'POST',
@@ -3127,14 +1626,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     // CRITICAL FIX: Stop periodic updates when user leaves
                     this.stopPeriodicUpdates();
                     
-                    console.log('✅ Meeting leave recorded successfully');
                 } else {
                     this.showNotification('⚠️ ' + data.message, 'warning');
-                    console.warn('Failed to record meeting leave:', data.message);
                 }
                 
             } catch (error) {
-                console.error('Error recording meeting leave:', error);
                 this.showNotification('❌ فشل في تسجيل خروجك من الجلسة', 'error');
             }
         }
@@ -3144,10 +1640,8 @@ document.addEventListener('DOMContentLoaded', function() {
          * @param {Object} statusData - Attendance status data from API
          */
         updateAttendanceUI(statusData) {
-            console.log('📊 Updating attendance UI with data:', statusData);
             
             if (!this.statusElement || !this.textElement || !this.timeElement || !this.dotElement) {
-                console.warn('⚠️ Attendance UI elements not found');
                 return;
             }
             
@@ -3176,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ATTENDED: 'attended',
                 PRESENT: 'present',
                 LATE: 'late',
-                LEAVED: 'leaved',
+                LEFT: 'left',
                 PARTIAL: 'partial',
                 PARTIAL_ATTENDANCE: 'partial_attendance',
                 NOT_ATTENDED: 'not_attended',
@@ -3209,7 +1703,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     borderColor = 'border-red-200';
                     iconClass = 'ri-close-circle-line';
 
-                } else if (attendance_status === AttendanceStatus.LEAVED || attendance_status === AttendanceStatus.PARTIAL_ATTENDANCE || attendance_status === AttendanceStatus.PARTIAL) {
+                } else if (attendance_status === AttendanceStatus.LEFT || attendance_status === AttendanceStatus.PARTIAL_ATTENDANCE || attendance_status === AttendanceStatus.PARTIAL) {
                     statusText = 'غادر مبكراً';
                     timeText = `حضرت ${duration_minutes} دقيقة (${attendance_percentage}%)`;
                     dotColor = 'bg-orange-400';
@@ -3266,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'attended': 'حاضر',
                     'present': 'حاضر',  // Legacy support
                     'late': 'متأخر',
-                    'leaved': 'غادر مبكراً',
+                    'left': 'غادر مبكراً',
                     'partial': 'غادر مبكراً',  // Legacy support
                     'absent': 'غائب'
                 };
@@ -3284,7 +1778,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     containerColor = 'from-yellow-50 to-amber-50';
                     borderColor = 'border-yellow-200';
                     iconClass = 'ri-time-line';
-                } else if (attendance_status === 'leaved' || attendance_status === 'partial') {
+                } else if (attendance_status === 'left' || attendance_status === 'partial') {
                     dotColor = 'bg-orange-400';
                     containerColor = 'from-orange-50 to-red-50';
                     borderColor = 'border-orange-200';
@@ -3317,7 +1811,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 iconElement.className = `attendance-icon ${iconClass} text-lg`;
             }
             
-            console.log('✅ Attendance UI updated successfully');
         }
         
         /**
@@ -3341,49 +1834,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         /**
-         * Show notification to user
+         * Show notification to user using unified toast system
          */
         showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-sm max-w-sm transition-all duration-300 ${
-                type === 'success' ? 'bg-green-600' : 
-                type === 'warning' ? 'bg-yellow-600' : 
-                type === 'error' ? 'bg-red-600' : 'bg-blue-600'
-            }`;
-            notification.textContent = message;
-            notification.style.transform = 'translateX(100%)';
-            notification.style.opacity = '0';
-            
-            // Add to page
-            document.body.appendChild(notification);
-            
-            // Animate in
-            setTimeout(() => {
-                notification.style.transform = 'translateX(0)';
-                notification.style.opacity = '1';
-            }, 10);
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                notification.style.transform = 'translateX(100%)';
-                notification.style.opacity = '0';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 5000);
+            if (window.toast) {
+                window.toast.show({ type: type, message: message });
+            } else {
+            }
         }
         
         /**
          * Hook into meeting events
          */
         hookIntoMeetingEvents(meeting) {
-            console.log('🔗 Hooking into meeting events for attendance tracking...', meeting);
             
             if (!meeting) {
-                console.warn('⚠️ No meeting object provided');
                 return;
             }
             
@@ -3398,38 +1863,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!room) {
-                console.warn('⚠️ Room not available, trying to connect anyway...');
                 // Fallback: try to record join immediately since user clicked to join
                 setTimeout(() => {
-                    console.log('🔄 Fallback: Recording join after timeout');
                     this.recordJoin();
                 }, 2000);
                 return;
             }
             
-            console.log('✅ Room found:', room);
             
             // Check if already connected
             if (room.state === 'connected') {
-                console.log('📡 Room already connected - recording join immediately');
                 this.recordJoin();
             }
             
             // Listen for local participant connection
             room.on('connected', () => {
-                console.log('📡 Connected to room - recording join');
                 this.recordJoin();
             });
             
             // Listen for local participant disconnection
             room.on('disconnected', () => {
-                console.log('📡 Disconnected from room - recording leave');
                 this.recordLeave();
             });
             
             // Listen for connection state changes
             room.on('connectionStateChanged', (state) => {
-                console.log('📡 Connection state changed:', state);
                 
                 if (state === 'connected') {
                     this.recordJoin();
@@ -3438,7 +1896,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            console.log('✅ Attendance tracking hooked into meeting events');
         }
     }
     
@@ -3451,7 +1908,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     function initializeRecordingControls() {
-        console.log('🎥 Initializing recording controls for Interactive Course...');
         
         const recordingBtn = document.getElementById('toggleRecording');
         const recordingIcon = document.getElementById('recordingIcon');
@@ -3459,7 +1915,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (recordingBtn) {
             recordingBtn.addEventListener('click', toggleRecording);
-            console.log('✅ Recording controls initialized');
         }
     }
     
@@ -3471,7 +1926,6 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             if (recordingState.isRecording) {
                 // Stop recording
-                console.log('🛑 Stopping recording...');
                 await stopRecording();
                 
                 // Update UI
@@ -3485,7 +1939,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } else {
                 // Start recording
-                console.log('▶️ Starting recording...');
                 await startRecording();
                 
                 // Update UI
@@ -3498,7 +1951,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 showRecordingNotification('🎥 بدأ تسجيل الدورة التفاعلية', 'success');
             }
         } catch (error) {
-            console.error('❌ Recording error:', error);
             showRecordingNotification('❌ خطأ في التسجيل: ' + error.message, 'error');
         }
     }
@@ -3525,7 +1977,6 @@ document.addEventListener('DOMContentLoaded', function() {
         recordingState.recordingId = data.recording_id;
         recordingState.startTime = new Date();
         
-        console.log('✅ Recording started:', data);
     }
     
     async function stopRecording() {
@@ -3554,29 +2005,14 @@ document.addEventListener('DOMContentLoaded', function() {
         recordingState.recordingId = null;
         recordingState.startTime = null;
         
-        console.log('✅ Recording stopped:', data);
     }
     
     function showRecordingNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 left-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-sm max-w-sm transition-all duration-300 ${
-            type === 'success' ? 'bg-green-600' : 
-            type === 'error' ? 'bg-red-600' : 
-            'bg-blue-600'
-        }`;
-        notification.textContent = message;
-        
-        // Add to DOM
-        document.body.appendChild(notification);
-        
-        // Remove after 4 seconds
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 4000);
+        // Use unified toast system
+        if (window.toast) {
+            window.toast.show({ type: type, message: message, duration: 4000 });
+        } else {
+        }
     }
     
     // Initialize attendance tracker
@@ -3593,7 +2029,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // CRITICAL FIX: Load initial status for students (especially for completed sessions)
         @if($userType === 'student')
-            console.log('📊 Student detected - loading initial attendance status...');
             // Wait a moment for DOM to be fully ready, then load status
             setTimeout(() => {
                 if (attendanceTracker) {

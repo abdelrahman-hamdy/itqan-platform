@@ -304,8 +304,10 @@ class BaseSubscriptionObserver
             'student_id' => $subscription->student_id,
         ]);
 
-        // TODO: Send activation notification
-        // TODO: Create initial sessions if applicable
+        // Send activation notification
+        $this->sendActivationNotification($subscription);
+
+        // Note: Session creation is handled separately by session scheduling services
     }
 
     /**
@@ -319,7 +321,8 @@ class BaseSubscriptionObserver
             'auto_renew' => $subscription->auto_renew,
         ]);
 
-        // TODO: Send expiration notification
+        // Send expiration notification
+        $this->sendExpirationNotification($subscription);
     }
 
     /**
@@ -333,8 +336,10 @@ class BaseSubscriptionObserver
             'reason' => $subscription->cancellation_reason,
         ]);
 
-        // TODO: Send cancellation notification
-        // TODO: Cancel upcoming sessions if applicable
+        // Send cancellation notification
+        $this->sendCancellationNotification($subscription);
+
+        // Note: Session cancellation is handled separately by session management services
     }
 
     /**
@@ -346,13 +351,196 @@ class BaseSubscriptionObserver
         SubscriptionStatus|string $newStatus
     ): void {
         try {
-            // TODO: Implement broadcasting when needed
+            // Broadcasting not yet implemented - will be added when real-time updates are required
             // event(new SubscriptionStatusChanged($subscription, $oldStatus, $newStatus));
         } catch (\Exception $e) {
             Log::warning("Failed to broadcast subscription status change", [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Send subscription activation notification
+     */
+    protected function sendActivationNotification(BaseSubscription $subscription): void
+    {
+        try {
+            $student = $subscription->student;
+            if (!$student) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            // Get subscription display name
+            $subscriptionName = $this->getSubscriptionName($subscription);
+            $subscriptionType = $subscription->getSubscriptionType();
+
+            $notificationService->send(
+                $student,
+                \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                [
+                    'subscription_name' => $subscriptionName,
+                    'subscription_type' => $subscriptionType,
+                    'start_date' => $subscription->starts_at?->format('Y-m-d'),
+                    'end_date' => $subscription->ends_at?->format('Y-m-d'),
+                ],
+                $this->getSubscriptionUrl($subscription),
+                [
+                    'subscription_id' => $subscription->id,
+                    'subscription_type' => $subscriptionType,
+                ],
+                true
+            );
+
+            Log::info('Subscription activation notification sent', [
+                'subscription_id' => $subscription->id,
+                'student_id' => $student->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send activation notification', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Send subscription expiration notification
+     */
+    protected function sendExpirationNotification(BaseSubscription $subscription): void
+    {
+        try {
+            $student = $subscription->student;
+            if (!$student) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            // Get subscription display name
+            $subscriptionName = $this->getSubscriptionName($subscription);
+            $subscriptionType = $subscription->getSubscriptionType();
+
+            $notificationService->send(
+                $student,
+                \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
+                [
+                    'subscription_name' => $subscriptionName,
+                    'subscription_type' => $subscriptionType,
+                    'expired_date' => $subscription->ends_at?->format('Y-m-d'),
+                    'can_renew' => $subscription->canRenew(),
+                ],
+                $this->getSubscriptionUrl($subscription),
+                [
+                    'subscription_id' => $subscription->id,
+                    'subscription_type' => $subscriptionType,
+                ],
+                true
+            );
+
+            Log::info('Subscription expiration notification sent', [
+                'subscription_id' => $subscription->id,
+                'student_id' => $student->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send expiration notification', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Send subscription cancellation notification
+     */
+    protected function sendCancellationNotification(BaseSubscription $subscription): void
+    {
+        try {
+            $student = $subscription->student;
+            if (!$student) {
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            // Get subscription display name
+            $subscriptionName = $this->getSubscriptionName($subscription);
+            $subscriptionType = $subscription->getSubscriptionType();
+
+            // Send to student
+            $notificationService->send(
+                $student,
+                \App\Enums\NotificationType::SESSION_CANCELLED,
+                [
+                    'subscription_name' => $subscriptionName,
+                    'subscription_type' => $subscriptionType,
+                    'cancellation_reason' => $subscription->cancellation_reason ?? 'غير محدد',
+                    'cancelled_at' => $subscription->cancelled_at?->format('Y-m-d H:i'),
+                ],
+                $this->getSubscriptionUrl($subscription),
+                [
+                    'subscription_id' => $subscription->id,
+                    'subscription_type' => $subscriptionType,
+                ],
+                true
+            );
+
+            Log::info('Subscription cancellation notification sent', [
+                'subscription_id' => $subscription->id,
+                'student_id' => $student->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send cancellation notification', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Get display name for subscription
+     */
+    protected function getSubscriptionName(BaseSubscription $subscription): string
+    {
+        // Try to use snapshot data first
+        if (!empty($subscription->package_name_ar)) {
+            return $subscription->package_name_ar;
+        }
+
+        // Fallback to package relationship
+        if ($subscription->package && method_exists($subscription->package, 'name')) {
+            return $subscription->package->name ?? 'اشتراك';
+        }
+
+        // Default based on type
+        return match ($subscription->getSubscriptionType()) {
+            'quran' => 'اشتراك القرآن',
+            'academic' => 'اشتراك أكاديمي',
+            'course' => 'اشتراك الدورة',
+            default => 'اشتراك',
+        };
+    }
+
+    /**
+     * Get URL for subscription
+     */
+    protected function getSubscriptionUrl(BaseSubscription $subscription): string
+    {
+        $type = $subscription->getSubscriptionType();
+
+        try {
+            return match ($type) {
+                'quran' => route('student.subscriptions.quran.show', ['subscription' => $subscription->id]),
+                'academic' => route('student.subscriptions.academic.show', ['subscription' => $subscription->id]),
+                'course' => route('student.subscriptions.course.show', ['subscription' => $subscription->id]),
+                default => route('student.profile'),
+            };
+        } catch (\Exception $e) {
+            // Fallback to student profile if route doesn't exist
+            return route('student.profile');
         }
     }
 }

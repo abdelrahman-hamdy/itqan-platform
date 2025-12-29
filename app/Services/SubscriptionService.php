@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\SubscriptionServiceInterface;
 use App\Enums\BillingCycle;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\SubscriptionStatus;
@@ -35,7 +36,7 @@ use App\Enums\SessionStatus;
  * - Factory Method: Creates appropriate subscription types
  * - Repository Pattern: Centralized data access
  */
-class SubscriptionService
+class SubscriptionService implements SubscriptionServiceInterface
 {
     /**
      * Subscription type constants
@@ -47,7 +48,7 @@ class SubscriptionService
     /**
      * Get all subscription types
      */
-    public static function getSubscriptionTypes(): array
+    public function getSubscriptionTypes(): array
     {
         return [
             self::TYPE_QURAN => 'اشتراك قرآن',
@@ -59,7 +60,7 @@ class SubscriptionService
     /**
      * Get the model class for a subscription type
      */
-    public static function getModelClass(string $type): string
+    public function getModelClass(string $type): string
     {
         return match ($type) {
             self::TYPE_QURAN => QuranSubscription::class,
@@ -82,7 +83,7 @@ class SubscriptionService
      */
     public function create(string $type, array $data): BaseSubscription
     {
-        $modelClass = self::getModelClass($type);
+        $modelClass = $this->getModelClass($type);
 
         return DB::transaction(function () use ($modelClass, $data) {
             // Use the model's static factory method
@@ -132,7 +133,7 @@ class SubscriptionService
      */
     public function createTrialSubscription(string $type, array $data): BaseSubscription
     {
-        $modelClass = self::getModelClass($type);
+        $modelClass = $this->getModelClass($type);
 
         return DB::transaction(function () use ($modelClass, $data) {
             if (method_exists($modelClass, 'createTrialSubscription')) {
@@ -311,7 +312,7 @@ class SubscriptionService
      */
     public function findById(int $id, string $type): ?BaseSubscription
     {
-        $modelClass = self::getModelClass($type);
+        $modelClass = $this->getModelClass($type);
 
         return $modelClass::find($id);
     }
@@ -337,7 +338,7 @@ class SubscriptionService
         ];
 
         foreach ([self::TYPE_QURAN, self::TYPE_ACADEMIC, self::TYPE_COURSE] as $type) {
-            $modelClass = self::getModelClass($type);
+            $modelClass = $this->getModelClass($type);
 
             $typeStats = [
                 'total' => $modelClass::where('academy_id', $academyId)->count(),

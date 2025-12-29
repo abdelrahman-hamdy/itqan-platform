@@ -81,14 +81,14 @@ class ViewAcademicSession extends ViewRecord
                                         AttendanceStatus::ATTENDED->value => 'حاضر',
                                         AttendanceStatus::ABSENT->value => 'غائب',
                                         AttendanceStatus::LATE->value => 'متأخر',
-                                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                                         default => 'غير محدد',
                                     })
                                     ->color(fn (?string $state): string => match ($state) {
                                         AttendanceStatus::ATTENDED->value => 'success',
                                         AttendanceStatus::ABSENT->value => 'danger',
                                         AttendanceStatus::LATE->value => 'warning',
-                                        AttendanceStatus::LEAVED->value => 'info',
+                                        AttendanceStatus::LEFT->value => 'info',
                                         default => 'gray',
                                     }),
                             ]),

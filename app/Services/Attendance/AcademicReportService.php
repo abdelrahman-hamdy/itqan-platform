@@ -73,7 +73,7 @@ class AcademicReportService extends BaseReportSyncService
         if ($attendancePercentage >= $requiredPercentage) {
             return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
         } elseif ($attendancePercentage > 0) {
-            return AttendanceStatus::LEAVED->value;
+            return AttendanceStatus::LEFT->value;
         } else {
             return AttendanceStatus::ABSENT->value;
         }
@@ -280,7 +280,7 @@ class AcademicReportService extends BaseReportSyncService
                 $status = $status->value;
             }
 
-            if (in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LEAVED->value])) {
+            if (in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LEFT->value])) {
                 $attended++;
             } elseif ($status === AttendanceStatus::LATE->value) {
                 $late++;

@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Requests\PreviewCertificateRequest;
+use App\Http\Requests\RequestInteractiveCourseCertificateRequest;
 use App\Models\Certificate;
 use App\Services\CertificateService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class CertificateController extends Controller
 {
+    use ApiResponses;
+
     protected CertificateService $certificateService;
 
     public function __construct(CertificateService $certificateService)
@@ -26,6 +30,8 @@ class CertificateController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Certificate::class);
+
         $user = Auth::user();
         $academy = $request->get('academy') ?? session('current_academy');
 
@@ -60,12 +66,12 @@ class CertificateController extends Controller
         $certificate = Certificate::findOrFail($certificate);
 
         // Authorization
-        $this->authorize('view', $certificate);
+        $this->authorize('download', $certificate);
 
         try {
             return $this->certificateService->downloadCertificate($certificate);
         } catch (\Exception $e) {
-            return back()->with('error', 'حدث خطأ أثناء تحميل الشهادة: ' . $e->getMessage());
+            return back()->with('error', 'حدث خطأ أثناء تحميل الشهادة: '.$e->getMessage());
         }
     }
 
@@ -82,62 +88,51 @@ class CertificateController extends Controller
         try {
             return $this->certificateService->streamCertificate($certificate);
         } catch (\Exception $e) {
-            return back()->with('error', 'حدث خطأ أثناء عرض الشهادة: ' . $e->getMessage());
+            return back()->with('error', 'حدث خطأ أثناء عرض الشهادة: '.$e->getMessage());
         }
     }
 
     /**
      * Preview certificate (for teachers/admins)
      */
-    public function preview(Request $request): Response|JsonResponse
+    public function preview(PreviewCertificateRequest $request): Response|JsonResponse
     {
-        // Authorization - only teachers and admins
-        if (!Auth::user()->hasAnyRole(['teacher', 'quran_teacher', 'academic_teacher', 'admin', 'super_admin'])) {
-            abort(403);
-        }
+        $this->authorize('create', Certificate::class);
 
-        $data = $request->validate([
-            'student_name' => 'required|string',
-            'certificate_text' => 'required|string',
-            'teacher_name' => 'nullable|string',
-            'academy_name' => 'required|string',
-            'template_style' => 'required|string',
-        ]);
+        $data = $request->validated();
 
         // Add default values
-        $data['certificate_number'] = 'PREVIEW-' . now()->format('YmdHis');
+        $data['certificate_number'] = 'PREVIEW-'.now()->format('YmdHis');
         $data['issued_date'] = now()->format('Y-m-d');
         $data['issued_date_formatted'] = now()->locale('ar')->translatedFormat('d F Y');
         $data['metadata'] = [];
 
         try {
             $pdf = $this->certificateService->previewCertificate($data, $data['template_style']);
+
             // TCPDF Output: 'I' = inline (browser display)
             return response($pdf->Output('', 'S'), 200)
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'inline; filename="certificate-preview.pdf"');
         } catch (\Exception $e) {
             \Log::error('Certificate preview error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return response()->json(['error' => 'حدث خطأ أثناء معاينة الشهادة: ' . $e->getMessage()], 500);
+
+            return $this->serverErrorResponse('حدث خطأ أثناء معاينة الشهادة: '.$e->getMessage());
         }
     }
 
     /**
      * Request certificate for interactive course (student action)
      */
-    public function requestForInteractiveCourse(Request $request): RedirectResponse
+    public function requestForInteractiveCourse(RequestInteractiveCourseCertificateRequest $request): RedirectResponse
     {
-        $user = Auth::user();
-
-        $validated = $request->validate([
-            'enrollment_id' => 'required|exists:interactive_course_enrollments,id',
-        ]);
+        $validated = $request->validated();
 
         $enrollment = \App\Models\InteractiveCourseEnrollment::findOrFail($validated['enrollment_id']);
 
-        // Check if student owns this enrollment
-        if ($enrollment->student_id !== $user->id) {
-            return back()->with('error', 'غير مصرح لك بطلب هذه الشهادة.');
+        // Authorization: Ensure the current user owns this enrollment
+        if (Auth::id() !== $enrollment->student_id) {
+            $this->authorize('view', $enrollment); // Will fail with 403 if not authorized
         }
 
         // Check if certificate already issued

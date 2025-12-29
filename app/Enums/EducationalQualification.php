@@ -2,6 +2,20 @@
 
 namespace App\Enums;
 
+/**
+ * Educational Qualification Enum
+ *
+ * Defines academic qualification levels for teacher profiles.
+ *
+ * Levels:
+ * - BACHELOR: Bachelor's degree
+ * - MASTER: Master's degree
+ * - PHD: Doctorate degree
+ * - OTHER: Other qualifications
+ *
+ * @see \App\Models\QuranTeacherProfile
+ * @see \App\Models\AcademicTeacherProfile
+ */
 enum EducationalQualification: string
 {
     case BACHELOR = 'bachelor';
@@ -10,16 +24,11 @@ enum EducationalQualification: string
     case OTHER = 'other';
 
     /**
-     * Get the Arabic label for the qualification
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::BACHELOR => 'بكالوريوس',
-            self::MASTER => 'ماجستير',
-            self::PHD => 'دكتوراه',
-            self::OTHER => 'أخرى',
-        };
+        return __('enums.educational_qualification.' . $this->value);
     }
 
     /**
@@ -46,5 +55,13 @@ enum EducationalQualification: string
         } catch (\ValueError $e) {
             return $value;
         }
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

@@ -1,16 +1,19 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Student\AcademicSessionController;
 use App\Http\Controllers\Api\V1\Student\CalendarController;
 use App\Http\Controllers\Api\V1\Student\CertificateController;
+use App\Http\Controllers\Api\V1\Student\CourseController;
 use App\Http\Controllers\Api\V1\Student\DashboardController;
 use App\Http\Controllers\Api\V1\Student\HomeworkController;
+use App\Http\Controllers\Api\V1\Student\InteractiveSessionController;
 use App\Http\Controllers\Api\V1\Student\PaymentController;
 use App\Http\Controllers\Api\V1\Student\ProfileController;
 use App\Http\Controllers\Api\V1\Student\QuizController;
-use App\Http\Controllers\Api\V1\Student\SessionController;
+use App\Http\Controllers\Api\V1\Student\QuranSessionController;
 use App\Http\Controllers\Api\V1\Student\SubscriptionController;
 use App\Http\Controllers\Api\V1\Student\TeacherController;
-use App\Http\Controllers\Api\V1\Student\CourseController;
+use App\Http\Controllers\Api\V1\Student\UnifiedSessionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,22 +33,77 @@ Route::middleware('api.is.student')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('api.v1.student.dashboard');
 
-    // Sessions
+    // Sessions (unified - aggregates all types)
     Route::prefix('sessions')->group(function () {
-        Route::get('/', [SessionController::class, 'index'])
+        Route::get('/', [UnifiedSessionController::class, 'index'])
             ->name('api.v1.student.sessions.index');
 
-        Route::get('/upcoming', [SessionController::class, 'upcoming'])
+        Route::get('/upcoming', [UnifiedSessionController::class, 'upcoming'])
             ->name('api.v1.student.sessions.upcoming');
 
-        Route::get('/today', [SessionController::class, 'today'])
+        Route::get('/today', [UnifiedSessionController::class, 'today'])
             ->name('api.v1.student.sessions.today');
 
-        Route::get('/{type}/{id}', [SessionController::class, 'show'])
+        // Type-specific routes for detailed operations
+        Route::prefix('quran')->group(function () {
+            Route::get('/', [QuranSessionController::class, 'index'])
+                ->name('api.v1.student.sessions.quran.index');
+            Route::get('/{id}', [QuranSessionController::class, 'show'])
+                ->name('api.v1.student.sessions.quran.show');
+            Route::post('/{id}/feedback', [QuranSessionController::class, 'submitFeedback'])
+                ->name('api.v1.student.sessions.quran.feedback');
+        });
+
+        Route::prefix('academic')->group(function () {
+            Route::get('/', [AcademicSessionController::class, 'index'])
+                ->name('api.v1.student.sessions.academic.index');
+            Route::get('/{id}', [AcademicSessionController::class, 'show'])
+                ->name('api.v1.student.sessions.academic.show');
+            Route::post('/{id}/feedback', [AcademicSessionController::class, 'submitFeedback'])
+                ->name('api.v1.student.sessions.academic.feedback');
+        });
+
+        Route::prefix('interactive')->group(function () {
+            Route::get('/', [InteractiveSessionController::class, 'index'])
+                ->name('api.v1.student.sessions.interactive.index');
+            Route::get('/{id}', [InteractiveSessionController::class, 'show'])
+                ->name('api.v1.student.sessions.interactive.show');
+            Route::post('/{id}/feedback', [InteractiveSessionController::class, 'submitFeedback'])
+                ->name('api.v1.student.sessions.interactive.feedback');
+        });
+
+        // Legacy routes for backward compatibility (delegate to type-specific controllers)
+        Route::get('/{type}/{id}', function (string $type, int $id) {
+            $controllerClass = match ($type) {
+                'quran' => QuranSessionController::class,
+                'academic' => AcademicSessionController::class,
+                'interactive' => InteractiveSessionController::class,
+                default => null,
+            };
+
+            if (! $controllerClass) {
+                abort(404);
+            }
+
+            return app($controllerClass)->show(request(), $id);
+        })
             ->where('type', 'quran|academic|interactive')
             ->name('api.v1.student.sessions.show');
 
-        Route::post('/{type}/{id}/feedback', [SessionController::class, 'submitFeedback'])
+        Route::post('/{type}/{id}/feedback', function (string $type, int $id) {
+            $controllerClass = match ($type) {
+                'quran' => QuranSessionController::class,
+                'academic' => AcademicSessionController::class,
+                'interactive' => InteractiveSessionController::class,
+                default => null,
+            };
+
+            if (! $controllerClass) {
+                abort(404);
+            }
+
+            return app($controllerClass)->submitFeedback(request(), $id);
+        })
             ->where('type', 'quran|academic|interactive')
             ->name('api.v1.student.sessions.feedback');
     });

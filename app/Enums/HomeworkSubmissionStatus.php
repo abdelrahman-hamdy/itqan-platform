@@ -2,6 +2,22 @@
 
 namespace App\Enums;
 
+/**
+ * Homework Submission Status Enum
+ *
+ * Tracks the lifecycle of student homework submissions.
+ *
+ * States:
+ * - NOT_STARTED: Student hasn't begun
+ * - DRAFT: Work in progress, not submitted
+ * - SUBMITTED: Submitted on time
+ * - LATE: Submitted after deadline
+ * - GRADED: Teacher has graded
+ * - RETURNED: Returned for revision
+ * - RESUBMITTED: Revised and resubmitted
+ *
+ * @see \App\Models\HomeworkSubmission
+ */
 enum HomeworkSubmissionStatus: string
 {
     case NOT_STARTED = 'not_started';
@@ -13,19 +29,11 @@ enum HomeworkSubmissionStatus: string
     case RESUBMITTED = 'resubmitted';
 
     /**
-     * Get the Arabic label for the status
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::NOT_STARTED => 'لم يتم البدء',
-            self::DRAFT => 'مسودة',
-            self::SUBMITTED => 'تم التسليم',
-            self::LATE => 'متأخر',
-            self::GRADED => 'تم التقييم',
-            self::RETURNED => 'مُعاد للمراجعة',
-            self::RESUBMITTED => 'أُعيد تسليمه',
-        };
+        return __('enums.homework_submission_status.' . $this->value);
     }
 
     /**

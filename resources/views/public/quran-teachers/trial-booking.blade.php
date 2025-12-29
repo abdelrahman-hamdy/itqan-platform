@@ -221,7 +221,6 @@
           <!-- Submit Button -->
           <div class="flex gap-4">
             <button type="submit"
-                    onclick="console.log('Trial form submit clicked'); return true;"
                     class="flex-1 {{ $brandBgClass }} text-white py-3 px-6 rounded-lg font-medium {{ $brandBgHoverClass }} transition-colors">
               <i class="ri-send-plane-line ml-2"></i>
               إرسال طلب الجلسة التجريبية
@@ -244,22 +243,16 @@
       const form = document.querySelector('form');
       if (form) {
         form.addEventListener('submit', function(e) {
-          console.log('Form submit event fired');
-          console.log('Form data:', new FormData(form));
           
           // Check if required fields are filled
           const currentLevel = form.querySelector('[name="current_level"]');
           const learningGoals = form.querySelectorAll('[name="learning_goals[]"]:checked');
           
-          console.log('Current level:', currentLevel ? currentLevel.value : 'not found');
-          console.log('Learning goals checked:', learningGoals.length);
           
           if (!currentLevel || !currentLevel.value) {
-            console.error('Current level not selected');
           }
           
           if (learningGoals.length === 0) {
-            console.error('No learning goals selected');
           }
         });
       }

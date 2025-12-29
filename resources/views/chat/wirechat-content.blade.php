@@ -62,7 +62,6 @@
   <script>
     // Initialize WireChat when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('WireChat integrated within platform layout');
 
       // Adjust height dynamically if needed
       function adjustChatHeight() {

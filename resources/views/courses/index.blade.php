@@ -2,7 +2,7 @@
   $academy = auth()->user()->academy ?? null;
 @endphp
 
-<x-student title="{{ $academy->name ?? 'أكاديمية إتقان' }} - الدورات المسجلة">
+<x-layouts.student title="{{ $academy->name ?? 'أكاديمية إتقان' }} - الدورات المسجلة">
   <x-slot name="description">استكشف الدورات المسجلة المتاحة - {{ $academy->name ?? 'أكاديمية إتقان' }}</x-slot>
 
   <!-- Header Section -->
@@ -77,4 +77,4 @@
   </div>
   @endif
 
-</x-student>
+</x-layouts.student>

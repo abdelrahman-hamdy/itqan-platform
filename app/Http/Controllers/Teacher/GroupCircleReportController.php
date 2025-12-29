@@ -8,6 +8,7 @@ use App\Models\QuranCircle;
 use App\Models\User;
 use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 use App\Enums\SessionStatus;
 
 class GroupCircleReportController extends Controller
@@ -24,12 +25,9 @@ class GroupCircleReportController extends Controller
     /**
      * Display comprehensive report for group circle (all students)
      */
-    public function show(Request $request, $subdomain, QuranCircle $circle)
+    public function show(Request $request, $subdomain, QuranCircle $circle): View
     {
-        // Authorization: Ensure teacher owns this circle
-        if ($circle->quran_teacher_id !== auth()->id()) {
-            abort(403, 'غير مصرح لك بعرض هذا التقرير');
-        }
+        $this->authorize('view', $circle);
 
         // Generate report data
         $reportData = $this->reportService->getGroupCircleReport($circle);
@@ -40,12 +38,9 @@ class GroupCircleReportController extends Controller
     /**
      * Display detailed report for specific student in group circle
      */
-    public function studentReport(Request $request, $subdomain, QuranCircle $circle, User $student)
+    public function studentReport(Request $request, $subdomain, QuranCircle $circle, User $student): View
     {
-        // Authorization: Ensure teacher owns this circle
-        if ($circle->quran_teacher_id !== auth()->id()) {
-            abort(403, 'غير مصرح لك بعرض هذا التقرير');
-        }
+        $this->authorize('view', $circle);
 
         // Ensure student is enrolled in this circle
         if (!$circle->students()->where('student_id', $student->id)->exists()) {

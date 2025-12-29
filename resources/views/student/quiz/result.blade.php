@@ -1,4 +1,4 @@
-<x-layouts.student-layout title="نتيجة الاختبار">
+<x-layouts.student title="نتيجة الاختبار">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <!-- Back Button -->
         @php
@@ -145,4 +145,4 @@
             </div>
         @endif
     </div>
-</x-layouts.student-layout>
+</x-layouts.student>

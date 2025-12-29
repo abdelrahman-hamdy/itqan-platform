@@ -469,7 +469,7 @@
                     const codes = this.studentCodes.filter(code => code.trim() !== '').map(code => code.trim().toUpperCase());
 
                     if (!phone || codes.length === 0) {
-                        alert('يرجى إدخال رقم الهاتف ورمز طالب واحد على الأقل');
+                        window.toast?.warning('يرجى إدخال رقم الهاتف ورمز طالب واحد على الأقل');
                         return;
                     }
 
@@ -509,16 +509,15 @@
                         } else if (!data.success || this.verifiedStudents.length === 0) {
                             // Show appropriate message based on the results
                             if (this.studentsWithParent.length > 0 && this.verifiedStudents.length === 0) {
-                                alert('جميع الطلاب المدخلين لديهم حساب ولي أمر بالفعل. لا يمكن إنشاء حساب جديد.');
+                                window.toast?.error('جميع الطلاب المدخلين لديهم حساب ولي أمر بالفعل. لا يمكن إنشاء حساب جديد.');
                             } else if (data.message) {
-                                alert(data.message);
+                                window.toast?.error(data.message);
                             } else {
-                                alert('حدث خطأ أثناء التحقق. يرجى المحاولة مرة أخرى.');
+                                window.toast?.error('حدث خطأ أثناء التحقق. يرجى المحاولة مرة أخرى.');
                             }
                         }
                     } catch (error) {
-                        console.error('Verification error:', error);
-                        alert('حدث خطأ أثناء التحقق. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.');
+                        window.toast?.error('حدث خطأ أثناء التحقق. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.');
                     } finally {
                         this.verifying = false;
                     }
@@ -530,10 +529,10 @@
 
                     if (!this.verified || (this.verifiedStudents.length === 0 && !(hasValidationErrors && hasOldInput))) {
                         event.preventDefault();
-                        alert('يرجى التحقق من رموز الطلاب أولاً');
+                        window.toast?.warning('يرجى التحقق من رموز الطلاب أولاً');
                     } else if (!this.passwordMatch) {
                         event.preventDefault();
-                        alert('كلمتا المرور غير متطابقتين. يرجى التأكد من تطابق كلمتي المرور');
+                        window.toast?.warning('كلمتا المرور غير متطابقتين. يرجى التأكد من تطابق كلمتي المرور');
                     } else {
                         this.loading = true;
                     }

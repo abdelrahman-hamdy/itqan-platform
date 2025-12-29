@@ -16,12 +16,8 @@
 
         newHeight = $el.scrollHeight;
 
-        {{-- console.log('old height' + height);
-        console.log('new height' + document.getElementById('conversation').scrollHeight); --}}
         heightDifference = newHeight - height;
 
-        {{-- console.log('conversationElement.scrollTop ' + conversationElement.scrollTop);
-        console.log('heightDifference' + heightDifference); --}}
 
         $el.scrollTop += heightDifference;
         // Update the previous height to the new height

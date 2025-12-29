@@ -26,12 +26,7 @@ class ParentCalendarController extends Controller
         $this->calendarService = $calendarService;
 
         // Enforce read-only access
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -42,7 +37,7 @@ class ParentCalendarController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\View\View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -101,6 +96,7 @@ class ParentCalendarController extends Controller
 
     /**
      * Get events for multiple children
+     * Optimized to avoid N+1 by eager loading users in a single query.
      *
      * @param array $childUserIds
      * @param Carbon $startDate
@@ -111,8 +107,11 @@ class ParentCalendarController extends Controller
     {
         $allEvents = collect();
 
+        // Eager load all child users at once to avoid N+1
+        $childUsers = \App\Models\User::whereIn('id', $childUserIds)->get()->keyBy('id');
+
         foreach ($childUserIds as $childUserId) {
-            $childUser = \App\Models\User::find($childUserId);
+            $childUser = $childUsers->get($childUserId);
             if ($childUser) {
                 $events = $this->calendarService->getUserCalendar($childUser, $startDate, $endDate);
                 // Add child name to each event for identification
@@ -130,6 +129,7 @@ class ParentCalendarController extends Controller
 
     /**
      * Get aggregated stats for children
+     * Optimized to avoid N+1 by eager loading users in a single query.
      *
      * @param array $childUserIds
      * @param Carbon $date
@@ -144,17 +144,17 @@ class ParentCalendarController extends Controller
             'cancelled' => 0,
         ];
 
-        foreach ($childUserIds as $childUserId) {
-            $childUser = \App\Models\User::find($childUserId);
-            if ($childUser) {
-                $stats = $this->calendarService->getCalendarStats($childUser, $date);
-                // CalendarService returns 'total_events' and 'by_status' array
-                $totalStats['total'] += $stats['total_events'] ?? 0;
-                $byStatus = $stats['by_status'] ?? [];
-                $totalStats['scheduled'] += $byStatus[SessionStatus::SCHEDULED->value] ?? 0;
-                $totalStats['completed'] += $byStatus[SessionStatus::COMPLETED->value] ?? 0;
-                $totalStats['cancelled'] += $byStatus[SessionStatus::CANCELLED->value] ?? 0;
-            }
+        // Eager load all child users at once to avoid N+1
+        $childUsers = \App\Models\User::whereIn('id', $childUserIds)->get();
+
+        foreach ($childUsers as $childUser) {
+            $stats = $this->calendarService->getCalendarStats($childUser, $date);
+            // CalendarService returns 'total_events' and 'by_status' array
+            $totalStats['total'] += $stats['total_events'] ?? 0;
+            $byStatus = $stats['by_status'] ?? [];
+            $totalStats['scheduled'] += $byStatus[SessionStatus::SCHEDULED->value] ?? 0;
+            $totalStats['completed'] += $byStatus[SessionStatus::COMPLETED->value] ?? 0;
+            $totalStats['cancelled'] += $byStatus[SessionStatus::CANCELLED->value] ?? 0;
         }
 
         return $totalStats;

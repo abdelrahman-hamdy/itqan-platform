@@ -11,8 +11,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Contracts\QuizServiceInterface;
 
-class QuizService
+class QuizService implements QuizServiceInterface
 {
     /**
      * Create a new quiz with questions

@@ -129,13 +129,10 @@
 
     <!-- Initialize Chat Configuration -->
     <script>
-        console.log('🔧 Initializing chat configuration...');
         
         // Debug auth status
         @auth
-            console.log('✅ User authenticated - ID: {{ auth()->id() }}');
         @else
-            console.error('❌ User not authenticated');
         @endauth
         
         // Initialize chat configuration for Reverb WebSocket
@@ -155,10 +152,7 @@
                 @endif
             };
             
-            console.log('✅ Chat config created successfully:', window.chatConfig);
-            console.log('🚀 Loading pure Reverb chat system...');
         } catch (error) {
-            console.error('❌ Failed to create chat config:', error);
             window.chatConfig = null;
         }
     </script>

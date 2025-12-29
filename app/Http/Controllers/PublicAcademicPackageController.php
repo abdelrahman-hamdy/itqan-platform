@@ -2,28 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ApprovalStatus;
+use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\Academy;
+use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSession;
+use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
-use App\Enums\ApprovalStatus;
 
 class PublicAcademicPackageController extends Controller
 {
+    use ApiResponses;
     /**
      * Display academic packages and teachers for browsing
      */
-    public function index(Request $request, $subdomain)
+    public function index(Request $request, $subdomain): \Illuminate\View\View
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -69,7 +71,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * Show subscription booking form for specific package and teacher
      */
-    public function showSubscriptionForm(Request $request, $subdomain, $teacherId, $packageId)
+    public function showSubscriptionForm(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -122,7 +124,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * Submit subscription request for academic package
      */
-    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId)
+    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\Http\RedirectResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -441,7 +443,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * Show teacher profile for academic packages
      */
-    public function showTeacher(Request $request, $subdomain, $teacherId)
+    public function showTeacher(Request $request, $subdomain, $teacherId): \Illuminate\View\View
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -492,12 +494,12 @@ class PublicAcademicPackageController extends Controller
     /**
      * API: Get teachers available for a specific package
      */
-    public function getPackageTeachers(Request $request, $subdomain, $packageId)
+    public function getPackageTeachers(Request $request, $subdomain, $packageId): \Illuminate\Http\JsonResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy) {
-            return response()->json(['error' => 'Academy not found'], 404);
+            return $this->notFoundResponse('Academy not found');
         }
 
         $package = AcademicPackage::where('academy_id', $academy->id)
@@ -506,7 +508,7 @@ class PublicAcademicPackageController extends Controller
             ->first();
 
         if (! $package) {
-            return response()->json(['error' => 'Package not found'], 404);
+            return $this->notFoundResponse('Package not found');
         }
 
         // Get teachers that match this package's subjects and grade levels
@@ -534,7 +536,7 @@ class PublicAcademicPackageController extends Controller
                 ];
             });
 
-        return response()->json([
+        return $this->successResponse([
             'teachers' => $teachers,
             'package' => [
                 'id' => $package->id,

@@ -15,13 +15,10 @@ use App\Enums\SessionStatus;
  */
 class IndividualCircleValidator implements ScheduleValidatorInterface
 {
-    private SessionManagementService $sessionService;
-
     public function __construct(
-        private QuranIndividualCircle $circle
-    ) {
-        $this->sessionService = app(SessionManagementService::class);
-    }
+        private QuranIndividualCircle $circle,
+        private SessionManagementService $sessionService
+    ) {}
 
     public function validateDaySelection(array $days): ValidationResult
     {

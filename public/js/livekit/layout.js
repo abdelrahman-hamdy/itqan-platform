@@ -35,7 +35,6 @@ class LiveKitLayout {
         // Set global reference for screen share focus mode
         window.livekitLayout = this;
 
-        console.log('🎨 LiveKitLayout initialized');
     }
 
     /**
@@ -63,7 +62,6 @@ class LiveKitLayout {
             videoArea: document.getElementById('videoArea')
         };
 
-        console.log('🔍 Cached elements:', {
             videoGrid: !!this.elements.videoGrid,
             meetingInterface: !!this.elements.meetingInterface,
             sidebar: !!this.elements.sidebar,
@@ -75,7 +73,6 @@ class LiveKitLayout {
      * Set up responsive system
      */
     setupResponsiveSystem() {
-        console.log('📱 Setting up responsive layout system...');
 
         // Add window resize listener
         window.addEventListener('resize', () => {
@@ -86,7 +83,6 @@ class LiveKitLayout {
         // Detect sidebar state
         this.detectSidebarState();
 
-        console.log('✅ Responsive system initialized');
     }
 
     /**
@@ -94,7 +90,6 @@ class LiveKitLayout {
      */
     setupResizeObserver() {
         if (!window.ResizeObserver) {
-            console.warn('⚠️ ResizeObserver not supported');
             return;
         }
 
@@ -107,7 +102,6 @@ class LiveKitLayout {
         if (this.elements.meetingInterface) {
             this.responsiveObserver.observe(this.elements.meetingInterface);
         } else {
-            console.warn('⚠️ Meeting interface element not found for resize observer');
         }
     }
 
@@ -115,17 +109,14 @@ class LiveKitLayout {
      * Set up keyboard handlers
      */
     setupKeyboardHandlers() {
-        console.log('⌨️ Setting up keyboard handlers...');
 
         // Add keyboard event listener for focus mode
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isFocusModeActive) {
-                console.log('⌨️ Escape key pressed, exiting focus mode');
                 this.exitFocusMode();
             }
         });
 
-        console.log('✅ Keyboard handlers set up');
     }
 
     /**
@@ -134,7 +125,6 @@ class LiveKitLayout {
      */
     handleContainerResize(entry) {
         const { width, height } = entry.contentRect;
-        console.log(`📐 Container resized: ${width}x${height}`);
 
         this.adjustVideoGridForContainer(width, height);
 
@@ -164,7 +154,6 @@ class LiveKitLayout {
 
         this.elements.meetingInterface.style.height = `${finalHeight}px`;
 
-        console.log(`📱 Meeting height set to: ${finalHeight}px`);
     }
 
     /**
@@ -200,7 +189,6 @@ class LiveKitLayout {
         this.isSidebarOpen = this.elements.sidebar.classList.contains('-translate-x-0');
 
         if (wasOpen !== this.isSidebarOpen) {
-            console.log(`📋 Sidebar state changed: ${this.isSidebarOpen ? 'open' : 'closed'}`);
             this.adjustVideoAreaForSidebar(this.isSidebarOpen);
         }
     }
@@ -219,7 +207,6 @@ class LiveKitLayout {
         // Update layout classes for responsive grid system
         this.updateVideoLayoutClasses();
 
-        console.log(`📐 Video grid adjusted for container ${width}x${height} with ${participantCount} participants`);
     }
 
 
@@ -236,7 +223,6 @@ class LiveKitLayout {
         // Update data attribute for CSS-driven responsive grid layout
         this.elements.videoGrid.setAttribute('data-participants', participantCount);
 
-        console.log(`🎯 Applied CSS grid layout for ${participantCount} participants`);
     }
 
     /**
@@ -244,10 +230,8 @@ class LiveKitLayout {
      * @param {number} participantCount - Number of participants
      */
     applyGrid(participantCount) {
-        console.log(`🎯 Applying CSS grid layout for ${participantCount} participants`);
 
         if (!this.elements.videoGrid) {
-            console.error('❌ Video grid not found');
             return;
         }
 
@@ -262,7 +246,6 @@ class LiveKitLayout {
         // Apply grid configuration using CSS data attribute
         this.applyGridLayout({ participantCount });
 
-        console.log(`✅ CSS grid layout applied for ${participantCount} participants`);
     }
 
     /**
@@ -287,7 +270,6 @@ class LiveKitLayout {
             this.elements.videoGrid.classList.remove('has-screen-share');
         }
 
-        console.log(`🎨 Updated layout for ${participantElements} participants and ${screenShareElements} screen shares (${totalElements} total)`);
     }
 
     /**
@@ -296,28 +278,22 @@ class LiveKitLayout {
      * @param {HTMLElement} participantElement - Participant DOM element
      */
     applyFocusMode(participantId, participantElement = null) {
-        console.log(`🎯 applyFocusMode called with participantId: ${participantId}`);
-        console.log(`🎯 participantElement provided: ${!!participantElement}`);
 
         if (!participantElement) {
             participantElement = document.getElementById(`participant-${participantId}`);
-            console.log(`🎯 Found element by ID: ${!!participantElement}`);
         }
 
         if (!participantElement) {
-            console.log(`⏳ Participant element not found for ${participantId}, will retry later`);
             return;
         }
 
         // Prevent multiple focus modes
         if (this.isFocusModeActive) {
-            console.log('⚠️ Focus mode already active, exiting first');
             this.exitFocusMode();
             setTimeout(() => this.applyFocusMode(participantId, participantElement), 100);
             return;
         }
 
-        console.log(`🎯 Entering focus mode for ${participantId} (simple fade-in approach)`);
 
         this.isFocusModeActive = true;
         this.focusedParticipant = participantId;
@@ -328,7 +304,6 @@ class LiveKitLayout {
         const focusedContainer = document.getElementById('focusedVideoContainer');
 
         if (!videoArea || !overlay || !focusedContainer) {
-            console.error('❌ Required elements not found');
             return;
         }
 
@@ -341,8 +316,6 @@ class LiveKitLayout {
         const availableWidth = videoAreaRect.width - (padding * 2);
         const availableHeight = videoAreaRect.height - (padding * 2);
 
-        console.log(`📐 Video area rect: ${videoAreaRect.width}x${videoAreaRect.height}`);
-        console.log(`📐 Available space after padding: ${availableWidth}x${availableHeight}`);
 
         // Get actual video aspect ratio from the original video element
         const originalVideo = participantElement.querySelector('video');
@@ -353,15 +326,12 @@ class LiveKitLayout {
 
         if (originalVideo && originalVideo.videoWidth && originalVideo.videoHeight) {
             videoAspectRatio = originalVideo.videoWidth / originalVideo.videoHeight;
-            console.log(`📹 Detected video aspect ratio: ${videoAspectRatio.toFixed(2)} (${originalVideo.videoWidth}x${originalVideo.videoHeight})`);
         } else {
-            console.log(`📹 Using default aspect ratio: ${videoAspectRatio.toFixed(2)}`);
         }
 
         // For screen shares, use a more conservative aspect ratio to ensure content fits
         if (isScreenShare) {
             videoAspectRatio = Math.min(videoAspectRatio, 16 / 9); // Cap at 16:9 for screen shares
-            console.log(`🖥️ Screen share detected, adjusted aspect ratio: ${videoAspectRatio.toFixed(2)}`);
         }
 
         // Use FULL available height as primary constraint
@@ -378,11 +348,6 @@ class LiveKitLayout {
         focusedWidth = Math.max(focusedWidth, 200);
         focusedHeight = Math.max(focusedHeight, 150);
 
-        console.log(`📐 Video area rect: ${videoAreaRect.width}x${videoAreaRect.height}`);
-        console.log(`📐 Available space: ${availableWidth}x${availableHeight}`);
-        console.log(`📐 Calculated aspect ratio: ${videoAspectRatio.toFixed(2)}`);
-        console.log(`📐 Final focused video size: ${focusedWidth}x${focusedHeight}`);
-        console.log(`📐 Size utilization: ${((focusedWidth * focusedHeight) / (availableWidth * availableHeight) * 100).toFixed(1)}%`);
 
         // Create focused video element
         const focusedElement = participantElement.cloneNode(true);
@@ -470,7 +435,6 @@ class LiveKitLayout {
             if (focusedScreenShareTitle) {
                 focusedScreenShareTitle.style.setProperty('opacity', '0', 'important');
                 focusedScreenShareTitle.style.setProperty('pointer-events', 'none', 'important');
-                console.log('🏷️ Hidden screen share title in focus mode');
             }
         }
 
@@ -499,16 +463,11 @@ class LiveKitLayout {
             // Debug: Check actual applied dimensions
             setTimeout(() => {
                 const rect = focusedElement.getBoundingClientRect();
-                console.log(`🔍 ACTUAL focused video dimensions: ${rect.width}x${rect.height}`);
-                console.log(`🔍 Expected vs Actual: ${focusedWidth}x${focusedHeight} vs ${rect.width}x${rect.height}`);
 
                 const computedStyle = window.getComputedStyle(focusedElement);
-                console.log(`🔍 Computed width: ${computedStyle.width}, height: ${computedStyle.height}`);
-                console.log(`🔍 Max-width: ${computedStyle.maxWidth}, max-height: ${computedStyle.maxHeight}`);
             }, 100);
         });
 
-        console.log('✅ Focus mode activated with simple fade-in');
     }
 
     /**
@@ -518,7 +477,6 @@ class LiveKitLayout {
      * @param {string} participantId - Participant ID
      */
     cloneVideoTracks(originalElement, clonedElement, participantId) {
-        console.log(`🎬 Cloning video tracks for ${participantId}...`);
 
         try {
             // Get video elements from both original and clone
@@ -526,7 +484,6 @@ class LiveKitLayout {
             const clonedVideo = clonedElement.querySelector('video');
 
             if (!originalVideo || !clonedVideo) {
-                console.log(`⚠️ Video elements not found for cloning - original: ${!!originalVideo}, clone: ${!!clonedVideo}`);
                 return;
             }
 
@@ -534,11 +491,8 @@ class LiveKitLayout {
             if (originalVideo.srcObject) {
                 clonedVideo.srcObject = originalVideo.srcObject;
                 clonedVideo.play().catch(e => {
-                    console.log(`⚠️ Could not auto-play cloned video for ${participantId}:`, e);
                 });
-                console.log(`✅ Video track cloned for ${participantId}`);
             } else {
-                console.log(`⚠️ No srcObject found on original video for ${participantId}`);
             }
 
             // Sync other video properties
@@ -547,7 +501,6 @@ class LiveKitLayout {
             clonedVideo.playsInline = originalVideo.playsInline;
 
         } catch (error) {
-            console.error(`❌ Error cloning video tracks for ${participantId}:`, error);
         }
     }
 
@@ -562,12 +515,10 @@ class LiveKitLayout {
         this.fullscreenListener = () => {
             const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement ||
                 document.mozFullScreenElement || document.msFullscreenElement);
-            console.log(`📺 Fullscreen state changed to: ${isFullscreen ? 'FULLSCREEN' : 'NORMAL'}, recalculating focused video...`);
 
             // Force immediate recalculation for both entering and exiting fullscreen
             setTimeout(() => {
                 if (this.isFocusModeActive && this._focusedElement) {
-                    console.log('🔧 Force recalculating focus mode size due to fullscreen change');
                     this.recalculateFocusedVideoSize();
                 }
             }, 50); // Shorter delay for immediate response
@@ -575,7 +526,6 @@ class LiveKitLayout {
             // Also add a secondary check after a longer delay to ensure it worked
             setTimeout(() => {
                 if (this.isFocusModeActive && this._focusedElement) {
-                    console.log('🔧 Secondary focus mode size check after fullscreen change');
                     this.recalculateFocusedVideoSize();
                 }
             }, 300);
@@ -583,7 +533,6 @@ class LiveKitLayout {
             // Add a third check after an even longer delay for stubborn cases
             setTimeout(() => {
                 if (this.isFocusModeActive && this._focusedElement) {
-                    console.log('🔧 Final focus mode size check after fullscreen change');
                     this.recalculateFocusedVideoSize();
                 }
             }, 1000);
@@ -598,7 +547,6 @@ class LiveKitLayout {
         // Also listen for window resize as a fallback
         this.fullscreenResizeListener = () => {
             if (this.isFocusModeActive && this._focusedElement) {
-                console.log('🔧 Window resize detected during focus mode, recalculating...');
                 clearTimeout(this.fullscreenResizeTimeout);
                 this.fullscreenResizeTimeout = setTimeout(() => {
                     this.recalculateFocusedVideoSize();
@@ -609,16 +557,12 @@ class LiveKitLayout {
 
         // Add a global method for manual testing
         window.testFocusResize = () => {
-            console.log('🧪 Manual focus resize test triggered');
             if (this.isFocusModeActive && this._focusedElement) {
                 this.recalculateFocusedVideoSize();
             } else {
-                console.log('❌ No active focus mode to resize');
             }
         };
 
-        console.log('📺 Enhanced fullscreen listener set up with immediate recalculation and manual test function');
-        console.log('🧪 You can test manual resize by running: window.testFocusResize() in console');
     }
 
     /**
@@ -630,7 +574,6 @@ class LiveKitLayout {
         }
 
         this.focusResizeListener = () => {
-            console.log('📏 Window resized, recalculating focused video...');
 
             // Debounce resize events
             clearTimeout(this.resizeTimeout);
@@ -640,7 +583,6 @@ class LiveKitLayout {
         };
 
         window.addEventListener('resize', this.focusResizeListener);
-        console.log('📏 Focus resize listener set up');
     }
 
     /**
@@ -664,14 +606,12 @@ class LiveKitLayout {
             const currentSize = `${videoArea.offsetWidth}x${videoArea.offsetHeight}`;
 
             if (lastVideoAreaSize && lastVideoAreaSize !== currentSize) {
-                console.log(`📏 Video area size changed from ${lastVideoAreaSize} to ${currentSize} - recalculating focus mode`);
                 this.recalculateFocusedVideoSize();
             }
 
             lastVideoAreaSize = currentSize;
         }, 250); // Check every 250ms
 
-        console.log('👁️ Started focus mode monitoring (checks every 250ms)');
     }
 
     /**
@@ -681,7 +621,6 @@ class LiveKitLayout {
         if (this.focusMonitoringInterval) {
             clearInterval(this.focusMonitoringInterval);
             this.focusMonitoringInterval = null;
-            console.log('👁️ Stopped focus mode monitoring');
         }
     }
 
@@ -690,21 +629,17 @@ class LiveKitLayout {
      */
     recalculateFocusedVideoSize() {
         if (!this.isFocusModeActive || !this._focusedElement) {
-            console.log('⚠️ No active focus mode or focused element found');
             return;
         }
 
-        console.log('🔄 Recalculating focused video size...');
 
         const videoArea = document.getElementById('videoArea');
         if (!videoArea) {
-            console.log('⚠️ Video area not found');
             return;
         }
 
         const participantElement = this._focusOriginalElement;
         if (!participantElement) {
-            console.log('⚠️ Original participant element not found');
             return;
         }
 
@@ -717,8 +652,6 @@ class LiveKitLayout {
         const availableWidth = Math.max(200, videoAreaRect.width - (padding * 2));
         const availableHeight = Math.max(150, videoAreaRect.height - (padding * 2));
 
-        console.log(`📊 Video area fresh bounds: ${videoAreaRect.width}x${videoAreaRect.height}`);
-        console.log(`📊 Available space after padding: ${availableWidth}x${availableHeight}`);
 
         // Get video aspect ratio
         const originalVideo = participantElement.querySelector('video');
@@ -734,7 +667,6 @@ class LiveKitLayout {
         // For screen shares, use a more conservative aspect ratio to ensure content fits
         if (isScreenShare) {
             videoAspectRatio = Math.min(videoAspectRatio, 16 / 9); // Cap at 16:9 for screen shares
-            console.log(`🖥️ Screen share detected during resize, adjusted aspect ratio: ${videoAspectRatio.toFixed(2)}`);
         }
 
         // Calculate new size - prioritize fitting within available space
@@ -763,11 +695,8 @@ class LiveKitLayout {
             focusedWidth = Math.floor(focusedWidth * scale);
             focusedHeight = Math.floor(focusedHeight * scale);
 
-            console.log(`📊 Applied scale factor ${scale.toFixed(2)} to fit within bounds`);
         }
 
-        console.log(`🔄 Final focused video size: ${focusedWidth}x${focusedHeight}`);
-        console.log(`📊 Constraint check: width ${focusedWidth} <= ${availableWidth}, height ${focusedHeight} <= ${availableHeight}`);
 
         // Apply new size with smooth transition - OVERRIDE ALL CSS CONSTRAINTS
         const focusedElement = this._focusedElement;
@@ -784,14 +713,12 @@ class LiveKitLayout {
             focusedElement.style.transition = 'opacity 400ms ease-in-out';
         }, 300);
 
-        console.log('✅ Focused video size recalculated and aggressively constrained to video area');
     }
 
     /**
      * Clean up focus mode event listeners
      */
     cleanupFocusListeners() {
-        console.log('🧹 Cleaning up focus listeners...');
 
         // Clean up fullscreen listeners
         if (this.fullscreenListener) {
@@ -834,7 +761,6 @@ class LiveKitLayout {
         // Stop any monitoring
         this.stopFocusModeMonitoring();
 
-        console.log('✅ Focus listeners cleaned up');
     }
 
     /**
@@ -843,17 +769,14 @@ class LiveKitLayout {
      * @param {string} participantId - Participant ID
      */
     cleanupClonedVideoTracks(clonedElement, participantId) {
-        console.log(`🧹 Cleaning up cloned video tracks for ${participantId}...`);
 
         try {
             const clonedVideo = clonedElement?.querySelector('video');
             if (clonedVideo && clonedVideo.srcObject) {
                 // Set srcObject to null to release the MediaStream reference
                 clonedVideo.srcObject = null;
-                console.log(`✅ Cloned video tracks cleaned up for ${participantId}`);
             }
         } catch (error) {
-            console.error(`❌ Error cleaning up cloned video tracks for ${participantId}:`, error);
         }
     }
 
@@ -873,7 +796,6 @@ class LiveKitLayout {
             this.exitFocusMode();
         });
 
-        console.log('🔘 Close focus button setup complete');
     }
 
 
@@ -882,10 +804,8 @@ class LiveKitLayout {
      * Exit focus mode and return to grid layout (Simple Fade-out)
      */
     exitFocusMode() {
-        console.log('🚪 Exiting focus mode');
 
         if (!this.isFocusModeActive || !this._focusOriginalElement || !this._focusedElement) {
-            console.log('⚠️ No active focus mode to exit');
             return;
         }
 
@@ -894,7 +814,6 @@ class LiveKitLayout {
         const videoArea = document.getElementById('videoArea');
         const overlay = document.getElementById('focusOverlay');
 
-        console.log('🎬 Starting fade-out animation...');
 
         // Fade out focused element and overlay
         focusedElement.style.opacity = '0';
@@ -915,7 +834,6 @@ class LiveKitLayout {
             // Remove the focused element from DOM
             if (focusedElement && focusedElement.parentNode) {
                 focusedElement.remove();
-                console.log('🗑️ Focused element removed from DOM');
             }
 
             // Hide overlay completely
@@ -942,10 +860,8 @@ class LiveKitLayout {
             this._focusOriginalElement = null;
             this._focusedElement = null;
 
-            console.log('✅ Focus mode exited - original element restored');
         }, 400);
 
-        console.log('✅ Focus mode exit animation started');
     }
 
 
@@ -963,7 +879,6 @@ class LiveKitLayout {
     adjustVideoAreaForSidebar(sidebarOpen) {
         if (!this.elements.videoArea) return;
 
-        console.log(`📋 Adjusting video area for sidebar: ${sidebarOpen ? 'open' : 'closed'}`);
 
         if (sidebarOpen) {
             this.elements.videoArea.classList.add('mr-96');
@@ -1000,7 +915,6 @@ class LiveKitLayout {
      * Destroy layout manager and clean up
      */
     destroy() {
-        console.log('🧹 Destroying layout manager...');
 
         // Remove event listeners
         window.removeEventListener('resize', this.handleResize);
@@ -1022,7 +936,6 @@ class LiveKitLayout {
         // Clean up any remaining focused elements
         const focusedElements = document.querySelectorAll('[id^="focused-"]');
         focusedElements.forEach(element => {
-            console.log(`🗑️ Cleaning up focused element: ${element.id}`);
             const participantId = element.id.replace('focused-', '');
             this.cleanupClonedVideoTracks(element, participantId);
             element.remove();
@@ -1041,7 +954,6 @@ class LiveKitLayout {
         this.elements = {};
         this.focusedParticipant = null;
 
-        console.log('📐 Layout manager destroyed');
     }
 }
 

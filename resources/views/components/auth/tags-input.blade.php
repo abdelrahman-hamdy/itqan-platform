@@ -155,7 +155,6 @@ function tagsInput(maxTags) {
 
         showError(message) {
             // You could integrate with a toast notification system here
-            console.warn(message);
         }
     }
 }

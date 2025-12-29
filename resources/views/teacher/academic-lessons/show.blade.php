@@ -15,8 +15,8 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8" data-sticky-container>
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-4 md:space-y-6">
-            <!-- Subscription Header (using circle header pattern) -->
-            <x-circle.individual-header :circle="$subscription" view-type="teacher" context="academic" />
+            <!-- Subscription Header -->
+            <x-circle.circle-header :circle="$subscription" type="individual" view-type="teacher" context="academic" />
 
             @php
                 $allSessions = collect($upcomingSessions)->merge($pastSessions)->sortByDesc('scheduled_at');
@@ -168,10 +168,8 @@ function openSessionDetail(sessionId) {
         const sessionUrl = '{{ route("teacher.academic-sessions.show", ["subdomain" => request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy", "session" => "SESSION_ID_PLACEHOLDER"]) }}';
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
 
-        console.log('Academic Teacher Session URL:', finalUrl);
         window.location.href = finalUrl;
     @else
-        console.error('User not authenticated');
     @endif
 }
 </script>

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\AttendanceStatus;
 use App\Services\Traits\AttendanceCalculatorTrait;
-use App\Traits\ScopedToAcademy;
+use App\Models\Traits\ScopedToAcademy;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -174,7 +174,7 @@ abstract class BaseSessionReport extends Model
 
     public function scopePartial($query)
     {
-        return $query->where('attendance_status', AttendanceStatus::LEAVED->value);
+        return $query->where('attendance_status', AttendanceStatus::LEFT->value);
     }
 
     public function scopeEvaluated($query)

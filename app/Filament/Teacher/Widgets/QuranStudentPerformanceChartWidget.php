@@ -100,7 +100,7 @@ class QuranStudentPerformanceChartWidget extends ChartWidget
                 $attended = $periodReports->whereIn('attendance_status', [
                     AttendanceStatus::ATTENDED->value,
                     AttendanceStatus::LATE->value,
-                    AttendanceStatus::LEAVED->value
+                    AttendanceStatus::LEFT->value
                 ])->count();
                 $attendanceRates[] = round(($attended / $totalReports) * 100, 1);
             } else {

@@ -12,8 +12,8 @@
       theme: {
         extend: {
           colors: {
-            primary: "{{ $academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ $academy->secondary_color ?? '#6495ED' }}",
+            primary: @json(preg_match('/^#[a-fA-F0-9]{6}$/', $academy->primary_color ?? '') ? $academy->primary_color : '#4169E1'),
+            secondary: @json(preg_match('/^#[a-fA-F0-9]{6}$/', $academy->secondary_color ?? '') ? $academy->secondary_color : '#6495ED'),
           }
         }
       }
@@ -394,18 +394,17 @@
           
           if (data.success) {
             // Show success message and redirect
-            alert(data.message);
+            window.toast?.info(data.message);
             window.location.href = data.redirect_url;
           } else {
             // Show error message
-            alert(data.error || 'حدث خطأ أثناء عملية الدفع');
+            window.toast?.error(data.error || 'حدث خطأ أثناء عملية الدفع');
             payButton.disabled = false;
           }
         })
         .catch(error => {
           processingModal.classList.add('hidden');
-          console.error('Payment error:', error);
-          alert('حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى');
+          window.toast?.error('حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى');
           payButton.disabled = false;
         });
       });

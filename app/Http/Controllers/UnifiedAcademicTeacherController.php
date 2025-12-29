@@ -16,7 +16,7 @@ class UnifiedAcademicTeacherController extends Controller
     /**
      * Display a listing of Academic teachers (Unified for both public and authenticated)
      */
-    public function index(Request $request, $subdomain)
+    public function index(Request $request, $subdomain): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -156,7 +156,7 @@ class UnifiedAcademicTeacherController extends Controller
     /**
      * Display the specified academic teacher profile (Unified for both public and authenticated)
      */
-    public function show(Request $request, $subdomain, $teacherId)
+    public function show(Request $request, $subdomain, $teacherId): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();

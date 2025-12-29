@@ -274,14 +274,10 @@
         
         // ENHANCED FORM SUBMISSION WITH ERROR CAPTURE
         form.addEventListener('submit', function(e) {
-          console.log('FORM SUBMIT TRIGGERED!');
-          console.log('Form action URL:', form.action);
-          console.log('Form method:', form.method);
           
           // Log all form values
           const formData = new FormData(form);
           for (let [key, value] of formData.entries()) {
-            console.log(key + ': ' + value);
           }
           
           const existingError = document.querySelector('.validation-error');
@@ -292,15 +288,10 @@
 
         // Capture any form submission errors
         window.addEventListener('error', function(e) {
-          console.error('JavaScript error:', e.error);
-          console.error('Error message:', e.message);
-          console.error('Error filename:', e.filename);
-          console.error('Error line:', e.lineno);
         });
 
         // Capture unhandled promise rejections
         window.addEventListener('unhandledrejection', function(e) {
-          console.error('Unhandled promise rejection:', e.reason);
           e.preventDefault();
         });
       }

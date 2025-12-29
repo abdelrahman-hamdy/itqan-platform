@@ -310,11 +310,13 @@ class AcademicSession extends BaseSession
         return $this->hasMany(AcademicSessionReport::class, 'session_id');
     }
 
-    // Makeup session relationship removed - makeup_session_for field deleted in simplification
-    // public function makeupSessionFor(): BelongsTo
-    // {
-    //     return $this->belongsTo(AcademicSession::class, 'makeup_session_for');
-    // }
+    /**
+     * Get all attendance records for this academic session
+     */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AcademicSessionAttendance::class, 'session_id');
+    }
 
     /**
      * Unified homework submission system (polymorphic)
@@ -699,7 +701,7 @@ class AcademicSession extends BaseSession
      * Mark session as cancelled
      * Does not count towards subscription
      */
-    public function markAsCancelled(?string $reason = null, ?int $cancelledBy = null): bool
+    public function markAsCancelled(?string $reason = null, ?User $cancelledBy = null, ?string $cancellationType = null): bool
     {
         if (!in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING])) {
             return false;
@@ -708,8 +710,9 @@ class AcademicSession extends BaseSession
         $this->update([
             'status' => SessionStatus::CANCELLED,
             'cancellation_reason' => $reason,
-            'cancelled_by' => $cancelledBy,
+            'cancelled_by' => $cancelledBy?->id,
             'cancelled_at' => now(),
+            'cancellation_type' => $cancellationType,
         ]);
 
         return true;
@@ -776,20 +779,4 @@ class AcademicSession extends BaseSession
         return null;
     }
 
-    // Makeup session methods removed - makeup fields deleted in simplification
-    // /**
-    //  * Check if this is a makeup session
-    //  */
-    // public function isMakeupSession(): bool
-    // {
-    //     return $this->is_makeup_session && $this->makeup_session_for !== null;
-    // }
-
-    // /**
-    //  * Get makeup sessions for this session
-    //  */
-    // public function makeupSessions(): HasMany
-    // {
-    //     return $this->hasMany(AcademicSession::class, 'makeup_session_for');
-    // }
 }

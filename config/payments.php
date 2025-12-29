@@ -31,7 +31,7 @@ return [
             // Unified Intention API credentials
             'secret_key' => env('PAYMOB_SECRET_KEY'),
             'public_key' => env('PAYMOB_PUBLIC_KEY'),
-            // Legacy API credentials (for backward compatibility)
+            // Paymob Classic API credentials (required for some payment flows)
             'api_key' => env('PAYMOB_API_KEY'),
             // Integration IDs for different payment methods
             'integration_ids' => [
@@ -91,7 +91,7 @@ return [
         'wallet' => 0.02,        // 2.0%
         'bank_transfer' => 0.0,  // 0%
         'bank_installments' => 0.03, // 3.0%
-        // Legacy method names for backward compatibility
+        // Additional payment method fee configurations
         'credit_card' => 0.025,  // 2.5%
         'mada' => 0.015,         // 1.5%
         'stc_pay' => 0.02,       // 2.0%
@@ -169,11 +169,6 @@ return [
         'tapay' => '/webhooks/tapay',
         'moyasar' => '/webhooks/moyasar',
         'stc_pay' => '/webhooks/stc-pay',
-        // Legacy routes for backward compatibility
-        'paymob_callback' => '/payments/paymob/callback',
-        'tapay_callback' => '/payments/tapay/callback',
-        'moyasar_callback' => '/payments/moyasar/callback',
-        'stc_pay_callback' => '/payments/stc-pay/callback',
     ],
 
     /*

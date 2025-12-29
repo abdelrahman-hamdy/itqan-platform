@@ -22,7 +22,7 @@ class TeacherController extends Controller
      */
     public function quranTeachers(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = QuranTeacherProfile::where('academy_id', $academy->id)
             ->where('is_active', true)
@@ -87,7 +87,7 @@ class TeacherController extends Controller
      */
     public function showQuranTeacher(Request $request, int $id): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $teacher = QuranTeacherProfile::where('id', $id)
             ->where('academy_id', $academy->id)
@@ -140,7 +140,7 @@ class TeacherController extends Controller
      */
     public function academicTeachers(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = AcademicTeacherProfile::where('academy_id', $academy->id)
             ->where('is_active', true)
@@ -217,7 +217,7 @@ class TeacherController extends Controller
      */
     public function showAcademicTeacher(Request $request, int $id): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $teacher = AcademicTeacherProfile::where('id', $id)
             ->where('academy_id', $academy->id)

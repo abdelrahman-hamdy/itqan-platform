@@ -2,6 +2,15 @@
 
 namespace App\Enums;
 
+/**
+ * Certificate Template Style Enum
+ *
+ * Defines available certificate template designs.
+ * Each template has unique styling, colors, and layout.
+ *
+ * @see \App\Models\Certificate
+ * @see \App\Services\CertificateService
+ */
 enum CertificateTemplateStyle: string
 {
     case TEMPLATE_1 = 'template_1';
@@ -14,20 +23,11 @@ enum CertificateTemplateStyle: string
     case TEMPLATE_8 = 'template_8';
 
     /**
-     * Get Arabic label for the template style
+     * Get localized label for the template style
      */
     public function label(): string
     {
-        return match($this) {
-            self::TEMPLATE_1 => 'القالب 1',
-            self::TEMPLATE_2 => 'القالب 2',
-            self::TEMPLATE_3 => 'القالب 3',
-            self::TEMPLATE_4 => 'القالب 4',
-            self::TEMPLATE_5 => 'القالب 5',
-            self::TEMPLATE_6 => 'القالب 6',
-            self::TEMPLATE_7 => 'القالب 7',
-            self::TEMPLATE_8 => 'القالب 8',
-        };
+        return __('enums.certificate_template_style.' . $this->value);
     }
 
     /**

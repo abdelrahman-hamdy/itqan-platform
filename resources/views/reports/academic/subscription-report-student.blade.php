@@ -11,7 +11,7 @@
 @php
 $academySubdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
 
-// Convert DTOs to arrays for backward compatibility
+// Convert DTO objects to arrays for array-style access in Blade
 if (is_object($attendance) && method_exists($attendance, 'toArray')) {
     $attendance = $attendance->toArray();
 }

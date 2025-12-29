@@ -378,7 +378,6 @@
           <!-- Submit Button -->
           <div class="flex gap-4">
             <button type="submit"
-                    onclick="console.log('Subscription form submit clicked'); return true;"
                     class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
               <i class="ri-secure-payment-line ml-2"></i>
               المتابعة للدفع
@@ -431,7 +430,6 @@
         
         // Form submission validation
         form.addEventListener('submit', function(e) {
-          console.log('Subscription form submit event fired');
           
           // Check required fields
           const billingCycle = form.querySelector('[name="billing_cycle"]:checked');
@@ -468,10 +466,6 @@
             existingError.remove();
           }
           
-          console.log('Form validation passed, submitting...');
-          console.log('Billing cycle:', billingCycle.value);
-          console.log('Current level:', currentLevel.value);
-          console.log('Learning goals:', Array.from(learningGoals).map(g => g.value));
         });
       }
     });

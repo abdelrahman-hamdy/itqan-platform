@@ -294,7 +294,6 @@ document.getElementById('score')?.addEventListener('input', function() {
     const percentage = (score / maxScore) * 100;
 
     // You can display the percentage somewhere if needed
-    console.log(`Score: ${score}/${maxScore} = ${percentage.toFixed(2)}%`);
 });
 
 // Form validation before submit
@@ -305,13 +304,13 @@ document.getElementById('gradingForm')?.addEventListener('submit', function(e) {
 
     if (isNaN(score) || score < 0 || score > maxScore) {
         e.preventDefault();
-        alert(`يرجى إدخال درجة صحيحة بين 0 و ${maxScore}`);
+        window.toast?.warning(`يرجى إدخال درجة صحيحة بين 0 و ${maxScore}`);
         return false;
     }
 
     if (!feedback) {
         e.preventDefault();
-        alert('يرجى كتابة ملاحظات وتعليقات على أداء الطالب');
+        window.toast?.warning('يرجى كتابة ملاحظات وتعليقات على أداء الطالب');
         return false;
     }
 

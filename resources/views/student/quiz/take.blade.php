@@ -1,4 +1,4 @@
-<x-layouts.student-layout title="{{ $quiz->title }}">
+<x-layouts.student title="{{ $quiz->title }}">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8" x-data="quizPage({{ $remainingTime ?? 'null' }})">
         <!-- Quiz Header -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
@@ -202,4 +202,4 @@
             background-color: rgb(239 246 255); /* blue-50 */
         }
     </style>
-</x-layouts.student-layout>
+</x-layouts.student>

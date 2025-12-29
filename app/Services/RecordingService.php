@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\RecordingCapable;
+use App\Contracts\RecordingServiceInterface;
 use App\Models\SessionRecording;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -19,7 +20,7 @@ use App\Enums\RecordingStatus;
  *
  * This service works with any session implementing RecordingCapable interface
  */
-class RecordingService
+class RecordingService implements RecordingServiceInterface
 {
     /**
      * @var LiveKitService
@@ -273,9 +274,10 @@ class RecordingService
     {
         try {
             if ($removeFile && $recording->file_path) {
-                // TODO: Implement file deletion on LiveKit server
-                // For now, just mark as deleted in database
-                Log::info('File deletion not implemented yet', [
+                // LiveKit S3 file deletion not yet implemented
+                // Currently only marking as deleted in database
+                // To implement: Use LiveKit Egress API to delete S3 object
+                Log::info('Recording marked as deleted (S3 file not removed)', [
                     'recording_id' => $recording->id,
                     'file_path' => $recording->file_path,
                 ]);

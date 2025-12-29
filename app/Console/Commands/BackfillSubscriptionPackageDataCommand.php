@@ -92,57 +92,61 @@ class BackfillSubscriptionPackageDataCommand extends Command
         $results = ['processed' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
 
         $query = QuranSubscription::whereNull('package_name_ar')
-            ->whereNotNull('package_id')
-            ->with('package');
+            ->whereNotNull('package_id');
 
         if ($limit) {
             $query->limit($limit);
         }
 
-        $subscriptions = $query->get();
-        $total = $subscriptions->count();
-
+        $total = $query->count();
         $this->info("Found {$total} Quran subscriptions to process");
+
+        if ($total === 0) {
+            return $results;
+        }
 
         $progressBar = $this->output->createProgressBar($total);
 
-        foreach ($subscriptions as $subscription) {
-            $results['processed']++;
+        // Process in chunks to prevent memory issues
+        $query->with('package')->chunkById(100, function ($subscriptions) use (&$results, $isDryRun, $progressBar) {
+            foreach ($subscriptions as $subscription) {
+                $results['processed']++;
 
-            try {
-                $package = $subscription->package;
+                try {
+                    $package = $subscription->package;
 
-                if (!$package) {
-                    $results['skipped']++;
-                    $progressBar->advance();
-                    continue;
+                    if (!$package) {
+                        $results['skipped']++;
+                        $progressBar->advance();
+                        continue;
+                    }
+
+                    $updateData = [
+                        'package_name_ar' => $package->name_ar ?? $package->name ?? null,
+                        'package_name_en' => $package->name_en ?? $package->name ?? null,
+                        'package_price_monthly' => $package->price_monthly ?? $package->monthly_price ?? null,
+                        'package_price_quarterly' => $package->price_quarterly ?? $package->quarterly_price ?? null,
+                        'package_price_yearly' => $package->price_yearly ?? $package->yearly_price ?? null,
+                        'package_sessions_per_week' => $package->sessions_per_week ?? null,
+                        'package_session_duration_minutes' => $package->session_duration_minutes ?? $package->session_duration ?? null,
+                    ];
+
+                    if (!$isDryRun) {
+                        $subscription->update($updateData);
+                    }
+
+                    $results['updated']++;
+
+                } catch (\Exception $e) {
+                    $results['errors']++;
+                    Log::warning("Failed to backfill Quran subscription {$subscription->id}", [
+                        'error' => $e->getMessage(),
+                    ]);
                 }
 
-                $updateData = [
-                    'package_name_ar' => $package->name_ar ?? $package->name ?? null,
-                    'package_name_en' => $package->name_en ?? $package->name ?? null,
-                    'package_price_monthly' => $package->price_monthly ?? $package->monthly_price ?? null,
-                    'package_price_quarterly' => $package->price_quarterly ?? $package->quarterly_price ?? null,
-                    'package_price_yearly' => $package->price_yearly ?? $package->yearly_price ?? null,
-                    'package_sessions_per_week' => $package->sessions_per_week ?? null,
-                    'package_session_duration_minutes' => $package->session_duration_minutes ?? $package->session_duration ?? null,
-                ];
-
-                if (!$isDryRun) {
-                    $subscription->update($updateData);
-                }
-
-                $results['updated']++;
-
-            } catch (\Exception $e) {
-                $results['errors']++;
-                Log::warning("Failed to backfill Quran subscription {$subscription->id}", [
-                    'error' => $e->getMessage(),
-                ]);
+                $progressBar->advance();
             }
-
-            $progressBar->advance();
-        }
+        });
 
         $progressBar->finish();
         $this->newLine();
@@ -160,57 +164,61 @@ class BackfillSubscriptionPackageDataCommand extends Command
         $results = ['processed' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
 
         $query = AcademicSubscription::whereNull('package_name_ar')
-            ->whereNotNull('academic_package_id')
-            ->with('package');
+            ->whereNotNull('academic_package_id');
 
         if ($limit) {
             $query->limit($limit);
         }
 
-        $subscriptions = $query->get();
-        $total = $subscriptions->count();
-
+        $total = $query->count();
         $this->info("Found {$total} Academic subscriptions to process");
+
+        if ($total === 0) {
+            return $results;
+        }
 
         $progressBar = $this->output->createProgressBar($total);
 
-        foreach ($subscriptions as $subscription) {
-            $results['processed']++;
+        // Process in chunks to prevent memory issues
+        $query->with('package')->chunkById(100, function ($subscriptions) use (&$results, $isDryRun, $progressBar) {
+            foreach ($subscriptions as $subscription) {
+                $results['processed']++;
 
-            try {
-                $package = $subscription->package;
+                try {
+                    $package = $subscription->package;
 
-                if (!$package) {
-                    $results['skipped']++;
-                    $progressBar->advance();
-                    continue;
+                    if (!$package) {
+                        $results['skipped']++;
+                        $progressBar->advance();
+                        continue;
+                    }
+
+                    $updateData = [
+                        'package_name_ar' => $package->name_ar ?? $package->name ?? null,
+                        'package_name_en' => $package->name_en ?? $package->name ?? null,
+                        'package_price_monthly' => $package->price_monthly ?? $package->monthly_price ?? null,
+                        'package_price_quarterly' => $package->price_quarterly ?? $package->quarterly_price ?? null,
+                        'package_price_yearly' => $package->price_yearly ?? $package->yearly_price ?? null,
+                        'package_sessions_per_week' => $package->sessions_per_week ?? null,
+                        'package_session_duration_minutes' => $package->session_duration_minutes ?? $package->session_duration ?? null,
+                    ];
+
+                    if (!$isDryRun) {
+                        $subscription->update($updateData);
+                    }
+
+                    $results['updated']++;
+
+                } catch (\Exception $e) {
+                    $results['errors']++;
+                    Log::warning("Failed to backfill Academic subscription {$subscription->id}", [
+                        'error' => $e->getMessage(),
+                    ]);
                 }
 
-                $updateData = [
-                    'package_name_ar' => $package->name_ar ?? $package->name ?? null,
-                    'package_name_en' => $package->name_en ?? $package->name ?? null,
-                    'package_price_monthly' => $package->price_monthly ?? $package->monthly_price ?? null,
-                    'package_price_quarterly' => $package->price_quarterly ?? $package->quarterly_price ?? null,
-                    'package_price_yearly' => $package->price_yearly ?? $package->yearly_price ?? null,
-                    'package_sessions_per_week' => $package->sessions_per_week ?? null,
-                    'package_session_duration_minutes' => $package->session_duration_minutes ?? $package->session_duration ?? null,
-                ];
-
-                if (!$isDryRun) {
-                    $subscription->update($updateData);
-                }
-
-                $results['updated']++;
-
-            } catch (\Exception $e) {
-                $results['errors']++;
-                Log::warning("Failed to backfill Academic subscription {$subscription->id}", [
-                    'error' => $e->getMessage(),
-                ]);
+                $progressBar->advance();
             }
-
-            $progressBar->advance();
-        }
+        });
 
         $progressBar->finish();
         $this->newLine();
@@ -227,56 +235,60 @@ class BackfillSubscriptionPackageDataCommand extends Command
 
         $results = ['processed' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
 
-        $query = CourseSubscription::whereNull('package_name_ar')
-            ->with(['recordedCourse', 'interactiveCourse']);
+        $query = CourseSubscription::whereNull('package_name_ar');
 
         if ($limit) {
             $query->limit($limit);
         }
 
-        $subscriptions = $query->get();
-        $total = $subscriptions->count();
-
+        $total = $query->count();
         $this->info("Found {$total} Course subscriptions to process");
+
+        if ($total === 0) {
+            return $results;
+        }
 
         $progressBar = $this->output->createProgressBar($total);
 
-        foreach ($subscriptions as $subscription) {
-            $results['processed']++;
+        // Process in chunks to prevent memory issues
+        $query->with(['recordedCourse', 'interactiveCourse'])->chunkById(100, function ($subscriptions) use (&$results, $isDryRun, $progressBar) {
+            foreach ($subscriptions as $subscription) {
+                $results['processed']++;
 
-            try {
-                $course = $subscription->recordedCourse ?? $subscription->interactiveCourse;
+                try {
+                    $course = $subscription->recordedCourse ?? $subscription->interactiveCourse;
 
-                if (!$course) {
-                    $results['skipped']++;
-                    $progressBar->advance();
-                    continue;
+                    if (!$course) {
+                        $results['skipped']++;
+                        $progressBar->advance();
+                        continue;
+                    }
+
+                    // Determine course type
+                    $courseType = $subscription->recorded_course_id ? 'recorded' : 'interactive';
+
+                    $updateData = [
+                        'course_type' => $courseType,
+                        'package_name_ar' => $course->title_ar ?? $course->title ?? null,
+                        'package_name_en' => $course->title_en ?? $course->title ?? null,
+                    ];
+
+                    if (!$isDryRun) {
+                        $subscription->update($updateData);
+                    }
+
+                    $results['updated']++;
+
+                } catch (\Exception $e) {
+                    $results['errors']++;
+                    Log::warning("Failed to backfill Course subscription {$subscription->id}", [
+                        'error' => $e->getMessage(),
+                    ]);
                 }
 
-                // Determine course type
-                $courseType = $subscription->recorded_course_id ? 'recorded' : 'interactive';
-
-                $updateData = [
-                    'course_type' => $courseType,
-                    'package_name_ar' => $course->title_ar ?? $course->title ?? null,
-                    'package_name_en' => $course->title_en ?? $course->title ?? null,
-                ];
-
-                if (!$isDryRun) {
-                    $subscription->update($updateData);
-                }
-
-                $results['updated']++;
-
-            } catch (\Exception $e) {
-                $results['errors']++;
-                Log::warning("Failed to backfill Course subscription {$subscription->id}", [
-                    'error' => $e->getMessage(),
-                ]);
+                $progressBar->advance();
             }
-
-            $progressBar->advance();
-        }
+        });
 
         $progressBar->finish();
         $this->newLine();

@@ -1,5 +1,5 @@
 @php
-    $layoutComponent = ($layout ?? 'student') === 'parent' ? 'layouts.parent-layout' : 'layouts.student-layout';
+    $layoutComponent = ($layout ?? 'student') === 'parent' ? 'layouts.parent-layout' : 'layouts.student';
     $isParentView = ($layout ?? 'student') === 'parent';
     $pageTitle = $isParentView ? 'واجبات الأبناء' : 'واجباتي';
     $pageDescription = $isParentView

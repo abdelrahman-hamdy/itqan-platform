@@ -17,6 +17,17 @@ use Illuminate\Auth\Access\Response;
 class ParentPolicy
 {
     /**
+     * Can user access parent dashboard?
+     *
+     * @param User $user
+     * @return bool
+     */
+    public function viewDashboard(User $user): bool
+    {
+        return $user->isParent() && $user->parentProfile !== null;
+    }
+
+    /**
      * Can parent view this child's data?
      *
      * @param User $user

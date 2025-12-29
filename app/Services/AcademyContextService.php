@@ -5,13 +5,52 @@ namespace App\Services;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Support\Facades\Session;
-use App\Enums\SessionStatus;
 
 class AcademyContextService
 {
-    const SELECTED_ACADEMY_SESSION_KEY = 'selected_academy_id';
-    const ACADEMY_OBJECT_SESSION_KEY = 'selected_academy';
-    const GLOBAL_VIEW_SESSION_KEY = 'super_admin_global_view';
+    public const SELECTED_ACADEMY_SESSION_KEY = 'selected_academy_id';
+    public const ACADEMY_OBJECT_SESSION_KEY = 'selected_academy';
+    public const GLOBAL_VIEW_SESSION_KEY = 'super_admin_global_view';
+
+    /**
+     * Request-scoped API context (set by middleware)
+     */
+    private static ?Academy $apiContextAcademy = null;
+    private static ?int $apiContextAcademyId = null;
+
+    /**
+     * Set API request context (called by middleware)
+     */
+    public static function setApiContext(Academy $academy): void
+    {
+        self::$apiContextAcademy = $academy;
+        self::$apiContextAcademyId = $academy->id;
+    }
+
+    /**
+     * Clear API request context (for testing or request cleanup)
+     */
+    public static function clearApiContext(): void
+    {
+        self::$apiContextAcademy = null;
+        self::$apiContextAcademyId = null;
+    }
+
+    /**
+     * Check if API context is set
+     */
+    public static function hasApiContext(): bool
+    {
+        return self::$apiContextAcademyId !== null;
+    }
+
+    /**
+     * Get API context academy ID
+     */
+    public static function getApiContextAcademyId(): ?int
+    {
+        return self::$apiContextAcademyId;
+    }
 
     /**
      * Get the current academy context for the authenticated user
@@ -69,8 +108,8 @@ class AcademyContextService
     public static function getCurrentAcademyId(): ?int
     {
         // First check if academy was set by API middleware (for API requests)
-        if (app()->bound('current_academy_id')) {
-            return app('current_academy_id');
+        if (self::hasApiContext()) {
+            return self::$apiContextAcademyId;
         }
 
         $academy = self::getCurrentAcademy();
@@ -83,7 +122,7 @@ class AcademyContextService
     public static function setAcademyContext(?int $academyId): bool
     {
         $user = auth()->user();
-        
+
         if (!$user || !self::isSuperAdmin($user)) {
             return false;
         }
@@ -96,17 +135,17 @@ class AcademyContextService
 
             Session::put(self::SELECTED_ACADEMY_SESSION_KEY, $academyId);
             Session::put(self::ACADEMY_OBJECT_SESSION_KEY, $academy);
-            
+
             // Disable global view when selecting a specific academy
             Session::forget(self::GLOBAL_VIEW_SESSION_KEY);
-            
-            // Make academy available globally for this request
-            app()->instance('current_academy', $academy);
+
+            // Also set API context for consistency in mixed web/API scenarios
+            self::setApiContext($academy);
         } else {
             // Clear academy context
             Session::forget(self::SELECTED_ACADEMY_SESSION_KEY);
             Session::forget(self::ACADEMY_OBJECT_SESSION_KEY);
-            app()->forgetInstance('current_academy');
+            self::clearApiContext();
         }
 
         return true;
@@ -145,7 +184,7 @@ class AcademyContextService
     {
         Session::forget(self::SELECTED_ACADEMY_SESSION_KEY);
         Session::forget(self::ACADEMY_OBJECT_SESSION_KEY);
-        app()->forgetInstance('current_academy');
+        self::clearApiContext();
     }
 
     /**
@@ -225,12 +264,12 @@ class AcademyContextService
         }
 
         Session::put(self::GLOBAL_VIEW_SESSION_KEY, true);
-        
+
         // Clear academy context when enabling global view
         Session::forget(self::SELECTED_ACADEMY_SESSION_KEY);
         Session::forget(self::ACADEMY_OBJECT_SESSION_KEY);
-        app()->forgetInstance('current_academy');
-        
+        self::clearApiContext();
+
         return true;
     }
 

@@ -28,9 +28,9 @@ class StudentCalendarController extends Controller
     public function index(Request $request): View
     {
         $user = Auth::user();
-        
-        // Check if user is a student
-        if (!$user->isStudent()) {
+
+        // Check if user is a student via role
+        if (!$user->hasRole('student')) {
             abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
         }
 

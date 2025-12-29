@@ -71,13 +71,6 @@ class SmartSessionTimer {
             }
         };
         
-        console.log('🕐 SmartSessionTimer initialized', {
-            sessionId: this.sessionId,
-            scheduledAt: this.scheduledAt,
-            duration: this.durationMinutes,
-            preparation: this.preparationMinutes
-        });
-        
         this.init();
     }
     
@@ -87,15 +80,13 @@ class SmartSessionTimer {
     init() {
         // CRITICAL FIX: Always calculate and display current state immediately
         const timing = this.calculateCurrentTiming();
-        console.log('⏰ Timer initializing - current phase:', timing.phase);
-        
+
         // Immediately update display with current state
         this.updateDisplay(timing);
         this.handlePhaseChange(timing.phase);
         
         // If session has ended, mark as completed and don't start interval
         if (timing.phase === this.phases.ENDED) {
-            console.log('⏰ Session already ended - showing 00:00 permanently');
             this.isSessionCompleted = true;
             return; // Don't start the timer interval
         }
@@ -127,8 +118,6 @@ class SmartSessionTimer {
         this.intervalId = setInterval(() => {
             this.update();
         }, 1000);
-        
-        console.log('⏰ Timer started');
     }
     
     /**
@@ -143,8 +132,6 @@ class SmartSessionTimer {
             clearInterval(this.intervalId);
             this.intervalId = null;
         }
-        
-        console.log('⏸️ Timer stopped');
     }
     
     /**
@@ -160,7 +147,6 @@ class SmartSessionTimer {
         
         // CRITICAL FIX: Stop immediately if session has ended
         if (timing.phase === this.phases.ENDED) {
-            console.log('⏰ Session ended - stopping timer immediately');
             this.isSessionCompleted = true;
             this.stop();
             
@@ -258,9 +244,7 @@ class SmartSessionTimer {
     handlePhaseChange(newPhase) {
         const oldPhase = this.currentPhase;
         this.currentPhase = newPhase;
-        
-        console.log(`🔄 Phase changed: ${oldPhase} → ${newPhase}`);
-        
+
         // Update UI classes
         this.updatePhaseUI(newPhase);
         
@@ -362,7 +346,7 @@ class SmartSessionTimer {
             const response = await fetch('/api/server-time', {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    'X-CSRF-TOKEN': window.getCsrfToken?.() || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                 }
             });
             
@@ -374,13 +358,12 @@ class SmartSessionTimer {
                 
                 // Adjust scheduled time if there's significant drift (>5 seconds)
                 if (Math.abs(drift) > 5000) {
-                    console.log(`⏰ Time drift detected: ${drift}ms, adjusting...`);
                     // Note: In production, you might want to adjust the scheduledAt time
                     // this.scheduledAt = new Date(this.scheduledAt.getTime() + drift);
                 }
             }
-        } catch (error) {
-            console.warn('⚠️ Failed to sync with server time:', error);
+        } catch {
+            // Silent fail - timer continues working with client time
         }
     }
     
@@ -410,15 +393,13 @@ class SmartSessionTimer {
                 const state = JSON.parse(savedState);
                 
                 // Validate the saved state is for the same session configuration
-                if (state.sessionId === this.sessionId && 
+                if (state.sessionId === this.sessionId &&
                     state.scheduledAt === this.scheduledAt.toISOString()) {
-                    
                     this.currentPhase = state.currentPhase;
-                    console.log('📱 Restored timer state from localStorage');
                 }
             }
-        } catch (error) {
-            console.warn('⚠️ Failed to restore timer state:', error);
+        } catch {
+            // Silent fail - timer will calculate fresh state
         }
     }
     
@@ -457,7 +438,6 @@ class SmartSessionTimer {
     destroy() {
         this.stop();
         this.clearState();
-        console.log('🗑️ Timer destroyed');
     }
 }
 

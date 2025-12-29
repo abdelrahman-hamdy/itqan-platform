@@ -3,17 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
+use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Requests\AddStudentFeedbackRequest;
+use App\Http\Requests\CancelAcademicSessionRequest;
+use App\Http\Requests\RescheduleAcademicSessionRequest;
+use App\Http\Requests\UpdateAcademicHomeworkRequest;
+use App\Http\Requests\UpdateAcademicSessionEvaluationRequest;
+use App\Http\Requests\UpdateAcademicSessionStatusRequest;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Services\Attendance\AcademicReportService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Enums\SessionStatus;
+use Illuminate\View\View;
 
 class AcademicSessionController extends Controller
 {
+    use ApiResponses;
     public function __construct()
     {
         $this->middleware('auth');
@@ -22,15 +32,13 @@ class AcademicSessionController extends Controller
     /**
      * Display sessions for teacher
      */
-    public function index(Request $request, $subdomain = null)
+    public function index(Request $request, $subdomain = null): View
     {
+        $this->authorize('viewAny', AcademicSession::class);
+
         $user = Auth::user();
-
-        if (! $user->isAcademicTeacher()) {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
-        }
-
         $teacherProfile = $user->academicTeacherProfile;
+
         if (! $teacherProfile) {
             abort(404, 'ملف المعلم غير موجود');
         }
@@ -53,32 +61,28 @@ class AcademicSessionController extends Controller
     /**
      * Show session details
      */
-    public function show($subdomain, $session)
+    public function show($subdomain, $session): View
     {
         $user = Auth::user();
 
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
 
-        // Check permissions
-        $canAccess = false;
+        // Authorize view access using policy
+        $this->authorize('view', $session);
+
+        // Determine view type based on user role
         $viewType = 'guest';
 
         if ($user->isAcademicTeacher()) {
             $teacherProfile = $user->academicTeacherProfile;
             if ($teacherProfile && (int) $session->academic_teacher_id === (int) $teacherProfile->id) {
-                $canAccess = true;
                 $viewType = 'teacher';
             }
         } elseif ($user->isStudent() && (int) $session->student_id === (int) $user->id) {
-            $canAccess = true;
             $viewType = 'student';
-        }
-
-        if (! $canAccess) {
-            abort(403, 'غير مسموح لك بالوصول لهذه الجلسة');
         }
 
         $session->load([
@@ -100,45 +104,36 @@ class AcademicSessionController extends Controller
     /**
      * Add student feedback to session
      */
-    public function addStudentFeedback(Request $request, $subdomain, $session): JsonResponse
+    public function addStudentFeedback(AddStudentFeedbackRequest $request, $subdomain, $session): JsonResponse
     {
-        $user = Auth::user();
-
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
 
-        // Check if user is the student for this session
-        if (! $user->isStudent() || (int) $session->student_id !== (int) $user->id) {
-            return response()->json(['success' => false, 'message' => 'غير مسموح لك بإضافة تقييم لهذه الجلسة'], 403);
-        }
-
-        // Validate request
-        $request->validate([
-            'feedback' => 'required|string|max:1000',
-        ]);
+        // Authorize view access (students need to view the session to provide feedback)
+        $this->authorize('view', $session);
 
         // Update session with student feedback
         $session->update([
             'student_feedback' => $request->feedback,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إرسال تقييمك بنجاح',
-        ]);
+        return $this->successResponse(null, 'تم إرسال تقييمك بنجاح');
     }
 
     /**
      * Assign homework to session (Teacher)
      */
-    public function assignHomework(\App\Http\Requests\AssignAcademicHomeworkRequest $request, $subdomain, $session)
+    public function assignHomework(\App\Http\Requests\AssignAcademicHomeworkRequest $request, $subdomain, $session): JsonResponse|RedirectResponse
     {
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
+
+        // Authorize update access (only teachers can assign homework)
+        $this->authorize('update', $session);
 
         // Handle file upload
         $homeworkFilePath = null;
@@ -176,7 +171,7 @@ class AcademicSessionController extends Controller
 
         // Return JSON for AJAX requests, redirect for regular form submissions
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => true, 'message' => 'تم تعيين الواجب بنجاح']);
+            return $this->successResponse(null, 'تم تعيين الواجب بنجاح');
         }
 
         return redirect()->back()->with('success', 'تم تعيين الواجب بنجاح');
@@ -185,17 +180,17 @@ class AcademicSessionController extends Controller
     /**
      * Update homework for academic session (Teacher)
      */
-    public function updateHomework(Request $request, $subdomain, $session)
+    public function updateHomework(UpdateAcademicHomeworkRequest $request, $subdomain, $session): JsonResponse|RedirectResponse
     {
-        $validated = $request->validate([
-            'homework_description' => 'required|string|max:2000',
-            'homework_file' => 'nullable|file|mimes:pdf,doc,docx|max:10240'
-        ]);
+        $validated = $request->validated();
 
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
+
+        // Authorize update access (only teachers can update homework)
+        $this->authorize('update', $session);
 
         // Handle file upload
         $homeworkFilePath = $session->homework_file; // Keep existing file if no new file uploaded
@@ -230,7 +225,7 @@ class AcademicSessionController extends Controller
 
         // Return JSON for AJAX requests, redirect for regular form submissions
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => true, 'message' => 'تم تحديث الواجب بنجاح']);
+            return $this->successResponse(null, 'تم تحديث الواجب بنجاح');
         }
 
         return redirect()->back()->with('success', 'تم تحديث الواجب بنجاح');
@@ -239,14 +234,17 @@ class AcademicSessionController extends Controller
     /**
      * Submit homework for academic session (Student)
      */
-    public function submitHomework(\App\Http\Requests\SubmitAcademicHomeworkRequest $request, $subdomain, $session)
+    public function submitHomework(\App\Http\Requests\SubmitAcademicHomeworkRequest $request, $subdomain, $session): RedirectResponse
     {
         $user = Auth::user();
 
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
+
+        // Authorize view access (students need to view the session to submit homework)
+        $this->authorize('view', $session);
 
         // Handle file upload
         $homeworkFilePath = null;
@@ -280,12 +278,16 @@ class AcademicSessionController extends Controller
     /**
      * Grade homework submission (Teacher)
      */
-    public function gradeHomework(\App\Http\Requests\GradeAcademicHomeworkRequest $request, $subdomain, $session, $reportId)
+    public function gradeHomework(\App\Http\Requests\GradeAcademicHomeworkRequest $request, $subdomain, $session, $reportId): RedirectResponse
     {
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
+
+        // Authorize update access (only teachers can grade homework)
+        $this->authorize('update', $session);
+
         $report = \App\Models\AcademicSessionReport::findOrFail($reportId);
 
         // Verify report belongs to this session
@@ -305,37 +307,17 @@ class AcademicSessionController extends Controller
     /**
      * Update session evaluation (for teachers)
      */
-    public function updateEvaluation(Request $request, $subdomain, $session): JsonResponse
+    public function updateEvaluation(UpdateAcademicSessionEvaluationRequest $request, $subdomain, $session): JsonResponse
     {
-        $user = Auth::user();
-
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
 
-        // Only teachers can update evaluation
-        if (! $user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
-        }
+        // Authorize update access (only teachers can update evaluation)
+        $this->authorize('update', $session);
 
-        $teacherProfile = $user->academicTeacherProfile;
-        if (! $teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بتقييم هذه الجلسة'], 403);
-        }
-
-        $validated = $request->validate([
-            'session_topics_covered' => 'nullable|string|max:1000',
-            'lesson_content' => 'nullable|string|max:2000',
-            'homework_description' => 'nullable|string|max:1000',
-            'homework_file' => 'nullable|file|mimes:pdf,doc,docx,txt|max:5120', // 5MB max
-            'session_notes' => 'nullable|string|max:1000',
-            'teacher_feedback' => 'nullable|string|max:1000',
-            'overall_rating' => 'nullable|integer|min:1|max:5',
-            'technical_issues' => 'nullable|string|max:500',
-            'follow_up_required' => 'boolean',
-            'follow_up_notes' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         // Handle file upload
         if ($request->hasFile('homework_file')) {
@@ -347,7 +329,7 @@ class AcademicSessionController extends Controller
 
         $session->update($validated);
 
-        return response()->json([
+        return $this->customResponse([
             'success' => true,
             'message' => 'تم حفظ تقييم الجلسة بنجاح',
             'session' => $session->fresh(),
@@ -357,30 +339,17 @@ class AcademicSessionController extends Controller
     /**
      * Update session status
      */
-    public function updateStatus(Request $request, $subdomain, $session): JsonResponse
+    public function updateStatus(UpdateAcademicSessionStatusRequest $request, $subdomain, $session): JsonResponse
     {
-        $user = Auth::user();
-
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
 
-        // Only teachers can update status
-        if (! $user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
-        }
+        // Authorize update access (only teachers/admins can update session status)
+        $this->authorize('update', $session);
 
-        $teacherProfile = $user->academicTeacherProfile;
-        if (! $teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بتعديل هذه الجلسة'], 403);
-        }
-
-        $validated = $request->validate([
-            'status' => 'required|in:scheduled,ongoing,completed,cancelled,rescheduled',
-            'attendance_status' => 'nullable|in:scheduled,attended,absent,late,leaved',
-            'attendance_notes' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         // Update timestamps based on status
         if ($validated['status'] === SessionStatus::ONGOING->value && ! $session->started_at) {
@@ -394,7 +363,7 @@ class AcademicSessionController extends Controller
 
         $session->update($validated);
 
-        return response()->json([
+        return $this->customResponse([
             'success' => true,
             'message' => 'تم تحديث حالة الجلسة بنجاح',
             'session' => $session->fresh(),
@@ -404,29 +373,17 @@ class AcademicSessionController extends Controller
     /**
      * Reschedule session
      */
-    public function reschedule(Request $request, $subdomain, $session): JsonResponse
+    public function reschedule(RescheduleAcademicSessionRequest $request, $subdomain, $session): JsonResponse
     {
-        $user = Auth::user();
-
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
 
-        // Only teachers can reschedule
-        if (! $user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
-        }
+        // Authorize reschedule access using policy
+        $this->authorize('reschedule', $session);
 
-        $teacherProfile = $user->academicTeacherProfile;
-        if (! $teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بإعادة جدولة هذه الجلسة'], 403);
-        }
-
-        $validated = $request->validate([
-            'new_scheduled_at' => 'required|date|after:now',
-            'reschedule_reason' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $session->update([
             'rescheduled_from' => $session->scheduled_at,
@@ -436,7 +393,7 @@ class AcademicSessionController extends Controller
             'status' => SessionStatus::SCHEDULED,
         ]);
 
-        return response()->json([
+        return $this->customResponse([
             'success' => true,
             'message' => 'تم إعادة جدولة الجلسة بنجاح',
             'session' => $session->fresh(),
@@ -446,28 +403,19 @@ class AcademicSessionController extends Controller
     /**
      * Cancel session
      */
-    public function cancel(Request $request, $subdomain, $session): JsonResponse
+    public function cancel(CancelAcademicSessionRequest $request, $subdomain, $session): JsonResponse
     {
         $user = Auth::user();
 
         // If $session is not a model instance, fetch it
-        if (!$session instanceof AcademicSession) {
+        if (! $session instanceof AcademicSession) {
             $session = AcademicSession::findOrFail($session);
         }
 
-        // Only teachers can cancel
-        if (! $user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
-        }
+        // Authorize cancel access using policy
+        $this->authorize('cancel', $session);
 
-        $teacherProfile = $user->academicTeacherProfile;
-        if (! $teacherProfile || (int) $session->academic_teacher_id !== (int) $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بإلغاء هذه الجلسة'], 403);
-        }
-
-        $validated = $request->validate([
-            'cancellation_reason' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $session->update([
             'status' => SessionStatus::CANCELLED,
@@ -476,7 +424,7 @@ class AcademicSessionController extends Controller
             'cancelled_at' => now(),
         ]);
 
-        return response()->json([
+        return $this->customResponse([
             'success' => true,
             'message' => 'تم إلغاء الجلسة بنجاح',
             'session' => $session->fresh(),
@@ -486,23 +434,23 @@ class AcademicSessionController extends Controller
     /**
      * Show comprehensive report for academic subscription (teacher view)
      */
-    public function subscriptionReport($subdomain, $subscription)
+    public function subscriptionReport($subdomain, $subscription): View
     {
         $user = Auth::user();
 
         // If $subscription is not a model instance, fetch it
-        if (!$subscription instanceof AcademicSubscription) {
+        if (! $subscription instanceof AcademicSubscription) {
             $subscription = AcademicSubscription::findOrFail($subscription);
         }
 
-        // Check permissions - only the teacher who owns this subscription can view
-        if (!$user->isAcademicTeacher()) {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
-        }
-
-        $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || (int) $subscription->teacher_id !== (int) $teacherProfile->id) {
-            abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
+        // Verify teacher has access to the subscription
+        // Check through first session if available, otherwise check teacher ownership
+        $firstSession = $subscription->sessions()->first();
+        if ($firstSession) {
+            $this->authorize('view', $firstSession);
+        } else {
+            // If no sessions exist, verify subscription belongs to this teacher
+            $this->authorize('view', $subscription);
         }
 
         // Load subscription with relationships
@@ -541,18 +489,23 @@ class AcademicSessionController extends Controller
     /**
      * Show comprehensive report for academic subscription (student view)
      */
-    public function studentSubscriptionReport($subdomain, $subscription)
+    public function studentSubscriptionReport($subdomain, $subscription): View
     {
         $user = Auth::user();
 
         // If $subscription is not a model instance, fetch it
-        if (!$subscription instanceof AcademicSubscription) {
+        if (! $subscription instanceof AcademicSubscription) {
             $subscription = AcademicSubscription::findOrFail($subscription);
         }
 
-        // Check permissions - only the student who owns this subscription can view
-        if (!$user->isStudent() || (int) $subscription->student_id !== (int) $user->id) {
-            abort(403, 'غير مسموح لك بالوصول لهذا التقرير');
+        // Verify student has access to the subscription
+        // Check through first session if available, otherwise check student ownership
+        $firstSession = $subscription->sessions()->first();
+        if ($firstSession) {
+            $this->authorize('view', $firstSession);
+        } else {
+            // If no sessions exist, verify subscription belongs to this student
+            $this->authorize('view', $subscription);
         }
 
         // Load subscription with relationships

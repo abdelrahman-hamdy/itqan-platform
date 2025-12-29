@@ -137,7 +137,7 @@ class PaymentController extends Controller
             return $this->notFound(__('Receipt not found.'));
         }
 
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         return $this->success([
             'receipt' => [

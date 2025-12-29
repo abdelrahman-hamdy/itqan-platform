@@ -5,6 +5,11 @@ namespace App\Http\Controllers;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
+use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Requests\GetLiveKitTokenRequest;
+use App\Http\Requests\GetRoomParticipantsRequest;
+use App\Http\Requests\GetRoomPermissionsRequest;
+use App\Http\Requests\MuteParticipantRequest;
 use App\Services\LiveKitService;
 use App\Services\RoomPermissionService;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +19,8 @@ use App\Enums\SessionStatus;
 
 class LiveKitController extends Controller
 {
+    use ApiResponses;
+
     public function __construct(
         protected LiveKitService $liveKitService,
         protected RoomPermissionService $roomPermissionService
@@ -21,14 +28,9 @@ class LiveKitController extends Controller
     /**
      * Get LiveKit access token for a participant
      */
-    public function getToken(Request $request): JsonResponse
+    public function getToken(GetLiveKitTokenRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'room_name' => 'required|string',
-                'participant_name' => 'required|string',
-                'user_type' => 'required|string|in:quran_teacher,student',
-            ]);
 
             $roomName = $request->input('room_name');
             $participantName = $request->input('participant_name');
@@ -39,9 +41,7 @@ class LiveKitController extends Controller
             $apiSecret = config('livekit.api_secret');
 
             if (! $apiKey || ! $apiSecret) {
-                return response()->json([
-                    'error' => 'LiveKit configuration not found',
-                ], 500);
+                return $this->serverErrorResponse('LiveKit configuration not found');
             }
 
             // Create participant identity with user ID for uniqueness (consistent with other token generation)
@@ -92,7 +92,7 @@ class LiveKitController extends Controller
             // Generate token
             $token = $at->toJwt();
 
-            return response()->json([
+            return $this->successResponse([
                 'token' => $token,
                 'room_name' => $roomName,
                 'participant_name' => $participantName,
@@ -100,30 +100,16 @@ class LiveKitController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to generate token: '.$e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to generate token: '.$e->getMessage());
         }
     }
 
     /**
      * Mute/unmute participant's microphone (Admin only)
      */
-    public function muteParticipant(Request $request): JsonResponse
+    public function muteParticipant(MuteParticipantRequest $request): JsonResponse
     {
         try {
-            // Validate request
-            $request->validate([
-                'room_name' => 'required|string',
-                'participant_identity' => 'required|string',
-                'track_sid' => 'required|string',
-                'muted' => 'required|boolean',
-            ]);
-
-            // Check if user is a teacher
-            if (! in_array(auth()->user()->user_type, ['quran_teacher', 'academic_teacher'])) {
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
 
             $roomName = $request->input('room_name');
             $participantIdentity = $request->input('participant_identity');
@@ -131,7 +117,7 @@ class LiveKitController extends Controller
             $muted = $request->input('muted');
 
             if (! $this->liveKitService->isConfigured()) {
-                return response()->json(['error' => 'LiveKit service not configured'], 500);
+                return $this->serverErrorResponse('LiveKit service not configured');
             }
 
             // Use room service client to mute/unmute
@@ -156,8 +142,7 @@ class LiveKitController extends Controller
                 'teacher' => auth()->id(),
             ]);
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'muted' => $muted,
                 'participant_identity' => $participantIdentity,
             ]);
@@ -168,33 +153,23 @@ class LiveKitController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return response()->json([
-                'error' => 'Failed to mute/unmute participant: '.$e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to mute/unmute participant: '.$e->getMessage());
         }
     }
 
     /**
      * Get room participants with their tracks
      */
-    public function getRoomParticipants(Request $request): JsonResponse
+    public function getRoomParticipants(GetRoomParticipantsRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'room_name' => 'required|string',
-            ]);
-
-            // Check if user is a teacher
-            if (! in_array(auth()->user()->user_type, ['quran_teacher', 'academic_teacher'])) {
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
 
             $roomName = $request->input('room_name');
 
             $roomInfo = $this->liveKitService->getRoomInfo($roomName);
 
             if (! $roomInfo) {
-                return response()->json(['error' => 'Room not found'], 404);
+                return $this->notFoundResponse('Room not found');
             }
 
             // Get detailed participant info with tracks
@@ -233,44 +208,35 @@ class LiveKitController extends Controller
                 }
             }
 
-            return response()->json([
+            return $this->successResponse([
                 'room_name' => $roomName,
                 'participants' => $participants,
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error' => 'Validation failed',
-                'messages' => $e->errors(),
-            ], 422);
+            return $this->validationErrorResponse($e->errors(), 'Validation failed');
         } catch (\Exception $e) {
             Log::error('Failed to get room participants', [
                 'error' => $e->getMessage(),
                 'room_name' => $request->input('room_name'),
             ]);
 
-            return response()->json([
-                'error' => 'Failed to get participants: '.$e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to get participants: '.$e->getMessage());
         }
     }
 
     /**
      * Get room permissions (microphone and camera allowed state)
      */
-    public function getRoomPermissions(Request $request): JsonResponse
+    public function getRoomPermissions(GetRoomPermissionsRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'room_name' => 'required|string',
-            ]);
 
             $roomName = $request->input('room_name');
 
             $permissions = $this->roomPermissionService->getRoomPermissions($roomName);
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'permissions' => [
                     'microphone_allowed' => $permissions['microphone_allowed'] ?? true,
                     'camera_allowed' => $permissions['camera_allowed'] ?? true,
@@ -278,19 +244,14 @@ class LiveKitController extends Controller
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error' => 'Validation failed',
-                'messages' => $e->errors(),
-            ], 422);
+            return $this->validationErrorResponse($e->errors(), 'Validation failed');
         } catch (\Exception $e) {
             Log::error('Failed to get room permissions', [
                 'error' => $e->getMessage(),
                 'request' => $request->all(),
             ]);
 
-            return response()->json([
-                'error' => 'Failed to get room permissions: '.$e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to get room permissions: '.$e->getMessage());
         }
     }
 
@@ -313,7 +274,7 @@ class LiveKitController extends Controller
             if (! auth()->check()) {
                 \Log::warning('LiveKitController::muteAllStudents - User not authenticated');
 
-                return response()->json(['error' => 'Authentication required'], 401);
+                return $this->unauthorizedResponse('Authentication required');
             }
 
             $allowedTypes = ['quran_teacher', 'academic_teacher', 'admin', 'super_admin'];
@@ -323,7 +284,7 @@ class LiveKitController extends Controller
                     'allowed_types' => $allowedTypes,
                 ]);
 
-                return response()->json(['error' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
 
             $roomName = $request->input('room_name');
@@ -353,9 +314,7 @@ class LiveKitController extends Controller
                     'error' => $e->getMessage(),
                 ]);
 
-                return response()->json([
-                    'error' => 'Room not found or LiveKit server unavailable',
-                ], 404);
+                return $this->notFoundResponse('Room not found or LiveKit server unavailable');
             }
 
             $mutedCount = 0;
@@ -402,8 +361,7 @@ class LiveKitController extends Controller
                 'teacher' => auth()->id(),
             ]);
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'muted' => $muted,
                 'affected_participants' => $mutedCount,
             ]);
@@ -414,9 +372,7 @@ class LiveKitController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return response()->json([
-                'error' => 'Failed to mute all students: '.$e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to mute all students: '.$e->getMessage());
         }
     }
 
@@ -434,12 +390,12 @@ class LiveKitController extends Controller
             ]);
 
             if (! auth()->check()) {
-                return response()->json(['error' => 'Authentication required'], 401);
+                return $this->unauthorizedResponse('Authentication required');
             }
 
             $allowedTypes = ['quran_teacher', 'academic_teacher', 'admin', 'super_admin'];
             if (! in_array(auth()->user()->user_type, $allowedTypes)) {
-                return response()->json(['error' => 'Unauthorized'], 403);
+                return $this->forbiddenResponse('Unauthorized');
             }
 
             $roomName = $request->input('room_name');
@@ -468,9 +424,7 @@ class LiveKitController extends Controller
                     'error' => $e->getMessage(),
                 ]);
 
-                return response()->json([
-                    'error' => 'Room not found or LiveKit server unavailable',
-                ], 404);
+                return $this->notFoundResponse('Room not found or LiveKit server unavailable');
             }
 
             $affectedCount = 0;
@@ -514,8 +468,7 @@ class LiveKitController extends Controller
                 'teacher' => auth()->id(),
             ]);
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'disabled' => $disabled,
                 'affected_participants' => $affectedCount,
             ]);
@@ -526,9 +479,7 @@ class LiveKitController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return response()->json([
-                'error' => 'Failed to control cameras: '.$e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to control cameras: '.$e->getMessage());
         }
     }
 }

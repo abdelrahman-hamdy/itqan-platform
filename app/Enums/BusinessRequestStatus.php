@@ -2,6 +2,21 @@
 
 namespace App\Enums;
 
+/**
+ * Business Request Status Enum
+ *
+ * Tracks the lifecycle of business/partnership requests.
+ * Used by academy partnership and business inquiries.
+ *
+ * States:
+ * - PENDING: Request submitted, awaiting review
+ * - REVIEWED: Request reviewed by staff
+ * - APPROVED: Request approved
+ * - REJECTED: Request rejected
+ * - COMPLETED: Request fully processed
+ *
+ * @see \App\Models\BusinessRequest
+ */
 enum BusinessRequestStatus: string
 {
     case PENDING = 'pending';
@@ -11,17 +26,11 @@ enum BusinessRequestStatus: string
     case COMPLETED = 'completed';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => __('قيد الانتظار'),
-            self::REVIEWED => __('تمت المراجعة'),
-            self::APPROVED => __('موافق عليه'),
-            self::REJECTED => __('مرفوض'),
-            self::COMPLETED => __('مكتمل'),
-        };
+        return __('enums.business_request_status.' . $this->value);
     }
 
     /**
@@ -60,5 +69,13 @@ enum BusinessRequestStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

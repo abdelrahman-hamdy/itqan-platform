@@ -57,9 +57,9 @@ use App\Enums\AttendanceStatus;
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                     {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
                                        ($attendance->status === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' :
-                                       ($attendance->status === AttendanceStatus::LEAVED->value ? 'bg-orange-100 text-orange-800' :
+                                       ($attendance->status === AttendanceStatus::LEFT->value ? 'bg-orange-100 text-orange-800' :
                                        'bg-red-100 text-red-800')) }}">
-                                    {{ match($attendance->status) { AttendanceStatus::ATTENDED->value => 'حاضر', AttendanceStatus::LATE->value => 'متأخر', AttendanceStatus::LEAVED->value => 'غادر مبكراً', default => 'غائب' } }}
+                                    {{ match($attendance->status) { AttendanceStatus::ATTENDED->value => 'حاضر', AttendanceStatus::LATE->value => 'متأخر', AttendanceStatus::LEFT->value => 'غادر مبكراً', default => 'غائب' } }}
                                 </span>
                             @else
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">

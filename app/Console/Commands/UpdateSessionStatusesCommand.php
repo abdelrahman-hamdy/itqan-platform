@@ -30,11 +30,13 @@ class UpdateSessionStatusesCommand extends Command
     protected $description = 'Update session statuses based on current time and business rules';
 
     private UnifiedSessionStatusService $statusService;
+    private CronJobLogger $cronJobLogger;
 
-    public function __construct(UnifiedSessionStatusService $statusService)
+    public function __construct(UnifiedSessionStatusService $statusService, CronJobLogger $cronJobLogger)
     {
         parent::__construct();
         $this->statusService = $statusService;
+        $this->cronJobLogger = $cronJobLogger;
     }
 
     /**
@@ -50,7 +52,7 @@ class UpdateSessionStatusesCommand extends Command
         $interactiveOnly = $this->option('interactive-only');
 
         // Start enhanced logging
-        $executionData = CronJobLogger::logCronStart('sessions:update-statuses', [
+        $executionData = $this->cronJobLogger->logCronStart('sessions:update-statuses', [
             'dry_run' => $isDryRun,
             'verbose' => $isVerbose,
             'academy_id' => $academyId,
@@ -111,7 +113,7 @@ class UpdateSessionStatusesCommand extends Command
                              $totalStats['academic']['processed'] +
                              $totalStats['interactive']['processed'];
 
-            CronJobLogger::logCronEnd('sessions:update-statuses', $executionData, [
+            $this->cronJobLogger->logCronEnd('sessions:update-statuses', $executionData, [
                 'total_processed' => $totalProcessed,
                 'quran_stats' => $totalStats['quran'],
                 'academic_stats' => $totalStats['academic'],
@@ -129,7 +131,7 @@ class UpdateSessionStatusesCommand extends Command
                 $this->error('Stack trace: ' . $e->getTraceAsString());
             }
 
-            CronJobLogger::logCronError('sessions:update-statuses', $executionData, $e);
+            $this->cronJobLogger->logCronError('sessions:update-statuses', $executionData, $e);
 
             return self::FAILURE;
         }
@@ -278,18 +280,20 @@ class UpdateSessionStatusesCommand extends Command
             $query->where('academy_id', $academyId);
         }
 
-        // Get all sessions that might need status updates
-        $sessionsToProcess = $query->whereIn('status', [
+        $query->whereIn('status', [
             SessionStatus::SCHEDULED,
             SessionStatus::READY,
             SessionStatus::ONGOING,
-        ])->with(['academy', 'circle', 'individualCircle', 'meetingAttendances'])->get();
+        ]);
+
+        // Count total sessions for progress tracking
+        $totalCount = $query->count();
 
         if ($isVerbose) {
-            $this->info("📖 Found {$sessionsToProcess->count()} Quran sessions to process");
+            $this->info("📖 Found {$totalCount} Quran sessions to process");
         }
 
-        if ($sessionsToProcess->isEmpty()) {
+        if ($totalCount === 0) {
             if ($isVerbose) {
                 $this->info('✅ No Quran sessions require status updates');
             }
@@ -297,15 +301,38 @@ class UpdateSessionStatusesCommand extends Command
             return ['processed' => 0, 'transitions' => []];
         }
 
-        // Process status transitions using the unified service
-        if ($isDryRun) {
-            $stats = $this->simulateStatusTransitions($sessionsToProcess, $isVerbose, 'Quran session');
-        } else {
-            $rawStats = $this->statusService->processStatusTransitions($sessionsToProcess);
-            $stats = $this->formatStats($rawStats, $isVerbose);
-        }
+        // Initialize stats
+        $stats = [
+            'scheduled_to_ready' => 0,
+            'ready_to_absent' => 0,
+            'ongoing_to_completed' => 0,
+            'errors' => 0,
+            'details' => [],
+        ];
+        $processedCount = 0;
 
-        return ['processed' => $sessionsToProcess->count(), 'transitions' => $stats];
+        // Process in chunks to prevent memory issues
+        $query->with(['academy', 'circle', 'individualCircle', 'meetingAttendances'])
+            ->chunkById(200, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
+                // Process status transitions using the unified service
+                if ($isDryRun) {
+                    $chunkStats = $this->simulateStatusTransitions($sessions, $isVerbose, 'Quran session');
+                } else {
+                    $rawStats = $this->statusService->processStatusTransitions($sessions);
+                    $chunkStats = $this->formatStats($rawStats, $isVerbose);
+                }
+
+                // Merge chunk stats into overall stats
+                $stats['scheduled_to_ready'] += $chunkStats['scheduled_to_ready'];
+                $stats['ready_to_absent'] += $chunkStats['ready_to_absent'];
+                $stats['ongoing_to_completed'] += $chunkStats['ongoing_to_completed'];
+                $stats['errors'] += $chunkStats['errors'];
+                $stats['details'] = array_merge($stats['details'], $chunkStats['details']);
+
+                $processedCount += $sessions->count();
+            });
+
+        return ['processed' => $processedCount, 'transitions' => $stats];
     }
 
     /**
@@ -320,18 +347,20 @@ class UpdateSessionStatusesCommand extends Command
             $query->where('academy_id', $academyId);
         }
 
-        // Get all sessions that might need status updates
-        $sessionsToProcess = $query->whereIn('status', [
+        $query->whereIn('status', [
             SessionStatus::SCHEDULED,
             SessionStatus::READY,
             SessionStatus::ONGOING,
-        ])->with(['academy', 'academicTeacher', 'student'])->get();
+        ]);
+
+        // Count total sessions for progress tracking
+        $totalCount = $query->count();
 
         if ($isVerbose) {
-            $this->info("🎓 Found {$sessionsToProcess->count()} Academic sessions to process");
+            $this->info("🎓 Found {$totalCount} Academic sessions to process");
         }
 
-        if ($sessionsToProcess->isEmpty()) {
+        if ($totalCount === 0) {
             if ($isVerbose) {
                 $this->info('✅ No Academic sessions require status updates');
             }
@@ -339,15 +368,38 @@ class UpdateSessionStatusesCommand extends Command
             return ['processed' => 0, 'transitions' => []];
         }
 
-        // Process status transitions using the unified service
-        if ($isDryRun) {
-            $stats = $this->simulateStatusTransitions($sessionsToProcess, $isVerbose, 'Academic session');
-        } else {
-            $rawStats = $this->statusService->processStatusTransitions($sessionsToProcess);
-            $stats = $this->formatStats($rawStats, $isVerbose);
-        }
+        // Initialize stats
+        $stats = [
+            'scheduled_to_ready' => 0,
+            'ready_to_absent' => 0,
+            'ongoing_to_completed' => 0,
+            'errors' => 0,
+            'details' => [],
+        ];
+        $processedCount = 0;
 
-        return ['processed' => $sessionsToProcess->count(), 'transitions' => $stats];
+        // Process in chunks to prevent memory issues
+        $query->with(['academy', 'academicTeacher', 'student'])
+            ->chunkById(200, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
+                // Process status transitions using the unified service
+                if ($isDryRun) {
+                    $chunkStats = $this->simulateStatusTransitions($sessions, $isVerbose, 'Academic session');
+                } else {
+                    $rawStats = $this->statusService->processStatusTransitions($sessions);
+                    $chunkStats = $this->formatStats($rawStats, $isVerbose);
+                }
+
+                // Merge chunk stats into overall stats
+                $stats['scheduled_to_ready'] += $chunkStats['scheduled_to_ready'];
+                $stats['ready_to_absent'] += $chunkStats['ready_to_absent'];
+                $stats['ongoing_to_completed'] += $chunkStats['ongoing_to_completed'];
+                $stats['errors'] += $chunkStats['errors'];
+                $stats['details'] = array_merge($stats['details'], $chunkStats['details']);
+
+                $processedCount += $sessions->count();
+            });
+
+        return ['processed' => $processedCount, 'transitions' => $stats];
     }
 
     /**
@@ -365,18 +417,20 @@ class UpdateSessionStatusesCommand extends Command
             });
         }
 
-        // Get all sessions that might need status updates
-        $sessionsToProcess = $query->whereIn('status', [
+        $query->whereIn('status', [
             SessionStatus::SCHEDULED,
             SessionStatus::READY,
             SessionStatus::ONGOING,
-        ])->with(['course.academy', 'course.assignedTeacher.user'])->get();
+        ]);
+
+        // Count total sessions for progress tracking
+        $totalCount = $query->count();
 
         if ($isVerbose) {
-            $this->info("🎬 Found {$sessionsToProcess->count()} Interactive Course sessions to process");
+            $this->info("🎬 Found {$totalCount} Interactive Course sessions to process");
         }
 
-        if ($sessionsToProcess->isEmpty()) {
+        if ($totalCount === 0) {
             if ($isVerbose) {
                 $this->info('✅ No Interactive Course sessions require status updates');
             }
@@ -384,15 +438,38 @@ class UpdateSessionStatusesCommand extends Command
             return ['processed' => 0, 'transitions' => []];
         }
 
-        // Process status transitions using the unified service
-        if ($isDryRun) {
-            $stats = $this->simulateStatusTransitions($sessionsToProcess, $isVerbose, 'Interactive session');
-        } else {
-            $rawStats = $this->statusService->processStatusTransitions($sessionsToProcess);
-            $stats = $this->formatStats($rawStats, $isVerbose);
-        }
+        // Initialize stats
+        $stats = [
+            'scheduled_to_ready' => 0,
+            'ready_to_absent' => 0,
+            'ongoing_to_completed' => 0,
+            'errors' => 0,
+            'details' => [],
+        ];
+        $processedCount = 0;
 
-        return ['processed' => $sessionsToProcess->count(), 'transitions' => $stats];
+        // Process in chunks to prevent memory issues
+        $query->with(['course.academy', 'course.assignedTeacher.user'])
+            ->chunkById(200, function ($sessions) use (&$stats, &$processedCount, $isDryRun, $isVerbose) {
+                // Process status transitions using the unified service
+                if ($isDryRun) {
+                    $chunkStats = $this->simulateStatusTransitions($sessions, $isVerbose, 'Interactive session');
+                } else {
+                    $rawStats = $this->statusService->processStatusTransitions($sessions);
+                    $chunkStats = $this->formatStats($rawStats, $isVerbose);
+                }
+
+                // Merge chunk stats into overall stats
+                $stats['scheduled_to_ready'] += $chunkStats['scheduled_to_ready'];
+                $stats['ready_to_absent'] += $chunkStats['ready_to_absent'];
+                $stats['ongoing_to_completed'] += $chunkStats['ongoing_to_completed'];
+                $stats['errors'] += $chunkStats['errors'];
+                $stats['details'] = array_merge($stats['details'], $chunkStats['details']);
+
+                $processedCount += $sessions->count();
+            });
+
+        return ['processed' => $processedCount, 'transitions' => $stats];
     }
 
     /**

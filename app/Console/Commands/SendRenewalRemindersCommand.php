@@ -32,7 +32,8 @@ class SendRenewalRemindersCommand extends Command
     protected $description = 'Send renewal reminder notifications for upcoming subscription renewals';
 
     public function __construct(
-        private SubscriptionRenewalService $renewalService
+        private SubscriptionRenewalService $renewalService,
+        private CronJobLogger $cronJobLogger
     ) {
         parent::__construct();
     }
@@ -46,7 +47,7 @@ class SendRenewalRemindersCommand extends Command
         $isVerbose = $this->option('details') || $isDryRun;
 
         // Start enhanced logging
-        $executionData = CronJobLogger::logCronStart('subscriptions:send-reminders', [
+        $executionData = $this->cronJobLogger->logCronStart('subscriptions:send-reminders', [
             'dry_run' => $isDryRun,
             'verbose' => $isVerbose,
         ]);
@@ -68,7 +69,7 @@ class SendRenewalRemindersCommand extends Command
             $this->displayResults($results, $isDryRun, $isVerbose);
 
             // Log completion
-            CronJobLogger::logCronEnd('subscriptions:send-reminders', $executionData, $results);
+            $this->cronJobLogger->logCronEnd('subscriptions:send-reminders', $executionData, $results);
 
             return self::SUCCESS;
 
@@ -79,7 +80,7 @@ class SendRenewalRemindersCommand extends Command
                 $this->error('Stack trace: ' . $e->getTraceAsString());
             }
 
-            CronJobLogger::logCronError('subscriptions:send-reminders', $executionData, $e);
+            $this->cronJobLogger->logCronError('subscriptions:send-reminders', $executionData, $e);
 
             Log::error('Renewal reminder processing failed', [
                 'error' => $e->getMessage(),

@@ -26,7 +26,7 @@ class AuthController extends Controller
     /**
      * Show the login form
      */
-    public function showLoginForm(Request $request)
+    public function showLoginForm(Request $request): \Illuminate\View\View
     {
         // Get academy from subdomain
         $subdomain = $request->route('subdomain');
@@ -59,7 +59,7 @@ class AuthController extends Controller
     /**
      * Handle login attempt
      */
-    public function login(Request $request)
+    public function login(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -128,7 +128,7 @@ class AuthController extends Controller
     /**
      * Handle logout
      */
-    public function logout(Request $request)
+    public function logout(Request $request): \Illuminate\Http\RedirectResponse
     {
         $user = Auth::user();
 
@@ -152,7 +152,7 @@ class AuthController extends Controller
     /**
      * Show registration form for students
      */
-    public function showStudentRegistration(Request $request)
+    public function showStudentRegistration(Request $request): \Illuminate\View\View
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -176,7 +176,7 @@ class AuthController extends Controller
     /**
      * Handle student registration
      */
-    public function registerStudent(Request $request)
+    public function registerStudent(Request $request): \Illuminate\Http\RedirectResponse
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -284,8 +284,10 @@ class AuthController extends Controller
             ]);
         }
 
-        // Send email verification
-        // TODO: Implement email verification
+        // Email verification not yet implemented
+        // When implemented, send verification email using Laravel's built-in email verification:
+        // $user->sendEmailVerificationNotification();
+        // Then require email verification before allowing access to protected routes
 
         // Auto-login the user
         Auth::login($user);
@@ -298,7 +300,7 @@ class AuthController extends Controller
     /**
      * Show teacher registration form
      */
-    public function showTeacherRegistration(Request $request)
+    public function showTeacherRegistration(Request $request): \Illuminate\View\View
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -313,7 +315,7 @@ class AuthController extends Controller
     /**
      * Handle teacher registration step 1 (teacher type selection)
      */
-    public function registerTeacherStep1(Request $request)
+    public function registerTeacherStep1(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validator = Validator::make($request->all(), [
             'teacher_type' => 'required|in:quran_teacher,academic_teacher',
@@ -331,7 +333,7 @@ class AuthController extends Controller
     /**
      * Show teacher registration step 2 (teacher-specific form)
      */
-    public function showTeacherRegistrationStep2(Request $request)
+    public function showTeacherRegistrationStep2(Request $request): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $teacherType = $request->session()->get('teacher_type');
 
@@ -352,7 +354,7 @@ class AuthController extends Controller
     /**
      * Handle teacher registration step 2
      */
-    public function registerTeacherStep2(Request $request)
+    public function registerTeacherStep2(Request $request): \Illuminate\Http\RedirectResponse
     {
         $teacherType = $request->session()->get('teacher_type');
 
@@ -492,7 +494,7 @@ class AuthController extends Controller
     /**
      * Show teacher registration success page
      */
-    public function showTeacherRegistrationSuccess(Request $request)
+    public function showTeacherRegistrationSuccess(Request $request): \Illuminate\View\View
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -507,7 +509,7 @@ class AuthController extends Controller
     /**
      * Show forgot password form
      */
-    public function showForgotPasswordForm(Request $request)
+    public function showForgotPasswordForm(Request $request): \Illuminate\View\View
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -522,7 +524,7 @@ class AuthController extends Controller
     /**
      * Send password reset link to user's email
      */
-    public function sendResetLink(Request $request)
+    public function sendResetLink(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -582,7 +584,7 @@ class AuthController extends Controller
     /**
      * Show reset password form
      */
-    public function showResetPasswordForm(Request $request, string $token)
+    public function showResetPasswordForm(Request $request, string $token): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -624,7 +626,7 @@ class AuthController extends Controller
     /**
      * Reset user's password
      */
-    public function resetPassword(Request $request)
+    public function resetPassword(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',

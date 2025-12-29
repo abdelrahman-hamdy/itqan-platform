@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
 use App\Http\Controllers\Controller;
-use App\Http\Traits\Api\ApiResponses;
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -11,18 +11,34 @@ use App\Models\InteractiveCourseSession;
 use App\Models\ParentStudentRelationship;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
+use App\Services\SessionFetchingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 
+/**
+ * Parent Dashboard API Controller
+ *
+ * Demonstrates usage of the standardized ApiResponseService via ApiResponses trait.
+ * Provides parent dashboard with children data, sessions, and subscriptions.
+ */
 class DashboardController extends Controller
 {
     use ApiResponses;
 
+    public function __construct(
+        protected SessionFetchingService $sessionFetchingService
+    ) {
+    }
+
     /**
      * Get parent dashboard data.
+     *
+     * Demonstrates ApiResponseService usage:
+     * - notFoundResponse() for missing parent profile
+     * - successResponse() with structured data
      *
      * @param Request $request
      * @return JsonResponse
@@ -35,12 +51,9 @@ class DashboardController extends Controller
         // Property access was returning null due to relationship caching issues
         $parentProfile = $user->parentProfile()->first();
 
+        // Example: Using notFoundResponse() from ApiResponses trait
         if (!$parentProfile) {
-            return $this->error(
-                __('Parent profile not found.'),
-                404,
-                'PARENT_PROFILE_NOT_FOUND'
-            );
+            return $this->notFoundResponse(__('Parent profile not found.'));
         }
 
         // Get all linked children
@@ -53,7 +66,7 @@ class DashboardController extends Controller
             $studentUser = $student->user;
 
             // Get today's sessions for this child
-            $todaySessions = $this->getChildTodaySessions($studentUser?->id ?? $student->id);
+            $todaySessions = $this->sessionFetchingService->getTodaySessionsCount($studentUser?->id ?? $student->id);
 
             // Get active subscriptions
             $activeSubscriptions = $this->getChildActiveSubscriptions($studentUser?->id ?? $student->id);
@@ -66,7 +79,7 @@ class DashboardController extends Controller
                 'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : null,
                 'grade_level' => $student->gradeLevel?->name,
                 'relationship' => $relationship->relationship_type,
-                'today_sessions_count' => count($todaySessions),
+                'today_sessions_count' => $todaySessions,
                 'active_subscriptions_count' => $activeSubscriptions,
             ];
         })->toArray();
@@ -76,7 +89,7 @@ class DashboardController extends Controller
         $studentIds = $children->pluck('student.id')->toArray();
         $allIds = array_unique(array_merge($childIds, $studentIds));
 
-        $upcomingSessions = $this->getAllChildrenUpcomingSessions($allIds);
+        $upcomingSessions = $this->sessionFetchingService->getAllChildrenUpcomingSessions($allIds);
 
         // Get summary stats
         $stats = [
@@ -86,7 +99,7 @@ class DashboardController extends Controller
             'upcoming_sessions' => count($upcomingSessions),
         ];
 
-        return $this->success([
+        $dashboardData = [
             'parent' => [
                 'id' => $parentProfile->id,
                 'name' => $parentProfile->first_name . ' ' . $parentProfile->last_name,
@@ -95,38 +108,14 @@ class DashboardController extends Controller
             'children' => $childrenData,
             'stats' => $stats,
             'upcoming_sessions' => array_slice($upcomingSessions, 0, 5),
-        ], __('Dashboard data retrieved successfully'));
-    }
+        ];
 
-    /**
-     * Get today's sessions for a child.
-     */
-    protected function getChildTodaySessions(int $userId): array
-    {
-        $today = Carbon::today();
-        $sessions = [];
-
-        // Quran sessions
-        $quranCount = QuranSession::where('student_id', $userId)
-            ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-            ->count();
-
-        // Academic sessions
-        $academicCount = AcademicSession::where('student_id', $userId)
-            ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-            ->count();
-
-        // Interactive sessions
-        $interactiveCount = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
-            $q->where('student_id', $userId);
-        })
-            ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-            ->count();
-
-        return array_fill(0, $quranCount + $academicCount + $interactiveCount, true);
+        // Example: Using successResponse() from ApiResponses trait
+        // Returns standardized format: {success: true, message: "...", data: {...}}
+        return $this->successResponse(
+            data: $dashboardData,
+            message: __('Dashboard data retrieved successfully')
+        );
     }
 
     /**
@@ -149,66 +138,5 @@ class DashboardController extends Controller
             ->count();
 
         return $count;
-    }
-
-    /**
-     * Get upcoming sessions for all children.
-     */
-    protected function getAllChildrenUpcomingSessions(array $userIds): array
-    {
-        $sessions = [];
-        $now = now();
-        $endDate = $now->copy()->addDays(7);
-
-        foreach ($userIds as $userId) {
-            // Quran sessions
-            $quranSessions = QuranSession::where('student_id', $userId)
-                ->where('scheduled_at', '>', $now)
-                ->where('scheduled_at', '<=', $endDate)
-                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                ->with(['student.user', 'quranTeacher'])
-                ->orderBy('scheduled_at')
-                ->limit(3)
-                ->get();
-
-            foreach ($quranSessions as $session) {
-                $sessions[] = [
-                    'id' => $session->id,
-                    'type' => 'quran',
-                    'title' => $session->title ?? 'جلسة قرآنية',
-                    'child_name' => $session->student?->user?->name ?? $session->student?->full_name,
-                    'teacher_name' => $session->quranTeacher?->name,
-                    'scheduled_at' => $session->scheduled_at->toISOString(),
-                ];
-            }
-
-            // Academic sessions
-            $academicSessions = AcademicSession::where('student_id', $userId)
-                ->where('scheduled_at', '>', $now)
-                ->where('scheduled_at', '<=', $endDate)
-                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                ->with(['student.user', 'academicTeacher.user', 'academicSubscription'])
-                ->orderBy('scheduled_at')
-                ->limit(3)
-                ->get();
-
-            foreach ($academicSessions as $session) {
-                $sessions[] = [
-                    'id' => $session->id,
-                    'type' => 'academic',
-                    'title' => $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-                    'child_name' => $session->student?->user?->name ?? 'طالب',
-                    'teacher_name' => $session->academicTeacher?->user?->name,
-                    'scheduled_at' => $session->scheduled_at->toISOString(),
-                ];
-            }
-        }
-
-        // Sort by time
-        usort($sessions, function ($a, $b) {
-            return strtotime($a['scheduled_at']) <=> strtotime($b['scheduled_at']);
-        });
-
-        return $sessions;
     }
 }

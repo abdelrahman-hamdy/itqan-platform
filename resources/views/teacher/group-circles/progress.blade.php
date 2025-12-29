@@ -2,48 +2,7 @@
     :title="'تقرير تقدم الحلقة الجماعية - ' . $circle->name . ' - ' . config('app.name', 'منصة إتقان')"
     :description="'تقرير التقدم للحلقة الجماعية: ' . $circle->name">
 
-<!-- Custom Progress Page Styles -->
-<style>
-.progress-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-.progress-card {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    background-size: 200% 200%;
-    animation: gradientShift 6s ease infinite;
-}
-@keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.attendance-indicator {
-    position: relative;
-    overflow: hidden;
-}
-.attendance-indicator::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.5s;
-}
-.attendance-indicator:hover::before {
-    left: 100%;
-}
-.chart-container {
-    position: relative;
-    width: 100%;
-}
-@media (max-width: 768px) {
-    .chart-container {
-        height: 200px !important;
-    }
-}
-</style>
+<!-- Progress page CSS is loaded via resources/css/progress.css through Vite -->
 
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -98,8 +57,8 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-2 md:gap-3 mr-auto lg:mr-0">
-                <button onclick="window.print()" class="min-h-[44px] inline-flex items-center justify-center px-3 md:px-6 py-2 md:py-3 bg-white/20 backdrop-blur-sm text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-white/30 transition-colors">
+            <div class="flex items-center gap-2 md:gap-3 mr-auto lg:mr-0" x-data>
+                <button @click="window.print()" class="min-h-[44px] inline-flex items-center justify-center px-3 md:px-6 py-2 md:py-3 bg-white/20 backdrop-blur-sm text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-white/30 transition-colors">
                     <i class="ri-printer-line md:ml-2"></i>
                     <span class="hidden md:inline">طباعة التقرير</span>
                 </button>
@@ -114,150 +73,86 @@
 
     <!-- Enhanced Progress Statistics with Better UX -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-4 md:mb-8">
-        <!-- Total Sessions -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-blue-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group">
-            <div class="flex items-center justify-between gap-2">
-                <div class="min-w-0">
-                    <p class="text-xs md:text-sm font-medium text-blue-600 mb-0.5 md:mb-1 truncate">إجمالي الجلسات</p>
-                    <p class="text-xl md:text-3xl font-bold text-blue-900 mb-1 md:mb-2">{{ $stats['total_sessions'] }}</p>
-                    <div class="flex items-center text-[10px] md:text-xs text-blue-600">
-                        <i class="ri-calendar-line ml-0.5 md:ml-1"></i>
-                        <span>منذ البداية</span>
-                    </div>
-                </div>
-                <div class="w-8 h-8 md:w-12 md:h-12 bg-blue-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                    <i class="ri-book-line text-lg md:text-2xl text-blue-600"></i>
-                </div>
-            </div>
-        </div>
+        <x-circle.progress-stat-card
+            label="إجمالي الجلسات"
+            :value="$stats['total_sessions']"
+            subtitle="منذ البداية"
+            subtitleIcon="ri-calendar-line"
+            icon="ri-book-line"
+            color="blue"
+        />
 
-        <!-- Completed Sessions -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-green-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group">
-            <div class="flex items-center justify-between gap-2">
-                <div class="min-w-0">
-                    <p class="text-xs md:text-sm font-medium text-green-600 mb-0.5 md:mb-1 truncate">الجلسات المكتملة</p>
-                    <p class="text-xl md:text-3xl font-bold text-green-900 mb-1 md:mb-2">{{ $stats['completed_sessions'] }}</p>
-                    <div class="flex items-center text-[10px] md:text-xs text-green-600">
-                        <i class="ri-check-line ml-0.5 md:ml-1"></i>
-                        <span class="hidden sm:inline">مع المجموعة</span>
-                        <span class="sm:hidden">مكتملة</span>
-                    </div>
-                </div>
-                <div class="w-8 h-8 md:w-12 md:h-12 bg-green-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                    <i class="ri-checkbox-circle-line text-lg md:text-2xl text-green-600"></i>
-                </div>
-            </div>
-        </div>
+        <x-circle.progress-stat-card
+            label="الجلسات المكتملة"
+            :value="$stats['completed_sessions']"
+            subtitle="مع المجموعة"
+            subtitleIcon="ri-check-line"
+            icon="ri-checkbox-circle-line"
+            color="green"
+        />
 
-        <!-- Enrolled Students -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-purple-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group">
-            <div class="flex items-center justify-between gap-2">
-                <div class="min-w-0">
-                    <p class="text-xs md:text-sm font-medium text-purple-600 mb-0.5 md:mb-1 truncate">الطلاب</p>
-                    <p class="text-xl md:text-3xl font-bold text-purple-900 mb-1 md:mb-2">{{ $stats['enrolled_students'] }}</p>
-                    <div class="flex items-center text-[10px] md:text-xs text-purple-600">
-                        <i class="ri-user-add-line ml-0.5 md:ml-1"></i>
-                        <span>من {{ $stats['max_students'] ?? '∞' }}</span>
-                    </div>
-                </div>
-                <div class="w-8 h-8 md:w-12 md:h-12 bg-purple-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                    <i class="ri-group-line text-lg md:text-2xl text-purple-600"></i>
-                </div>
-            </div>
-        </div>
+        <x-circle.progress-stat-card
+            label="الطلاب"
+            :value="$stats['enrolled_students']"
+            :subtitle="'من ' . ($stats['max_students'] ?? '∞')"
+            subtitleIcon="ri-user-add-line"
+            icon="ri-group-line"
+            color="purple"
+        />
 
-        <!-- Upcoming Sessions -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-orange-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group">
-            <div class="flex items-center justify-between gap-2">
-                <div class="min-w-0">
-                    <p class="text-xs md:text-sm font-medium text-orange-600 mb-0.5 md:mb-1 truncate">الجلسات القادمة</p>
-                    <p class="text-xl md:text-3xl font-bold text-orange-900 mb-1 md:mb-2">{{ $stats['upcoming_sessions'] }}</p>
-                    <div class="flex items-center text-[10px] md:text-xs text-orange-600">
-                        <i class="ri-time-line ml-0.5 md:ml-1"></i>
-                        <span>مجدولة</span>
-                    </div>
-                </div>
-                <div class="w-8 h-8 md:w-12 md:h-12 bg-orange-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                    <i class="ri-calendar-check-line text-lg md:text-2xl text-orange-600"></i>
-                </div>
-            </div>
-        </div>
+        <x-circle.progress-stat-card
+            label="الجلسات القادمة"
+            :value="$stats['upcoming_sessions']"
+            subtitle="مجدولة"
+            subtitleIcon="ri-time-line"
+            icon="ri-calendar-check-line"
+            color="orange"
+        />
 
-        <!-- Enrollment Rate -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-emerald-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group col-span-2 sm:col-span-1">
-            <div class="flex items-center justify-between gap-2">
-                <div class="min-w-0 flex-1">
-                    <p class="text-xs md:text-sm font-medium text-emerald-600 mb-0.5 md:mb-1 truncate">معدل التسجيل</p>
-                    <p class="text-xl md:text-3xl font-bold text-emerald-900 mb-1 md:mb-2">{{ number_format($stats['enrollment_rate'], 1) }}%</p>
-                    <div class="w-full bg-emerald-100 rounded-full h-1.5 md:h-2">
-                        <div class="bg-emerald-500 h-1.5 md:h-2 rounded-full transition-all duration-500"
-                             style="width: {{ $stats['enrollment_rate'] }}%"></div>
-                    </div>
-                </div>
-                <div class="w-8 h-8 md:w-12 md:h-12 bg-emerald-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                    <i class="ri-user-check-line text-lg md:text-2xl text-emerald-600"></i>
-                </div>
-            </div>
-        </div>
+        <x-circle.progress-stat-card
+            label="معدل التسجيل"
+            :value="number_format($stats['enrollment_rate'], 1) . '%'"
+            icon="ri-user-check-line"
+            color="emerald"
+            :showProgressBar="true"
+            :progressValue="$stats['enrollment_rate']"
+            colSpan="col-span-2 sm:col-span-1"
+        />
     </div>
 
     <!-- Comprehensive Analytics Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
-        <!-- Attendance Trends Chart -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
-            <div class="flex items-center justify-between mb-4 md:mb-6 gap-2">
-                <div class="min-w-0">
-                    <h3 class="text-base md:text-xl font-bold text-gray-900 truncate">اتجاهات الحضور</h3>
-                    <p class="text-gray-600 text-xs md:text-sm">نسبة الحضور عبر الوقت</p>
-                </div>
-                <i class="ri-line-chart-line text-xl md:text-2xl text-blue-600 flex-shrink-0"></i>
-            </div>
-            <div class="chart-container h-[200px] md:h-[300px]">
-                <canvas id="attendanceChart"></canvas>
-            </div>
-        </div>
+        <x-circle.chart-container
+            chartId="attendanceChart"
+            title="اتجاهات الحضور"
+            subtitle="نسبة الحضور عبر الوقت"
+            iconClass="ri-line-chart-line"
+            iconColor="text-blue-600"
+        />
 
-        <!-- Session Status Distribution -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
-            <div class="flex items-center justify-between mb-4 md:mb-6 gap-2">
-                <div class="min-w-0">
-                    <h3 class="text-base md:text-xl font-bold text-gray-900 truncate">توزيع حالة الجلسات</h3>
-                    <p class="text-gray-600 text-xs md:text-sm">نظرة عامة على الجلسات</p>
-                </div>
-                <i class="ri-pie-chart-line text-xl md:text-2xl text-green-600 flex-shrink-0"></i>
-            </div>
-            <div class="chart-container h-[200px] md:h-[300px]">
-                <canvas id="sessionStatusChart"></canvas>
-            </div>
-        </div>
+        <x-circle.chart-container
+            chartId="sessionStatusChart"
+            title="توزيع حالة الجلسات"
+            subtitle="نظرة عامة على الجلسات"
+            iconClass="ri-pie-chart-line"
+            iconColor="text-green-600"
+        />
 
-        <!-- Performance Metrics Over Time -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
-            <div class="flex items-center justify-between mb-4 md:mb-6 gap-2">
-                <div class="min-w-0">
-                    <h3 class="text-base md:text-xl font-bold text-gray-900 truncate">تطور الأداء</h3>
-                    <p class="text-gray-600 text-xs md:text-sm">التلاوة والتجويد عبر الوقت</p>
-                </div>
-                <i class="ri-bar-chart-line text-xl md:text-2xl text-purple-600 flex-shrink-0"></i>
-            </div>
-            <div class="chart-container h-[200px] md:h-[300px]">
-                <canvas id="performanceChart"></canvas>
-            </div>
-        </div>
+        <x-circle.chart-container
+            chartId="performanceChart"
+            title="تطور الأداء"
+            subtitle="التلاوة والتجويد عبر الوقت"
+            iconClass="ri-bar-chart-line"
+            iconColor="text-purple-600"
+        />
 
-        <!-- Weekly Activity Heatmap -->
-        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
-            <div class="flex items-center justify-between mb-4 md:mb-6 gap-2">
-                <div class="min-w-0">
-                    <h3 class="text-base md:text-xl font-bold text-gray-900 truncate">خريطة النشاط الأسبوعي</h3>
-                    <p class="text-gray-600 text-xs md:text-sm">توزيع الجلسات خلال الأسبوع</p>
-                </div>
-                <i class="ri-calendar-2-line text-xl md:text-2xl text-orange-600 flex-shrink-0"></i>
-            </div>
-            <div class="chart-container h-[200px] md:h-[300px]">
-                <canvas id="weeklyActivityChart"></canvas>
-            </div>
-        </div>
+        <x-circle.chart-container
+            chartId="weeklyActivityChart"
+            title="خريطة النشاط الأسبوعي"
+            subtitle="توزيع الجلسات خلال الأسبوع"
+            iconClass="ri-calendar-2-line"
+            iconColor="text-orange-600"
+        />
     </div>
 
     <!-- Enhanced Group Progress Overview -->
@@ -319,7 +214,7 @@
                     <div class="space-y-4">
                         @forelse($circle->sessions->sortByDesc('scheduled_at')->take(10) as $session)
                             <div class="attendance-indicator bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200 hover:shadow-md transition-all duration-300 cursor-pointer"
-                                 onclick="openSessionDetail({{ $session->id }})">
+                                 x-data @click="openSessionDetail({{ $session->id }})">
                                 <div class="flex items-center justify-between">
                                     <!-- Session Info -->
                                     <div class="flex items-center space-x-4 space-x-reverse">
@@ -621,10 +516,8 @@ function openSessionDetail(sessionId) {
         const sessionUrl = '{{ route("teacher.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
         
-        console.log('Teacher Session URL:', finalUrl);
         window.location.href = finalUrl;
     @else
-        console.error('User not authenticated');
     @endif
 }
 

@@ -24,11 +24,13 @@ class ManageAcademicSessionMeetings extends Command
     protected $description = 'Manage LiveKit meetings for scheduled academic sessions - auto-create, update status, and cleanup';
 
     private AcademicSessionMeetingService $academicSessionMeetingService;
+    private CronJobLogger $cronJobLogger;
 
-    public function __construct(AcademicSessionMeetingService $academicSessionMeetingService)
+    public function __construct(AcademicSessionMeetingService $academicSessionMeetingService, CronJobLogger $cronJobLogger)
     {
         parent::__construct();
         $this->academicSessionMeetingService = $academicSessionMeetingService;
+        $this->cronJobLogger = $cronJobLogger;
     }
 
     /**
@@ -40,7 +42,7 @@ class ManageAcademicSessionMeetings extends Command
         $isForced = $this->option('force');
 
         // Start enhanced logging
-        $executionData = CronJobLogger::logCronStart('academic-sessions:manage-meetings', [
+        $executionData = $this->cronJobLogger->logCronStart('academic-sessions:manage-meetings', [
             'dry_run' => $isDryRun,
             'forced' => $isForced,
         ]);
@@ -83,7 +85,7 @@ class ManageAcademicSessionMeetings extends Command
             $this->info('✅ Academic session meeting management completed successfully');
 
             // Log completion
-            CronJobLogger::logCronEnd('academic-sessions:manage-meetings', $executionData, $results, 'success');
+            $this->cronJobLogger->logCronEnd('academic-sessions:manage-meetings', $executionData, $results, 'success');
 
             return Command::SUCCESS;
 
@@ -95,7 +97,7 @@ class ManageAcademicSessionMeetings extends Command
             ]);
 
             // Log error
-            CronJobLogger::logCronError('academic-sessions:manage-meetings', $executionData, $e);
+            $this->cronJobLogger->logCronError('academic-sessions:manage-meetings', $executionData, $e);
 
             return Command::FAILURE;
         }
@@ -131,7 +133,7 @@ class ManageAcademicSessionMeetings extends Command
             $this->info('✅ Maintenance mode completed');
 
             // Log completion
-            CronJobLogger::logCronEnd('academic-sessions:manage-meetings', $executionData, $results, 'success');
+            $this->cronJobLogger->logCronEnd('academic-sessions:manage-meetings', $executionData, $results, 'success');
 
             return Command::SUCCESS;
 
@@ -139,7 +141,7 @@ class ManageAcademicSessionMeetings extends Command
             $this->error('❌ Error during maintenance: '.$e->getMessage());
 
             // Log error
-            CronJobLogger::logCronError('academic-sessions:manage-meetings', $executionData, $e);
+            $this->cronJobLogger->logCronError('academic-sessions:manage-meetings', $executionData, $e);
 
             return Command::FAILURE;
         }

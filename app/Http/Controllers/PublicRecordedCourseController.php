@@ -12,7 +12,7 @@ class PublicRecordedCourseController extends Controller
     /**
      * Display a listing of recorded courses for an academy
      */
-    public function index(Request $request, $subdomain)
+    public function index(Request $request, $subdomain): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -33,7 +33,7 @@ class PublicRecordedCourseController extends Controller
     /**
      * Display the specified recorded course
      */
-    public function show(Request $request, $subdomain, $courseId)
+    public function show(Request $request, $subdomain, $courseId): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->first();

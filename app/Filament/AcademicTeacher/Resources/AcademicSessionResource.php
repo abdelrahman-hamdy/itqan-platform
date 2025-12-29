@@ -33,10 +33,16 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
 
     /**
      * Override query to show only sessions for current academic teacher
+     * Eager load relationships to prevent N+1 queries
      */
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->with([
+                'academy',
+                'student',
+                'academicSubscription',
+            ]);
 
         $teacherProfile = static::getCurrentAcademicTeacherProfile();
 
@@ -227,14 +233,14 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         'success' => AttendanceStatus::ATTENDED->value,
                         'danger' => AttendanceStatus::ABSENT->value,
                         'warning' => AttendanceStatus::LATE->value,
-                        'primary' => AttendanceStatus::LEAVED->value,
+                        'primary' => AttendanceStatus::LEFT->value,
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         SessionStatus::SCHEDULED->value => 'مجدولة',
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                         default => $state,
                     }),
 
@@ -262,7 +268,7 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                     ]),
 
                 Tables\Filters\SelectFilter::make('student_id')

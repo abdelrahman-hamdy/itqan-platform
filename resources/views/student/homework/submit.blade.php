@@ -1,4 +1,4 @@
-<x-layouts.student-layout title="تسليم الواجب">
+<x-layouts.student title="تسليم الواجب">
     <div class="space-y-6">
         <!-- Back Button -->
         <div>
@@ -38,7 +38,7 @@
     @if(session('success'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                alert('{{ session('success') }}');
+                window.toast?.success('{{ session('success') }}');
             });
         </script>
     @endif
@@ -46,8 +46,8 @@
     @if(session('error'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                alert('{{ session('error') }}');
+                window.toast?.error('{{ session('error') }}');
             });
         </script>
     @endif
-</x-layouts.student-layout>
+</x-layouts.student>

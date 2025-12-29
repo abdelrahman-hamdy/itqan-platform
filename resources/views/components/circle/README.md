@@ -238,7 +238,7 @@ $stats = [
 ## Component Dependencies
 
 ### Required Blade Components
-- `x-student-avatar` (for student displays)
+- `x-avatar` (for all user displays - supports student, teacher, parent types via userType prop)
 
 ### Required CSS Classes
 - Tailwind CSS utility classes

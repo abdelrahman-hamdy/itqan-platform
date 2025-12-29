@@ -2,6 +2,19 @@
 
 namespace App\Enums;
 
+/**
+ * Lesson Status Enum
+ *
+ * Tracks the lifecycle of individual lessons.
+ *
+ * States:
+ * - PENDING: Lesson scheduled but not started
+ * - ACTIVE: Lesson currently in progress
+ * - COMPLETED: Lesson finished
+ * - CANCELLED: Lesson cancelled
+ *
+ * @see \App\Models\Lesson
+ */
 enum LessonStatus: string
 {
     case PENDING = 'pending';
@@ -10,16 +23,11 @@ enum LessonStatus: string
     case CANCELLED = 'cancelled';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => __('قيد الانتظار'),
-            self::ACTIVE => __('نشط'),
-            self::COMPLETED => __('مكتمل'),
-            self::CANCELLED => __('ملغي'),
-        };
+        return __('enums.lesson_status.' . $this->value);
     }
 
     /**
@@ -56,5 +64,13 @@ enum LessonStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

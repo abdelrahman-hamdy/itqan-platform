@@ -150,7 +150,6 @@
     // Student management functions
     function changeStudentStatus(studentId) {
         showNotification('تغيير حالة الطالب قيد التطوير', 'info');
-        console.log('Change status for student:', studentId);
     }
 
     // Student evaluation modal functions - Compatible with Alpine.js
@@ -212,7 +211,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error loading report:', error);
                 showNotification('خطأ في تحميل بيانات التقرير', 'error');
             });
     }
@@ -228,7 +226,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error loading student info:', error);
             });
     }
 
@@ -262,7 +259,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error loading homework fields:', error);
                 // On error, hide fields
                 document.getElementById('newMemorizationDegreeField').classList.add('hidden');
                 document.getElementById('reviewDegreeField').classList.add('hidden');
@@ -315,7 +311,7 @@
         const statusMap = {
             'attended': 'حاضر',
             'late': 'متأخر',
-            'leaved': 'غادر مبكراً',
+            'left': 'غادر مبكراً',
             'absent': 'غائب'
         };
         return statusMap[status] || 'غير محدد';
@@ -395,7 +391,6 @@
                     showNotification(result.message || 'خطأ في حفظ التقييم', 'error');
                 }
             } catch (error) {
-                console.error('Error saving evaluation:', error);
                 showNotification('خطأ في حفظ التقييم', 'error');
             }
         });
@@ -403,7 +398,6 @@
 
     function viewStudentReport(studentId) {
         showNotification('تقرير الطالب قيد التطوير', 'info');
-        console.log('View report for student:', studentId);
     }
 
     function messageStudent(studentId) {

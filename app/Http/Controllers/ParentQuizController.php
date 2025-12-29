@@ -7,6 +7,7 @@ use App\Services\QuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
 
 /**
  * Parent Quiz Controller
@@ -23,12 +24,7 @@ class ParentQuizController extends Controller
         $this->quizService = $quizService;
 
         // Enforce read-only access
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -37,7 +33,7 @@ class ParentQuizController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -58,6 +54,9 @@ class ParentQuizController extends Controller
             $studentProfile = $childUser?->studentProfile;
 
             if ($studentProfile) {
+                // Authorize parent can view this child's quiz results
+                $this->authorize('viewChildQuizResults', $studentProfile);
+
                 // Get quizzes for this child
                 $quizzes = $this->quizService->getStudentQuizzes($studentProfile->id);
 
@@ -106,7 +105,7 @@ class ParentQuizController extends Controller
      * @param int $quizId
      * @return \Illuminate\View\View
      */
-    public function result(Request $request, int $quizId)
+    public function result(Request $request, int $quizId): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -118,15 +117,14 @@ class ParentQuizController extends Controller
         // Get the quiz assignment
         $assignment = \App\Models\QuizAssignment::with(['quiz', 'attempts'])->findOrFail($quizId);
 
+        // Policy-based authorization
+        $this->authorize('viewResults', $assignment);
+
         // Get attempts by parent's children only
         $childAttempts = $assignment->attempts->filter(function ($attempt) use ($childUserIds) {
             $studentProfile = \App\Models\StudentProfile::find($attempt->student_id);
             return $studentProfile && in_array($studentProfile->user_id, $childUserIds);
         });
-
-        if ($childAttempts->isEmpty()) {
-            abort(403, 'لا يمكنك الوصول إلى نتائج هذا الاختبار');
-        }
 
         return view('parent.quizzes.result', [
             'parent' => $parent,

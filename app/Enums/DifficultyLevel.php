@@ -2,6 +2,19 @@
 
 namespace App\Enums;
 
+/**
+ * Difficulty Level Enum
+ *
+ * Defines skill/content difficulty levels for courses and sessions.
+ *
+ * Levels:
+ * - BEGINNER: For new learners
+ * - INTERMEDIATE: For learners with basic knowledge
+ * - ADVANCED: For experienced learners
+ *
+ * @see \App\Models\Course
+ * @see \App\Models\QuranCircle
+ */
 enum DifficultyLevel: string
 {
     case BEGINNER = 'beginner';
@@ -9,15 +22,11 @@ enum DifficultyLevel: string
     case ADVANCED = 'advanced';
 
     /**
-     * Get label in Arabic
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::BEGINNER => 'مبتدئ',
-            self::INTERMEDIATE => 'متوسط',
-            self::ADVANCED => 'متقدم',
-        };
+        return __('enums.difficulty_level.' . $this->value);
     }
 
     /**
@@ -54,5 +63,13 @@ enum DifficultyLevel: string
             self::INTERMEDIATE->value => self::INTERMEDIATE->labelEn(),
             self::ADVANCED->value => self::ADVANCED->labelEn(),
         ];
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

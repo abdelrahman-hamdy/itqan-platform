@@ -1,0 +1,56 @@
+/**
+ * Progress Page Styles
+ * Used by: teacher/group-circles/progress.blade.php
+ *         teacher/individual-circles/progress.blade.php
+ */
+
+/* Progress Gradient Header */
+.progress-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Animated Progress Card */
+.progress-card {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background-size: 200% 200%;
+    animation: gradientShift 6s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Attendance Indicator with Shimmer Effect */
+.attendance-indicator {
+    position: relative;
+    overflow: hidden;
+}
+
+.attendance-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.attendance-indicator:hover::before {
+    left: 100%;
+}
+
+/* Chart Container */
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 200px !important;
+    }
+}

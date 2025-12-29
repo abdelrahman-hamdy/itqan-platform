@@ -2,6 +2,21 @@
 
 namespace App\Enums;
 
+/**
+ * Homework Status Enum
+ *
+ * Tracks the publication status of homework assignments.
+ * Used by homework models across all session types.
+ *
+ * States:
+ * - DRAFT: Homework created but not visible to students
+ * - PUBLISHED: Homework visible and assignable to students
+ * - IN_PROGRESS: Homework currently being worked on by students
+ * - ARCHIVED: Homework completed and archived
+ *
+ * @see \App\Models\AcademicHomework
+ * @see \App\Models\InteractiveCourseHomework
+ */
 enum HomeworkStatus: string
 {
     case DRAFT = 'draft';
@@ -10,16 +25,11 @@ enum HomeworkStatus: string
     case ARCHIVED = 'archived';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::DRAFT => __('مسودة'),
-            self::PUBLISHED => __('منشور'),
-            self::IN_PROGRESS => __('قيد التقدم'),
-            self::ARCHIVED => __('مؤرشف'),
-        };
+        return __('enums.homework_status.' . $this->value);
     }
 
     /**
@@ -64,5 +74,13 @@ enum HomeworkStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

@@ -21,7 +21,6 @@ class LiveKitParticipants {
         this.participantElements = new Map(); // participantId -> DOM element
         this.localParticipant = null;
 
-        console.log('👥 LiveKitParticipants initialized');
     }
 
     /**
@@ -30,7 +29,6 @@ class LiveKitParticipants {
      */
     setLocalParticipant(localParticipant) {
         this.localParticipant = localParticipant;
-        console.log('👤 Local participant set:', localParticipant.identity);
     }
 
     /**
@@ -40,10 +38,8 @@ class LiveKitParticipants {
     addParticipant(participant) {
         const participantId = participant.identity;
 
-        console.log('👤 Adding participant:', participantId);
 
         if (this.participants.has(participantId)) {
-            console.log('⚠️ Participant already exists:', participantId);
             return;
         }
 
@@ -58,7 +54,6 @@ class LiveKitParticipants {
             this.config.onParticipantAdded(participant);
         }
 
-        console.log(`✅ Participant ${participantId} added successfully`);
     }
 
     /**
@@ -66,10 +61,8 @@ class LiveKitParticipants {
      * @param {string} participantId - Participant ID to remove
      */
     removeParticipant(participantId) {
-        console.log('👤 Removing participant:', participantId);
 
         if (!this.participants.has(participantId)) {
-            console.log('⚠️ Participant not found:', participantId);
             return;
         }
 
@@ -87,7 +80,6 @@ class LiveKitParticipants {
             this.config.onParticipantRemoved(participant, participantId);
         }
 
-        console.log(`✅ Participant ${participantId} removed successfully`);
     }
 
     /**
@@ -98,11 +90,9 @@ class LiveKitParticipants {
         const participantId = participant.identity;
         const isLocal = participant === this.localParticipant;
 
-        console.log(`🎨 Creating DOM element for ${participantId} (local: ${isLocal})`);
 
         const videoGrid = document.getElementById('videoGrid');
         if (!videoGrid) {
-            console.error('❌ Video grid not found');
             return;
         }
 
@@ -176,7 +166,6 @@ class LiveKitParticipants {
             e.preventDefault();
             e.stopPropagation();
 
-            console.log(`🎯 Participant clicked for focus mode: ${participantId}`);
 
             if (this.config.onParticipantClick) {
                 this.config.onParticipantClick(participantDiv, participant);
@@ -197,11 +186,8 @@ class LiveKitParticipants {
             this.syncParticipantIcons(participant);
         }, 100);
 
-        console.log(`✅ DOM element created for ${participantId}`);
-        console.log(`📊 Video grid now has ${videoGrid.children.length} participants`);
 
         // Debug: Log the participant element
-        console.log('🎨 Participant element:', participantDiv);
     }
 
     /**
@@ -242,7 +228,6 @@ class LiveKitParticipants {
         const micStatusClass = 'text-red-500';
         const micStatusIcon = 'ri-mic-off-line';
 
-        console.log(`🎭 Initializing ${participantId} with all icons OFF - will sync to actual state via track events`);
 
         placeholder.innerHTML = `
             <div class="flex flex-col items-center text-center">
@@ -273,7 +258,6 @@ class LiveKitParticipants {
      * @param {string} participantId - Participant ID
      */
     removeParticipantElement(participantId) {
-        console.log(`🗑️ Removing DOM element for ${participantId}`);
 
         const element = this.participantElements.get(participantId);
         if (element && element.parentNode) {
@@ -281,7 +265,6 @@ class LiveKitParticipants {
         }
 
         this.participantElements.delete(participantId);
-        console.log(`✅ DOM element removed for ${participantId}`);
     }
 
     /**
@@ -439,11 +422,9 @@ class LiveKitParticipants {
      * Update participant list in sidebar
      */
     updateParticipantsList() {
-        console.log('👥 Updating participants list in sidebar');
 
         const participantsList = document.getElementById('participantsList');
         if (!participantsList) {
-            console.log('⚠️ Participants list element not found');
             return;
         }
 
@@ -461,7 +442,6 @@ class LiveKitParticipants {
 
         participantsList.appendChild(participantsContainer);
 
-        console.log(`✅ Participants list updated with ${this.getParticipantCount()} participants`);
     }
 
     /**
@@ -616,11 +596,9 @@ class LiveKitParticipants {
      * @param {string} participantId - Participant ID
      */
     ensureParticipantPlaceholderVisible(participantId) {
-        console.log(`🔍 Ensuring placeholder visibility for ${participantId}`);
 
         const participantElement = this.getParticipantElement(participantId);
         if (!participantElement) {
-            console.warn(`⚠️ Participant element not found for ${participantId}`);
             return;
         }
 
@@ -656,9 +634,7 @@ class LiveKitParticipants {
                 statusContainer.style.zIndex = '';
             }
 
-            console.log(`✅ Placeholder visibility ensured for ${participantId}`);
         } else {
-            console.warn(`⚠️ Placeholder not found for ${participantId}`);
         }
 
         // Ensure video is hidden initially
@@ -718,7 +694,6 @@ class LiveKitParticipants {
             avatar.textContent = initials;
         }
         
-        console.log(`✅ Updated participant name for ${participantId}: ${cleanName}`);
     }
 
     /**
@@ -726,33 +701,27 @@ class LiveKitParticipants {
      * @param {string} participantId - Participant ID to test
      */
     testHandRaiseDirectly(participantId) {
-        console.log(`🧪 Testing hand raise directly for ${participantId}`);
         
         // Check if element exists
         const participantElement = document.getElementById(`participant-${participantId}`);
         if (!participantElement) {
-            console.error(`❌ Participant element not found: participant-${participantId}`);
             return;
         }
         
         // Check if hand raise indicator exists
         const handRaiseIndicator = document.getElementById(`hand-raise-${participantId}`);
         if (!handRaiseIndicator) {
-            console.error(`❌ Hand raise indicator not found: hand-raise-${participantId}`);
             
             // Try to create one manually for testing
-            console.log(`🔧 Creating hand raise indicator manually for testing...`);
             const newIndicator = document.createElement('div');
             newIndicator.id = `hand-raise-${participantId}`;
             newIndicator.className = 'absolute top-2 right-2 z-30 bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg border-2 border-white';
             newIndicator.innerHTML = '<i class="fas fa-hand text-sm"></i>';
             participantElement.appendChild(newIndicator);
             
-            console.log(`✅ Created manual hand raise indicator for ${participantId}`);
             return;
         }
         
-        console.log(`✅ Both elements found, testing show/hide...`);
         
         // Test show
         this.showHandRaise(participantId);
@@ -768,18 +737,15 @@ class LiveKitParticipants {
      * @param {string} participantId - Participant ID
      */
     showHandRaise(participantId) {
-        console.log(`✋ Attempting to show hand raise for ${participantId}`);
         const handRaiseIndicator = document.getElementById(`hand-raise-${participantId}`);
         if (handRaiseIndicator) {
             handRaiseIndicator.style.display = 'flex';
             handRaiseIndicator.style.opacity = '1';
             handRaiseIndicator.style.transform = 'scale(1)';
             handRaiseIndicator.style.visibility = 'visible';
-            console.log(`✋ ✅ Hand raise shown for ${participantId}`, handRaiseIndicator);
             
             // Debug: Check computed styles
             const computedStyle = window.getComputedStyle(handRaiseIndicator);
-            console.log(`✋ Computed styles for ${participantId}:`, {
                 display: computedStyle.display,
                 opacity: computedStyle.opacity,
                 visibility: computedStyle.visibility,
@@ -789,10 +755,8 @@ class LiveKitParticipants {
                 zIndex: computedStyle.zIndex
             });
         } else {
-            console.warn(`⚠️ Hand raise indicator not found for ${participantId}`);
             // Debug: Check what elements exist
             const allElements = document.querySelectorAll('[id^="hand-raise-"]');
-            console.log(`🔍 Found hand raise elements:`, allElements);
         }
     }
 
@@ -801,7 +765,6 @@ class LiveKitParticipants {
      * @param {string} participantId - Participant ID
      */
     hideHandRaise(participantId) {
-        console.log(`✋ Attempting to hide hand raise for ${participantId}`);
         const handRaiseIndicator = document.getElementById(`hand-raise-${participantId}`);
         if (handRaiseIndicator) {
             handRaiseIndicator.style.opacity = '0';
@@ -810,9 +773,7 @@ class LiveKitParticipants {
             setTimeout(() => {
                 handRaiseIndicator.style.display = 'none';
             }, 300); // Wait for transition to complete
-            console.log(`✋ ✅ Hand raise hidden for ${participantId}`);
         } else {
-            console.warn(`⚠️ Hand raise indicator not found for ${participantId}`);
         }
     }
 
@@ -836,7 +797,6 @@ class LiveKitParticipants {
     syncParticipantIcons(participant) {
         const participantId = participant.identity;
 
-        console.log(`🔄 Syncing icons for ${participantId} to actual track state...`);
 
         // Check actual track publications
         const videoPublication = participant.getTrackPublication?.(window.LiveKit.Track.Source.Camera);
@@ -845,7 +805,6 @@ class LiveKitParticipants {
         const hasActiveVideo = videoPublication && !videoPublication.isMuted && videoPublication.track;
         const hasActiveAudio = audioPublication && !audioPublication.isMuted && audioPublication.track;
 
-        console.log(`📊 Actual state for ${participantId}:`, {
             camera: hasActiveVideo ? 'ON' : 'OFF',
             mic: hasActiveAudio ? 'ON' : 'OFF',
             hasVideoPublication: !!videoPublication,
@@ -890,14 +849,12 @@ class LiveKitParticipants {
             }
         }
 
-        console.log(`✅ Icons synced for ${participantId}`);
     }
 
     /**
      * Destroy participants manager and clean up
      */
     destroy() {
-        console.log('🧹 Destroying participants manager...');
 
         // Remove all participant elements
         for (const participantId of this.participants.keys()) {
@@ -908,7 +865,6 @@ class LiveKitParticipants {
         this.participantElements.clear();
         this.localParticipant = null;
 
-        console.log('🧑‍🤝‍🧑 Participants manager destroyed');
     }
 }
 

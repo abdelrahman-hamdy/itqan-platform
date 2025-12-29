@@ -2,6 +2,16 @@
 
 namespace App\Enums;
 
+/**
+ * Tailwind Color Enum
+ *
+ * Defines the available Tailwind CSS color palette.
+ * Used for academy theming and UI customization.
+ *
+ * Each color has shades from 50 to 950 available via getHexValue().
+ *
+ * @see \App\Models\Academy
+ */
 enum TailwindColor: string
 {
     case RED = 'red';
@@ -22,27 +32,12 @@ enum TailwindColor: string
     case PINK = 'pink';
     case ROSE = 'rose';
 
-    public function getLabel(): string
+    /**
+     * Get localized label
+     */
+    public function label(): string
     {
-        return match($this) {
-            self::RED => 'أحمر',
-            self::ORANGE => 'برتقالي',
-            self::AMBER => 'كهرماني',
-            self::YELLOW => 'أصفر',
-            self::LIME => 'ليموني',
-            self::GREEN => 'أخضر',
-            self::EMERALD => 'زمردي',
-            self::TEAL => 'أزرق مخضر',
-            self::CYAN => 'سماوي',
-            self::SKY => 'سماوي فاتح',
-            self::BLUE => 'أزرق',
-            self::INDIGO => 'نيلي',
-            self::VIOLET => 'بنفسجي',
-            self::PURPLE => 'أرجواني',
-            self::FUCHSIA => 'فوشي',
-            self::PINK => 'وردي',
-            self::ROSE => 'وردي غامق',
-        };
+        return __('enums.tailwind_color.' . $this->value);
     }
 
     /**
@@ -157,7 +152,7 @@ enum TailwindColor: string
     {
         return array_combine(
             array_map(fn($case) => $case->value, self::cases()),
-            array_map(fn($case) => $case->getLabel(), self::cases())
+            array_map(fn($case) => $case->label(), self::cases())
         );
     }
 

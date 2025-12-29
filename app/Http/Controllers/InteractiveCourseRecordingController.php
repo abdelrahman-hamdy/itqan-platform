@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\InteractiveCourseSession;
 use App\Models\CourseRecording;
 use App\Models\SessionRecording;
@@ -15,6 +16,7 @@ use App\Enums\SessionStatus;
 
 class InteractiveCourseRecordingController extends Controller
 {
+    use ApiResponses;
     protected RecordingService $recordingService;
 
     public function __construct(RecordingService $recordingService)
@@ -36,7 +38,7 @@ class InteractiveCourseRecordingController extends Controller
 
         // Check if user is an academic teacher
         if (!$user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بالتسجيل'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بالتسجيل');
         }
 
         $courseSession = InteractiveCourseSession::findOrFail($validated['session_id']);
@@ -44,28 +46,25 @@ class InteractiveCourseRecordingController extends Controller
         // Check if teacher is assigned to this course
         $teacherProfile = $user->academicTeacherProfile;
         if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بتسجيل هذه الدورة'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بتسجيل هذه الدورة');
         }
 
         // Use RecordingCapable trait method to check if recording is possible
         if (!$courseSession->canBeRecorded()) {
-            return response()->json([
-                'error' => 'لا يمكن تسجيل هذه الجلسة حالياً',
+            return $this->errorResponse('لا يمكن تسجيل هذه الجلسة حالياً', 400, [
                 'reasons' => $this->getRecordingBlockReasons($courseSession)
-            ], 400);
+            ]);
         }
 
         try {
             // Use RecordingService to start recording (creates SessionRecording)
             $recording = $this->recordingService->startRecording($courseSession);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'تم بدء التسجيل بنجاح',
+            return $this->successResponse([
                 'recording_id' => $recording->recording_id,
                 'recording' => $recording,
                 'session' => $courseSession->load('course'),
-            ]);
+            ], 'تم بدء التسجيل بنجاح');
 
         } catch (\Exception $e) {
             \Log::error('Failed to start recording', [
@@ -74,9 +73,7 @@ class InteractiveCourseRecordingController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'error' => 'فشل بدء التسجيل: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('فشل بدء التسجيل: ' . $e->getMessage());
         }
     }
 
@@ -118,7 +115,7 @@ class InteractiveCourseRecordingController extends Controller
         $user = Auth::user();
 
         if (!$user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بإيقاف التسجيل'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بإيقاف التسجيل');
         }
 
         $courseSession = InteractiveCourseSession::findOrFail($validated['session_id']);
@@ -126,14 +123,14 @@ class InteractiveCourseRecordingController extends Controller
         // Check if teacher is assigned to this course
         $teacherProfile = $user->academicTeacherProfile;
         if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بإيقاف هذا التسجيل'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بإيقاف هذا التسجيل');
         }
 
         // Get active recording
         $activeRecording = $courseSession->getActiveRecording();
 
         if (!$activeRecording) {
-            return response()->json(['error' => 'لا يوجد تسجيل نشط لهذه الجلسة'], 404);
+            return $this->notFoundResponse('لا يوجد تسجيل نشط لهذه الجلسة');
         }
 
         try {
@@ -141,15 +138,11 @@ class InteractiveCourseRecordingController extends Controller
             $success = $this->recordingService->stopRecording($activeRecording);
 
             if ($success) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'تم إيقاف التسجيل وسيتم معالجته قريباً',
+                return $this->successResponse([
                     'recording' => $activeRecording->fresh(),
-                ]);
+                ], 'تم إيقاف التسجيل وسيتم معالجته قريباً');
             } else {
-                return response()->json([
-                    'error' => 'فشل إيقاف التسجيل'
-                ], 500);
+                return $this->serverErrorResponse('فشل إيقاف التسجيل');
             }
 
         } catch (\Exception $e) {
@@ -159,9 +152,7 @@ class InteractiveCourseRecordingController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'error' => 'فشل إيقاف التسجيل: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('فشل إيقاف التسجيل: ' . $e->getMessage());
         }
     }
 
@@ -173,7 +164,7 @@ class InteractiveCourseRecordingController extends Controller
         $user = Auth::user();
 
         if (!$user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بالوصول'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بالوصول');
         }
 
         $courseSession = InteractiveCourseSession::findOrFail($sessionId);
@@ -181,14 +172,13 @@ class InteractiveCourseRecordingController extends Controller
         // Check permissions
         $teacherProfile = $user->academicTeacherProfile;
         if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بالوصول لهذه التسجيلات'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بالوصول لهذه التسجيلات');
         }
 
         // Use HasRecording trait method to get recordings (returns SessionRecording collection)
         $recordings = $courseSession->getRecordings();
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'recordings' => $recordings,
             'recording_stats' => $courseSession->getRecordingStats(),
             'session' => $courseSession->load('course'),
@@ -203,26 +193,26 @@ class InteractiveCourseRecordingController extends Controller
         $user = Auth::user();
 
         if (!$user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح لك بالحذف'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بالحذف');
         }
 
         // Find SessionRecording by ID (not recording_id)
         $recording = SessionRecording::find($recordingId);
 
         if (!$recording) {
-            return response()->json(['error' => 'التسجيل غير موجود'], 404);
+            return $this->notFoundResponse('التسجيل غير موجود');
         }
 
         // Get the session and check permissions
         $courseSession = $recording->recordable;
 
         if (!$courseSession instanceof InteractiveCourseSession) {
-            return response()->json(['error' => 'نوع التسجيل غير صحيح'], 400);
+            return $this->errorResponse('نوع التسجيل غير صحيح', 400);
         }
 
         $teacherProfile = $user->academicTeacherProfile;
         if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
-            return response()->json(['error' => 'غير مسموح لك بحذف هذا التسجيل'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بحذف هذا التسجيل');
         }
 
         // Delete the file if it exists
@@ -233,16 +223,13 @@ class InteractiveCourseRecordingController extends Controller
         // Mark as deleted (soft delete approach) instead of hard deleting
         $recording->markAsDeleted();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم حذف التسجيل بنجاح',
-        ]);
+        return $this->successResponse(null, 'تم حذف التسجيل بنجاح');
     }
 
     /**
      * Download a recording
      */
-    public function downloadRecording(Request $request, $recordingId)
+    public function downloadRecording(Request $request, $recordingId): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
     {
         $user = Auth::user();
 
@@ -260,10 +247,8 @@ class InteractiveCourseRecordingController extends Controller
             abort(400, 'نوع التسجيل غير صحيح');
         }
 
-        // Check permissions using RecordingCapable method
-        if (!$courseSession->canUserAccessRecordings($user)) {
-            abort(403, 'غير مسموح لك بتحميل هذا التسجيل');
-        }
+        // Authorize downloading the recording
+        $this->authorize('download', $recording);
 
         // Check recording is available
         if (!$recording->isAvailable()) {
@@ -293,7 +278,7 @@ class InteractiveCourseRecordingController extends Controller
     /**
      * Stream a recording (for in-browser playback)
      */
-    public function streamRecording(Request $request, $recordingId)
+    public function streamRecording(Request $request, $recordingId): \Symfony\Component\HttpFoundation\StreamedResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
     {
         $user = Auth::user();
 
@@ -311,10 +296,8 @@ class InteractiveCourseRecordingController extends Controller
             abort(400, 'نوع التسجيل غير صحيح');
         }
 
-        // Check permissions
-        if (!$courseSession->canUserAccessRecordings($user)) {
-            abort(403, 'غير مسموح لك بمشاهدة هذا التسجيل');
-        }
+        // Authorize viewing the recording
+        $this->authorize('view', $recording);
 
         // Check recording is available
         if (!$recording->isAvailable()) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\ParentProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
@@ -16,7 +17,8 @@ use App\Enums\SessionStatus;
 
 class ParentRegistrationController extends Controller
 {
-    public function showRegistrationForm()
+    use ApiResponses;
+    public function showRegistrationForm(): \Illuminate\View\View
     {
         $academyContextService = app(AcademyContextService::class);
         $academy = $academyContextService->getCurrentAcademy();
@@ -28,7 +30,7 @@ class ParentRegistrationController extends Controller
      * Verify student codes by parent phone number
      * API endpoint for real-time verification during registration
      */
-    public function verifyStudentCodes(Request $request)
+    public function verifyStudentCodes(Request $request): \Illuminate\Http\JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'parent_phone' => 'required|string',
@@ -37,10 +39,7 @@ class ParentRegistrationController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->validationErrorResponse($validator->errors()->toArray());
         }
 
         $academyContextService = app(AcademyContextService::class);
@@ -116,19 +115,18 @@ class ParentRegistrationController extends Controller
             $message = 'لم يتم العثور على أي طلاب يطابقون الرموز المدخلة ورقم الهاتف';
         }
 
-        return response()->json([
-            'success' => count($verified) > 0, // Only success if at least one verified
+        return $this->customResponse([
             'verified' => $verified,
             'unverified' => $unverified,
             'already_has_parent' => $alreadyHasParent,
             'message' => $message,
-        ]);
+        ], count($verified) > 0); // Only success if at least one verified
     }
 
     /**
      * Register a new parent account
      */
-    public function register(Request $request)
+    public function register(Request $request): \Illuminate\Http\RedirectResponse
     {
         $academyContextService = app(AcademyContextService::class);
         $academyId = $academyContextService->getCurrentAcademyId();

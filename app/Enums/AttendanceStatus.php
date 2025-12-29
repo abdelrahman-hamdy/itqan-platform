@@ -2,24 +2,34 @@
 
 namespace App\Enums;
 
+/**
+ * Attendance Status Enum
+ *
+ * Tracks participant attendance status for sessions.
+ * Used by MeetingAttendance and session-specific attendance models.
+ *
+ * States:
+ * - ATTENDED: Full participation in the session
+ * - LATE: Arrived after session start but attended
+ * - LEFT: Left before session ended (partial attendance)
+ * - ABSENT: Did not attend at all
+ *
+ * @see \App\Models\MeetingAttendance
+ * @see \App\Services\MeetingAttendanceService
+ */
 enum AttendanceStatus: string
 {
     case ATTENDED = 'attended';     // Full attendance
     case LATE = 'late';             // Arrived late but attended
-    case LEAVED = 'leaved';         // Left early (partial attendance)
+    case LEFT = 'left';             // Left early (partial attendance)
     case ABSENT = 'absent';         // Did not attend
 
     /**
-     * Get Arabic label for the status
+     * Get localized label for the status
      */
     public function label(): string
     {
-        return match($this) {
-            self::ATTENDED => 'حاضر',
-            self::LATE => 'متأخر',
-            self::LEAVED => 'غادر مبكراً',
-            self::ABSENT => 'غائب',
-        };
+        return __('enums.attendance_status.' . $this->value);
     }
 
     /**
@@ -30,7 +40,7 @@ enum AttendanceStatus: string
         return match($this) {
             self::ATTENDED => 'bg-green-100 text-green-800',
             self::LATE => 'bg-yellow-100 text-yellow-800',
-            self::LEAVED => 'bg-orange-100 text-orange-800',
+            self::LEFT => 'bg-orange-100 text-orange-800',
             self::ABSENT => 'bg-red-100 text-red-800',
         };
     }
@@ -43,7 +53,7 @@ enum AttendanceStatus: string
         return match($this) {
             self::ATTENDED => 'ri-check-line',
             self::LATE => 'ri-time-line',
-            self::LEAVED => 'ri-logout-box-line',
+            self::LEFT => 'ri-logout-box-line',
             self::ABSENT => 'ri-close-line',
         };
     }

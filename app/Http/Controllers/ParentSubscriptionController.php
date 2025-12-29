@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\HasParentChildren;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -9,6 +10,7 @@ use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
 use App\Services\ParentDataService;
+use App\Services\ParentChildVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
@@ -25,19 +27,13 @@ use Illuminate\Http\JsonResponse;
  */
 class ParentSubscriptionController extends Controller
 {
-    protected ParentDataService $dataService;
-
-    public function __construct(ParentDataService $dataService)
-    {
-        $this->dataService = $dataService;
-
+    use HasParentChildren;
+    public function __construct(
+        protected ParentDataService $dataService,
+        protected ParentChildVerificationService $verificationService
+    ) {
         // Enforce read-only access
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -50,6 +46,9 @@ class ParentSubscriptionController extends Controller
      */
     public function index(Request $request): View
     {
+        // Authorize that user can view subscriptions (handles parent role check via SubscriptionPolicy)
+        $this->authorize('viewAny', QuranSubscription::class);
+
         $user = Auth::user();
         $parent = $user->parentProfile;
 
@@ -60,7 +59,7 @@ class ParentSubscriptionController extends Controller
         $individualQuranSubscriptions = QuranSubscription::whereIn('student_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
             ->where('subscription_type', 'individual')
-            ->with(['quranTeacher', 'package', 'individualCircle', 'sessions' => function ($query) {
+            ->with(['quranTeacher.user', 'package', 'individualCircle', 'student', 'sessions' => function ($query) {
                 $query->orderBy('scheduled_at', 'desc')->limit(5);
             }])
             ->orderBy('created_at', 'desc')
@@ -70,7 +69,7 @@ class ParentSubscriptionController extends Controller
         $groupQuranSubscriptions = QuranSubscription::whereIn('student_id', $childUserIds)
             ->where('academy_id', $parent->academy_id)
             ->whereIn('subscription_type', ['group', 'circle'])
-            ->with(['quranTeacher', 'package', 'sessions' => function ($query) {
+            ->with(['quranTeacher.user', 'package', 'student', 'sessions' => function ($query) {
                 $query->orderBy('scheduled_at', 'desc')->limit(5);
             }])
             ->orderBy('created_at', 'desc')
@@ -81,7 +80,7 @@ class ParentSubscriptionController extends Controller
             ->whereHas('students', function ($query) use ($childUserIds) {
                 $query->whereIn('users.id', $childUserIds);
             })
-            ->with(['quranTeacher', 'students'])
+            ->with(['quranTeacher.user', 'students'])
             ->get();
 
         // Map group subscriptions to their circles
@@ -96,8 +95,8 @@ class ParentSubscriptionController extends Controller
             ->whereHas('enrollments', function ($query) use ($childUserIds) {
                 $query->whereIn('student_id', $childUserIds);
             })
-            ->with(['assignedTeacher', 'enrollments' => function ($query) use ($childUserIds) {
-                $query->whereIn('student_id', $childUserIds);
+            ->with(['assignedTeacher.user', 'enrollments' => function ($query) use ($childUserIds) {
+                $query->whereIn('student_id', $childUserIds)->with('student');
             }])
             ->get();
 
@@ -132,8 +131,7 @@ class ParentSubscriptionController extends Controller
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
-        $children = $parent->students()->with('user')->get();
-        $childUserIds = $children->pluck('user_id')->toArray();
+        $children = $this->verificationService->getChildrenWithUsers($parent);
 
         if ($type === 'quran') {
             $subscription = QuranSubscription::with(['quranTeacher.user', 'package', 'student'])
@@ -148,10 +146,10 @@ class ParentSubscriptionController extends Controller
             abort(404, 'نوع الاشتراك غير صحيح');
         }
 
+        $this->authorize('view', $subscription);
+
         // Verify subscription belongs to one of parent's children
-        if (!in_array($subscription->student_id, $childUserIds)) {
-            abort(403, 'لا يمكنك الوصول إلى هذا الاشتراك');
-        }
+        $this->verificationService->verifySubscriptionBelongsToChild($parent, $subscription);
 
         return view('parent.subscriptions.show', [
             'parent' => $parent,
@@ -160,24 +158,5 @@ class ParentSubscriptionController extends Controller
             'subscriptionType' => $type,
             'type' => $type,
         ]);
-    }
-
-    /**
-     * Helper: Get user IDs for children based on filter
-     */
-    protected function getChildUserIds($children, $selectedChildId): array
-    {
-        if ($selectedChildId === 'all') {
-            return $children->pluck('user_id')->toArray();
-        }
-
-        // Find the specific child
-        $child = $children->firstWhere('id', $selectedChildId);
-        if ($child) {
-            return [$child->user_id];
-        }
-
-        // Fallback to all children if invalid selection
-        return $children->pluck('user_id')->toArray();
     }
 }

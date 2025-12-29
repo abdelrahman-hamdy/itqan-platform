@@ -2,22 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EnrollmentStatus;
+use App\Enums\SessionStatus;
+use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Requests\AddLessonNoteRequest;
+use App\Http\Requests\RateLessonRequest;
+use App\Http\Requests\UpdateLessonProgressRequest;
 use App\Models\CourseSubscription;
 use App\Models\Lesson;
 use App\Models\RecordedCourse;
 use App\Models\StudentProgress;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
-use App\Enums\EnrollmentStatus;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LessonController extends Controller
 {
+    use ApiResponses;
     /**
      * Display the specified lesson
      */
-    public function show($subdomain, $courseId, $lessonId)
+    public function show($subdomain, $courseId, $lessonId): View|RedirectResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
@@ -32,7 +42,7 @@ class LessonController extends Controller
             // For non-free lessons, require authentication
             if (! Auth::check()) {
                 // Get subdomain from current academy context or use default
-                $academy = app('current_academy') ?? \App\Models\Academy::where('subdomain', 'itqan-academy')->first();
+                $academy = current_academy() ?? \App\Models\Academy::where('subdomain', 'itqan-academy')->first();
                 $subdomain = $academy ? $academy->subdomain : 'itqan-academy';
 
                 return redirect()->route('login', ['subdomain' => $subdomain]);
@@ -48,22 +58,15 @@ class LessonController extends Controller
 
             if (! $enrollment && ! $lesson->is_free_preview) {
                 // Redirect to course page using the correct route with subdomain
-                $academy = app('current_academy') ?? $course->academy;
+                $academy = current_academy() ?? $course->academy;
                 $subdomain = $academy ? $academy->subdomain : 'itqan-academy';
 
                 return redirect()->route('courses.show', ['subdomain' => $subdomain, 'id' => $course->id])
                     ->with('error', 'يجب التسجيل في الدورة أولاً للوصول للدروس');
             }
 
-            // Check if lesson is accessible
-            if (! $lesson->isAccessibleBy($user)) {
-                // Redirect to course page using the correct route with subdomain
-                $academy = app('current_academy') ?? $course->academy;
-                $subdomain = $academy ? $academy->subdomain : 'itqan-academy';
-
-                return redirect()->route('courses.show', ['subdomain' => $subdomain, 'id' => $course->id])
-                    ->with('error', 'لا يمكنك الوصول لهذا الدرس');
-            }
+            // Authorize view access
+            $this->authorize('view', $lesson);
         }
 
         $lesson->load(['section', 'quiz', 'recordedCourse']);
@@ -84,7 +87,7 @@ class LessonController extends Controller
             ->get();
 
         // Get academy context for the view
-        $academy = app('current_academy') ?? $course->academy;
+        $academy = current_academy() ?? $course->academy;
 
         // Determine if user is enrolled
         $isEnrolled = $user ? $course->isEnrolledBy($user) : false;
@@ -121,14 +124,14 @@ class LessonController extends Controller
     /**
      * Mark lesson as completed
      */
-    public function markCompleted(Request $request, $subdomain, $courseId, $lessonId)
+    public function markCompleted(Request $request, $subdomain, $courseId, $lessonId): JsonResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $user = Auth::user();
@@ -140,7 +143,7 @@ class LessonController extends Controller
             ->first();
 
         if (! $enrollment && ! $lesson->is_free_preview) {
-            return response()->json(['error' => 'Not enrolled'], 403);
+            return $this->forbiddenResponse('Not enrolled');
         }
 
         DB::transaction(function () use ($user, $course, $lesson, $enrollment) {
@@ -153,7 +156,7 @@ class LessonController extends Controller
             }
         });
 
-        return response()->json([
+        return $this->customResponse([
             'success' => true,
             'message' => 'تم إكمال الدرس',
             'next_lesson_url' => $lesson->getNextLesson() ?
@@ -164,14 +167,14 @@ class LessonController extends Controller
     /**
      * Add bookmark to lesson
      */
-    public function addBookmark(Request $request, $subdomain, $courseId, $lessonId)
+    public function addBookmark(Request $request, $subdomain, $courseId, $lessonId): JsonResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $user = Auth::user();
@@ -179,23 +182,20 @@ class LessonController extends Controller
 
         $progress->addBookmark();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إضافة العلامة المرجعية',
-        ]);
+        return $this->successResponse(null, 'تم إضافة العلامة المرجعية');
     }
 
     /**
      * Remove bookmark from lesson
      */
-    public function removeBookmark(Request $request, $subdomain, $courseId, $lessonId)
+    public function removeBookmark(Request $request, $subdomain, $courseId, $lessonId): JsonResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $user = Auth::user();
@@ -203,83 +203,65 @@ class LessonController extends Controller
 
         $progress->removeBookmark();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إزالة العلامة المرجعية',
-        ]);
+        return $this->successResponse(null, 'تم إزالة العلامة المرجعية');
     }
 
     /**
      * Add note to lesson
      */
-    public function addNote(Request $request, $subdomain, $courseId, $lessonId)
+    public function addNote(AddLessonNoteRequest $request, $subdomain, $courseId, $lessonId): JsonResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
-
-        $validated = $request->validate([
-            'note' => 'required|string|max:1000',
-        ]);
 
         $user = Auth::user();
         $progress = StudentProgress::getOrCreate($user, $course, $lesson);
 
-        $progress->addNote($validated['note']);
+        $progress->addNote($request->note);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم حفظ الملاحظة',
-        ]);
+        return $this->successResponse(null, 'تم حفظ الملاحظة');
     }
 
     /**
      * Rate lesson
      */
-    public function rate(Request $request, $subdomain, $courseId, $lessonId)
+    public function rate(RateLessonRequest $request, $subdomain, $courseId, $lessonId): JsonResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
-
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'review' => 'nullable|string|max:500',
-        ]);
 
         $user = Auth::user();
         $progress = StudentProgress::getOrCreate($user, $course, $lesson);
 
-        $progress->addRating($validated['rating'], $validated['review'] ?? null);
+        $progress->addRating($request->rating, $request->review ?? null);
 
         // Update lesson stats
         $lesson->updateStats();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم حفظ التقييم',
-        ]);
+        return $this->successResponse(null, 'تم حفظ التقييم');
     }
 
     /**
      * Get lesson notes
      */
-    public function getNotes($subdomain, $courseId, $lessonId)
+    public function getNotes($subdomain, $courseId, $lessonId): JsonResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $user = Auth::user();
@@ -290,16 +272,13 @@ class LessonController extends Controller
 
         $notes = $progress ? $progress->getNotesArray() : [];
 
-        return response()->json([
-            'success' => true,
-            'notes' => $notes,
-        ]);
+        return $this->successResponse(['notes' => $notes]);
     }
 
     /**
      * Download lesson materials (if available)
      */
-    public function downloadMaterials($subdomain, $courseId, $lessonId)
+    public function downloadMaterials($subdomain, $courseId, $lessonId): RedirectResponse|JsonResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
@@ -313,10 +292,8 @@ class LessonController extends Controller
 
         $user = Auth::user();
 
-        // Check if user has access
-        if (! $lesson->isAccessibleBy($user)) {
-            abort(403, 'لا يمكنك الوصول لمواد هذا الدرس');
-        }
+        // Authorize download access
+        $this->authorize('downloadMaterials', $lesson);
 
         if (! $lesson->is_downloadable || ! $lesson->attachments) {
             abort(404, 'لا توجد مواد قابلة للتحميل');
@@ -324,16 +301,13 @@ class LessonController extends Controller
 
         // This would handle file downloads
         // Implementation depends on your file storage system
-        return response()->json([
-            'success' => true,
-            'download_links' => $lesson->attachments,
-        ]);
+        return $this->successResponse(['download_links' => $lesson->attachments]);
     }
 
     /**
      * Handle CORS preflight requests for video serving
      */
-    public function serveVideoOptions($subdomain, $courseId, $lessonId)
+    public function serveVideoOptions($subdomain, $courseId, $lessonId): Response
     {
         return response('', 200, [
             'Access-Control-Allow-Origin' => '*',
@@ -346,7 +320,7 @@ class LessonController extends Controller
     /**
      * Serve video file for playback
      */
-    public function serveVideo($subdomain, $courseId, $lessonId)
+    public function serveVideo($subdomain, $courseId, $lessonId): RedirectResponse|JsonResponse|Response|BinaryFileResponse
     {
         $course = RecordedCourse::findOrFail($courseId);
         $lesson = Lesson::findOrFail($lessonId);
@@ -363,10 +337,8 @@ class LessonController extends Controller
 
             $user = Auth::user();
 
-            // Check if user has access
-            if (! $lesson->isAccessibleBy($user)) {
-                abort(403, 'لا يمكنك الوصول لهذا الفيديو');
-            }
+            // Authorization check
+            $this->authorize('view', $lesson);
         }
 
         if (! $lesson->video_url) {
@@ -386,19 +358,19 @@ class LessonController extends Controller
 
         if (! $filePath) {
             // If video file doesn't exist in either location, return a placeholder response
-            return response()->json([
+            return $this->customResponse([
                 'error' => 'الفيديو غير متاح حالياً',
                 'message' => 'سيتم رفع الفيديو قريباً',
-            ], 404);
+            ], false, 404);
         }
 
         // Check if file is a valid video (basic check)
         $fileSize = filesize($filePath);
         if ($fileSize < 1000) { // Less than 1KB is likely not a real video
-            return response()->json([
+            return $this->customResponse([
                 'error' => 'الفيديو غير متاح حالياً',
                 'message' => 'سيتم رفع الفيديو قريباً',
-            ], 404);
+            ], false, 404);
         }
 
         // Check if file is actually a valid MP4 (basic header check)
@@ -408,10 +380,10 @@ class LessonController extends Controller
 
         // MP4 files should start with specific bytes
         if (substr($header, 4, 4) !== 'ftyp') {
-            return response()->json([
+            return $this->customResponse([
                 'error' => 'الفيديو غير متاح حالياً',
                 'message' => 'سيتم رفع الفيديو قريباً',
-            ], 404);
+            ], false, 404);
         }
 
         // Serve the video file with proper range request support
@@ -487,19 +459,18 @@ class LessonController extends Controller
     /**
      * Get lesson progress
      */
-    public function getProgress($courseId, $lessonId)
+    public function getProgress($courseId, $lessonId): JsonResponse
     {
         $lesson = Lesson::findOrFail($lessonId);
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'progress' => [
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
@@ -513,20 +484,14 @@ class LessonController extends Controller
     /**
      * Update lesson progress
      */
-    public function updateProgress($courseId, $lessonId, Request $request)
+    public function updateProgress($courseId, $lessonId, UpdateLessonProgressRequest $request): JsonResponse
     {
         $lesson = Lesson::findOrFail($lessonId);
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
-
-        $request->validate([
-            'current_time' => 'required|numeric|min:0',
-            'total_time' => 'required|numeric|min:0',
-            'progress_percentage' => 'required|numeric|min:0|max:100',
-        ]);
 
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
         $progress->updateProgress(
@@ -534,64 +499,57 @@ class LessonController extends Controller
             (int) $request->total_time
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Progress updated successfully',
+        return $this->successResponse([
             'progress' => [
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
                 'is_completed' => $progress->is_completed,
             ],
-        ]);
+        ], 'Progress updated successfully');
     }
 
     /**
      * Mark lesson as complete
      */
-    public function markComplete($courseId, $lessonId)
+    public function markComplete($courseId, $lessonId): JsonResponse
     {
         $lesson = Lesson::findOrFail($lessonId);
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
         $progress->markAsCompleted();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lesson marked as complete',
+        return $this->successResponse([
             'progress' => [
                 'is_completed' => true,
                 'completed_at' => $progress->completed_at,
             ],
-        ]);
+        ], 'Lesson marked as complete');
     }
 
     /**
      * Get lesson transcript
      */
-    public function getTranscript($subdomain, $courseId, $lessonId)
+    public function getTranscript($subdomain, $courseId, $lessonId): JsonResponse
     {
         // Manually resolve the models
         $course = RecordedCourse::findOrFail($courseId);
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $user = Auth::user();
 
         if (! $lesson->isAccessibleBy($user)) {
-            return response()->json(['error' => 'Access denied'], 403);
+            return $this->forbiddenResponse('Access denied');
         }
 
-        return response()->json([
-            'success' => true,
-            'transcript' => $lesson->transcript,
-        ]);
+        return $this->successResponse(['transcript' => $lesson->transcript]);
     }
 }

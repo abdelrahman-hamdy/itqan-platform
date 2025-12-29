@@ -402,7 +402,6 @@
      <script>
          // Calendar initialization and event handling
          document.addEventListener('DOMContentLoaded', function() {
-             console.log('Academy profile page loaded');
              
              // Initialize calendar data
              const events = @json($events ?? []);
@@ -513,7 +512,7 @@
                          window.open(event.meeting_link, '_blank');
                      }
                  } else {
-                     alert(details);
+                     window.toast?.info(details);
                  }
              }
              

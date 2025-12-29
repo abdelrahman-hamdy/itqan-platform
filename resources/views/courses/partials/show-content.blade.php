@@ -114,14 +114,14 @@
                 متابعة الدراسة
               </a>
               @else
-              <button onclick="enrollInCourse()"
+              <button x-data @click="enrollInCourse($event)"
                       class="bg-cyan-500 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                 <i class="ri-shopping-cart-2-fill text-2xl"></i>
                 {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
               </button>
               @endif
             @else
-              <button onclick="enrollInCourse()"
+              <button x-data @click="enrollInCourse($event)"
                       class="bg-cyan-500 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                 <i class="ri-shopping-cart-2-fill text-2xl"></i>
                 {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
@@ -425,7 +425,7 @@
           @endif
         </div>
 
-                                <button onclick="enrollInCourse()"
+                                <button x-data @click="enrollInCourse($event)"
                                 class="w-full bg-cyan-500 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                           <i class="ri-shopping-cart-2-fill text-xl"></i>
                           {{ $course->price && $course->price > 0 ? 'اشتري الآن' : 'سجل مجاناً' }}
@@ -469,14 +469,14 @@ function toggleSection(sectionId) {
   }
 }
 
-function enrollInCourse() {
+function enrollInCourse(event) {
   // Check if user is authenticated
   @guest
     window.location.href = "{{ route('login', ['subdomain' => $academy->subdomain]) }}";
     return;
   @endguest
 
-  const button = event.target;
+  const button = event.target.closest('button');
   const originalHTML = button.innerHTML;
   button.innerHTML = '<i class="ri-loader-4-line animate-spin ml-2"></i>جاري التسجيل...';
   button.disabled = true;
@@ -496,8 +496,8 @@ function enrollInCourse() {
   })
   .then(data => {
     if (data && data.success) {
-      alert(data.message);
+      window.toast?.info(data.message);
       window.location.reload();
     } else if (data && data.message) {
-      alert(data.message);
+      window.toast?.info(data.message);
       button.innerHTML = originalHTML;

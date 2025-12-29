@@ -422,11 +422,8 @@ class AcademyDesignSettings extends Page implements HasForms
 
     public function save(): void
     {
-        \Log::info('=== SAVE METHOD CALLED ===');
-
         try {
             $data = $this->form->getState();
-            \Log::info('Form State Retrieved', ['has_sections_order' => isset($data['sections_order'])]);
 
             if (!$this->selectedAcademyId) {
                 Notification::make()
@@ -453,33 +450,16 @@ class AcademyDesignSettings extends Page implements HasForms
                 // Filter out empty values and reindex
                 $sectionsOrder = array_filter($sectionsOrder);
                 $data['sections_order'] = array_values($sectionsOrder);
-
-                // DEBUG: Log what we're about to save
-                \Log::info('Sections Order Before Save:', [
-                    'sections_order' => $data['sections_order'],
-                    'count' => count($data['sections_order']),
-                    'type' => gettype($data['sections_order']),
-                ]);
             } else {
                 // Set default if not present
                 $data['sections_order'] = ['hero', 'stats', 'reviews', 'quran', 'academic', 'courses', 'features'];
-                \Log::info('Using default sections order');
             }
 
             // Remove the selectedAcademyId from data before updating
             unset($data['selectedAcademyId']);
 
-            // DEBUG: Log all data being updated
-            \Log::info('Full Update Data:', ['data' => $data]);
-
             // Update the academy
             $academy->update($data);
-
-            // DEBUG: Check what was actually saved
-            \Log::info('After Save - DB Value:', [
-                'model_value' => $academy->sections_order,
-                'raw_db_value' => \DB::table('academies')->where('id', $academy->id)->value('sections_order'),
-            ]);
 
             // Force refresh the model to verify save
             $academy->refresh();

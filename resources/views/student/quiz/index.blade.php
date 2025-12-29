@@ -3,7 +3,7 @@
     $subdomain = request()->route('subdomain') ?? $academy->subdomain ?? 'itqan-academy';
 @endphp
 
-<x-student title="{{ $academy->name ?? 'أكاديمية إتقان' }} - اختباراتي">
+<x-layouts.student title="{{ $academy->name ?? 'أكاديمية إتقان' }} - اختباراتي">
     <x-slot name="description">عرض جميع الاختبارات المتاحة وسجل المحاولات - {{ $academy->name ?? 'أكاديمية إتقان' }}</x-slot>
 
     <!-- Header Section -->
@@ -55,11 +55,11 @@
                     @endforeach
                 </div>
             @else
-                <x-student-page.empty-state
+                <x-ui.empty-state
                     icon="ri-file-list-3-line"
                     title="لا توجد اختبارات متاحة حالياً"
                     description="ستظهر الاختبارات هنا عند تخصيصها من قبل المعلمين في حلقاتك أو دوراتك"
-                    iconBgColor="blue"
+                    color="blue"
                 />
             @endif
         </div>
@@ -70,13 +70,13 @@
                 <x-quiz.history-table :history="$history" />
                 <x-quiz.stats-summary :history="$history" />
             @else
-                <x-student-page.empty-state
+                <x-ui.empty-state
                     icon="ri-history-line"
                     title="لا توجد محاولات سابقة"
                     description="ستظهر سجلات محاولاتك للاختبارات هنا بعد إتمام أول اختبار"
-                    iconBgColor="gray"
+                    color="gray"
                 />
             @endif
         </div>
     </div>
-</x-student>
+</x-layouts.student>

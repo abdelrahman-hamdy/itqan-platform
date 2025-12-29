@@ -61,7 +61,10 @@
                             </a>
                             
                             <!-- Copy Domain Link -->
-                            <button onclick="copyDomain('{{ $academy->subdomain }}.itqan-platform.test')" class="w-full bg-blue-600 text-white text-center py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                            <button
+                                x-data
+                                @click="navigator.clipboard.writeText('http://{{ $academy->subdomain }}.itqan-platform.test').then(() => window.toast?.success('تم نسخ الرابط'))"
+                                class="w-full bg-blue-600 text-white text-center py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
                                 📋 نسخ الرابط
                             </button>
                         </div>
@@ -110,12 +113,5 @@
         </div>
     </div>
 
-    <script>
-        function copyDomain(domain) {
-            navigator.clipboard.writeText('http://' + domain).then(function() {
-                alert('تم نسخ الرابط: http://' + domain);
-            });
-        }
-    </script>
 </body>
 </html>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs;
 
 use Carbon\Carbon;
@@ -9,25 +11,35 @@ use Carbon\Carbon;
  *
  * Represents a calendar event for display in the UI,
  * standardizing the structure across different session types.
+ *
+ * @property-read string|int $id Event unique identifier
+ * @property-read string $title Event title/name
+ * @property-read Carbon $start Event start date/time
+ * @property-read Carbon $end Event end date/time
+ * @property-read string $type Event type (session, meeting, homework, etc.)
+ * @property-read string|null $status Event status (scheduled, live, completed, etc.)
+ * @property-read string|null $color Event display color (hex or CSS color)
+ * @property-read string|null $url Event detail page URL
+ * @property-read array $metadata Additional event metadata
  */
-class CalendarEvent
+readonly class CalendarEvent
 {
     public function __construct(
-        public readonly string $id,
-        public readonly string $title,
-        public readonly Carbon $start,
-        public readonly Carbon $end,
-        public readonly string $type,
-        public readonly string $status,
-        public readonly ?string $color = null,
-        public readonly ?string $url = null,
-        public readonly ?int $teacherId = null,
-        public readonly ?string $teacherName = null,
-        public readonly ?int $studentId = null,
-        public readonly ?string $studentName = null,
-        public readonly array $metadata = [],
-        public readonly bool $allDay = false,
-        public readonly bool $editable = false,
+        public string|int $id,
+        public string $title,
+        public Carbon $start,
+        public Carbon $end,
+        public string $type,
+        public ?string $status = null,
+        public ?string $color = null,
+        public ?string $url = null,
+        public ?int $teacherId = null,
+        public ?string $teacherName = null,
+        public ?int $studentId = null,
+        public ?string $studentName = null,
+        public array $metadata = [],
+        public bool $allDay = false,
+        public bool $editable = false,
     ) {}
 
     /**
@@ -109,6 +121,62 @@ class CalendarEvent
     }
 
     /**
+     * Create a session event
+     */
+    public static function forSession(
+        string|int $id,
+        string $title,
+        Carbon $start,
+        Carbon $end,
+        string $sessionType,
+        ?string $status = null,
+        ?string $url = null,
+        array $metadata = []
+    ): self {
+        $colors = [
+            'quran' => '#10b981', // green
+            'academic' => '#3b82f6', // blue
+            'interactive' => '#8b5cf6', // purple
+        ];
+
+        return new self(
+            id: $id,
+            title: $title,
+            start: $start,
+            end: $end,
+            type: $sessionType,
+            status: $status,
+            color: $colors[$sessionType] ?? '#6b7280',
+            url: $url,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * Create instance from array data
+     */
+    public static function fromArray(array $data): self
+    {
+        return new self(
+            id: $data['id'],
+            title: $data['title'],
+            start: $data['start'] instanceof Carbon ? $data['start'] : Carbon::parse($data['start']),
+            end: $data['end'] instanceof Carbon ? $data['end'] : Carbon::parse($data['end']),
+            type: $data['type'],
+            status: $data['status'] ?? null,
+            color: $data['color'] ?? null,
+            url: $data['url'] ?? null,
+            teacherId: $data['teacherId'] ?? $data['teacher_id'] ?? null,
+            teacherName: $data['teacherName'] ?? $data['teacher_name'] ?? null,
+            studentId: $data['studentId'] ?? $data['student_id'] ?? null,
+            studentName: $data['studentName'] ?? $data['student_name'] ?? null,
+            metadata: $data['metadata'] ?? [],
+            allDay: (bool) ($data['allDay'] ?? $data['all_day'] ?? false),
+            editable: (bool) ($data['editable'] ?? false),
+        );
+    }
+
+    /**
      * Get color based on session status
      */
     private static function getStatusColor(mixed $status): string
@@ -159,8 +227,8 @@ class CalendarEvent
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'start' => $this->start->toDateTimeString(),
-            'end' => $this->end->toDateTimeString(),
+            'start' => $this->start->toIso8601String(),
+            'end' => $this->end->toIso8601String(),
             'type' => $this->type,
             'status' => $this->status,
             'color' => $this->color,
@@ -173,5 +241,38 @@ class CalendarEvent
             'editable' => $this->editable,
             'metadata' => $this->metadata,
         ];
+    }
+
+    /**
+     * Get event duration in minutes
+     */
+    public function getDurationInMinutes(): int
+    {
+        return (int) $this->start->diffInMinutes($this->end);
+    }
+
+    /**
+     * Check if event is in the past
+     */
+    public function isPast(): bool
+    {
+        return $this->end->isPast();
+    }
+
+    /**
+     * Check if event is ongoing
+     */
+    public function isOngoing(): bool
+    {
+        $now = Carbon::now();
+        return $this->start->isPast() && $this->end->isFuture();
+    }
+
+    /**
+     * Check if event is upcoming
+     */
+    public function isUpcoming(): bool
+    {
+        return $this->start->isFuture();
     }
 }

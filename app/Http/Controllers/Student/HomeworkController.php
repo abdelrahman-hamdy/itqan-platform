@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Services\HomeworkService;
 use App\Services\UnifiedHomeworkService;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
 
@@ -32,7 +34,7 @@ class HomeworkController extends Controller
      * - Interactive course homework
      * - Quran homework (view-only)
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $student = Auth::user();
         $academyId = $student->academy_id;
@@ -61,7 +63,7 @@ class HomeworkController extends Controller
     /**
      * Show the form for submitting homework
      */
-    public function submit(Request $request, $id, $type = 'academic')
+    public function submit(Request $request, $id, $type = 'academic'): View|RedirectResponse
     {
         $student = Auth::user();
         $academyId = $student->academy_id;
@@ -89,7 +91,7 @@ class HomeworkController extends Controller
     /**
      * Process homework submission
      */
-    public function submitProcess(Request $request, $id, $type = 'academic')
+    public function submitProcess(Request $request, $id, $type = 'academic'): RedirectResponse
     {
         $student = Auth::user();
         $academyId = $student->academy_id;
@@ -165,7 +167,7 @@ class HomeworkController extends Controller
     /**
      * Display a specific homework with submission details
      */
-    public function view(Request $request, $id, $type = 'academic')
+    public function view(Request $request, $id, $type = 'academic'): View
     {
         $student = Auth::user();
         $academyId = $student->academy_id;

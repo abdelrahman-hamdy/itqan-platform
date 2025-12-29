@@ -2,14 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Requests\AddQuranSessionFeedbackRequest;
+use App\Http\Requests\CancelQuranSessionRequest;
+use App\Http\Requests\MarkQuranSessionAbsentRequest;
+use App\Http\Requests\UpdateQuranSessionNotesRequest;
 use App\Models\QuranSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Enums\SessionStatus;
+use Illuminate\Http\JsonResponse;
+use Illuminate\View\View;
 
 class QuranSessionController extends Controller
 {
+    use ApiResponses;
     public function __construct()
     {
         $this->middleware('auth');
@@ -18,20 +26,15 @@ class QuranSessionController extends Controller
     /**
      * Show session details for student
      */
-    public function showForStudent(Request $request, $subdomain, $sessionId)
+    public function showForStudent(Request $request, $subdomain, $sessionId): View
     {
         $user = Auth::user();
 
         // Get academy from container (set by middleware) or from user
-        $academy = app('current_academy') ?? $user->academy;
+        $academy = current_academy() ?? $user->academy;
 
         if (! $academy) {
             abort(404, 'Academy not found');
-        }
-
-        // Check if user is a student
-        if ($user->user_type !== 'student') {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
         }
 
         // Query for sessions - handle individual, trial, and group sessions
@@ -62,6 +65,9 @@ class QuranSessionController extends Controller
             abort(404, 'الجلسة غير موجودة أو غير مصرح لك بالوصول إليها');
         }
 
+        // Authorize user can view this session
+        $this->authorize('view', $session);
+
         // Automatic meeting creation fallback for ready/ongoing sessions
         $session->ensureMeetingExists();
 
@@ -71,28 +77,15 @@ class QuranSessionController extends Controller
     /**
      * Show session details for teacher
      */
-    public function showForTeacher(Request $request, $subdomain, $sessionId)
+    public function showForTeacher(Request $request, $subdomain, $sessionId): View
     {
         $user = Auth::user();
 
         // Get academy from container (set by middleware) or from user
-        $academy = app('current_academy') ?? $user->academy;
+        $academy = current_academy() ?? $user->academy;
 
         if (! $academy) {
             abort(404, 'Academy not found');
-        }
-
-        // Check if user has permission to access teacher sessions
-        if (! in_array($user->user_type, ['quran_teacher', 'admin', 'super_admin'])) {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
-        }
-
-        // Get teacher profile (only required for quran_teacher users)
-        if ($user->user_type === 'quran_teacher') {
-            $teacherProfile = $user->quranTeacherProfile;
-            if (! $teacherProfile) {
-                abort(403, 'ملف المعلم غير موجود');
-            }
         }
 
         // Build query based on user type
@@ -127,6 +120,9 @@ class QuranSessionController extends Controller
             abort(404, 'الجلسة غير موجودة أو غير مصرح لك بالوصول إليها');
         }
 
+        // Authorize user can view this session
+        $this->authorize('view', $session);
+
         // Automatic meeting creation fallback for ready/ongoing sessions
         $session->ensureMeetingExists();
 
@@ -136,7 +132,7 @@ class QuranSessionController extends Controller
     /**
      * Update session notes (for teachers)
      */
-    public function updateNotes(Request $request, $subdomain, $sessionId)
+    public function updateNotes(UpdateQuranSessionNotesRequest $request, $subdomain, $sessionId): JsonResponse
     {
         $user = Auth::user();
 
@@ -153,15 +149,11 @@ class QuranSessionController extends Controller
             ->first();
 
         if (! $session) {
-            return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة'], 404);
+            return $this->notFoundResponse('الجلسة غير موجودة');
         }
 
-        $request->validate([
-            'lesson_content' => 'nullable|string|max:5000',
-            'teacher_notes' => 'nullable|string|max:2000',
-            'student_progress' => 'nullable|string|max:1000',
-            'homework_assigned' => 'nullable|string|max:1000',
-        ]);
+        // Authorize user can update this session
+        $this->authorize('update', $session);
 
         $session->update([
             'lesson_content' => $request->lesson_content,
@@ -170,16 +162,13 @@ class QuranSessionController extends Controller
             'homework_assigned' => $request->homework_assigned,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم حفظ الملاحظات بنجاح',
-        ]);
+        return $this->successResponse(null, 'تم حفظ الملاحظات بنجاح');
     }
 
     /**
      * Mark session as completed
      */
-    public function markCompleted(Request $request, $subdomain, $sessionId)
+    public function markCompleted(Request $request, $subdomain, $sessionId): JsonResponse
     {
         Log::info('=== MARK COMPLETED METHOD REACHED ===', [
             'session_id' => $sessionId,
@@ -203,29 +192,29 @@ class QuranSessionController extends Controller
             ->first();
 
         if (! $session) {
-            return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة'], 404);
+            return $this->notFoundResponse('الجلسة غير موجودة');
         }
 
+        // Authorize user can update this session
+        $this->authorize('update', $session);
+
         if ($session->status === SessionStatus::COMPLETED) {
-            return response()->json(['success' => false, 'message' => 'الجلسة مكتملة بالفعل'], 400);
+            return $this->errorResponse('الجلسة مكتملة بالفعل', 400);
         }
 
         $result = $session->markAsCompleted();
 
         if (! $result) {
-            return response()->json(['success' => false, 'message' => 'لا يمكن إكمال هذه الجلسة في حالتها الحالية'], 400);
+            return $this->errorResponse('لا يمكن إكمال هذه الجلسة في حالتها الحالية', 400);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إنهاء الجلسة بنجاح',
-        ]);
+        return $this->successResponse(null, 'تم إنهاء الجلسة بنجاح');
     }
 
     /**
      * Mark session as cancelled
      */
-    public function markCancelled(Request $request, $subdomain, $sessionId)
+    public function markCancelled(CancelQuranSessionRequest $request, $subdomain, $sessionId): JsonResponse
     {
         Log::info('=== MARK CANCELLED METHOD REACHED ===', [
             'session_id' => $sessionId,
@@ -249,12 +238,11 @@ class QuranSessionController extends Controller
             ->first();
 
         if (! $session) {
-            return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة'], 404);
+            return $this->notFoundResponse('الجلسة غير موجودة');
         }
 
-        $request->validate([
-            'reason' => 'nullable|string|max:500',
-        ]);
+        // Authorize user can cancel this session
+        $this->authorize('cancel', $session);
 
         $result = $session->markAsCancelled(
             $request->reason,
@@ -262,19 +250,16 @@ class QuranSessionController extends Controller
         );
 
         if (! $result) {
-            return response()->json(['success' => false, 'message' => 'لا يمكن إلغاء هذه الجلسة في حالتها الحالية'], 400);
+            return $this->errorResponse('لا يمكن إلغاء هذه الجلسة في حالتها الحالية', 400);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إلغاء الجلسة بنجاح',
-        ]);
+        return $this->successResponse(null, 'تم إلغاء الجلسة بنجاح');
     }
 
     /**
      * Mark session as absent (individual circles only)
      */
-    public function markAbsent(Request $request, $subdomain, $sessionId)
+    public function markAbsent(MarkQuranSessionAbsentRequest $request, $subdomain, $sessionId): JsonResponse
     {
         Log::info('=== MARK ABSENT METHOD REACHED ===', [
             'session_id' => $sessionId,
@@ -301,7 +286,7 @@ class QuranSessionController extends Controller
         if (! $sessionExists) {
             Log::error('Session not found in database', ['session_id' => $sessionId]);
 
-            return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة في قاعدة البيانات'], 404);
+            return $this->notFoundResponse('الجلسة غير موجودة في قاعدة البيانات');
         }
 
         Log::info('Session found', [
@@ -341,42 +326,38 @@ class QuranSessionController extends Controller
                 'individual_session_check' => $individualSessions->toArray(),
             ]);
 
-            return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة أو ليست جلسة فردية'], 404);
+            return $this->notFoundResponse('الجلسة غير موجودة أو ليست جلسة فردية');
         }
 
-        $request->validate([
-            'reason' => 'nullable|string|max:500',
-        ]);
+        // Authorize user can update this session
+        $this->authorize('update', $session);
 
         $result = $session->markAsAbsent($request->reason);
 
         if (! $result) {
-            return response()->json(['success' => false, 'message' => 'لا يمكن تسجيل غياب لهذه الجلسة في حالتها الحالية'], 400);
+            return $this->errorResponse('لا يمكن تسجيل غياب لهذه الجلسة في حالتها الحالية', 400);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تسجيل غياب الطالب بنجاح',
-        ]);
+        return $this->successResponse(null, 'تم تسجيل غياب الطالب بنجاح');
     }
 
     /**
      * Get available status actions for a session
      */
-    public function getStatusActions(Request $request, $subdomain, $sessionId)
+    public function getStatusActions(Request $request, $subdomain, $sessionId): JsonResponse
     {
         $user = Auth::user();
 
         // Get academy from container (set by middleware) or from user
-        $academy = app('current_academy') ?? $user->academy;
+        $academy = current_academy() ?? $user->academy;
 
         if (! $academy) {
-            return response()->json(['success' => false, 'message' => 'Academy not found'], 404);
+            return $this->notFoundResponse('Academy not found');
         }
 
         // Check if user has permission to access teacher sessions
         if (! in_array($user->user_type, ['quran_teacher', 'admin', 'super_admin'])) {
-            return response()->json(['success' => false, 'message' => 'غير مسموح لك بالوصول'], 403);
+            return $this->forbiddenResponse('غير مسموح لك بالوصول');
         }
 
         // Build query based on user type
@@ -400,8 +381,11 @@ class QuranSessionController extends Controller
         $session = $query->first();
 
         if (! $session) {
-            return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة'], 404);
+            return $this->notFoundResponse('الجلسة غير موجودة');
         }
+
+        // Authorize user can view this session
+        $this->authorize('view', $session);
 
         $statusData = $session->getStatusDisplayData();
         $actions = [];
@@ -444,7 +428,7 @@ class QuranSessionController extends Controller
             ];
         }
 
-        return response()->json([
+        return $this->customResponse([
             'success' => true,
             'actions' => $actions,
             'session_type' => $session->session_type,
@@ -456,15 +440,15 @@ class QuranSessionController extends Controller
     /**
      * Add student feedback (for students)
      */
-    public function addFeedback(Request $request, $subdomain, $sessionId)
+    public function addFeedback(AddQuranSessionFeedbackRequest $request, $subdomain, $sessionId): JsonResponse
     {
         $user = Auth::user();
 
         // Get academy from container (set by middleware) or from user
-        $academy = app('current_academy') ?? $user->academy;
+        $academy = current_academy() ?? $user->academy;
 
         if (! $academy) {
-            return response()->json(['success' => false, 'message' => 'Academy not found'], 404);
+            return $this->notFoundResponse('Academy not found');
         }
 
         // Query for sessions - handle both individual and group sessions
@@ -485,13 +469,11 @@ class QuranSessionController extends Controller
             ->first();
 
         if (! $session) {
-            return response()->json(['success' => false, 'message' => 'الجلسة غير موجودة أو غير مكتملة'], 404);
+            return $this->notFoundResponse('الجلسة غير موجودة أو غير مكتملة');
         }
 
-        $request->validate([
-            'student_feedback' => 'required|string|max:1000',
-            'rating' => 'required|integer|min:1|max:5',
-        ]);
+        // Authorize user can view this session (students can only add feedback to their own sessions)
+        $this->authorize('view', $session);
 
         $session->update([
             'student_feedback' => $request->student_feedback,
@@ -499,9 +481,6 @@ class QuranSessionController extends Controller
             'feedback_at' => now(),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إرسال تقييمك بنجاح',
-        ]);
+        return $this->successResponse(null, 'تم إرسال تقييمك بنجاح');
     }
 }

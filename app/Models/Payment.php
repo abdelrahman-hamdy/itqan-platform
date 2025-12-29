@@ -140,6 +140,14 @@ class Payment extends Model
         return $query->where('payment_gateway', $gateway);
     }
 
+    /**
+     * Scope to filter by academy (tenant isolation)
+     */
+    public function scopeForAcademy($query, int $academyId)
+    {
+        return $query->where('academy_id', $academyId);
+    }
+
     public function scopeByDateRange($query, $startDate, $endDate)
     {
         return $query->whereBetween('payment_date', [$startDate, $endDate]);

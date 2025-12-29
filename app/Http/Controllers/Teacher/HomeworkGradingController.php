@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Services\HomeworkService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use App\Enums\SessionStatus;
 
 class HomeworkGradingController extends Controller
@@ -24,7 +26,7 @@ class HomeworkGradingController extends Controller
     /**
      * Display a listing of homework for grading
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $teacher = Auth::user();
         $academyId = $teacher->academy_id;
@@ -47,7 +49,7 @@ class HomeworkGradingController extends Controller
     /**
      * Show the grading form for a specific submission
      */
-    public function grade($submissionId)
+    public function grade($submissionId): View|RedirectResponse
     {
         $teacher = Auth::user();
         $academyId = $teacher->academy_id;
@@ -76,7 +78,7 @@ class HomeworkGradingController extends Controller
     /**
      * Process grading of a submission
      */
-    public function gradeProcess(Request $request, $submissionId)
+    public function gradeProcess(Request $request, $submissionId): RedirectResponse
     {
         $teacher = Auth::user();
         $academyId = $teacher->academy_id;
@@ -167,7 +169,7 @@ class HomeworkGradingController extends Controller
     /**
      * Request revision for a submission
      */
-    public function requestRevision(Request $request, $submissionId)
+    public function requestRevision(Request $request, $submissionId): RedirectResponse
     {
         $teacher = Auth::user();
         $academyId = $teacher->academy_id;
@@ -211,7 +213,7 @@ class HomeworkGradingController extends Controller
     /**
      * Show homework statistics for teacher
      */
-    public function statistics()
+    public function statistics(): View
     {
         $teacher = Auth::user();
         $academyId = $teacher->academy_id;

@@ -34,7 +34,8 @@ class ProcessSubscriptionRenewalsCommand extends Command
     protected $description = 'Process automatic subscription renewals for Quran and Academic subscriptions';
 
     public function __construct(
-        private SubscriptionRenewalService $renewalService
+        private SubscriptionRenewalService $renewalService,
+        private CronJobLogger $cronJobLogger
     ) {
         parent::__construct();
     }
@@ -48,7 +49,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
         $isVerbose = $this->option('details') || $isDryRun;
 
         // Start enhanced logging
-        $executionData = CronJobLogger::logCronStart('subscriptions:process-renewals', [
+        $executionData = $this->cronJobLogger->logCronStart('subscriptions:process-renewals', [
             'dry_run' => $isDryRun,
             'verbose' => $isVerbose,
         ]);
@@ -70,7 +71,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
             $this->displayResults($results, $isDryRun, $isVerbose);
 
             // Log completion
-            CronJobLogger::logCronEnd('subscriptions:process-renewals', $executionData, $results);
+            $this->cronJobLogger->logCronEnd('subscriptions:process-renewals', $executionData, $results);
 
             return self::SUCCESS;
 
@@ -81,7 +82,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
                 $this->error('Stack trace: ' . $e->getTraceAsString());
             }
 
-            CronJobLogger::logCronError('subscriptions:process-renewals', $executionData, $e);
+            $this->cronJobLogger->logCronError('subscriptions:process-renewals', $executionData, $e);
 
             Log::error('Subscription renewal processing failed', [
                 'error' => $e->getMessage(),

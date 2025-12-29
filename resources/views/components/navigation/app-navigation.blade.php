@@ -33,17 +33,6 @@
     $studentNavItems[] = ['route' => 'courses.index', 'label' => 'الكورسات المسجلة', 'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn', 'lessons.show']];
   }
 
-  // If no routes exist, add fallback items without routes
-  if (empty($studentNavItems)) {
-    $studentNavItems = [
-      ['route' => 'student.profile', 'label' => 'حلقات القرآن الجماعية', 'activeRoutes' => []],
-      ['route' => 'student.profile', 'label' => 'معلمو القرآن', 'activeRoutes' => []],
-      ['route' => 'student.profile', 'label' => 'الكورسات التفاعلية', 'activeRoutes' => []],
-      ['route' => 'student.profile', 'label' => 'المعلمون الأكاديميون', 'activeRoutes' => []],
-      ['route' => 'student.profile', 'label' => 'الكورسات المسجلة', 'activeRoutes' => []],
-    ];
-  }
-
   // Teacher navigation items - links to Filament dashboard resources
   $teacherNavItems = [];
 
@@ -75,13 +64,6 @@
   }
   if (Route::has('parent.reports.progress')) {
     $parentNavItems[] = ['route' => 'parent.reports.progress', 'label' => 'التقارير', 'icon' => 'ri-bar-chart-line', 'activeRoutes' => ['parent.reports.*']];
-  }
-
-  // If no routes exist, add fallback items
-  if (empty($parentNavItems)) {
-    $parentNavItems = [
-      ['route' => 'parent.dashboard', 'label' => 'الرئيسية', 'icon' => 'ri-dashboard-line', 'activeRoutes' => []],
-    ];
   }
 
   $navItems = match($role) {
@@ -312,8 +294,9 @@
             function childSelector() {
               return {
                 open: false,
+                selectChildUrl: '{{ route("parent.select-child", ["subdomain" => $subdomain]) }}',
+                csrfToken: '{{ csrf_token() }}',
                 init() {
-                  // Close on escape
                   this.$watch('open', value => {
                     if (value) {
                       document.addEventListener('keydown', this.handleEscape.bind(this));
@@ -326,12 +309,11 @@
                   if (e.key === 'Escape') this.open = false;
                 },
                 selectChild(childId) {
-                  // Update session via AJAX
-                  fetch('{{ route("parent.select-child", ["subdomain" => $subdomain]) }}', {
+                  fetch(this.selectChildUrl, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
-                      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                      'X-CSRF-TOKEN': this.csrfToken,
                       'Accept': 'application/json',
                     },
                     body: JSON.stringify({ child_id: childId })
@@ -339,14 +321,10 @@
                   .then(response => response.json())
                   .then(data => {
                     if (data.success) {
-                      // Reload current page to reflect changes
                       window.location.reload();
                     }
                   })
-                  .catch(error => {
-                    console.error('Error selecting child:', error);
-                  });
-
+                  .catch(() => {});
                   this.open = false;
                 }
               };
@@ -646,36 +624,3 @@
 <style>
   [x-cloak] { display: none !important; }
 </style>
-
-<script>
-// Handle navigation search form submission
-function handleNavSearch(event) {
-  const form = event.target;
-  const input = form.querySelector('#nav-search-input');
-  const query = input.value.trim();
-
-  if (!query || query.length === 0) {
-    event.preventDefault();
-    alert('الرجاء إدخال كلمة بحث');
-    return false;
-  }
-
-  return true;
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Navigation search - handle Enter key
-  const navSearchInput = document.getElementById('nav-search-input');
-  if (navSearchInput) {
-    navSearchInput.addEventListener('keypress', function(event) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        const form = document.getElementById('nav-search-form');
-        if (form) {
-          form.submit();
-        }
-      }
-    });
-  }
-});
-</script>

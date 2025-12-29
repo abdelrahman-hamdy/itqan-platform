@@ -257,7 +257,7 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
         const statusMap = {
             'attended': 'حاضر',
             'late': 'متأخر',
-            'leaved': 'غادر مبكراً',
+            'left': 'غادر مبكراً',
             'absent': 'غائب'
         };
         let infoText = 'الحضور: ' + (statusMap[reportData.attendance_status] || reportData.attendance_status);
@@ -310,7 +310,7 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
             const statusMap = {
                 'attended': 'حاضر',
                 'late': 'متأخر',
-                'leaved': 'غادر مبكراً',
+                'left': 'غادر مبكراً',
                 'absent': 'غائب'
             };
 
@@ -396,7 +396,6 @@ function fetchQuranHomeworkConfig(sessionId) {
         }
     })
     .catch(error => {
-        console.warn('Could not fetch homework config:', error);
         // On error, show both fields as fallback (original behavior)
         memField.style.display = 'block';
         reviewField.style.display = 'block';
@@ -526,7 +525,6 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
         }
     })
     .catch(error => {
-        console.error('Error:', error);
 
         // Show error message with details
         messageDiv.className = 'bg-red-50 border border-red-200 rounded-lg p-4';

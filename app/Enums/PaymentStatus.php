@@ -2,6 +2,24 @@
 
 namespace App\Enums;
 
+/**
+ * Payment Status Enum
+ *
+ * Tracks the lifecycle of payment transactions.
+ * Used by Payment model and payment gateway integrations (Paymob, Tap).
+ *
+ * States:
+ * - PENDING: Payment initiated, awaiting processing
+ * - PROCESSING: Payment being processed by gateway
+ * - COMPLETED: Payment successful
+ * - FAILED: Payment failed at gateway
+ * - CANCELLED: Payment cancelled by user/system
+ * - REFUNDED: Full refund issued
+ * - PARTIALLY_REFUNDED: Partial refund issued
+ *
+ * @see \App\Models\Payment
+ * @see \App\Services\PaymentService
+ */
 enum PaymentStatus: string
 {
     case PENDING = 'pending';
@@ -13,19 +31,11 @@ enum PaymentStatus: string
     case PARTIALLY_REFUNDED = 'partially_refunded';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => __('قيد الانتظار'),
-            self::PROCESSING => __('قيد المعالجة'),
-            self::COMPLETED => __('مكتمل'),
-            self::FAILED => __('فاشل'),
-            self::CANCELLED => __('ملغي'),
-            self::REFUNDED => __('مسترد'),
-            self::PARTIALLY_REFUNDED => __('مسترد جزئياً'),
-        };
+        return __('enums.payment_status.' . $this->value);
     }
 
     /**
@@ -90,5 +100,13 @@ enum PaymentStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

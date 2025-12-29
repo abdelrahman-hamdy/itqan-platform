@@ -186,7 +186,7 @@ class AcademicSessionReport extends BaseSessionReport
             ];
         }
 
-        $attended = $reports->whereIn('attendance_status', [AttendanceStatus::ATTENDED->value, AttendanceStatus::LEAVED->value])->count();
+        $attended = $reports->whereIn('attendance_status', [AttendanceStatus::ATTENDED->value, AttendanceStatus::LEFT->value])->count();
         $absent = $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count();
         $late = $reports->where('attendance_status', AttendanceStatus::LATE->value)->count();
 

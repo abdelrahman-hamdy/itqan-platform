@@ -13,7 +13,7 @@ use App\Enums\SessionStatus;
 
 class AcademyHomepageController extends Controller
 {
-    public function show(Request $request)
+    public function show(Request $request): \Illuminate\View\View
     {
         // Get the current academy from the request (set by middleware)
         $academy = $request->academy ?? Academy::first();

@@ -49,43 +49,50 @@ class CalculateSessionAttendance implements ShouldQueue
             ? now()->subSeconds(10)
             : now()->subMinutes(5);
 
-        $sessionsToProcess = collect();
-
-        // Quran sessions
-        // 🔥 FIX: Calculate end time as scheduled_at + duration_minutes (no scheduled_end_at column)
-        $quranSessions = QuranSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value]) // Include ongoing in case status update missed
-            ->where('scheduled_at', '>=', now()->subDays(7)) // Only last 7 days
-            ->get();
-        $sessionsToProcess = $sessionsToProcess->concat($quranSessions);
-
-        // Academic sessions
-        $academicSessions = AcademicSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
-            ->where('scheduled_at', '>=', now()->subDays(7))
-            ->get();
-        $sessionsToProcess = $sessionsToProcess->concat($academicSessions);
-
-        // Interactive course sessions
-        if (class_exists(InteractiveCourseSession::class)) {
-            $interactiveSessions = InteractiveCourseSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
-                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
-                ->where('scheduled_at', '>=', now()->subDays(7))
-                ->get();
-            $sessionsToProcess = $sessionsToProcess->concat($interactiveSessions);
-        }
-
-        Log::info('📊 Found sessions to process', [
-            'count' => $sessionsToProcess->count(),
-            'quran' => $quranSessions->count(),
-            'academic' => $academicSessions->count(),
-        ]);
-
         $processed = 0;
         $skipped = 0;
         $failed = 0;
+        $chunkSize = 100;
 
-        foreach ($sessionsToProcess as $session) {
+        // Process Quran sessions with chunking
+        QuranSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
+            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
+            ->where('scheduled_at', '>=', now()->subDays(7))
+            ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
+                $this->processSessionBatch($sessions, $processed, $skipped, $failed);
+            });
+
+        // Process Academic sessions with chunking
+        AcademicSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
+            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
+            ->where('scheduled_at', '>=', now()->subDays(7))
+            ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
+                $this->processSessionBatch($sessions, $processed, $skipped, $failed);
+            });
+
+        // Process Interactive course sessions with chunking
+        if (class_exists(InteractiveCourseSession::class)) {
+            InteractiveCourseSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
+                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
+                ->where('scheduled_at', '>=', now()->subDays(7))
+                ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
+                    $this->processSessionBatch($sessions, $processed, $skipped, $failed);
+                });
+        }
+
+        Log::info('Post-meeting attendance calculation completed', [
+            'processed' => $processed,
+            'skipped' => $skipped,
+            'failed' => $failed,
+        ]);
+    }
+
+    /**
+     * Process a batch of sessions
+     */
+    private function processSessionBatch($sessions, int &$processed, int &$skipped, int &$failed): void
+    {
+        foreach ($sessions as $session) {
             // Find all uncalculated attendance records for this session
             $attendances = MeetingAttendance::where('session_id', $session->id)
                 ->where('is_calculated', false)
@@ -101,7 +108,7 @@ class CalculateSessionAttendance implements ShouldQueue
                     $this->calculateAttendance($session, $attendance);
                     $processed++;
                 } catch (\Exception $e) {
-                    Log::error('❌ Failed to calculate attendance', [
+                    Log::error('Failed to calculate attendance', [
                         'session_id' => $session->id,
                         'user_id' => $attendance->user_id,
                         'error' => $e->getMessage(),
@@ -110,12 +117,6 @@ class CalculateSessionAttendance implements ShouldQueue
                 }
             }
         }
-
-        Log::info('✅ Post-meeting attendance calculation completed', [
-            'processed' => $processed,
-            'skipped' => $skipped,
-            'failed' => $failed,
-        ]);
     }
 
     /**
@@ -160,7 +161,7 @@ class CalculateSessionAttendance implements ShouldQueue
         // Sync to session report
         $this->syncToReport($session, $attendance);
 
-        Log::info('✅ Attendance calculated', [
+        Log::info('Attendance calculated', [
             'session_id' => $session->id,
             'user_id' => $attendance->user_id,
             'status' => $status->value,
@@ -242,7 +243,7 @@ class CalculateSessionAttendance implements ShouldQueue
             }
         }
 
-        Log::debug('📊 Calculated total duration from cycles', [
+        Log::debug('Calculated total duration from cycles', [
             'cycles_count' => count($cycles),
             'total_minutes' => $totalMinutes,
             'session_duration' => $sessionStart->diffInMinutes($sessionEnd),
@@ -260,7 +261,7 @@ class CalculateSessionAttendance implements ShouldQueue
      * Logic:
      * - attended: joined before tolerance + stayed >= 50%
      * - late: joined after tolerance + stayed >= 50%
-     * - leaved: stayed < 50% (regardless of join time)
+     * - left: stayed < 50% (regardless of join time)
      * - absent: didn't join at all
      */
     private function determineAttendanceStatus($firstJoinTime, bool $isLate, float $percentage): AttendanceStatus
@@ -272,7 +273,7 @@ class CalculateSessionAttendance implements ShouldQueue
 
         // Stayed < 50% - left early (regardless of join time)
         if ($percentage < 50) {
-            return AttendanceStatus::LEAVED;
+            return AttendanceStatus::LEFT;
         }
 
         // Stayed >= 50% but joined after tolerance - late
@@ -326,7 +327,7 @@ class CalculateSessionAttendance implements ShouldQueue
 
             $report->save();
 
-            Log::info('📝 Attendance synced to report', [
+            Log::info('Attendance synced to report', [
                 'session_id' => $session->id,
                 'user_id' => $attendance->user_id,
                 'report_class' => class_basename($reportClass),

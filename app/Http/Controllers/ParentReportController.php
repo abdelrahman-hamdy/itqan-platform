@@ -14,6 +14,7 @@ use App\Models\AcademicSession;
 use App\Models\QuranSubscription;
 use App\Models\InteractiveCourse;
 use App\Services\ParentDataService;
+use App\Services\ParentChildVerificationService;
 use App\Services\Reports\AcademicReportService;
 use App\Services\Reports\InteractiveCourseReportService;
 use App\Services\Reports\QuranReportService;
@@ -34,18 +35,13 @@ class ParentReportController extends Controller
 {
     public function __construct(
         protected ParentDataService $dataService,
+        protected ParentChildVerificationService $verificationService,
         protected QuranReportService $quranReportService,
         protected AcademicReportService $academicReportService,
         protected InteractiveCourseReportService $interactiveReportService
     ) {
-
         // Enforce read-only access
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -658,14 +654,7 @@ class ParentReportController extends Controller
      */
     public function quranIndividualReport(Request $request, $subdomain, QuranIndividualCircle $circle): View
     {
-        $user = Auth::user();
-        $parent = $user->parentProfile;
-
-        // Verify parent has access to this child's circle
-        $childIds = $parent->students()->pluck('user_id')->toArray();
-        if (!in_array($circle->student_id, $childIds)) {
-            abort(403, 'لا يمكنك الوصول إلى هذا التقرير');
-        }
+        $this->authorize('viewReport', $circle);
 
         // Use the same report service as student reports
         $reportService = $this->quranReportService;
@@ -690,12 +679,10 @@ class ParentReportController extends Controller
         $user = Auth::user();
         $parent = $user->parentProfile;
 
+        $this->authorize('view', $subscription);
+
         // Verify parent has access to this child's subscription
-        // AcademicSubscription.student_id references User.id, so we need user_ids
-        $childUserIds = $parent->students()->pluck('user_id')->toArray();
-        if (!in_array($subscription->student_id, $childUserIds)) {
-            abort(403, 'لا يمكنك الوصول إلى هذا التقرير');
-        }
+        $this->verificationService->verifySubscriptionBelongsToChild($parent, $subscription);
 
         // Use the same report service as student reports
         $reportService = $this->academicReportService;
@@ -718,22 +705,15 @@ class ParentReportController extends Controller
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
-
-        // Verify parent has access to this child's course enrollment
-        $childUserIds = $parent->students()->pluck('user_id')->toArray();
-        $hasEnrollment = CourseSubscription::where('course_id', $course->id)
-            ->whereIn('student_id', $childUserIds)
-            ->exists();
-
-        if (!$hasEnrollment) {
-            abort(403, 'لا يمكنك الوصول إلى هذا التقرير');
-        }
+        $childUserIds = $this->verificationService->getChildUserIds($parent);
 
         // Find the child enrolled in this course
         $enrollment = CourseSubscription::where('course_id', $course->id)
             ->whereIn('student_id', $childUserIds)
             ->with('student')
-            ->first();
+            ->firstOrFail();
+
+        $this->authorize('view', $enrollment);
 
         // Use the same report service as student reports
         $reportService = $this->interactiveReportService;

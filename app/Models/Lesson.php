@@ -89,17 +89,6 @@ class Lesson extends Model implements HasMedia
             ->acceptsMimeTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']);
     }
 
-    // TODO: Implement LessonComment and LessonNote models if needed
-    // public function comments(): HasMany
-    // {
-    //     return $this->hasMany(LessonComment::class);
-    // }
-
-    // public function notes(): HasMany
-    // {
-    //     return $this->hasMany(LessonNote::class);
-    // }
-
     // Scopes
     public function scopePublished($query)
     {

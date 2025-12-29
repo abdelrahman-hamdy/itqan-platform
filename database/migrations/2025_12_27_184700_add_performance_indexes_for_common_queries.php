@@ -10,6 +10,18 @@ use Illuminate\Support\Facades\Schema;
  *
  * These indexes were identified through codebase analysis to improve
  * query performance for common operations.
+ *
+ * @deprecated This migration overlaps with 2025_12_28_002207_add_performance_indexes.php
+ *             which is more comprehensive. The newer migration checks for indexes
+ *             created by this migration to avoid duplicates.
+ *
+ *             Tables with overlapping indexes:
+ *             - quran_subscriptions (student_academy, teacher)
+ *             - academic_subscriptions (student_academy, teacher)
+ *             - quran_sessions (teacher_month_status)
+ *             - academic_sessions (teacher_status)
+ *             - teacher_earnings (academy_month)
+ *             - payments (user_academy, status)
  */
 return new class extends Migration
 {

@@ -263,7 +263,7 @@ class AcademyGeneralSettingsResource extends BaseResource
                                 }
 
                                 try {
-                                    return Country::from($state)->getLabel();
+                                    return Country::from($state)->label();
                                 } catch (\ValueError $e) {
                                     return $state;
                                 }
@@ -277,7 +277,7 @@ class AcademyGeneralSettingsResource extends BaseResource
                                 }
 
                                 try {
-                                    return Currency::from($state)->getLabel();
+                                    return Currency::from($state)->label();
                                 } catch (\ValueError $e) {
                                     return $state;
                                 }
@@ -291,7 +291,7 @@ class AcademyGeneralSettingsResource extends BaseResource
                                 }
 
                                 try {
-                                    return Timezone::from($state)->getLabel();
+                                    return Timezone::from($state)->label();
                                 } catch (\ValueError $e) {
                                     return $state;
                                 }
@@ -337,7 +337,7 @@ class AcademyGeneralSettingsResource extends BaseResource
                         }
 
                         try {
-                            return Country::from($state)->getLabel();
+                            return Country::from($state)->label();
                         } catch (\ValueError $e) {
                             return $state;
                         }
@@ -351,7 +351,7 @@ class AcademyGeneralSettingsResource extends BaseResource
                         }
 
                         try {
-                            return Currency::from($state)->getLabel();
+                            return Currency::from($state)->label();
                         } catch (\ValueError $e) {
                             return $state;
                         }
@@ -365,7 +365,7 @@ class AcademyGeneralSettingsResource extends BaseResource
                         }
 
                         try {
-                            return Timezone::from($state)->getLabel();
+                            return Timezone::from($state)->label();
                         } catch (\ValueError $e) {
                             return $state;
                         }

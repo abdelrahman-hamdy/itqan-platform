@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 /**
  * QuranCircle Model
@@ -161,11 +162,28 @@ class QuranCircle extends Model
     }
 
     /**
-     * Get the teacher (User model) for this circle
+     * Get the teacher user for this circle
      */
     public function teacher(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'quran_teacher_id');
+        return $this->belongsTo(User::class, 'quran_teacher_id');
+    }
+
+    /**
+     * Get the Quran teacher profile for this circle
+     * Uses user_id as the foreign key match since quran_teacher_id stores user IDs
+     */
+    public function quranTeacherProfile(): BelongsTo
+    {
+        return $this->belongsTo(QuranTeacherProfile::class, 'quran_teacher_id', 'user_id');
+    }
+
+    /**
+     * Alias for teacher relationship for consistency with other models
+     */
+    public function quranTeacher(): BelongsTo
+    {
+        return $this->teacher();
     }
 
 
@@ -197,12 +215,6 @@ class QuranCircle extends Model
     {
         return $this->hasOne(QuranCircleSchedule::class, 'circle_id');
     }
-
-    // Note: QuranCircleEnrollment model doesn't exist, using students pivot relationship instead
-    // public function enrollments(): HasMany
-    // {
-    //     return $this->hasMany(QuranCircleEnrollment::class);
-    // }
 
     // Note: homework() relationship removed - Quran homework is now tracked through
     // QuranSession model fields and graded through student session reports
@@ -641,17 +653,21 @@ class QuranCircle extends Model
 
     public function recordSession(array $sessionData): QuranSession
     {
-        $session = $this->sessions()->create(array_merge($sessionData, [
-            'academy_id' => $this->academy_id,
-            'quran_teacher_id' => $this->quran_teacher_id,
-            'session_type' => 'group',
-            'participants_count' => $this->current_students,
-        ]));
+        return DB::transaction(function () use ($sessionData) {
+            $session = $this->sessions()->create(array_merge($sessionData, [
+                'academy_id' => $this->academy_id,
+                'quran_teacher_id' => $this->quran_teacher_id,
+                'session_type' => 'group',
+                'participants_count' => $this->current_students,
+            ]));
 
-        $this->increment('sessions_completed');
-        $this->update(['last_session_at' => now()]);
+            // Lock the circle row to prevent race conditions during counter increment
+            $lockedCircle = self::lockForUpdate()->find($this->id);
+            $lockedCircle->increment('sessions_completed');
+            $lockedCircle->update(['last_session_at' => now()]);
 
-        return $session;
+            return $session;
+        });
     }
 
     public function updateRating(): self

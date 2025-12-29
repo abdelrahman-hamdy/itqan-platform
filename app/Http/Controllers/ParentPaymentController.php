@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\HasParentChildren;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Models\Payment;
 use App\Services\ParentDataService;
+use App\Services\ParentChildVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
@@ -20,19 +22,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ParentPaymentController extends Controller
 {
-    protected ParentDataService $dataService;
-
-    public function __construct(ParentDataService $dataService)
-    {
-        $this->dataService = $dataService;
-
+    use HasParentChildren;
+    public function __construct(
+        protected ParentDataService $dataService,
+        protected ParentChildVerificationService $verificationService
+    ) {
         // Enforce read-only access
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -45,6 +41,8 @@ class ParentPaymentController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Payment::class);
+
         $user = Auth::user();
         $parent = $user->parentProfile;
 
@@ -103,15 +101,14 @@ class ParentPaymentController extends Controller
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
-        $children = $parent->students()->with('user')->get();
-        $childUserIds = $children->pluck('user_id')->toArray();
+        $children = $this->verificationService->getChildrenWithUsers($parent);
 
         $payment = Payment::with('user')->findOrFail($paymentId);
 
+        $this->authorize('view', $payment);
+
         // Verify payment belongs to one of parent's children
-        if (!in_array($payment->user_id, $childUserIds)) {
-            abort(403, 'لا يمكنك الوصول إلى هذا الدفع');
-        }
+        $this->verificationService->verifyPaymentBelongsToParent($parent, $payment);
 
         return view('parent.payments.show', [
             'parent' => $parent,
@@ -131,15 +128,13 @@ class ParentPaymentController extends Controller
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
-        $children = $parent->students()->with('user')->get();
-        $childUserIds = $children->pluck('user_id')->toArray();
 
         $payment = Payment::findOrFail($paymentId);
 
+        $this->authorize('downloadReceipt', $payment);
+
         // Verify payment belongs to one of parent's children
-        if (!in_array($payment->user_id, $childUserIds)) {
-            abort(403, 'لا يمكنك الوصول إلى هذا الدفع');
-        }
+        $this->verificationService->verifyPaymentBelongsToParent($parent, $payment);
 
         // Check if receipt exists
         if (!$payment->receipt_url) {
@@ -151,24 +146,5 @@ class ParentPaymentController extends Controller
             storage_path('app/' . $payment->receipt_url),
             'receipt-' . $payment->payment_code . '.pdf'
         );
-    }
-
-    /**
-     * Helper: Get user IDs for children based on filter
-     */
-    protected function getChildUserIds($children, $selectedChildId): array
-    {
-        if ($selectedChildId === 'all') {
-            return $children->pluck('user_id')->toArray();
-        }
-
-        // Find the specific child
-        $child = $children->firstWhere('id', $selectedChildId);
-        if ($child) {
-            return [$child->user_id];
-        }
-
-        // Fallback to all children if invalid selection
-        return $children->pluck('user_id')->toArray();
     }
 }

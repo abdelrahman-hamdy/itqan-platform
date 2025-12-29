@@ -21,16 +21,11 @@ enum BillingCycle: string
     case LIFETIME = 'lifetime';     // For one-time purchases (courses)
 
     /**
-     * Get the Arabic label for the billing cycle
+     * Get localized label for the billing cycle
      */
     public function label(): string
     {
-        return match ($this) {
-            self::MONTHLY => 'شهري',
-            self::QUARTERLY => 'ربع سنوي',
-            self::YEARLY => 'سنوي',
-            self::LIFETIME => 'مدى الحياة',
-        };
+        return __('enums.billing_cycle.' . $this->value);
     }
 
     /**

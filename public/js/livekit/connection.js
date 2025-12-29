@@ -34,7 +34,6 @@ class LiveKitConnection {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
 
-        console.log('🔗 LiveKitConnection initialized');
     }
 
     /**
@@ -42,7 +41,6 @@ class LiveKitConnection {
      * @returns {Promise<LiveKit.Room>} Configured room instance
      */
     async createRoom() {
-        console.log('🏠 Creating LiveKit room...');
 
         if (!window.LiveKit) {
             throw new Error('LiveKit SDK not loaded');
@@ -77,7 +75,6 @@ class LiveKitConnection {
 
         this.setupRoomEventListeners();
 
-        console.log('✅ Room created successfully');
         return this.room;
     }
 
@@ -86,28 +83,23 @@ class LiveKitConnection {
      */
     setupRoomEventListeners() {
         if (!this.room) {
-            console.error('❌ Room not available for event listeners');
             return;
         }
 
-        console.log('🎧 Setting up room event listeners...');
 
         // Connection state changes
         this.room.on(window.LiveKit.RoomEvent.ConnectionStateChanged, (state) => {
-            console.log('🔗 Connection state changed:', state);
             this.handleConnectionStateChange(state);
         });
 
         // Participant events
         this.room.on(window.LiveKit.RoomEvent.ParticipantConnected, (participant) => {
-            console.log('👤 Participant connected:', participant.identity);
             if (this.config.onParticipantConnected) {
                 this.config.onParticipantConnected(participant);
             }
         });
 
         this.room.on(window.LiveKit.RoomEvent.ParticipantDisconnected, (participant) => {
-            console.log('👤 Participant disconnected:', participant.identity);
             if (this.config.onParticipantDisconnected) {
                 this.config.onParticipantDisconnected(participant);
             }
@@ -115,14 +107,12 @@ class LiveKitConnection {
 
         // Track events - these will be handled by the tracks module
         this.room.on(window.LiveKit.RoomEvent.TrackSubscribed, (track, publication, participant) => {
-            console.log('📹 Track subscribed:', track.kind, 'from', participant.identity, 'isLocal:', participant.isLocal);
             if (this.config.onTrackSubscribed) {
                 this.config.onTrackSubscribed(track, publication, participant);
             }
         });
 
         this.room.on(window.LiveKit.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-            console.log('📹 Track unsubscribed:', track.kind, 'from', participant.identity, 'isLocal:', participant.isLocal);
             if (this.config.onTrackUnsubscribed) {
                 this.config.onTrackUnsubscribed(track, publication, participant);
             }
@@ -130,28 +120,24 @@ class LiveKitConnection {
 
         // Local track events - important for local participant
         this.room.on(window.LiveKit.RoomEvent.LocalTrackPublished, (publication, participant) => {
-            console.log('📹 Local track published:', publication.kind, 'from', participant.identity);
             if (this.config.onTrackPublished) {
                 this.config.onTrackPublished(publication, participant);
             }
         });
 
         this.room.on(window.LiveKit.RoomEvent.LocalTrackUnpublished, (publication, participant) => {
-            console.log('📹 Local track unpublished:', publication.kind, 'from', participant.identity);
             if (this.config.onTrackUnpublished) {
                 this.config.onTrackUnpublished(publication, participant);
             }
         });
 
         this.room.on(window.LiveKit.RoomEvent.TrackMuted, (publication, participant) => {
-            console.log('🔇 Track muted:', publication.kind, 'from', participant.identity);
             if (this.config.onTrackMuted) {
                 this.config.onTrackMuted(publication, participant);
             }
         });
 
         this.room.on(window.LiveKit.RoomEvent.TrackUnmuted, (publication, participant) => {
-            console.log('🔊 Track unmuted:', publication.kind, 'from', participant.identity);
             if (this.config.onTrackUnmuted) {
                 this.config.onTrackUnmuted(publication, participant);
             }
@@ -166,13 +152,6 @@ class LiveKitConnection {
 
         // Data received
         this.room.on(window.LiveKit.RoomEvent.DataReceived, (payload, participant) => {
-            console.log('📦 Raw data received from:', participant?.identity);
-            console.log('📦 Payload length:', payload?.length);
-            console.log('📦 Participant is local:', participant?.isLocal);
-            console.log('📦 Participant SID:', participant?.sid);
-            console.log('📦 Local participant SID:', this.room?.localParticipant?.sid);
-            console.log('📦 Current participants in room:', Array.from(this.room.remoteParticipants.keys()));
-            console.log('📦 All participants (including local):', [
                 this.room?.localParticipant?.identity,
                 ...Array.from(this.room.remoteParticipants.values()).map(p => p.identity)
             ]);
@@ -180,20 +159,15 @@ class LiveKitConnection {
             // Try to decode the payload for debugging
             try {
                 const decodedData = JSON.parse(new TextDecoder().decode(payload));
-                console.log('📦 Decoded payload:', decodedData);
             } catch (e) {
-                console.log('📦 Could not decode payload as JSON:', e.message);
             }
 
             if (this.config.onDataReceived) {
-                console.log('📦 Calling onDataReceived callback');
                 this.config.onDataReceived(payload, participant);
             } else {
-                console.warn('⚠️ No onDataReceived callback configured');
             }
         });
 
-        console.log('✅ Room event listeners set up successfully');
     }
 
     /**
@@ -208,12 +182,10 @@ class LiveKitConnection {
         }
 
         if (this.isConnected || this.isConnecting) {
-            console.warn('⚠️ Already connected or connecting');
             return;
         }
 
         this.isConnecting = true;
-        console.log('🔌 Connecting to LiveKit room with VP9 optimization...');
 
         try {
             // LiveKit optimization: VP9 codec + Dynacast + Adaptive Stream + Simulcast
@@ -245,14 +217,9 @@ class LiveKitConnection {
             };
 
             await this.room.connect(serverUrl, token, connectionOptions);
-            console.log('✅ Successfully connected to room with VP9 + simulcast optimization');
-            console.log('   - VP9 codec: 30-35% bandwidth savings');
-            console.log('   - Simulcast: 3 quality layers (180p/360p/540p)');
-            console.log('   - Dynacast: Server-side selective forwarding');
             this.localParticipant = this.room.localParticipant;
         } catch (error) {
             this.isConnecting = false;
-            console.error('❌ Connection failed:', error);
             throw error;
         }
     }
@@ -267,20 +234,17 @@ class LiveKitConnection {
         if (state === 'connected') {
             this.isConnecting = false;
             this.reconnectAttempts = 0;
-            console.log('✅ Connected to room successfully');
             
             // CRITICAL FIX: Record attendance when successfully connected
             this.recordAttendanceJoin();
         } else if (state === 'disconnected') {
             this.isConnecting = false;
-            console.log('❌ Disconnected from room');
             
             // CRITICAL FIX: Record attendance when disconnected
             this.recordAttendanceLeave();
             this.handleDisconnection();
         } else if (state === 'reconnecting') {
             this.isConnecting = true;
-            console.log('🔄 Reconnecting to room...');
         }
 
         if (this.config.onConnectionStateChange) {
@@ -292,7 +256,6 @@ class LiveKitConnection {
      * Handle disconnection and attempt reconnection if needed
      */
     handleDisconnection() {
-        console.log('❌ Connection lost - disabling auto-reconnect to prevent spam');
         // Temporarily disable auto-reconnection to stop notification spam
         // User can manually click meeting button to reconnect
     }
@@ -306,7 +269,6 @@ class LiveKitConnection {
         }
 
         try {
-            console.log('🔄 Attempting to reconnect...');
             this.isConnecting = true;
 
             // Get a fresh token
@@ -337,10 +299,8 @@ class LiveKitConnection {
 
             await this.room.connect(serverUrl, token, connectionOptions);
 
-            console.log('✅ Reconnected to room successfully with optimizations');
 
         } catch (error) {
-            console.error('❌ Failed to connect to room:', error);
             this.isConnecting = false;
             throw error;
         }
@@ -351,7 +311,6 @@ class LiveKitConnection {
      * @returns {Promise<string>} LiveKit token
      */
     async getLiveKitToken() {
-        console.log('🔑 Getting LiveKit token from unified API...');
 
         try {
             // Get session ID from window object (set in Blade template)
@@ -360,31 +319,18 @@ class LiveKitConnection {
                 throw new Error('Session ID not found. Please refresh the page.');
             }
 
-            console.log('🔑 Using session ID:', sessionId);
 
             // Get session type from window object (set in Blade template)
             const sessionType = window.sessionType || 'quran';
-            console.log('🔑 Using session type:', sessionType);
 
             // Use unified API endpoint for getting participant token
-            const response = await fetch('/api/sessions/meeting/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': this.config.csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    session_type: sessionType,
-                    session_id: sessionId
-                })
+            const response = await window.LiveKitAPI.post('/api/sessions/meeting/token', {
+                session_type: sessionType,
+                session_id: sessionId
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ Server response:', errorText);
                 throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
 
@@ -394,11 +340,9 @@ class LiveKitConnection {
                 throw new Error('Invalid token response: ' + (data.message || data.error || 'Unknown error'));
             }
 
-            console.log('✅ Token received successfully from unified API');
             return data.data.access_token;
 
         } catch (error) {
-            console.error('❌ Failed to get LiveKit token:', error);
             throw error;
         }
     }
@@ -409,12 +353,10 @@ class LiveKitConnection {
      */
     async disconnect() {
         if (this.room && this.isConnected) {
-            console.log('🔌 Disconnecting from room...');
             
             await this.room.disconnect();
             this.isConnected = false;
             this.isConnecting = false;
-            console.log('✅ Disconnected from room');
         }
     }
 
@@ -455,23 +397,19 @@ class LiveKitConnection {
      */
     async recordAttendanceJoin() {
         try {
-            console.log('📝 Recording attendance join via unified API...');
             
             // Get session ID and type from window object (set in Blade template)
             const sessionId = window.sessionId;
             const sessionType = window.sessionType || 'quran';
             
             if (!sessionId) {
-                console.warn('⚠️ Session ID not available for attendance recording');
                 return;
             }
 
             // This is handled automatically by the unified API when generating token
             // But we can call the leave endpoint just to be sure
-            console.log('✅ Attendance join will be recorded automatically by unified API');
 
         } catch (error) {
-            console.error('❌ Error recording attendance join:', error);
         }
     }
 
@@ -480,39 +418,26 @@ class LiveKitConnection {
      */
     async recordAttendanceLeave() {
         try {
-            console.log('📝 Recording attendance leave via unified API...');
             
             // Get session ID and type from window object (set in Blade template)
             const sessionId = window.sessionId;
             const sessionType = window.sessionType || 'quran';
             
             if (!sessionId) {
-                console.warn('⚠️ Session ID not available for attendance recording');
                 return;
             }
 
-            const response = await fetch('/api/sessions/meeting/leave', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.config.csrfToken
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    session_type: sessionType,
-                    session_id: sessionId
-                })
+            const response = await window.LiveKitAPI.post('/api/sessions/meeting/leave', {
+                session_type: sessionType,
+                session_id: sessionId
             });
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('✅ Attendance leave recorded via unified API:', data);
             } else {
                 const error = await response.text();
-                console.warn('⚠️ Failed to record attendance leave:', error);
             }
         } catch (error) {
-            console.error('❌ Error recording attendance leave:', error);
         }
     }
 
@@ -536,7 +461,6 @@ class LiveKitConnection {
      * Destroy the connection and clean up
      */
     destroy() {
-        console.log('🧹 Destroying LiveKit connection...');
 
         // Record leave when destroying connection
         if (this.isConnected) {
@@ -556,7 +480,6 @@ class LiveKitConnection {
         this.isConnecting = false;
         this.reconnectAttempts = 0;
 
-        console.log('✅ Connection destroyed');
     }
 }
 

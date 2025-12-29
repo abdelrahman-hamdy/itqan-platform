@@ -48,13 +48,5 @@
         </button>
     @endif
 
-    {{-- WireChat Debug Script (Local/Development Only) --}}
-    @if(config('app.debug'))
-        <script src="{{ asset('js/chat-debug.js') }}"></script>
-        <script>
-            console.log('%c🎯 WireChat Debug Loaded', 'font-size: 14px; color: #8b5cf6; font-weight: bold;');
-            console.log('%c💡 Type wirechatDebug.help() for available commands', 'color: #6b7280;');
-        </script>
-    @endif
 </body>
 </html>

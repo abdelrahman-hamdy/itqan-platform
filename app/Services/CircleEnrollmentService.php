@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 use App\Enums\EnrollmentStatus;
+use App\Exceptions\EnrollmentCapacityException;
+use App\Contracts\CircleEnrollmentServiceInterface;
 
 /**
  * Service for handling student enrollment in Quran circles.
@@ -17,7 +19,7 @@ use App\Enums\EnrollmentStatus;
  * Extracted from StudentProfileController to reduce controller size.
  * Handles enrollInCircle() and leaveCircle() logic (~200 lines).
  */
-class CircleEnrollmentService
+class CircleEnrollmentService implements CircleEnrollmentServiceInterface
 {
     /**
      * Enroll a student in a Quran circle.
@@ -49,7 +51,12 @@ class CircleEnrollmentService
 
                 // Double-check capacity after acquiring lock
                 if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
-                    throw new \RuntimeException('الحلقة ممتلئة. يرجى اختيار حلقة أخرى.');
+                    throw EnrollmentCapacityException::circleFull(
+                        circleId: (string) $lockedCircle->id,
+                        currentCount: $lockedCircle->enrolled_students,
+                        maxCapacity: $lockedCircle->max_students,
+                        circleName: $lockedCircle->name_ar ?? $lockedCircle->name_en ?? null
+                    );
                 }
 
                 // Enroll student in circle
@@ -88,8 +95,12 @@ class CircleEnrollmentService
                 // Update circle enrollment count atomically
                 $lockedCircle->increment('enrolled_students');
 
-                // Check if circle is now full using fresh count
-                if ($lockedCircle->fresh()->enrolled_students >= $lockedCircle->max_students) {
+                // Refresh the locked instance to get updated count
+                // Note: We refresh the locked instance, not fetch fresh from DB
+                $lockedCircle->refresh();
+
+                // Check if circle is now full using refreshed count
+                if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
                     $lockedCircle->update(['enrollment_status' => 'full']);
                 }
             });
@@ -97,6 +108,16 @@ class CircleEnrollmentService
             return [
                 'success' => true,
                 'message' => 'تم تسجيلك في الحلقة بنجاح!',
+            ];
+        } catch (EnrollmentCapacityException $e) {
+            // Report the exception (uses built-in report method)
+            $e->report();
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'error_type' => 'capacity_exceeded',
+                'available_slots' => $e->getAvailableSlots(),
             ];
         } catch (\Exception $e) {
             Log::error('Error enrolling student in circle', [

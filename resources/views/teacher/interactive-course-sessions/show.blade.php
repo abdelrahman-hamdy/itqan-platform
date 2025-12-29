@@ -164,7 +164,7 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
 
             setTimeout(() => notification.remove(), 3000);
         } else {
-            alert(data.message || 'حدث خطأ أثناء الحفظ');
+            window.toast?.error(data.message || 'حدث خطأ أثناء الحفظ');
         }
 
         // Restore button state
@@ -172,8 +172,7 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
         submitButton.innerHTML = originalText;
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('حدث خطأ أثناء حفظ محتوى الدرس');
+        window.toast?.error('حدث خطأ أثناء حفظ محتوى الدرس');
 
         // Restore button state
         submitButton.disabled = false;

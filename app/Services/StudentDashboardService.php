@@ -11,6 +11,8 @@ use App\Models\QuranTrialRequest;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use App\Contracts\StudentDashboardServiceInterface;
 
 /**
  * Service for loading student dashboard data.
@@ -18,7 +20,7 @@ use Illuminate\Support\Collection;
  * Extracted from StudentProfileController::index() to reduce controller size.
  * Handles all dashboard data aggregation for the student portal.
  */
-class StudentDashboardService
+class StudentDashboardService implements StudentDashboardServiceInterface
 {
     /**
      * Load all dashboard data for a student.
@@ -28,16 +30,20 @@ class StudentDashboardService
      */
     public function loadDashboardData(User $user): array
     {
-        $studentProfile = $user->studentProfileUnscoped;
-        $academy = $user->academy;
+        $cacheKey = "student:dashboard:{$user->id}";
 
-        return [
-            'circles' => $this->getQuranCircles($user, $academy),
-            'privateSessions' => $this->getQuranPrivateSessions($user, $academy),
-            'trialRequests' => $this->getQuranTrialRequests($user, $academy),
-            'interactiveCourses' => $this->getInteractiveCourses($studentProfile, $academy),
-            'recordedCourses' => $this->getRecordedCourses($user, $academy),
-        ];
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user) {
+            $studentProfile = $user->studentProfileUnscoped;
+            $academy = $user->academy;
+
+            return [
+                'circles' => $this->getQuranCircles($user, $academy),
+                'privateSessions' => $this->getQuranPrivateSessions($user, $academy),
+                'trialRequests' => $this->getQuranTrialRequests($user, $academy),
+                'interactiveCourses' => $this->getInteractiveCourses($studentProfile, $academy),
+                'recordedCourses' => $this->getRecordedCourses($user, $academy),
+            ];
+        });
     }
 
     /**
@@ -45,21 +51,25 @@ class StudentDashboardService
      */
     public function getQuranCircles(User $user, $academy): Collection
     {
-        $circles = QuranCircle::where('academy_id', $academy->id)
-            ->whereHas('students', function ($query) use ($user) {
-                $query->where('users.id', $user->id);
-            })
-            ->with(['students'])
-            ->get();
+        $cacheKey = "student:circles:{$user->id}:{$academy->id}";
 
-        // Load teacher data for each circle
-        foreach ($circles as $circle) {
-            if ($circle->quran_teacher_id) {
-                $circle->teacherData = User::find($circle->quran_teacher_id);
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $academy) {
+            $circles = QuranCircle::where('academy_id', $academy->id)
+                ->whereHas('students', function ($query) use ($user) {
+                    $query->where('users.id', $user->id);
+                })
+                ->with(['students', 'quranTeacher']) // Eager load teacher
+                ->get();
+
+            // Load teacher data for each circle
+            foreach ($circles as $circle) {
+                if ($circle->quran_teacher_id) {
+                    $circle->teacherData = $circle->quranTeacher ?? User::find($circle->quran_teacher_id);
+                }
             }
-        }
 
-        return $circles;
+            return $circles;
+        });
     }
 
     /**
@@ -67,26 +77,30 @@ class StudentDashboardService
      */
     public function getQuranPrivateSessions(User $user, $academy): Collection
     {
-        $subscriptions = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('subscription_type', 'individual')
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->whereHas('individualCircle', function ($query) {
-                $query->whereNull('deleted_at');
-            })
-            ->with(['package', 'individualCircle', 'sessions' => function ($query) {
-                $query->orderBy('scheduled_at', 'desc')->limit(5);
-            }])
-            ->get();
+        $cacheKey = "student:private_sessions:{$user->id}:{$academy->id}";
 
-        // Load teacher data for each subscription
-        foreach ($subscriptions as $subscription) {
-            if ($subscription->quran_teacher_id) {
-                $subscription->teacherData = User::find($subscription->quran_teacher_id);
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $academy) {
+            $subscriptions = QuranSubscription::where('student_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->where('subscription_type', 'individual')
+                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->whereHas('individualCircle', function ($query) {
+                    $query->whereNull('deleted_at');
+                })
+                ->with(['package', 'individualCircle', 'quranTeacher', 'sessions' => function ($query) {
+                    $query->orderBy('scheduled_at', 'desc')->limit(5);
+                }])
+                ->get();
+
+            // Load teacher data for each subscription
+            foreach ($subscriptions as $subscription) {
+                if ($subscription->quran_teacher_id) {
+                    $subscription->teacherData = $subscription->quranTeacher ?? User::find($subscription->quran_teacher_id);
+                }
             }
-        }
 
-        return $subscriptions;
+            return $subscriptions;
+        });
     }
 
     /**
@@ -112,16 +126,19 @@ class StudentDashboardService
         }
 
         $studentId = $studentProfile->id;
+        $cacheKey = "student:interactive_courses:{$studentId}:{$academy->id}";
 
-        return InteractiveCourse::where('academy_id', $academy->id)
-            ->whereHas('enrollments', function ($query) use ($studentId) {
-                $query->where('student_id', $studentId)
-                    ->whereIn('enrollment_status', ['enrolled', 'completed']);
-            })
-            ->with(['assignedTeacher', 'enrollments' => function ($query) use ($studentId) {
-                $query->where('student_id', $studentId);
-            }])
-            ->get();
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($studentId, $academy) {
+            return InteractiveCourse::where('academy_id', $academy->id)
+                ->whereHas('enrollments', function ($query) use ($studentId) {
+                    $query->where('student_id', $studentId)
+                        ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                })
+                ->with(['assignedTeacher', 'enrollments' => function ($query) use ($studentId) {
+                    $query->where('student_id', $studentId);
+                }])
+                ->get();
+        });
     }
 
     /**
@@ -129,17 +146,38 @@ class StudentDashboardService
      */
     public function getRecordedCourses(User $user, $academy): Collection
     {
-        return RecordedCourse::where('academy_id', $academy->id)
-            ->whereHas('enrollments', function ($query) use ($user) {
-                $query->where('student_id', $user->id);
-            })
-            ->with([
-                'enrollments' => function ($query) use ($user) {
+        $cacheKey = "student:recorded_courses:{$user->id}:{$academy->id}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($user, $academy) {
+            return RecordedCourse::where('academy_id', $academy->id)
+                ->whereHas('enrollments', function ($query) use ($user) {
                     $query->where('student_id', $user->id);
-                },
-                'instructor',
-                'chapters.lessons',
-            ])
-            ->get();
+                })
+                ->with([
+                    'enrollments' => function ($query) use ($user) {
+                        $query->where('student_id', $user->id);
+                    },
+                    'instructor',
+                    'chapters.lessons',
+                ])
+                ->get();
+        });
+    }
+
+    /**
+     * Clear all dashboard caches for a student.
+     */
+    public function clearStudentCache(int $userId, int $academyId): void
+    {
+        Cache::forget("student:dashboard:{$userId}");
+        Cache::forget("student:circles:{$userId}:{$academyId}");
+        Cache::forget("student:private_sessions:{$userId}:{$academyId}");
+        Cache::forget("student:recorded_courses:{$userId}:{$academyId}");
+
+        // Also clear interactive courses cache if student profile exists
+        $user = User::find($userId);
+        if ($user && $user->studentProfile) {
+            Cache::forget("student:interactive_courses:{$user->studentProfile->id}:{$academyId}");
+        }
     }
 }

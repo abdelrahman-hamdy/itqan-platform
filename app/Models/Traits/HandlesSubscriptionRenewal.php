@@ -239,6 +239,45 @@ trait HandlesSubscriptionRenewal
     }
 
     /**
+     * Get display name for the subscription (for notifications)
+     */
+    protected function getSubscriptionDisplayName(): string
+    {
+        // Try to use snapshot data first
+        if (!empty($this->package_name_ar)) {
+            return $this->package_name_ar;
+        }
+
+        // Fallback to package relationship
+        if ($this->package && method_exists($this->package, 'name')) {
+            return $this->package->name ?? 'اشتراك';
+        }
+
+        // Default based on type
+        return match ($this->getSubscriptionType()) {
+            'quran' => 'اشتراك القرآن',
+            'academic' => 'اشتراك أكاديمي',
+            'course' => 'اشتراك الدورة',
+            default => 'اشتراك',
+        };
+    }
+
+    /**
+     * Get URL for the subscription (for notifications)
+     */
+    protected function getSubscriptionUrl(): string
+    {
+        $type = $this->getSubscriptionType();
+
+        return match ($type) {
+            'quran' => route('student.subscriptions.quran.show', ['subscription' => $this->id]),
+            'academic' => route('student.subscriptions.academic.show', ['subscription' => $this->id]),
+            'course' => route('student.subscriptions.course.show', ['subscription' => $this->id]),
+            default => route('student.profile'),
+        };
+    }
+
+    /**
      * Extend sessions on renewal (for session-based subscriptions)
      *
      * Default implementation does nothing.
@@ -262,8 +301,21 @@ trait HandlesSubscriptionRenewal
         }
 
         try {
-            // TODO: Implement notification via NotificationService
-            Log::info("Renewal success notification would be sent to student {$student->id}", [
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            $subscriptionData = [
+                'subscription_id' => $this->id,
+                'name' => $this->getSubscriptionDisplayName(),
+                'amount' => $amount,
+                'currency' => $this->currency ?? 'SAR',
+                'next_billing_date' => $this->next_billing_date?->format('Y-m-d'),
+                'subscription_type' => $this->getSubscriptionType(),
+                'url' => $this->getSubscriptionUrl(),
+            ];
+
+            $notificationService->sendSubscriptionRenewedNotification($student, $subscriptionData);
+
+            Log::info("Renewal success notification sent to student {$student->id}", [
                 'subscription_id' => $this->id,
                 'amount' => $amount,
             ]);
@@ -287,8 +339,21 @@ trait HandlesSubscriptionRenewal
         }
 
         try {
-            // TODO: Implement notification via NotificationService
-            Log::info("Payment failed notification would be sent to student {$student->id}", [
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            $paymentData = [
+                'subscription_id' => $this->id,
+                'subscription_name' => $this->getSubscriptionDisplayName(),
+                'subscription_type' => $this->getSubscriptionType(),
+                'amount' => $this->calculateRenewalPrice(),
+                'currency' => $this->currency ?? 'SAR',
+                'reason' => $reason,
+                'url' => $this->getSubscriptionUrl(),
+            ];
+
+            $notificationService->sendPaymentFailedNotification($student, $paymentData);
+
+            Log::info("Payment failed notification sent to student {$student->id}", [
                 'subscription_id' => $this->id,
                 'reason' => $reason,
             ]);
@@ -313,8 +378,22 @@ trait HandlesSubscriptionRenewal
         }
 
         try {
-            // TODO: Implement notification via NotificationService
-            Log::info("Renewal reminder would be sent to student {$student->id}", [
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            $subscriptionData = [
+                'subscription_id' => $this->id,
+                'name' => $this->getSubscriptionDisplayName(),
+                'subscription_type' => $this->getSubscriptionType(),
+                'expiry_date' => $this->ends_at?->format('Y-m-d'),
+                'days_remaining' => $daysUntilRenewal,
+                'renewal_amount' => $this->calculateRenewalPrice(),
+                'currency' => $this->currency ?? 'SAR',
+                'url' => $this->getSubscriptionUrl(),
+            ];
+
+            $notificationService->sendSubscriptionExpiringNotification($student, $subscriptionData);
+
+            Log::info("Renewal reminder sent to student {$student->id}", [
                 'subscription_id' => $this->id,
                 'days_until_renewal' => $daysUntilRenewal,
                 'renewal_amount' => $this->calculateRenewalPrice(),

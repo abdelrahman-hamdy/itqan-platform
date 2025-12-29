@@ -1,4 +1,4 @@
-<x-layouts.student-layout title="تفاصيل الواجب">
+<x-layouts.student title="تفاصيل الواجب">
     <div class="space-y-4 md:space-y-6">
         <!-- Back Button -->
         <div>
@@ -228,4 +228,4 @@
             </div>
         @endif
     </div>
-</x-layouts.student-layout>
+</x-layouts.student>

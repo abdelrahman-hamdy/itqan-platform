@@ -29,80 +29,80 @@ class CheckExpiringSubscriptions extends Command
 
             $this->info("Checking subscriptions expiring in {$days} days...");
 
-            // Quran Subscriptions
-            $quranSubs = QuranSubscription::whereBetween('end_date', [$targetDate, $endDate])
+            // Quran Subscriptions - Process in chunks
+            QuranSubscription::whereBetween('end_date', [$targetDate, $endDate])
                 ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->with(['student', 'quranCircle'])
-                ->get();
+                ->chunkById(100, function ($quranSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
+                    foreach ($quranSubs as $subscription) {
+                        try {
+                            if (!$subscription->student) {
+                                continue;
+                            }
 
-            foreach ($quranSubs as $subscription) {
-                try {
-                    if (!$subscription->student) {
-                        continue;
+                            $notificationService->send(
+                                $subscription->student,
+                                NotificationType::SUBSCRIPTION_EXPIRING,
+                                [
+                                    'subscription_name' => 'حلقة ' . ($subscription->quranCircle?->name ?? 'القرآن'),
+                                    'days_left' => $days,
+                                    'expiry_date' => $subscription->end_date->format('Y-m-d'),
+                                ],
+                                "/circles/{$subscription->quran_circle_id}",
+                                [
+                                    'subscription_id' => $subscription->id,
+                                    'circle_id' => $subscription->quran_circle_id,
+                                ],
+                                $days <= 3  // Important if 3 days or less
+                            );
+
+                            // Also notify parents
+                            $parentNotificationService->sendPaymentReminder($subscription);
+
+                            $count++;
+
+                            $this->line("  - Sent to {$subscription->student->full_name} (Quran - {$days} days)");
+                        } catch (\Exception $e) {
+                            $this->error("  - Failed for Quran subscription {$subscription->id}: {$e->getMessage()}");
+                        }
                     }
+                });
 
-                    $notificationService->send(
-                        $subscription->student,
-                        NotificationType::SUBSCRIPTION_EXPIRING,
-                        [
-                            'subscription_name' => 'حلقة ' . ($subscription->quranCircle?->name ?? 'القرآن'),
-                            'days_left' => $days,
-                            'expiry_date' => $subscription->end_date->format('Y-m-d'),
-                        ],
-                        "/circles/{$subscription->quran_circle_id}",
-                        [
-                            'subscription_id' => $subscription->id,
-                            'circle_id' => $subscription->quran_circle_id,
-                        ],
-                        $days <= 3  // Important if 3 days or less
-                    );
-
-                    // Also notify parents
-                    $parentNotificationService->sendPaymentReminder($subscription);
-
-                    $count++;
-
-                    $this->line("  - Sent to {$subscription->student->full_name} (Quran - {$days} days)");
-                } catch (\Exception $e) {
-                    $this->error("  - Failed for Quran subscription {$subscription->id}: {$e->getMessage()}");
-                }
-            }
-
-            // Academic Subscriptions
-            $academicSubs = AcademicSubscription::whereBetween('end_date', [$targetDate, $endDate])
+            // Academic Subscriptions - Process in chunks
+            AcademicSubscription::whereBetween('end_date', [$targetDate, $endDate])
                 ->where('status', SubscriptionStatus::ACTIVE->value)
                 ->with(['student'])
-                ->get();
+                ->chunkById(100, function ($academicSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
+                    foreach ($academicSubs as $subscription) {
+                        try {
+                            if (!$subscription->student) {
+                                continue;
+                            }
 
-            foreach ($academicSubs as $subscription) {
-                try {
-                    if (!$subscription->student) {
-                        continue;
+                            $notificationService->send(
+                                $subscription->student,
+                                NotificationType::SUBSCRIPTION_EXPIRING,
+                                [
+                                    'subscription_name' => 'الاشتراك الأكاديمي',
+                                    'days_left' => $days,
+                                    'expiry_date' => $subscription->end_date->format('Y-m-d'),
+                                ],
+                                "/academic-subscriptions/{$subscription->id}",
+                                ['subscription_id' => $subscription->id],
+                                $days <= 3
+                            );
+
+                            // Also notify parents
+                            $parentNotificationService->sendPaymentReminder($subscription);
+
+                            $count++;
+
+                            $this->line("  - Sent to {$subscription->student->full_name} (Academic - {$days} days)");
+                        } catch (\Exception $e) {
+                            $this->error("  - Failed for Academic subscription {$subscription->id}: {$e->getMessage()}");
+                        }
                     }
-
-                    $notificationService->send(
-                        $subscription->student,
-                        NotificationType::SUBSCRIPTION_EXPIRING,
-                        [
-                            'subscription_name' => 'الاشتراك الأكاديمي',
-                            'days_left' => $days,
-                            'expiry_date' => $subscription->end_date->format('Y-m-d'),
-                        ],
-                        "/academic-subscriptions/{$subscription->id}",
-                        ['subscription_id' => $subscription->id],
-                        $days <= 3
-                    );
-
-                    // Also notify parents
-                    $parentNotificationService->sendPaymentReminder($subscription);
-
-                    $count++;
-
-                    $this->line("  - Sent to {$subscription->student->full_name} (Academic - {$days} days)");
-                } catch (\Exception $e) {
-                    $this->error("  - Failed for Academic subscription {$subscription->id}: {$e->getMessage()}");
-                }
-            }
+                });
         }
 
         $this->info("✓ Sent {$count} subscription expiry notifications.");

@@ -5,16 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\BusinessServiceCategory;
 use App\Models\BusinessServiceRequest;
 use App\Models\PortfolioItem;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
 use App\Enums\SessionStatus;
+use App\Http\Controllers\Traits\ApiResponses;
 
 class BusinessServiceController extends Controller
 {
+    use ApiResponses;
     /**
      * Show the business services page
      */
-    public function index()
+    public function index(): View
     {
         $categories = BusinessServiceCategory::active()->get();
         $portfolioItems = PortfolioItem::active()->ordered()->with('serviceCategory')->get();
@@ -25,7 +29,7 @@ class BusinessServiceController extends Controller
     /**
      * Show the portfolio page
      */
-    public function portfolio()
+    public function portfolio(): View
     {
         $categories = BusinessServiceCategory::active()->get();
         $portfolioItems = PortfolioItem::active()->ordered()->with('serviceCategory')->get();
@@ -36,7 +40,7 @@ class BusinessServiceController extends Controller
     /**
      * Store a new business service request
      */
-    public function storeRequest(Request $request)
+    public function storeRequest(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'client_name' => 'required|string|max:255',
@@ -57,52 +61,47 @@ class BusinessServiceController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->validationErrorResponse($validator->errors()->toArray());
         }
 
         try {
             $serviceRequest = BusinessServiceRequest::create($request->all());
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'message' => 'تم إرسال طلبك بنجاح! سنتواصل معك قريباً.',
-                'request_id' => $serviceRequest->id
-            ]);
+                'data' => null,
+                'request_id' => $serviceRequest->id,
+            ], true, 200);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.'
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.');
         }
     }
 
     /**
      * Get service categories for AJAX requests
      */
-    public function getCategories()
+    public function getCategories(): JsonResponse
     {
         $categories = BusinessServiceCategory::active()->get(['id', 'name', 'description', 'color', 'icon']);
-        
-        return response()->json($categories);
+
+        return $this->successResponse($categories);
     }
 
     /**
      * Get portfolio items for AJAX requests
      */
-    public function getPortfolioItems(Request $request)
+    public function getPortfolioItems(Request $request): JsonResponse
     {
         $query = PortfolioItem::active()->with('serviceCategory');
-        
+
         if ($request->has('category_id')) {
             $query->where('service_category_id', $request->category_id);
         }
-        
+
         $items = $query->ordered()->get();
-        
-        return response()->json($items);
+
+        return $this->successResponse($items);
     }
 }

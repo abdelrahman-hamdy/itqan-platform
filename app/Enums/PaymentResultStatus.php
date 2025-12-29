@@ -20,20 +20,11 @@ enum PaymentResultStatus: string
     case EXPIRED = 'expired';
 
     /**
-     * Get Arabic label for display.
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => 'قيد الانتظار',
-            self::PROCESSING => 'جارٍ المعالجة',
-            self::SUCCESS => 'ناجح',
-            self::FAILED => 'فشل',
-            self::CANCELLED => 'ملغي',
-            self::REFUNDED => 'مسترد',
-            self::PARTIALLY_REFUNDED => 'مسترد جزئياً',
-            self::EXPIRED => 'منتهي الصلاحية',
-        };
+        return __('enums.payment_result_status.' . $this->value);
     }
 
     /**
@@ -89,5 +80,13 @@ enum PaymentResultStatus: string
     public static function refundableStatuses(): array
     {
         return [self::SUCCESS, self::PARTIALLY_REFUNDED];
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

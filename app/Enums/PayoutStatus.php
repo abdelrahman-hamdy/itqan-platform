@@ -2,6 +2,20 @@
 
 namespace App\Enums;
 
+/**
+ * Payout Status Enum
+ *
+ * Tracks the lifecycle of teacher payout requests.
+ *
+ * States:
+ * - PENDING: Payout request submitted
+ * - APPROVED: Payout approved by admin
+ * - PAID: Payout transferred
+ * - REJECTED: Payout request rejected
+ *
+ * @see \App\Models\TeacherPayout
+ * @see \App\Services\PayoutService
+ */
 enum PayoutStatus: string
 {
     case PENDING = 'pending';
@@ -10,16 +24,11 @@ enum PayoutStatus: string
     case REJECTED = 'rejected';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => __('قيد الانتظار'),
-            self::APPROVED => __('موافق عليها'),
-            self::PAID => __('مدفوعة'),
-            self::REJECTED => __('مرفوضة'),
-        };
+        return __('enums.payout_status.' . $this->value);
     }
 
     /**
@@ -56,5 +65,13 @@ enum PayoutStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

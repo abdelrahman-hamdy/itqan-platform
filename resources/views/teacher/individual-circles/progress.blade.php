@@ -87,8 +87,8 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-2 md:gap-3 mr-auto lg:mr-0">
-                <button onclick="window.print()" class="min-h-[44px] inline-flex items-center justify-center px-3 md:px-6 py-2 md:py-3 bg-white/20 backdrop-blur-sm text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-white/30 transition-colors">
+            <div class="flex items-center gap-2 md:gap-3 mr-auto lg:mr-0" x-data>
+                <button @click="window.print()" class="min-h-[44px] inline-flex items-center justify-center px-3 md:px-6 py-2 md:py-3 bg-white/20 backdrop-blur-sm text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-white/30 transition-colors">
                     <i class="ri-printer-line md:ml-2"></i>
                     <span class="hidden md:inline">طباعة التقرير</span>
                 </button>
@@ -333,7 +333,7 @@
                                                 @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LATE->value)
                                                     <div class="w-4 h-4 bg-yellow-500 rounded-full mb-1"></div>
                                                     <span class="text-xs text-yellow-600 font-bold">متأخر</span>
-                                                @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LEAVED->value)
+                                                @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LEFT->value)
                                                     <div class="w-4 h-4 bg-orange-500 rounded-full mb-1"></div>
                                                     <span class="text-xs text-orange-600 font-bold">غادر مبكراً</span>
                                                 @elseif($session->attendance_status === \App\Enums\AttendanceStatus::ABSENT->value)
@@ -419,7 +419,7 @@
                                                         <i class="ri-check-double-line ml-1"></i> حضر وأكمل
                                                     @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LATE->value)
                                                         <i class="ri-time-line ml-1"></i> حضر متأخراً
-                                                    @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LEAVED->value)
+                                                    @elseif($session->attendance_status === \App\Enums\AttendanceStatus::LEFT->value)
                                                         <i class="ri-logout-box-line ml-1"></i> غادر مبكراً
                                                     @elseif($session->attendance_status === \App\Enums\AttendanceStatus::ABSENT->value)
                                                         <i class="ri-close-line ml-1"></i> غائب
@@ -766,7 +766,8 @@
                 @else
                     <p class="text-xs md:text-sm text-gray-600 mb-3 md:mb-4">يمكنك إصدار شهادة للطالب عند إتمام البرنامج أو تحقيق إنجاز معين</p>
                     <button type="button"
-                            onclick="Livewire.dispatch('openModal', { subscriptionType: 'quran', subscriptionId: {{ $circle->subscription->id }}, circleId: null })"
+                            x-data
+                            @click="Livewire.dispatch('openModal', { subscriptionType: 'quran', subscriptionId: {{ $circle->subscription->id }}, circleId: null })"
                             class="min-h-[44px] w-full inline-flex items-center justify-center px-4 md:px-5 py-2.5 md:py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white text-sm md:text-base font-bold rounded-lg md:rounded-xl transition-all shadow-lg hover:shadow-xl">
                         <i class="ri-award-line ml-1.5 md:ml-2 text-base md:text-lg"></i>
                         إصدار شهادة

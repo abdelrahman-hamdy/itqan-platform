@@ -44,7 +44,29 @@ class CertificatePolicy
             return true;
         }
 
+        // Parents can view their children's certificates
+        if ($user->isParent()) {
+            return $this->isParentOfCertificateOwner($user, $certificate);
+        }
+
         return false;
+    }
+
+    /**
+     * Check if user is a parent of the certificate owner.
+     */
+    private function isParentOfCertificateOwner(User $user, Certificate $certificate): bool
+    {
+        $parent = $user->parentProfile;
+        if (!$parent) {
+            return false;
+        }
+
+        // Get student user IDs through the parent-student relationship
+        $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
+
+        // Certificate.student_id references User.id
+        return in_array($certificate->student_id, $studentUserIds);
     }
 
     /**

@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\QuizAssignment;
 use App\Models\QuizAttempt;
 use App\Services\QuizService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use App\Enums\SessionStatus;
 
 class QuizController extends Controller
@@ -26,13 +28,11 @@ class QuizController extends Controller
     /**
      * List all quizzes for the student
      */
-    public function index()
+    public function index(): View
     {
-        $student = Auth::user()->studentProfile;
+        $this->authorize('viewAny', QuizAssignment::class);
 
-        if (!$student) {
-            abort(403, 'يجب أن تكون طالباً لعرض الاختبارات');
-        }
+        $student = Auth::user()->studentProfile;
 
         // Get all quiz assignments for the student
         $quizzes = $this->quizService->getStudentQuizzes($student->id);
@@ -49,7 +49,7 @@ class QuizController extends Controller
     /**
      * Start a quiz attempt
      */
-    public function start(string $quiz_id)
+    public function start(string $quiz_id): RedirectResponse
     {
         \Log::info('QuizController::start() called', [
             'quiz_id' => $quiz_id,
@@ -57,17 +57,12 @@ class QuizController extends Controller
             'route_params' => request()->route()->parameters(),
         ]);
 
-        // Check if user is a student
-        if (!Auth::user()->isStudent()) {
-            abort(403, 'يجب أن تكون طالباً لأداء الاختبار');
-        }
-
         $assignment = QuizAssignment::findOrFail($quiz_id);
-        $student = Auth::user()->studentProfile;
 
-        if (!$student) {
-            abort(403, 'يجب أن تكون طالباً لأداء الاختبار');
-        }
+        // Authorize start access
+        $this->authorize('start', $assignment);
+
+        $student = Auth::user()->studentProfile;
 
         if (!$assignment->isAvailable()) {
             return back()->with('error', 'هذا الاختبار غير متاح حالياً');
@@ -88,14 +83,14 @@ class QuizController extends Controller
     /**
      * Take/continue a quiz
      */
-    public function take(string $attempt_id)
+    public function take(string $attempt_id): View|RedirectResponse
     {
         $attempt = QuizAttempt::findOrFail($attempt_id);
-        $student = Auth::user()->studentProfile;
 
-        if (!$student || $attempt->student_id !== $student->id) {
-            abort(403, 'غير مصرح لك بالوصول إلى هذا الاختبار');
-        }
+        // Authorize take access
+        $this->authorize('take', $attempt);
+
+        $student = Auth::user()->studentProfile;
 
         if ($attempt->isCompleted()) {
             return redirect()->route('student.quiz.result', [
@@ -118,14 +113,14 @@ class QuizController extends Controller
     /**
      * Submit quiz answers
      */
-    public function submit(Request $request, string $attempt_id)
+    public function submit(Request $request, string $attempt_id): RedirectResponse
     {
         $attempt = QuizAttempt::findOrFail($attempt_id);
-        $student = Auth::user()->studentProfile;
 
-        if (!$student || $attempt->student_id !== $student->id) {
-            abort(403, 'غير مصرح لك بالوصول إلى هذا الاختبار');
-        }
+        // Authorize submit access
+        $this->authorize('submit', $attempt);
+
+        $student = Auth::user()->studentProfile;
 
         if ($attempt->isCompleted()) {
             return redirect()->route('student.quiz.result', [
@@ -146,14 +141,14 @@ class QuizController extends Controller
     /**
      * Show quiz results
      */
-    public function result(string $quiz_id)
+    public function result(string $quiz_id): View|RedirectResponse
     {
         $assignment = QuizAssignment::findOrFail($quiz_id);
-        $student = Auth::user()->studentProfile;
 
-        if (!$student) {
-            abort(403, 'يجب أن تكون طالباً لعرض النتائج');
-        }
+        // Authorize result access
+        $this->authorize('viewResult', $assignment);
+
+        $student = Auth::user()->studentProfile;
 
         $attempts = QuizAttempt::where('quiz_assignment_id', $assignment->id)
             ->where('student_id', $student->id)

@@ -18,11 +18,11 @@
         $allSubscriptions->push([
             'id' => $sub->id,
             'type' => 'quran_individual',
-            'type_label' => 'قرآن فردي',
+            'type_label' => __('student.subscriptions.type_quran_individual'),
             'type_icon' => 'ri-user-line',
             'type_color' => 'yellow',
-            'title' => $sub->quranTeacher?->full_name ?? $sub->quranTeacherUser?->name ?? 'معلم غير محدد',
-            'subtitle' => $sub->package_name_ar ?? $sub->package?->name_ar ?? 'اشتراك فردي',
+            'title' => $sub->quranTeacher?->full_name ?? $sub->quranTeacherUser?->name ?? __('student.common.teacher_not_specified'),
+            'subtitle' => $sub->package_name_ar ?? $sub->package?->name_ar ?? __('student.subscriptions.individual_subscription'),
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
@@ -55,11 +55,11 @@
         $allSubscriptions->push([
             'id' => $sub->id,
             'type' => 'quran_group',
-            'type_label' => 'حلقة جماعية',
+            'type_label' => __('student.subscriptions.type_quran_group'),
             'type_icon' => 'ri-group-line',
             'type_color' => 'green',
-            'title' => $circle?->name_ar ?? $circle?->name ?? $sub->quranTeacher?->full_name ?? 'حلقة قرآنية',
-            'subtitle' => $sub->quranTeacher?->full_name ?? 'معلم غير محدد',
+            'title' => $circle?->name_ar ?? $circle?->name ?? $sub->quranTeacher?->full_name ?? __('student.subscriptions.quran_circle'),
+            'subtitle' => $sub->quranTeacher?->full_name ?? __('student.common.teacher_not_specified'),
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
@@ -95,11 +95,11 @@
         $allSubscriptions->push([
             'id' => $sub->id,
             'type' => 'academic',
-            'type_label' => 'دروس أكاديمية',
+            'type_label' => __('student.subscriptions.type_academic'),
             'type_icon' => 'ri-book-open-line',
             'type_color' => 'violet',
-            'title' => $sub->teacher?->user?->name ?? 'معلم غير محدد',
-            'subtitle' => ($sub->subject?->name ?? 'مادة غير محددة') . ' - ' . ($sub->gradeLevel?->name ?? ''),
+            'title' => $sub->teacher?->user?->name ?? __('student.common.teacher_not_specified'),
+            'subtitle' => ($sub->subject?->name ?? __('student.subscriptions.subject_not_specified')) . ' - ' . ($sub->gradeLevel?->name ?? ''),
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
@@ -125,13 +125,13 @@
         $allSubscriptions->push([
             'id' => $course->id,
             'type' => 'course',
-            'type_label' => 'دورة تفاعلية',
+            'type_label' => __('student.subscriptions.type_course'),
             'type_icon' => 'ri-slideshow-line',
             'type_color' => 'blue',
             'title' => $course->title,
-            'subtitle' => $course->assignedTeacher?->user?->name ?? 'معلم غير محدد',
+            'subtitle' => $course->assignedTeacher?->user?->name ?? __('student.common.teacher_not_specified'),
             'status' => null,
-            'status_label' => $enrollment?->enrollment_status === \App\Enums\EnrollmentStatus::COMPLETED ? 'مكتمل' : 'مسجل',
+            'status_label' => $enrollment?->enrollment_status === \App\Enums\EnrollmentStatus::COMPLETED ? __('student.subscriptions.completed') : __('student.subscriptions.enrolled'),
             'status_classes' => $enrollment?->enrollment_status === \App\Enums\EnrollmentStatus::COMPLETED ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800',
             'is_active' => $enrollment?->enrollment_status === \App\Enums\EnrollmentStatus::ENROLLED,
             'progress' => $enrollment?->progress_percentage ?? 0,
@@ -172,18 +172,18 @@
 
 <x-layouts.authenticated
     :role="$layout ?? 'student'"
-    title="{{ $academy->name ?? 'أكاديمية إتقان' }} - {{ $isParent ? 'اشتراكات الأبناء' : 'الاشتراكات' }}">
-    <x-slot name="description">{{ $isParent ? 'متابعة اشتراكات الأبناء' : 'إدارة جميع اشتراكاتك والدورات المسجلة' }} - {{ $academy->name ?? 'أكاديمية إتقان' }}</x-slot>
+    title="{{ $academy->name ?? 'أكاديمية إتقان' }} - {{ $isParent ? __('student.subscriptions.parent_title') : __('student.subscriptions.title') }}">
+    <x-slot name="description">{{ $isParent ? __('student.subscriptions.parent_description') : __('student.subscriptions.description') }} - {{ $academy->name ?? 'أكاديمية إتقان' }}</x-slot>
 
     <!-- Header Section (Using reusable component - same as certificates page) -->
     <x-student-page.header
-        title="{{ $isParent ? 'اشتراكات الأبناء' : 'الاشتراكات' }}"
-        description="{{ $isParent ? 'متابعة اشتراكات الأبناء والدورات المسجلة' : 'إدارة جميع اشتراكاتك والدورات المسجلة' }}"
+        title="{{ $isParent ? __('student.subscriptions.parent_title') : __('student.subscriptions.title') }}"
+        description="{{ $isParent ? __('student.subscriptions.parent_description') : __('student.subscriptions.description') }}"
         :count="$totalCount"
-        countLabel="إجمالي الاشتراكات"
+        countLabel="{{ __('student.subscriptions.total_count') }}"
         countColor="blue"
         :secondaryCount="$activeCount"
-        secondaryCountLabel="نشط"
+        secondaryCountLabel="{{ __('student.subscriptions.active_count') }}"
         secondaryCountColor="green"
     />
 
@@ -207,7 +207,7 @@
             <div class="mb-4">
                 <h3 class="text-base md:text-lg font-semibold text-gray-900">
                     <i class="ri-filter-3-line ml-2"></i>
-                    تصفية النتائج
+                    {{ __('student.subscriptions.filters_title') }}
                 </h3>
             </div>
 
@@ -216,15 +216,15 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="ri-checkbox-circle-line ml-1"></i>
-                        الحالة
+                        {{ __('student.subscriptions.status_label') }}
                     </label>
                     <div class="relative">
                         <select name="status"
                                 style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
                                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
-                            <option value="">الكل</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>نشط</option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>غير نشط</option>
+                            <option value="">{{ __('student.subscriptions.status_all') }}</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('student.subscriptions.status_active') }}</option>
+                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>{{ __('student.subscriptions.status_inactive') }}</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                             <i class="ri-arrow-down-s-line text-lg"></i>
@@ -236,17 +236,17 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="ri-stack-line ml-1"></i>
-                        نوع الاشتراك
+                        {{ __('student.subscriptions.type_label') }}
                     </label>
                     <div class="relative">
                         <select name="type"
                                 style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
                                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
-                            <option value="">جميع الأنواع</option>
-                            <option value="quran_individual" {{ request('type') === 'quran_individual' ? 'selected' : '' }}>قرآن فردي</option>
-                            <option value="quran_group" {{ request('type') === 'quran_group' ? 'selected' : '' }}>حلقة جماعية</option>
-                            <option value="academic" {{ request('type') === 'academic' ? 'selected' : '' }}>دروس أكاديمية</option>
-                            <option value="course" {{ request('type') === 'course' ? 'selected' : '' }}>دورات تفاعلية</option>
+                            <option value="">{{ __('student.subscriptions.type_all') }}</option>
+                            <option value="quran_individual" {{ request('type') === 'quran_individual' ? 'selected' : '' }}>{{ __('student.subscriptions.type_quran_individual') }}</option>
+                            <option value="quran_group" {{ request('type') === 'quran_group' ? 'selected' : '' }}>{{ __('student.subscriptions.type_quran_group') }}</option>
+                            <option value="academic" {{ request('type') === 'academic' ? 'selected' : '' }}>{{ __('student.subscriptions.type_academic') }}</option>
+                            <option value="course" {{ request('type') === 'course' ? 'selected' : '' }}>{{ __('student.subscriptions.type_course') }}</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                             <i class="ri-arrow-down-s-line text-lg"></i>
@@ -263,14 +263,14 @@
                 <button type="submit"
                         class="inline-flex items-center justify-center min-h-[44px] bg-blue-600 text-white px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                     <i class="ri-search-line ml-1"></i>
-                    تطبيق الفلاتر
+                    {{ __('student.subscriptions.apply_filters') }}
                 </button>
 
                 @if(request()->hasAny(['status', 'type']))
                 <a href="{{ route($isParent ? 'parent.subscriptions.index' : 'student.subscriptions', ['subdomain' => $subdomain]) }}"
                    class="inline-flex items-center justify-center min-h-[44px] bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                     <i class="ri-close-circle-line ml-1"></i>
-                    إعادة تعيين
+                    {{ __('student.subscriptions.reset_filters') }}
                 </a>
                 @endif
             </div>
@@ -297,9 +297,9 @@
                         $billingLabel = $subscription['billing_cycle'] instanceof \App\Enums\BillingCycle
                             ? $subscription['billing_cycle']->label()
                             : match($subscription['billing_cycle']) {
-                                'monthly' => 'شهري',
-                                'quarterly' => 'ربع سنوي',
-                                'yearly' => 'سنوي',
+                                'monthly' => __('student.subscriptions.billing_monthly'),
+                                'quarterly' => __('student.subscriptions.billing_quarterly'),
+                                'yearly' => __('student.subscriptions.billing_yearly'),
                                 default => $subscription['billing_cycle'],
                             };
                     }
@@ -333,7 +333,7 @@
                                     <a href="{{ $subscription['href'] }}"
                                        class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-white border border-gray-300 rounded-xl md:rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors">
                                         <i class="ri-eye-line ml-2"></i>
-                                        عرض التفاصيل
+                                        {{ __('student.subscriptions.view_details') }}
                                     </a>
                                 @endif
 
@@ -345,7 +345,7 @@
                                                        ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
                                                        : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100' }}">
                                         <i class="{{ $subscription['auto_renew'] ? 'ri-toggle-fill' : 'ri-toggle-line' }} ml-2"></i>
-                                        {{ $subscription['auto_renew'] ? 'إيقاف التجديد' : 'تفعيل التجديد' }}
+                                        {{ $subscription['auto_renew'] ? __('student.subscriptions.toggle_renew_disable') : __('student.subscriptions.toggle_renew_enable') }}
                                     </button>
                                 @endif
 
@@ -354,7 +354,7 @@
                                             onclick="cancelSubscription('{{ $subscription['model_type'] }}', {{ $subscription['id'] }})"
                                             class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl md:rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
                                         <i class="ri-close-circle-line ml-2"></i>
-                                        إلغاء
+                                        {{ __('student.subscriptions.cancel') }}
                                     </button>
                                 @endif
                             </div>
@@ -367,25 +367,25 @@
                                 <div class="flex items-center gap-3">
                                     <div class="flex items-center gap-2">
                                         <i class="ri-calendar-check-line text-gray-400"></i>
-                                        <span class="text-gray-600">{{ $subscription['sessions_used'] }}/{{ $subscription['total_sessions'] }} جلسة</span>
+                                        <span class="text-gray-600">{{ $subscription['sessions_used'] }}/{{ $subscription['total_sessions'] }} {{ __('student.subscriptions.sessions_label') }}</span>
                                     </div>
                                     <div class="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
                                         <div class="{{ $colors['bg'] }} h-full rounded-full transition-all" style="width: {{ $subscription['progress'] }}%"></div>
                                     </div>
                                     @if($subscription['sessions_remaining'] > 0)
-                                        <span class="text-gray-500">({{ $subscription['sessions_remaining'] }} متبقية)</span>
+                                        <span class="text-gray-500">({{ $subscription['sessions_remaining'] }} {{ __('student.subscriptions.sessions_remaining') }})</span>
                                     @endif
                                 </div>
                             @elseif($subscription['type'] === 'quran_group')
                                 <div class="flex items-center gap-2 text-gray-600">
                                     <i class="ri-group-2-line {{ $colors['text'] }}"></i>
-                                    <span>{{ $subscription['students_count'] ?? 0 }} / {{ $subscription['max_students'] ?? 10 }} طالب</span>
+                                    <span>{{ $subscription['students_count'] ?? 0 }} / {{ $subscription['max_students'] ?? 10 }} {{ __('student.subscriptions.students_label') }}</span>
                                 </div>
                             @elseif($subscription['type'] === 'course')
                                 <div class="flex items-center gap-3">
                                     <div class="flex items-center gap-2">
                                         <i class="ri-pie-chart-line text-gray-400"></i>
-                                        <span class="text-gray-600">{{ $subscription['progress'] }}% مكتمل</span>
+                                        <span class="text-gray-600">{{ $subscription['progress'] }}% {{ __('student.subscriptions.progress_complete') }}</span>
                                     </div>
                                     <div class="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
                                         <div class="{{ $colors['bg'] }} h-full rounded-full transition-all" style="width: {{ $subscription['progress'] }}%"></div>
@@ -404,14 +404,14 @@
                             @if($subscription['next_billing_date'])
                                 <div class="flex items-center gap-1.5 text-amber-600">
                                     <i class="ri-calendar-line"></i>
-                                    <span>التجديد: {{ $subscription['next_billing_date']->format('d/m/Y') }}</span>
+                                    <span>{{ __('student.subscriptions.next_billing') }}: {{ $subscription['next_billing_date']->format('d/m/Y') }}</span>
                                 </div>
                             @endif
 
                             @if($subscription['auto_renew'] !== null)
                                 <div class="flex items-center gap-1.5 {{ $subscription['auto_renew'] ? 'text-green-600' : 'text-gray-500' }}">
                                     <i class="{{ $subscription['auto_renew'] ? 'ri-checkbox-circle-fill' : 'ri-close-circle-line' }}"></i>
-                                    <span>التجديد التلقائي: {{ $subscription['auto_renew'] ? 'مفعّل' : 'معطّل' }}</span>
+                                    <span>{{ $subscription['auto_renew'] ? __('student.subscriptions.auto_renew_enabled') : __('student.subscriptions.auto_renew_disabled') }}</span>
                                 </div>
                             @endif
                         </div>
@@ -421,14 +421,14 @@
         </div>
     @else
         <!-- Empty State (Using reusable component) -->
-        <x-student-page.empty-state
+        <x-ui.empty-state
             icon="ri-bookmark-line"
-            title="{{ ($filterStatus || $filterType) ? 'لا توجد نتائج' : ($isParent ? 'لا توجد اشتراكات للأبناء' : 'لا توجد اشتراكات حالياً') }}"
-            description="{{ ($filterStatus || $filterType) ? 'لم يتم العثور على اشتراكات تطابق معايير البحث' : ($isParent ? 'لم يتم تسجيل أي اشتراكات للأبناء بعد' : 'ابدأ رحلة التعلم معنا من خلال الاشتراك في أحد برامجنا التعليمية') }}"
+            title="{{ ($filterStatus || $filterType) ? __('student.subscriptions.no_results') : ($isParent ? __('student.subscriptions.parent_no_subscriptions') : __('student.subscriptions.no_subscriptions')) }}"
+            description="{{ ($filterStatus || $filterType) ? __('student.subscriptions.no_results_description') : ($isParent ? __('student.subscriptions.parent_no_subscriptions_description') : __('student.subscriptions.no_subscriptions_description')) }}"
             :actionUrl="($filterStatus || $filterType) ? route($isParent ? 'parent.subscriptions.index' : 'student.subscriptions', ['subdomain' => $subdomain]) : ($isParent ? null : route('quran-teachers.index', ['subdomain' => $subdomain]))"
-            actionLabel="{{ ($filterStatus || $filterType) ? 'إعادة تعيين' : ($isParent ? '' : 'تصفح المعلمين') }}"
+            actionLabel="{{ ($filterStatus || $filterType) ? __('student.subscriptions.reset_filters') : ($isParent ? '' : __('student.subscriptions.browse_teachers')) }}"
             actionIcon="{{ ($filterStatus || $filterType) ? 'ri-refresh-line' : 'ri-user-line' }}"
-            iconBgColor="blue"
+            color="blue"
         />
     @endif
 
@@ -438,7 +438,7 @@
         <div class="mb-4">
             <h2 class="text-xl font-bold text-gray-900">
                 <i class="ri-test-tube-line text-amber-500 ml-2"></i>
-                الجلسات التجريبية
+                {{ __('student.subscriptions.trial_requests_title') }}
                 <span class="text-sm font-normal text-gray-500 mr-2">({{ $quranTrialRequests->count() }})</span>
             </h2>
         </div>
@@ -454,7 +454,7 @@
                                     <i class="ri-user-star-line text-white text-xl"></i>
                                 </div>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/20 text-white">
-                                    جلسة تجريبية
+                                    {{ __('student.subscriptions.trial_session') }}
                                 </span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
@@ -468,7 +468,7 @@
 
                     <!-- Body -->
                     <div class="p-4">
-                        <h3 class="font-bold text-gray-900 mb-1">{{ $trial->teacher?->full_name ?? 'معلم غير محدد' }}</h3>
+                        <h3 class="font-bold text-gray-900 mb-1">{{ $trial->teacher?->full_name ?? __('student.subscriptions.teacher_not_specified') }}</h3>
                         <p class="text-sm text-gray-600 mb-4">{{ $trial->request_code ?? '' }}</p>
 
                         <div class="space-y-2">
@@ -491,20 +491,20 @@
                             <a href="{{ $trial->meeting_link }}" target="_blank"
                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
                                 <i class="ri-video-line ml-1"></i>
-                                دخول الجلسة
+                                {{ __('student.subscriptions.enter_session') }}
                             </a>
                         @elseif($trial->status === \App\Enums\TrialRequestStatus::COMPLETED)
                             <a href="{{ route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $trial->teacher?->id]) }}"
                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                                 <i class="ri-arrow-left-line ml-1"></i>
-                                اشترك الآن
+                                {{ __('student.subscriptions.subscribe_now') }}
                             </a>
                         @else
                             <span class="block text-center text-sm text-gray-500 py-2">
                                 @if($trial->status === \App\Enums\TrialRequestStatus::PENDING)
-                                    في انتظار الموافقة
+                                    {{ __('student.subscriptions.pending_approval') }}
                                 @elseif($trial->status === \App\Enums\TrialRequestStatus::REJECTED)
-                                    تم رفض الطلب
+                                    {{ __('student.subscriptions.request_rejected') }}
                                 @endif
                             </span>
                         @endif
@@ -548,10 +548,10 @@
                 </div>
                 <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col-reverse md:flex-row gap-3 md:justify-center">
                     <button onclick="closeModal()" class="min-h-[48px] md:min-h-[44px] flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl md:rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                        إلغاء
+                        {{ __('student.subscriptions.modal_cancel') }}
                     </button>
                     <button id="modalConfirmBtn" class="min-h-[48px] md:min-h-[44px] flex-1 px-4 py-2.5 rounded-xl md:rounded-lg font-medium transition-colors">
-                        تأكيد
+                        {{ __('student.subscriptions.modal_confirm') }}
                     </button>
                 </div>
             </div>

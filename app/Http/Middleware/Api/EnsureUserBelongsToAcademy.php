@@ -17,7 +17,7 @@ class EnsureUserBelongsToAcademy
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         if (!$user) {
             return response()->json([

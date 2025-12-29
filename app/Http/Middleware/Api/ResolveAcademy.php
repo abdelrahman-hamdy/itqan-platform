@@ -3,6 +3,7 @@
 namespace App\Http\Middleware\Api;
 
 use App\Models\Academy;
+use App\Services\AcademyContextService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -43,9 +44,8 @@ class ResolveAcademy
         // Also merge into request for form requests and validation
         $request->merge(['academy' => $academy]);
 
-        // Store in container for global access
-        app()->instance('current_academy', $academy);
-        app()->instance('current_academy_id', $academy->id);
+        // Set API context using the service (replaces direct container binding)
+        AcademyContextService::setApiContext($academy);
 
         return $next($request);
     }

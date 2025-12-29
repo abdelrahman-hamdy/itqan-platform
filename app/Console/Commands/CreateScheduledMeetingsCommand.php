@@ -22,11 +22,13 @@ class CreateScheduledMeetingsCommand extends Command
     protected $description = 'Create video meetings for scheduled sessions based on academy settings';
 
     private AutoMeetingCreationService $autoMeetingService;
+    private CronJobLogger $cronJobLogger;
 
-    public function __construct(AutoMeetingCreationService $autoMeetingService)
+    public function __construct(AutoMeetingCreationService $autoMeetingService, CronJobLogger $cronJobLogger)
     {
         parent::__construct();
         $this->autoMeetingService = $autoMeetingService;
+        $this->cronJobLogger = $cronJobLogger;
     }
 
     /**
@@ -40,7 +42,7 @@ class CreateScheduledMeetingsCommand extends Command
         $isVerbose = $this->getOutput()->isVerbose();
 
         // Start enhanced logging
-        $executionData = CronJobLogger::logCronStart('meetings:create-scheduled', [
+        $executionData = $this->cronJobLogger->logCronStart('meetings:create-scheduled', [
             'academy_id' => $academyId,
             'dry_run' => $isDryRun,
         ]);
@@ -61,7 +63,7 @@ class CreateScheduledMeetingsCommand extends Command
                 if (! $academy) {
                     $this->error("❌ Academy with ID {$academyId} not found");
 
-                    CronJobLogger::logCronEnd('meetings:create-scheduled', $executionData, ['error' => 'Academy not found'], 'error');
+                    $this->cronJobLogger->logCronEnd('meetings:create-scheduled', $executionData, ['error' => 'Academy not found'], 'error');
 
                     return self::FAILURE;
                 }
@@ -98,7 +100,7 @@ class CreateScheduledMeetingsCommand extends Command
             if (isset($results['meetings_failed']) && $results['meetings_failed'] > 0) {
                 $this->warn('⚠️  Some meetings failed to create. Check logs for details.');
 
-                CronJobLogger::logCronEnd('meetings:create-scheduled', $executionData, $results, 'partial');
+                $this->cronJobLogger->logCronEnd('meetings:create-scheduled', $executionData, $results, 'partial');
 
                 return self::INVALID;
             }
@@ -106,7 +108,7 @@ class CreateScheduledMeetingsCommand extends Command
             $this->info('✅ Meeting creation process completed successfully');
 
             // Log completion
-            CronJobLogger::logCronEnd('meetings:create-scheduled', $executionData, $results, 'success');
+            $this->cronJobLogger->logCronEnd('meetings:create-scheduled', $executionData, $results, 'success');
 
             return self::SUCCESS;
 
@@ -119,7 +121,7 @@ class CreateScheduledMeetingsCommand extends Command
             }
 
             // Log error
-            CronJobLogger::logCronError('meetings:create-scheduled', $executionData, $e);
+            $this->cronJobLogger->logCronError('meetings:create-scheduled', $executionData, $e);
 
             return self::FAILURE;
         }

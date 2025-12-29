@@ -2,6 +2,18 @@
 
 namespace App\Enums;
 
+/**
+ * Relationship Type Enum
+ *
+ * Defines parent-child relationships.
+ *
+ * Types:
+ * - FATHER: Father relationship
+ * - MOTHER: Mother relationship
+ * - OTHER: Other guardian/family relationship
+ *
+ * @see \App\Models\ParentStudent
+ */
 enum RelationshipType: string
 {
     case FATHER = 'father';
@@ -9,15 +21,11 @@ enum RelationshipType: string
     case OTHER = 'other';
 
     /**
-     * Get the Arabic label for the relationship type
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::FATHER => 'أب',
-            self::MOTHER => 'أم',
-            self::OTHER => 'أخرى',
-        };
+        return __('enums.relationship_type.' . $this->value);
     }
 
     /**
@@ -30,5 +38,13 @@ enum RelationshipType: string
             self::MOTHER->value => self::MOTHER->label(),
             self::OTHER->value => self::OTHER->label(),
         ];
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

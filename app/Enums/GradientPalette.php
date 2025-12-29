@@ -2,6 +2,14 @@
 
 namespace App\Enums;
 
+/**
+ * Gradient Palette Enum
+ *
+ * Defines color gradient themes for UI elements.
+ * Used for cards, backgrounds, and visual styling.
+ *
+ * @see \App\Models\Academy
+ */
 enum GradientPalette: string
 {
     case OCEAN_BREEZE = 'ocean_breeze';
@@ -11,17 +19,11 @@ enum GradientPalette: string
     case WARM_FLAME = 'warm_flame';
 
     /**
-     * Get the label for the gradient palette
+     * Get localized label
      */
-    public function getLabel(): string
+    public function label(): string
     {
-        return match ($this) {
-            self::OCEAN_BREEZE => 'نسيم المحيط',
-            self::SUNSET_GLOW => 'وهج الغروب',
-            self::FOREST_MIST => 'ضباب الغابة',
-            self::PURPLE_DREAM => 'حلم بنفسجي',
-            self::WARM_FLAME => 'لهب دافئ',
-        };
+        return __('enums.gradient_palette.' . $this->value);
     }
 
     /**
@@ -122,7 +124,7 @@ enum GradientPalette: string
     {
         $options = [];
         foreach (self::cases() as $palette) {
-            $options[$palette->value] = $palette->getLabel();
+            $options[$palette->value] = $palette->label();
         }
         return $options;
     }

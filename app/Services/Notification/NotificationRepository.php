@@ -57,15 +57,31 @@ class NotificationRepository
      */
     public function markAsRead(string $notificationId, User $user): bool
     {
+        // First, check if panel_opened_at is null and set it along with read_at
+        $notification = DB::table('notifications')
+            ->where('id', $notificationId)
+            ->where('notifiable_id', $user->id)
+            ->where('notifiable_type', get_class($user))
+            ->where('tenant_id', $user->academy_id)
+            ->first(['panel_opened_at']);
+
+        if (!$notification) {
+            return false;
+        }
+
+        $updateData = ['read_at' => now()];
+
+        // Only set panel_opened_at if it's currently null
+        if (is_null($notification->panel_opened_at)) {
+            $updateData['panel_opened_at'] = now();
+        }
+
         return DB::table('notifications')
             ->where('id', $notificationId)
             ->where('notifiable_id', $user->id)
             ->where('notifiable_type', get_class($user))
             ->where('tenant_id', $user->academy_id)
-            ->update([
-                'read_at' => now(),
-                'panel_opened_at' => DB::raw('COALESCE(panel_opened_at, NOW())'),
-            ]) > 0;
+            ->update($updateData) > 0;
     }
 
     /**
@@ -92,15 +108,20 @@ class NotificationRepository
      */
     public function markAllAsRead(User $user): int
     {
-        return DB::table('notifications')
-            ->where('notifiable_id', $user->id)
-            ->where('notifiable_type', get_class($user))
-            ->where('tenant_id', $user->academy_id)
-            ->whereNull('read_at')
-            ->update([
-                'read_at' => now(),
-                'panel_opened_at' => DB::raw('COALESCE(panel_opened_at, NOW())'),
-            ]);
+        $now = now();
+        $baseQuery = function () use ($user) {
+            return DB::table('notifications')
+                ->where('notifiable_id', $user->id)
+                ->where('notifiable_type', get_class($user))
+                ->where('tenant_id', $user->academy_id)
+                ->whereNull('read_at');
+        };
+
+        // First, set panel_opened_at for notifications that don't have it
+        $baseQuery()->whereNull('panel_opened_at')->update(['panel_opened_at' => $now]);
+
+        // Then mark all as read
+        return $baseQuery()->update(['read_at' => $now]);
     }
 
     /**

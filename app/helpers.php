@@ -6,7 +6,7 @@ if (! function_exists('current_academy')) {
      */
     function current_academy(): ?\App\Models\Academy
     {
-        return app()->bound('current_academy') ? app('current_academy') : null;
+        return \App\Services\AcademyContextService::getCurrentAcademy();
     }
 }
 

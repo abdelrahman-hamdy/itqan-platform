@@ -9,6 +9,7 @@ use App\Models\TeacherPayout;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Enums\SessionStatus;
@@ -16,12 +17,9 @@ use App\Enums\PayoutStatus;
 
 class PayoutService
 {
-    protected NotificationService $notificationService;
-
-    public function __construct(?NotificationService $notificationService = null)
-    {
-        $this->notificationService = $notificationService ?? app(NotificationService::class);
-    }
+    public function __construct(
+        private NotificationService $notificationService
+    ) {}
 
     /**
      * Generate monthly payout for a specific teacher
@@ -99,7 +97,15 @@ class PayoutService
                 'status' => PayoutStatus::PENDING->value,
             ]);
 
-            // Link earnings to payout and finalize them
+            // Link earnings to payout and finalize them with row-level locking
+            // Prevents race conditions where same earning could be included in multiple payouts
+            $earningIds = $earnings->pluck('id')->toArray();
+
+            DB::table('teacher_earnings')
+                ->whereIn('id', $earningIds)
+                ->lockForUpdate()
+                ->get();
+
             $earnings->each(function ($earning) use ($payout) {
                 $earning->update([
                     'payout_id' => $payout->id,
@@ -131,30 +137,30 @@ class PayoutService
     {
         $monthDate = sprintf('%04d-%02d-01', $year, $month);
 
-        // Get all teachers who have unpaid earnings for this month
-        $teachersWithEarnings = TeacherEarning::where('academy_id', $academyId)
+        $payouts = collect();
+
+        // Process teachers in chunks to prevent memory issues
+        TeacherEarning::where('academy_id', $academyId)
             ->forMonth($year, $month)
             ->unpaid()
             ->where('is_disputed', false)
             ->select('teacher_type', 'teacher_id')
             ->distinct()
-            ->get();
+            ->chunkById(50, function ($teachersWithEarnings) use ($year, $month, $academyId, &$payouts) {
+                foreach ($teachersWithEarnings as $teacher) {
+                    $payout = $this->generateMonthlyPayout(
+                        $teacher->teacher_type,
+                        $teacher->teacher_id,
+                        $year,
+                        $month,
+                        $academyId
+                    );
 
-        $payouts = collect();
-
-        foreach ($teachersWithEarnings as $teacher) {
-            $payout = $this->generateMonthlyPayout(
-                $teacher->teacher_type,
-                $teacher->teacher_id,
-                $year,
-                $month,
-                $academyId
-            );
-
-            if ($payout) {
-                $payouts->push($payout);
-            }
-        }
+                    if ($payout) {
+                        $payouts->push($payout);
+                    }
+                }
+            });
 
         Log::info('Bulk payout generation completed', [
             'academy_id' => $academyId,
@@ -366,29 +372,33 @@ class PayoutService
      */
     public function getTeacherPayoutStats(string $teacherType, int $teacherId, int $academyId): array
     {
-        // Use database aggregation for counts and sums instead of loading all records
-        $stats = TeacherPayout::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId)
-            ->selectRaw('
-                COUNT(*) as total_payouts,
-                SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_paid,
-                SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_pending,
-                SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_approved
-            ', [PayoutStatus::PAID->value, PayoutStatus::PENDING->value, PayoutStatus::APPROVED->value])
-            ->first();
+        $cacheKey = "teacher:payout_stats:{$teacherType}:{$teacherId}:{$academyId}";
 
-        $lastPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId)
-            ->orderByDesc('payout_month')
-            ->first();
+        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($teacherType, $teacherId, $academyId) {
+            // Use database aggregation for counts and sums instead of loading all records
+            $stats = TeacherPayout::forTeacher($teacherType, $teacherId)
+                ->where('academy_id', $academyId)
+                ->selectRaw('
+                    COUNT(*) as total_payouts,
+                    SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_paid,
+                    SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_pending,
+                    SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_approved
+                ', [PayoutStatus::PAID->value, PayoutStatus::PENDING->value, PayoutStatus::APPROVED->value])
+                ->first();
 
-        return [
-            'total_payouts' => (int) ($stats->total_payouts ?? 0),
-            'total_paid' => (float) ($stats->total_paid ?? 0),
-            'total_pending' => (float) ($stats->total_pending ?? 0),
-            'total_approved' => (float) ($stats->total_approved ?? 0),
-            'last_payout' => $lastPayout,
-        ];
+            $lastPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
+                ->where('academy_id', $academyId)
+                ->orderByDesc('payout_month')
+                ->first();
+
+            return [
+                'total_payouts' => (int) ($stats->total_payouts ?? 0),
+                'total_paid' => (float) ($stats->total_paid ?? 0),
+                'total_pending' => (float) ($stats->total_pending ?? 0),
+                'total_approved' => (float) ($stats->total_approved ?? 0),
+                'last_payout' => $lastPayout,
+            ];
+        });
     }
 
     /**
@@ -466,5 +476,13 @@ class PayoutService
         }
 
         return null;
+    }
+
+    /**
+     * Clear payout statistics cache for a teacher.
+     */
+    public function clearTeacherPayoutCache(string $teacherType, int $teacherId, int $academyId): void
+    {
+        Cache::forget("teacher:payout_stats:{$teacherType}:{$teacherId}:{$academyId}");
     }
 }

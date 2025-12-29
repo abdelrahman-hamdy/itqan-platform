@@ -160,12 +160,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const groupId = data.group ? data.group.id : data.group_id;
                 window.location.href = '/chat?group=' + groupId;
             } else {
-                alert('حدث خطأ في إنشاء المحادثة الجماعية');
+                window.toast?.error('حدث خطأ في إنشاء المحادثة الجماعية');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('حدث خطأ في الاتصال');
+            window.toast?.error('حدث خطأ في الاتصال');
         });
     };
 });

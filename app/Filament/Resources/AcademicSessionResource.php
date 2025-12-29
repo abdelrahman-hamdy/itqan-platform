@@ -228,14 +228,14 @@ class AcademicSessionResource extends Resource
                         'success' => AttendanceStatus::ATTENDED->value,
                         'danger' => AttendanceStatus::ABSENT->value,
                         'warning' => AttendanceStatus::LATE->value,
-                        'primary' => AttendanceStatus::LEAVED->value,
+                        'primary' => AttendanceStatus::LEFT->value,
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         SessionStatus::SCHEDULED->value => 'مجدولة',
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                         default => $state,
                     }),
 
@@ -263,7 +263,7 @@ class AcademicSessionResource extends Resource
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                     ]),
                 
                 Tables\Filters\SelectFilter::make('academic_teacher_id')

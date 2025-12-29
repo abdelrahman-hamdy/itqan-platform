@@ -15,6 +15,7 @@ use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\StudentProfile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Parent Data Service
@@ -199,43 +200,47 @@ class ParentDataService
      */
     public function getChildProgressReport(ParentProfile $parent, int $childId): array
     {
-        $child = $this->validateChildAccess($parent, $childId);
-        $userId = $child->user_id;
+        $cacheKey = "parent:child_progress:{$parent->id}:{$childId}";
 
-        // Calculate session statistics
-        $quranSessionsTotal = QuranSession::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->count();
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($parent, $childId) {
+            $child = $this->validateChildAccess($parent, $childId);
+            $userId = $child->user_id;
 
-        $quranSessionsCompleted = QuranSession::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->where('status', SessionStatus::COMPLETED->value)
-            ->count();
+            // Calculate session statistics
+            $quranSessionsTotal = QuranSession::where('student_id', $userId)
+                ->where('academy_id', $parent->academy_id)
+                ->count();
 
-        $academicSessionsTotal = AcademicSession::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->count();
+            $quranSessionsCompleted = QuranSession::where('student_id', $userId)
+                ->where('academy_id', $parent->academy_id)
+                ->where('status', SessionStatus::COMPLETED->value)
+                ->count();
 
-        $academicSessionsCompleted = AcademicSession::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->where('status', SessionStatus::COMPLETED->value)
-            ->count();
+            $academicSessionsTotal = AcademicSession::where('student_id', $userId)
+                ->where('academy_id', $parent->academy_id)
+                ->count();
 
-        // Calculate attendance rate
-        $totalSessions = $quranSessionsTotal + $academicSessionsTotal;
-        $completedSessions = $quranSessionsCompleted + $academicSessionsCompleted;
-        $attendanceRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100, 2) : 0;
+            $academicSessionsCompleted = AcademicSession::where('student_id', $userId)
+                ->where('academy_id', $parent->academy_id)
+                ->where('status', SessionStatus::COMPLETED->value)
+                ->count();
 
-        return [
-            'quran_sessions_total' => $quranSessionsTotal,
-            'quran_sessions_completed' => $quranSessionsCompleted,
-            'academic_sessions_total' => $academicSessionsTotal,
-            'academic_sessions_completed' => $academicSessionsCompleted,
-            'total_sessions' => $totalSessions,
-            'completed_sessions' => $completedSessions,
-            'attendance_rate' => $attendanceRate,
-            'certificates_count' => $this->getChildCertificatesCount($child),
-        ];
+            // Calculate attendance rate
+            $totalSessions = $quranSessionsTotal + $academicSessionsTotal;
+            $completedSessions = $quranSessionsCompleted + $academicSessionsCompleted;
+            $attendanceRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100, 2) : 0;
+
+            return [
+                'quran_sessions_total' => $quranSessionsTotal,
+                'quran_sessions_completed' => $quranSessionsCompleted,
+                'academic_sessions_total' => $academicSessionsTotal,
+                'academic_sessions_completed' => $academicSessionsCompleted,
+                'total_sessions' => $totalSessions,
+                'completed_sessions' => $completedSessions,
+                'attendance_rate' => $attendanceRate,
+                'certificates_count' => $this->getChildCertificatesCount($child),
+            ];
+        });
     }
 
     /**
@@ -316,5 +321,13 @@ class ParentDataService
             ->count();
 
         return $quranCount + $academicCount;
+    }
+
+    /**
+     * Clear all caches for a specific child.
+     */
+    public function clearChildCache(int $parentId, int $childId): void
+    {
+        Cache::forget("parent:child_progress:{$parentId}:{$childId}");
     }
 }

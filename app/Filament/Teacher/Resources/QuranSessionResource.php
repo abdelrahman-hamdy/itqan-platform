@@ -51,6 +51,7 @@ class QuranSessionResource extends BaseTeacherResource
     protected static ?int $navigationSort = 1;
 
     // Scope to only the current teacher's sessions
+    // Eager load relationships to prevent N+1 queries
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
@@ -64,7 +65,14 @@ class QuranSessionResource extends BaseTeacherResource
         return parent::getEloquentQuery()
             ->where('quran_teacher_id', $userId)
             ->where('academy_id', $user->academy_id)
-            ->with(['student', 'subscription', 'circle', 'individualCircle', 'sessionHomework']);
+            ->with([
+                'student',
+                'subscription',
+                'circle',
+                'individualCircle',
+                'sessionHomework',
+                'academy',
+            ]);
     }
 
     public static function form(Form $form): Form
@@ -284,14 +292,14 @@ class QuranSessionResource extends BaseTeacherResource
                         'success' => AttendanceStatus::ATTENDED->value,
                         'danger' => AttendanceStatus::ABSENT->value,
                         'warning' => AttendanceStatus::LATE->value,
-                        'info' => AttendanceStatus::LEAVED->value,
+                        'info' => AttendanceStatus::LEFT->value,
                         'gray' => 'pending',
                     ])
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                         SubscriptionStatus::PENDING->value => 'في الانتظار',
                         null => 'غير محدد',
                         default => $state,
@@ -327,7 +335,7 @@ class QuranSessionResource extends BaseTeacherResource
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                         SubscriptionStatus::PENDING->value => 'في الانتظار',
                     ]),
 

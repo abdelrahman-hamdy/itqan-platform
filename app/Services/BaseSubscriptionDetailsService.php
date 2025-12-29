@@ -46,90 +46,34 @@ abstract class BaseSubscriptionDetailsService
 
     /**
      * Get billing cycle text in English
-     *
-     * @param BillingCycle|string|null $billingCycle
-     * @return string
      */
-    protected function getBillingCycleText(BillingCycle|string|null $billingCycle): string
+    protected function getBillingCycleText(?BillingCycle $billingCycle): string
     {
-        if ($billingCycle instanceof BillingCycle) {
-            return $billingCycle->labelEn();
-        }
-
-        // Handle legacy string values
-        return match($billingCycle) {
-            'monthly' => 'Monthly',
-            'quarterly' => 'Quarterly',
-            'yearly' => 'Yearly',
-            default => 'Unknown',
-        };
+        return $billingCycle?->labelEn() ?? 'Unknown';
     }
 
     /**
      * Get billing cycle text in Arabic
-     *
-     * @param BillingCycle|string|null $billingCycle
-     * @return string
      */
-    protected function getBillingCycleTextArabic(BillingCycle|string|null $billingCycle): string
+    protected function getBillingCycleTextArabic(?BillingCycle $billingCycle): string
     {
-        if ($billingCycle instanceof BillingCycle) {
-            return $billingCycle->label();
-        }
-
-        // Handle legacy string values
-        return match($billingCycle) {
-            'monthly' => 'شهرية',
-            'quarterly' => 'ربع سنوية',
-            'yearly' => 'سنوية',
-            default => 'غير محدد',
-        };
+        return $billingCycle?->label() ?? 'غير محدد';
     }
 
     /**
      * Get status badge CSS class
-     *
-     * @param SubscriptionStatus|string|null $status
-     * @return string
      */
-    protected function getStatusBadgeClass(SubscriptionStatus|string|null $status): string
+    protected function getStatusBadgeClass(?SubscriptionStatus $status): string
     {
-        if ($status instanceof SubscriptionStatus) {
-            return $status->badgeClasses();
-        }
-
-        // Handle legacy string values
-        return match($status) {
-            SubscriptionStatus::ACTIVE->value => 'bg-green-100 text-green-800',
-            SubscriptionStatus::PENDING->value => 'bg-yellow-100 text-yellow-800',
-            SubscriptionStatus::PAUSED->value => 'bg-blue-100 text-blue-800',
-            SubscriptionStatus::CANCELLED->value => 'bg-red-100 text-red-800',
-            SubscriptionStatus::EXPIRED->value => 'bg-gray-100 text-gray-800',
-            SubscriptionStatus::COMPLETED->value => 'bg-purple-100 text-purple-800',
-            default => 'bg-gray-100 text-gray-800',
-        };
+        return $status?->badgeClasses() ?? 'bg-gray-100 text-gray-800';
     }
 
     /**
      * Get payment status badge CSS class
-     *
-     * @param SubscriptionPaymentStatus|string|null $paymentStatus
-     * @return string
      */
-    protected function getPaymentStatusBadgeClass(SubscriptionPaymentStatus|string|null $paymentStatus): string
+    protected function getPaymentStatusBadgeClass(?SubscriptionPaymentStatus $paymentStatus): string
     {
-        if ($paymentStatus instanceof SubscriptionPaymentStatus) {
-            return $paymentStatus->badgeClasses();
-        }
-
-        // Handle legacy string values
-        return match($paymentStatus) {
-            'paid' => 'bg-green-100 text-green-800',
-            'pending' => 'bg-yellow-100 text-yellow-800',
-            'failed' => 'bg-red-100 text-red-800',
-            'refunded' => 'bg-orange-100 text-orange-800',
-            default => 'bg-gray-100 text-gray-800',
-        };
+        return $paymentStatus?->badgeClasses() ?? 'bg-gray-100 text-gray-800';
     }
 
     /**
@@ -151,65 +95,26 @@ abstract class BaseSubscriptionDetailsService
 
     /**
      * Get subscription status text in Arabic
-     *
-     * @param SubscriptionStatus|string|null $status
-     * @return string
      */
-    public function getStatusTextArabic(SubscriptionStatus|string|null $status): string
+    public function getStatusTextArabic(?SubscriptionStatus $status): string
     {
-        if ($status instanceof SubscriptionStatus) {
-            return $status->label();
-        }
-
-        // Handle legacy string values
-        return match($status) {
-            SubscriptionStatus::ACTIVE->value => 'نشط',
-            SubscriptionStatus::PENDING->value => 'في الانتظار',
-            SubscriptionStatus::PAUSED->value => 'متوقف مؤقتاً',
-            SubscriptionStatus::CANCELLED->value => 'ملغي',
-            SubscriptionStatus::EXPIRED->value => 'منتهي',
-            SubscriptionStatus::COMPLETED->value => 'مكتمل',
-            default => 'غير معروف',
-        };
+        return $status?->label() ?? 'غير معروف';
     }
 
     /**
      * Get payment status text in Arabic
-     *
-     * @param SubscriptionPaymentStatus|string|null $paymentStatus
-     * @return string
      */
-    public function getPaymentStatusTextArabic(SubscriptionPaymentStatus|string|null $paymentStatus): string
+    public function getPaymentStatusTextArabic(?SubscriptionPaymentStatus $paymentStatus): string
     {
-        if ($paymentStatus instanceof SubscriptionPaymentStatus) {
-            return $paymentStatus->label();
-        }
-
-        // Handle legacy string values
-        return match($paymentStatus) {
-            'paid' => 'مدفوع',
-            'pending' => 'في انتظار الدفع',
-            'failed' => 'فشل الدفع',
-            'refunded' => 'مسترد',
-            default => 'غير معروف',
-        };
+        return $paymentStatus?->label() ?? 'غير معروف';
     }
 
     /**
      * Check if subscription needs renewal soon
-     *
-     * @param BaseSubscription $subscription
-     * @param int $daysThreshold
-     * @return bool
      */
     public function needsRenewalSoon(BaseSubscription $subscription, int $daysThreshold = 7): bool
     {
-        // Check if status is active (handle both enum and legacy string)
-        $isActive = $subscription->status instanceof SubscriptionStatus
-            ? $subscription->status === SubscriptionStatus::ACTIVE
-            : $subscription->status === SubscriptionStatus::ACTIVE->value;
-
-        if (!$isActive) {
+        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
             return false;
         }
 
@@ -220,11 +125,7 @@ abstract class BaseSubscriptionDetailsService
 
         $daysUntilPayment = $this->getDaysUntilNextPayment($subscription);
 
-        if ($daysUntilPayment !== null && $daysUntilPayment <= $daysThreshold) {
-            return true;
-        }
-
-        return false;
+        return $daysUntilPayment !== null && $daysUntilPayment <= $daysThreshold;
     }
 
     /**
@@ -240,18 +141,10 @@ abstract class BaseSubscriptionDetailsService
 
     /**
      * Get renewal message based on sessions remaining
-     *
-     * @param BaseSubscription $subscription
-     * @return string|null
      */
     public function getRenewalMessage(BaseSubscription $subscription): ?string
     {
-        // Check if status is active (handle both enum and legacy string)
-        $isActive = $subscription->status instanceof SubscriptionStatus
-            ? $subscription->status === SubscriptionStatus::ACTIVE
-            : $subscription->status === SubscriptionStatus::ACTIVE->value;
-
-        if (!$isActive) {
+        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
             return null;
         }
 

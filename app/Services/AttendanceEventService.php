@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\AttendanceEventServiceInterface;
 use App\Models\MeetingAttendance;
 use App\Models\MeetingAttendanceEvent;
 use Illuminate\Support\Facades\Cache;
@@ -14,7 +15,7 @@ use App\Enums\SessionStatus;
  * Simple service for storing attendance events from LiveKit webhooks.
  * NO complex business logic - just data storage. Calculation happens post-meeting.
  */
-class AttendanceEventService
+class AttendanceEventService implements AttendanceEventServiceInterface
 {
     /**
      * Record user joining the meeting (from webhook)
@@ -62,10 +63,10 @@ class AttendanceEventService
             // Clear cache
             $this->clearAttendanceCache($session->id, $user->id);
 
-            // 🔥 Dispatch Livewire event to update UI in real-time
+            // Dispatch Livewire event to update UI in real-time
             $this->dispatchAttendanceUpdate($session->id, $user->id);
 
-            Log::info('📥 Join event recorded', [
+            Log::info('Join event recorded', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
                 'event_id' => $eventData['event_id'] ?? null,
@@ -74,7 +75,7 @@ class AttendanceEventService
             return true;
 
         } catch (\Exception $e) {
-            Log::error('❌ Failed to record join event', [
+            Log::error('Failed to record join event', [
                 'error' => $e->getMessage(),
                 'session_id' => $session->id,
                 'user_id' => $user->id,
@@ -96,7 +97,7 @@ class AttendanceEventService
                 ->first();
 
             if (! $attendance) {
-                Log::warning('⚠️ No attendance record found for leave event', [
+                Log::warning('No attendance record found for leave event', [
                     'session_id' => $session->id,
                     'user_id' => $user->id,
                 ]);
@@ -108,7 +109,7 @@ class AttendanceEventService
             $participantSid = $eventData['participant_sid'] ?? null;
             $leaveTime = $eventData['timestamp'] ?? now();
 
-            // 🔥 FIX: Find matching join event by participant_sid and update it
+            // Find matching join event by participant_sid and update it
             $matchFound = false;
             if ($participantSid) {
                 for ($i = count($cycles) - 1; $i >= 0; $i--) {
@@ -133,7 +134,7 @@ class AttendanceEventService
                             ]]);
 
                             $matchFound = true;
-                            Log::info('📤 Matched leave to join event', [
+                            Log::info('Matched leave to join event', [
                                 'participant_sid' => $participantSid,
                                 'duration' => $duration,
                             ]);
@@ -153,7 +154,7 @@ class AttendanceEventService
                     'duration_minutes' => $eventData['duration_minutes'] ?? null,
                 ];
 
-                Log::warning('⚠️ Leave event added without matching join', [
+                Log::warning('Leave event added without matching join', [
                     'participant_sid' => $participantSid,
                 ]);
             }
@@ -170,10 +171,10 @@ class AttendanceEventService
             // Clear cache
             $this->clearAttendanceCache($session->id, $user->id);
 
-            // 🔥 Dispatch Livewire event to update UI in real-time
+            // Dispatch Livewire event to update UI in real-time
             $this->dispatchAttendanceUpdate($session->id, $user->id);
 
-            Log::info('📤 Leave event recorded', [
+            Log::info('Leave event recorded', [
                 'session_id' => $session->id,
                 'user_id' => $user->id,
                 'event_id' => $eventData['event_id'] ?? null,
@@ -183,7 +184,7 @@ class AttendanceEventService
             return true;
 
         } catch (\Exception $e) {
-            Log::error('❌ Failed to record leave event', [
+            Log::error('Failed to record leave event', [
                 'error' => $e->getMessage(),
                 'session_id' => $session->id,
                 'user_id' => $user->id,

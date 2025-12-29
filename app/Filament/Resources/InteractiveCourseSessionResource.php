@@ -34,7 +34,11 @@ class InteractiveCourseSessionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['course', 'course.assignedTeacher']);
+            ->with([
+                'course',
+                'course.assignedTeacher',
+                'course.assignedTeacher.user',
+            ]);
     }
 
     public static function form(Form $form): Form

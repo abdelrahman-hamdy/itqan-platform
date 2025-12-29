@@ -77,7 +77,7 @@ use App\Enums\AttendanceStatus;
             ],
             [
                 'date' => '2024-01-13',
-                'status' => AttendanceStatus::LEAVED->value,
+                'status' => AttendanceStatus::LEFT->value,
                 'duration' => 45,
                 'notes' => 'انضم متأخراً 15 دقيقة'
             ],
@@ -103,7 +103,7 @@ use App\Enums\AttendanceStatus;
                 <div class="flex-shrink-0">
                     @if($record['status'] === AttendanceStatus::ATTENDED->value)
                         <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                    @elseif($record['status'] === AttendanceStatus::LEAVED->value)
+                    @elseif($record['status'] === AttendanceStatus::LEFT->value)
                         <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     @else
                         <div class="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -127,9 +127,9 @@ use App\Enums\AttendanceStatus;
             <!-- Status Badge -->
             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                 {{ $record['status'] === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
-                   ($record['status'] === AttendanceStatus::LEAVED->value ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                   ($record['status'] === AttendanceStatus::LEFT->value ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                 {{ $record['status'] === AttendanceStatus::ATTENDED->value ? 'حضر' :
-                   ($record['status'] === AttendanceStatus::LEAVED->value ? 'غادر مبكراً' : 'غاب') }}
+                   ($record['status'] === AttendanceStatus::LEFT->value ? 'غادر مبكراً' : 'غاب') }}
             </span>
         </div>
         @endforeach
@@ -179,14 +179,14 @@ use App\Enums\AttendanceStatus;
         </div>
 
         <!-- Attendance Action Buttons -->
-        <div class="mt-4 pt-3 border-t border-gray-100">
+        <div class="mt-4 pt-3 border-t border-gray-100" x-data>
             <div class="flex items-center space-x-2 space-x-reverse">
-                <button onclick="viewDetailedAttendance({{ $subscription->id }})" 
+                <button @click="window.location.href = '/teacher/academic/lessons/{{ $subscription->id }}/attendance'"
                         class="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium rounded-lg transition-colors">
                     <i class="ri-bar-chart-line ml-1"></i>
                     تقرير مفصل
                 </button>
-                <button onclick="exportAttendance({{ $subscription->id }})" 
+                <button @click="window.toast?.info('سيتم تنفيذ تصدير البيانات قريباً')"
                         class="flex-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-medium rounded-lg transition-colors">
                     <i class="ri-download-line ml-1"></i>
                     تصدير
@@ -218,16 +218,3 @@ use App\Enums\AttendanceStatus;
     @endif
 </div>
 
-<script>
-@if($isTeacher)
-function viewDetailedAttendance(subscriptionId) {
-    // Navigate to detailed attendance report
-    window.location.href = '/teacher/academic/lessons/' + subscriptionId + '/attendance';
-}
-
-function exportAttendance(subscriptionId) {
-    // Export attendance data as CSV or PDF
-    alert('سيتم تنفيذ تصدير البيانات قريباً');
-}
-@endif
-</script>

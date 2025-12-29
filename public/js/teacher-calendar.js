@@ -51,8 +51,8 @@ function loadCircles() {
             displayIndividualCircles(data.individualCircles || []);
             updateCircleCounts(data);
         })
-        .catch(error => {
-            console.error('Error loading circles:', error);
+        .catch(() => {
+            // Silent fail - circles list stays empty
         });
 }
 
@@ -305,7 +305,7 @@ function handleBulkScheduling(e) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            'X-CSRF-TOKEN': window.getCsrfToken?.() || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         },
         body: JSON.stringify(scheduleData)
     })
@@ -318,11 +318,10 @@ function handleBulkScheduling(e) {
                 // You might want to refresh the calendar widget here
                 location.reload(); // Temporary solution
             } else {
-                alert('حدث خطأ في جدولة الجلسات');
+                window.toast?.error('حدث خطأ في جدولة الجلسات');
             }
         })
-        .catch(error => {
-            console.error('Error scheduling sessions:', error);
-            alert('حدث خطأ في جدولة الجلسات');
+        .catch(() => {
+            window.toast?.error('حدث خطأ في جدولة الجلسات');
         });
 }

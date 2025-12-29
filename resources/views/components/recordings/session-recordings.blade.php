@@ -231,7 +231,6 @@ function confirmDeleteRecording(recordingId, recordingName) {
         }
     })
     .catch(error => {
-        console.error('Error deleting recording:', error);
         showNotification('error', 'حدث خطأ أثناء حذف التسجيل');
         // Restore button state
         buttons.forEach(btn => {

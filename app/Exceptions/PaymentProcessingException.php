@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Exception for payment processing failures.
@@ -14,57 +15,140 @@ use Illuminate\Http\Request;
  */
 class PaymentProcessingException extends Exception
 {
-    protected array $errors;
-
-    protected string $paymentId;
+    protected ?string $paymentId;
+    protected ?array $gatewayResponse;
+    protected ?string $errorCode;
 
     public function __construct(
-        string $message = 'فشل في معالجة الدفع',
-        string $paymentId = '',
-        array $errors = [],
-        int $code = 0,
+        string $message,
+        ?string $paymentId = null,
+        ?array $gatewayResponse = null,
+        ?string $errorCode = null,
         ?Exception $previous = null
     ) {
-        parent::__construct($message, $code, $previous);
+        parent::__construct($message, 0, $previous);
+
         $this->paymentId = $paymentId;
-        $this->errors = $errors;
+        $this->gatewayResponse = $gatewayResponse;
+        $this->errorCode = $errorCode;
     }
 
     /**
-     * Render the exception as an HTTP response.
+     * Create exception from gateway error response
      */
-    public function render(Request $request): JsonResponse
-    {
-        $response = [
-            'success' => false,
-            'message' => $this->getMessage(),
-            'error' => 'payment_processing_failed',
-        ];
+    public static function fromGatewayError(
+        string $gateway,
+        array $gatewayResponse,
+        ?string $paymentId = null
+    ): self {
+        $errorCode = $gatewayResponse['error_code'] ?? $gatewayResponse['code'] ?? 'UNKNOWN_ERROR';
+        $gatewayMessage = $gatewayResponse['message'] ?? $gatewayResponse['error'] ?? 'حدث خطأ في معالجة الدفع';
 
-        if ($this->paymentId) {
-            $response['payment_id'] = $this->paymentId;
-        }
+        $message = sprintf(
+            'فشلت عملية الدفع عبر %s: %s',
+            $gateway,
+            $gatewayMessage
+        );
 
-        if (! empty($this->errors)) {
-            $response['errors'] = $this->errors;
-        }
-
-        return response()->json($response, 400);
+        return new self($message, $paymentId, $gatewayResponse, $errorCode);
     }
 
     /**
-     * Get the payment ID associated with this exception.
+     * Create exception for declined payment
      */
-    public function getPaymentId(): string
+    public static function paymentDeclined(
+        string $reason,
+        ?string $paymentId = null,
+        ?array $gatewayResponse = null
+    ): self {
+        $message = sprintf('تم رفض عملية الدفع: %s', $reason);
+
+        return new self($message, $paymentId, $gatewayResponse, 'PAYMENT_DECLINED');
+    }
+
+    /**
+     * Create exception for timeout
+     */
+    public static function timeout(
+        string $gateway,
+        ?string $paymentId = null
+    ): self {
+        $message = sprintf('انتهت مهلة الاتصال ببوابة الدفع %s', $gateway);
+
+        return new self($message, $paymentId, null, 'GATEWAY_TIMEOUT');
+    }
+
+    /**
+     * Create exception for invalid amount
+     */
+    public static function invalidAmount(
+        float $amount,
+        ?string $paymentId = null
+    ): self {
+        $message = sprintf('المبلغ غير صالح: %s', $amount);
+
+        return new self($message, $paymentId, null, 'INVALID_AMOUNT');
+    }
+
+    /**
+     * Get payment ID
+     */
+    public function getPaymentId(): ?string
     {
         return $this->paymentId;
     }
 
     /**
-     * Get the errors array.
+     * Get gateway response
      */
-    public function getErrors(): array
+    public function getGatewayResponse(): ?array
     {
-        return $this->errors;
+        return $this->gatewayResponse;
+    }
+
+    /**
+     * Get error code
+     */
+    public function getErrorCode(): ?string
+    {
+        return $this->errorCode;
+    }
+
+    /**
+     * Report the exception
+     */
+    public function report(): void
+    {
+        Log::error('Payment processing failed', [
+            'payment_id' => $this->paymentId,
+            'error_code' => $this->errorCode,
+            'gateway_response' => $this->gatewayResponse,
+            'message' => $this->message,
+            'trace' => $this->getTraceAsString(),
+        ]);
+    }
+
+    /**
+     * Render the exception as an HTTP response
+     */
+    public function render(Request $request): JsonResponse
+    {
+        $statusCode = match ($this->errorCode) {
+            'PAYMENT_DECLINED' => 402, // Payment Required
+            'INVALID_AMOUNT' => 400, // Bad Request
+            'GATEWAY_TIMEOUT' => 504, // Gateway Timeout
+            default => 500, // Internal Server Error
+        };
+
+        return response()->json([
+            'success' => false,
+            'message' => $this->message,
+            'error' => [
+                'type' => 'payment_processing_error',
+                'code' => $this->errorCode,
+                'payment_id' => $this->paymentId,
+                'gateway_response' => $this->gatewayResponse,
+            ],
+        ], $statusCode);
     }
 }

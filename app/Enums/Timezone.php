@@ -2,6 +2,15 @@
 
 namespace App\Enums;
 
+/**
+ * Timezone Enum
+ *
+ * Defines supported timezones for Arab countries.
+ * Uses PHP timezone identifiers as values.
+ *
+ * @see \App\Models\User
+ * @see \App\Models\Academy
+ */
 enum Timezone: string
 {
     case RIYADH = 'Asia/Riyadh';
@@ -27,39 +36,19 @@ enum Timezone: string
     case COMORO = 'Indian/Comoro';
     case NOUAKCHOTT = 'Africa/Nouakchott';
 
-    public function getLabel(): string
+    /**
+     * Get localized label
+     */
+    public function label(): string
     {
-        return match($this) {
-            self::RIYADH => 'الرياض (GMT+3)',
-            self::DUBAI => 'دبي (GMT+4)',
-            self::CAIRO => 'القاهرة (GMT+2)',
-            self::QATAR => 'قطر (GMT+3)',
-            self::KUWAIT => 'الكويت (GMT+3)',
-            self::BAHRAIN => 'البحرين (GMT+3)',
-            self::MUSCAT => 'مسقط (GMT+4)',
-            self::AMMAN => 'عمّان (GMT+2)',
-            self::BEIRUT => 'بيروت (GMT+2)',
-            self::BAGHDAD => 'بغداد (GMT+3)',
-            self::DAMASCUS => 'دمشق (GMT+2)',
-            self::ADEN => 'عدن (GMT+3)',
-            self::GAZA => 'غزة (GMT+2)',
-            self::CASABLANCA => 'الدار البيضاء (GMT+1)',
-            self::ALGIERS => 'الجزائر (GMT+1)',
-            self::TUNIS => 'تونس (GMT+1)',
-            self::TRIPOLI => 'طرابلس (GMT+2)',
-            self::KHARTOUM => 'الخرطوم (GMT+2)',
-            self::MOGADISHU => 'مقديشو (GMT+3)',
-            self::DJIBOUTI => 'جيبوتي (GMT+3)',
-            self::COMORO => 'القُمر (GMT+3)',
-            self::NOUAKCHOTT => 'نواكشوط (GMT+0)',
-        };
+        return __('enums.timezone.' . $this->value);
     }
 
     public static function toArray(): array
     {
         return array_combine(
             array_map(fn($case) => $case->value, self::cases()),
-            array_map(fn($case) => $case->getLabel(), self::cases())
+            array_map(fn($case) => $case->label(), self::cases())
         );
     }
 

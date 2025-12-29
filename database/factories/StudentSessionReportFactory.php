@@ -19,14 +19,14 @@ class StudentSessionReportFactory extends Factory
         $student = User::factory()->state(['user_type' => 'student']);
         $session = QuranSession::factory();
 
-        $attendanceStatuses = ['attended', 'late', 'leaved', 'absent'];
+        $attendanceStatuses = ['attended', 'late', 'left', 'absent'];
         $attendanceStatus = $this->faker->randomElement($attendanceStatuses);
 
         // Calculate realistic attendance percentage based on status
         $attendancePercentage = match ($attendanceStatus) {
             'attended' => $this->faker->numberBetween(80, 100),
             'late' => $this->faker->numberBetween(70, 95),
-            'leaved' => $this->faker->numberBetween(30, 49),
+            'left' => $this->faker->numberBetween(30, 49),
             'absent' => 0,
         };
 
@@ -117,13 +117,13 @@ class StudentSessionReportFactory extends Factory
     /**
      * Create a report for a student who left early
      */
-    public function leaved(): static
+    public function left(): static
     {
         return $this->state(function (array $attributes) {
             $attendanceMinutes = $this->faker->numberBetween(18, 29); // 30-49% of 60 minutes
 
             return [
-                'attendance_status' => 'leaved',
+                'attendance_status' => 'left',
                 'attendance_percentage' => round(($attendanceMinutes / 60) * 100, 2),
                 'actual_attendance_minutes' => $attendanceMinutes,
                 'is_late' => $this->faker->boolean(),

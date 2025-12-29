@@ -112,25 +112,24 @@ class QuranSessionSchedulingService
     public function hasTeacherConflict(int $teacherId, Carbon $scheduledAt, int $durationMinutes): bool
     {
         $sessionEnd = $scheduledAt->copy()->addMinutes($durationMinutes);
-        
-        return QuranSession::where('quran_teacher_id', $teacherId)
+
+        // Get all scheduled sessions for this teacher
+        $existingSessions = QuranSession::where('quran_teacher_id', $teacherId)
             ->where('status', SessionStatus::SCHEDULED->value)
-            ->where(function ($query) use ($scheduledAt, $sessionEnd) {
-                $query->where(function ($q) use ($scheduledAt) {
-                    // New session starts during existing session
-                    $q->where('scheduled_at', '<=', $scheduledAt)
-                      ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) > ?', [$scheduledAt]);
-                })->orWhere(function ($q) use ($sessionEnd) {
-                    // New session ends during existing session
-                    $q->where('scheduled_at', '<', $sessionEnd)
-                      ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) >= ?', [$sessionEnd]);
-                })->orWhere(function ($q) use ($scheduledAt, $sessionEnd) {
-                    // New session completely overlaps existing session
-                    $q->where('scheduled_at', '>=', $scheduledAt)
-                      ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) <= ?', [$sessionEnd]);
-                });
-            })
-            ->exists();
+            ->get(['scheduled_at', 'duration_minutes']);
+
+        // Check for conflicts in PHP (more portable and maintainable)
+        foreach ($existingSessions as $session) {
+            $existingStart = Carbon::parse($session->scheduled_at);
+            $existingEnd = $existingStart->copy()->addMinutes($session->duration_minutes);
+
+            // Check if sessions overlap
+            if ($scheduledAt->lt($existingEnd) && $sessionEnd->gt($existingStart)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -207,20 +207,12 @@
 <!-- Academic Homework AJAX Scripts -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Unified notification function (centered toast style)
+    // Use unified toast notification system
     function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg text-white shadow-lg z-50 flex items-center gap-2 ${
-            type === 'success' ? 'bg-green-500' :
-            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        }`;
-        notification.innerHTML = `<i class="ri-${type === 'success' ? 'check' : type === 'error' ? 'close' : 'information'}-line"></i><span>${message}</span>`;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
+        if (window.toast) {
+            window.toast.show({ type: type, message: message });
+        } else {
+        }
     }
 
     // Generic form submission handler
@@ -258,7 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 showNotification('حدث خطأ أثناء الحفظ', 'error');
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
@@ -308,7 +299,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 showNotification('حدث خطأ أثناء الحفظ', 'error');
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;

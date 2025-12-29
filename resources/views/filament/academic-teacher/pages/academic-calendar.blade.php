@@ -251,7 +251,6 @@
     {{-- JavaScript for GUARANTEED item selection --}}
     <script>
         function makeItemSelected(itemId, itemType) {
-            console.log('🎯 Making item selected:', itemId, itemType);
             
             // Remove all selections first
             document.querySelectorAll('.item-card').forEach(card => {
@@ -268,7 +267,6 @@
             const targetCard = document.querySelector(`[data-item-id="${itemId}"][data-item-type="${itemType}"]`);
             if (targetCard) {
                 targetCard.classList.add('item-selected');
-                console.log('✅ Applied item-selected class');
                 
                 // Force styles as backup
                 const cardElement = targetCard.querySelector('.fi-card');
@@ -284,7 +282,6 @@
         }
         
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Academic calendar selection system initialized');
             
             // Enhanced click handler for items
             document.addEventListener('click', function(e) {

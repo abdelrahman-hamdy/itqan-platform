@@ -176,7 +176,7 @@ function gradeHomework(homeworkId) {
 
 // Utility function for showing modals
 function showModal(options) {
-    alert(options.content); // Temporary implementation
+    window.toast?.info(options.content);
 }
 @endif
 </script>

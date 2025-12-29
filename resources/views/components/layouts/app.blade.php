@@ -40,6 +40,9 @@
             </main>
         </div>
 
+        <!-- Unified Toast Notification System -->
+        <x-ui.toast-container />
+
         <!-- Livewire Scripts -->
         @livewireScripts
     </body>

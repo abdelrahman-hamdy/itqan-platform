@@ -48,6 +48,8 @@ class UnifiedTeacherCalendar extends Page
 
     protected ?SessionStrategyInterface $strategy = null;
 
+    protected SessionStrategyFactory $strategyFactory;
+
     // Selected item properties
     public ?int $selectedItemId = null;
 
@@ -67,10 +69,11 @@ class UnifiedTeacherCalendar extends Page
     /**
      * Mount the page and detect teacher type
      */
-    public function mount(): void
+    public function mount(SessionStrategyFactory $strategyFactory): void
     {
+        $this->strategyFactory = $strategyFactory;
         $this->teacherType = $this->detectTeacherType();
-        $this->strategy = SessionStrategyFactory::make($this->teacherType);
+        $this->strategy = $this->strategyFactory->make($this->teacherType);
 
         // Set initial active tab based on strategy
         $tabs = $this->strategy->getTabConfiguration();
@@ -128,7 +131,7 @@ class UnifiedTeacherCalendar extends Page
     protected function getStrategy(): SessionStrategyInterface
     {
         if (!$this->strategy) {
-            $this->strategy = SessionStrategyFactory::make($this->teacherType);
+            $this->strategy = $this->strategyFactory->make($this->teacherType);
         }
         return $this->strategy;
     }

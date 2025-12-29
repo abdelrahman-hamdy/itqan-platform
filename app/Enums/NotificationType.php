@@ -2,6 +2,24 @@
 
 namespace App\Enums;
 
+/**
+ * Notification Type Enum
+ *
+ * Defines all notification types in the system.
+ * Each type maps to a category and has specific title/message templates.
+ *
+ * Categories:
+ * - Session: Scheduling, reminders, completions
+ * - Attendance: Presence tracking
+ * - Homework: Assignments and grading
+ * - Payment: Transactions and subscriptions
+ * - Meeting: Video conferencing
+ * - Progress: Academic achievements
+ * - System: Account and system updates
+ *
+ * @see \App\Models\Notification
+ * @see \App\Services\NotificationService
+ */
 enum NotificationType: string
 {
     // Session Notifications
@@ -139,5 +157,13 @@ enum NotificationType: string
     public function getMessageKey(): string
     {
         return "notifications.types.{$this->value}.message";
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

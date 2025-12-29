@@ -96,7 +96,8 @@ class QuranSessionStrategy implements SessionStrategyInterface
                     ->count();
 
                 $currentMonthSessions = $circle->sessions()
-                    ->whereRaw("DATE_FORMAT(scheduled_at, '%Y-%m') = ?", [now()->format('Y-m')])
+                    ->whereYear('scheduled_at', now()->year)
+                    ->whereMonth('scheduled_at', now()->month)
                     ->count();
 
                 $monthlyLimit = $circle->monthly_sessions_count ?? 4;

@@ -329,21 +329,21 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
 
         if (submissionType === 'text' && !hasText) {
             e.preventDefault();
-            alert('يرجى كتابة حل الواجب');
+            window.toast?.warning('يرجى كتابة حل الواجب');
             textInput.focus();
             return false;
         }
 
         if (submissionType === 'file' && !hasFiles) {
             e.preventDefault();
-            alert('يرجى رفع ملف واحد على الأقل');
+            window.toast?.warning('يرجى رفع ملف واحد على الأقل');
             fileInput.focus();
             return false;
         }
 
         if (submissionType === 'both' && !hasText && !hasFiles) {
             e.preventDefault();
-            alert('يرجى كتابة حل الواجب أو رفع ملف واحد على الأقل');
+            window.toast?.warning('يرجى كتابة حل الواجب أو رفع ملف واحد على الأقل');
             return false;
         }
     }

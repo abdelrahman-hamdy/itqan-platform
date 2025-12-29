@@ -146,7 +146,7 @@ class StudentProfileService
      * @param  User  $user  The student user
      * @return \Illuminate\Database\Eloquent\Collection Grade levels
      */
-    public function getGradeLevels(User $user)
+    public function getGradeLevels(User $user): \Illuminate\Database\Eloquent\Collection
     {
         return AcademicGradeLevel::where('academy_id', $user->academy_id)
             ->active()

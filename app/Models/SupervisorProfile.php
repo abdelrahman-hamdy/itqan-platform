@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Traits\ScopedToAcademy;
+use App\Models\Traits\ScopedToAcademy;
 
 class SupervisorProfile extends Model
 {

@@ -228,7 +228,7 @@ function processPayment() {
     // Simulate payment processing
     setTimeout(() => {
         // Show success message
-        alert('تم الدفع بنجاح! مرحباً بك في الدورة');
+        window.toast?.success('تم الدفع بنجاح! مرحباً بك في الدورة');
         
         // Redirect to course learning page
         window.location.href = `{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}`;

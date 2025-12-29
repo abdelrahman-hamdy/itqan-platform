@@ -15,8 +15,8 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" data-sticky-container>
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Subscription Header (using circle header pattern) -->
-            <x-circle.individual-header :circle="$subscription" view-type="student" context="academic" />
+            <!-- Subscription Header -->
+            <x-circle.circle-header :circle="$subscription" type="individual" view-type="student" context="academic" />
 
             @php
                 $allSessions = collect($upcomingSessions)->merge($pastSessions)->sortByDesc('scheduled_at');

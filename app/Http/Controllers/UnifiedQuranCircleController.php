@@ -13,7 +13,7 @@ class UnifiedQuranCircleController extends Controller
     /**
      * Display a listing of Quran circles (Unified for both public and authenticated)
      */
-    public function index(Request $request, $subdomain)
+    public function index(Request $request, $subdomain): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -137,7 +137,7 @@ class UnifiedQuranCircleController extends Controller
     /**
      * Display the specified circle details (Unified for both public and authenticated)
      */
-    public function show(Request $request, $subdomain, $circleId)
+    public function show(Request $request, $subdomain, $circleId): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -224,7 +224,7 @@ class UnifiedQuranCircleController extends Controller
     /**
      * Enroll student in a circle (requires authentication)
      */
-    public function enroll(Request $request, $subdomain, $circleId)
+    public function enroll(Request $request, $subdomain, $circleId): \Illuminate\Http\RedirectResponse
     {
         // Must be authenticated
         if (! Auth::check()) {

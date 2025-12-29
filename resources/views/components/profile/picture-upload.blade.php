@@ -85,13 +85,13 @@ function profilePictureUpload(currentAvatar, userName) {
             if (file) {
                 // Validate file type
                 if (!file.type.startsWith('image/')) {
-                    alert('يرجى اختيار ملف صورة');
+                    window.toast?.warning('يرجى اختيار ملف صورة');
                     return;
                 }
 
                 // Validate file size (2MB)
                 if (file.size > 2 * 1024 * 1024) {
-                    alert('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+                    window.toast?.warning('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
                     return;
                 }
 

@@ -19,6 +19,12 @@ class QuranIndividualCircleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['academy', 'quranTeacher.user', 'student.user', 'subscription']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

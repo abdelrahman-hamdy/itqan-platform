@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Enums\NotificationCategory;
 use App\Services\NotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
 
 class NotificationController extends Controller
 {
+    use ApiResponses;
+
     protected NotificationService $notificationService;
 
     public function __construct(NotificationService $notificationService)
@@ -21,7 +26,7 @@ class NotificationController extends Controller
     /**
      * Display all notifications for the authenticated user
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = auth()->user();
 
@@ -65,22 +70,21 @@ class NotificationController extends Controller
     /**
      * Mark a notification as read
      */
-    public function markAsRead(Request $request, string $id)
+    public function markAsRead(Request $request, string $id): JsonResponse
     {
         $this->notificationService->markAsRead($id, auth()->user());
 
-        return response()->json(['success' => true]);
+        return $this->successResponse();
     }
 
     /**
      * Mark all notifications as read
      */
-    public function markAllAsRead(Request $request)
+    public function markAllAsRead(Request $request): JsonResponse
     {
         $count = $this->notificationService->markAllAsRead(auth()->user());
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'count' => $count
         ]);
     }
@@ -88,14 +92,14 @@ class NotificationController extends Controller
     /**
      * Delete a notification
      */
-    public function destroy(Request $request, string $id)
+    public function destroy(Request $request, string $id): JsonResponse
     {
         $deleted = $this->notificationService->delete($id, auth()->user());
 
         if ($deleted) {
-            return response()->json(['success' => true]);
+            return $this->successResponse();
         }
 
-        return response()->json(['success' => false], 404);
+        return $this->notFoundResponse('Notification not found');
     }
 }

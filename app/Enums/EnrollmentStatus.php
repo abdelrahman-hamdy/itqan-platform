@@ -2,6 +2,22 @@
 
 namespace App\Enums;
 
+/**
+ * Enrollment Status Enum
+ *
+ * Tracks student enrollment state in courses and circles.
+ *
+ * States:
+ * - PENDING: Enrollment request submitted
+ * - ENROLLED: Successfully enrolled
+ * - ACTIVE: Actively participating
+ * - COMPLETED: Successfully completed
+ * - DROPPED: Student withdrew
+ * - SUSPENDED: Enrollment temporarily suspended
+ *
+ * @see \App\Models\InteractiveCourseEnrollment
+ * @see \App\Models\QuranCircleStudent
+ */
 enum EnrollmentStatus: string
 {
     case PENDING = 'pending';
@@ -12,18 +28,11 @@ enum EnrollmentStatus: string
     case SUSPENDED = 'suspended';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => __('قيد الانتظار'),
-            self::ENROLLED => __('مسجل'),
-            self::ACTIVE => __('نشط'),
-            self::COMPLETED => __('مكتمل'),
-            self::DROPPED => __('منسحب'),
-            self::SUSPENDED => __('موقوف'),
-        };
+        return __('enums.enrollment_status.' . $this->value);
     }
 
     /**
@@ -72,5 +81,13 @@ enum EnrollmentStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

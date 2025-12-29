@@ -284,18 +284,14 @@ function playLesson(lessonId, lessonTitle) {
         let progressInterval;
         
         video.addEventListener('loadedmetadata', function() {
-            console.log('Video metadata loaded, duration:', video.duration);
-            console.log('Loading progress for lesson:', lessonId);
             // Load saved progress if available
             loadLessonProgress(lessonId);
         });
         
         video.addEventListener('play', function() {
-            console.log('Video started playing, starting progress tracking');
             // Start progress tracking
             progressInterval = setInterval(function() {
                 if (!video.paused && !video.ended) {
-                    console.log('Updating progress - current time:', video.currentTime, 'duration:', video.duration);
                     updateLessonProgress(lessonId, video.currentTime, video.duration);
                 }
             }, 5000); // Update every 5 seconds
@@ -311,7 +307,6 @@ function playLesson(lessonId, lessonTitle) {
         });
         
         video.addEventListener('ended', function() {
-            console.log('Video ended, marking lesson complete and playing next');
             // Clear progress tracking
             if (progressInterval) {
                 clearInterval(progressInterval);
@@ -325,7 +320,6 @@ function playLesson(lessonId, lessonTitle) {
         });
         
         video.addEventListener('error', function(e) {
-            console.error('Video error:', e);
             if (progressInterval) {
                 clearInterval(progressInterval);
             }
@@ -346,7 +340,6 @@ function playLesson(lessonId, lessonTitle) {
 }
 
 function markLessonComplete(lessonId) {
-    console.log('Marking lesson complete:', lessonId);
     // Update lesson status
     const statusIcon = document.getElementById(`lesson-status-${lessonId}`);
     if (statusIcon) {
@@ -364,7 +357,6 @@ function markLessonComplete(lessonId) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Lesson marked as complete:', data);
         if (data.success) {
             showNotification('تم إكمال الدرس بنجاح!', 'success');
             // Update progress bar with animation after a short delay
@@ -376,7 +368,6 @@ function markLessonComplete(lessonId) {
         }
     })
     .catch(error => {
-        console.error('Error marking lesson complete:', error);
     });
 }
 
@@ -404,17 +395,13 @@ function updateLessonProgress(lessonId, currentTime, totalTime) {
     })
     .then(data => {
         if (data.success) {
-            console.log('Progress updated successfully');
         }
     })
     .catch(error => {
-        console.error('Error updating progress:', error);
     });
 }
 
 function loadLessonProgress(lessonId) {
-    console.log('Loading lesson progress for lesson:', lessonId);
-    console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'));
     
     fetch(`/api/courses/{{ $course->id }}/lessons/${lessonId}/progress`, {
         method: 'GET',
@@ -426,25 +413,20 @@ function loadLessonProgress(lessonId) {
         credentials: 'same-origin'
     })
     .then(response => {
-        console.log('Lesson progress response status:', response.status);
-        console.log('Lesson progress response headers:', response.headers);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
     })
     .then(data => {
-        console.log('Lesson progress data:', data);
         if (data.success && data.progress) {
             const video = document.getElementById('lesson-video');
             if (video && data.progress.current_position_seconds > 0) {
                 video.currentTime = data.progress.current_position_seconds;
-                console.log('Loaded saved progress:', data.progress.current_position_seconds, 'seconds');
             }
         }
     })
     .catch(error => {
-        console.error('Error loading progress:', error);
     });
 }
 
@@ -476,8 +458,6 @@ function playNextLesson(currentLessonId) {
 }
 
 function updateCourseProgress() {
-    console.log('Updating course progress');
-    console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'));
     
     fetch(`/api/courses/{{ $course->id }}/progress`, {
         method: 'GET',
@@ -489,15 +469,12 @@ function updateCourseProgress() {
         credentials: 'same-origin'
     })
     .then(response => {
-        console.log('Course progress response status:', response.status);
-        console.log('Course progress response headers:', response.headers);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
     })
     .then(data => {
-        console.log('Course progress data:', data);
         if (data.success) {
             const progressPercentageElement = document.getElementById('progress-percentage');
             const completedLessonsElement = document.getElementById('completed-lessons');
@@ -521,26 +498,16 @@ function updateCourseProgress() {
         }
     })
     .catch(error => {
-        console.error('Error updating course progress:', error);
     });
 }
 
 function showNotification(message, type = 'info') {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white ${
-        type === 'success' ? 'bg-green-600' :
-        type === 'error' ? 'bg-red-600' :
-        'bg-cyan-500'
-    }`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
+    // Use unified toast system
+    if (window.toast) {
+        window.toast.show({ type: type, message: message });
+    } else {
+        // Fallback for when toast system isn't loaded yet
+    }
 }
 
 function startNextLesson() {
@@ -647,7 +614,6 @@ function toggleLessonStatus(lessonId) {
         }
     })
     .catch(error => {
-        console.error('Error toggling lesson status:', error);
         // Revert to original state on error
         statusIcon.className = originalClass;
         showNotification('حدث خطأ في تحديث حالة الدرس', 'error');

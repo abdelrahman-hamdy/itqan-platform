@@ -160,14 +160,13 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
 
             setTimeout(() => window.location.reload(), 1500);
         } else {
-            alert(data.message || 'حدث خطأ أثناء إرسال التقييم');
+            window.toast?.error(data.message || 'حدث خطأ أثناء إرسال التقييم');
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('حدث خطأ أثناء إرسال التقييم');
+        window.toast?.error('حدث خطأ أثناء إرسال التقييم');
         submitButton.disabled = false;
         submitButton.innerHTML = originalText;
     });

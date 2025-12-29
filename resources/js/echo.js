@@ -19,3 +19,19 @@ window.Echo = new Echo({
         },
     },
 });
+
+/**
+ * Ensure Echo is registered with Livewire for real-time events
+ * (Merged from livewire-echo.js)
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // Livewire v3 should auto-detect Echo, but ensure it's set
+    const checkLivewire = setInterval(() => {
+        if (typeof window.Livewire !== 'undefined') {
+            clearInterval(checkLivewire);
+            if (!window.Livewire.echo) {
+                window.Livewire.echo = window.Echo;
+            }
+        }
+    }, 100);
+});

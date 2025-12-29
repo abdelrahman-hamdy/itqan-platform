@@ -16,6 +16,16 @@ class CalculateSessionEarningsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
+     * The number of times the job may be attempted.
+     */
+    public int $tries = 3;
+
+    /**
+     * The number of seconds to wait before retrying.
+     */
+    public int $backoff = 60;
+
+    /**
      * The session instance.
      *
      * @var BaseSession
@@ -76,9 +86,6 @@ class CalculateSessionEarningsJob implements ShouldQueue
                     'session_type' => $this->sessionType,
                     'amount' => $earning->amount,
                 ]);
-
-                // TODO: Broadcast event to notify teacher
-                // event(new EarningCalculatedEvent($earning));
             } else {
                 Log::info('No earnings calculated for session (not eligible or already calculated)', [
                     'session_id' => $this->sessionId,
@@ -111,7 +118,5 @@ class CalculateSessionEarningsJob implements ShouldQueue
             'session_type' => $this->sessionType,
             'error' => $exception->getMessage(),
         ]);
-
-        // TODO: Notify admin about failed earnings calculation
     }
 }

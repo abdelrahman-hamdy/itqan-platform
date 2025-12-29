@@ -35,7 +35,7 @@ class StopExpiredRecordingsCommand extends Command
      */
     public function handle(): int
     {
-        Log::info('🎬 [RECORDINGS] Starting expired recordings check');
+        Log::info('[RECORDINGS] Starting expired recordings check');
 
         $stoppedCount = 0;
         $errorCount = 0;
@@ -50,7 +50,7 @@ class StopExpiredRecordingsCommand extends Command
             }])
             ->get();
 
-        Log::info('🎬 [RECORDINGS] Found sessions with active recordings', [
+        Log::info('[RECORDINGS] Found sessions with active recordings', [
             'count' => $sessionsWithActiveRecordings->count(),
         ]);
 
@@ -62,7 +62,7 @@ class StopExpiredRecordingsCommand extends Command
 
             // Skip if no scheduled_at or end time not reached yet
             if (!$scheduledEndTime || now()->lt($scheduledEndTime)) {
-                Log::debug('🎬 [RECORDINGS] Session end time not yet reached', [
+                Log::debug('[RECORDINGS] Session end time not yet reached', [
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at?->toISOString(),
                     'scheduled_end' => $scheduledEndTime?->toISOString(),
@@ -72,7 +72,7 @@ class StopExpiredRecordingsCommand extends Command
             }
 
             // Session has passed its scheduled end time - stop recording
-            Log::info('🎬 [RECORDINGS] Stopping recording for expired session', [
+            Log::info('[RECORDINGS] Stopping recording for expired session', [
                 'session_id' => $session->id,
                 'scheduled_at' => $session->scheduled_at->toISOString(),
                 'scheduled_end' => $scheduledEndTime->toISOString(),
@@ -85,25 +85,25 @@ class StopExpiredRecordingsCommand extends Command
 
                     if ($stopped) {
                         $stoppedCount++;
-                        Log::info('✅ [RECORDINGS] Recording stopped successfully', [
+                        Log::info('[RECORDINGS] Recording stopped successfully', [
                             'session_id' => $session->id,
                         ]);
                     } else {
-                        Log::warning('⚠️ [RECORDINGS] No active recording to stop', [
+                        Log::warning('[RECORDINGS] No active recording to stop', [
                             'session_id' => $session->id,
                         ]);
                     }
                 }
             } catch (\Exception $e) {
                 $errorCount++;
-                Log::error('❌ [RECORDINGS] Failed to stop recording', [
+                Log::error('[RECORDINGS] Failed to stop recording', [
                     'session_id' => $session->id,
                     'error' => $e->getMessage(),
                 ]);
             }
         }
 
-        Log::info('🎬 [RECORDINGS] Expired recordings check completed', [
+        Log::info('[RECORDINGS] Expired recordings check completed', [
             'stopped' => $stoppedCount,
             'errors' => $errorCount,
         ]);

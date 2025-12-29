@@ -165,8 +165,9 @@ class NotificationDispatcher
      */
     public function isNotificationEnabled(User $user, NotificationType $type): bool
     {
-        // TODO: Implement user notification preferences
-        // For now, all notifications are enabled
+        // User notification preferences not yet implemented
+        // When implemented, check user settings table for notification type preferences
+        // For now, all notifications are enabled by default
         return true;
     }
 }

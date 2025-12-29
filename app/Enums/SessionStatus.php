@@ -2,6 +2,21 @@
 
 namespace App\Enums;
 
+/**
+ * Session Status Enum
+ *
+ * Defines the lifecycle states for all session types:
+ * - QuranSession (individual and group circles)
+ * - AcademicSession (private tutoring lessons)
+ * - InteractiveCourseSession (live course sessions)
+ *
+ * Sessions transition through states from scheduling to completion.
+ * The ABSENT status is only applicable to individual sessions.
+ *
+ * @see \App\Models\QuranSession
+ * @see \App\Models\AcademicSession
+ * @see \App\Models\InteractiveCourseSession
+ */
 enum SessionStatus: string
 {
     case UNSCHEDULED = 'unscheduled';      // Created but not scheduled
@@ -13,19 +28,11 @@ enum SessionStatus: string
     case ABSENT = 'absent';                // Student didn't attend (individual only)
 
     /**
-     * Get the Arabic label for the status
+     * Get the localized label for the status
      */
     public function label(): string
     {
-        return match ($this) {
-            self::UNSCHEDULED => 'غير مجدولة',
-            self::SCHEDULED => 'مجدولة',
-            self::READY => 'جاهزة للبدء',
-            self::ONGOING => 'جارية الآن',
-            self::COMPLETED => 'مكتملة',
-            self::CANCELLED => 'ملغية',
-            self::ABSENT => 'غياب الطالب',
-        };
+        return __('enums.session_status.' . $this->value);
     }
 
     /**

@@ -389,7 +389,7 @@ abstract class BaseReportSyncService
             'total_students' => $reports->count(),
             'present' => $reports->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
             'late' => $reports->where('attendance_status', AttendanceStatus::LATE->value)->count(),
-            'partial' => $reports->where('attendance_status', AttendanceStatus::LEAVED->value)->count(),
+            'partial' => $reports->where('attendance_status', AttendanceStatus::LEFT->value)->count(),
             'absent' => $reports->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
             'average_attendance_percentage' => 0,
             'average_performance' => 0,

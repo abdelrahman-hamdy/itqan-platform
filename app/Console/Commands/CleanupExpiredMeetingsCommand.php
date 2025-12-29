@@ -21,11 +21,13 @@ class CleanupExpiredMeetingsCommand extends Command
     protected $description = 'End expired video meetings and cleanup resources';
 
     private AutoMeetingCreationService $autoMeetingService;
+    private CronJobLogger $cronJobLogger;
 
-    public function __construct(AutoMeetingCreationService $autoMeetingService)
+    public function __construct(AutoMeetingCreationService $autoMeetingService, CronJobLogger $cronJobLogger)
     {
         parent::__construct();
         $this->autoMeetingService = $autoMeetingService;
+        $this->cronJobLogger = $cronJobLogger;
     }
 
     /**
@@ -37,7 +39,7 @@ class CleanupExpiredMeetingsCommand extends Command
         $isVerbose = $this->getOutput()->isVerbose();
 
         // Start enhanced logging
-        $executionData = CronJobLogger::logCronStart('meetings:cleanup-expired', [
+        $executionData = $this->cronJobLogger->logCronStart('meetings:cleanup-expired', [
             'dry_run' => $isDryRun,
         ]);
 
@@ -71,7 +73,7 @@ class CleanupExpiredMeetingsCommand extends Command
             if (isset($results['meetings_failed_to_end']) && $results['meetings_failed_to_end'] > 0) {
                 $this->warn('⚠️  Some meetings failed to end. Check logs for details.');
 
-                CronJobLogger::logCronEnd('meetings:cleanup-expired', $executionData, $results, 'partial');
+                $this->cronJobLogger->logCronEnd('meetings:cleanup-expired', $executionData, $results, 'partial');
 
                 return self::INVALID;
             }
@@ -79,7 +81,7 @@ class CleanupExpiredMeetingsCommand extends Command
             $this->info('✅ Meeting cleanup process completed successfully');
 
             // Log completion
-            CronJobLogger::logCronEnd('meetings:cleanup-expired', $executionData, $results, 'success');
+            $this->cronJobLogger->logCronEnd('meetings:cleanup-expired', $executionData, $results, 'success');
 
             return self::SUCCESS;
 
@@ -92,7 +94,7 @@ class CleanupExpiredMeetingsCommand extends Command
             }
 
             // Log error
-            CronJobLogger::logCronError('meetings:cleanup-expired', $executionData, $e);
+            $this->cronJobLogger->logCronError('meetings:cleanup-expired', $executionData, $e);
 
             return self::FAILURE;
         }
@@ -142,40 +144,52 @@ class CleanupExpiredMeetingsCommand extends Command
      */
     private function simulateCleanup(): array
     {
-        // Count sessions that would be cleaned up
-        $expiredSessions = \App\Models\QuranSession::whereNotNull('meeting_id')
+        $expiredCount = 0;
+        $sessionDetails = [];
+
+        // Process sessions in chunks to prevent memory issues
+        \App\Models\QuranSession::whereNotNull('meeting_id')
             ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING])
             ->whereNotNull('scheduled_at')
             ->with('academy')
-            ->get()
-            ->filter(function ($session) {
-                $videoSettings = \App\Models\VideoSettings::forAcademy($session->academy);
+            ->chunkById(100, function ($sessions) use (&$expiredCount, &$sessionDetails) {
+                foreach ($sessions as $session) {
+                    $videoSettings = \App\Models\VideoSettings::forAcademy($session->academy);
 
-                if (! $videoSettings->auto_end_meetings) {
-                    return false;
+                    if (! $videoSettings->auto_end_meetings) {
+                        continue;
+                    }
+
+                    $scheduledEndTime = \Carbon\Carbon::parse($session->scheduled_at)
+                        ->addMinutes($session->duration_minutes ?? 60);
+                    $actualEndTime = $videoSettings->getMeetingEndTime($scheduledEndTime);
+
+                    if (now()->gte($actualEndTime)) {
+                        $expiredCount++;
+
+                        // Only store details if verbose mode (limit to prevent memory issues)
+                        if ($this->getOutput()->isVerbose() && count($sessionDetails) < 100) {
+                            $sessionDetails[] = [
+                                'id' => $session->id,
+                                'scheduled_end' => $scheduledEndTime->format('Y-m-d H:i:s'),
+                            ];
+                        }
+                    }
                 }
-
-                $scheduledEndTime = \Carbon\Carbon::parse($session->scheduled_at)
-                    ->addMinutes($session->duration_minutes ?? 60);
-                $actualEndTime = $videoSettings->getMeetingEndTime($scheduledEndTime);
-
-                return now()->gte($actualEndTime);
             });
 
-        $this->line("  📋 Would end {$expiredSessions->count()} expired meetings");
+        $this->line("  📋 Would end {$expiredCount} expired meetings");
 
-        if ($this->getOutput()->isVerbose() && $expiredSessions->count() > 0) {
-            $this->line('  📝 Sessions that would be ended:');
-            foreach ($expiredSessions as $session) {
-                $scheduledEnd = \Carbon\Carbon::parse($session->scheduled_at)
-                    ->addMinutes($session->duration_minutes ?? 60);
-                $this->line("    - Session {$session->id}: Scheduled to end at {$scheduledEnd->format('Y-m-d H:i:s')}");
+        if ($this->getOutput()->isVerbose() && count($sessionDetails) > 0) {
+            $this->line('  📝 Sessions that would be ended (first 100):');
+            foreach ($sessionDetails as $detail) {
+                $this->line("    - Session {$detail['id']}: Scheduled to end at {$detail['scheduled_end']}");
             }
         }
 
         return [
-            'sessions_checked' => $expiredSessions->count(),
-            'meetings_ended' => $expiredSessions->count(), // In dry run, assume all would succeed
+            'sessions_checked' => $expiredCount,
+            'meetings_ended' => $expiredCount, // In dry run, assume all would succeed
             'meetings_failed_to_end' => 0,
             'errors' => [],
         ];

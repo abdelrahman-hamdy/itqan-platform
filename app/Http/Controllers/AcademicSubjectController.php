@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\AcademicSubject;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicTeacherProfile;
@@ -15,6 +16,7 @@ use App\Enums\SessionStatus;
 
 class AcademicSubjectController extends Controller
 {
+    use ApiResponses;
     /**
      * عرض قائمة المواد الأكاديمية
      */
@@ -55,18 +57,10 @@ class AcademicSubjectController extends Controller
 
             $subjects = $query->paginate($request->get('per_page', 15));
 
-            return response()->json([
-                'success' => true,
-                'data' => $subjects,
-                'message' => 'تم جلب قائمة المواد الأكاديمية بنجاح'
-            ]);
+            return $this->successResponse($subjects, 'تم جلب قائمة المواد الأكاديمية بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء جلب قائمة المواد',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء جلب قائمة المواد');
         }
     }
 
@@ -94,18 +88,10 @@ class AcademicSubjectController extends Controller
                 'recordedCourses as total_recorded_courses_count'
             ]);
 
-            return response()->json([
-                'success' => true,
-                'data' => $subject,
-                'message' => 'تم جلب تفاصيل المادة بنجاح'
-            ]);
+            return $this->successResponse($subject, 'تم جلب تفاصيل المادة بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء جلب تفاصيل المادة',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء جلب تفاصيل المادة');
         }
     }
 
@@ -130,11 +116,7 @@ class AcademicSubjectController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'بيانات غير صحيحة',
-                    'errors' => $validator->errors()
-                ], 422);
+                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             DB::beginTransaction();
@@ -165,19 +147,11 @@ class AcademicSubjectController extends Controller
 
             $subject->load(['academy:id,name', 'creator:id,first_name,last_name', 'gradeLevels:id,name']);
 
-            return response()->json([
-                'success' => true,
-                'data' => $subject,
-                'message' => 'تم إنشاء المادة الأكاديمية بنجاح'
-            ], 201);
+            return $this->createdResponse($subject, 'تم إنشاء المادة الأكاديمية بنجاح');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء إنشاء المادة',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء إنشاء المادة');
         }
     }
 
@@ -203,11 +177,7 @@ class AcademicSubjectController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'بيانات غير صحيحة',
-                    'errors' => $validator->errors()
-                ], 422);
+                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $subject->update($request->only([
@@ -232,18 +202,10 @@ class AcademicSubjectController extends Controller
 
             $subject->load(['academy:id,name', 'creator:id,first_name,last_name', 'gradeLevels:id,name']);
 
-            return response()->json([
-                'success' => true,
-                'data' => $subject,
-                'message' => 'تم تحديث بيانات المادة بنجاح'
-            ]);
+            return $this->successResponse($subject, 'تم تحديث بيانات المادة بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء تحديث بيانات المادة',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء تحديث بيانات المادة');
         }
     }
 
@@ -257,18 +219,12 @@ class AcademicSubjectController extends Controller
 
             // التحقق من عدم وجود معلمين مرتبطين
             if ($subject->teachers()->count() > 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'لا يمكن حذف المادة لوجود معلمين مرتبطين بها'
-                ], 400);
+                return $this->errorResponse('لا يمكن حذف المادة لوجود معلمين مرتبطين بها', 400);
             }
 
             // التحقق من عدم وجود دورات مرتبطة
             if ($subject->interactiveCourses()->count() > 0 || $subject->recordedCourses()->count() > 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'لا يمكن حذف المادة لوجود دورات مرتبطة بها'
-                ], 400);
+                return $this->errorResponse('لا يمكن حذف المادة لوجود دورات مرتبطة بها', 400);
             }
 
             // حذف ربط المراحل الدراسية
@@ -277,17 +233,10 @@ class AcademicSubjectController extends Controller
             // حذف المادة
             $subject->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'تم حذف المادة بنجاح'
-            ]);
+            return $this->successResponse(null, 'تم حذف المادة بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء حذف المادة',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء حذف المادة');
         }
     }
 
@@ -304,18 +253,10 @@ class AcademicSubjectController extends Controller
                 ->with(['academy:id,name'])
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $subjects,
-                'message' => 'تم جلب قائمة المواد بنجاح'
-            ]);
+            return $this->successResponse($subjects, 'تم جلب قائمة المواد بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء جلب المواد',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء جلب المواد');
         }
     }
 
@@ -332,18 +273,10 @@ class AcademicSubjectController extends Controller
                 ->orderBy('name')
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $subjects,
-                'message' => 'تم جلب قائمة المواد بنجاح'
-            ]);
+            return $this->successResponse($subjects, 'تم جلب قائمة المواد بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء جلب المواد',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء جلب المواد');
         }
     }
 }

@@ -4,6 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\MeetingCommandEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Requests\AcknowledgeMeetingMessageRequest;
+use App\Http\Requests\GrantMicrophoneToStudentRequest;
+use App\Http\Requests\SendTeacherCommandRequest;
 use App\Models\QuranSession;
 use App\Services\MeetingDataChannelService;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +20,8 @@ use App\Enums\SessionStatus;
 
 class MeetingDataChannelController extends Controller
 {
+    use ApiResponses;
+
     private MeetingDataChannelService $dataChannelService;
 
     public function __construct(MeetingDataChannelService $dataChannelService)
@@ -26,15 +32,9 @@ class MeetingDataChannelController extends Controller
     /**
      * Send teacher control command
      */
-    public function sendTeacherCommand(Request $request, QuranSession $session): JsonResponse
+    public function sendTeacherCommand(SendTeacherCommandRequest $request, QuranSession $session): JsonResponse
     {
         $this->authorize('control', $session);
-
-        $request->validate([
-            'command' => 'required|string|in:mute_all_students,allow_student_microphones,clear_all_hand_raises,grant_microphone_permission,end_session,kick_participant',
-            'data' => 'array',
-            'targets' => 'array',
-        ]);
 
         try {
             $result = $this->dataChannelService->sendTeacherControlCommand(
@@ -45,11 +45,7 @@ class MeetingDataChannelController extends Controller
                 $request->input('targets', [])
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Command sent successfully',
-                'data' => $result,
-            ]);
+            return $this->successResponse($result, 'Command sent successfully');
         } catch (\Exception $e) {
             Log::error('Failed to send teacher command', [
                 'session_id' => $session->id,
@@ -57,25 +53,16 @@ class MeetingDataChannelController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send command',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to send command');
         }
     }
 
     /**
      * Handle participant acknowledgment
      */
-    public function acknowledgeMessage(Request $request, QuranSession $session): JsonResponse
+    public function acknowledgeMessage(AcknowledgeMeetingMessageRequest $request, QuranSession $session): JsonResponse
     {
         $this->authorize('participate', $session);
-
-        $request->validate([
-            'message_id' => 'required|string',
-            'response_data' => 'array',
-        ]);
 
         try {
             $this->dataChannelService->handleParticipantAcknowledgment(
@@ -85,10 +72,7 @@ class MeetingDataChannelController extends Controller
                 $request->input('response_data', [])
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Acknowledgment recorded',
-            ]);
+            return $this->successResponse(null, 'Acknowledgment recorded');
         } catch (\Exception $e) {
             Log::error('Failed to record acknowledgment', [
                 'session_id' => $session->id,
@@ -96,10 +80,7 @@ class MeetingDataChannelController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to record acknowledgment',
-            ], 500);
+            return $this->serverErrorResponse('Failed to record acknowledgment');
         }
     }
 
@@ -116,10 +97,7 @@ class MeetingDataChannelController extends Controller
                 Auth::user()
             );
 
-            return response()->json([
-                'success' => true,
-                'data' => $state,
-            ]);
+            return $this->successResponse($state);
         } catch (\Exception $e) {
             Log::error('Failed to get meeting state', [
                 'session_id' => $session->id,
@@ -127,10 +105,7 @@ class MeetingDataChannelController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to get meeting state',
-            ], 500);
+            return $this->serverErrorResponse('Failed to get meeting state');
         }
     }
 
@@ -147,8 +122,7 @@ class MeetingDataChannelController extends Controller
 
             $commandsData = Redis::get($stateKey);
             if (! $commandsData) {
-                return response()->json([
-                    'success' => true,
+                return $this->successResponse([
                     'commands' => [],
                 ]);
             }
@@ -169,8 +143,7 @@ class MeetingDataChannelController extends Controller
                 return empty($command['targets']) || in_array($userIdentifier, $command['targets']);
             });
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'commands' => array_values($relevantCommands),
                 'server_time' => now()->toISOString(),
             ]);
@@ -180,8 +153,7 @@ class MeetingDataChannelController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
+            return $this->successResponse([
                 'commands' => [],
             ]);
         }
@@ -281,17 +253,9 @@ class MeetingDataChannelController extends Controller
         try {
             $result = $this->dataChannelService->muteAllStudents($session, Auth::user());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'All students muted successfully',
-                'data' => $result,
-            ]);
+            return $this->successResponse($result, 'All students muted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to mute all students',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to mute all students');
         }
     }
 
@@ -302,17 +266,9 @@ class MeetingDataChannelController extends Controller
         try {
             $result = $this->dataChannelService->allowStudentMicrophones($session, Auth::user());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Student microphones allowed successfully',
-                'data' => $result,
-            ]);
+            return $this->successResponse($result, 'Student microphones allowed successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to allow student microphones',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to allow student microphones');
         }
     }
 
@@ -323,27 +279,15 @@ class MeetingDataChannelController extends Controller
         try {
             $result = $this->dataChannelService->clearAllHandRaises($session, Auth::user());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'All hand raises cleared successfully',
-                'data' => $result,
-            ]);
+            return $this->successResponse($result, 'All hand raises cleared successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to clear hand raises',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to clear hand raises');
         }
     }
 
-    public function grantMicrophoneToStudent(Request $request, QuranSession $session): JsonResponse
+    public function grantMicrophoneToStudent(GrantMicrophoneToStudentRequest $request, QuranSession $session): JsonResponse
     {
         $this->authorize('control', $session);
-
-        $request->validate([
-            'student_id' => 'required|exists:users,id',
-        ]);
 
         try {
             $student = \App\Models\User::findOrFail($request->input('student_id'));
@@ -354,17 +298,9 @@ class MeetingDataChannelController extends Controller
                 $student
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Microphone permission granted successfully',
-                'data' => $result,
-            ]);
+            return $this->successResponse($result, 'Microphone permission granted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to grant microphone permission',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to grant microphone permission');
         }
     }
 
@@ -383,35 +319,25 @@ class MeetingDataChannelController extends Controller
             $commandData = Redis::get($commandKey);
 
             if (! $commandData) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Command not found',
-                ], 404);
+                return $this->notFoundResponse('Command not found');
             }
 
             $command = json_decode($commandData, true);
             $expectedCount = $session->students()->count() + 1; // +1 for teacher
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'message_id' => $messageId,
-                    'command' => $command['command'],
-                    'sent_at' => $command['timestamp'],
-                    'acknowledgments' => count($acks),
-                    'expected_acknowledgments' => $expectedCount,
-                    'delivery_complete' => count($acks) >= $expectedCount,
-                    'acknowledgment_details' => array_map(function ($ack) {
-                        return json_decode($ack, true);
-                    }, $acks),
-                ],
+            return $this->successResponse([
+                'message_id' => $messageId,
+                'command' => $command['command'],
+                'sent_at' => $command['timestamp'],
+                'acknowledgments' => count($acks),
+                'expected_acknowledgments' => $expectedCount,
+                'delivery_complete' => count($acks) >= $expectedCount,
+                'acknowledgment_details' => array_map(function ($ack) {
+                    return json_decode($ack, true);
+                }, $acks),
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to get delivery status',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to get delivery status');
         }
     }
 
@@ -437,17 +363,11 @@ class MeetingDataChannelController extends Controller
             // Test WebSocket broadcast
             broadcast(new MeetingCommandEvent($session, $testData));
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Connectivity test sent',
+            return $this->successResponse([
                 'test_id' => $testData['message_id'],
-            ]);
+            ], 'Connectivity test sent');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Connectivity test failed',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Connectivity test failed');
         }
     }
 }

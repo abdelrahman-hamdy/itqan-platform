@@ -2,6 +2,23 @@
 
 namespace App\Enums;
 
+/**
+ * Notification Category Enum
+ *
+ * Categorizes notifications for filtering and display.
+ *
+ * Categories:
+ * - SESSION: Session-related notifications
+ * - ATTENDANCE: Attendance tracking notifications
+ * - HOMEWORK: Homework assignments and submissions
+ * - PAYMENT: Payment and billing notifications
+ * - MEETING: Video meeting notifications
+ * - PROGRESS: Student progress updates
+ * - SYSTEM: System announcements
+ *
+ * @see \App\Models\Notification
+ * @see \App\Services\NotificationService
+ */
 enum NotificationCategory: string
 {
     case SESSION = 'session';
@@ -11,6 +28,14 @@ enum NotificationCategory: string
     case MEETING = 'meeting';
     case PROGRESS = 'progress';
     case SYSTEM = 'system';
+
+    /**
+     * Get localized label
+     */
+    public function label(): string
+    {
+        return __('enums.notification_category.' . $this->value);
+    }
 
     /**
      * Get the icon for the notification category
@@ -57,22 +82,6 @@ enum NotificationCategory: string
             self::MEETING => 'bg-purple-100 text-purple-800',
             self::PROGRESS => 'bg-indigo-100 text-indigo-800',
             self::SYSTEM => 'bg-gray-100 text-gray-800',
-        };
-    }
-
-    /**
-     * Get the label for the notification category
-     */
-    public function getLabel(): string
-    {
-        return match ($this) {
-            self::SESSION => __('notifications.categories.session'),
-            self::ATTENDANCE => __('notifications.categories.attendance'),
-            self::HOMEWORK => __('notifications.categories.homework'),
-            self::PAYMENT => __('notifications.categories.payment'),
-            self::MEETING => __('notifications.categories.meeting'),
-            self::PROGRESS => __('notifications.categories.progress'),
-            self::SYSTEM => __('notifications.categories.system'),
         };
     }
 }

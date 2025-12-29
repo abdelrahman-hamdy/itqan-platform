@@ -153,10 +153,11 @@
                                 </x-filament::card>
                             </div>
                         @empty
-                            <x-calendar.empty-state
+                            <x-ui.empty-state
                                 icon="heroicon-o-user-group"
                                 title="لا توجد حلقات جماعية"
                                 description="سيتم عرض الحلقات الجماعية المخصصة لك هنا"
+                                :filament="true"
                             />
                         @endforelse
                     </div>
@@ -234,10 +235,11 @@
                                 </x-filament::card>
                             </div>
                         @empty
-                            <x-calendar.empty-state
+                            <x-ui.empty-state
                                 icon="heroicon-o-user"
                                 title="لا توجد حلقات فردية"
                                 description="سيتم عرض الحلقات الفردية المخصصة لك هنا"
+                                :filament="true"
                             />
                         @endforelse
                     </div>
@@ -304,10 +306,11 @@
                                 </x-filament::card>
                             </div>
                         @empty
-                            <x-calendar.empty-state
+                            <x-ui.empty-state
                                 icon="heroicon-o-clock"
                                 title="لا توجد جلسات تجريبية"
                                 description="سيتم عرض طلبات الجلسات التجريبية المخصصة لك هنا"
+                                :filament="true"
                             />
                         @endforelse
                     </div>
@@ -382,10 +385,11 @@
                                 </x-filament::card>
                             </div>
                         @empty
-                            <x-calendar.empty-state
+                            <x-ui.empty-state
                                 icon="heroicon-o-user"
                                 title="لا توجد دروس خاصة"
                                 description="سيتم عرض الدروس الخاصة المخصصة لك هنا"
+                                :filament="true"
                             />
                         @endforelse
                     </div>
@@ -459,10 +463,11 @@
                                 </x-filament::card>
                             </div>
                         @empty
-                            <x-calendar.empty-state
+                            <x-ui.empty-state
                                 icon="heroicon-o-user-group"
                                 title="لا توجد دورات تفاعلية"
                                 description="سيتم عرض الدورات التفاعلية المخصصة لك هنا"
+                                :filament="true"
                             />
                         @endforelse
                     </div>
@@ -516,7 +521,6 @@
     {{-- JavaScript for GUARANTEED circle selection --}}
     <script>
         function makeCircleSelected(circleId, circleType) {
-            console.log('🎯 Making circle selected:', circleId, circleType);
             
             // Remove all selections first
             document.querySelectorAll('.circle-card').forEach(card => {
@@ -533,7 +537,6 @@
             const targetCard = document.querySelector(`[data-circle-id="${circleId}"][data-circle-type="${circleType}"]`);
             if (targetCard) {
                 targetCard.classList.add('circle-selected');
-                console.log('✅ Applied circle-selected class');
                 
                 // Force styles as backup
                 const cardElement = targetCard.querySelector('.fi-card');
@@ -549,7 +552,6 @@
         }
         
         function makeTrialSelected(trialId) {
-            console.log('🎯 Making trial selected:', trialId);
 
             // Remove all trial selections first
             document.querySelectorAll('.trial-card').forEach(card => {
@@ -566,7 +568,6 @@
             const targetCard = document.querySelector(`[data-trial-id="${trialId}"]`);
             if (targetCard) {
                 targetCard.classList.add('trial-selected');
-                console.log('✅ Applied trial-selected class');
 
                 // Force styles as backup
                 const cardElement = targetCard.querySelector('.fi-card');
@@ -581,7 +582,6 @@
         }
 
         function makeItemSelected(itemId, itemType) {
-            console.log('🎯 Making item selected:', itemId, itemType);
 
             // Remove all item selections first
             document.querySelectorAll('.item-card').forEach(card => {
@@ -598,7 +598,6 @@
             const targetCard = document.querySelector(`[data-item-id="${itemId}"][data-item-type="${itemType}"]`);
             if (targetCard) {
                 targetCard.classList.add('item-selected');
-                console.log('✅ Applied item-selected class');
 
                 // Force styles as backup
                 const cardElement = targetCard.querySelector('.fi-card');
@@ -613,7 +612,6 @@
         }
         
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Calendar selection system initialized');
 
             // Enhanced click handler for circles, trials, and items
             document.addEventListener('click', function(e) {

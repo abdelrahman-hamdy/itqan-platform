@@ -270,13 +270,7 @@ class CourseSubscription extends BaseSubscription
             ->where('user_id', $this->student_id);
     }
 
-    /**
-     * Get payment records
-     */
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class, 'subscription_id');
-    }
+    // Note: payments() relationship is inherited from BaseSubscription using morphMany
 
     // ========================================
     // ABSTRACT METHOD IMPLEMENTATIONS

@@ -1,220 +1,212 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs;
 
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
-use App\Models\QuranSession;
+use App\Models\BaseSession;
 
 /**
- * Data Transfer Object for Session Operation Results
+ * Data Transfer Object for session operation results
  *
- * Represents the result of session operations like creation, update,
- * cancellation, rescheduling, or status changes.
+ * Used by SessionManagementService to return structured results for
+ * session operations like creation, updates, status changes, and cancellations.
+ *
+ * @property-read bool $success Whether the operation was successful
+ * @property-read BaseSession|null $session The session instance
+ * @property-read string $operation Operation type (create, update, cancel, reschedule, etc.)
+ * @property-read string|null $previousStatus Previous session status (if applicable)
+ * @property-read string|null $newStatus New session status (if applicable)
+ * @property-read string $message Human-readable operation result message
+ * @property-read array $metadata Additional operation metadata
  */
-class SessionOperationResult
+readonly class SessionOperationResult
 {
     public function __construct(
-        public readonly bool $success,
-        public readonly string $operation,
-        public readonly QuranSession|AcademicSession|InteractiveCourseSession|null $session = null,
-        public readonly ?string $message = null,
-        public readonly ?string $errorMessage = null,
-        public readonly array $errors = [],
-        public readonly array $changes = [],
-        public readonly array $metadata = [],
+        public bool $success,
+        public ?BaseSession $session,
+        public string $operation,
+        public ?string $previousStatus = null,
+        public ?string $newStatus = null,
+        public string $message = '',
+        public array $metadata = [],
     ) {}
 
     /**
-     * Create a successful creation result
+     * Create a successful operation result
      */
-    public static function created(
-        QuranSession|AcademicSession|InteractiveCourseSession $session,
-        ?string $message = null
+    public static function success(
+        BaseSession $session,
+        string $operation,
+        ?string $message = null,
+        ?string $previousStatus = null,
+        ?string $newStatus = null,
+        array $metadata = []
     ): self {
+        $defaultMessage = $message ?? ucfirst($operation) . ' completed successfully';
+
         return new self(
             success: true,
-            operation: 'create',
             session: $session,
-            message: $message ?? 'تم إنشاء الجلسة بنجاح',
+            operation: $operation,
+            previousStatus: $previousStatus,
+            newStatus: $newStatus,
+            message: $defaultMessage,
+            metadata: $metadata,
         );
     }
 
     /**
-     * Create a successful update result
-     */
-    public static function updated(
-        QuranSession|AcademicSession|InteractiveCourseSession $session,
-        array $changes = [],
-        ?string $message = null
-    ): self {
-        return new self(
-            success: true,
-            operation: 'update',
-            session: $session,
-            message: $message ?? 'تم تحديث الجلسة بنجاح',
-            changes: $changes,
-        );
-    }
-
-    /**
-     * Create a successful cancellation result
-     */
-    public static function cancelled(
-        QuranSession|AcademicSession|InteractiveCourseSession $session,
-        ?string $reason = null
-    ): self {
-        return new self(
-            success: true,
-            operation: 'cancel',
-            session: $session,
-            message: 'تم إلغاء الجلسة بنجاح',
-            metadata: ['cancellation_reason' => $reason],
-        );
-    }
-
-    /**
-     * Create a successful reschedule result
-     */
-    public static function rescheduled(
-        QuranSession|AcademicSession|InteractiveCourseSession $session,
-        string $previousTime,
-        string $newTime,
-        ?string $reason = null
-    ): self {
-        return new self(
-            success: true,
-            operation: 'reschedule',
-            session: $session,
-            message: 'تم إعادة جدولة الجلسة بنجاح',
-            changes: [
-                'scheduled_at' => [
-                    'from' => $previousTime,
-                    'to' => $newTime,
-                ],
-            ],
-            metadata: ['reschedule_reason' => $reason],
-        );
-    }
-
-    /**
-     * Create a successful status change result
-     */
-    public static function statusChanged(
-        QuranSession|AcademicSession|InteractiveCourseSession $session,
-        string $previousStatus,
-        string $newStatus
-    ): self {
-        return new self(
-            success: true,
-            operation: 'status_change',
-            session: $session,
-            message: 'تم تغيير حالة الجلسة بنجاح',
-            changes: [
-                'status' => [
-                    'from' => $previousStatus,
-                    'to' => $newStatus,
-                ],
-            ],
-        );
-    }
-
-    /**
-     * Create a failure result
+     * Create a failed operation result
      */
     public static function failure(
         string $operation,
-        string $errorMessage,
-        array $errors = [],
-        QuranSession|AcademicSession|InteractiveCourseSession|null $session = null
+        string $message,
+        ?BaseSession $session = null,
+        array $metadata = []
     ): self {
         return new self(
             success: false,
-            operation: $operation,
             session: $session,
-            errorMessage: $errorMessage,
-            errors: $errors,
-        );
-    }
-
-    /**
-     * Create a validation failure result
-     */
-    public static function validationFailed(
-        string $operation,
-        array $errors
-    ): self {
-        return new self(
-            success: false,
             operation: $operation,
-            errorMessage: 'فشل التحقق من صحة البيانات',
-            errors: $errors,
+            previousStatus: null,
+            newStatus: null,
+            message: $message,
+            metadata: $metadata,
         );
     }
 
     /**
-     * Check if operation had changes
+     * Create result for session creation
      */
-    public function hasChanges(): bool
-    {
-        return ! empty($this->changes);
+    public static function created(
+        BaseSession $session,
+        ?string $message = null,
+        array $metadata = []
+    ): self {
+        return self::success(
+            session: $session,
+            operation: 'create',
+            message: $message ?? 'Session created successfully',
+            newStatus: $session->status?->value ?? 'scheduled',
+            metadata: $metadata,
+        );
     }
 
     /**
-     * Get session ID
+     * Create result for session update
      */
-    public function getSessionId(): ?int
-    {
-        return $this->session?->id;
+    public static function updated(
+        BaseSession $session,
+        ?string $message = null,
+        array $metadata = []
+    ): self {
+        return self::success(
+            session: $session,
+            operation: 'update',
+            message: $message ?? 'Session updated successfully',
+            metadata: $metadata,
+        );
     }
 
     /**
-     * Get session type
+     * Create result for session cancellation
      */
-    public function getSessionType(): ?string
-    {
-        if (! $this->session) {
-            return null;
-        }
-
-        return match (true) {
-            $this->session instanceof QuranSession => 'quran',
-            $this->session instanceof AcademicSession => 'academic',
-            $this->session instanceof InteractiveCourseSession => 'interactive',
-            default => 'unknown',
-        };
+    public static function cancelled(
+        BaseSession $session,
+        string $previousStatus,
+        ?string $message = null,
+        array $metadata = []
+    ): self {
+        return self::success(
+            session: $session,
+            operation: 'cancel',
+            message: $message ?? 'Session cancelled successfully',
+            previousStatus: $previousStatus,
+            newStatus: 'cancelled',
+            metadata: $metadata,
+        );
     }
 
     /**
-     * Convert to array for API responses
+     * Create result for session rescheduling
+     */
+    public static function rescheduled(
+        BaseSession $session,
+        ?string $message = null,
+        array $metadata = []
+    ): self {
+        return self::success(
+            session: $session,
+            operation: 'reschedule',
+            message: $message ?? 'Session rescheduled successfully',
+            metadata: array_merge(['rescheduled_at' => now()], $metadata),
+        );
+    }
+
+    /**
+     * Create instance from array data
+     */
+    public static function fromArray(array $data): self
+    {
+        return new self(
+            success: (bool) ($data['success'] ?? false),
+            session: $data['session'] ?? null,
+            operation: $data['operation'] ?? 'unknown',
+            previousStatus: $data['previousStatus'] ?? $data['previous_status'] ?? null,
+            newStatus: $data['newStatus'] ?? $data['new_status'] ?? null,
+            message: $data['message'] ?? '',
+            metadata: $data['metadata'] ?? [],
+        );
+    }
+
+    /**
+     * Convert to array representation
      */
     public function toArray(): array
     {
-        $result = [
+        return [
             'success' => $this->success,
+            'session_id' => $this->session?->id,
             'operation' => $this->operation,
+            'previous_status' => $this->previousStatus,
+            'new_status' => $this->newStatus,
+            'message' => $this->message,
+            'metadata' => $this->metadata,
         ];
+    }
 
-        if ($this->success) {
-            $result['message'] = $this->message;
-            $result['session_id'] = $this->getSessionId();
-            $result['session_type'] = $this->getSessionType();
+    /**
+     * Check if the operation was successful
+     */
+    public function isSuccessful(): bool
+    {
+        return $this->success;
+    }
 
-            if ($this->hasChanges()) {
-                $result['changes'] = $this->changes;
-            }
-        } else {
-            $result['error'] = $this->errorMessage;
+    /**
+     * Check if the operation failed
+     */
+    public function isFailed(): bool
+    {
+        return !$this->success;
+    }
 
-            if (! empty($this->errors)) {
-                $result['errors'] = $this->errors;
-            }
-        }
+    /**
+     * Check if status changed
+     */
+    public function hasStatusChanged(): bool
+    {
+        return $this->previousStatus !== null
+            && $this->newStatus !== null
+            && $this->previousStatus !== $this->newStatus;
+    }
 
-        if (! empty($this->metadata)) {
-            $result['metadata'] = $this->metadata;
-        }
-
-        return $result;
+    /**
+     * Get operation type
+     */
+    public function getOperationType(): string
+    {
+        return $this->operation;
     }
 }

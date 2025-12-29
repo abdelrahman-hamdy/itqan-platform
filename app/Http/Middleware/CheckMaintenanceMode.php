@@ -59,7 +59,7 @@ class CheckMaintenanceMode
 
         // If not in request, try to get from app container
         if (!$academy && app()->has('current_academy')) {
-            $academy = app('current_academy');
+            $academy = current_academy();
         }
 
         // If no academy is found (main domain), proceed normally
@@ -123,7 +123,7 @@ class CheckMaintenanceMode
 
         // If not in request, try to get from app container
         if (!$academy && app()->has('current_academy')) {
-            $academy = app('current_academy');
+            $academy = current_academy();
         }
 
         if ($academy && $academy->admin_id === $user->id) {

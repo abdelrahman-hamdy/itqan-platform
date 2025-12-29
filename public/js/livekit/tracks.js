@@ -33,7 +33,6 @@ class LiveKitTracks {
         this.syncTimeouts = new Map(); // participantId -> timeout ID
         this.lastStateUpdate = new Map(); // participantId -> timestamp
 
-        console.log('🎬 LiveKitTracks initialized with enhanced synchronization');
     }
 
     /**
@@ -55,7 +54,6 @@ class LiveKitTracks {
             };
             
             this.trackStates.set(participantId, defaultState);
-            console.log(`📊 [FIXED] Initialized state for ${participantId}:`, defaultState);
         }
     }
 
@@ -83,7 +81,6 @@ class LiveKitTracks {
         state.lastUpdate = Date.now();
         state.uiSynced = false; // Mark as needing UI sync
         
-        console.log(`📊 [FIXED] Updated track state for ${participantId}:`, state);
     }
 
     /**
@@ -108,11 +105,9 @@ class LiveKitTracks {
      * CRITICAL FIX: Perform UI synchronization based on actual state
      */
     performUISync(participantId) {
-        console.log(`🔄 [FIXED] Performing UI sync for ${participantId}`);
         
         const state = this.trackStates.get(participantId);
         if (!state) {
-            console.warn(`⚠️ No state found for ${participantId}`);
             return;
         }
 
@@ -126,21 +121,18 @@ class LiveKitTracks {
         this.updateOverlayMicStatus(participantId, shouldShowAudio);
 
         state.uiSynced = true;
-        console.log(`✅ UI sync completed for ${participantId}`);
     }
 
     /**
      * CRITICAL FIX: Wait for video to be ready before showing
      */
     async waitForVideoReady(videoElement, participantId, timeout = 3000) {
-        console.log(`📹 Waiting for video to be ready for ${participantId}`);
         
         return new Promise((resolve) => {
             const checkReady = () => {
                 if (videoElement.srcObject && 
                     videoElement.srcObject.getTracks().length > 0 &&
                     videoElement.readyState >= 2) {
-                    console.log(`✅ Video ready for ${participantId}`);
                     resolve(true);
                     return;
                 }
@@ -151,12 +143,10 @@ class LiveKitTracks {
 
             // Set up event listeners for video ready states
             const onLoadedData = () => {
-                console.log(`📹 Video loaded data for ${participantId}`);
                 checkReady();
             };
 
             const onCanPlay = () => {
-                console.log(`📹 Video can play for ${participantId}`);
                 checkReady();
             };
 
@@ -167,7 +157,6 @@ class LiveKitTracks {
             setTimeout(() => {
                 videoElement.removeEventListener('loadeddata', onLoadedData);
                 videoElement.removeEventListener('canplay', onCanPlay);
-                console.log(`⏰ Video ready timeout for ${participantId}, proceeding anyway`);
                 resolve(false);
             }, timeout);
         });
@@ -183,13 +172,10 @@ class LiveKitTracks {
         const participantId = participant.identity;
         const isLocal = participant.isLocal;
         
-        console.log(`📹 [FIXED] Track subscribed: ${track.kind} from ${participantId}, source: ${publication.source}`);
-        console.log(`📊 Publication state: subscribed=${publication.isSubscribed}, muted=${publication.isMuted}`);
 
         // CRITICAL FIX: Prevent duplicate processing
         const processingKey = `${participantId}-${track.kind}-${publication.source}`;
         if (this.processingQueue.has(processingKey)) {
-            console.log(`⏭️ Already processing ${track.kind} for ${participantId}, skipping`);
             return;
         }
         
@@ -236,22 +222,18 @@ class LiveKitTracks {
         const participantId = participant.identity;
         const isLocal = participant.isLocal;
 
-        console.log(`📹 [FIXED] Video track subscribed for ${participantId} (local: ${isLocal})`);
 
         try {
             // CRITICAL FIX: Get video element with retry mechanism
             const videoElement = await this.getVideoElementWithRetry(participantId, isLocal);
             if (!videoElement) {
-                console.error(`❌ Failed to create video element for ${participantId} after retries`);
                 return;
             }
 
             // Attach track with error handling
             try {
                 track.attach(videoElement);
-                console.log(`✅ Video track attached for ${participantId}`);
             } catch (attachError) {
-                console.error(`❌ Failed to attach video track for ${participantId}:`, attachError);
                 return;
             }
 
@@ -272,10 +254,8 @@ class LiveKitTracks {
                 this.config.onVideoTrackAttached(participantId, videoElement, track, publication);
             }
 
-            console.log(`✅ Video track handled for ${participantId} (FIXED)`);
 
         } catch (error) {
-            console.error(`❌ Error handling video track for ${participantId}:`, error);
         }
     }
 
@@ -284,7 +264,6 @@ class LiveKitTracks {
      */
     async getVideoElementWithRetry(participantId, isLocal, maxRetries = 3) {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            console.log(`📹 Getting video element for ${participantId} (attempt ${attempt}/${maxRetries})`);
             
             const videoElement = this.getOrCreateVideoElement(participantId, isLocal);
             if (videoElement) {
@@ -292,7 +271,6 @@ class LiveKitTracks {
             }
             
             if (attempt < maxRetries) {
-                console.log(`⏳ Waiting before retry for ${participantId}...`);
                 await new Promise(resolve => setTimeout(resolve, 500 * attempt));
             }
         }
@@ -320,7 +298,6 @@ class LiveKitTracks {
         const participantId = participant.identity;
         const isLocal = participant.isLocal;
 
-        console.log(`🎤 [FIXED] Audio track subscribed for ${participantId} (local: ${isLocal}, muted: ${publication.isMuted})`);
 
         try {
             // CRITICAL FIX: Update UI immediately with actual state
@@ -336,7 +313,6 @@ class LiveKitTracks {
                     track.attach(audioElement);
                     this.storeTrackReference(participantId, 'audio', audioElement);
                 } catch (attachError) {
-                    console.error(`❌ Failed to attach audio track for ${participantId}:`, attachError);
                 }
             }
 
@@ -345,10 +321,8 @@ class LiveKitTracks {
                 this.config.onAudioTrackAttached(participantId, null, track, publication);
             }
 
-            console.log(`✅ Audio track handled for ${participantId} (FIXED)`);
 
         } catch (error) {
-            console.error(`❌ Error handling audio track for ${participantId}:`, error);
         }
     }
 
@@ -362,7 +336,6 @@ class LiveKitTracks {
         const participantId = participant.identity;
         const isLocal = participant.isLocal;
 
-        console.log(`🖥️ Screen share track subscribed for ${participantId} (local: ${isLocal})`);
 
         // Create a screen share "participant" element
         this.createScreenShareElement(track, publication, participant);
@@ -372,7 +345,6 @@ class LiveKitTracks {
             this.config.onVideoTrackAttached(`${participantId}_screen`, null, track, publication);
         }
 
-        console.log(`✅ Screen share track handled for ${participantId}`);
     }
 
     /**
@@ -385,7 +357,6 @@ class LiveKitTracks {
         const participantId = participant.identity;
         const isLocal = participant.isLocal;
 
-        console.log(`🔊 Screen share audio track subscribed for ${participantId} (local: ${isLocal})`);
 
         // For screen share audio, we'll attach it to a hidden audio element
         if (!isLocal) {
@@ -393,7 +364,6 @@ class LiveKitTracks {
             track.attach(audioElement);
         }
 
-        console.log(`✅ Screen share audio track handled for ${participantId}`);
     }
 
     /**
@@ -407,19 +377,15 @@ class LiveKitTracks {
         const screenShareId = `${participantId}_screen`;
         const isLocal = participant.isLocal;
 
-        console.log(`🖥️ Creating screen share element for ${participantId}`);
 
         const videoGrid = document.getElementById('videoGrid');
         if (!videoGrid) {
-            console.error('❌ Video grid not found');
-            console.error('❌ Available elements with "video" in ID:', Array.from(document.querySelectorAll('[id*="video"]')).map(el => el.id));
             return;
         }
 
         // Check if screen share element already exists
         let screenShareDiv = document.getElementById(`participant-${screenShareId}`);
         if (screenShareDiv) {
-            console.log(`🖥️ Screen share element already exists for ${participantId}`);
             return;
         }
 
@@ -445,7 +411,6 @@ class LiveKitTracks {
         // Attach track to video element
         track.attach(videoElement);
 
-        console.log(`✅ Screen share video element created and track attached for ${participantId}`);
 
         // Create screen share overlay with info
         const overlay = document.createElement('div');
@@ -503,18 +468,11 @@ class LiveKitTracks {
             e.preventDefault();
             e.stopPropagation();
 
-            console.log(`🎯 Screen share clicked for focus mode: ${participantId}`);
-            console.log(`🎯 Screen share ID: ${screenShareId}`);
-            console.log(`🎯 Window livekitLayout exists: ${!!window.livekitLayout}`);
-            console.log(`🎯 Click target:`, e.target);
-            console.log(`🎯 Current target:`, e.currentTarget);
 
             // Trigger focus mode through layout system
             if (window.livekitLayout) {
-                console.log(`🎯 Calling applyFocusMode with: ${screenShareId}`);
                 window.livekitLayout.applyFocusMode(screenShareId, screenShareDiv);
             } else {
-                console.error('❌ window.livekitLayout not found!');
             }
         });
 
@@ -523,7 +481,6 @@ class LiveKitTracks {
             e.preventDefault();
             e.stopPropagation();
 
-            console.log(`🎯 Screen share video clicked for focus mode: ${participantId}`);
 
             if (window.livekitLayout) {
                 window.livekitLayout.applyFocusMode(screenShareId, screenShareDiv);
@@ -535,7 +492,6 @@ class LiveKitTracks {
 
         // Add a small delay and then test if the element is clickable
         setTimeout(() => {
-            console.log(`🖥️ Screen share element created and inserted:`, {
                 id: screenShareDiv.id,
                 exists: !!document.getElementById(screenShareDiv.id),
                 clickable: screenShareDiv.style.pointerEvents === 'auto',
@@ -549,8 +505,6 @@ class LiveKitTracks {
         }
         this.participantTracks.get(screenShareId).video = videoElement;
 
-        console.log(`✅ Screen share element created for ${participantId}`);
-        console.log(`📊 Video grid now has ${videoGrid.children.length} participants (including screen share)`);
     }
 
     /**
@@ -581,7 +535,6 @@ class LiveKitTracks {
      */
     removeScreenShareElement(participantId) {
         const screenShareId = `${participantId}_screen`;
-        console.log(`🗑️ Removing screen share element for ${participantId}`);
 
         const element = document.getElementById(`participant-${screenShareId}`);
         if (element && element.parentNode) {
@@ -597,7 +550,6 @@ class LiveKitTracks {
             audioElement.remove();
         }
 
-        console.log(`✅ Screen share element removed for ${participantId}`);
     }
 
     /**
@@ -607,7 +559,6 @@ class LiveKitTracks {
      * @param {LiveKit.Participant} participant - The participant
      */
     handleTrackUnsubscribed(track, publication, participant) {
-        console.log(`📹 Track unsubscribed: ${track.kind} from ${participant.identity}, source: ${publication.source}`);
 
         const participantId = participant.identity;
 
@@ -635,7 +586,6 @@ class LiveKitTracks {
     handleVideoTrackUnsubscribed(track, publication, participant) {
         const participantId = participant.identity;
 
-        console.log(`📹 Video track unsubscribed for ${participantId}`);
 
         // Detach track
         track.detach();
@@ -653,7 +603,6 @@ class LiveKitTracks {
             this.config.onVideoTrackDetached(participantId, track, publication);
         }
 
-        console.log(`✅ Video track detached for ${participantId}`);
     }
 
     /**
@@ -665,7 +614,6 @@ class LiveKitTracks {
     handleAudioTrackUnsubscribed(track, publication, participant) {
         const participantId = participant.identity;
 
-        console.log(`🎤 Audio track unsubscribed for ${participantId}`);
 
         // Update microphone status icon to show as muted
         this.updateMicrophoneStatusIcon(participantId, false);
@@ -684,7 +632,6 @@ class LiveKitTracks {
             this.config.onAudioTrackDetached(participantId, track, publication);
         }
 
-        console.log(`✅ Audio track detached for ${participantId}`);
     }
 
     /**
@@ -696,7 +643,6 @@ class LiveKitTracks {
     handleScreenShareTrackUnsubscribed(track, publication, participant) {
         const participantId = participant.identity;
 
-        console.log(`🖥️ Screen share track unsubscribed for ${participantId}`);
 
         // Detach track
         track.detach();
@@ -709,7 +655,6 @@ class LiveKitTracks {
             this.config.onVideoTrackDetached(`${participantId}_screen`, track, publication);
         }
 
-        console.log(`✅ Screen share track detached for ${participantId}`);
     }
 
     /**
@@ -721,7 +666,6 @@ class LiveKitTracks {
     handleScreenShareAudioTrackUnsubscribed(track, publication, participant) {
         const participantId = participant.identity;
 
-        console.log(`🔊 Screen share audio track unsubscribed for ${participantId}`);
 
         // Detach track
         track.detach();
@@ -737,7 +681,6 @@ class LiveKitTracks {
             this.config.onAudioTrackDetached(`${participantId}_screen_audio`, track, publication);
         }
 
-        console.log(`✅ Screen share audio track detached for ${participantId}`);
     }
 
     /**
@@ -747,7 +690,6 @@ class LiveKitTracks {
      */
     handleTrackMuted(publication, participant) {
         const participantId = participant.identity;
-        console.log(`🔇 [FIXED] Track muted: ${publication.kind} from ${participantId}`);
 
         // CRITICAL FIX: Update state immediately
         this.updateTrackState(participantId, publication, publication.track);
@@ -785,7 +727,6 @@ class LiveKitTracks {
      */
     handleTrackUnmuted(publication, participant) {
         const participantId = participant.identity;
-        console.log(`🔊 [FIXED] Track unmuted: ${publication.kind} from ${participantId}`);
 
         // CRITICAL FIX: Update state immediately
         this.updateTrackState(participantId, publication, publication.track);
@@ -825,13 +766,11 @@ class LiveKitTracks {
      * @returns {HTMLVideoElement} Video element
      */
     getOrCreateVideoElement(participantId, isLocal = false) {
-        console.log(`📹 Getting video element for ${participantId}, isLocal: ${isLocal}`);
 
         // Try to find the video element directly first
         let videoElement = document.getElementById(`video-${participantId}`);
         
         if (videoElement) {
-            console.log(`✅ Found existing video element for ${participantId}`);
             return videoElement;
         }
 
@@ -840,21 +779,16 @@ class LiveKitTracks {
 
         if (!participantElement) {
             // Alternative search methods
-            console.log(`🔍 Primary search failed for participant-${participantId}, trying alternatives...`);
             participantElement = document.querySelector(`[data-participant-id="${participantId}"]`);
 
             if (!participantElement) {
-                console.error(`❌ Participant element not found for ${participantId}`);
                 // Log available participant elements for debugging
                 const allParticipants = document.querySelectorAll('[id^="participant-"], [data-participant-id]');
-                console.log('📋 Available participant elements:', Array.from(allParticipants).map(el => el.id || el.getAttribute('data-participant-id')));
 
                 // Wait a bit and try again (race condition fix)
                 setTimeout(() => {
-                    console.log(`🔄 Retrying video element creation for ${participantId}...`);
                     const retryElement = document.getElementById(`participant-${participantId}`);
                     if (retryElement && this.lastTrack && this.lastPublication && this.lastParticipant) {
-                        console.log(`✅ Participant element found on retry for ${participantId}`);
                         this.handleTrackSubscribed(this.lastTrack, this.lastPublication, this.lastParticipant);
                     }
                 }, 500);
@@ -863,13 +797,11 @@ class LiveKitTracks {
             }
         }
 
-        console.log(`✅ Found participant element for ${participantId}`);
 
         // Look for existing video element inside participant
         videoElement = participantElement.querySelector('video');
         
         if (!videoElement) {
-            console.log(`📹 Creating new video element for ${participantId}`);
 
             videoElement = document.createElement('video');
             videoElement.id = `video-${participantId}`;
@@ -882,9 +814,7 @@ class LiveKitTracks {
             // Insert video element at the beginning of participant element
             participantElement.insertBefore(videoElement, participantElement.firstChild);
 
-            console.log(`📹 ✅ Video element created and inserted for ${participantId}`);
         } else {
-            console.log(`📹 Found existing video element for ${participantId}: ${videoElement.id}`);
         }
 
         return videoElement;
@@ -917,12 +847,9 @@ class LiveKitTracks {
      * @param {boolean} hasVideo - Whether participant has active video
      */
     updateVideoDisplay(participantId, hasVideo) {
-        console.log(`🔴 [DEBUG] updateVideoDisplay called for ${participantId} with hasVideo=${hasVideo}`);
-        console.log(`📹 Updating video display for ${participantId}: ${hasVideo ? 'ON' : 'OFF'}`);
 
         const participantElement = document.getElementById(`participant-${participantId}`);
         if (!participantElement) {
-            console.log(`⏳ Participant element not found for ${participantId}, will retry later`);
             return;
         }
 
@@ -931,7 +858,6 @@ class LiveKitTracks {
 
                 if (hasVideo) {
             // Show video, hide placeholder completely and show name overlay
-            console.log(`📹 Showing video for ${participantId}`);
 
             if (videoElement) {
                 videoElement.style.opacity = '1';
@@ -952,15 +878,11 @@ class LiveKitTracks {
             if (nameOverlay) {
                 nameOverlay.style.display = 'block';
                 nameOverlay.style.opacity = '1';
-                console.log(`✅ Name overlay shown for ${participantId}`);
             } else {
-                console.warn(`⚠️ Name overlay not found for ${participantId}`);
             }
 
-            console.log(`✅ Video shown for ${participantId}`);
         } else {
             // Hide video, show full placeholder with all content
-            console.log(`📹 Hiding video for ${participantId}`);
 
             if (videoElement) {
                 videoElement.style.opacity = '0';
@@ -1001,10 +923,8 @@ class LiveKitTracks {
             if (nameOverlay) {
                 nameOverlay.style.display = 'none';
                 nameOverlay.style.opacity = '0';
-                console.log(`✅ Name overlay hidden for ${participantId}`);
             }
 
-            console.log(`✅ Video hidden for ${participantId}`);
         }
 
         // Update camera status icon (in status bar)
@@ -1043,7 +963,6 @@ class LiveKitTracks {
             } else {
                 overlayMicIcon.className = 'ri-mic-off-line text-sm text-red-500';
             }
-            console.log(`🎤 Updated overlay mic status for ${participantId}: ${hasAudio ? 'ON' : 'OFF'}`);
         }
     }
 
@@ -1063,7 +982,6 @@ class LiveKitTracks {
                 cameraStatus.className = 'text-red-500';
                 if (icon) icon.className = 'ri-video-off-line text-sm';
             }
-            console.log(`📹 Updated camera status icon for ${participantId}: ${hasVideo ? 'green' : 'red'}`);
         }
     }
 
@@ -1083,7 +1001,6 @@ class LiveKitTracks {
                 micStatus.className = 'text-red-500';
                 if (icon) icon.className = 'ri-mic-off-line text-sm';
             }
-            console.log(`🎤 Updated microphone status icon for ${participantId}: ${hasAudio ? 'green' : 'red'}`);
         }
     }
 
@@ -1093,13 +1010,11 @@ class LiveKitTracks {
      * @param {boolean} isVisible - Whether screen share should be visible
      */
     updateScreenShareDisplay(participantId, isVisible) {
-        console.log(`🖥️ Updating screen share display for ${participantId}: ${isVisible ? 'VISIBLE' : 'HIDDEN'}`);
 
         const screenShareId = `${participantId}_screen`;
         const screenShareElement = document.getElementById(`participant-${screenShareId}`);
 
         if (!screenShareElement) {
-            console.log(`⏳ Screen share element not found for ${participantId}`);
             return;
         }
 
@@ -1108,7 +1023,6 @@ class LiveKitTracks {
 
         if (isVisible) {
             // Show screen share
-            console.log(`🖥️ Showing screen share for ${participantId}`);
 
             if (videoElement) {
                 videoElement.style.opacity = '1';
@@ -1122,10 +1036,8 @@ class LiveKitTracks {
 
             screenShareElement.style.opacity = '1';
 
-            console.log(`✅ Screen share shown for ${participantId}`);
         } else {
             // Hide screen share or show paused state
-            console.log(`🖥️ Hiding screen share for ${participantId}`);
 
             if (videoElement) {
                 videoElement.style.opacity = '0.3';
@@ -1151,7 +1063,6 @@ class LiveKitTracks {
 
             screenShareElement.style.opacity = '0.7';
 
-            console.log(`✅ Screen share hidden for ${participantId}`);
         }
     }
 
@@ -1187,7 +1098,6 @@ class LiveKitTracks {
             state.audioMuted = publication.isMuted;
         }
 
-        console.log(`📊 Updated track state for ${participantId}:`, state);
     }
 
     /**
@@ -1241,7 +1151,6 @@ class LiveKitTracks {
      * @param {string} participantId - Participant ID
      */
     removeParticipantTracks(participantId) {
-        console.log(`🧹 Removing tracks for participant ${participantId}`);
 
         // Remove track references
         if (this.participantTracks.has(participantId)) {
@@ -1266,7 +1175,6 @@ class LiveKitTracks {
         // Remove track state
         this.trackStates.delete(participantId);
 
-        console.log(`✅ Tracks removed for ${participantId}`);
     }
 
     /**
@@ -1289,7 +1197,6 @@ class LiveKitTracks {
      * Destroy tracks manager and clean up - ENHANCED WITH CLEANUP
      */
     destroy() {
-        console.log('🧹 [FIXED] Destroying tracks manager...');
 
         // CRITICAL FIX: Clear all timeouts
         for (const timeoutId of this.syncTimeouts.values()) {
@@ -1309,7 +1216,6 @@ class LiveKitTracks {
         this.trackStates.clear();
         this.lastStateUpdate.clear();
 
-        console.log('🎵 Tracks manager destroyed (FIXED)');
     }
 }
 

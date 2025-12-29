@@ -240,7 +240,7 @@ class StudentProfileResource extends BaseResource
                         }
 
                         try {
-                            return \App\Enums\Country::from($state)->getLabel();
+                            return \App\Enums\Country::from($state)->label();
                         } catch (\ValueError $e) {
                             return $state;
                         }

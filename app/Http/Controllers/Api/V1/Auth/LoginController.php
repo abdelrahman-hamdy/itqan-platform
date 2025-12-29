@@ -26,7 +26,7 @@ class LoginController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         // Find user by email AND academy_id (users can have same email in different academies)
         $user = User::where('email', $request->email)
@@ -113,7 +113,7 @@ class LoginController extends Controller
         $user = $request->user();
         $user->load(['academy', 'studentProfile', 'parentProfile', 'quranTeacherProfile', 'academicTeacherProfile']);
 
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         return $this->success([
             'user' => new UserResource($user),

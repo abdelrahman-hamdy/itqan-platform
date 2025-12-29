@@ -2,7 +2,7 @@
     $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
 @endphp
 
-<x-layouts.student-layout>
+<x-layouts.student>
     {{-- Breadcrumb Navigation --}}
     <x-ui.breadcrumb
         :items="[
@@ -182,4 +182,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
-</x-layouts.student-layout>
+</x-layouts.student>

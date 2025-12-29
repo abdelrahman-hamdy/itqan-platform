@@ -13,13 +13,18 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
 use App\Enums\EnrollmentStatus;
+use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use App\Http\Controllers\Traits\ApiResponses;
 
 class RecordedCourseController extends Controller
 {
+    use ApiResponses;
     /**
      * Display a listing of courses for the current academy
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $academy = $this->getCurrentAcademy();
         $user = Auth::user();
@@ -108,7 +113,7 @@ class RecordedCourseController extends Controller
     /**
      * Show the form for creating a new course
      */
-    public function create()
+    public function create(): View
     {
         $this->authorize('create', RecordedCourse::class);
 
@@ -122,7 +127,7 @@ class RecordedCourseController extends Controller
     /**
      * Store a newly created course
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $this->authorize('create', RecordedCourse::class);
 
@@ -164,7 +169,7 @@ class RecordedCourseController extends Controller
     /**
      * Display the specified course (Public Access - ID based)
      */
-    public function show($subdomain, $courseId)
+    public function show($subdomain, $courseId): View
     {
         $academy = $this->getCurrentAcademy();
 
@@ -212,7 +217,7 @@ class RecordedCourseController extends Controller
             $isEnrolled = (bool) $enrollment;
         }
 
-        // Get related courses
+        // Get related courses with eager loading
         $relatedCourses = RecordedCourse::where('academy_id', $course->academy_id)
             ->where('id', '!=', $course->id)
             ->where(function ($query) use ($course) {
@@ -221,6 +226,10 @@ class RecordedCourseController extends Controller
                     ->orWhere('difficulty_level', $course->difficulty_level);
             })
             ->published()
+            ->with(['subject', 'gradeLevel'])
+            ->withCount(['lessons as total_lessons' => function ($query) {
+                $query->where('is_published', true);
+            }])
             ->take(4)
             ->get();
 
@@ -238,7 +247,7 @@ class RecordedCourseController extends Controller
     /**
      * Enroll user in a course
      */
-    public function enroll(Request $request, $subdomain, $courseId)
+    public function enroll(Request $request, $subdomain, $courseId): RedirectResponse
     {
         if (! Auth::check()) {
             return redirect()->route('login', ['subdomain' => $subdomain])
@@ -301,14 +310,9 @@ class RecordedCourseController extends Controller
     /**
      * API endpoint for course enrollment (returns JSON)
      */
-    public function enrollApi(Request $request, $subdomain, $courseId)
+    public function enrollApi(Request $request, $subdomain, $courseId): JsonResponse
     {
-        if (! Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'يجب تسجيل الدخول أولاً للتسجيل في الدورة',
-            ], 401);
-        }
+        $this->authorize('create', \App\Models\CourseSubscription::class);
 
         $academy = $this->getCurrentAcademy();
         $course = RecordedCourse::where('id', $courseId)
@@ -317,10 +321,7 @@ class RecordedCourseController extends Controller
             ->first();
 
         if (! $course) {
-            return response()->json([
-                'success' => false,
-                'message' => 'الدورة غير موجودة',
-            ], 404);
+            return $this->notFoundResponse('الدورة غير موجودة');
         }
 
         $user = Auth::user();
@@ -332,17 +333,11 @@ class RecordedCourseController extends Controller
             ->first();
 
         if ($existingEnrollment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'أنت مسجل بالفعل في هذه الدورة',
-            ], 400);
+            return $this->errorResponse('أنت مسجل بالفعل في هذه الدورة', 400);
         }
 
         if (! $course->canEnroll()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'لا يمكن التسجيل في هذه الدورة حالياً',
-            ], 400);
+            return $this->errorResponse('لا يمكن التسجيل في هذه الدورة حالياً', 400);
         }
 
         try {
@@ -370,11 +365,12 @@ class RecordedCourseController extends Controller
                 CourseSubscription::create($enrollmentData);
             });
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'message' => 'تم تسجيلك في الدورة بنجاح!',
+                'data' => null,
                 'redirect_url' => route('courses.learn', ['subdomain' => $subdomain, 'id' => $course->id]),
-            ]);
+            ], true, 200);
 
         } catch (\Exception $e) {
             \Log::error('Course enrollment error: '.$e->getMessage(), [
@@ -383,27 +379,36 @@ class RecordedCourseController extends Controller
                 'error' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
+            $errorData = [
                 'success' => false,
                 'message' => 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى',
-                'debug' => app()->environment('local') ? $e->getMessage() : null,
-            ], 500);
+                'data' => null,
+            ];
+
+            if (app()->environment('local')) {
+                $errorData['debug'] = $e->getMessage();
+            }
+
+            return $this->customResponse($errorData, false, 500);
         }
     }
 
     /**
      * Get course progress
      */
-    public function getProgress($courseId)
+    public function getProgress($courseId): JsonResponse
     {
-        $course = RecordedCourse::findOrFail($courseId);
+        $course = RecordedCourse::withCount(['lessons as total_lessons' => function ($query) {
+            $query->where('is_published', true);
+        }])->findOrFail($courseId);
+
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
-        $totalLessons = $course->lessons->count();
+        $totalLessons = $course->total_lessons;
         $completedLessons = StudentProgress::where('user_id', $user->id)
             ->where('recorded_course_id', $courseId)
             ->where('is_completed', true)
@@ -411,8 +416,7 @@ class RecordedCourseController extends Controller
 
         $progressPercentage = $totalLessons > 0 ? ($completedLessons / $totalLessons) * 100 : 0;
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'progress_percentage' => $progressPercentage,
             'completed_lessons' => $completedLessons,
             'total_lessons' => $totalLessons,
@@ -422,7 +426,7 @@ class RecordedCourseController extends Controller
     /**
      * Show course learning interface
      */
-    public function learn($subdomain, $courseId)
+    public function learn($subdomain, $courseId): View|RedirectResponse
     {
         if (! Auth::check()) {
             return redirect()->route('login', ['subdomain' => $subdomain]);
@@ -472,7 +476,7 @@ class RecordedCourseController extends Controller
     /**
      * Show course checkout page
      */
-    public function checkout($subdomain, $courseId)
+    public function checkout($subdomain, $courseId): View|RedirectResponse
     {
         if (! Auth::check()) {
             return redirect()->route('login', ['subdomain' => $subdomain]);

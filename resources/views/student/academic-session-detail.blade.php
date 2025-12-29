@@ -117,7 +117,7 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
     
     const feedback = document.getElementById('feedback').value.trim();
     if (!feedback) {
-        alert('الرجاء كتابة تقييمك للجلسة');
+        window.toast?.warning('الرجاء كتابة تقييمك للجلسة');
         return;
     }
 
@@ -146,12 +146,11 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
                 </div>
             `;
         } else {
-            alert('حدث خطأ أثناء إرسال التقييم. الرجاء المحاولة مرة أخرى.');
+            window.toast?.error('حدث خطأ أثناء إرسال التقييم. الرجاء المحاولة مرة أخرى.');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('حدث خطأ أثناء إرسال التقييم. الرجاء المحاولة مرة أخرى.');
+        window.toast?.error('حدث خطأ أثناء إرسال التقييم. الرجاء المحاولة مرة أخرى.');
     });
 });
 
@@ -209,15 +208,14 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
                 </div>
             `;
         } else {
-            alert(data.message || 'حدث خطأ أثناء تسليم الواجب. الرجاء المحاولة مرة أخرى.');
+            window.toast?.error(data.message || 'حدث خطأ أثناء تسليم الواجب. الرجاء المحاولة مرة أخرى.');
             // Restore button state
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('حدث خطأ أثناء تسليم الواجب. الرجاء المحاولة مرة أخرى.');
+        window.toast?.error('حدث خطأ أثناء تسليم الواجب. الرجاء المحاولة مرة أخرى.');
         // Restore button state
         submitButton.disabled = false;
         submitButton.innerHTML = originalText;
@@ -225,7 +223,6 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Academic session detail page loaded');
 
     // Auto-scroll to meeting if session is starting soon
     @if($session->scheduled_at && $session->scheduled_at->diffInMinutes(now()) <= 5 && $session->scheduled_at->diffInMinutes(now()) >= -5)

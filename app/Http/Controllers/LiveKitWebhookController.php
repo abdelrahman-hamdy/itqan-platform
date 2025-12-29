@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
@@ -15,9 +16,12 @@ use App\Services\AttendanceEventService;
 use App\Services\RecordingService;
 use App\Services\RoomPermissionService;
 use App\Enums\SessionStatus;
+use App\Exceptions\WebhookValidationException;
 
 class LiveKitWebhookController extends Controller
 {
+    use ApiResponses;
+
     public function __construct(
         protected SessionMeetingService $sessionMeetingService,
         protected MeetingAttendanceService $attendanceService,
@@ -32,29 +36,16 @@ class LiveKitWebhookController extends Controller
      */
     public function handleWebhook(Request $request): Response
     {
-        // 🔥 CRITICAL DEBUG: Log EVERY incoming request to this endpoint
-        Log::info('🔔 WEBHOOK ENDPOINT HIT - Request received', [
+        Log::debug('LiveKit webhook endpoint request received', [
             'timestamp' => now()->toISOString(),
             'method' => $request->method(),
-            'url' => $request->fullUrl(),
             'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'headers' => $request->headers->all(),
-            'body_size' => strlen($request->getContent()),
             'has_event' => $request->has('event'),
-            'event_value' => $request->input('event'),
         ]);
 
         try {
-            // ENHANCEMENT: Validate webhook signature
-            if (! $this->validateWebhookSignature($request)) {
-                Log::warning('Invalid LiveKit webhook signature', [
-                    'ip' => $request->ip(),
-                    'user_agent' => $request->userAgent(),
-                ]);
-
-                return response('Unauthorized', 401);
-            }
+            // Validate webhook signature (throws WebhookValidationException on failure)
+            $this->validateWebhookSignature($request);
 
             $event = $request->input('event');
             $data = $request->all();
@@ -104,12 +95,33 @@ class LiveKitWebhookController extends Controller
 
             return response('OK', 200);
 
-        } catch (\Exception $e) {
-            Log::error('Failed to handle LiveKit webhook', [
+        } catch (WebhookValidationException $e) {
+            $e->report();
+
+            return response($e->getMessage(), 401);
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Database error handling LiveKit webhook', [
                 'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'event' => $request->input('event'),
+            ]);
+
+            return response('Database error', 500);
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('Invalid webhook data from LiveKit', [
+                'error' => $e->getMessage(),
+                'event' => $request->input('event'),
+            ]);
+
+            return response('Invalid data', 400);
+        } catch (\Throwable $e) {
+            Log::error('Unexpected error handling LiveKit webhook', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'data' => $request->all(),
             ]);
-            
+            report($e);
+
             return response('Error processing webhook', 500);
         }
     }
@@ -119,7 +131,7 @@ class LiveKitWebhookController extends Controller
      */
     public function health(): JsonResponse
     {
-        return response()->json([
+        return $this->successResponse([
             'status' => 'ok',
             'timestamp' => now()->toISOString(),
             'service' => 'livekit-webhooks',
@@ -133,25 +145,12 @@ class LiveKitWebhookController extends Controller
     {
         $roomName = $data['room']['name'] ?? null;
 
-        Log::info('🚀 handleRoomStarted called', [
-            'room_name' => $roomName,
-            'has_room_data' => isset($data['room']),
-        ]);
-
         if (!$roomName) {
-            Log::warning('🚀 handleRoomStarted: No room name in data');
+            Log::warning('Room started event missing room name');
             return;
         }
 
         $session = $this->findSessionByRoomName($roomName);
-
-        Log::info('🚀 handleRoomStarted: Session lookup result', [
-            'room_name' => $roomName,
-            'session_found' => $session !== null,
-            'session_id' => $session?->id,
-            'session_class' => $session ? get_class($session) : null,
-            'session_status' => $session?->status?->value,
-        ]);
 
         if (!$session) return;
 
@@ -213,99 +212,63 @@ class LiveKitWebhookController extends Controller
      */
     private function tryStartAutoRecording(\App\Models\BaseSession $session, string $roomName): void
     {
-        // 🔍 DEBUG: Log entry point
-        Log::info('🎬 AUTO-RECORDING CHECK starting', [
-            'session_id' => $session->id,
-            'session_class' => get_class($session),
-            'room_name' => $roomName,
-        ]);
-
         try {
             // Check if session implements RecordingCapable interface
             if (!($session instanceof \App\Contracts\RecordingCapable)) {
-                Log::info('🎬 AUTO-RECORDING: Session does not implement RecordingCapable', [
+                Log::debug('Auto-recording skipped: Session does not implement RecordingCapable', [
                     'session_id' => $session->id,
-                    'session_class' => get_class($session),
                 ]);
                 return;
             }
 
-            // 🕐 Check if session's scheduled time has started
+            // Check if session's scheduled time has started
             if ($session->scheduled_at && now()->lt($session->scheduled_at)) {
-                Log::info('🎬 AUTO-RECORDING: Session scheduled time not yet reached - skipping', [
+                Log::debug('Auto-recording skipped: Session scheduled time not yet reached', [
                     'session_id' => $session->id,
-                    'scheduled_at' => $session->scheduled_at->toISOString(),
-                    'current_time' => now()->toISOString(),
-                    'minutes_until_start' => now()->diffInMinutes($session->scheduled_at),
+                    'scheduled_at' => $session->scheduled_at,
                 ]);
                 return;
             }
 
             // Check if recording is enabled for this session
-            $isEnabled = $session->isRecordingEnabled();
-            Log::info('🎬 AUTO-RECORDING: isRecordingEnabled check', [
-                'session_id' => $session->id,
-                'is_enabled' => $isEnabled,
-            ]);
-
-            if (!$isEnabled) {
-                Log::info('🎬 AUTO-RECORDING: Recording not enabled for this session/course', [
+            if (!$session->isRecordingEnabled()) {
+                Log::debug('Auto-recording skipped: Recording not enabled for this session', [
                     'session_id' => $session->id,
                 ]);
                 return;
             }
 
             // Check if session can be recorded (status, permissions, etc.)
-            $canBeRecorded = $session->canBeRecorded();
-            Log::info('🎬 AUTO-RECORDING: canBeRecorded check', [
-                'session_id' => $session->id,
-                'can_be_recorded' => $canBeRecorded,
-            ]);
-
-            if (!$canBeRecorded) {
-                Log::info('🎬 AUTO-RECORDING: Session cannot be recorded at this time', [
+            if (!$session->canBeRecorded()) {
+                Log::debug('Auto-recording skipped: Session cannot be recorded at this time', [
                     'session_id' => $session->id,
                 ]);
                 return;
             }
 
             // Check if already recording
-            $isRecording = $session->isRecording();
-            Log::info('🎬 AUTO-RECORDING: isRecording check', [
-                'session_id' => $session->id,
-                'is_recording' => $isRecording,
-            ]);
-
-            if ($isRecording) {
-                Log::info('🎬 AUTO-RECORDING: Session is already being recorded', [
+            if ($session->isRecording()) {
+                Log::debug('Auto-recording skipped: Session is already being recorded', [
                     'session_id' => $session->id,
                 ]);
                 return;
             }
 
             // Start auto-recording
-            Log::info('🎥 Starting AUTO-RECORDING for session', [
-                'session_id' => $session->id,
-                'session_class' => get_class($session),
-                'room_name' => $roomName,
-            ]);
-
             $recording = $this->recordingService->startRecording($session);
 
-            Log::info('✅ AUTO-RECORDING started successfully', [
+            Log::info('Auto-recording started successfully', [
                 'session_id' => $session->id,
                 'recording_id' => $recording->id,
                 'egress_id' => $recording->recording_id,
-                'room_name' => $roomName,
             ]);
 
         } catch (\Exception $e) {
             // Log error but don't fail the webhook - recording is optional
-            Log::error('❌ Failed to start AUTO-RECORDING', [
+            Log::error('Failed to start auto-recording', [
                 'session_id' => $session->id,
                 'room_name' => $roomName,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -342,17 +305,13 @@ class LiveKitWebhookController extends Controller
             // Remove persistence since room is finished
             $this->sessionMeetingService->removeSessionPersistence($session);
 
-            // 🎥 BACKUP: Stop any active recording when room closes
+            // Stop any active recording when room closes
             if ($session instanceof \App\Contracts\RecordingCapable && $session->isRecording()) {
-                Log::info('🎬 Stopping recording on room_finished (backup)', [
-                    'session_id' => $session->id,
-                    'room_name' => $roomName,
-                ]);
                 try {
                     $session->stopRecording();
-                    Log::info('✅ Recording stopped on room_finished', ['session_id' => $session->id]);
+                    Log::info('Recording stopped on room finished', ['session_id' => $session->id]);
                 } catch (\Exception $e) {
-                    Log::error('❌ Failed to stop recording on room_finished', [
+                    Log::error('Failed to stop recording on room finished', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);
@@ -416,18 +375,18 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
-            // 🔥 FIXED: Use LiveKit's exact join timestamp (source of truth)
+            // Use LiveKit's exact join timestamp (source of truth)
             // LiveKit sends 'joinedAt' in camelCase, not 'joined_at'
-            // IMPORTANT: Always use UTC for storage, convert to academy timezone only for display
+            // Always use UTC for storage, convert to academy timezone only for display
             $joinedAt = isset($participantData['joinedAt'])
                 ? \Carbon\Carbon::createFromTimestamp($participantData['joinedAt'], 'UTC')
                 : now('UTC');
 
-            // 🔥 NEW: Create immutable event log entry
+            // Create immutable event log entry
             $event = \App\Models\MeetingAttendanceEvent::create([
-                'event_id' => $data['id'],  // Webhook UUID for idempotency
+                'event_id' => $data['id'],
                 'event_type' => 'join',
-                'event_timestamp' => $joinedAt,  // From LiveKit, not Carbon::now()
+                'event_timestamp' => $joinedAt,
                 'session_id' => $session->id,
                 'session_type' => get_class($session),
                 'user_id' => $user->id,
@@ -435,44 +394,28 @@ class LiveKitWebhookController extends Controller
                 'participant_sid' => $participantData['sid'] ?? null,
                 'participant_identity' => $participantIdentity,
                 'participant_name' => $participantData['name'] ?? $user->full_name,
-                'raw_webhook_data' => $data,  // Store full payload for debugging
+                'raw_webhook_data' => $data,
             ]);
 
-            // 🎯 NEW: Update MeetingAttendance record (aggregated state)
+            // Update MeetingAttendance record (aggregated state)
             $this->eventService->recordJoin($session, $user, [
                 'timestamp' => $joinedAt,
                 'event_id' => $data['id'],
                 'participant_sid' => $participantData['sid'] ?? null,
             ]);
 
-            // 🐛 Enhanced logging for debugging
-            Log::info('✅ [WEBHOOK] JOIN event processed', [
-                'webhook_id' => $data['id'] ?? null,
-                'event_db_id' => $event->id,
+            Log::info('Participant join event processed', [
                 'session_id' => $session->id,
-                'session_name' => $session->name ?? 'Unknown',
                 'user_id' => $userId,
-                'user_name' => $user->full_name,
                 'participant_sid' => $participantData['sid'] ?? null,
-                'joined_at' => $joinedAt->toISOString(),
-                'room_name' => $roomName,
-                'participant_count' => $data['room']['num_participants'] ?? 0,
             ]);
 
             // Clear any cached attendance status
             \Cache::forget("attendance_status_{$session->id}_{$userId}");
 
-            // 🎥 AUTO-RECORDING: Try to start recording when first participant joins
-            // Recording will only start if:
-            // 1. Session scheduled time has passed
-            // 2. Recording is enabled on the course
-            // 3. Session is not already being recorded
+            // Try to start recording when first participant joins
             $participantCount = $data['room']['num_participants'] ?? 0;
             if ($participantCount == 1) {
-                Log::info('🎬 First participant joined - attempting auto-recording', [
-                    'session_id' => $session->id,
-                    'participant_count' => $participantCount,
-                ]);
                 $this->tryStartAutoRecording($session, $roomName);
             }
 
@@ -528,13 +471,13 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
-            // 🔥 NEW: Use webhook creation time as leave timestamp (source of truth)
-            // IMPORTANT: Always use UTC for storage, convert to academy timezone only for display
+            // Use webhook creation time as leave timestamp (source of truth)
+            // Always use UTC for storage, convert to academy timezone only for display
             $leftAt = isset($data['createdAt'])
                 ? \Carbon\Carbon::createFromTimestamp($data['createdAt'], 'UTC')
                 : now('UTC');
 
-            // 🔥 NEW: Find the matching join event by participant_sid
+            // Find the matching join event by participant_sid
             $joinEvent = \App\Models\MeetingAttendanceEvent::where('session_id', $session->id)
                 ->where('session_type', get_class($session))
                 ->where('user_id', $userId)
@@ -587,10 +530,10 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
-            // 🔥 NEW: Close the join event with calculated duration
+            // Close the join event with calculated duration
             $this->closeJoinEvent($joinEvent, $leftAt, $data['id']);
 
-            // 🎯 NEW: Update MeetingAttendance record (aggregated state)
+            // Update MeetingAttendance record (aggregated state)
             $user = User::find($userId);
             if ($user) {
                 $this->eventService->recordLeave($session, $user, [
@@ -601,28 +544,17 @@ class LiveKitWebhookController extends Controller
                 ]);
             }
 
-            $remainingParticipants = $data['room']['num_participants'] ?? 0;
-
-            // 🐛 Enhanced logging for debugging
-            Log::info('✅ [WEBHOOK] LEAVE event processed', [
-                'webhook_id' => $data['id'] ?? null,
-                'event_db_id' => $joinEvent->id,
+            Log::info('Participant leave event processed', [
                 'session_id' => $session->id,
-                'session_name' => $session->name ?? 'Unknown',
                 'user_id' => $userId,
-                'user_name' => $user->full_name ?? 'Unknown',
-                'participant_sid' => $participantSid,
-                'joined_at' => $joinEvent->event_timestamp->toISOString(),
-                'left_at' => $leftAt->toISOString(),
                 'duration_minutes' => $joinEvent->duration_minutes,
-                'room_name' => $roomName,
-                'remaining_participants' => $remainingParticipants,
             ]);
 
             // Clear any cached attendance status
             \Cache::forget("attendance_status_{$session->id}_{$userId}");
 
             // Check if room is now empty
+            $remainingParticipants = $data['room']['num_participants'] ?? 0;
             if ($remainingParticipants === 0) {
                 $this->handleEmptyRoom($session, $roomName);
             }
@@ -845,10 +777,8 @@ class LiveKitWebhookController extends Controller
         }
 
         if ($shouldMute) {
-            Log::info('🚫 Enforcing permission: Muting student track', [
-                'room' => $roomName,
+            Log::info('Enforcing permission: Muting student track', [
                 'participant' => $participantIdentity,
-                'track_sid' => $trackSid,
                 'track_type' => $trackType,
                 'reason' => $reason,
             ]);
@@ -868,7 +798,7 @@ class LiveKitWebhookController extends Controller
                     true
                 );
 
-                Log::info('✅ Student track muted successfully by permission enforcement', [
+                Log::info('Student track muted successfully', [
                     'participant' => $participantIdentity,
                     'track_type' => $trackType,
                 ]);
@@ -937,15 +867,17 @@ class LiveKitWebhookController extends Controller
     }
 
     /**
-     * 🔥 NEW: Validate webhook using LiveKit's JWT-based verification
+     * Validate webhook using LiveKit's JWT-based verification.
      * Based on: https://docs.livekit.io/home/server/webhooks
+     *
+     * @throws WebhookValidationException When signature validation fails
      */
-    private function validateWebhookSignature(Request $request): bool
+    private function validateWebhookSignature(Request $request): void
     {
         // Allow webhooks in development mode without strict validation
         if (app()->environment('local', 'development')) {
             Log::debug('Development mode - skipping webhook validation');
-            return true;
+            return;
         }
 
         $apiKey = config('livekit.api_key');
@@ -953,14 +885,17 @@ class LiveKitWebhookController extends Controller
 
         if (! $apiKey || ! $apiSecret) {
             Log::warning('LiveKit API credentials not configured - allowing webhook anyway');
-            return true;
+            return;
         }
 
         // Get Authorization header (JWT token)
         $authHeader = $request->header('Authorization');
         if (! $authHeader) {
-            Log::error('LiveKit webhook missing Authorization header');
-            return false;
+            throw WebhookValidationException::missingFields(
+                'livekit',
+                ['Authorization header'],
+                $request->all()
+            );
         }
 
         // Remove "Bearer " prefix if present
@@ -972,8 +907,11 @@ class LiveKitWebhookController extends Controller
             // Decode JWT token without verification first to get claims
             $parts = explode('.', $token);
             if (count($parts) !== 3) {
-                Log::error('Invalid JWT token format');
-                return false;
+                throw WebhookValidationException::invalidFormat(
+                    'livekit',
+                    'Invalid JWT token format - expected 3 parts',
+                    $request->all()
+                );
             }
 
             // Decode header and payload
@@ -981,8 +919,11 @@ class LiveKitWebhookController extends Controller
             $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
 
             if (! $payload || ! isset($payload['sha256'])) {
-                Log::error('JWT payload missing sha256 claim');
-                return false;
+                throw WebhookValidationException::missingFields(
+                    'livekit',
+                    ['sha256 claim in JWT payload'],
+                    $request->all()
+                );
             }
 
             // Verify JWT signature
@@ -991,14 +932,20 @@ class LiveKitWebhookController extends Controller
             $expectedSignature = rtrim(strtr(base64_encode(hash_hmac('sha256', $dataToSign, $apiSecret, true)), '+/', '-_'), '=');
 
             if (! hash_equals($expectedSignature, $signature)) {
-                Log::error('JWT signature verification failed');
-                return false;
+                throw WebhookValidationException::invalidSignature(
+                    'livekit',
+                    substr($signature, 0, 20) . '...',
+                    $request->all()
+                );
             }
 
             // Verify token expiration
             if (isset($payload['exp']) && $payload['exp'] < time()) {
-                Log::error('JWT token expired');
-                return false;
+                throw WebhookValidationException::expired(
+                    'livekit',
+                    date('Y-m-d H:i:s', $payload['exp']),
+                    $request->all()
+                );
             }
 
             // Verify issuer matches API key
@@ -1015,19 +962,27 @@ class LiveKitWebhookController extends Controller
             $claimsHash = base64_decode($payload['sha256']);
 
             if (! hash_equals($bodyHash, $claimsHash)) {
-                Log::error('Request body hash mismatch');
-                return false;
+                throw WebhookValidationException::invalidSignature(
+                    'livekit',
+                    'body_hash_mismatch',
+                    $request->all()
+                );
             }
 
-            Log::info('✅ LiveKit webhook signature verified successfully');
-            return true;
+            Log::debug('LiveKit webhook signature verified successfully');
 
+        } catch (WebhookValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error validating LiveKit webhook signature', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return false;
+            throw WebhookValidationException::invalidFormat(
+                'livekit',
+                'JWT validation error: ' . $e->getMessage(),
+                $request->all()
+            );
         }
     }
 

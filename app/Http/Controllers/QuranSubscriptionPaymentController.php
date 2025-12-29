@@ -2,19 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Enums\SubscriptionStatus;
 use App\Models\QuranSubscription;
 use App\Models\Payment;
 use App\Models\Academy;
 use App\Services\PaymentService;
+use App\Http\Requests\ProcessQuranSubscriptionPaymentRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Enums\SessionStatus;
+use Illuminate\Http\JsonResponse;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class QuranSubscriptionPaymentController extends Controller
 {
+    use ApiResponses;
     protected $paymentService;
 
     public function __construct(PaymentService $paymentService)
@@ -25,7 +31,7 @@ class QuranSubscriptionPaymentController extends Controller
     /**
      * Show payment form for Quran subscription
      */
-    public function create(Request $request, $subscriptionId)
+    public function create(Request $request, $subscriptionId): View|RedirectResponse
     {
         $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
         
@@ -78,29 +84,17 @@ class QuranSubscriptionPaymentController extends Controller
     /**
      * Process Quran subscription payment
      */
-    public function store(Request $request, $subscriptionId)
+    public function store(ProcessQuranSubscriptionPaymentRequest $request, $subscriptionId): JsonResponse
     {
         $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
-        
-        if (!$academy) {
-            return response()->json(['error' => 'Academy not found'], 404);
-        }
 
-        if (!Auth::check() || Auth::user()->user_type !== 'student') {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        if (!$academy) {
+            return $this->notFoundResponse('Academy not found');
         }
 
         $user = Auth::user();
-        
-        $validated = $request->validate([
-            'payment_method' => 'required|in:credit_card,mada,stc_pay,paymob,tapay,bank_transfer',
-            'card_number' => 'required_if:payment_method,credit_card,mada,paymob,tapay|string',
-            'expiry_month' => 'required_if:payment_method,credit_card,mada,paymob,tapay|integer|min:1|max:12',
-            'expiry_year' => 'required_if:payment_method,credit_card,mada,paymob,tapay|integer|min:2024',
-            'cvv' => 'required_if:payment_method,credit_card,mada,paymob,tapay|string|size:3',
-            'cardholder_name' => 'required_if:payment_method,credit_card,mada,paymob,tapay|string|max:255',
-            'phone' => 'required_if:payment_method,stc_pay|string'
-        ]);
+
+        $validated = $request->validated();
 
         // Get subscription
         $subscription = QuranSubscription::where('academy_id', $academy->id)
@@ -110,9 +104,7 @@ class QuranSubscriptionPaymentController extends Controller
             ->first();
 
         if (!$subscription) {
-            return response()->json([
-                'error' => 'لم يتم العثور على الاشتراك'
-            ], 404);
+            return $this->notFoundResponse('لم يتم العثور على الاشتراك');
         }
 
         $finalPrice = $subscription->final_price;
@@ -163,8 +155,11 @@ class QuranSubscriptionPaymentController extends Controller
                         'last_payment_amount' => $totalAmount,
                     ]);
 
-                    // TODO: Send payment confirmation email
-                    // TODO: Send notification to teacher about new subscription
+                    // Send payment confirmation email to student
+                    $this->sendPaymentConfirmation($user, $subscription, $payment, $totalAmount);
+
+                    // Send notification to teacher about new subscription
+                    $this->notifyTeacherAboutNewSubscription($subscription);
                     
                 } else {
                     // Mark payment as failed
@@ -178,19 +173,14 @@ class QuranSubscriptionPaymentController extends Controller
                 }
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'تم الدفع بنجاح! مرحباً بك في رحلة تعلم القرآن الكريم',
+            return $this->successResponse([
                 'redirect_url' => route('student.profile', ['subdomain' => $academy->subdomain])
-            ]);
+            ], 'تم الدفع بنجاح! مرحباً بك في رحلة تعلم القرآن الكريم');
 
         } catch (\Exception $e) {
             Log::error('Error processing Quran subscription payment: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'error' => 'حدث خطأ أثناء عملية الدفع. يرجى المحاولة مرة أخرى'
-            ], 500);
+
+            return $this->serverErrorResponse('حدث خطأ أثناء عملية الدفع. يرجى المحاولة مرة أخرى');
         }
     }
 
@@ -233,5 +223,85 @@ class QuranSubscriptionPaymentController extends Controller
         return $gateways[$method] ?? 'moyasar';
     }
 
+    /**
+     * Send payment confirmation notification to student
+     */
+    private function sendPaymentConfirmation($user, $subscription, $payment, $totalAmount): void
+    {
+        try {
+            $notificationService = app(\App\Services\NotificationService::class);
 
+            $paymentData = [
+                'payment_id' => $payment->id,
+                'transaction_id' => $payment->gateway_transaction_id,
+                'amount' => $totalAmount,
+                'currency' => $subscription->currency ?? 'SAR',
+                'description' => 'اشتراك القرآن الكريم',
+                'subscription_id' => $subscription->id,
+                'subscription_type' => 'quran',
+            ];
+
+            $notificationService->sendPaymentSuccessNotification($user, $paymentData);
+
+            Log::info('Payment confirmation sent to student', [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'payment_id' => $payment->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment confirmation', [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Notify teacher about new subscription
+     */
+    private function notifyTeacherAboutNewSubscription($subscription): void
+    {
+        try {
+            $teacher = $subscription->quranTeacher;
+            if (!$teacher) {
+                Log::warning('Cannot notify teacher: teacher not found', [
+                    'subscription_id' => $subscription->id,
+                ]);
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            $student = $subscription->student;
+            $studentName = $student ? ($student->first_name . ' ' . $student->last_name) : 'طالب جديد';
+
+            $notificationService->send(
+                $teacher,
+                \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
+                [
+                    'student_name' => $studentName,
+                    'subscription_type' => 'قرآن كريم',
+                    'package_name' => $subscription->package?->name ?? 'باقة قرآن',
+                    'start_date' => $subscription->starts_at?->format('Y-m-d'),
+                ],
+                route('teacher.quran-circles.index'),
+                [
+                    'subscription_id' => $subscription->id,
+                    'student_id' => $subscription->student_id,
+                ],
+                true
+            );
+
+            Log::info('Teacher notified about new subscription', [
+                'teacher_id' => $teacher->id,
+                'subscription_id' => $subscription->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to notify teacher about new subscription', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
 }

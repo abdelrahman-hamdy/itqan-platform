@@ -209,13 +209,7 @@ class QuranSubscription extends BaseSubscription
         return $this->quranCircle();
     }
 
-    /**
-     * Get payment records for this subscription
-     */
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class, 'subscription_id');
-    }
+    // Note: payments() relationship is inherited from BaseSubscription using morphMany
 
     // ========================================
     // ABSTRACT METHOD IMPLEMENTATIONS

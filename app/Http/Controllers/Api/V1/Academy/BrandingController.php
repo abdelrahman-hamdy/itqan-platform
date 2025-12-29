@@ -24,7 +24,7 @@ class BrandingController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         if (!$academy) {
             return $this->error(

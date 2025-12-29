@@ -7,7 +7,7 @@
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => 'الكورسات التفاعلية', 'route' => route('interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
+            ['label' => __('student.interactive_course.courses_index'), 'route' => route('interactive-courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
             ['label' => $course->title, 'truncate' => true],
         ]"
         :view-type="$viewType"
@@ -21,22 +21,22 @@
         $isUpcoming = $course->start_date && $course->start_date > $now->toDateString();
 
         if ($isFinished) {
-            $statusLabel = 'انتهى';
+            $statusLabel = __('student.interactive_course.status_finished');
             $statusBg = 'bg-gray-100';
             $statusText = 'text-gray-700';
             $statusIcon = 'ri-checkbox-circle-line';
         } elseif ($isOngoing) {
-            $statusLabel = 'جاري الآن';
+            $statusLabel = __('student.interactive_course.status_ongoing');
             $statusBg = 'bg-green-100';
             $statusText = 'text-green-700';
             $statusIcon = 'ri-play-circle-fill';
         } elseif ($isEnrollmentClosed) {
-            $statusLabel = 'التسجيل مغلق';
+            $statusLabel = __('student.interactive_course.status_enrollment_closed');
             $statusBg = 'bg-red-100';
             $statusText = 'text-red-700';
             $statusIcon = 'ri-close-circle-line';
         } else {
-            $statusLabel = 'متاح للتسجيل';
+            $statusLabel = __('student.interactive_course.status_available');
             $statusBg = 'bg-green-100';
             $statusText = 'text-green-700';
             $statusIcon = 'ri-check-circle-fill';
@@ -100,9 +100,9 @@
             <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
                 <i class="ri-bar-chart-line text-blue-500 text-sm md:text-base"></i>
                 <span class="text-xs md:text-sm font-medium text-gray-700">
-                    @if($course->difficulty_level === 'beginner') مبتدئ
-                    @elseif($course->difficulty_level === 'intermediate') متوسط
-                    @elseif($course->difficulty_level === 'advanced') متقدم
+                    @if($course->difficulty_level === 'beginner') {{ __('student.interactive_course.difficulty_beginner') }}
+                    @elseif($course->difficulty_level === 'intermediate') {{ __('student.interactive_course.difficulty_intermediate') }}
+                    @elseif($course->difficulty_level === 'advanced') {{ __('student.interactive_course.difficulty_advanced') }}
                     @else {{ $course->difficulty_level }}
                     @endif
                 </span>
@@ -123,7 +123,7 @@
                 <div class="mb-6 md:mb-10">
                     <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-user-star-line text-blue-500"></i>
-                        المدرس
+                        {{ __('student.interactive_course.teacher_title') }}
                     </h2>
                     <div class="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
                         <!-- Teacher Avatar -->
@@ -167,14 +167,14 @@
                                 @if($course->assignedTeacher->years_of_experience)
                                 <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm bg-gray-50 rounded-lg px-2 py-1.5 sm:bg-transparent sm:p-0">
                                     <i class="ri-medal-line text-blue-500"></i>
-                                    <span class="text-gray-900 font-medium">{{ $course->assignedTeacher->years_of_experience }} سنة خبرة</span>
+                                    <span class="text-gray-900 font-medium">{{ $course->assignedTeacher->years_of_experience }} {{ __('student.interactive_course.years_experience') }}</span>
                                 </div>
                                 @endif
 
                                 @if($course->assignedTeacher->total_students)
                                 <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm bg-gray-50 rounded-lg px-2 py-1.5 sm:bg-transparent sm:p-0">
                                     <i class="ri-group-line text-blue-500"></i>
-                                    <span class="text-gray-900 font-medium">{{ $course->assignedTeacher->total_students }} طالب</span>
+                                    <span class="text-gray-900 font-medium">{{ $course->assignedTeacher->total_students }} {{ __('student.interactive_course.total_students') }}</span>
                                 </div>
                                 @endif
                             </div>
@@ -209,7 +209,7 @@
                             <!-- Certifications -->
                             @if($course->assignedTeacher->certifications && count($course->assignedTeacher->certifications) > 0)
                             <div class="mb-4">
-                                <p class="text-xs text-gray-500 mb-2">الشهادات والدورات</p>
+                                <p class="text-xs text-gray-500 mb-2">{{ __('student.interactive_course.certifications_title') }}</p>
                                 <div class="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2">
                                     @foreach($course->assignedTeacher->certifications as $cert)
                                     <span class="inline-flex items-center px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] sm:text-xs font-medium">
@@ -226,14 +226,14 @@
                                 <a href="{{ route('academic-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacherId' => $course->assignedTeacher->id]) }}"
                                    class="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-medium transition-colors text-sm md:text-base">
                                     <i class="ri-user-line"></i>
-                                    <span>عرض الملف الشخصي</span>
+                                    <span>{{ __('student.interactive_course.view_profile') }}</span>
                                 </a>
 
                                 @if($isEnrolled)
                                 <a href="#"
                                    class="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors text-sm md:text-base">
                                     <i class="ri-chat-3-line"></i>
-                                    <span>تواصل مع المعلم</span>
+                                    <span>{{ __('student.interactive_course.contact_teacher') }}</span>
                                 </a>
                                 @endif
                             </div>
@@ -252,7 +252,7 @@
                 <div class="mb-6 md:mb-10">
                     <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-lightbulb-flash-line text-green-600"></i>
-                        ما ستتعلمه
+                        {{ __('student.interactive_course.learning_outcomes_title') }}
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                         @foreach($course->learning_outcomes as $outcome)
@@ -277,7 +277,7 @@
                 <div class="mb-6 md:mb-10">
                     <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-file-list-3-line text-blue-600"></i>
-                        المتطلبات الأساسية
+                        {{ __('student.interactive_course.prerequisites_title') }}
                     </h2>
                     <div class="space-y-2 md:space-y-3">
                         @foreach($course->prerequisites as $prerequisite)
@@ -304,7 +304,7 @@
                 <div>
                     <h2 class="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6 flex items-center gap-2">
                         <i class="ri-calendar-2-line text-purple-600"></i>
-                        الجدول الأسبوعي
+                        {{ __('student.interactive_course.schedule_title') }}
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                         @foreach($course->schedule as $day => $time)
@@ -328,18 +328,18 @@
                     @endphp
                     <x-tabs.tab
                         id="sessions"
-                        label="الجلسات"
+                        label="{{ __('student.interactive_course.sessions_tab') }}"
                         icon="ri-calendar-line"
                         :badge="$allCourseSessions->count()"
                     />
                     <x-tabs.tab
                         id="quizzes"
-                        label="الاختبارات"
+                        label="{{ __('student.interactive_course.quizzes_tab') }}"
                         icon="ri-file-list-3-line"
                     />
                     <x-tabs.tab
                         id="reviews"
-                        label="التقييمات"
+                        label="{{ __('student.interactive_course.reviews_tab') }}"
                         icon="ri-star-line"
                         :badge="$courseReviews->count()"
                     />
@@ -354,7 +354,7 @@
                             :sessions="$allCourseSessions"
                             :view-type="$viewType"
                             :show-tabs="false"
-                            empty-message="لا توجد جلسات مجدولة بعد" />
+                            empty-message="{{ __('student.interactive_course.no_sessions_scheduled') }}" />
                     </x-tabs.panel>
 
                     <x-tabs.panel id="quizzes">
@@ -410,18 +410,18 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
                         <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                             <i class="ri-file-list-3-line text-purple-500 text-lg" style="font-weight: 100;"></i>
-                            حالة التسجيل
+                            {{ __('student.interactive_course.enrollment_status_title') }}
                         </h3>
 
                         <!-- Enrolled Badge -->
                         <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-200 mb-4">
                             <div class="flex items-center justify-center gap-2">
                                 <i class="ri-check-line text-2xl text-green-600"></i>
-                                <span class="text-lg font-bold text-green-800">مسجل في الدورة</span>
+                                <span class="text-lg font-bold text-green-800">{{ __('student.interactive_course.enrolled_badge') }}</span>
                             </div>
                             @if($enrollment->enrollment_date)
                                 <p class="text-xs text-green-700 text-center mt-2">
-                                    تاريخ التسجيل: {{ \Carbon\Carbon::parse($enrollment->enrollment_date)->locale('ar')->translatedFormat('d F Y') }}
+                                    {{ __('student.interactive_course.enrollment_date') }}: {{ \Carbon\Carbon::parse($enrollment->enrollment_date)->locale('ar')->translatedFormat('d F Y') }}
                                 </p>
                             @endif
                         </div>
@@ -430,7 +430,7 @@
                         @if(isset($enrollment->completion_percentage))
                             <div class="mb-4">
                                 <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium text-gray-700">التقدم في الدورة</span>
+                                    <span class="text-sm font-medium text-gray-700">{{ __('student.interactive_course.course_progress') }}</span>
                                     <span class="text-sm font-bold text-primary">{{ round($enrollment->completion_percentage) }}%</span>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-3">
@@ -445,7 +445,7 @@
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div class="flex items-center">
                                     <i class="ri-money-dollar-circle-line text-gray-600 ml-2"></i>
-                                    <span class="text-sm text-gray-700">حالة الدفع</span>
+                                    <span class="text-sm text-gray-700">{{ __('student.interactive_course.payment_status') }}</span>
                                 </div>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                     {{ $enrollment->payment_status->badgeClasses() }}">
@@ -459,16 +459,16 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
                         <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                             <i class="ri-shopping-cart-line text-purple-500 text-lg" style="font-weight: 100;"></i>
-                            التسجيل في الدورة
+                            {{ __('student.interactive_course.enroll_title') }}
                         </h3>
                         <form id="enrollForm" method="POST" action="{{ route('interactive-courses.enroll', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $course->id]) }}">
                             @csrf
                             <button type="button"
                                 onclick="showConfirmModal({
-                                    title: 'تأكيد التسجيل في الكورس',
-                                    message: 'هل أنت متأكد من التسجيل في هذا الكورس؟@if($course->enrollment_fee && $course->is_enrollment_fee_required) سيتم تحصيل رسوم تسجيل بقيمة {{ number_format($course->enrollment_fee) }} ر.س.@endif',
-                                    confirmText: 'نعم، سجل الآن',
-                                    cancelText: 'إلغاء',
+                                    title: '{{ __('student.interactive_course.confirm_enrollment_title') }}',
+                                    message: '{{ __('student.interactive_course.confirm_enrollment_message') }}@if($course->enrollment_fee && $course->is_enrollment_fee_required) {{ __('student.interactive_course.confirm_enrollment_with_fee') }} {{ number_format($course->enrollment_fee) }} ر.س.@endif',
+                                    confirmText: '{{ __('student.interactive_course.yes_enroll') }}',
+                                    cancelText: '{{ __('student.common.cancel') }}',
                                     type: 'success',
                                     onConfirm: function() {
                                         document.getElementById('enrollForm').submit();
@@ -477,7 +477,7 @@
                                 class="group w-full min-h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 relative overflow-hidden">
                                 <span class="relative z-10 flex items-center justify-center gap-2">
                                     <i class="ri-shopping-cart-line text-xl"></i>
-                                    <span>سجل الآن</span>
+                                    <span>{{ __('student.interactive_course.enroll_button') }}</span>
                                 </span>
                                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
                             </button>
@@ -489,7 +489,7 @@
                 <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-200 mb-4 md:mb-6">
                     <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                         <i class="ri-information-line text-blue-500" style="font-weight: 100;"></i>
-                        معلومات الدورة
+                        {{ __('student.interactive_course.course_info_title') }}
                     </h3>
                     <div class="space-y-2 md:space-y-3">
                         <!-- Start Date -->
@@ -498,7 +498,7 @@
                                 <i class="ri-calendar-check-line text-blue-600 text-sm sm:text-base"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-[10px] sm:text-xs text-gray-500 mb-0.5">تاريخ البدء</p>
+                                <p class="text-[10px] sm:text-xs text-gray-500 mb-0.5">{{ __('student.interactive_course.start_date') }}</p>
                                 <p class="font-bold text-gray-900 text-sm sm:text-base">{{ $course->start_date->format('d/m/Y') }}</p>
                             </div>
                         </div>
@@ -510,7 +510,7 @@
                                 <i class="ri-calendar-close-line text-purple-600 text-sm sm:text-base"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-[10px] sm:text-xs text-gray-500 mb-0.5">تاريخ الانتهاء</p>
+                                <p class="text-[10px] sm:text-xs text-gray-500 mb-0.5">{{ __('student.interactive_course.end_date') }}</p>
                                 <p class="font-bold text-gray-900 text-sm sm:text-base">{{ $course->end_date->format('d/m/Y') }}</p>
                             </div>
                         </div>
@@ -552,7 +552,7 @@
                                     <i class="ri-time-line {{ $iconColor }} text-sm sm:text-base"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-[10px] sm:text-xs text-gray-600 mb-0.5">آخر موعد للتسجيل</p>
+                                    <p class="text-[10px] sm:text-xs text-gray-600 mb-0.5">{{ __('student.interactive_course.enrollment_deadline') }}</p>
                                     <p class="font-bold text-gray-900 text-sm sm:text-base">{{ $deadline->format('d/m/Y') }}</p>
                                 </div>
                             </div>
@@ -561,7 +561,7 @@
                             @if($isDeadlinePassed)
                                 <div class="flex items-center justify-center gap-2 {{ $countdownColor }} font-bold py-3">
                                     <i class="ri-close-circle-fill text-xl"></i>
-                                    <span>انتهى موعد التسجيل</span>
+                                    <span>{{ __('student.interactive_course.deadline_passed') }}</span>
                                 </div>
                             @else
                                 <div id="countdown-timer" class="text-center py-2"
@@ -569,22 +569,22 @@
                                     <div class="flex justify-center items-start gap-0.5 sm:gap-1">
                                         <div class="flex flex-col items-center min-w-[40px] sm:min-w-[48px]">
                                             <span id="countdown-days" class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
-                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">يوم</span>
+                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{{ __('student.interactive_course.countdown_days') }}</span>
                                         </div>
                                         <span class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }}">:</span>
                                         <div class="flex flex-col items-center min-w-[40px] sm:min-w-[48px]">
                                             <span id="countdown-hours" class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
-                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">ساعة</span>
+                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{{ __('student.interactive_course.countdown_hours') }}</span>
                                         </div>
                                         <span class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }}">:</span>
                                         <div class="flex flex-col items-center min-w-[40px] sm:min-w-[48px]">
                                             <span id="countdown-minutes" class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
-                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">دقيقة</span>
+                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{{ __('student.interactive_course.countdown_minutes') }}</span>
                                         </div>
                                         <span class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }}">:</span>
                                         <div class="flex flex-col items-center min-w-[40px] sm:min-w-[48px]">
                                             <span id="countdown-seconds" class="text-lg sm:text-xl md:text-2xl font-bold {{ $countdownColor }} font-mono">00</span>
-                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">ثانية</span>
+                                            <span class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{{ __('student.interactive_course.countdown_seconds') }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -637,7 +637,6 @@ function openSessionDetail(sessionId) {
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
         window.location.href = finalUrl;
     @else
-        console.error('User not authenticated');
     @endif
 }
 

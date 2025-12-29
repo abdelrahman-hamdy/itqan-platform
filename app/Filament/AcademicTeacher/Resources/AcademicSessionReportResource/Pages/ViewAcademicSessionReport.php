@@ -53,14 +53,14 @@ class ViewAcademicSessionReport extends ViewRecord
                                     ->formatStateUsing(fn (string $state): string => match ($state) {
                                         AttendanceStatus::ATTENDED->value => 'حاضر',
                                         AttendanceStatus::LATE->value => 'متأخر',
-                                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                                         AttendanceStatus::ABSENT->value => 'غائب',
                                         default => $state,
                                     })
                                     ->color(fn (string $state): string => match ($state) {
                                         AttendanceStatus::ATTENDED->value => 'success',
                                         AttendanceStatus::LATE->value => 'warning',
-                                        AttendanceStatus::LEAVED->value => 'info',
+                                        AttendanceStatus::LEFT->value => 'info',
                                         AttendanceStatus::ABSENT->value => 'danger',
                                         default => 'gray',
                                     }),

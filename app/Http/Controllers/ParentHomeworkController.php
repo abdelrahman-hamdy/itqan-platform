@@ -7,6 +7,7 @@ use App\Services\UnifiedHomeworkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
 
 /**
  * Parent Homework Controller
@@ -24,12 +25,7 @@ class ParentHomeworkController extends Controller
         $this->homeworkService = $homeworkService;
 
         // Enforce read-only access
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -40,7 +36,7 @@ class ParentHomeworkController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -48,6 +44,14 @@ class ParentHomeworkController extends Controller
 
         // Get child user IDs from middleware (session-based selection)
         $childUserIds = ChildSelectionMiddleware::getChildIds();
+
+        // Authorize parent can view homework for each selected child
+        foreach ($childUserIds as $childUserId) {
+            $childUser = \App\Models\User::find($childUserId);
+            if ($childUser && $childUser->studentProfileUnscoped) {
+                $this->authorize('viewChildHomework', [get_class($parent), $childUser->studentProfileUnscoped]);
+            }
+        }
 
         // Get filter parameters
         $status = $request->get('status');
@@ -141,7 +145,7 @@ class ParentHomeworkController extends Controller
      * @param string $type
      * @return \Illuminate\View\View
      */
-    public function view(Request $request, $id, $type = 'academic')
+    public function view(Request $request, $id, $type = 'academic'): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
@@ -161,10 +165,22 @@ class ParentHomeworkController extends Controller
             ]);
         }
 
-        // Verify homework belongs to one of parent's children
-        $studentId = $this->getStudentIdFromHomework($homework, $type);
-        if (!in_array($studentId, $childUserIds)) {
-            abort(403, 'لا يمكنك الوصول إلى هذا الواجب');
+        // Authorization: Use appropriate policy based on homework type
+        if ($type === 'interactive' && $homework instanceof \App\Models\InteractiveCourseHomework) {
+            $this->authorize('view', $homework);
+        } elseif ($type === 'academic' && $homework instanceof \App\Models\AcademicSession) {
+            $this->authorize('viewAcademicHomework', $homework);
+        } elseif ($type === 'quran' && $homework instanceof \App\Models\QuranSession) {
+            $this->authorize('viewQuranHomework', $homework);
+        } else {
+            // Fallback: Verify homework belongs to one of parent's children
+            $studentId = $this->getStudentIdFromHomework($homework, $type);
+            $studentUser = \App\Models\User::find($studentId);
+            if ($studentUser && $studentUser->studentProfileUnscoped) {
+                $this->authorize('viewChildHomework', [get_class($parent), $studentUser->studentProfileUnscoped]);
+            } else {
+                abort(404, 'الواجب غير موجود');
+            }
         }
 
         // Get submission

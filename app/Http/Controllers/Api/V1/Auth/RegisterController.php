@@ -33,7 +33,7 @@ class RegisterController extends Controller
      */
     public function registerStudent(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $validator = Validator::make($request->all(), [
             'first_name' => ['required', 'string', 'max:255'],
@@ -121,7 +121,7 @@ class RegisterController extends Controller
      */
     public function verifyStudentCode(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $validator = Validator::make($request->all(), [
             'student_code' => ['required', 'string'],
@@ -168,7 +168,7 @@ class RegisterController extends Controller
      */
     public function registerParent(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $validator = Validator::make($request->all(), [
             'first_name' => ['required', 'string', 'max:255'],
@@ -309,7 +309,7 @@ class RegisterController extends Controller
      */
     public function teacherStep2(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         // Validate registration token
         try {

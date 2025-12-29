@@ -546,7 +546,7 @@ class MeetingAttendance extends Model
 
                 $hasChanges = true;
 
-                Log::info('🔄 Auto-closed stale attendance cycle', [
+                Log::info('Auto-closed stale attendance cycle', [
                     'session_id' => $this->session_id,
                     'user_id' => $this->user_id,
                     'cycle_format' => $isWebhookFormat ? 'webhook' : 'manual',
@@ -577,7 +577,7 @@ class MeetingAttendance extends Model
                 'last_leave_time' => $this->extractLastLeaveTime($cycles),
             ]);
 
-            Log::info('✅ Stale cycles auto-closed and attendance updated', [
+            Log::info('Stale cycles auto-closed and attendance updated', [
                 'session_id' => $this->session_id,
                 'user_id' => $this->user_id,
                 'new_total_duration' => $this->fresh()->total_duration_minutes,
@@ -752,7 +752,7 @@ class MeetingAttendance extends Model
 
     public function scopePartial($query)
     {
-        return $query->where('attendance_status', AttendanceStatus::LEAVED->value);
+        return $query->where('attendance_status', AttendanceStatus::LEFT->value);
     }
 
     public function scopeCalculated($query)

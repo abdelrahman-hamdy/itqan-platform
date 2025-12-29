@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\ScopedToAcademy;
+use App\Models\Traits\ScopedToAcademy;
 use App\Models\Traits\HasReviews;
 use Illuminate\Support\Facades\DB;
 use App\Models\AcademicSubject;
@@ -439,9 +439,14 @@ class AcademicTeacherProfile extends Model
 
     public function scopeForAcademy($query, int $academyId)
     {
-        // Since we don't have direct academy relationship, we'll need to determine this differently
-        // For now, we can use a TODO comment and implement based on email domain or other logic
-        return $query; // TODO: Implement academy scoping for registration flow
+        // Academy scoping for teacher profiles not yet implemented
+        // AcademicTeacherProfile does not have a direct academy_id column
+        // Possible implementation approaches:
+        // 1. Add academy_id column to academic_teacher_profiles table
+        // 2. Scope through user->academy relationship: whereHas('user', fn($q) => $q->where('academy_id', $academyId))
+        // 3. Use email domain matching if teachers use academy-specific email domains
+        // For now, returning unscoped query - all teachers are shown
+        return $query;
     }
 
     public function scopeCanTeachSubject($query, int $subjectId)

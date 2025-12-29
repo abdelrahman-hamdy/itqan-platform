@@ -7,10 +7,8 @@
 @php
     use App\Enums\SubscriptionStatus;
 
-    // Handle both enum and legacy string status
-    $statusEnum = $subscription->status instanceof SubscriptionStatus
-        ? $subscription->status
-        : SubscriptionStatus::tryFrom($subscription->status) ?? SubscriptionStatus::PENDING;
+    // Status is automatically cast to SubscriptionStatus enum by the model
+    $statusEnum = $subscription->status ?? SubscriptionStatus::PENDING;
 
     $teacher = $subscription->quranTeacher;
     $teacherName = $teacher?->full_name ?? $subscription->quranTeacherUser?->name ?? 'معلم غير محدد';

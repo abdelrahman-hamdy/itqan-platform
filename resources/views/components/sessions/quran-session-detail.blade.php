@@ -308,7 +308,7 @@
             const statusMap = {
                 'attended': { label: 'حاضر', class: 'bg-green-100 text-green-800', icon: 'ri-check-line' },
                 'late': { label: 'متأخر', class: 'bg-yellow-100 text-yellow-800', icon: 'ri-time-line' },
-                'leaved': { label: 'غادر مبكراً', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
+                'left': { label: 'غادر مبكراً', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
                 'absent': { label: 'غائب', class: 'bg-red-100 text-red-800', icon: 'ri-close-line' }
             };
             const status = statusMap[reportData.attendance_status] || statusMap['attended'];
@@ -499,14 +499,13 @@
                             notification.remove();
                         }, 3000);
                     } else {
-                        alert(data.message || 'حدث خطأ أثناء الحفظ');
+                        window.toast?.error(data.message || 'حدث خطأ أثناء الحفظ');
                     }
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    alert('حدث خطأ أثناء حفظ محتوى الدرس');
+                    window.toast?.error('حدث خطأ أثناء حفظ محتوى الدرس');
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 });

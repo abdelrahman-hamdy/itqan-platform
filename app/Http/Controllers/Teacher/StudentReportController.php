@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
@@ -16,6 +17,8 @@ use App\Enums\SessionStatus;
 
 class StudentReportController extends Controller
 {
+    use ApiResponses;
+
     protected StudentReportService $studentReportService;
 
     public function __construct(StudentReportService $studentReportService)
@@ -37,13 +40,10 @@ class StudentReportController extends Controller
                 ->first();
 
             if (! $report) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'التقرير غير موجود',
-                ], 404);
+                return $this->notFoundResponse('التقرير غير موجود');
             }
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'report' => [
                     'id' => $report->id,
@@ -71,10 +71,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ في جلب بيانات التقرير',
-            ], 500);
+            return $this->serverErrorResponse('خطأ في جلب بيانات التقرير');
         }
     }
 
@@ -87,13 +84,25 @@ class StudentReportController extends Controller
             $student = User::find($studentId);
 
             if (! $student) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'الطالب غير موجود',
-                ], 404);
+                return $this->notFoundResponse('الطالب غير موجود');
             }
 
-            return response()->json([
+            // Verify student belongs to one of this teacher's sessions
+            $teacherId = Auth::id();
+            $hasAccess = QuranSession::where('quran_teacher_id', $teacherId)
+                ->where(function ($query) use ($studentId) {
+                    $query->where('student_id', $studentId)
+                        ->orWhereHas('circle.enrollments', function ($q) use ($studentId) {
+                            $q->where('student_id', $studentId);
+                        });
+                })
+                ->exists();
+
+            if (! $hasAccess) {
+                return $this->forbiddenResponse('لا يمكنك الوصول إلى بيانات هذا الطالب');
+            }
+
+            return $this->customResponse([
                 'success' => true,
                 'student' => [
                     'id' => $student->id,
@@ -107,10 +116,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ في جلب بيانات الطالب',
-            ], 500);
+            return $this->serverErrorResponse('خطأ في جلب بيانات الطالب');
         }
     }
 
@@ -126,16 +132,12 @@ class StudentReportController extends Controller
                 'new_memorization_degree' => 'nullable|numeric|min:0|max:10',
                 'reservation_degree' => 'nullable|numeric|min:0|max:10',
                 'notes' => 'nullable|string|max:1000',
-                'attendance_status' => 'nullable|in:attended,late,leaved,absent',
+                'attendance_status' => 'nullable|in:attended,late,left,absent',
                 'report_id' => 'nullable|exists:student_session_reports,id',
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'بيانات غير صحيحة',
-                    'errors' => $validator->errors(),
-                ], 422);
+                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $session = QuranSession::where('id', $request->session_id)
@@ -143,22 +145,34 @@ class StudentReportController extends Controller
                 ->first();
 
             if (! $session) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'الجلسة غير موجودة أو غير مسموح لك بالوصول إليها',
-                ], 403);
+                return $this->forbiddenResponse('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
             }
 
             $student = User::find($request->student_id);
+
+            if (! $student) {
+                return $this->notFoundResponse('الطالب غير موجود');
+            }
+
+            // Verify student belongs to this session (individual or circle)
+            $isStudentInSession = false;
+            if ($session->session_type === 'individual' && $session->student_id === $student->id) {
+                $isStudentInSession = true;
+            } elseif ($session->session_type === 'circle' && $session->circle) {
+                $isStudentInSession = $session->circle->enrollments()
+                    ->where('student_id', $student->id)
+                    ->exists();
+            }
+
+            if (! $isStudentInSession) {
+                return $this->forbiddenResponse('الطالب غير مسجل في هذه الجلسة');
+            }
 
             // Get or create student report
             if ($request->report_id) {
                 $report = StudentSessionReport::find($request->report_id);
                 if (! $report) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'التقرير غير موجود',
-                    ], 404);
+                    return $this->notFoundResponse('التقرير غير موجود');
                 }
             } else {
                 // Generate new report if not exists
@@ -196,7 +210,7 @@ class StudentReportController extends Controller
             // Refresh the report to get updated values
             $report->refresh();
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'message' => 'تم حفظ التقييم بنجاح',
                 'report' => [
@@ -221,10 +235,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ في حفظ التقييم',
-            ], 500);
+            return $this->serverErrorResponse('خطأ في حفظ التقييم');
         }
     }
 
@@ -239,15 +250,12 @@ class StudentReportController extends Controller
                 ->first();
 
             if (! $session) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'الجلسة غير موجودة أو غير مسموح لك بالوصول إليها',
-                ], 403);
+                return $this->forbiddenResponse('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
             }
 
             $reports = $this->studentReportService->generateSessionReports($session);
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'message' => 'تم إنشاء التقارير بنجاح',
                 'reports_count' => $reports->count(),
@@ -259,10 +267,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ في إنشاء التقارير',
-            ], 500);
+            return $this->serverErrorResponse('خطأ في إنشاء التقارير');
         }
     }
 
@@ -277,15 +282,12 @@ class StudentReportController extends Controller
                 ->first();
 
             if (! $session) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'الجلسة غير موجودة',
-                ], 404);
+                return $this->notFoundResponse('الجلسة غير موجودة');
             }
 
             $stats = $this->studentReportService->getSessionStats($session);
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'stats' => $stats,
             ]);
@@ -296,10 +298,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ في جلب إحصائيات الجلسة',
-            ], 500);
+            return $this->serverErrorResponse('خطأ في جلب إحصائيات الجلسة');
         }
     }
 }

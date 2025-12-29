@@ -1,10 +1,15 @@
 /**
  * Enhanced Chat System with Real-time Features
  * Itqan Platform - Production Ready
+ *
+ * Note: Echo and Pusher are initialized globally via bootstrap.js
+ * This module uses window.Echo for real-time features
  */
 
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
+import { Logger, ChatLogger } from './utils/logger';
+import { ErrorHandler, handleApiError } from './utils/error-handler';
+import { getCsrfToken, getCsrfFormDataHeaders } from './utils/csrf';
+import { TIMEOUTS, LIMITS, STATUS, LABELS_AR } from './utils/constants';
 
 class EnhancedChatSystem {
     constructor() {
@@ -18,6 +23,18 @@ class EnhancedChatSystem {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
 
+        // Store bound handlers for cleanup (prevents memory leaks)
+        this._boundHandlers = {
+            onConnected: null,
+            onDisconnected: null,
+            onConnectionError: null,
+            messageInputHandler: null,
+            messageKeyHandler: null,
+            sendButtonHandler: null,
+            attachButtonHandler: null,
+            fileInputHandler: null,
+        };
+
         this.init();
     }
 
@@ -28,7 +45,7 @@ class EnhancedChatSystem {
         this.currentUserId = document.querySelector('meta[name="user-id"]')?.content;
 
         if (!this.currentUserId) {
-            console.error('User ID not found. Chat system cannot initialize.');
+            ChatLogger.error('User ID not found. Chat system cannot initialize.');
             return;
         }
 
@@ -44,34 +61,20 @@ class EnhancedChatSystem {
 
     /**
      * Initialize Laravel Echo for WebSocket connection
+     * Uses the existing window.Echo instance from bootstrap.js to avoid duplicate connections
      */
     initializeEcho() {
-        window.Pusher = Pusher;
-
-        // Configure Echo with Reverb
-        // SECURITY: REVERB_APP_KEY must be set via environment, no fallback
-        if (!window.REVERB_APP_KEY) {
-            console.error('REVERB_APP_KEY is not configured. Real-time features will not work.');
+        // Use existing Echo instance initialized in resources/js/echo.js via bootstrap.js
+        // This prevents duplicate WebSocket connections and event listener conflicts
+        if (!window.Echo) {
+            ChatLogger.error('Echo not initialized. Ensure bootstrap.js is loaded before chat-enhanced.js');
+            ChatLogger.error('Real-time chat features will not work.');
             return;
         }
 
-        window.Echo = new Echo({
-            broadcaster: 'reverb',
-            key: window.REVERB_APP_KEY,
-            wsHost: window.REVERB_HOST || window.location.hostname,
-            wsPort: window.REVERB_PORT || 8085,
-            wssPort: window.REVERB_PORT || 8085,
-            forceTLS: window.location.protocol === 'https:',
-            enabledTransports: ['ws', 'wss'],
-            disableStats: true,
-            auth: {
-                headers: {
-                    'X-CSRF-TOKEN': this.getCsrfToken(),
-                    'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '')
-                }
-            },
-            authEndpoint: '/broadcasting/auth'
-        });
+        // Echo is already configured and connected via echo.js
+        // Just monitor its connection and join channels
+        ChatLogger.log('Using existing Echo instance');
 
         // Monitor connection status
         this.monitorConnection();
@@ -84,17 +87,14 @@ class EnhancedChatSystem {
      * Monitor WebSocket connection status
      */
     monitorConnection() {
-        window.Echo.connector.pusher.connection.bind('connected', () => {
-            this.onConnected();
-        });
+        // Store bound handlers for cleanup
+        this._boundHandlers.onConnected = () => this.onConnected();
+        this._boundHandlers.onDisconnected = () => this.onDisconnected();
+        this._boundHandlers.onConnectionError = (error) => this.onConnectionError(error);
 
-        window.Echo.connector.pusher.connection.bind('disconnected', () => {
-            this.onDisconnected();
-        });
-
-        window.Echo.connector.pusher.connection.bind('error', (error) => {
-            this.onConnectionError(error);
-        });
+        window.Echo.connector.pusher.connection.bind('connected', this._boundHandlers.onConnected);
+        window.Echo.connector.pusher.connection.bind('disconnected', this._boundHandlers.onDisconnected);
+        window.Echo.connector.pusher.connection.bind('error', this._boundHandlers.onConnectionError);
     }
 
     /**
@@ -125,7 +125,7 @@ class EnhancedChatSystem {
      * Handle connection errors
      */
     onConnectionError(error) {
-        console.error('WebSocket error:', error);
+        ChatLogger.error('WebSocket error:', error);
         this.updateConnectionStatus('error');
     }
 
@@ -224,7 +224,7 @@ class EnhancedChatSystem {
                 this.handleTypingIndicator(e);
             })
             .error((error) => {
-                console.error('Presence channel error:', error);
+                ChatLogger.error('Presence channel error:', error);
             });
     }
 
@@ -323,7 +323,7 @@ class EnhancedChatSystem {
             const response = await fetch('/chat/sendMessage', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': this.getCsrfToken(),
+                    'X-CSRF-TOKEN': getCsrfToken(),
                     'Accept': 'application/json'
                 },
                 body: formData
@@ -340,13 +340,13 @@ class EnhancedChatSystem {
             }
 
         } catch (error) {
-            console.error('Error sending message:', error);
+            ChatLogger.error('Error sending message:', error);
             this.updateMessageStatus(tempId, 'failed');
 
             // Add to offline queue
             this.addToOfflineQueue(message);
 
-            this.showError('Failed to send message. It will be sent when connection is restored.');
+            this.showError(LABELS_AR.ERRORS.NETWORK);
         }
     }
 
@@ -376,7 +376,7 @@ class EnhancedChatSystem {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.getCsrfToken()
+                    'X-CSRF-TOKEN': getCsrfToken()
                 },
                 body: JSON.stringify({
                     conversation_id: this.currentConversationId,
@@ -385,7 +385,7 @@ class EnhancedChatSystem {
                 })
             });
         } catch (error) {
-            console.error('Error sending typing indicator:', error);
+            ChatLogger.debug('Error sending typing indicator:', error);
         }
     }
 
@@ -447,7 +447,7 @@ class EnhancedChatSystem {
             await fetch(`/chat/messages/${messageId}/read`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': this.getCsrfToken(),
+                    'X-CSRF-TOKEN': getCsrfToken(),
                     'Content-Type': 'application/json'
                 }
             });
@@ -455,7 +455,7 @@ class EnhancedChatSystem {
             this.updateMessageStatus(messageId, 'read');
 
         } catch (error) {
-            console.error('Error marking message as read:', error);
+            ChatLogger.error('Error marking message as read:', error);
         }
     }
 
@@ -646,36 +646,46 @@ class EnhancedChatSystem {
      * Bind UI event listeners
      */
     bindEventListeners() {
-        // Message input
-        const messageInput = document.getElementById('message-input');
-        if (messageInput) {
-            messageInput.addEventListener('input', () => this.handleTypingInput());
-            messageInput.addEventListener('keypress', (e) => {
+        // Store element references for cleanup
+        this._elements = {
+            messageInput: document.getElementById('message-input'),
+            sendButton: document.getElementById('send-button'),
+            attachButton: document.getElementById('attach-button'),
+            fileInput: document.getElementById('file-input'),
+            messagesContainer: document.getElementById('messages-container'),
+        };
+
+        // Message input - store bound handlers for cleanup
+        if (this._elements.messageInput) {
+            this._boundHandlers.messageInputHandler = () => this.handleTypingInput();
+            this._boundHandlers.messageKeyHandler = (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     this.sendMessageFromInput();
                 }
-            });
+            };
+            this._elements.messageInput.addEventListener('input', this._boundHandlers.messageInputHandler);
+            this._elements.messageInput.addEventListener('keypress', this._boundHandlers.messageKeyHandler);
         }
 
         // Send button
-        const sendButton = document.getElementById('send-button');
-        if (sendButton) {
-            sendButton.addEventListener('click', () => this.sendMessageFromInput());
+        if (this._elements.sendButton) {
+            this._boundHandlers.sendButtonHandler = () => this.sendMessageFromInput();
+            this._elements.sendButton.addEventListener('click', this._boundHandlers.sendButtonHandler);
         }
 
         // File attachment
-        const attachButton = document.getElementById('attach-button');
-        if (attachButton) {
-            attachButton.addEventListener('click', () => {
+        if (this._elements.attachButton) {
+            this._boundHandlers.attachButtonHandler = () => {
                 document.getElementById('file-input')?.click();
-            });
+            };
+            this._elements.attachButton.addEventListener('click', this._boundHandlers.attachButtonHandler);
         }
 
         // File input change
-        const fileInput = document.getElementById('file-input');
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+        if (this._elements.fileInput) {
+            this._boundHandlers.fileInputHandler = (e) => this.handleFileSelect(e);
+            this._elements.fileInput.addEventListener('change', this._boundHandlers.fileInputHandler);
         }
 
         // Conversation items
@@ -687,15 +697,7 @@ class EnhancedChatSystem {
             });
         });
 
-        // Scroll to load more messages
-        const messagesContainer = document.getElementById('messages-container');
-        if (messagesContainer) {
-            messagesContainer.addEventListener('scroll', () => {
-                if (messagesContainer.scrollTop === 0) {
-                    this.loadMoreMessages();
-                }
-            });
-        }
+        // Note: Message pagination is handled by WireChat's Livewire component ($wire.loadMore)
 
         // Mark messages as read on scroll
         if ('IntersectionObserver' in window) {
@@ -729,10 +731,8 @@ class EnhancedChatSystem {
 
     /**
      * Helper functions
+     * Note: getCsrfToken is now imported from utils/csrf.js for consistency
      */
-    getCsrfToken() {
-        return document.querySelector('meta[name="csrf-token"]')?.content || '';
-    }
 
     updateConnectionStatus(status) {
         const statusElement = document.getElementById('connection-status');
@@ -779,13 +779,21 @@ class EnhancedChatSystem {
             }
         }
 
+        // Build message HTML with proper XSS protection
+        const replyHtml = message.reply_to
+            ? `<div class="reply-to">الرد على: ${this.escapeHtml(message.reply_to_text)}</div>`
+            : '';
+        const bodyHtml = `<div class="message-text">${this.escapeHtml(message.body)}</div>`;
+        const attachmentHtml = message.attachment ? this.renderAttachment(message.attachment) : '';
+        const timeHtml = `<span class="message-time">${this.escapeHtml(this.formatTime(message.created_at))}</span>`;
+
         div.innerHTML = `
             <div class="message-content">
-                ${message.reply_to ? `<div class="reply-to">Replying to: ${message.reply_to_text}</div>` : ''}
-                <div class="message-text">${this.escapeHtml(message.body)}</div>
-                ${message.attachment ? this.renderAttachment(message.attachment) : ''}
+                ${replyHtml}
+                ${bodyHtml}
+                ${attachmentHtml}
                 <div class="message-meta">
-                    <span class="message-time">${this.formatTime(message.created_at)}</span>
+                    ${timeHtml}
                     ${statusIcon}
                 </div>
             </div>
@@ -794,28 +802,79 @@ class EnhancedChatSystem {
         return div;
     }
 
+    /**
+     * Render attachment with proper XSS protection
+     * @param {Object} attachment - Attachment object with url, name, type, size
+     * @returns {string} Safe HTML for attachment
+     */
     renderAttachment(attachment) {
+        if (!attachment) return '';
+
+        // Sanitize URL and filename to prevent XSS
+        const safeUrl = this.sanitizeUrl(attachment.url);
+        const safeName = this.sanitizeFilename(attachment.name);
+        const safeSize = this.formatFileSize(attachment.size || 0);
+
         if (attachment.type === 'image') {
-            return `<img src="${attachment.url}" alt="Image" class="message-image" onclick="this.classList.toggle('expanded')">`;
+            return `<img src="${safeUrl}" alt="${safeName}" class="message-image" onclick="this.classList.toggle('expanded')" loading="lazy">`;
         } else if (attachment.type === 'video') {
-            return `<video src="${attachment.url}" controls class="message-video"></video>`;
+            return `<video src="${safeUrl}" controls class="message-video" preload="metadata"></video>`;
         } else if (attachment.type === 'audio') {
-            return `<audio src="${attachment.url}" controls class="message-audio"></audio>`;
+            return `<audio src="${safeUrl}" controls class="message-audio" preload="metadata"></audio>`;
         } else {
             return `
                 <div class="message-file">
                     <i class="fas fa-file"></i>
-                    <a href="${attachment.url}" download="${attachment.name}">${attachment.name}</a>
-                    <span class="file-size">${this.formatFileSize(attachment.size)}</span>
+                    <a href="${safeUrl}" download="${safeName}">${safeName}</a>
+                    <span class="file-size">${safeSize}</span>
                 </div>
             `;
         }
     }
 
+    /**
+     * Escape HTML to prevent XSS attacks
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped HTML-safe text
+     */
     escapeHtml(text) {
+        if (text === null || text === undefined) return '';
         const div = document.createElement('div');
-        div.textContent = text;
+        div.textContent = String(text);
         return div.innerHTML;
+    }
+
+    /**
+     * Sanitize URL to prevent XSS via javascript: or data: URLs
+     * @param {string} url - URL to sanitize
+     * @returns {string} Safe URL or placeholder
+     */
+    sanitizeUrl(url) {
+        if (!url || typeof url !== 'string') return '#invalid-url';
+
+        try {
+            const parsed = new URL(url, window.location.origin);
+            // Only allow http, https protocols
+            if (!['http:', 'https:'].includes(parsed.protocol)) {
+                ChatLogger.warn('Blocked potentially dangerous URL protocol:', { protocol: parsed.protocol });
+                return '#blocked-url';
+            }
+            return parsed.href;
+        } catch (error) {
+            ChatLogger.warn('Invalid URL blocked:', { url });
+            return '#invalid-url';
+        }
+    }
+
+    /**
+     * Sanitize filename to prevent XSS
+     * @param {string} filename - Filename to sanitize
+     * @returns {string} Safe filename
+     */
+    sanitizeFilename(filename) {
+        if (!filename || typeof filename !== 'string') return 'file';
+        // Remove potentially dangerous characters and escape HTML
+        return this.escapeHtml(filename.replace(/[<>"'&]/g, '_'));
     }
 
     formatTime(timestamp) {
@@ -910,14 +969,21 @@ class EnhancedChatSystem {
             if (file.type.startsWith('image/')) {
                 const img = document.createElement('img');
                 img.src = URL.createObjectURL(file);
+                img.alt = this.escapeHtml(file.name);
                 div.appendChild(img);
             } else {
-                div.innerHTML = `<i class="fas fa-file"></i> ${file.name}`;
+                // Use DOM methods instead of innerHTML to prevent XSS
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-file';
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = ' ' + file.name; // textContent is safe
+                div.appendChild(icon);
+                div.appendChild(nameSpan);
             }
 
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-file';
-            removeBtn.innerHTML = '×';
+            removeBtn.textContent = '×';
             removeBtn.onclick = () => this.removeFile(file);
             div.appendChild(removeBtn);
 
@@ -959,7 +1025,7 @@ class EnhancedChatSystem {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.getCsrfToken()
+                    'X-CSRF-TOKEN': getCsrfToken()
                 },
                 body: JSON.stringify({
                     id: conversationId,
@@ -973,7 +1039,7 @@ class EnhancedChatSystem {
                 this.displayMessages(data.messages);
             }
         } catch (error) {
-            console.error('Error loading messages:', error);
+            ChatLogger.error('Error loading messages:', error);
         }
     }
 
@@ -997,7 +1063,7 @@ class EnhancedChatSystem {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.getCsrfToken()
+                    'X-CSRF-TOKEN': getCsrfToken()
                 },
                 body: JSON.stringify({
                     id: conversationId
@@ -1007,7 +1073,7 @@ class EnhancedChatSystem {
             // Update unread count
             this.updateUnreadCount(conversationId, 0);
         } catch (error) {
-            console.error('Error marking conversation as read:', error);
+            ChatLogger.error('Error marking conversation as read:', error);
         }
     }
 
@@ -1032,16 +1098,7 @@ class EnhancedChatSystem {
         this.updateUnreadCount(conversationId);
     }
 
-    async loadMoreMessages() {
-        if (this.loadingMessages) return;
-
-        this.loadingMessages = true;
-
-        // Implementation for loading older messages
-        // ...
-
-        this.loadingMessages = false;
-    }
+    // Note: Message pagination is handled by WireChat's Livewire component ($wire.loadMore)
 
     shouldPlaySound() {
         return localStorage.getItem('chat_sound') !== 'false';
@@ -1068,7 +1125,7 @@ class EnhancedChatSystem {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': this.getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             },
             body: JSON.stringify({
                 status: isOnline ? 'online' : 'offline'
@@ -1121,7 +1178,7 @@ class EnhancedChatSystem {
         fetch(`/chat/messages/${messageId}/delivered`, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': this.getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             }
         });
     }
@@ -1176,8 +1233,47 @@ class EnhancedChatSystem {
      * Destroy the chat system
      */
     destroy() {
-        // Clean up event listeners
-        window.Echo?.disconnect();
+        // Leave any joined channels
+        this.leaveConversation();
+        if (this.currentUserId) {
+            window.Echo?.leave(`chat.${this.currentUserId}`);
+        }
+
+        // Remove Pusher connection handlers
+        if (window.Echo?.connector?.pusher?.connection) {
+            const connection = window.Echo.connector.pusher.connection;
+            if (this._boundHandlers.onConnected) {
+                connection.unbind('connected', this._boundHandlers.onConnected);
+            }
+            if (this._boundHandlers.onDisconnected) {
+                connection.unbind('disconnected', this._boundHandlers.onDisconnected);
+            }
+            if (this._boundHandlers.onConnectionError) {
+                connection.unbind('error', this._boundHandlers.onConnectionError);
+            }
+        }
+
+        // Remove DOM event listeners
+        if (this._elements?.messageInput) {
+            if (this._boundHandlers.messageInputHandler) {
+                this._elements.messageInput.removeEventListener('input', this._boundHandlers.messageInputHandler);
+            }
+            if (this._boundHandlers.messageKeyHandler) {
+                this._elements.messageInput.removeEventListener('keypress', this._boundHandlers.messageKeyHandler);
+            }
+        }
+
+        if (this._elements?.sendButton && this._boundHandlers.sendButtonHandler) {
+            this._elements.sendButton.removeEventListener('click', this._boundHandlers.sendButtonHandler);
+        }
+
+        if (this._elements?.attachButton && this._boundHandlers.attachButtonHandler) {
+            this._elements.attachButton.removeEventListener('click', this._boundHandlers.attachButtonHandler);
+        }
+
+        if (this._elements?.fileInput && this._boundHandlers.fileInputHandler) {
+            this._elements.fileInput.removeEventListener('change', this._boundHandlers.fileInputHandler);
+        }
 
         // Clear timers
         clearTimeout(this.typingTimer);
@@ -1188,6 +1284,10 @@ class EnhancedChatSystem {
         // Clear data
         this.onlineUsers.clear();
         this.messageQueue = [];
+
+        // Clear references
+        this._elements = null;
+        this._boundHandlers = null;
     }
 }
 

@@ -38,7 +38,7 @@
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-4 md:space-y-6">
             <!-- Circle Header -->
-            <x-circle.group-header :circle="$circle" view-type="teacher" />
+            <x-circle.circle-header :circle="$circle" type="group" view-type="teacher" />
 
             <!-- Tabs Component -->
             @php
@@ -190,7 +190,6 @@ function openSessionDetail(sessionId) {
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
         window.location.href = finalUrl;
     @else
-        console.error('User not authenticated');
     @endif
 }
 </script>

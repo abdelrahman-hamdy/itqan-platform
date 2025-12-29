@@ -3,24 +3,27 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\Lesson;
 use App\Models\RecordedCourse;
 use App\Models\StudentProgress;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
 
 class ProgressController extends Controller
 {
+    use ApiResponses;
     /**
      * Get course progress
      */
-    public function getCourseProgress($courseId)
+    public function getCourseProgress($courseId): JsonResponse
     {
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $course = RecordedCourse::findOrFail($courseId);
@@ -33,8 +36,7 @@ class ProgressController extends Controller
 
         $progressPercentage = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'progress_percentage' => $progressPercentage,
             'completed_lessons' => $completedLessons,
             'total_lessons' => $totalLessons,
@@ -44,19 +46,18 @@ class ProgressController extends Controller
     /**
      * Get lesson progress
      */
-    public function getLessonProgress($courseId, $lessonId)
+    public function getLessonProgress($courseId, $lessonId): JsonResponse
     {
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $lesson = Lesson::findOrFail($lessonId);
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'progress' => [
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
@@ -70,12 +71,12 @@ class ProgressController extends Controller
     /**
      * Update lesson progress
      */
-    public function updateLessonProgress(Request $request, $courseId, $lessonId)
+    public function updateLessonProgress(Request $request, $courseId, $lessonId): JsonResponse
     {
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $request->validate([
@@ -92,8 +93,7 @@ class ProgressController extends Controller
             (int) $request->total_time
         );
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'progress' => [
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
@@ -105,37 +105,35 @@ class ProgressController extends Controller
     /**
      * Mark lesson as complete
      */
-    public function markLessonComplete($courseId, $lessonId)
+    public function markLessonComplete($courseId, $lessonId): JsonResponse
     {
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $lesson = Lesson::findOrFail($lessonId);
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
         $progress->markAsCompleted();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lesson marked as complete',
+        return $this->successResponse([
             'progress' => [
                 'is_completed' => true,
                 'completed_at' => $progress->completed_at,
             ],
-        ]);
+        ], 'Lesson marked as complete');
     }
 
     /**
      * Toggle lesson completion status
      */
-    public function toggleLessonCompletion($courseId, $lessonId)
+    public function toggleLessonCompletion($courseId, $lessonId): JsonResponse
     {
         $user = Auth::user();
 
         if (! $user) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
         $lesson = Lesson::findOrFail($lessonId);
@@ -154,14 +152,12 @@ class ProgressController extends Controller
             $message = 'Lesson marked as complete';
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => $message,
+        return $this->successResponse([
             'progress' => [
                 'is_completed' => $progress->is_completed,
                 'progress_percentage' => $progress->progress_percentage,
                 'completed_at' => $progress->completed_at,
             ],
-        ]);
+        ], $message);
     }
 }

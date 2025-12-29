@@ -142,7 +142,6 @@
                 detail: options
             }));
         };
-        console.log('[Confirmation Modal] Global confirmAction function registered');
     }
 
     // Register immediately if Alpine is already loaded

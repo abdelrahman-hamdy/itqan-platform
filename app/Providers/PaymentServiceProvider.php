@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentServiceInterface;
+use App\Services\NotificationService;
 use App\Services\Payment\PaymentGatewayManager;
 use App\Services\Payment\PaymentStateMachine;
 use App\Services\Payment\PaymobSignatureService;
@@ -36,9 +38,13 @@ class PaymentServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentService::class, function ($app) {
             return new PaymentService(
                 $app->make(PaymentGatewayManager::class),
-                $app->make(PaymentStateMachine::class)
+                $app->make(PaymentStateMachine::class),
+                $app->make(NotificationService::class)
             );
         });
+
+        // Bind interface to implementation
+        $this->app->bind(PaymentServiceInterface::class, PaymentService::class);
 
         // Alias for convenience
         $this->app->alias(PaymentGatewayManager::class, 'payment.gateway');

@@ -1,148 +1,141 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs;
 
-use Carbon\Carbon;
-
 /**
- * Data Transfer Object for Meeting/Video Conference Data
+ * Data Transfer Object for LiveKit meeting data
  *
- * Represents meeting information for LiveKit or other video providers,
- * including room details, tokens, and participant information.
+ * Used by LiveKitService to return structured meeting connection information
+ * including room details, access tokens, and participant data.
+ *
+ * @property-read string $roomName LiveKit room name/identifier
+ * @property-read string $token JWT access token for participant
+ * @property-read string $serverUrl LiveKit server WebSocket URL
+ * @property-read string $participantName Participant display name
+ * @property-read string $participantId Participant unique identifier
+ * @property-read array $metadata Additional meeting metadata
  */
-class MeetingData
+readonly class MeetingData
 {
     public function __construct(
-        public readonly string $roomName,
-        public readonly ?string $roomSid = null,
-        public readonly ?string $token = null,
-        public readonly ?string $serverUrl = null,
-        public readonly ?string $joinUrl = null,
-        public readonly string $status = 'created',
-        public readonly ?Carbon $createdAt = null,
-        public readonly ?Carbon $startedAt = null,
-        public readonly ?Carbon $endedAt = null,
-        public readonly int $participantCount = 0,
-        public readonly int $maxParticipants = 0,
-        public readonly array $metadata = [],
+        public string $roomName,
+        public string $token,
+        public string $serverUrl,
+        public string $participantName,
+        public string $participantId,
+        public array $metadata = [],
     ) {}
 
     /**
-     * Create from LiveKit room data
+     * Create meeting data for a teacher
      */
-    public static function fromLiveKitRoom(array $roomData, ?string $token = null): self
-    {
-        return new self(
-            roomName: $roomData['name'] ?? $roomData['room_name'] ?? '',
-            roomSid: $roomData['sid'] ?? $roomData['room_sid'] ?? null,
-            token: $token,
-            serverUrl: config('livekit.server_url'),
-            status: $roomData['status'] ?? 'created',
-            createdAt: isset($roomData['creation_time'])
-                ? Carbon::createFromTimestamp($roomData['creation_time'])
-                : null,
-            participantCount: $roomData['num_participants'] ?? 0,
-            maxParticipants: $roomData['max_participants'] ?? 0,
-            metadata: $roomData['metadata'] ?? [],
-        );
-    }
-
-    /**
-     * Create for a new meeting
-     */
-    public static function forNewMeeting(
+    public static function forTeacher(
         string $roomName,
         string $token,
         string $serverUrl,
+        string $teacherId,
+        string $teacherName,
         array $metadata = []
     ): self {
         return new self(
             roomName: $roomName,
             token: $token,
             serverUrl: $serverUrl,
-            status: 'created',
-            createdAt: Carbon::now(),
-            metadata: $metadata,
+            participantName: $teacherName,
+            participantId: $teacherId,
+            metadata: array_merge(['role' => 'teacher'], $metadata),
         );
     }
 
     /**
-     * Check if meeting is active
+     * Create meeting data for a student
      */
-    public function isActive(): bool
-    {
-        return in_array($this->status, ['active', 'live', 'in_progress']);
+    public static function forStudent(
+        string $roomName,
+        string $token,
+        string $serverUrl,
+        string $studentId,
+        string $studentName,
+        array $metadata = []
+    ): self {
+        return new self(
+            roomName: $roomName,
+            token: $token,
+            serverUrl: $serverUrl,
+            participantName: $studentName,
+            participantId: $studentId,
+            metadata: array_merge(['role' => 'student'], $metadata),
+        );
     }
 
     /**
-     * Check if meeting has ended
+     * Create instance from array data
      */
-    public function hasEnded(): bool
+    public static function fromArray(array $data): self
     {
-        return in_array($this->status, ['ended', 'closed', 'completed']);
+        return new self(
+            roomName: $data['roomName'] ?? $data['room_name'],
+            token: $data['token'],
+            serverUrl: $data['serverUrl'] ?? $data['server_url'],
+            participantName: $data['participantName'] ?? $data['participant_name'],
+            participantId: $data['participantId'] ?? $data['participant_id'],
+            metadata: $data['metadata'] ?? [],
+        );
     }
 
     /**
-     * Check if meeting can be joined
-     */
-    public function canJoin(): bool
-    {
-        return ! $this->hasEnded()
-            && ! empty($this->token)
-            && ! empty($this->serverUrl);
-    }
-
-    /**
-     * Get meeting duration in minutes
-     */
-    public function getDurationMinutes(): ?int
-    {
-        if (! $this->startedAt) {
-            return null;
-        }
-
-        $endTime = $this->endedAt ?? Carbon::now();
-
-        return (int) $this->startedAt->diffInMinutes($endTime);
-    }
-
-    /**
-     * Convert to array for API responses
+     * Convert to array representation
      */
     public function toArray(): array
     {
         return [
             'room_name' => $this->roomName,
-            'room_sid' => $this->roomSid,
             'token' => $this->token,
             'server_url' => $this->serverUrl,
-            'join_url' => $this->joinUrl,
-            'status' => $this->status,
-            'created_at' => $this->createdAt?->toDateTimeString(),
-            'started_at' => $this->startedAt?->toDateTimeString(),
-            'ended_at' => $this->endedAt?->toDateTimeString(),
-            'participant_count' => $this->participantCount,
-            'max_participants' => $this->maxParticipants,
-            'can_join' => $this->canJoin(),
-            'is_active' => $this->isActive(),
-            'duration_minutes' => $this->getDurationMinutes(),
+            'participant_name' => $this->participantName,
+            'participant_id' => $this->participantId,
             'metadata' => $this->metadata,
         ];
     }
 
     /**
-     * Convert to client-safe array (without sensitive data)
+     * Convert to JSON-safe array for frontend
      */
-    public function toClientArray(): array
+    public function toJson(): array
     {
         return [
-            'room_name' => $this->roomName,
+            'roomName' => $this->roomName,
             'token' => $this->token,
-            'server_url' => $this->serverUrl,
-            'status' => $this->status,
-            'can_join' => $this->canJoin(),
-            'is_active' => $this->isActive(),
-            'participant_count' => $this->participantCount,
+            'serverUrl' => $this->serverUrl,
+            'participantName' => $this->participantName,
+            'participantId' => $this->participantId,
+            'metadata' => $this->metadata,
         ];
+    }
+
+    /**
+     * Get participant role from metadata
+     */
+    public function getRole(): ?string
+    {
+        return $this->metadata['role'] ?? null;
+    }
+
+    /**
+     * Check if participant is a teacher
+     */
+    public function isTeacher(): bool
+    {
+        return $this->getRole() === 'teacher';
+    }
+
+    /**
+     * Check if participant is a student
+     */
+    public function isStudent(): bool
+    {
+        return $this->getRole() === 'student';
     }
 }

@@ -123,22 +123,27 @@ class MigrateQuranSystemData extends Command
     {
         $this->info('📝 Migrating individual subscriptions...');
 
-        $subscriptions = QuranSubscription::where('subscription_type', 'individual')
-            ->whereDoesntHave('individualCircle')
-            ->get();
+        $query = QuranSubscription::where('subscription_type', 'individual')
+            ->whereDoesntHave('individualCircle');
 
-        if ($subscriptions->isEmpty()) {
+        $total = $query->count();
+
+        if ($total === 0) {
             $this->line('   No subscriptions to migrate');
             return 0;
         }
 
         $migratedCount = 0;
-        foreach ($subscriptions as $subscription) {
-            if (!$isDryRun) {
-                $subscription->createIndividualCircle();
+
+        // Process in chunks to prevent memory issues
+        $query->chunkById(100, function ($subscriptions) use ($isDryRun, &$migratedCount) {
+            foreach ($subscriptions as $subscription) {
+                if (!$isDryRun) {
+                    $subscription->createIndividualCircle();
+                }
+                $migratedCount++;
             }
-            $migratedCount++;
-        }
+        });
 
         $this->line("   ✅ Migrated {$migratedCount} subscriptions");
         return $migratedCount;
@@ -151,18 +156,28 @@ class MigrateQuranSystemData extends Command
     {
         $this->info('📅 Migrating group circle schedules...');
 
-        $circles = QuranCircle::whereDoesntHave('schedule')
-            ->whereNotNull('quran_teacher_id')
-            ->get();
+        $query = QuranCircle::whereDoesntHave('schedule')
+            ->whereNotNull('quran_teacher_id');
+
+        $total = $query->count();
+
+        if ($total === 0) {
+            $this->line('   No circles to update');
+            return 0;
+        }
 
         $migratedCount = 0;
-        foreach ($circles as $circle) {
-            if (!$isDryRun) {
-                // Update circle to inactive until teacher sets schedule
-                $circle->update(['status' => false]);
+
+        // Process in chunks to prevent memory issues
+        $query->chunkById(100, function ($circles) use ($isDryRun, &$migratedCount) {
+            foreach ($circles as $circle) {
+                if (!$isDryRun) {
+                    // Update circle to inactive until teacher sets schedule
+                    $circle->update(['status' => false]);
+                }
+                $migratedCount++;
             }
-            $migratedCount++;
-        }
+        });
 
         $this->line("   ✅ Updated {$migratedCount} circles");
         return $migratedCount;
@@ -175,19 +190,30 @@ class MigrateQuranSystemData extends Command
     {
         $this->info('🔄 Updating sessions...');
 
-        $sessions = QuranSession::whereNull('is_template')->get();
-        
-        $updatedCount = 0;
-        foreach ($sessions as $session) {
-            if (!$isDryRun) {
-                $session->update([
-                    'is_template' => false,
-                    'is_scheduled' => true,
-                    'session_type' => $session->circle_id ? 'group' : 'individual',
-                ]);
-            }
-            $updatedCount++;
+        $query = QuranSession::whereNull('is_template');
+
+        $total = $query->count();
+
+        if ($total === 0) {
+            $this->line('   No sessions to update');
+            return 0;
         }
+
+        $updatedCount = 0;
+
+        // Process in chunks to prevent memory issues
+        $query->chunkById(200, function ($sessions) use ($isDryRun, &$updatedCount) {
+            foreach ($sessions as $session) {
+                if (!$isDryRun) {
+                    $session->update([
+                        'is_template' => false,
+                        'is_scheduled' => true,
+                        'session_type' => $session->circle_id ? 'group' : 'individual',
+                    ]);
+                }
+                $updatedCount++;
+            }
+        });
 
         $this->line("   ✅ Updated {$updatedCount} sessions");
         return $updatedCount;

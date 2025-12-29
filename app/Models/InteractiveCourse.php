@@ -240,6 +240,21 @@ class InteractiveCourse extends Model
     }
 
     /**
+     * Get all quizzes assigned to this course through quiz assignments
+     */
+    public function quizzes(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Quiz::class,
+            QuizAssignment::class,
+            'assignable_id',
+            'id',
+            'id',
+            'quiz_id'
+        )->where('assignable_type', self::class);
+    }
+
+    /**
      * Helper methods
      */
     public function getDisplayNameAttribute(): string

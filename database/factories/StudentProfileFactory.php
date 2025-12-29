@@ -46,7 +46,7 @@ class StudentProfileFactory extends Factory
 
     /**
      * Configure the model factory.
-     * Handles academy_id -> grade_level_id conversion for backward compatibility.
+     * Handles academy_id -> grade_level_id conversion for factory convenience.
      */
     public function configure(): static
     {

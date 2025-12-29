@@ -106,17 +106,14 @@ function openSessionDetail(sessionId) {
         const sessionUrl = '{{ route("student.sessions.show", ["subdomain" => request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
 
-        console.log('Student Session URL:', finalUrl);
         window.location.href = finalUrl;
     @else
-        console.error('User not authenticated');
     @endif
 }
 
 // Add any additional student-specific functionality here
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips, progress bars, etc.
-    console.log('Student individual circle page loaded');
 });
 </script>
 </x-slot>

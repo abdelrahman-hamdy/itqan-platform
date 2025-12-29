@@ -41,16 +41,16 @@ class AcademyBrandingResource extends JsonResource
             // Localization
             'country' => [
                 'code' => $this->country?->value,
-                'name' => $this->country?->getLabel(),
+                'name' => $this->country?->label(),
             ],
             'timezone' => [
                 'code' => $this->timezone?->value,
-                'name' => $this->timezone?->getLabel(),
+                'name' => $this->timezone?->label(),
             ],
             'currency' => [
                 'code' => $this->currency?->value,
                 'symbol' => $this->getCurrencySymbol($this->currency),
-                'name' => $this->currency?->getLabel(),
+                'name' => $this->currency?->label(),
             ],
 
             // Contact Info
@@ -79,7 +79,7 @@ class AcademyBrandingResource extends JsonResource
 
         return [
             'name' => $this->brand_color->value,
-            'label' => $this->brand_color->getLabel(),
+            'label' => $this->brand_color->label(),
             'primary' => $this->brand_color->getHexValue(500),
             'shades' => $this->getBrandColorShades(),
         ];
@@ -117,7 +117,7 @@ class AcademyBrandingResource extends JsonResource
 
         return [
             'name' => $this->gradient_palette->value,
-            'label' => $this->gradient_palette->getLabel(),
+            'label' => $this->gradient_palette->label(),
             'from_color' => $colors['from'],
             'to_color' => $colors['to'],
             'gradient_class' => $this->gradient_palette->getGradientClass(),

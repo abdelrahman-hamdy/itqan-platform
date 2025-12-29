@@ -21,6 +21,7 @@ use App\Enums\EducationalQualification;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\UpdateTeacherProfileRequest;
 
 class TeacherProfileController extends Controller
 {
@@ -69,7 +70,7 @@ class TeacherProfileController extends Controller
         $academyId = $user->academy_id;
 
         // Get currency from academy settings or default
-        $currencyLabel = $academy->currency?->getLabel() ?? 'ريال سعودي (SAR)';
+        $currencyLabel = $academy->currency?->label() ?? 'ريال سعودي (SAR)';
 
         // Get timezone from academy settings or default
         $timezone = $academy->timezone?->value ?? 'Asia/Riyadh';
@@ -162,31 +163,12 @@ class TeacherProfileController extends Controller
             abort(404, 'Teacher profile not found');
         }
 
-        // Verify this teacher can access this student
-        $canAccessStudent = false;
-
-        if ($user->isQuranTeacher()) {
-            // Check if teacher has any circles with this student
-            $canAccessStudent = \App\Models\QuranIndividualCircle::where('quran_teacher_id', $teacherProfile->id)
-                ->where('student_id', $student->id)
-                ->exists();
-
-            // Also check group circles
-            if (! $canAccessStudent) {
-                $canAccessStudent = \App\Models\QuranCircle::where('quran_teacher_id', $teacherProfile->id)
-                    ->whereHas('students', function ($query) use ($student) {
-                        $query->where('student_id', $student->id);
-                    })
-                    ->exists();
-            }
+        // Use policy to check if teacher can access this student's profile
+        $studentProfile = $student->studentProfileUnscoped;
+        if ($studentProfile) {
+            $this->authorize('view', $studentProfile);
         } else {
-            // For academic teachers, check if they have any subjects with this student
-            // This is a simplified check - you may need to implement proper academic class relationships
-            $canAccessStudent = false; // For now, only Quran teachers can access student profiles
-        }
-
-        if (! $canAccessStudent) {
-            abort(403, 'غير مسموح لك بالوصول لملف هذا الطالب');
+            abort(404, 'لم يتم العثور على ملف الطالب');
         }
 
         // Load student with profile and relationships
@@ -296,7 +278,7 @@ class TeacherProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(UpdateTeacherProfileRequest $request): RedirectResponse
     {
         $user = Auth::user();
         $teacherProfile = $this->getTeacherProfile($user);
@@ -305,34 +287,7 @@ class TeacherProfileController extends Controller
             abort(404, 'Teacher profile not found');
         }
 
-        // Build validation rules based on teacher type
-        $rules = [
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'bio_arabic' => 'nullable|string|max:1000',
-            'bio_english' => 'nullable|string|max:1000',
-            'available_days' => 'nullable|array',
-            'available_time_start' => 'nullable|date_format:H:i',
-            'available_time_end' => 'nullable|date_format:H:i',
-            'teaching_experience_years' => 'nullable|integer|min:0|max:50',
-            'certifications' => 'nullable|array',
-            'languages' => 'nullable|array',
-        ];
-
-        // Add Quran teacher specific fields
-        if ($user->isQuranTeacher()) {
-            $rules['educational_qualification'] = 'nullable|string|in:bachelor,master,phd,diploma,other';
-        }
-
-        // Add Academic teacher specific fields
-        if ($user->isAcademicTeacher()) {
-            $rules['education_level'] = ['nullable', new Enum(EducationalQualification::class)];
-            $rules['university'] = 'nullable|string|max:255';
-        }
-
-        $validated = $request->validate($rules);
+        $validated = $request->validated();
 
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
@@ -496,18 +451,34 @@ class TeacherProfileController extends Controller
      */
     private function calculateQuranTeacherStats($user, $teacherProfile, $currentMonth)
     {
-        // Total students from assigned circles
-        $totalStudents = User::whereHas('quranCircles', function ($query) use ($user) {
-            $query->where('quran_teacher_id', $user->id);
-        })->count();
+        // Total students from assigned circles - use DB query instead of loading all users
+        $totalStudents = \DB::table('quran_circle_student')
+            ->join('quran_circles', 'quran_circle_student.quran_circle_id', '=', 'quran_circles.id')
+            ->where('quran_circles.quran_teacher_id', $user->id)
+            ->distinct('quran_circle_student.student_id')
+            ->count('quran_circle_student.student_id');
+
+        // Also count individual circle students
+        $individualStudents = \App\Models\QuranIndividualCircle::where('quran_teacher_id', $teacherProfile->id)
+            ->distinct('student_id')
+            ->count('student_id');
+
+        $totalStudents = max($totalStudents, $individualStudents);
 
         // Active circles
         $activeCircles = QuranCircle::where('quran_teacher_id', $user->id)
             ->where('status', true)
             ->count();
 
-        // This month sessions
-        $thisMonthSessions = 0; // TODO: Implement when session tracking is ready
+        // This month sessions - count completed and ongoing sessions
+        $thisMonthSessions = \App\Models\QuranSession::where('quran_teacher_id', $user->id)
+            ->whereMonth('scheduled_at', $currentMonth->month)
+            ->whereYear('scheduled_at', $currentMonth->year)
+            ->whereIn('status', [
+                \App\Enums\SessionStatus::COMPLETED,
+                \App\Enums\SessionStatus::ONGOING,
+            ])
+            ->count();
 
         // Monthly earnings
         $monthlyEarnings = $this->calculateMonthlyEarnings($user, $teacherProfile, $currentMonth);
@@ -526,20 +497,47 @@ class TeacherProfileController extends Controller
      */
     private function calculateAcademicTeacherStats($user, $teacherProfile, $currentMonth)
     {
-        // Total students from courses
-        $totalStudents = User::whereHas('interactiveCourseEnrollments', function ($query) use ($teacherProfile) {
-            $query->whereHas('course', function ($q) use ($teacherProfile) {
-                $q->where('assigned_teacher_id', $teacherProfile->id);
-            });
-        })->count();
+        // Total students from courses - use DB query to avoid loading all users
+        $courseIds = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
+            ->pluck('id');
+
+        $totalStudents = \DB::table('interactive_course_enrollments')
+            ->whereIn('interactive_course_id', $courseIds)
+            ->distinct('student_id')
+            ->count('student_id');
+
+        // Also count private lesson students
+        $privateLessonStudents = \App\Models\AcademicSubscription::where('teacher_id', $teacherProfile->id)
+            ->distinct('student_id')
+            ->count('student_id');
+
+        $totalStudents = max($totalStudents, $privateLessonStudents);
 
         // Active courses (both created and assigned)
         $activeCourses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
             ->where('status', 'active')
             ->count();
 
-        // This month sessions
-        $thisMonthSessions = 0; // TODO: Implement when session tracking is ready
+        // This month sessions - count academic sessions and interactive course sessions
+        $academicSessionCount = \App\Models\AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+            ->whereMonth('scheduled_at', $currentMonth->month)
+            ->whereYear('scheduled_at', $currentMonth->year)
+            ->whereIn('status', [
+                \App\Enums\SessionStatus::COMPLETED,
+                \App\Enums\SessionStatus::ONGOING,
+            ])
+            ->count();
+
+        $interactiveSessionCount = \App\Models\InteractiveCourseSession::whereIn('interactive_course_id', $courseIds)
+            ->whereMonth('scheduled_date', $currentMonth->month)
+            ->whereYear('scheduled_date', $currentMonth->year)
+            ->whereIn('status', [
+                \App\Enums\SessionStatus::COMPLETED,
+                \App\Enums\SessionStatus::ONGOING,
+            ])
+            ->count();
+
+        $thisMonthSessions = $academicSessionCount + $interactiveSessionCount;
 
         // Monthly earnings
         $monthlyEarnings = $this->calculateMonthlyEarnings($user, $teacherProfile, $currentMonth);
@@ -770,14 +768,80 @@ class TeacherProfileController extends Controller
 
 
     /**
-     * Get upcoming sessions
+     * Get upcoming sessions for the teacher
      */
     private function getUpcomingSessions($user, $teacherProfile)
     {
-        // TODO: Implement when session scheduling is ready
-        // This would return upcoming scheduled sessions
+        $upcomingSessions = collect();
 
-        return collect(); // Empty collection for now
+        // Determine teacher type and get appropriate sessions
+        if ($teacherProfile instanceof \App\Models\QuranTeacherProfile) {
+            // Quran teacher - get QuranSessions
+            $upcomingSessions = \App\Models\QuranSession::where('quran_teacher_id', $user->id)
+                ->whereIn('status', [
+                    \App\Enums\SessionStatus::SCHEDULED,
+                    \App\Enums\SessionStatus::READY,
+                ])
+                ->where('scheduled_at', '>=', now())
+                ->orderBy('scheduled_at')
+                ->limit(10)
+                ->get()
+                ->map(fn ($session) => [
+                    'id' => $session->id,
+                    'type' => 'quran',
+                    'title' => $session->title ?? 'جلسة قرآن',
+                    'scheduled_at' => $session->scheduled_at,
+                    'duration' => $session->duration_minutes,
+                    'status' => $session->status->value,
+                ]);
+        } elseif ($teacherProfile instanceof \App\Models\AcademicTeacherProfile) {
+            // Academic teacher - get AcademicSessions and InteractiveCourseSessions
+            $academicSessions = \App\Models\AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+                ->whereIn('status', [
+                    \App\Enums\SessionStatus::SCHEDULED,
+                    \App\Enums\SessionStatus::READY,
+                ])
+                ->where('scheduled_at', '>=', now())
+                ->orderBy('scheduled_at')
+                ->limit(5)
+                ->get()
+                ->map(fn ($session) => [
+                    'id' => $session->id,
+                    'type' => 'academic',
+                    'title' => $session->title ?? 'درس أكاديمي',
+                    'scheduled_at' => $session->scheduled_at,
+                    'duration' => $session->duration_minutes,
+                    'status' => $session->status->value,
+                ]);
+
+            $interactiveSessions = \App\Models\InteractiveCourseSession::whereHas('course', function ($query) use ($teacherProfile) {
+                $query->where('assigned_teacher_id', $teacherProfile->id);
+            })
+                ->whereIn('status', [
+                    \App\Enums\SessionStatus::SCHEDULED,
+                    \App\Enums\SessionStatus::READY,
+                ])
+                ->where('scheduled_date', '>=', now()->toDateString())
+                ->orderBy('scheduled_date')
+                ->orderBy('scheduled_time')
+                ->limit(5)
+                ->get()
+                ->map(fn ($session) => [
+                    'id' => $session->id,
+                    'type' => 'interactive',
+                    'title' => $session->title ?? $session->course?->name_ar ?? 'دورة تفاعلية',
+                    'scheduled_at' => $session->scheduled_date?->setTimeFromTimeString($session->scheduled_time ?? '00:00:00'),
+                    'duration' => $session->duration_minutes,
+                    'status' => $session->status->value,
+                ]);
+
+            $upcomingSessions = $academicSessions->concat($interactiveSessions)
+                ->sortBy('scheduled_at')
+                ->take(10)
+                ->values();
+        }
+
+        return $upcomingSessions;
     }
 
     /**

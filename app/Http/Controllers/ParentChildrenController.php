@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\StoreChildRequest;
 
 class ParentChildrenController extends Controller
 {
@@ -33,12 +34,8 @@ class ParentChildrenController extends Controller
     /**
      * Add a new child to parent account
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreChildRequest $request): RedirectResponse
     {
-        $request->validate([
-            'student_code' => 'required|string',
-        ]);
-
         $parent = Auth::user()->parentProfile;
 
         if (!$parent) {
@@ -88,6 +85,9 @@ class ParentChildrenController extends Controller
      */
     public function destroy(StudentProfile $student): RedirectResponse
     {
+        // Authorize that the parent can view/manage this child
+        $this->authorize('viewChild', [User::class, $student]);
+
         $parent = Auth::user()->parentProfile;
 
         if (!$parent) {

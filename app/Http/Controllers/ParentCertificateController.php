@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Certificate;
 use App\Services\ParentDataService;
+use App\Services\ParentChildVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Enums\SessionStatus;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Parent Certificate Controller
@@ -17,19 +20,12 @@ use App\Enums\SessionStatus;
  */
 class ParentCertificateController extends Controller
 {
-    protected ParentDataService $dataService;
-
-    public function __construct(ParentDataService $dataService)
-    {
-        $this->dataService = $dataService;
-
+    public function __construct(
+        protected ParentDataService $dataService,
+        protected ParentChildVerificationService $verificationService
+    ) {
         // Enforce read-only access
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -40,8 +36,10 @@ class ParentCertificateController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
+        $this->authorize('viewAny', Certificate::class);
+
         $user = Auth::user();
         $parent = $user->parentProfile;
 
@@ -85,20 +83,18 @@ class ParentCertificateController extends Controller
      * @param int $certificateId
      * @return \Illuminate\View\View
      */
-    public function show(Request $request, int $certificateId)
+    public function show(Request $request, int $certificateId): View
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
-        $children = $parent->students()->with('user')->get();
-        // Certificate.student_id references User.id, not StudentProfile.id
-        $childUserIds = $children->pluck('user_id')->toArray();
+        $children = $this->verificationService->getChildrenWithUsers($parent);
 
         $certificate = Certificate::with('student')->findOrFail($certificateId);
 
+        $this->authorize('view', $certificate);
+
         // Verify certificate belongs to one of parent's children
-        if (!in_array($certificate->student_id, $childUserIds)) {
-            abort(403, 'لا يمكنك الوصول إلى هذه الشهادة');
-        }
+        $this->verificationService->verifyCertificateBelongsToParent($parent, $certificate);
 
         return view('parent.certificates.show', [
             'parent' => $parent,
@@ -114,20 +110,17 @@ class ParentCertificateController extends Controller
      * @param int $certificateId
      * @return \Symfony\Component\HttpFoundation\StreamedResponse
      */
-    public function download(Request $request, int $certificateId)
+    public function download(Request $request, int $certificateId): StreamedResponse
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
-        $children = $parent->students()->with('user')->get();
-        // Certificate.student_id references User.id, not StudentProfile.id
-        $childUserIds = $children->pluck('user_id')->toArray();
 
         $certificate = Certificate::findOrFail($certificateId);
 
+        $this->authorize('download', $certificate);
+
         // Verify certificate belongs to one of parent's children
-        if (!in_array($certificate->student_id, $childUserIds)) {
-            abort(403, 'لا يمكنك الوصول إلى هذه الشهادة');
-        }
+        $this->verificationService->verifyCertificateBelongsToParent($parent, $certificate);
 
         // Check if file exists
         if (!$certificate->file_path || !Storage::exists($certificate->file_path)) {

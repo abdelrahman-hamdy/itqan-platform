@@ -11,7 +11,7 @@ class StaticPageController extends Controller
     /**
      * Display the Terms & Conditions page
      */
-    public function terms(Request $request)
+    public function terms(Request $request): \Illuminate\View\View
     {
         $academy = $request->academy ?? Academy::first();
 
@@ -25,7 +25,7 @@ class StaticPageController extends Controller
     /**
      * Display the Refund Policy page
      */
-    public function refundPolicy(Request $request)
+    public function refundPolicy(Request $request): \Illuminate\View\View
     {
         $academy = $request->academy ?? Academy::first();
 
@@ -39,7 +39,7 @@ class StaticPageController extends Controller
     /**
      * Display the Privacy Policy page
      */
-    public function privacyPolicy(Request $request)
+    public function privacyPolicy(Request $request): \Illuminate\View\View
     {
         $academy = $request->academy ?? Academy::first();
 
@@ -53,7 +53,7 @@ class StaticPageController extends Controller
     /**
      * Display the About Us page
      */
-    public function aboutUs(Request $request)
+    public function aboutUs(Request $request): \Illuminate\View\View
     {
         $academy = $request->academy ?? Academy::first();
 

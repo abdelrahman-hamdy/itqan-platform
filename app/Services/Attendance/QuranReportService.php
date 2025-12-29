@@ -71,7 +71,7 @@ class QuranReportService extends BaseReportSyncService
         if ($attendancePercentage >= $requiredPercentage) {
             return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
         } elseif ($attendancePercentage > 0) {
-            return AttendanceStatus::LEAVED->value; // Left early / partial attendance
+            return AttendanceStatus::LEFT->value; // Left early / partial attendance
         } else {
             return AttendanceStatus::ABSENT->value;
         }

@@ -34,7 +34,6 @@ class MeetingDataChannelHandler {
         this.setupNetworkMonitoring();
         this.startStateSynchronization();
 
-        console.log('📡 MeetingDataChannelHandler initialized', {
             sessionId: this.sessionId,
             role: this.participantRole,
             channels: this.channels
@@ -66,7 +65,6 @@ class MeetingDataChannelHandler {
      */
     setupLiveKitDataChannel() {
         if (!this.room) {
-            console.warn('⚠️ No room available for data channel setup');
             return;
         }
 
@@ -75,12 +73,10 @@ class MeetingDataChannelHandler {
                 const data = JSON.parse(new TextDecoder().decode(payload));
                 this.handleIncomingMessage(data, 'livekit', participant);
             } catch (error) {
-                console.error('❌ Failed to parse LiveKit data:', error);
             }
         });
 
         this.channels.livekit = true;
-        console.log('✅ LiveKit data channel setup complete');
     }
 
     /**
@@ -97,22 +93,17 @@ class MeetingDataChannelHandler {
                 });
 
                 meetingChannel.here((users) => {
-                    console.log('👥 Current meeting participants:', users.length);
                 });
 
                 meetingChannel.joining((user) => {
-                    console.log('🟢 Participant joined:', user.name);
                 });
 
                 meetingChannel.leaving((user) => {
-                    console.log('🔴 Participant left:', user.name);
                 });
 
                 this.channels.websocket = true;
-                console.log('✅ WebSocket channel setup complete');
 
             } catch (error) {
-                console.warn('⚠️ WebSocket setup failed:', error);
                 this.channels.websocket = false;
             }
         }
@@ -139,22 +130,18 @@ class MeetingDataChannelHandler {
                     const data = JSON.parse(event.data);
                     this.handleIncomingMessage(data, 'sse');
                 } catch (error) {
-                    console.error('❌ SSE parse error:', error);
                 }
             };
 
             this.eventSource.onerror = (error) => {
-                console.warn('⚠️ SSE error:', error);
                 if (this.eventSource.readyState === EventSource.CLOSED) {
                     this.reconnectSSE();
                 }
             };
 
             this.channels.sse = true;
-            console.log('✅ Server-Sent Events setup complete');
 
         } catch (error) {
-            console.warn('⚠️ SSE setup failed:', error);
             this.channels.sse = false;
         }
     }
@@ -163,11 +150,9 @@ class MeetingDataChannelHandler {
      * Handle incoming messages from any channel
      */
     handleIncomingMessage(data, channel, participant = null) {
-        console.log(`📨 Received message via ${channel}:`, data);
 
         // Deduplicate messages
         if (this.messageHistory.has(data.message_id)) {
-            console.log('🔄 Duplicate message ignored:', data.message_id);
             return;
         }
 
@@ -204,10 +189,8 @@ class MeetingDataChannelHandler {
             try {
                 handler(data);
             } catch (error) {
-                console.error(`❌ Handler error for ${data.command}:`, error);
             }
         } else {
-            console.warn(`⚠️ No handler for command: ${data.command}`);
             this.handleUnknownCommand(data);
         }
     }
@@ -264,7 +247,6 @@ class MeetingDataChannelHandler {
      */
     handleMuteAllStudents(data) {
         if (this.participantRole === 'student') {
-            console.log('🔇 Teacher muted all students');
 
             // Create the data structure expected by handleGlobalAudioControlEvent
             const controlEventData = {
@@ -296,7 +278,6 @@ class MeetingDataChannelHandler {
 
     handleAllowStudentMicrophones(data) {
         if (this.participantRole === 'student') {
-            console.log('🎤 Teacher allowed student microphones');
 
             // Create the data structure expected by handleGlobalAudioControlEvent
             const controlEventData = {
@@ -326,7 +307,6 @@ class MeetingDataChannelHandler {
     }
 
     handleClearAllHandRaises(data) {
-        console.log('✋ Clear all hand raises');
 
         if (window.meeting?.controls) {
             window.meeting.controls.handleClearAllHandRaises(data);
@@ -336,14 +316,12 @@ class MeetingDataChannelHandler {
     }
 
     handleLowerHand(data) {
-        console.log('✋ Received lower hand command from teacher:', data);
 
         // Check if this message is for me
         const myParticipantId = window.room?.localParticipant?.identity;
         const myParticipantSid = window.room?.localParticipant?.sid;
 
         if (data.targetParticipantId === myParticipantId || data.targetParticipantSid === myParticipantSid) {
-            console.log('✋ This lower hand command is for me, lowering my hand');
 
             if (window.meeting?.controls) {
                 // Lower the hand
@@ -355,7 +333,6 @@ class MeetingDataChannelHandler {
                 // Update control buttons
                 window.meeting.controls.updateControlButtons();
 
-                console.log('✅ Hand lowered successfully');
             }
 
             this.showNotification('قام المعلم بإخفاء يدك المرفوعة', 'info');
@@ -367,7 +344,6 @@ class MeetingDataChannelHandler {
         const currentUserId = this.getCurrentUserId();
 
         if (studentId && currentUserId && studentId.toString() === currentUserId.toString()) {
-            console.log('🎤 Granted microphone permission');
 
             if (window.meeting?.controls) {
                 window.meeting.controls.handleAudioPermissionGranted(data);
@@ -378,7 +354,6 @@ class MeetingDataChannelHandler {
     }
 
     handleEndSession(data) {
-        console.log('🛑 Session ended by teacher');
 
         this.showNotification('تم إنهاء الجلسة من قبل المعلم', 'warning');
 
@@ -397,7 +372,6 @@ class MeetingDataChannelHandler {
         const currentUserId = this.getCurrentUserId();
 
         if (targetId && currentUserId && targetId.toString() === currentUserId.toString()) {
-            console.log('👢 Kicked from session');
 
             this.showNotification('تم إخراجك من الجلسة', 'error');
 
@@ -409,12 +383,10 @@ class MeetingDataChannelHandler {
     }
 
     handleSessionAnnouncement(data) {
-        console.log('📢 Session announcement:', data.data.message);
         this.showNotification(data.data.message, 'info');
     }
 
     handleStateSynchronization(data) {
-        console.log('🔄 State synchronization received');
 
         if (window.meeting?.controls) {
             window.meeting.controls.syncWithServerState(data.data);
@@ -424,7 +396,6 @@ class MeetingDataChannelHandler {
     }
 
     handleUnknownCommand(data) {
-        console.warn('❓ Unknown command received:', data);
 
         // Still show notification if there's a message
         if (data.data?.message) {
@@ -444,19 +415,10 @@ class MeetingDataChannelHandler {
                 response_data: responseData
             };
 
-            await fetch(`/api/sessions/${this.sessionId}/acknowledge`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-                },
-                body: JSON.stringify(ackData)
-            });
+            await window.LiveKitAPI.post(`/api/sessions/${this.sessionId}/acknowledge`, ackData);
 
-            console.log('✅ Acknowledgment sent for:', messageId);
 
         } catch (error) {
-            console.error('❌ Failed to send acknowledgment:', error);
         }
     }
 
@@ -465,13 +427,11 @@ class MeetingDataChannelHandler {
      */
     setupNetworkMonitoring() {
         window.addEventListener('online', () => {
-            console.log('🟢 Network connection restored');
             this.isOnline = true;
             this.handleNetworkReconnect();
         });
 
         window.addEventListener('offline', () => {
-            console.log('🔴 Network connection lost');
             this.isOnline = false;
             this.handleNetworkDisconnect();
         });
@@ -523,18 +483,14 @@ class MeetingDataChannelHandler {
      */
     async syncStateWithServer() {
         try {
-            const response = await fetch(`/api/sessions/${this.sessionId}/state`, {
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-                }
-            });
+            const response = await window.LiveKitAPI.get(`/api/sessions/${this.sessionId}/state`);
 
             if (response.ok) {
                 const state = await response.json();
                 this.handleStateSynchronization({ data: state });
             }
-        } catch (error) {
-            console.warn('⚠️ State sync failed:', error);
+        } catch {
+            // Silent fail - state sync will retry
         }
     }
 
@@ -544,16 +500,11 @@ class MeetingDataChannelHandler {
     startPolling() {
         if (this.pollingInterval) return;
 
-        console.log('🔄 Starting polling fallback');
         this.channels.polling = true;
 
         this.pollingInterval = setInterval(async () => {
             try {
-                const response = await fetch(`/api/sessions/${this.sessionId}/commands`, {
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-                    }
-                });
+                const response = await window.LiveKitAPI.get(`/api/sessions/${this.sessionId}/commands`);
 
                 if (response.ok) {
                     const commands = await response.json();
@@ -561,8 +512,8 @@ class MeetingDataChannelHandler {
                         this.handleIncomingMessage(command, 'polling');
                     });
                 }
-            } catch (error) {
-                console.warn('⚠️ Polling failed:', error);
+            } catch {
+                // Silent fail - polling will retry
             }
         }, 5000); // Poll every 5 seconds
     }
@@ -575,7 +526,6 @@ class MeetingDataChannelHandler {
             clearInterval(this.pollingInterval);
             this.pollingInterval = null;
             this.channels.polling = false;
-            console.log('⏹️ Polling stopped');
         }
     }
 
@@ -584,7 +534,6 @@ class MeetingDataChannelHandler {
      */
     reconnectSSE() {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.warn('⚠️ Max SSE reconnect attempts reached');
             return;
         }
 
@@ -592,7 +541,6 @@ class MeetingDataChannelHandler {
         const delay = Math.pow(2, this.reconnectAttempts) * 1000; // Exponential backoff
 
         setTimeout(() => {
-            console.log(`🔄 Reconnecting SSE (attempt ${this.reconnectAttempts})`);
             this.setupServerSentEvents();
         }, delay);
     }
@@ -605,7 +553,6 @@ class MeetingDataChannelHandler {
         if (window.meeting?.controls?.showNotification) {
             window.meeting.controls.showNotification(message, type);
         } else {
-            console.log(`📢 ${type.toUpperCase()}: ${message}`);
         }
     }
 
@@ -635,7 +582,6 @@ class MeetingDataChannelHandler {
         this.messageHistory.clear();
         this.pendingAcknowledgments.clear();
 
-        console.log('🧹 MeetingDataChannelHandler destroyed');
     }
 }
 
@@ -643,7 +589,6 @@ class MeetingDataChannelHandler {
 window.debugDataChannel = function () {
     if (window.meeting?.dataChannelHandler) {
         const handler = window.meeting.dataChannelHandler;
-        console.log('📡 Data Channel Debug Info:', {
             channels: handler.channels,
             messageHistory: Array.from(handler.messageHistory.entries()),
             isOnline: handler.isOnline,
@@ -652,12 +597,10 @@ window.debugDataChannel = function () {
             role: handler.participantRole
         });
     } else {
-        console.log('❌ No data channel handler available');
     }
 };
 
 window.testDataChannelDelivery = function () {
-    console.log('🧪 Testing data channel delivery...');
 
     if (window.meeting?.dataChannelHandler) {
         const testMessage = {
@@ -676,46 +619,31 @@ window.testDataChannelDelivery = function () {
 
 // Test teacher controls integration
 window.testTeacherMuteAll = async function () {
-    console.log('🧪 Testing teacher mute all students...');
 
     if (window.meeting?.controls && window.meeting.controls.userRole === 'teacher') {
         try {
             await window.meeting.controls.toggleAllStudentsMicrophones();
-            console.log('✅ Teacher mute toggle command sent');
         } catch (error) {
-            console.error('❌ Teacher mute toggle failed:', error);
         }
     } else {
-        console.log('❌ No teacher controls available or user is not a teacher');
     }
 };
 
 // Test backend service directly
 window.testBackendMuteAll = async function () {
-    console.log('🧪 Testing backend mute all service...');
 
     const sessionId = window.sessionId || prompt('Enter session ID:');
     if (!sessionId) {
-        console.log('❌ No session ID provided');
         return;
     }
 
     try {
-        const response = await fetch(`/api/sessions/${sessionId}/commands/mute-all`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-            }
-        });
+        const response = await window.LiveKitAPI.post(`/api/sessions/${sessionId}/commands/mute-all`, {});
 
         if (response.ok) {
             const result = await response.json();
-            console.log('✅ Backend mute all command sent:', result);
         } else {
-            console.error('❌ Backend request failed:', response.status);
         }
     } catch (error) {
-        console.error('❌ Backend service error:', error);
     }
 };

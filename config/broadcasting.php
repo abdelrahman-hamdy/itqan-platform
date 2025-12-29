@@ -44,13 +44,14 @@ return [
                 'useTLS' => true,
             ],
             'client_options' => [
-                // Disable SSL verification for self-signed Valet certificates
-                'verify' => false,
-                // Comprehensive cURL options for self-signed certificates
+                // SSL verification: disabled for local dev (self-signed Valet certificates)
+                // Set REVERB_VERIFY_SSL=true in production for security
+                'verify' => env('REVERB_VERIFY_SSL', env('APP_ENV') === 'production'),
                 'curl' => [
                     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_SSL_VERIFYPEER => false,
-                    CURLOPT_SSL_VERIFYHOST => false,
+                    // SSL verification based on environment
+                    CURLOPT_SSL_VERIFYPEER => env('REVERB_VERIFY_SSL', env('APP_ENV') === 'production'),
+                    CURLOPT_SSL_VERIFYHOST => env('REVERB_VERIFY_SSL', env('APP_ENV') === 'production') ? 2 : false,
                     CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
                 ],
             ],

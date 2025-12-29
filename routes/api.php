@@ -20,16 +20,22 @@ Route::middleware(['web', 'auth'])->group(function () {
 // Session Status API routes
 Route::middleware('auth:sanctum')->prefix('sessions')->group(function () {
     // Academic session status and attendance
-    Route::get('/academic/{sessionId}/status', [App\Http\Controllers\Api\SessionStatusApiController::class, 'academicSessionStatus'])
+    Route::get('/academic/{sessionId}/status', [App\Http\Controllers\Api\AcademicSessionStatusApiController::class, 'status'])
         ->name('api.sessions.academic.status');
-    Route::get('/academic/{sessionId}/attendance', [App\Http\Controllers\Api\SessionStatusApiController::class, 'academicAttendanceStatus'])
+    Route::get('/academic/{sessionId}/attendance', [App\Http\Controllers\Api\AcademicSessionStatusApiController::class, 'attendance'])
         ->name('api.sessions.academic.attendance');
 
     // Quran session status and attendance
-    Route::get('/quran/{sessionId}/status', [App\Http\Controllers\Api\SessionStatusApiController::class, 'quranSessionStatus'])
+    Route::get('/quran/{sessionId}/status', [App\Http\Controllers\Api\QuranSessionStatusApiController::class, 'status'])
         ->name('api.sessions.quran.status');
-    Route::get('/quran/{sessionId}/attendance', [App\Http\Controllers\Api\SessionStatusApiController::class, 'quranAttendanceStatus'])
+    Route::get('/quran/{sessionId}/attendance', [App\Http\Controllers\Api\QuranSessionStatusApiController::class, 'attendance'])
         ->name('api.sessions.quran.attendance');
+
+    // Unified general session status (polymorphic - auto-detects session type)
+    Route::get('/{sessionId}/status', [App\Http\Controllers\Api\UnifiedSessionStatusApiController::class, 'generalSessionStatus'])
+        ->name('api.sessions.status');
+    Route::get('/{sessionId}/attendance', [App\Http\Controllers\Api\UnifiedSessionStatusApiController::class, 'generalAttendanceStatus'])
+        ->name('api.sessions.attendance');
 });
 
 // Unified Meeting API routes - used by session detail pages
@@ -148,7 +154,7 @@ Route::middleware(['web', 'auth', 'verified'])->prefix('sessions')->group(functi
 
             \Cache::forget("attendance_status_{$sessionId}_{$user->id}");
 
-            \Log::info('✅ Meeting leave recorded via API', [
+            \Log::info('Meeting leave recorded via API', [
                 'event_id' => $event->id,
                 'duration_minutes' => $durationMinutes,
             ]);

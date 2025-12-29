@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
-use App\Traits\ScopedToAcademy;
+use App\Models\Traits\ScopedToAcademy;
 use App\Models\Traits\HasReviews;
 use Illuminate\Support\Facades\DB;
 

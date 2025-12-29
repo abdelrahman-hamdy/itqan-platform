@@ -1,38 +1,52 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs;
+
+use App\Models\BaseSubscription;
 
 /**
  * Data Transfer Object for Subscription Toggle Results
  *
  * Represents the result of toggling a subscription's active status,
  * pausing/resuming, or changing subscription state.
+ *
+ * @property-read bool $success Whether the operation was successful
+ * @property-read BaseSubscription|null $subscription The subscription instance
+ * @property-read string|null $previousStatus Previous subscription status
+ * @property-read string|null $newStatus New subscription status
+ * @property-read string $message Human-readable operation result message
  */
-class SubscriptionToggleResult
+readonly class SubscriptionToggleResult
 {
     public function __construct(
-        public readonly bool $success,
-        public readonly string $previousStatus,
-        public readonly string $newStatus,
-        public readonly ?string $message = null,
-        public readonly ?string $errorMessage = null,
-        public readonly array $metadata = [],
+        public bool $success,
+        public ?BaseSubscription $subscription = null,
+        public ?string $previousStatus = null,
+        public ?string $newStatus = null,
+        public string $message = '',
+        public array $metadata = [],
     ) {}
 
     /**
      * Create a successful toggle result
      */
     public static function success(
+        BaseSubscription $subscription,
         string $previousStatus,
         string $newStatus,
         ?string $message = null,
         array $metadata = []
     ): self {
+        $defaultMessage = $message ?? 'تم تحديث حالة الاشتراك بنجاح';
+
         return new self(
             success: true,
+            subscription: $subscription,
             previousStatus: $previousStatus,
             newStatus: $newStatus,
-            message: $message ?? 'تم تحديث حالة الاشتراك بنجاح',
+            message: $defaultMessage,
             metadata: $metadata,
         );
     }
@@ -41,25 +55,34 @@ class SubscriptionToggleResult
      * Create a failed toggle result
      */
     public static function failure(
-        string $currentStatus,
-        string $errorMessage,
+        string $message,
+        ?BaseSubscription $subscription = null,
+        ?string $previousStatus = null,
         array $metadata = []
     ): self {
         return new self(
             success: false,
-            previousStatus: $currentStatus,
-            newStatus: $currentStatus,
-            errorMessage: $errorMessage,
+            subscription: $subscription,
+            previousStatus: $previousStatus,
+            newStatus: null,
+            message: $message,
             metadata: $metadata,
         );
     }
 
     /**
-     * Check if status actually changed
+     * Create instance from array data
      */
-    public function statusChanged(): bool
+    public static function fromArray(array $data): self
     {
-        return $this->success && $this->previousStatus !== $this->newStatus;
+        return new self(
+            success: (bool) ($data['success'] ?? false),
+            subscription: $data['subscription'] ?? null,
+            previousStatus: $data['previousStatus'] ?? $data['previous_status'] ?? null,
+            newStatus: $data['newStatus'] ?? $data['new_status'] ?? null,
+            message: $data['message'] ?? '',
+            metadata: $data['metadata'] ?? [],
+        );
     }
 
     /**
@@ -67,22 +90,37 @@ class SubscriptionToggleResult
      */
     public function toArray(): array
     {
-        $result = [
+        return [
             'success' => $this->success,
+            'subscription_id' => $this->subscription?->id,
             'previous_status' => $this->previousStatus,
             'new_status' => $this->newStatus,
+            'message' => $this->message,
+            'metadata' => $this->metadata,
         ];
+    }
 
-        if ($this->success) {
-            $result['message'] = $this->message;
-        } else {
-            $result['error'] = $this->errorMessage;
-        }
+    /**
+     * Check if the operation was successful
+     */
+    public function isSuccessful(): bool
+    {
+        return $this->success;
+    }
 
-        if (! empty($this->metadata)) {
-            $result['metadata'] = $this->metadata;
-        }
+    /**
+     * Check if the operation failed
+     */
+    public function isFailed(): bool
+    {
+        return !$this->success;
+    }
 
-        return $result;
+    /**
+     * Check if status actually changed
+     */
+    public function hasStatusChanged(): bool
+    {
+        return $this->success && $this->previousStatus !== $this->newStatus;
     }
 }

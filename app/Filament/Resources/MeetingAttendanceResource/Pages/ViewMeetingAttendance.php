@@ -77,7 +77,7 @@ class ViewMeetingAttendance extends ViewRecord
                             ->color(fn (?string $state): string => match ($state) {
                                 AttendanceStatus::ATTENDED->value => 'success',
                                 AttendanceStatus::LATE->value => 'warning',
-                                AttendanceStatus::LEAVED->value => 'info',
+                                AttendanceStatus::LEFT->value => 'info',
                                 AttendanceStatus::ABSENT->value => 'danger',
                                 default => 'gray',
                             }),

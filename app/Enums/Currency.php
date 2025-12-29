@@ -2,6 +2,15 @@
 
 namespace App\Enums;
 
+/**
+ * Currency Enum
+ *
+ * Defines supported currencies for payments and pricing.
+ * Uses ISO 4217 currency codes as values.
+ *
+ * @see \App\Models\Payment
+ * @see \App\Models\Academy
+ */
 enum Currency: string
 {
     case SAR = 'SAR'; // Saudi Riyal
@@ -27,39 +36,19 @@ enum Currency: string
     case KMF = 'KMF'; // Comorian Franc
     case MRU = 'MRU'; // Mauritanian Ouguiya
 
-    public function getLabel(): string
+    /**
+     * Get localized label
+     */
+    public function label(): string
     {
-        return match($this) {
-            self::SAR => 'ريال سعودي (SAR)',
-            self::AED => 'درهم إماراتي (AED)',
-            self::EGP => 'جنيه مصري (EGP)',
-            self::QAR => 'ريال قطري (QAR)',
-            self::KWD => 'دينار كويتي (KWD)',
-            self::BHD => 'دينار بحريني (BHD)',
-            self::OMR => 'ريال عماني (OMR)',
-            self::JOD => 'دينار أردني (JOD)',
-            self::LBP => 'ليرة لبنانية (LBP)',
-            self::IQD => 'دينار عراقي (IQD)',
-            self::SYP => 'ليرة سورية (SYP)',
-            self::YER => 'ريال يمني (YER)',
-            self::ILS => 'شيكل إسرائيلي (ILS)',
-            self::MAD => 'درهم مغربي (MAD)',
-            self::DZD => 'دينار جزائري (DZD)',
-            self::TND => 'دينار تونسي (TND)',
-            self::LYD => 'دينار ليبي (LYD)',
-            self::SDG => 'جنيه سوداني (SDG)',
-            self::SOS => 'شلن صومالي (SOS)',
-            self::DJF => 'فرنك جيبوتي (DJF)',
-            self::KMF => 'فرنك قُمري (KMF)',
-            self::MRU => 'أوقية موريتانية (MRU)',
-        };
+        return __('enums.currency.' . $this->value);
     }
 
     public static function toArray(): array
     {
         return array_combine(
             array_map(fn($case) => $case->value, self::cases()),
-            array_map(fn($case) => $case->getLabel(), self::cases())
+            array_map(fn($case) => $case->label(), self::cases())
         );
     }
 

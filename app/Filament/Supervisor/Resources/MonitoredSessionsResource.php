@@ -193,14 +193,14 @@ class MonitoredSessionsResource extends BaseSupervisorResource
                         'success' => AttendanceStatus::ATTENDED->value,
                         'danger' => AttendanceStatus::ABSENT->value,
                         'warning' => AttendanceStatus::LATE->value,
-                        'info' => AttendanceStatus::LEAVED->value,
+                        'info' => AttendanceStatus::LEFT->value,
                         'gray' => 'pending',
                     ])
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                         SubscriptionStatus::PENDING->value => 'في الانتظار',
                         null => 'غير محدد',
                         default => $state,

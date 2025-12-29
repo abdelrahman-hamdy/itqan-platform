@@ -8,6 +8,7 @@ use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 use App\Enums\SessionStatus;
 
 class CircleReportController extends Controller
@@ -24,12 +25,9 @@ class CircleReportController extends Controller
     /**
      * Display student's own report for individual circle
      */
-    public function showIndividual(Request $request, $subdomain, QuranIndividualCircle $circle)
+    public function showIndividual(Request $request, $subdomain, QuranIndividualCircle $circle): View
     {
-        // Authorization: Ensure student owns this circle
-        if ($circle->student_id !== auth()->id()) {
-            abort(403, 'غير مصرح لك بعرض هذا التقرير');
-        }
+        $this->authorize('viewReport', $circle);
 
         // Get date range filter
         $dateRange = $this->getDateRangeFromRequest($request);
@@ -50,12 +48,9 @@ class CircleReportController extends Controller
     /**
      * Display student's own report for group circle
      */
-    public function showGroup(Request $request, $subdomain, QuranCircle $circle)
+    public function showGroup(Request $request, $subdomain, QuranCircle $circle): View
     {
-        // Authorization: Ensure student is enrolled in this circle
-        if (!$circle->students()->where('student_id', auth()->id())->exists()) {
-            abort(403, 'غير مصرح لك بعرض هذا التقرير');
-        }
+        $this->authorize('view', $circle);
 
         // Get date range filter
         $dateRange = $this->getDateRangeFromRequest($request);

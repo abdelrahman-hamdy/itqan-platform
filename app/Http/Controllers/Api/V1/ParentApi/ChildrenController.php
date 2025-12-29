@@ -70,7 +70,7 @@ class ChildrenController extends Controller
         }
 
         $user = $request->user();
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
         $parentProfile = $user->parentProfile()->first();
 
         if (!$parentProfile) {

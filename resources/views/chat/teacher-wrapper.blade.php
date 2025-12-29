@@ -54,7 +54,6 @@
   @wirechatAssets
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('WireChat integrated for teacher');
     });
   </script>
 @endpush

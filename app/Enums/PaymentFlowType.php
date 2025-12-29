@@ -17,15 +17,11 @@ enum PaymentFlowType: string
     case API_ONLY = 'api_only';
 
     /**
-     * Get Arabic label for display.
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::REDIRECT => 'إعادة توجيه',
-            self::IFRAME => 'نموذج مضمن',
-            self::API_ONLY => 'API مباشر',
-        };
+        return __('enums.payment_flow_type.' . $this->value);
     }
 
     /**
@@ -42,5 +38,13 @@ enum PaymentFlowType: string
     public function canEmbed(): bool
     {
         return $this === self::IFRAME;
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

@@ -10,7 +10,6 @@
             const redirect_url = e.redirect_url;
 
             if (Notification.permission !== 'granted') {
-                console.log('Notification permission not granted.');
                 return;
             }
 
@@ -41,7 +40,6 @@
             navigator.serviceWorker.ready
                 .then((registration )=> {
                     // Service worker is fully ready
-                    console.log('Service Worker ready');
                     registration.active.postMessage({
                         type: 'SHOW_NOTIFICATION',
                         title: title,
@@ -49,16 +47,12 @@
                     });
                 })
                 .catch(error => {
-                    console.error('Service Worker ready failed:', error);
                     // Fallback to regular notifications
-                    console.log('Falling Back to regular notifications');
                         this.newNotification(title, options);
                 });
 
-                console.error('Service Worker not ready');
 
         } else {
-            console.log('No service worker In navigator,Falling Back to regular notifications');
             this.newNotification(title, options);
         }
         },
@@ -86,8 +80,6 @@
         registerServiceWorker() {
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.register(`{{asset(config('wirechat.notifications.main_sw_script','sw.js'))}}`)
-                        .then(reg => console.log('Wirechat Service Worker registered'))
-                        .catch(err => console.error('Wirechat Service Worker registration failed:', err));
                 }
             }
         }"
@@ -104,7 +96,6 @@
                 {{--Ignore if user is currently open in the chat  --}}
                 if (e.redirect_url !== window.location.href) {
                     if (!('Notification' in window)) {
-                        console.log('This browser does not support desktop notifications.');
                     } else if (Notification.permission === 'granted') {
                         showNotification(e);
                     } else if (Notification.permission !== 'denied') {

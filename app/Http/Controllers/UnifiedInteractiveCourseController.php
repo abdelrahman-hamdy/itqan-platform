@@ -16,7 +16,7 @@ class UnifiedInteractiveCourseController extends Controller
     /**
      * Display a listing of interactive courses (Unified for both public and authenticated)
      */
-    public function index(Request $request, $subdomain)
+    public function index(Request $request, $subdomain): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -123,7 +123,7 @@ class UnifiedInteractiveCourseController extends Controller
     /**
      * Display the specified interactive course (Unified for both public and authenticated)
      */
-    public function show(Request $request, $subdomain, $courseId)
+    public function show(Request $request, $subdomain, $courseId): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -159,9 +159,7 @@ class UnifiedInteractiveCourseController extends Controller
                 $isAssignedTeacher = $course->assigned_teacher_id === $teacherProfile->id;
             }
 
-            if (!$isAssignedTeacher && !$isCreatedByCourse) {
-                abort(403, 'Access denied - not assigned to or creator of this course');
-            }
+            $this->authorize('view', $course);
         }
 
         // Check enrollment status for authenticated students
@@ -239,7 +237,7 @@ class UnifiedInteractiveCourseController extends Controller
     /**
      * Enroll student in a course
      */
-    public function enroll(Request $request, $subdomain, $courseId)
+    public function enroll(Request $request, $subdomain, $courseId): \Illuminate\Http\RedirectResponse
     {
         // Must be authenticated
         if (! Auth::check()) {

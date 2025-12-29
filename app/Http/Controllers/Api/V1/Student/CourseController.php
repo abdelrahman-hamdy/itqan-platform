@@ -23,7 +23,7 @@ class CourseController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $filter = $request->get('filter'); // enrolled, available, completed
 
@@ -125,7 +125,7 @@ class CourseController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $course = InteractiveCourse::where('id', $id)
             ->where('academy_id', $academy->id)

@@ -21,6 +21,14 @@ class CronJobMonitorCommand extends Command
      */
     protected $description = 'Monitor cron job execution status and show recent activity';
 
+    private CronJobLogger $cronJobLogger;
+
+    public function __construct(CronJobLogger $cronJobLogger)
+    {
+        parent::__construct();
+        $this->cronJobLogger = $cronJobLogger;
+    }
+
     /**
      * Execute the console command.
      */
@@ -34,7 +42,7 @@ class CronJobMonitorCommand extends Command
         $this->newLine();
 
         // Get cron job summary
-        $summary = CronJobLogger::getRecentCronSummary($hours);
+        $summary = $this->cronJobLogger->getRecentCronSummary($hours);
 
         if (empty($summary)) {
             $this->warn('⚠️  No cron job logs found');

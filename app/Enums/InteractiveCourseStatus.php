@@ -2,6 +2,20 @@
 
 namespace App\Enums;
 
+/**
+ * Interactive Course Status Enum
+ *
+ * Tracks the lifecycle of interactive courses.
+ *
+ * States:
+ * - DRAFT: Course being prepared
+ * - PUBLISHED: Visible and accepting enrollments
+ * - ACTIVE: Course currently running
+ * - COMPLETED: Course finished
+ * - CANCELLED: Course cancelled
+ *
+ * @see \App\Models\InteractiveCourse
+ */
 enum InteractiveCourseStatus: string
 {
     case DRAFT = 'draft';
@@ -11,17 +25,11 @@ enum InteractiveCourseStatus: string
     case CANCELLED = 'cancelled';
 
     /**
-     * Get Arabic label for the status
+     * Get localized label
      */
     public function label(): string
     {
-        return match($this) {
-            self::DRAFT => 'مسودة',
-            self::PUBLISHED => 'منشور',
-            self::ACTIVE => 'نشط',
-            self::COMPLETED => 'مكتمل',
-            self::CANCELLED => 'ملغي',
-        };
+        return __('enums.interactive_course_status.' . $this->value);
     }
 
     /**

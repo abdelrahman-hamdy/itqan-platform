@@ -273,7 +273,6 @@
             // Find the portfolio item by ID
             const portfolioItem = document.querySelector(`[data-project-id="${projectId}"]`);
             if (!portfolioItem) {
-                console.error('Portfolio item not found');
                 return;
             }
             

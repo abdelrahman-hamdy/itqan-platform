@@ -215,7 +215,7 @@ abstract class BaseSessionAttendance extends Model
             AttendanceStatus::ATTENDED->value => 'حاضر',
             AttendanceStatus::ABSENT->value => 'غائب',
             AttendanceStatus::LATE->value => 'متأخر',
-            AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+            AttendanceStatus::LEFT->value => 'غادر مبكراً',
             default => 'غير معروفة'
         };
     }
@@ -427,7 +427,7 @@ abstract class BaseSessionAttendance extends Model
         // Check if left early
         $expectedEnd = $sessionStart->copy()->addMinutes($this->session->duration_minutes);
         if ($leaveTime && $leaveTime->isBefore($expectedEnd->subMinutes(10))) {
-            return AttendanceStatus::LEAVED->value;
+            return AttendanceStatus::LEFT->value;
         }
 
         return AttendanceStatus::ATTENDED->value;

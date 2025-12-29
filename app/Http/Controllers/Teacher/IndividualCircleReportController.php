@@ -7,6 +7,7 @@ use App\Http\Controllers\Traits\HasDateRangeFilter;
 use App\Models\QuranIndividualCircle;
 use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 use App\Enums\SessionStatus;
 
 class IndividualCircleReportController extends Controller
@@ -23,12 +24,9 @@ class IndividualCircleReportController extends Controller
     /**
      * Display comprehensive report for individual circle
      */
-    public function show(Request $request, $subdomain, QuranIndividualCircle $circle)
+    public function show(Request $request, $subdomain, QuranIndividualCircle $circle): View
     {
-        // Authorization: Ensure teacher owns this circle
-        if ($circle->quran_teacher_id !== auth()->id()) {
-            abort(403, 'غير مصرح لك بعرض هذا التقرير');
-        }
+        $this->authorize('viewReport', $circle);
 
         // Get date range filter
         $dateRange = $this->getDateRangeFromRequest($request);

@@ -2,6 +2,18 @@
 
 namespace App\Enums;
 
+/**
+ * Week Days Enum
+ *
+ * Represents days of the week for scheduling purposes.
+ * Used by circle schedules and recurring session configurations.
+ *
+ * Days follow ISO week day ordering (Sunday = first day in Middle East context).
+ * Labels are provided in Arabic for display in the UI.
+ *
+ * @see \App\Models\QuranGroupCircleSchedule
+ * @see \App\Services\QuranSessionSchedulingService
+ */
 enum WeekDays: string
 {
     case SUNDAY = 'sunday';
@@ -13,19 +25,11 @@ enum WeekDays: string
     case SATURDAY = 'saturday';
 
     /**
-     * Get the Arabic label for the weekday
+     * Get localized label for the weekday
      */
     public function label(): string
     {
-        return match ($this) {
-            self::SUNDAY => 'الأحد',
-            self::MONDAY => 'الاثنين',
-            self::TUESDAY => 'الثلاثاء',
-            self::WEDNESDAY => 'الأربعاء',
-            self::THURSDAY => 'الخميس',
-            self::FRIDAY => 'الجمعة',
-            self::SATURDAY => 'السبت',
-        };
+        return __('enums.week_days.' . $this->value);
     }
 
     /**
@@ -46,5 +50,13 @@ enum WeekDays: string
         return collect($values)
             ->map(fn ($value) => self::from($value)->label())
             ->join('، ');
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

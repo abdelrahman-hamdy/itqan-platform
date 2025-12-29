@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +15,8 @@ use App\Enums\SessionStatus;
 
 class MeetingController extends Controller
 {
+    use ApiResponses;
+
     private LiveKitService $livekitService;
     private SessionMeetingService $sessionMeetingService;
 
@@ -29,7 +33,7 @@ class MeetingController extends Controller
     /**
      * Create or get meeting for a session (API endpoint)
      */
-    public function createOrGet(Request $request, int $sessionId)
+    public function createOrGet(Request $request, int $sessionId): JsonResponse
     {
         try {
             $session = QuranSession::findOrFail($sessionId);
@@ -37,10 +41,7 @@ class MeetingController extends Controller
 
             // First check if user can join this session at all
             if (!$this->canJoinSession($user, $session)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'غير مصرح لك بالانضمام إلى هذه الجلسة'
-                ], 403);
+                return $this->forbiddenResponse('غير مصرح لك بالانضمام إلى هذه الجلسة');
             }
 
             // If meeting room already exists, return it (anyone who can join can access)
@@ -54,8 +55,7 @@ class MeetingController extends Controller
                     'room_activity' => $this->sessionMeetingService->getRoomActivity($session),
                 ];
 
-                return response()->json([
-                    'success' => true,
+                return $this->customResponse([
                     'message' => 'الاجتماع متاح للانضمام',
                     'data' => [
                         'meeting_url' => $session->meeting_link,
@@ -65,15 +65,12 @@ class MeetingController extends Controller
                         'room_activity' => $meetingInfo['room_activity'],
                         'exists' => true,
                     ]
-                ]);
+                ], true, 200);
             }
 
             // If no meeting exists, only teachers/admins can create new ones
             if (!$this->canUserCreateMeeting($user, $session)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'لم يتم إنشاء الاجتماع بعد. يرجى انتظار المعلم لبدء الجلسة.'
-                ], 423); // 423 Locked - meeting not ready yet
+                return $this->errorResponse('لم يتم إنشاء الاجتماع بعد. يرجى انتظار المعلم لبدء الجلسة.', 423); // 423 Locked - meeting not ready yet
             }
 
             // Generate or get existing meeting using timing service
@@ -85,8 +82,7 @@ class MeetingController extends Controller
             // Get current subdomain from request
             $subdomain = $request->route('subdomain') ?? $session->academy->subdomain;
 
-            return response()->json([
-                'success' => true,
+            return $this->customResponse([
                 'message' => 'تم إنشاء الاجتماع بنجاح',
                 'data' => [
                     'meeting_url' => $session->meeting_link,
@@ -96,7 +92,7 @@ class MeetingController extends Controller
                     'room_activity' => $this->sessionMeetingService->getRoomActivity($session),
                     'created' => true,
                 ]
-            ]);
+            ], true, 200);
 
         } catch (\Exception $e) {
             Log::error('Failed to create/get meeting', [
@@ -105,10 +101,7 @@ class MeetingController extends Controller
                 'user_id' => $request->user()->id,
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'فشل في تحضير غرفة الاجتماع: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('فشل في تحضير غرفة الاجتماع: ' . $e->getMessage());
         }
     }
 

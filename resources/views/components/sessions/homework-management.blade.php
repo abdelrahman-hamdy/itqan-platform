@@ -407,7 +407,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 showNotification(data.message || 'خطأ في تحميل بيانات الواجب', 'error');
             }
         } catch (error) {
-            console.error('Error loading homework data:', error);
             showNotification('خطأ في تحميل بيانات الواجب: ' + error.message, 'error');
         }
     });
@@ -455,7 +454,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            console.log('Submitting homework data:', data); // Debug log
             
             const response = await fetch(`{{ url('/') }}/teacher/sessions/{{ $session->id }}/homework`, {
                 method: 'POST',
@@ -466,22 +464,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(data)
             });
             
-            console.log('Response status:', response.status, 'Response ok:', response.ok); // Debug log
             
             // Get response text first
             const responseText = await response.text();
-            console.log('Raw response:', responseText); // Debug log
             
             let result;
             try {
                 result = JSON.parse(responseText);
             } catch (parseError) {
-                console.error('JSON parse error:', parseError);
-                console.error('Response was not valid JSON:', responseText);
                 throw new Error('Server response was not valid JSON: ' + responseText.substring(0, 100));
             }
             
-            console.log('Parsed response:', result); // Debug log
             
             if (response.ok && result.success) {
                 showNotification('تم حفظ الواجب بنجاح', 'success');
@@ -492,7 +485,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.reload();
                 }, 1000);
             } else {
-                console.error('Server returned error:', result); // Debug log
                 const errorMessage = result.message || `خطأ HTTP: ${response.status}`;
                 
                 // Show detailed validation errors if available
@@ -504,25 +496,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         } catch (error) {
-            console.error('Error saving homework:', error);
             showNotification('خطأ في الاتصال بالخادم: ' + error.message, 'error');
         }
     });
     
-    // Notification function (unified centered toast style)
+    // Use unified toast notification system
     function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg text-white shadow-lg z-50 flex items-center gap-2 ${
-            type === 'success' ? 'bg-green-500' :
-            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        }`;
-        notification.innerHTML = `<i class="ri-${type === 'success' ? 'check' : type === 'error' ? 'close' : 'information'}-line"></i><span>${message}</span>`;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
+        if (window.toast) {
+            window.toast.show({ type: type, message: message });
+        } else {
+        }
     }
 });
 </script>

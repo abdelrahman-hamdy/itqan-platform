@@ -22,11 +22,13 @@ class ManageSessionMeetings extends Command
     protected $description = 'Manage LiveKit meetings for scheduled sessions - auto-create, update status, and cleanup';
 
     private SessionMeetingService $sessionMeetingService;
+    private CronJobLogger $cronJobLogger;
 
-    public function __construct(SessionMeetingService $sessionMeetingService)
+    public function __construct(SessionMeetingService $sessionMeetingService, CronJobLogger $cronJobLogger)
     {
         parent::__construct();
         $this->sessionMeetingService = $sessionMeetingService;
+        $this->cronJobLogger = $cronJobLogger;
     }
 
     /**
@@ -38,7 +40,7 @@ class ManageSessionMeetings extends Command
         $isForced = $this->option('force');
 
         // Start enhanced logging
-        $executionData = CronJobLogger::logCronStart('sessions:manage-meetings', [
+        $executionData = $this->cronJobLogger->logCronStart('sessions:manage-meetings', [
             'dry_run' => $isDryRun,
             'forced' => $isForced,
         ]);
@@ -82,7 +84,7 @@ class ManageSessionMeetings extends Command
             $this->info('✅ Session meeting management completed successfully');
 
             // Log completion
-            CronJobLogger::logCronEnd('sessions:manage-meetings', $executionData, $results, 'success');
+            $this->cronJobLogger->logCronEnd('sessions:manage-meetings', $executionData, $results, 'success');
 
             return Command::SUCCESS;
 
@@ -94,7 +96,7 @@ class ManageSessionMeetings extends Command
             ]);
 
             // Log error
-            CronJobLogger::logCronError('sessions:manage-meetings', $executionData, $e);
+            $this->cronJobLogger->logCronError('sessions:manage-meetings', $executionData, $e);
 
             return Command::FAILURE;
         }
@@ -130,7 +132,7 @@ class ManageSessionMeetings extends Command
             $this->info('✅ Maintenance mode completed');
 
             // Log completion
-            CronJobLogger::logCronEnd('sessions:manage-meetings', $executionData, $results, 'success');
+            $this->cronJobLogger->logCronEnd('sessions:manage-meetings', $executionData, $results, 'success');
 
             return Command::SUCCESS;
 
@@ -138,7 +140,7 @@ class ManageSessionMeetings extends Command
             $this->error('❌ Error during maintenance: '.$e->getMessage());
 
             // Log error
-            CronJobLogger::logCronError('sessions:manage-meetings', $executionData, $e);
+            $this->cronJobLogger->logCronError('sessions:manage-meetings', $executionData, $e);
 
             return Command::FAILURE;
         }

@@ -204,7 +204,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Add any session management specific JavaScript here
-            console.log('Session management page loaded');
         });
     </script>
     @endpush

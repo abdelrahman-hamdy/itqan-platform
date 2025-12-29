@@ -1,23 +1,12 @@
 <div x-data="{
-        showSuccessToast: false,
-        showErrorToast: false,
-        toastMessage: '',
         handleSuccess(event) {
-            this.toastMessage = event.detail.message || 'تم إصدار الشهادة بنجاح!';
-            this.showSuccessToast = true;
-            // Hide toast and reload after delay
-            setTimeout(() => {
-                this.showSuccessToast = false;
-                setTimeout(() => window.location.reload(), 500);
-            }, 1500);
+            // Use unified toast system (handled by toast container)
+            // Reload page after a short delay to show the updated data
+            setTimeout(() => window.location.reload(), 2000);
         },
         handleError(event) {
-            this.toastMessage = event.detail.message || 'حدث خطأ أثناء إصدار الشهادة';
-            this.showErrorToast = true;
-            // Auto-hide error toast after 5 seconds
-            setTimeout(() => {
-                this.showErrorToast = false;
-            }, 5000);
+            // Error is handled by unified toast system
+            // No additional action needed here
         }
      }"
      x-on:achievement-text-updated.window="document.getElementById('achievementTextarea').value = $event.detail.text"
@@ -380,43 +369,5 @@
         </div>
     </div>
     @endif
-
-    <!-- Success Toast Notification -->
-    <div x-show="showSuccessToast"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 transform -translate-x-4"
-         x-transition:enter-end="opacity-100 transform translate-x-0"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 transform translate-x-0"
-         x-transition:leave-end="opacity-0 transform -translate-x-4"
-         class="fixed top-4 right-4 z-[100] max-w-sm"
-         style="display: none;">
-        <div class="bg-green-500 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3">
-            <i class="ri-checkbox-circle-fill text-2xl"></i>
-            <p class="font-bold" x-text="toastMessage"></p>
-        </div>
-    </div>
-
-    <!-- Error Toast Notification -->
-    <div x-show="showErrorToast"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 transform translate-y-2"
-         x-transition:enter-end="opacity-100 transform translate-y-0"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 transform translate-y-0"
-         x-transition:leave-end="opacity-0 transform translate-y-2"
-         class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] w-full max-w-md"
-         style="display: none;">
-        <div class="bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
-            <div class="flex-shrink-0">
-                <i class="ri-error-warning-fill text-3xl"></i>
-            </div>
-            <div class="flex-1">
-                <p class="font-bold text-base" x-text="toastMessage"></p>
-            </div>
-            <button @click="showErrorToast = false" class="flex-shrink-0 hover:bg-red-600 rounded-lg p-1 transition">
-                <i class="ri-close-line text-xl"></i>
-            </button>
-        </div>
-    </div>
+    {{-- Toast notifications are now handled by the unified toast container --}}
 </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Models\PaymentWebhookEvent;
@@ -24,6 +25,7 @@ use App\Enums\SessionStatus;
  */
 class PaymobWebhookController extends Controller
 {
+    use ApiResponses;
     public function __construct(
         private PaymobSignatureService $signatureService,
         private PaymentStateMachine $stateMachine,
@@ -85,11 +87,31 @@ class PaymobWebhookController extends Controller
                 'status' => 'error',
                 'message' => $e->getMessage(),
             ], 400);
-        } catch (\Exception $e) {
-            Log::channel('payments')->error('Webhook processing failed', [
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::channel('payments')->error('Database error during webhook processing', [
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Database error occurred',
+            ], 500);
+        } catch (\InvalidArgumentException $e) {
+            Log::channel('payments')->error('Invalid webhook data', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid data format',
+            ], 400);
+        } catch (\Throwable $e) {
+            Log::channel('payments')->critical('Unexpected webhook processing error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+            report($e);
 
             return response()->json([
                 'status' => 'error',
@@ -251,8 +273,111 @@ class PaymobWebhookController extends Controller
             }
         }
 
-        // TODO: Send success notification
-        // TODO: Generate invoice/receipt
+        // Send success notification
+        $this->sendPaymentSuccessNotification($payment);
+
+        // Generate invoice/receipt
+        $this->generateInvoice($payment);
+    }
+
+    /**
+     * Send payment success notification to user.
+     */
+    private function sendPaymentSuccessNotification(Payment $payment): void
+    {
+        try {
+            $user = $payment->user;
+            if (!$user) {
+                Log::warning('Cannot send payment notification: user not found', [
+                    'payment_id' => $payment->id,
+                ]);
+                return;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+
+            // Get subscription name if available
+            $subscriptionName = 'دفعة';
+            $subscriptionType = null;
+
+            if ($payment->payable) {
+                if (method_exists($payment->payable, 'getSubscriptionDisplayName')) {
+                    $subscriptionName = $payment->payable->getSubscriptionDisplayName();
+                } elseif (method_exists($payment->payable, 'getSubscriptionType')) {
+                    $subscriptionType = $payment->payable->getSubscriptionType();
+                    $subscriptionName = match ($subscriptionType) {
+                        'quran' => 'اشتراك القرآن',
+                        'academic' => 'اشتراك أكاديمي',
+                        'course' => 'اشتراك الدورة',
+                        default => 'اشتراك',
+                    };
+                }
+            }
+
+            $paymentData = [
+                'payment_id' => $payment->id,
+                'transaction_id' => $payment->transaction_id,
+                'amount' => $payment->amount,
+                'currency' => $payment->currency ?? 'SAR',
+                'description' => $subscriptionName,
+                'subscription_id' => $payment->payable_id,
+                'subscription_type' => $subscriptionType,
+            ];
+
+            $notificationService->sendPaymentSuccessNotification($user, $paymentData);
+
+            Log::info('Payment success notification sent', [
+                'payment_id' => $payment->id,
+                'user_id' => $user->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment success notification', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Generate invoice/receipt for the payment.
+     */
+    private function generateInvoice(Payment $payment): void
+    {
+        try {
+            // Invoice generation service not yet implemented
+            // When implemented, this should:
+            // 1. Generate PDF invoice with payment details using a PDF library (e.g., DomPDF, TCPDF)
+            // 2. Store the PDF in storage/app/invoices/{payment_id}.pdf
+            // 3. Send the invoice via email to the user
+            // 4. Optionally create an Invoice model record with file path
+            Log::info('Invoice generation triggered (not yet implemented)', [
+                'payment_id' => $payment->id,
+                'amount' => $payment->amount,
+            ]);
+
+            // For now, just send invoice generated notification
+            $user = $payment->user;
+            if ($user) {
+                $notificationService = app(\App\Services\NotificationService::class);
+                $notificationService->send(
+                    $user,
+                    \App\Enums\NotificationType::INVOICE_GENERATED,
+                    [
+                        'invoice_number' => $payment->payment_code ?? $payment->id,
+                        'amount' => $payment->amount,
+                        'currency' => $payment->currency ?? 'SAR',
+                    ],
+                    route('payments.invoice', ['payment' => $payment->id]),
+                    ['payment_id' => $payment->id],
+                    false
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to generate invoice', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

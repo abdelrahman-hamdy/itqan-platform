@@ -330,7 +330,6 @@ function handleVideoLoadStart() {
         placeholder.classList.add('hidden');
         video.style.display = '';
         video.style.visibility = 'visible';
-        console.log('Video load started');
     }
 }
 
@@ -338,15 +337,10 @@ function handleVideoLoadStart() {
 function handleVideoMetadata() {
     const video = document.getElementById('lesson-video');
     if (video) {
-        console.log('Video metadata loaded, duration:', video.duration);
-        console.log('Video controls visible:', video.controls);
-        console.log('Video ready state:', video.readyState);
         
         // Ensure controls are visible
         if (video.controls) {
-            console.log('Video controls are enabled');
         } else {
-            console.log('Video controls are disabled - enabling them');
             video.controls = true;
         }
     }
@@ -369,28 +363,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (video) {
         // Add event listeners for better error handling
         video.addEventListener('loadedmetadata', function() {
-            console.log('Video metadata loaded successfully');
             handleVideoMetadata();
         });
         
         video.addEventListener('canplay', function() {
-            console.log('Video can start playing');
             // Ensure controls are visible when video can play
             if (!video.controls) {
                 video.controls = true;
-                console.log('Enabled video controls on canplay');
             }
         });
         
         video.addEventListener('error', function(e) {
-            console.error('Video error:', e);
             handleVideoError();
         });
         
         // Set a longer timeout to check if video loads
         setTimeout(function() {
             if (video.readyState === 0 && video.error) { // HAVE_NOTHING and has error
-                console.log('Video failed to load after timeout');
                 handleVideoError();
             }
         }, 10000); // Wait 10 seconds for video to load

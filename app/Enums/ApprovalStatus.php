@@ -2,6 +2,20 @@
 
 namespace App\Enums;
 
+/**
+ * Approval Status Enum
+ *
+ * Tracks the approval state of submissions requiring review.
+ * Used by teacher applications, content submissions, and other approval workflows.
+ *
+ * States:
+ * - PENDING: Awaiting review
+ * - APPROVED: Approved and active
+ * - REJECTED: Rejected with feedback
+ *
+ * @see \App\Models\QuranTeacherProfile
+ * @see \App\Models\AcademicTeacherProfile
+ */
 enum ApprovalStatus: string
 {
     case PENDING = 'pending';
@@ -9,15 +23,11 @@ enum ApprovalStatus: string
     case REJECTED = 'rejected';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => __('قيد المراجعة'),
-            self::APPROVED => __('موافق عليه'),
-            self::REJECTED => __('مرفوض'),
-        };
+        return __('enums.approval_status.' . $this->value);
     }
 
     /**
@@ -52,5 +62,13 @@ enum ApprovalStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

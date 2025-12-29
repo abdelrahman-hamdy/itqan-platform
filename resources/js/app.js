@@ -6,6 +6,14 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import tabsComponent from './components/tabs';
 import { initStickySidebar } from './components/sticky-sidebar';
+import { getCsrfToken, getCsrfHeaders, csrfFetch } from './utils/csrf';
+import './components/navigation';
+import './components/file-upload';
+
+// Expose CSRF utilities globally for public/js files
+window.getCsrfToken = getCsrfToken;
+window.getCsrfHeaders = getCsrfHeaders;
+window.csrfFetch = csrfFetch;
 
 // Initialize AOS
 AOS.init({
@@ -129,7 +137,7 @@ window.AttendanceStatus = {
     statuses: {
         'attended': { label: 'حاضر', class: 'bg-green-100 text-green-800', icon: 'ri-check-line' },
         'late': { label: 'متأخر', class: 'bg-yellow-100 text-yellow-800', icon: 'ri-time-line' },
-        'leaved': { label: 'غادر مبكراً', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
+        'left': { label: 'غادر مبكراً', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
         'absent': { label: 'غائب', class: 'bg-red-100 text-red-800', icon: 'ri-close-line' }
     },
     getLabel: (status) => window.AttendanceStatus.statuses[status]?.label || status,

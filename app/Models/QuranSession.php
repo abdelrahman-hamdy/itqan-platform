@@ -150,6 +150,15 @@ class QuranSession extends BaseSession
         return $this->belongsTo(User::class, 'quran_teacher_id');
     }
 
+    /**
+     * Get the Quran teacher profile for this session
+     * Uses user_id as the foreign key match since quran_teacher_id stores user IDs
+     */
+    public function quranTeacherProfile(): BelongsTo
+    {
+        return $this->belongsTo(QuranTeacherProfile::class, 'quran_teacher_id', 'user_id');
+    }
+
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(QuranSubscription::class, 'quran_subscription_id');
@@ -408,7 +417,7 @@ class QuranSession extends BaseSession
     /**
      * Mark session as cancelled
      */
-    public function markAsCancelled(?string $reason = null, ?int $cancelledBy = null): bool
+    public function markAsCancelled(?string $reason = null, ?User $cancelledBy = null, ?string $cancellationType = null): bool
     {
         if (! $this->status->canCancel()) {
             return false;
@@ -417,8 +426,9 @@ class QuranSession extends BaseSession
         $this->update([
             'status' => SessionStatus::CANCELLED,
             'cancellation_reason' => $reason,
-            'cancelled_by' => $cancelledBy,
+            'cancelled_by' => $cancelledBy?->id,
             'cancelled_at' => now(),
+            'cancellation_type' => $cancellationType,
         ]);
 
         // Record attendance as absent for cancelled sessions (doesn't count towards subscription)
@@ -502,7 +512,7 @@ class QuranSession extends BaseSession
      * For individual sessions: updates the single student's attendance
      * For group sessions: updates attendance for all enrolled students
      *
-     * @param string $status The attendance status ('attended', 'absent', 'cancelled', 'late', 'leaved')
+     * @param string $status The attendance status ('attended', 'absent', 'cancelled', 'late', 'left')
      * @return void
      */
     protected function recordSessionAttendance(string $status): void
@@ -677,7 +687,7 @@ class QuranSession extends BaseSession
             'attended' => 'حاضر',
             'absent' => 'غائب',
             'late' => 'متأخر',
-            'leaved' => 'غادر مبكراً',
+            'left' => 'غادر مبكراً',
         ];
 
         return $statuses[$this->attendance_status] ?? $this->attendance_status;
@@ -865,20 +875,19 @@ class QuranSession extends BaseSession
         return $this;
     }
 
-    public function reschedule(\Carbon\Carbon $newDateTime, ?string $reason = null): self
+    public function reschedule(\Carbon\Carbon $newDateTime, ?string $reason = null): bool
     {
         if (! $this->can_reschedule) {
-            throw new \Exception('لا يمكن إعادة جدولة الجلسة في هذا الوقت');
+            return false;
         }
 
-        $this->update([
+        return $this->update([
             'rescheduled_from' => $this->scheduled_at,
+            'rescheduled_to' => $newDateTime,
             'scheduled_at' => $newDateTime,
             'reschedule_reason' => $reason,
             'status' => SessionStatus::SCHEDULED, // Reset to scheduled after rescheduling
         ]);
-
-        return $this;
     }
 
     public function markAsNoShow(): self
@@ -1261,7 +1270,7 @@ class QuranSession extends BaseSession
             'present_count' => $attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
             'late_count' => $attendances->where('attendance_status', AttendanceStatus::LATE->value)->count(),
             'absent_count' => $attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count(),
-            'left_early_count' => $attendances->where('attendance_status', AttendanceStatus::LEAVED->value)->count(),
+            'left_early_count' => $attendances->where('attendance_status', AttendanceStatus::LEFT->value)->count(),
             'auto_tracked_count' => $attendances->where('auto_tracked', true)->count(),
             'manually_overridden_count' => $attendances->where('manually_overridden', true)->count(),
             'average_participation' => $attendances->whereNotNull('participation_score')->avg('participation_score') ?? 0,

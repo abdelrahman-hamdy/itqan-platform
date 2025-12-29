@@ -32,12 +32,18 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
      * Filter sessions to only show those for courses taught by current teacher
      * Override to prevent academy_id filtering on interactive_course_sessions table
      * (which doesn't have academy_id column - it gets academy through course relationship)
+     * Eager load relationships to prevent N+1 queries
      */
     public static function getEloquentQuery(): Builder
     {
         // Get base model query directly to bypass parent's academy_id filter
         // which doesn't work for interactive_course_sessions (no academy_id column)
-        $query = static::getModel()::query();
+        $query = static::getModel()::query()
+            ->with([
+                'course',
+                'course.assignedTeacher',
+                'course.assignedTeacher.user',
+            ]);
 
         $teacherProfile = static::getCurrentAcademicTeacherProfile();
         $teacherAcademy = static::getCurrentTeacherAcademy();

@@ -2,6 +2,22 @@
 
 namespace App\Enums;
 
+/**
+ * Trial Request Status Enum
+ *
+ * Tracks the lifecycle of free trial session requests.
+ *
+ * States:
+ * - PENDING: Request submitted, awaiting review
+ * - APPROVED: Request approved, can be scheduled
+ * - REJECTED: Request was rejected
+ * - SCHEDULED: Trial session has been scheduled
+ * - COMPLETED: Trial session completed
+ * - CANCELLED: Trial was cancelled
+ * - NO_SHOW: Student didn't attend the trial
+ *
+ * @see \App\Models\TrialRequest
+ */
 enum TrialRequestStatus: string
 {
     case PENDING = 'pending';
@@ -13,19 +29,11 @@ enum TrialRequestStatus: string
     case NO_SHOW = 'no_show';
 
     /**
-     * Get human-readable label
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => __('قيد الانتظار'),
-            self::APPROVED => __('موافق عليها'),
-            self::REJECTED => __('مرفوضة'),
-            self::SCHEDULED => __('مجدولة'),
-            self::COMPLETED => __('مكتملة'),
-            self::CANCELLED => __('ملغاة'),
-            self::NO_SHOW => __('لم يحضر'),
-        };
+        return __('enums.trial_request_status.' . $this->value);
     }
 
     /**
@@ -84,5 +92,13 @@ enum TrialRequestStatus: string
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
         )->all();
+    }
+
+    /**
+     * Get all enum values as an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

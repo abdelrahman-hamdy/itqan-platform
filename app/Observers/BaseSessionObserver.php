@@ -39,25 +39,22 @@ class BaseSessionObserver
                 // Check if meeting room doesn't exist yet
                 if (empty($session->meeting_room_name)) {
                     try {
-                        Log::info('🚀 Auto-creating meeting room for session', [
+                        Log::info('Auto-creating meeting room for session', [
                             'session_id' => $session->id,
                             'session_type' => $session->getMeetingType(),
-                            'status_change' => $oldStatus->value . ' → ' . $newStatus->value,
                         ]);
 
                         // Generate meeting link (this creates the LiveKit room)
                         $session->generateMeetingLink();
 
-                        Log::info('✅ Meeting room created successfully', [
+                        Log::info('Meeting room created successfully', [
                             'session_id' => $session->id,
                             'room_name' => $session->meeting_room_name,
-                            'meeting_link' => $session->meeting_link,
                         ]);
                     } catch (\Exception $e) {
-                        Log::error('❌ Failed to auto-create meeting room', [
+                        Log::error('Failed to auto-create meeting room', [
                             'session_id' => $session->id,
                             'error' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString(),
                         ]);
 
                         // Don't throw - let the status update proceed
@@ -85,22 +82,15 @@ class BaseSessionObserver
             $oldTime = $session->getOriginal('scheduled_at');
             $newTime = $session->scheduled_at;
 
-            Log::info('📅 Session rescheduled - checking if meeting needs update', [
+            Log::info('Session rescheduled - checking if meeting needs update', [
                 'session_id' => $session->id,
                 'session_type' => $session->getMeetingType(),
-                'old_time' => $oldTime,
-                'new_time' => $newTime,
                 'has_meeting' => !empty($session->meeting_room_name),
             ]);
 
             // If meeting exists, regenerate it with new time
             if (!empty($session->meeting_room_name)) {
                 try {
-                    Log::info('🔄 Regenerating meeting for rescheduled session', [
-                        'session_id' => $session->id,
-                        'old_room' => $session->meeting_room_name,
-                    ]);
-
                     // Clear old meeting data first
                     $session->meeting_room_name = null;
                     $session->meeting_link = null;
@@ -114,13 +104,12 @@ class BaseSessionObserver
                     // Save without triggering observer again
                     $session->saveQuietly();
 
-                    Log::info('✅ Meeting regenerated successfully for rescheduled session', [
+                    Log::info('Meeting regenerated successfully for rescheduled session', [
                         'session_id' => $session->id,
                         'new_room' => $session->meeting_room_name,
-                        'new_time' => $session->scheduled_at,
                     ]);
                 } catch (\Exception $e) {
-                    Log::error('❌ Failed to regenerate meeting for rescheduled session', [
+                    Log::error('Failed to regenerate meeting for rescheduled session', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);
@@ -133,12 +122,11 @@ class BaseSessionObserver
             $oldStatus = $session->getOriginal('status');
             $newStatus = $session->status;
 
-            Log::info('📊 Session status changed', [
+            Log::info('Session status changed', [
                 'session_id' => $session->id,
                 'session_type' => $session->getMeetingType(),
                 'old_status' => is_string($oldStatus) ? $oldStatus : $oldStatus->value,
                 'new_status' => is_string($newStatus) ? $newStatus : $newStatus->value,
-                'has_meeting' => !empty($session->meeting_room_name),
             ]);
 
             // Trigger earnings calculation when session becomes completed
@@ -146,14 +134,13 @@ class BaseSessionObserver
 
             if ($newStatusEnum === SessionStatus::COMPLETED) {
                 try {
-                    Log::info('💰 Dispatching earnings calculation job', [
+                    Log::info('Dispatching earnings calculation job', [
                         'session_id' => $session->id,
-                        'session_type' => get_class($session),
                     ]);
 
                     dispatch(new CalculateSessionEarningsJob($session));
                 } catch (\Exception $e) {
-                    Log::error('❌ Failed to dispatch earnings calculation job', [
+                    Log::error('Failed to dispatch earnings calculation job', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);
@@ -175,7 +162,7 @@ class BaseSessionObserver
         if (in_array($status, [SessionStatus::READY, SessionStatus::ONGOING])) {
             if (empty($session->meeting_room_name)) {
                 try {
-                    Log::info('🚀 Auto-creating meeting for newly created ready/ongoing session', [
+                    Log::info('Auto-creating meeting for newly created ready/ongoing session', [
                         'session_id' => $session->id,
                         'status' => $status->value,
                     ]);
@@ -183,12 +170,12 @@ class BaseSessionObserver
                     $session->generateMeetingLink();
                     $session->save();
 
-                    Log::info('✅ Meeting created for new session', [
+                    Log::info('Meeting created for new session', [
                         'session_id' => $session->id,
                         'room_name' => $session->meeting_room_name,
                     ]);
                 } catch (\Exception $e) {
-                    Log::error('❌ Failed to create meeting for new session', [
+                    Log::error('Failed to create meeting for new session', [
                         'session_id' => $session->id,
                         'error' => $e->getMessage(),
                     ]);

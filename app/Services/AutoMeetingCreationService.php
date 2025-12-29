@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\AutoMeetingCreationServiceInterface;
 use App\Enums\SessionStatus;
 use App\Models\Academy;
 use App\Models\QuranSession;
@@ -11,7 +12,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class AutoMeetingCreationService
+class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
 {
     private LiveKitService $livekitService;
 

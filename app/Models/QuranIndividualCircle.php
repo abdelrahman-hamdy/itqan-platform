@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
-use App\Traits\ScopedToAcademy;
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -104,9 +104,29 @@ class QuranIndividualCircle extends Model
         return $this->belongsTo(Academy::class);
     }
 
+    /**
+     * Get the teacher user for this individual circle
+     */
     public function quranTeacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'quran_teacher_id');
+    }
+
+    /**
+     * Get the Quran teacher profile for this individual circle
+     * Uses user_id as the foreign key match since quran_teacher_id stores user IDs
+     */
+    public function quranTeacherProfile(): BelongsTo
+    {
+        return $this->belongsTo(QuranTeacherProfile::class, 'quran_teacher_id', 'user_id');
+    }
+
+    /**
+     * Alias for quranTeacher for consistency
+     */
+    public function teacher(): BelongsTo
+    {
+        return $this->quranTeacher();
     }
 
     public function student(): BelongsTo

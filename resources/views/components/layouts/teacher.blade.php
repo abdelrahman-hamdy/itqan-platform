@@ -210,42 +210,10 @@
       }
     };
 
-    // Toast notification function
-    window.showToast = function(message, type = 'success') {
-      const toast = document.createElement('div');
-      toast.className = `fixed top-24 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white transition-all duration-300 transform translate-x-full ${
-        type === 'success' ? 'bg-green-600' : 
-        type === 'error' ? 'bg-red-600' : 
-        type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
-      }`;
-      
-      const icon = type === 'success' ? 'ri-check-line' : 
-                   type === 'error' ? 'ri-error-warning-line' : 
-                   type === 'warning' ? 'ri-alert-line' : 'ri-information-line';
-      
-      toast.innerHTML = `
-        <div class="flex items-center space-x-2 space-x-reverse">
-          <i class="${icon}"></i>
-          <span>${message}</span>
-        </div>
-      `;
-      
-      document.body.appendChild(toast);
-      
-      // Animate in
-      setTimeout(() => {
-        toast.classList.remove('translate-x-full');
-      }, 100);
-      
-      // Auto remove after 5 seconds
-      setTimeout(() => {
-        toast.classList.add('translate-x-full');
-        setTimeout(() => {
-          document.body.removeChild(toast);
-        }, 300);
-      }, 5000);
-    };
   </script>
+
+  <!-- Unified Toast Notification System -->
+  <x-ui.toast-container />
 
   <!-- Unified Confirmation Modal -->
   <x-ui.confirmation-modal />

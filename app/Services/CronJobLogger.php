@@ -11,7 +11,7 @@ class CronJobLogger
     /**
      * Log cron job execution with structured data
      */
-    public static function logCronStart(string $jobName, array $context = []): array
+    public function logCronStart(string $jobName, array $context = []): array
     {
         $executionId = uniqid("{$jobName}_", true);
         $startTime = microtime(true);
@@ -31,10 +31,10 @@ class CronJobLogger
             'path' => storage_path("logs/cron/{$jobName}.log"),
             'level' => 'debug',
             'replace_placeholders' => true,
-        ])->info("🚀 [{$jobName}] STARTED", $logData);
-        
+        ])->info("[{$jobName}] STARTED", $logData);
+
         // Also log to main log
-        Log::info("🚀 CRON JOB STARTED: {$jobName}", [
+        Log::info("CRON JOB STARTED: {$jobName}", [
             'execution_id' => $executionId,
             'context' => $context
         ]);
@@ -49,7 +49,7 @@ class CronJobLogger
     /**
      * Log cron job completion with results
      */
-    public static function logCronEnd(string $jobName, array $executionData, array $results = [], ?string $status = 'success'): void
+    public function logCronEnd(string $jobName, array $executionData, array $results = [], ?string $status = 'success'): void
     {
         $endTime = microtime(true);
         $executionTime = round($endTime - $executionData['start_time'], 2);
@@ -65,19 +65,18 @@ class CronJobLogger
             'results' => $results,
         ];
         
-        $icon = $status === 'success' ? '✅' : ($status === 'error' ? '❌' : '⚠️');
         $level = $status === 'error' ? 'error' : 'info';
-        
+
         // Log to dedicated cron log file
         Log::build([
             'driver' => 'single',
             'path' => storage_path("logs/cron/{$jobName}.log"),
             'level' => 'debug',
             'replace_placeholders' => true,
-        ])->log($level, "{$icon} [{$jobName}] FINISHED in {$executionTime}s", $logData);
-        
+        ])->log($level, "[{$jobName}] FINISHED in {$executionTime}s", $logData);
+
         // Also log to main log
-        Log::log($level, "{$icon} CRON JOB FINISHED: {$jobName} ({$executionTime}s)", [
+        Log::log($level, "CRON JOB FINISHED: {$jobName} ({$executionTime}s)", [
             'execution_id' => $executionData['execution_id'],
             'status' => $status,
             'execution_time' => $executionTime,
@@ -88,7 +87,7 @@ class CronJobLogger
     /**
      * Log cron job error
      */
-    public static function logCronError(string $jobName, array $executionData, \Exception $exception): void
+    public function logCronError(string $jobName, array $executionData, \Exception $exception): void
     {
         $endTime = microtime(true);
         $executionTime = round($endTime - $executionData['start_time'], 2);
@@ -115,10 +114,10 @@ class CronJobLogger
             'path' => storage_path("logs/cron/{$jobName}.log"),
             'level' => 'debug',
             'replace_placeholders' => true,
-        ])->error("❌ [{$jobName}] FAILED after {$executionTime}s: {$exception->getMessage()}", $logData);
-        
+        ])->error("[{$jobName}] FAILED after {$executionTime}s: {$exception->getMessage()}", $logData);
+
         // Also log to main log
-        Log::error("❌ CRON JOB FAILED: {$jobName} ({$executionTime}s)", [
+        Log::error("CRON JOB FAILED: {$jobName} ({$executionTime}s)", [
             'execution_id' => $executionData['execution_id'],
             'error' => $exception->getMessage(),
             'file' => $exception->getFile(),
@@ -129,7 +128,7 @@ class CronJobLogger
     /**
      * Log intermediate progress during cron job execution
      */
-    public static function logCronProgress(string $jobName, string $executionId, string $message, array $data = []): void
+    public function logCronProgress(string $jobName, string $executionId, string $message, array $data = []): void
     {
         $logData = array_merge([
             'execution_id' => $executionId,
@@ -149,7 +148,7 @@ class CronJobLogger
     /**
      * Create a summary report of recent cron job executions
      */
-    public static function getRecentCronSummary(int $hours = 24): array
+    public function getRecentCronSummary(int $hours = 24): array
     {
         $cronLogDir = storage_path('logs/cron');
         $summary = [];
@@ -171,7 +170,7 @@ class CronJobLogger
             ];
             
             // Read recent lines (last 100)
-            $lines = self::tail($logFile, 100);
+            $lines = $this->tail($logFile, 100);
             $cutoff = now()->subHours($hours);
             
             foreach ($lines as $line) {
@@ -201,7 +200,7 @@ class CronJobLogger
     /**
      * Simple tail implementation for reading last N lines of a file
      */
-    public static function tail(string $filepath, int $lines = 100): array
+    public function tail(string $filepath, int $lines = 100): array
     {
         if (!file_exists($filepath)) {
             return [];

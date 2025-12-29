@@ -20,6 +20,7 @@ class Quiz extends Model
         'duration_minutes',
         'passing_score',
         'is_active',
+        'created_by',
     ];
 
     protected $casts = [
@@ -37,6 +38,11 @@ class Quiz extends Model
         return $this->belongsTo(Academy::class);
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function questions(): HasMany
     {
         return $this->hasMany(QuizQuestion::class)->orderBy('order');
@@ -45,6 +51,11 @@ class Quiz extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(QuizAssignment::class);
+    }
+
+    public function attempts(): HasMany
+    {
+        return $this->hasMany(QuizAttempt::class);
     }
 
     // ========================================
@@ -56,7 +67,10 @@ class Quiz extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeByAcademy($query, $academyId)
+    /**
+     * Scope to filter by academy (tenant isolation)
+     */
+    public function scopeForAcademy($query, int $academyId)
     {
         return $query->where('academy_id', $academyId);
     }

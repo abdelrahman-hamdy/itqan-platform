@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\NotificationServiceInterface;
 use App\Enums\NotificationType;
 use App\Models\User;
 use App\Services\Notification\NotificationContentBuilder;
@@ -18,15 +19,14 @@ use Illuminate\Support\Collection;
  * Main notification service facade.
  *
  * This class provides a unified API for all notification operations,
- * delegating to specialized services internally. This maintains
- * backward compatibility while enabling a cleaner architecture.
+ * delegating to specialized services internally for a cleaner architecture.
  *
  * @see NotificationDispatcher For core sending logic
  * @see NotificationRepository For database operations
  * @see SessionNotificationBuilder For session notifications
  * @see PaymentNotificationBuilder For payment notifications
  */
-class NotificationService
+class NotificationService implements NotificationServiceInterface
 {
     public function __construct(
         private readonly NotificationDispatcher $dispatcher,
@@ -247,32 +247,5 @@ class NotificationService
     public function getUrlBuilder(): NotificationUrlBuilder
     {
         return $this->urlBuilder;
-    }
-
-    /**
-     * Get the appropriate URL for a session based on user role.
-     * @deprecated Use getUrlBuilder()->getSessionUrl() instead
-     */
-    protected function getSessionUrl(Model $session, User $user): string
-    {
-        return $this->urlBuilder->getSessionUrl($session, $user);
-    }
-
-    /**
-     * Get circle URL from session for students.
-     * @deprecated Use getUrlBuilder()->getCircleUrlFromSession() instead
-     */
-    protected function getCircleUrlFromSession(Model $session): string
-    {
-        return $this->urlBuilder->getCircleUrlFromSession($session);
-    }
-
-    /**
-     * Get appropriate teacher URL based on circle type.
-     * @deprecated Use getUrlBuilder()->getTeacherCircleUrl() instead
-     */
-    protected function getTeacherCircleUrl(Model $session): string
-    {
-        return $this->urlBuilder->getTeacherCircleUrl($session);
     }
 }

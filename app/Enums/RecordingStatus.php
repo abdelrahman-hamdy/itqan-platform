@@ -2,6 +2,21 @@
 
 namespace App\Enums;
 
+/**
+ * Recording Status Enum
+ *
+ * Tracks the lifecycle of session recordings.
+ *
+ * States:
+ * - RECORDING: Currently being recorded
+ * - PROCESSING: Recording is being processed/encoded
+ * - COMPLETED: Recording available for playback
+ * - FAILED: Recording failed
+ * - DELETED: Recording was deleted
+ *
+ * @see \App\Models\SessionRecording
+ * @see \App\Services\RecordingService
+ */
 enum RecordingStatus: string
 {
     case RECORDING = 'recording';
@@ -11,17 +26,11 @@ enum RecordingStatus: string
     case DELETED = 'deleted';
 
     /**
-     * Get the Arabic label for the status
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::RECORDING => 'جاري التسجيل',
-            self::PROCESSING => 'جاري المعالجة',
-            self::COMPLETED => 'مكتمل',
-            self::FAILED => 'فشل',
-            self::DELETED => 'محذوف',
-        };
+        return __('enums.recording_status.' . $this->value);
     }
 
     /**

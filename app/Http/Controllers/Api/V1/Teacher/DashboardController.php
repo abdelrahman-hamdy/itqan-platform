@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Http\Traits\Api\ApiResponses;
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -12,12 +12,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Enums\SessionStatus;
 
+/**
+ * Teacher Dashboard API Controller
+ *
+ * Demonstrates usage of the standardized ApiResponseService via ApiResponses trait.
+ * Supports both Quran and Academic teacher dashboards.
+ */
 class DashboardController extends Controller
 {
     use ApiResponses;
 
     /**
      * Get teacher dashboard data.
+     *
+     * Demonstrates ApiResponseService usage:
+     * - successResponse() with comprehensive teacher data
      *
      * @param Request $request
      * @return JsonResponse
@@ -26,7 +35,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        $data = [
+        $dashboardData = [
             'teacher' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -40,7 +49,11 @@ class DashboardController extends Controller
             'recent_activity' => $this->getRecentActivity($user),
         ];
 
-        return $this->success($data, __('Dashboard data retrieved successfully'));
+        // Example: Using successResponse() from ApiResponses trait
+        return $this->successResponse(
+            data: $dashboardData,
+            message: __('Dashboard data retrieved successfully')
+        );
     }
 
     /**

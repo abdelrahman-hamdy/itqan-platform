@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Traits\ScopedToAcademy;
+use App\Models\Traits\ScopedToAcademy;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

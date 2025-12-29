@@ -104,9 +104,9 @@ class CertificateController extends Controller
      *
      * @param Request $request
      * @param int $id
-     * @return JsonResponse|\Symfony\Component\HttpFoundation\StreamedResponse
+     * @return JsonResponse
      */
-    public function download(Request $request, int $id)
+    public function download(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
 

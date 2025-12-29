@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Traits\HasRecording;
+use App\Models\Traits\HasRecording;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -103,6 +103,30 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function attendances(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id');
+    }
+
+    /**
+     * Get all attendance records for this interactive session
+     * Overrides BaseSession abstract method
+     */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->attendances();
+    }
+
+    /**
+     * Get enrolled students through the course relationship
+     */
+    public function enrolledStudents(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(
+            StudentProfile::class,
+            InteractiveCourseEnrollment::class,
+            'course_id',
+            'id',
+            'course_id',
+            'student_id'
+        );
     }
 
     /**
@@ -292,7 +316,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      * Mark session as cancelled
      * Does not affect course completion
      */
-    public function markAsCancelled(?string $reason = null, ?int $cancelledBy = null): bool
+    public function markAsCancelled(?string $reason = null, ?User $cancelledBy = null, ?string $cancellationType = null): bool
     {
         if (!in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING])) {
             return false;
@@ -301,8 +325,9 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         $this->update([
             'status' => \App\Enums\SessionStatus::CANCELLED,
             'cancellation_reason' => $reason,
-            'cancelled_by' => $cancelledBy,
+            'cancelled_by' => $cancelledBy?->id,
             'cancelled_at' => now(),
+            'cancellation_type' => $cancellationType,
         ]);
 
         return true;

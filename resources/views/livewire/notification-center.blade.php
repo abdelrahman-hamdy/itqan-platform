@@ -61,7 +61,7 @@
                     <button wire:click.stop='filterByCategory("{{ $category->value }}")'
                             type="button"
                             class="px-3 py-1 text-sm rounded-full whitespace-nowrap transition-colors {{ $selectedCategory === $category->value ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200' }}">
-                        {{ $category->getLabel() }}
+                        {{ $category->label() }}
                     </button>
                 @endforeach
             </div>

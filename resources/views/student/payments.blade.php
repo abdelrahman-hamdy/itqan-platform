@@ -242,12 +242,12 @@
             </div>
         @empty
             <!-- Empty State -->
-            <x-student-page.empty-state
+            <x-ui.empty-state
                 icon="ri-wallet-3-line"
                 title="{{ $isParent ? 'لا توجد مدفوعات للأبناء' : 'لا توجد مدفوعات' }}"
                 description="{{ $isParent ? 'لم يتم تسجيل أي مدفوعات للأبناء بعد.' : 'لم تقم بأي عملية دفع بعد. عندما تشترك في أي خدمة، ستظهر مدفوعاتك هنا.' }}"
                 :actionUrl="$isParent ? null : route('quran-circles.index', ['subdomain' => $subdomain])"
-                actionText="{{ $isParent ? '' : 'تصفح الخدمات' }}"
+                actionLabel="{{ $isParent ? '' : 'تصفح الخدمات' }}"
             />
         @endforelse
     </div>

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -12,16 +14,17 @@ use App\Enums\SessionStatus;
 
 class MeetingLinkController extends Controller
 {
+    use ApiResponses;
     /**
      * Update meeting link for a session
      */
-    public function updateSessionMeetingLink(Request $request, $sessionId)
+    public function updateSessionMeetingLink(Request $request, $sessionId): JsonResponse
     {
         $user = Auth::user();
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return response()->json(['error' => 'غير مصرح لك بالوصول'], 403);
+            return $this->forbiddenResponse('غير مصرح لك بالوصول');
         }
 
         $session = QuranSession::where('id', $sessionId)
@@ -30,7 +33,7 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $session) {
-            return response()->json(['error' => 'لم يتم العثور على الجلسة'], 404);
+            return $this->notFoundResponse('لم يتم العثور على الجلسة');
         }
 
         $validator = Validator::make($request->all(), [
@@ -43,10 +46,7 @@ class MeetingLinkController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'error' => 'بيانات غير صحيحة',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
         }
 
         try {
@@ -59,34 +59,27 @@ class MeetingLinkController extends Controller
                 'meeting_id' => $request->meeting_id ?: $this->extractMeetingIdFromLink($meetingLink),
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'تم تحديث رابط الاجتماع بنجاح',
-                'data' => [
-                    'meeting_link' => $session->meeting_link,
-                    'meeting_password' => $session->meeting_password,
-                    'meeting_id' => $session->meeting_id,
-                ],
-            ]);
+            return $this->successResponse([
+                'meeting_link' => $session->meeting_link,
+                'meeting_password' => $session->meeting_password,
+                'meeting_id' => $session->meeting_id,
+            ], 'تم تحديث رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'حدث خطأ أثناء تحديث رابط الاجتماع',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء تحديث رابط الاجتماع: ' . $e->getMessage());
         }
     }
 
     /**
      * Update meeting link for a trial request
      */
-    public function updateTrialMeetingLink(Request $request, $trialRequestId)
+    public function updateTrialMeetingLink(Request $request, $trialRequestId): JsonResponse
     {
         $user = Auth::user();
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return response()->json(['error' => 'غير مصرح لك بالوصول'], 403);
+            return $this->forbiddenResponse('غير مصرح لك بالوصول');
         }
 
         $trialRequest = QuranTrialRequest::where('id', $trialRequestId)
@@ -95,7 +88,7 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $trialRequest) {
-            return response()->json(['error' => 'لم يتم العثور على طلب الجلسة التجريبية'], 404);
+            return $this->notFoundResponse('لم يتم العثور على طلب الجلسة التجريبية');
         }
 
         $validator = Validator::make($request->all(), [
@@ -107,10 +100,7 @@ class MeetingLinkController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'error' => 'بيانات غير صحيحة',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
         }
 
         try {
@@ -122,33 +112,26 @@ class MeetingLinkController extends Controller
                 'meeting_password' => $request->meeting_password,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'تم تحديث رابط الاجتماع بنجاح',
-                'data' => [
-                    'meeting_link' => $trialRequest->meeting_link,
-                    'meeting_password' => $trialRequest->meeting_password,
-                ],
-            ]);
+            return $this->successResponse([
+                'meeting_link' => $trialRequest->meeting_link,
+                'meeting_password' => $trialRequest->meeting_password,
+            ], 'تم تحديث رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'حدث خطأ أثناء تحديث رابط الاجتماع',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء تحديث رابط الاجتماع: ' . $e->getMessage());
         }
     }
 
     /**
      * Generate automatic meeting link (placeholder for now)
      */
-    public function generateMeetingLink(Request $request, $sessionId)
+    public function generateMeetingLink(Request $request, $sessionId): JsonResponse
     {
         $user = Auth::user();
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return response()->json(['error' => 'غير مصرح لك بالوصول'], 403);
+            return $this->forbiddenResponse('غير مصرح لك بالوصول');
         }
 
         $session = QuranSession::where('id', $sessionId)
@@ -157,33 +140,26 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $session) {
-            return response()->json(['error' => 'لم يتم العثور على الجلسة'], 404);
+            return $this->notFoundResponse('لم يتم العثور على الجلسة');
         }
 
         try {
             $meetingLink = $session->generateMeetingLink();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'تم إنشاء رابط الاجتماع بنجاح',
-                'data' => [
-                    'meeting_link' => $meetingLink,
-                    'meeting_id' => $session->meeting_id,
-                ],
-            ]);
+            return $this->successResponse([
+                'meeting_link' => $meetingLink,
+                'meeting_id' => $session->meeting_id,
+            ], 'تم إنشاء رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'حدث خطأ أثناء إنشاء رابط الاجتماع',
-                'message' => $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء إنشاء رابط الاجتماع: ' . $e->getMessage());
         }
     }
 
     /**
      * Get meeting platforms with their URL patterns
      */
-    public function getMeetingPlatforms()
+    public function getMeetingPlatforms(): JsonResponse
     {
         $platforms = [
             'google_meet' => [
@@ -223,10 +199,7 @@ class MeetingLinkController extends Controller
             ],
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $platforms,
-        ]);
+        return $this->successResponse($platforms);
     }
 
     /**

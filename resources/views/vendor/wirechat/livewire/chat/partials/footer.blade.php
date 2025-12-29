@@ -525,11 +525,9 @@
                                         if (validFiles.length > 0) {
                                             this.uploadFiles(validFiles);
                                         } else {
-                                            console.log('No valid files to upload');
                                         }
                                     })
                                     .catch((error) => {
-                                        console.log('Validation error:', error);
                                     });
                             }
                         },

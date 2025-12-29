@@ -22,6 +22,14 @@ class CronJobStatusCommand extends Command
      */
     protected $description = 'Display comprehensive status and logs for all cron jobs';
 
+    private CronJobLogger $cronJobLogger;
+
+    public function __construct(CronJobLogger $cronJobLogger)
+    {
+        parent::__construct();
+        $this->cronJobLogger = $cronJobLogger;
+    }
+
     /**
      * Execute the console command.
      */
@@ -35,7 +43,7 @@ class CronJobStatusCommand extends Command
         $this->info("📊 Cron Job Status Report (Last {$hours} hours)");
         $this->info('═══════════════════════════════════════════════════');
 
-        $summary = CronJobLogger::getRecentCronSummary($hours);
+        $summary = $this->cronJobLogger->getRecentCronSummary($hours);
 
         if (empty($summary)) {
             $this->warn('⚠️  No cron job logs found in the specified timeframe.');
@@ -165,7 +173,7 @@ class CronJobStatusCommand extends Command
      */
     private function getRecentLogs(string $logFile, int $hours): array
     {
-        $lines = CronJobLogger::tail($logFile, 200);
+        $lines = $this->cronJobLogger->tail($logFile, 200);
         $cutoff = now()->subHours($hours);
         $logs = [];
 

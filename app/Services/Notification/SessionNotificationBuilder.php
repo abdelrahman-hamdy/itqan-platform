@@ -122,7 +122,7 @@ class SessionNotificationBuilder
             AttendanceStatus::ATTENDED->value => NotificationType::ATTENDANCE_MARKED_PRESENT,
             AttendanceStatus::ABSENT->value => NotificationType::ATTENDANCE_MARKED_ABSENT,
             AttendanceStatus::LATE->value => NotificationType::ATTENDANCE_MARKED_LATE,
-            AttendanceStatus::LEAVED->value => NotificationType::ATTENDANCE_MARKED_LATE, // Left early treated as late for notifications
+            AttendanceStatus::LEFT->value => NotificationType::ATTENDANCE_MARKED_LATE, // Left early treated as late for notifications
             default => NotificationType::ATTENDANCE_MARKED_PRESENT,
         };
 

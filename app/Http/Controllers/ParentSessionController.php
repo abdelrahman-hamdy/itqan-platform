@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\HasParentChildren;
 use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use App\Services\ParentDataService;
+use App\Services\ParentChildVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
@@ -19,19 +21,13 @@ use Illuminate\Http\RedirectResponse;
  */
 class ParentSessionController extends Controller
 {
-    protected ParentDataService $dataService;
-
-    public function __construct(ParentDataService $dataService)
-    {
-        $this->dataService = $dataService;
-
+    use HasParentChildren;
+    public function __construct(
+        protected ParentDataService $dataService,
+        protected ParentChildVerificationService $verificationService
+    ) {
         // Enforce read-only access
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -72,8 +68,8 @@ class ParentSessionController extends Controller
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
-        $children = $parent->students()->with('user')->get();
-        $childUserIds = $children->pluck('user_id')->toArray();
+        $children = $this->verificationService->getChildrenWithUsers($parent);
+        $childUserIds = $this->verificationService->getChildUserIds($parent);
 
         if ($sessionType === 'quran') {
             $session = QuranSession::with(['quranTeacher', 'student', 'individualCircle', 'circle', 'attendances'])
@@ -85,23 +81,10 @@ class ParentSessionController extends Controller
             abort(404, 'نوع الجلسة غير صحيح');
         }
 
+        $this->authorize('view', $session);
+
         // Verify session belongs to one of parent's children
-        $hasAccess = false;
-
-        // Check individual sessions (student_id is set)
-        if ($session->student_id && in_array($session->student_id, $childUserIds)) {
-            $hasAccess = true;
-        }
-
-        // Check group circle sessions (circle_id is set)
-        if (!$hasAccess && $sessionType === 'quran' && $session->circle_id) {
-            $circleStudentIds = $session->circle->students()->pluck('quran_circle_students.student_id')->toArray();
-            $hasAccess = !empty(array_intersect($childUserIds, $circleStudentIds));
-        }
-
-        if (!$hasAccess) {
-            abort(403, 'لا يمكنك الوصول إلى هذه الجلسة');
-        }
+        $this->verificationService->verifySessionBelongsToChild($parent, $session);
 
         // Get attendance for this session
         $attendance = $session->attendances->first();
@@ -155,24 +138,5 @@ class ParentSessionController extends Controller
             'attendance' => $attendance,
             'stats' => $stats,
         ]);
-    }
-
-    /**
-     * Helper: Get user IDs for children based on filter
-     */
-    protected function getChildUserIds($children, $selectedChildId): array
-    {
-        if ($selectedChildId === 'all') {
-            return $children->pluck('user_id')->toArray();
-        }
-
-        // Find the specific child
-        $child = $children->firstWhere('id', $selectedChildId);
-        if ($child) {
-            return [$child->user_id];
-        }
-
-        // Fallback to all children if invalid selection
-        return $children->pluck('user_id')->toArray();
     }
 }

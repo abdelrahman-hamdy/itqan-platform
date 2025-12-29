@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\InteractiveCourseSession;
@@ -17,6 +18,8 @@ use Illuminate\Http\JsonResponse;
 
 class StudentReportController extends Controller
 {
+    use ApiResponses;
+
     /**
      * Store a new student report
      */
@@ -25,10 +28,7 @@ class StudentReportController extends Controller
         try {
             // Validate report type
             if (!in_array($type, ['academic', 'quran', 'interactive'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'نوع التقرير غير صحيح',
-                ], 400);
+                return $this->errorResponse('نوع التقرير غير صحيح', 400);
             }
 
             // Validate request data using the AttendanceStatus enum
@@ -57,10 +57,7 @@ class StudentReportController extends Controller
             $session = $this->getSession($type, $validated['session_id']);
             if (!$this->canManageReport($session)) {
                 DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'غير مصرح لك بإنشاء تقرير لهذه الجلسة',
-                ], 403);
+                return $this->forbiddenResponse('غير مصرح لك بإنشاء تقرير لهذه الجلسة');
             }
 
             // Prepare report data based on session type
@@ -98,18 +95,14 @@ class StudentReportController extends Controller
 
             DB::commit();
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'message' => 'تم إنشاء التقرير بنجاح',
                 'report' => $report,
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ في البيانات المدخلة',
-                'errors' => $e->errors(),
-            ], 422);
+            return $this->validationErrorResponse($e->errors(), 'خطأ في البيانات المدخلة');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error creating student report: ' . $e->getMessage(), [
@@ -118,10 +111,7 @@ class StudentReportController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء إنشاء التقرير: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء إنشاء التقرير: ' . $e->getMessage());
         }
     }
 
@@ -133,10 +123,7 @@ class StudentReportController extends Controller
         try {
             // Validate report type
             if (!in_array($type, ['academic', 'quran', 'interactive'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'نوع التقرير غير صحيح',
-                ], 400);
+                return $this->errorResponse('نوع التقرير غير صحيح', 400);
             }
 
             // Validate request data using the AttendanceStatus enum
@@ -165,10 +152,7 @@ class StudentReportController extends Controller
             // Check authorization - teacher can only edit their own session's reports
             if (!$this->canManageReport($report->session)) {
                 DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'غير مصرح لك بتعديل هذا التقرير',
-                ], 403);
+                return $this->forbiddenResponse('غير مصرح لك بتعديل هذا التقرير');
             }
 
             // Prepare update data based on type
@@ -202,23 +186,16 @@ class StudentReportController extends Controller
 
             DB::commit();
 
-            return response()->json([
+            return $this->customResponse([
                 'success' => true,
                 'message' => 'تم تحديث التقرير بنجاح',
                 'report' => $report->fresh(),
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ في البيانات المدخلة',
-                'errors' => $e->errors(),
-            ], 422);
+            return $this->validationErrorResponse($e->errors(), 'خطأ في البيانات المدخلة');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'التقرير غير موجود',
-            ], 404);
+            return $this->notFoundResponse('التقرير غير موجود');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error updating student report: ' . $e->getMessage(), [
@@ -228,10 +205,7 @@ class StudentReportController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء تحديث التقرير: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('حدث خطأ أثناء تحديث التقرير: ' . $e->getMessage());
         }
     }
 

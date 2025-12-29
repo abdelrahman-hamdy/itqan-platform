@@ -17,10 +17,8 @@
     $routeName = 'individual-circles.show'; // Unified route for both teachers and students
     $routeParam = 'circle'; // Unified parameter name
 
-    // Handle both enum and legacy string status
-    $statusEnum = $subscription->status instanceof SubscriptionStatus
-        ? $subscription->status
-        : SubscriptionStatus::tryFrom($subscription->status) ?? SubscriptionStatus::PENDING;
+    // Status is automatically cast to SubscriptionStatus enum by the model
+    $statusEnum = $subscription->status ?? SubscriptionStatus::PENDING;
 
     $canAccess = $subscription->individualCircle && $subscription->individualCircle->id;
     $href = $canAccess ?

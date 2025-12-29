@@ -3,26 +3,42 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Http\Resources\Api\V1\Student\DashboardResource;
-use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSession;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSubscription;
+use App\Services\SessionFetchingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 
+/**
+ * Student Dashboard API Controller
+ *
+ * Demonstrates usage of the standardized ApiResponseService via ApiResponses trait.
+ * Provides dashboard data including sessions, subscriptions, and quick stats.
+ */
 class DashboardController extends Controller
 {
     use ApiResponses;
 
+    public function __construct(
+        protected SessionFetchingService $sessionFetchingService
+    ) {
+    }
+
     /**
      * Get student dashboard data.
+     *
+     * Demonstrates ApiResponseService usage:
+     * - notFoundResponse() for missing student profile
+     * - successResponse() for successful data retrieval
      *
      * @param Request $request
      * @return JsonResponse
@@ -30,25 +46,22 @@ class DashboardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
         $studentProfile = $user->studentProfile()->first();
 
+        // Example: Using notFoundResponse() method from ApiResponses trait
         if (!$studentProfile) {
-            return $this->error(
-                __('Student profile not found.'),
-                404,
-                'STUDENT_PROFILE_NOT_FOUND'
-            );
+            return $this->notFoundResponse(__('Student profile not found.'));
         }
 
         // Get today's date
         $today = Carbon::today();
 
         // Get today's sessions across all types
-        $todaySessions = $this->getTodaySessions($user->id, $today);
+        $todaySessions = $this->sessionFetchingService->getTodaySessions($user->id, $today);
 
         // Get upcoming sessions (next 7 days, excluding today)
-        $upcomingSessions = $this->getUpcomingSessions($user->id, $today);
+        $upcomingSessions = $this->sessionFetchingService->getUpcomingSessions($user->id, $today);
 
         // Get active subscriptions count
         $activeSubscriptions = $this->getActiveSubscriptionsCount($user->id);
@@ -70,7 +83,7 @@ class DashboardController extends Controller
             'unread_notifications' => $unreadNotifications,
         ];
 
-        return $this->success([
+        $dashboardData = [
             'student' => [
                 'id' => $studentProfile->id,
                 'name' => $studentProfile->full_name,
@@ -81,140 +94,14 @@ class DashboardController extends Controller
             'stats' => $stats,
             'today_sessions' => $this->formatSessionsForDashboard($todaySessions),
             'upcoming_sessions' => $this->formatSessionsForDashboard($upcomingSessions),
-        ], __('Dashboard data retrieved successfully'));
-    }
+        ];
 
-    /**
-     * Get today's sessions for the student.
-     */
-    protected function getTodaySessions(int $userId, Carbon $today): array
-    {
-        $sessions = [];
-
-        // Quran sessions
-        // Note: quranTeacher relationship returns User directly, not QuranTeacherProfile
-        $quranSessions = QuranSession::where('student_id', $userId)
-            ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-            ->with(['quranTeacher', 'individualCircle', 'circle'])
-            ->orderBy('scheduled_at')
-            ->get();
-
-        foreach ($quranSessions as $session) {
-            $sessions[] = [
-                'type' => 'quran',
-                'session' => $session,
-            ];
-        }
-
-        // Academic sessions
-        $academicSessions = AcademicSession::where('student_id', $userId)
-            ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-            ->with(['academicTeacher.user', 'academicSubscription'])
-            ->orderBy('scheduled_at')
-            ->get();
-
-        foreach ($academicSessions as $session) {
-            $sessions[] = [
-                'type' => 'academic',
-                'session' => $session,
-            ];
-        }
-
-        // Interactive course sessions
-        $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
-            $q->where('student_id', $userId);
-        })
-            ->whereDate('scheduled_at', $today)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-            ->with(['course.assignedTeacher.user'])
-            ->orderBy('scheduled_at')
-            ->get();
-
-        foreach ($interactiveSessions as $session) {
-            $sessions[] = [
-                'type' => 'interactive',
-                'session' => $session,
-            ];
-        }
-
-        // Sort all sessions by time (all session types now use scheduled_at)
-        usort($sessions, function ($a, $b) {
-            return $a['session']->scheduled_at <=> $b['session']->scheduled_at;
-        });
-
-        return $sessions;
-    }
-
-    /**
-     * Get upcoming sessions for the student (next 7 days).
-     */
-    protected function getUpcomingSessions(int $userId, Carbon $today): array
-    {
-        $sessions = [];
-        $endDate = $today->copy()->addDays(7);
-
-        // Quran sessions
-        // Note: quranTeacher relationship returns User directly, not QuranTeacherProfile
-        $quranSessions = QuranSession::where('student_id', $userId)
-            ->whereDate('scheduled_at', '>', $today)
-            ->whereDate('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-            ->with(['quranTeacher'])
-            ->orderBy('scheduled_at')
-            ->limit(5)
-            ->get();
-
-        foreach ($quranSessions as $session) {
-            $sessions[] = [
-                'type' => 'quran',
-                'session' => $session,
-            ];
-        }
-
-        // Academic sessions
-        $academicSessions = AcademicSession::where('student_id', $userId)
-            ->whereDate('scheduled_at', '>', $today)
-            ->whereDate('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-            ->with(['academicTeacher.user'])
-            ->orderBy('scheduled_at')
-            ->limit(5)
-            ->get();
-
-        foreach ($academicSessions as $session) {
-            $sessions[] = [
-                'type' => 'academic',
-                'session' => $session,
-            ];
-        }
-
-        // Interactive course sessions
-        $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
-            $q->where('student_id', $userId);
-        })
-            ->whereDate('scheduled_at', '>', $today)
-            ->whereDate('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-            ->with(['course.assignedTeacher.user'])
-            ->orderBy('scheduled_at')
-            ->limit(5)
-            ->get();
-
-        foreach ($interactiveSessions as $session) {
-            $sessions[] = [
-                'type' => 'interactive',
-                'session' => $session,
-            ];
-        }
-
-        // Sort and limit (all session types now use scheduled_at)
-        usort($sessions, function ($a, $b) {
-            return $a['session']->scheduled_at <=> $b['session']->scheduled_at;
-        });
-
-        return array_slice($sessions, 0, 10);
+        // Example: Using successResponse() method from ApiResponses trait
+        // Automatically includes success flag, message, and data in standardized format
+        return $this->successResponse(
+            data: $dashboardData,
+            message: __('Dashboard data retrieved successfully')
+        );
     }
 
     /**

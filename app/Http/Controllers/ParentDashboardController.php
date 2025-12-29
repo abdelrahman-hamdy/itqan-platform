@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
 use App\Services\ParentDashboardService;
 use App\Services\ParentDataService;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ use Illuminate\Http\JsonResponse;
  */
 class ParentDashboardController extends Controller
 {
+    use ApiResponses;
     protected ParentDashboardService $dashboardService;
     protected ParentDataService $dataService;
 
@@ -30,12 +32,7 @@ class ParentDashboardController extends Controller
         $this->dataService = $dataService;
 
         // Enforce read-only access for parents
-        $this->middleware(function ($request, $next) {
-            if (!in_array($request->method(), ['GET', 'HEAD', 'POST'])) {
-                abort(403, 'أولياء الأمور لديهم صلاحيات مشاهدة فقط');
-            }
-            return $next($request);
-        });
+        $this->middleware('parent.readonly');
     }
 
     /**
@@ -46,12 +43,10 @@ class ParentDashboardController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->authorize('viewDashboard', \App\Models\ParentProfile::class);
+
         $user = Auth::user();
         $parent = $user->parentProfile;
-
-        if (!$parent) {
-            abort(403, 'لا يمكن الوصول إلى بيانات ولي الأمر');
-        }
 
         $dashboardData = $this->dashboardService->getDashboardData($parent);
 
@@ -76,20 +71,9 @@ class ParentDashboardController extends Controller
         $user = Auth::user();
         $parent = $user->parentProfile;
 
-        if (!$parent) {
-            abort(403, 'لا يمكن الوصول إلى بيانات ولي الأمر');
-        }
-
-        // Validate that parent owns this child
-        $child = $parent->students()
-            ->where('student_profiles.id', $childId)
-            ->forAcademy($parent->academy_id)
-            ->first();
-
-        if (!$child) {
-            return redirect()->route('parent.dashboard')
-                ->with('error', 'لا يمكنك الوصول إلى بيانات هذا الطالب');
-        }
+        // Find child and authorize access
+        $child = \App\Models\StudentProfile::findOrFail($childId);
+        $this->authorize('viewChild', [$parent, $child]);
 
         // Store in session
         session(['active_child_id' => $childId]);
@@ -106,13 +90,10 @@ class ParentDashboardController extends Controller
      */
     public function childDetail(Request $request): View
     {
+        $this->authorize('viewDashboard', \App\Models\ParentProfile::class);
+
         $user = Auth::user();
         $parent = $user->parentProfile;
-
-        if (!$parent) {
-            abort(403, 'لا يمكن الوصول إلى بيانات ولي الأمر');
-        }
-
         $child = $this->getActiveChild();
 
         // Get child's full data
@@ -139,39 +120,29 @@ class ParentDashboardController extends Controller
      */
     public function selectChildSession(Request $request): JsonResponse
     {
+        $this->authorize('viewDashboard', \App\Models\ParentProfile::class);
+
         $user = Auth::user();
         $parent = $user->parentProfile;
-
-        if (!$parent) {
-            return response()->json(['success' => false, 'message' => 'لا يمكن الوصول إلى بيانات ولي الأمر'], 403);
-        }
-
         $childId = $request->input('child_id', 'all');
 
         // If selecting 'all', just store it
         if ($childId === 'all') {
             session(['parent_selected_child_id' => 'all']);
-            return response()->json([
-                'success' => true,
+            return $this->customResponse([
                 'message' => 'تم اختيار جميع الأبناء',
                 'child_id' => 'all',
             ]);
         }
 
-        // Validate that parent owns this child
-        $child = $parent->students()
-            ->where('student_profiles.id', $childId)
-            ->first();
-
-        if (!$child) {
-            return response()->json(['success' => false, 'message' => 'لا يمكنك الوصول إلى بيانات هذا الطالب'], 403);
-        }
+        // Find child and authorize access
+        $child = \App\Models\StudentProfile::findOrFail($childId);
+        $this->authorize('viewChild', [$parent, $child]);
 
         // Store in session
         session(['parent_selected_child_id' => $childId]);
 
-        return response()->json([
-            'success' => true,
+        return $this->customResponse([
             'message' => 'تم اختيار: ' . ($child->user->name ?? $child->first_name),
             'child_id' => $childId,
             'child_name' => $child->user->name ?? $child->first_name,
@@ -190,25 +161,14 @@ class ParentDashboardController extends Controller
         $user = Auth::user();
         $parent = $user->parentProfile;
 
-        if (!$parent) {
-            return response()->json(['success' => false, 'message' => 'لا يمكن الوصول إلى بيانات ولي الأمر'], 403);
-        }
-
-        // Validate that parent owns this child
-        $child = $parent->students()
-            ->where('student_profiles.id', $childId)
-            ->forAcademy($parent->academy_id)
-            ->first();
-
-        if (!$child) {
-            return response()->json(['success' => false, 'message' => 'لا يمكنك الوصول إلى بيانات هذا الطالب'], 403);
-        }
+        // Find child and authorize access
+        $child = \App\Models\StudentProfile::findOrFail($childId);
+        $this->authorize('viewChild', [$parent, $child]);
 
         // Store in session
         session(['active_child_id' => $childId]);
 
-        return response()->json([
-            'success' => true,
+        return $this->customResponse([
             'message' => 'تم التبديل إلى: ' . $child->user->name,
             'child_name' => $child->user->name,
         ]);
@@ -237,8 +197,10 @@ class ParentDashboardController extends Controller
 
         if (!$child) {
             session()->forget('active_child_id');
-            abort(403, 'لا يمكنك الوصول إلى بيانات هذا الطالب');
+            abort(400, 'الطالب غير موجود');
         }
+
+        $this->authorize('viewChild', [$parent, $child]);
 
         return $child;
     }

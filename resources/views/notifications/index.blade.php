@@ -44,7 +44,7 @@
                         @foreach($categories as $category)
                             <a href="{{ route('notifications.index', ['subdomain' => request()->route('subdomain'), 'category' => $category->value, 'unread' => request()->get('unread')]) }}"
                                class="px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all {{ $selectedCategory === $category->value ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                {{ $category->getLabel() }}
+                                {{ $category->label() }}
                             </a>
                         @endforeach
                     </div>
@@ -145,7 +145,7 @@
                                 </span>
                                 @if($notification->category)
                                     <span class="px-2 py-1 {{ $colors['bg'] }} {{ $colors['text'] }} rounded-md font-medium">
-                                        {{ \App\Enums\NotificationCategory::tryFrom($notification->category)?->getLabel() }}
+                                        {{ \App\Enums\NotificationCategory::tryFrom($notification->category)?->label() }}
                                     </span>
                                 @endif
                             </div>
@@ -186,7 +186,6 @@ function markAsRead(notificationId) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json'
         }
-    }).catch(error => console.error('Error:', error));
 }
 
 function markAllAsRead() {
@@ -204,7 +203,6 @@ function markAllAsRead() {
             window.location.reload();
         }
     })
-    .catch(error => console.error('Error:', error));
 }
 </script>
 @endpush

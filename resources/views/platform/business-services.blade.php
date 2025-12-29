@@ -356,7 +356,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 
                 try {
                     const errorData = JSON.parse(error.message);

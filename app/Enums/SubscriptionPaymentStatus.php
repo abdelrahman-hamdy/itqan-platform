@@ -19,16 +19,11 @@ enum SubscriptionPaymentStatus: string
     case REFUNDED = 'refunded';     // Payment was refunded
 
     /**
-     * Get the Arabic label for the status
+     * Get localized label
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => 'في انتظار الدفع',
-            self::PAID => 'مدفوع',
-            self::FAILED => 'فشل الدفع',
-            self::REFUNDED => 'مسترد',
-        };
+        return __('enums.subscription_payment_status.' . $this->value);
     }
 
     /**

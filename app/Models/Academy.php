@@ -276,6 +276,102 @@ class Academy extends Model
         return $this->hasMany(Quiz::class);
     }
 
+    // ========================================
+    // SUBSCRIPTION RELATIONSHIPS
+    // ========================================
+
+    /**
+     * Get Quran subscriptions for this academy
+     */
+    public function quranSubscriptions(): HasMany
+    {
+        return $this->hasMany(QuranSubscription::class);
+    }
+
+    /**
+     * Get Academic subscriptions for this academy
+     */
+    public function academicSubscriptions(): HasMany
+    {
+        return $this->hasMany(AcademicSubscription::class);
+    }
+
+    /**
+     * Get Course subscriptions for this academy
+     */
+    public function courseSubscriptions(): HasMany
+    {
+        return $this->hasMany(CourseSubscription::class);
+    }
+
+    // ========================================
+    // SESSION RELATIONSHIPS
+    // ========================================
+
+    /**
+     * Get Quran sessions for this academy
+     */
+    public function quranSessions(): HasMany
+    {
+        return $this->hasMany(QuranSession::class);
+    }
+
+    /**
+     * Get Academic sessions for this academy
+     */
+    public function academicSessions(): HasMany
+    {
+        return $this->hasMany(AcademicSession::class);
+    }
+
+    /**
+     * Get Interactive course sessions for this academy
+     */
+    public function interactiveCourseSessions(): HasMany
+    {
+        return $this->hasMany(InteractiveCourseSession::class);
+    }
+
+    /**
+     * Get Quran individual circles for this academy
+     */
+    public function quranIndividualCircles(): HasMany
+    {
+        return $this->hasMany(QuranIndividualCircle::class);
+    }
+
+    // ========================================
+    // COURSE RELATIONSHIPS
+    // ========================================
+
+    /**
+     * Get Interactive courses for this academy
+     */
+    public function interactiveCourses(): HasMany
+    {
+        return $this->hasMany(InteractiveCourse::class);
+    }
+
+    /**
+     * Get Recorded courses for this academy
+     */
+    public function recordedCourses(): HasMany
+    {
+        return $this->hasMany(RecordedCourse::class);
+    }
+
+    // ========================================
+    // PAYMENT RELATIONSHIPS
+    // ========================================
+
+    /**
+     * Get all payments for this academy
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     /**
      * Get the full domain URL
      */
@@ -415,16 +511,8 @@ class Academy extends Model
      */
     public function setSectionsOrderAttribute($value): void
     {
-        // DEBUG: Log what mutator receives
-        \Log::info('Mutator Received:', [
-            'type' => gettype($value),
-            'value' => $value,
-            'is_empty' => is_array($value) && empty($value),
-        ]);
-
         // If value is null or empty array, store as null (accessor will return default)
         if ($value === null || (is_array($value) && empty($value))) {
-            \Log::info('Mutator: Storing NULL (empty or null value)');
             $this->attributes['sections_order'] = null;
             return;
         }
@@ -433,12 +521,10 @@ class Academy extends Model
         if (is_string($value)) {
             $decoded = json_decode($value, true);
             $value = is_array($decoded) ? $decoded : [];
-            \Log::info('Mutator: Decoded JSON string', ['decoded' => $value]);
         }
 
         // Ensure it's an array
         if (!is_array($value)) {
-            \Log::info('Mutator: Not an array, storing NULL');
             $this->attributes['sections_order'] = null;
             return;
         }
@@ -448,17 +534,11 @@ class Academy extends Model
 
         // If filtering resulted in empty array, store as null
         if (empty($value)) {
-            \Log::info('Mutator: Filtered array is empty, storing NULL');
             $this->attributes['sections_order'] = null;
             return;
         }
 
         // Store as JSON
-        $jsonEncoded = json_encode($value);
-        \Log::info('Mutator: Storing JSON', [
-            'array' => $value,
-            'json' => $jsonEncoded,
-        ]);
-        $this->attributes['sections_order'] = $jsonEncoded;
+        $this->attributes['sections_order'] = json_encode($value);
     }
 }

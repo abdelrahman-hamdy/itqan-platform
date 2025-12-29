@@ -91,112 +91,116 @@ class FixSessionDurations extends Command
 
     private function fixGroupSessionDurations(bool $isDryRun, ?string $circleId): array
     {
-        $query = QuranSession::with('circle')
-            ->whereNotNull('circle_id')
+        $query = QuranSession::whereNotNull('circle_id')
             ->whereHas('circle');
 
         if ($circleId) {
             $query->where('circle_id', $circleId);
         }
 
-        $sessions = $query->get();
         $fixed = 0;
         $errors = 0;
 
-        foreach ($sessions as $session) {
-            try {
-                $correctDuration = $session->circle->session_duration_minutes ?? 60;
+        // Process in chunks to prevent memory issues
+        $query->with('circle')->chunkById(200, function ($sessions) use (&$fixed, &$errors, $isDryRun) {
+            foreach ($sessions as $session) {
+                try {
+                    $correctDuration = $session->circle->session_duration_minutes ?? 60;
 
-                if ($session->duration_minutes !== $correctDuration) {
-                    $this->info("  Group Session {$session->id}: {$session->duration_minutes}min → {$correctDuration}min (Circle: {$session->circle->name_ar})");
+                    if ($session->duration_minutes !== $correctDuration) {
+                        $this->info("  Group Session {$session->id}: {$session->duration_minutes}min → {$correctDuration}min (Circle: {$session->circle->name_ar})");
 
-                    if (! $isDryRun) {
-                        $session->update(['duration_minutes' => $correctDuration]);
+                        if (! $isDryRun) {
+                            $session->update(['duration_minutes' => $correctDuration]);
+                        }
+
+                        $fixed++;
                     }
 
-                    $fixed++;
+                } catch (\Exception $e) {
+                    $this->error("  Error fixing session {$session->id}: ".$e->getMessage());
+                    $errors++;
                 }
-
-            } catch (\Exception $e) {
-                $this->error("  Error fixing session {$session->id}: ".$e->getMessage());
-                $errors++;
             }
-        }
+        });
 
         return ['fixed' => $fixed, 'errors' => $errors];
     }
 
     private function fixIndividualSessionDurations(bool $isDryRun, ?string $circleId): array
     {
-        $query = QuranSession::with(['individualCircle.subscription.package'])
-            ->whereNotNull('individual_circle_id')
+        $query = QuranSession::whereNotNull('individual_circle_id')
             ->whereHas('individualCircle');
 
         if ($circleId) {
             $query->where('individual_circle_id', $circleId);
         }
 
-        $sessions = $query->get();
         $fixed = 0;
         $errors = 0;
 
-        foreach ($sessions as $session) {
-            try {
-                $correctDuration = $session->individualCircle->subscription?->session_duration_minutes
-                    ?? $session->individualCircle->subscription?->package?->session_duration_minutes
-                    ?? 45;
+        // Process in chunks to prevent memory issues
+        $query->with(['individualCircle.subscription.package'])->chunkById(200, function ($sessions) use (&$fixed, &$errors, $isDryRun) {
+            foreach ($sessions as $session) {
+                try {
+                    $correctDuration = $session->individualCircle->subscription?->session_duration_minutes
+                        ?? $session->individualCircle->subscription?->package?->session_duration_minutes
+                        ?? 45;
 
-                if ($session->duration_minutes !== $correctDuration) {
-                    $studentName = $session->individualCircle->student?->name ?? 'Unknown';
-                    $this->info("  Individual Session {$session->id}: {$session->duration_minutes}min → {$correctDuration}min (Student: {$studentName})");
+                    if ($session->duration_minutes !== $correctDuration) {
+                        $studentName = $session->individualCircle->student?->name ?? 'Unknown';
+                        $this->info("  Individual Session {$session->id}: {$session->duration_minutes}min → {$correctDuration}min (Student: {$studentName})");
 
-                    if (! $isDryRun) {
-                        $session->update(['duration_minutes' => $correctDuration]);
+                        if (! $isDryRun) {
+                            $session->update(['duration_minutes' => $correctDuration]);
+                        }
+
+                        $fixed++;
                     }
 
-                    $fixed++;
+                } catch (\Exception $e) {
+                    $this->error("  Error fixing session {$session->id}: ".$e->getMessage());
+                    $errors++;
                 }
-
-            } catch (\Exception $e) {
-                $this->error("  Error fixing session {$session->id}: ".$e->getMessage());
-                $errors++;
             }
-        }
+        });
 
         return ['fixed' => $fixed, 'errors' => $errors];
     }
 
     private function fixScheduleDefaults(bool $isDryRun, ?string $circleId): array
     {
-        $query = \App\Models\QuranCircleSchedule::with('circle');
+        $query = \App\Models\QuranCircleSchedule::query();
 
         if ($circleId) {
             $query->where('circle_id', $circleId);
         }
 
-        $schedules = $query->get();
         $fixed = 0;
         $errors = 0;
 
-        foreach ($schedules as $schedule) {
-            try {
-                $correctDuration = $schedule->circle->session_duration_minutes ?? 60;
+        // Process in chunks to prevent memory issues
+        $query->with('circle')->chunkById(200, function ($schedules) use (&$fixed, &$errors, $isDryRun) {
+            foreach ($schedules as $schedule) {
+                try {
+                    $correctDuration = $schedule->circle->session_duration_minutes ?? 60;
 
-                if ($schedule->default_duration_minutes !== $correctDuration) {
-                    $this->info("  Schedule {$schedule->id}: {$schedule->default_duration_minutes}min → {$correctDuration}min (Circle: {$schedule->circle->name_ar})");
+                    if ($schedule->default_duration_minutes !== $correctDuration) {
+                        $this->info("  Schedule {$schedule->id}: {$schedule->default_duration_minutes}min → {$correctDuration}min (Circle: {$schedule->circle->name_ar})");
 
-                    if (! $isDryRun) {
-                        $schedule->update(['default_duration_minutes' => $correctDuration]);
+                        if (! $isDryRun) {
+                            $schedule->update(['default_duration_minutes' => $correctDuration]);
+                        }
+
+                        $fixed++;
                     }
 
-                    $fixed++;
+                } catch (\Exception $e) {
+                    $this->error("  Error fixing schedule {$schedule->id}: ".$e->getMessage());
+                    $errors++;
                 }
-
-            } catch (\Exception $e) {
-                $this->error("  Error fixing schedule {$schedule->id}: ".$e->getMessage());
-                $errors++;
             }
-        }
+        });
 
         return ['fixed' => $fixed, 'errors' => $errors];
     }

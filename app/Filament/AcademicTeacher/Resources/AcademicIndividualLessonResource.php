@@ -267,12 +267,21 @@ class AcademicIndividualLessonResource extends Resource
         return $user && $user->isAcademicTeacher();
     }
 
+    /**
+     * Eager load relationships to prevent N+1 queries
+     */
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
         $teacherProfile = $user->academicTeacherProfile;
 
         return parent::getEloquentQuery()
-            ->where('academic_teacher_id', $teacherProfile?->id ?? 0);
+            ->where('academic_teacher_id', $teacherProfile?->id ?? 0)
+            ->with([
+                'student',
+                'academicSubject',
+                'academicGradeLevel',
+                'academy',
+            ]);
     }
 }

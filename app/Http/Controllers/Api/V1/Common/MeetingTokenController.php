@@ -98,7 +98,39 @@ class MeetingTokenController extends Controller
                 'expires_in' => 7200,
             ], __('Meeting token generated'));
 
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
+            Log::error('Invalid meeting token parameters', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->error(
+                __('Invalid parameters for token generation.'),
+                400,
+                'INVALID_PARAMETERS'
+            );
+        } catch (\RuntimeException $e) {
+            Log::error('LiveKit service error', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->error(
+                __('Service unavailable.'),
+                503,
+                'SERVICE_UNAVAILABLE'
+            );
+        } catch (\Throwable $e) {
+            Log::critical('Unexpected error generating meeting token', [
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            report($e);
+
             return $this->error(
                 __('Failed to generate meeting token.'),
                 500,

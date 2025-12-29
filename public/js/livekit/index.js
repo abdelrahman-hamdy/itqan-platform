@@ -42,7 +42,6 @@ class LiveKitMeeting {
         // Track synchronization interval
         this.trackSyncInterval = null;
 
-        console.log('🚀 LiveKitMeeting initialized with enhanced synchronization:', config);
         
         // CRITICAL FIX: Initialize loading overlay state properly
         // Use setTimeout to ensure DOM is ready
@@ -57,12 +56,10 @@ class LiveKitMeeting {
      */
     async init() {
         if (this.isInitialized) {
-            console.log('⚠️ Meeting already initialized');
             return;
         }
 
         try {
-            console.log('🔧 [FIXED] Initializing LiveKit meeting modules...');
 
             // Initialize modules in correct order
             await this.initializeModules();
@@ -84,10 +81,8 @@ class LiveKitMeeting {
             this.isInitialized = true;
             this.isConnected = true;
 
-            console.log('✅ LiveKit meeting initialized successfully (FIXED)');
 
         } catch (error) {
-            console.error('❌ Failed to initialize meeting:', error);
             this.showError('فشل في الاتصال بالجلسة. يرجى المحاولة مرة أخرى.');
             throw error;
         }
@@ -97,7 +92,6 @@ class LiveKitMeeting {
      * Initialize all modules with cross-module communication
      */
     async initializeModules() {
-        console.log('🔧 Setting up meeting modules...');
 
         // 1. Initialize connection module
         this.connection = new LiveKitConnection({
@@ -122,10 +116,8 @@ class LiveKitMeeting {
         // 2. Initialize tracks module
         this.tracks = new LiveKitTracks({
             onVideoTrackAttached: (participantId, videoElement, track, publication) => {
-                console.log(`📹 Video track attached for ${participantId}`);
             },
             onVideoTrackDetached: (participantId, track, publication) => {
-                console.log(`📹 Video track detached for ${participantId}`);
             },
             onCameraStateChanged: (participantId, hasVideo) => {
                 this.handleCameraStateChanged(participantId, hasVideo);
@@ -139,11 +131,9 @@ class LiveKitMeeting {
         this.participants = new LiveKitParticipants({
             meetingConfig: this.config,
             onParticipantAdded: (participant) => {
-                console.log(`👤 Participant added: ${participant.identity}`);
                 this.layout.applyGrid(this.participants.getParticipantCount());
             },
             onParticipantRemoved: (participant, participantId) => {
-                console.log(`👤 Participant removed: ${participantId}`);
                 this.tracks.removeParticipantTracks(participantId);
                 this.layout.applyGrid(this.participants.getParticipantCount());
             },
@@ -155,39 +145,32 @@ class LiveKitMeeting {
         // 4. Initialize layout module
         this.layout = new LiveKitLayout({
             onLayoutChange: (layoutType) => {
-                console.log(`🎨 Layout changed to: ${layoutType}`);
             },
             onFocusEnter: (participantId) => {
-                console.log(`🎯 Entered focus mode for: ${participantId}`);
             },
             onFocusExit: (participantId) => {
-                console.log(`🔙 Exited focus mode for: ${participantId}`);
             }
         });
 
         // 5. Initialize controls module (will be set up after connection)
         // This is done in setupControls() after connection is established
 
-        console.log('✅ All modules initialized');
     }
 
     /**
      * Setup controls after connection is established
      */
     setupControls() {
-        console.log('🎮 Setting up controls...');
 
         this.controls = new LiveKitControls({
             room: this.connection.getRoom(),
             localParticipant: this.connection.getLocalParticipant(),
             meetingConfig: this.config,
             onControlStateChange: (control, enabled) => {
-                console.log(`🎮 Control state changed - ${control}: ${enabled}`);
             },
             onNotification: (message, type) => this.showNotification(message, type),
             onLeaveRequest: () => this.handleLeaveRequest(),
             onParticipantsListOpened: () => {
-                console.log('👥 Participants list opened, updating list...');
                 this.participants.updateParticipantsList();
             }
         });
@@ -200,50 +183,25 @@ class LiveKitMeeting {
             if (this.controls) {
                 this.controls.debugTestChat();
             } else {
-                console.log('❌ No controls available');
             }
         };
 
         window.debugMeeting = () => {
-            console.log('🔍 Meeting debug info:');
-            console.log('  - Initialized:', this.isInitialized);
-            console.log('  - Connected:', this.isConnected);
-            console.log('  - Room state:', this.connection?.getRoom()?.state);
-            console.log('  - Local participant:', this.connection?.getLocalParticipant()?.identity);
-            console.log('  - Remote participants:', Array.from(this.connection?.getRoom()?.remoteParticipants?.keys() || []));
-            console.log('  - Controls available:', !!this.controls);
             return this.getMeetingState();
         };
 
         window.debugVideos = () => {
-            console.log('📹 Video debug info:');
             const videoElements = document.querySelectorAll('video');
-            console.log(`  - Total video elements: ${videoElements.length}`);
             
             videoElements.forEach((video, index) => {
-                console.log(`  Video ${index + 1}:`);
-                console.log(`    - ID: ${video.id}`);
-                console.log(`    - Display: ${video.style.display}`);
-                console.log(`    - Opacity: ${video.style.opacity}`);
-                console.log(`    - Visibility: ${video.style.visibility}`);
-                console.log(`    - Source object: ${!!video.srcObject}`);
-                console.log(`    - Parent: ${video.parentElement?.id}`);
-                console.log(`    - Muted: ${video.muted}`);
-                console.log(`    - Autoplay: ${video.autoplay}`);
             });
 
             const participants = document.querySelectorAll('[id^="participant-"]');
-            console.log(`  - Total participant elements: ${participants.length}`);
             
             participants.forEach((participant, index) => {
                 const id = participant.id.replace('participant-', '');
                 const hasVideo = !!participant.querySelector('video');
                 const placeholder = participant.querySelector('.absolute.inset-0.flex.flex-col');
-                console.log(`  Participant ${index + 1} (${id}):`);
-                console.log(`    - Has video element: ${hasVideo}`);
-                console.log(`    - Has placeholder: ${!!placeholder}`);
-                console.log(`    - Placeholder opacity: ${placeholder?.style.opacity || 'default'}`);
-                console.log(`    - Placeholder background: ${placeholder?.style.backgroundColor || 'default'}`);
             });
 
             return {
@@ -267,7 +225,6 @@ class LiveKitMeeting {
         };
 
         window.debugPlaceholders = () => {
-            console.log('👤 Placeholder debug info:');
             const participants = document.querySelectorAll('[id^="participant-"]');
             
             participants.forEach((participant, index) => {
@@ -275,66 +232,42 @@ class LiveKitMeeting {
                 const placeholder = participant.querySelector('.absolute.inset-0.flex.flex-col');
                 const video = participant.querySelector('video');
                 
-                console.log(`  Participant ${index + 1} (${id}):`);
                 if (placeholder) {
-                    console.log(`    - Placeholder opacity: ${placeholder.style.opacity || 'default'}`);
-                    console.log(`    - Placeholder z-index: ${placeholder.style.zIndex || 'default'}`);
-                    console.log(`    - Placeholder background: ${placeholder.style.backgroundColor || 'default'}`);
                     
                     const avatar = placeholder.querySelector('.rounded-full');
                     const nameElements = placeholder.querySelectorAll('p');
                     const statusContainer = placeholder.querySelector('.mt-2.flex.items-center.justify-center.gap-3');
                     
-                    console.log(`    - Avatar opacity: ${avatar?.style.opacity || 'default'}`);
-                    console.log(`    - Name elements: ${nameElements.length}, opacity: ${nameElements[0]?.style.opacity || 'default'}`);
-                    console.log(`    - Status container position: ${statusContainer?.style.position || 'default'}`);
                 } else {
-                    console.log(`    - No placeholder found!`);
                 }
                 
                 if (video) {
-                    console.log(`    - Video opacity: ${video.style.opacity || 'default'}`);
-                    console.log(`    - Video display: ${video.style.display || 'default'}`);
-                    console.log(`    - Video has source: ${!!video.srcObject}`);
                 } else {
-                    console.log(`    - No video element found!`);
                 }
                 
                 // Check for name overlays
                 const overlay = document.getElementById(`name-overlay-${id}`);
                 if (overlay) {
-                    console.log(`    - Name overlay: FOUND`);
-                    console.log(`      - Position: ${overlay.style.position}`);
-                    console.log(`      - Bottom: ${overlay.style.bottom}`);
-                    console.log(`      - Left: ${overlay.style.left}`);
-                    console.log(`      - Z-index: ${overlay.style.zIndex}`);
-                    console.log(`      - Parent: ${overlay.parentElement?.id}`);
                 } else {
-                    console.log(`    - Name overlay: NOT FOUND`);
                 }
             });
         };
 
         // Add test function to manually show overlays
         window.testOverlay = (participantId) => {
-            console.log(`🧪 Testing overlay visibility for ${participantId}`);
             const overlay = document.getElementById(`name-overlay-${participantId}`);
             if (overlay) {
                 overlay.style.display = 'block';
                 overlay.style.opacity = '1';
-                console.log(`✅ Test overlay shown for ${participantId}`);
             } else {
-                console.error(`❌ Overlay not found for ${participantId}`);
             }
         };
 
         // Force show overlays for all participants (for testing)
         window.forceShowOverlays = () => {
-            console.log(`🧪 Force showing overlays for all participants`);
             const participants = document.querySelectorAll('[id^="participant-"]');
             participants.forEach(participant => {
                 const id = participant.id.replace('participant-', '');
-                console.log(`🧪 Showing overlay for ${id}`);
                 const overlay = document.getElementById(`name-overlay-${id}`);
                 if (overlay) {
                     overlay.style.display = 'block';
@@ -345,11 +278,9 @@ class LiveKitMeeting {
 
         // Force update video display for all participants (for testing)
         window.forceUpdateVideoDisplay = () => {
-            console.log(`🧪 Force updating video display for all participants`);
             const participants = document.querySelectorAll('[id^="participant-"]');
             participants.forEach(participant => {
                 const id = participant.id.replace('participant-', '');
-                console.log(`🧪 Updating video display for ${id}`);
                 if (this.tracks && this.tracks.updateVideoDisplay) {
                     // Force video ON state for testing
                     this.tracks.updateVideoDisplay(id, true);
@@ -359,25 +290,18 @@ class LiveKitMeeting {
 
         // Check if HTML overlays exist in DOM
         window.checkOverlays = () => {
-            console.log(`🔍 Checking HTML overlays in DOM`);
             const participants = document.querySelectorAll('[id^="participant-"]');
             participants.forEach(participant => {
                 const id = participant.id.replace('participant-', '');
                 const overlay = document.getElementById(`name-overlay-${id}`);
                 if (overlay) {
-                    console.log(`✅ Overlay found for ${id}:`, overlay);
-                    console.log(`   - Display: ${overlay.style.display}`);
-                    console.log(`   - Opacity: ${overlay.style.opacity}`);
-                    console.log(`   - Classes: ${overlay.className}`);
                 } else {
-                    console.log(`❌ No overlay found for ${id}`);
                 }
             });
         };
 
         // Test name cleaning function
         window.testNameCleaning = () => {
-            console.log(`🧪 Testing name cleaning function`);
             if (this.participants && this.participants.cleanParticipantIdentity) {
                 const testNames = [
                     '17_أحمد_العلي',
@@ -389,31 +313,25 @@ class LiveKitMeeting {
                 
                 testNames.forEach(name => {
                     const cleanName = this.participants.cleanParticipantIdentity(name);
-                    console.log(`   "${name}" → "${cleanName}"`);
                 });
             } else {
-                console.error(`❌ Participants module not available`);
             }
         };
 
         // Test hand raise functionality
         window.testHandRaise = (participantId, isRaised = true) => {
-            console.log(`🧪 Testing hand raise for ${participantId}: ${isRaised ? 'RAISE' : 'LOWER'}`);
             if (this.participants && this.participants.updateHandRaiseStatus) {
                 this.participants.updateHandRaiseStatus(participantId, isRaised);
             } else {
-                console.error(`❌ Participants module not available`);
             }
         };
 
         // Test hand raise indicators for all participants
         window.testHandRaiseIndicators = () => {
-            console.log(`🧪 Testing hand raise indicators`);
             if (this.participants) {
                 const participants = document.querySelectorAll('[id^="participant-"]');
                 participants.forEach(participant => {
                     const id = participant.id.replace('participant-', '');
-                    console.log(`🧪 Testing hand raise for participant ${id}`);
                     // Test show/hide cycle
                     this.participants.showHandRaise(id);
                     setTimeout(() => {
@@ -421,13 +339,11 @@ class LiveKitMeeting {
                     }, 2000);
                 });
             } else {
-                console.error(`❌ Participants module not available`);
             }
         };
 
         // Test hand raise for specific participant
         window.testHandRaiseForParticipant = (participantId) => {
-            console.log(`🧪 Testing hand raise for specific participant: ${participantId}`);
             if (this.participants && this.participants.updateHandRaiseStatus) {
                 // Show hand raise
                 this.participants.showHandRaise(participantId);
@@ -437,33 +353,26 @@ class LiveKitMeeting {
                     this.participants.hideHandRaise(participantId);
                 }, 3000);
                 
-                console.log(`✅ Hand raise test completed for ${participantId}`);
             } else {
-                console.error(`❌ Participants module not available`);
             }
         };
 
         // Test hand raise directly (bypasses LiveKit flow)
         window.testHandRaiseDirectly = (participantId) => {
-            console.log(`🧪 Testing hand raise directly for ${participantId}`);
             if (this.participants && this.participants.testHandRaiseDirectly) {
                 this.participants.testHandRaiseDirectly(participantId);
             } else {
-                console.error(`❌ Participants module not available`);
             }
         };
 
         // Force create hand raise indicator (for debugging)
         window.forceCreateHandRaiseIndicator = (participantId) => {
-            console.log(`🧪 Force creating hand raise indicator for ${participantId}`);
             
             const participantElement = document.getElementById(`participant-${participantId}`);
             if (!participantElement) {
-                console.error(`❌ Participant element not found: participant-${participantId}`);
                 
                 // List all available participant elements
                 const allParticipants = document.querySelectorAll('[id^="participant-"]');
-                console.log(`🔍 Available participants:`, Array.from(allParticipants).map(p => p.id));
                 return;
             }
             
@@ -471,7 +380,6 @@ class LiveKitMeeting {
             const existingIndicator = document.getElementById(`hand-raise-${participantId}`);
             if (existingIndicator) {
                 existingIndicator.remove();
-                console.log(`🗑️ Removed existing indicator`);
             }
             
             // Create new indicator
@@ -499,36 +407,29 @@ class LiveKitMeeting {
             
             participantElement.appendChild(handRaiseIndicator);
             
-            console.log(`✅ Force created hand raise indicator for ${participantId}:`, handRaiseIndicator);
             
             // Remove after 5 seconds
             setTimeout(() => {
                 if (handRaiseIndicator.parentNode) {
                     handRaiseIndicator.remove();
-                    console.log(`🗑️ Auto-removed force created indicator`);
                 }
             }, 5000);
         };
 
         // Test direct controls hand raise function
         window.testControlsHandRaise = (participantId = 'local', isRaised = true) => {
-            console.log(`🧪 Testing controls hand raise for ${participantId}: ${isRaised ? 'RAISE' : 'LOWER'}`);
             if (this.controls && this.controls.createHandRaiseIndicatorDirect) {
                 this.controls.createHandRaiseIndicatorDirect(participantId, isRaised);
             } else {
-                console.error(`❌ Controls module not available`);
             }
         };
 
-        console.log('✅ Controls set up successfully');
-        console.log('🔍 Debug functions available: window.debugChat(), window.debugMeeting(), window.debugVideos(), window.debugPlaceholders(), window.testOverlay(), window.forceShowOverlays(), window.forceUpdateVideoDisplay(), window.checkOverlays(), window.testNameCleaning(), window.testHandRaise(), window.testHandRaiseIndicators(), window.testHandRaiseForParticipant(), window.testHandRaiseDirectly(), window.forceCreateHandRaiseIndicator(), window.testControlsHandRaise()');
     }
 
     /**
      * Setup local media (camera and microphone)
      */
     async setupLocalMedia() {
-        console.log('🎤 Setting up local media...');
 
         try {
             const localParticipant = this.connection.getLocalParticipant();
@@ -546,7 +447,6 @@ class LiveKitMeeting {
             await this.setupMediaPermissions(localParticipant);
 
             // Process existing tracks after a short delay to ensure they're initialized
-            console.log('🔄 Processing local tracks...');
             
             // Wait a moment for tracks to be fully initialized
             setTimeout(() => {
@@ -564,9 +464,7 @@ class LiveKitMeeting {
         // Test hand raise functionality after meeting is fully initialized
         setTimeout(() => {
             if (this.participants && this.localParticipant) {
-                console.log('🧪 Testing hand raise functionality after initialization...');
                 const localId = this.localParticipant.identity;
-                console.log(`🧪 Local participant ID: ${localId}`);
                 
                 // Test direct hand raise
                 if (this.participants.testHandRaiseDirectly) {
@@ -578,10 +476,8 @@ class LiveKitMeeting {
             // Start periodic track synchronization check for late joiners
             this.startTrackSyncCheck();
 
-            console.log('✅ Local media setup complete');
 
         } catch (error) {
-            console.error('❌ Failed to setup local media:', error);
             
             // Only show user error for critical failures, not track processing issues
             if (error.name === 'NotAllowedError') {
@@ -590,7 +486,6 @@ class LiveKitMeeting {
                 this.showNotification('فشل في إعداد الجلسة. يرجى المحاولة مرة أخرى.', 'error');
             } else {
                 // For other errors, just log them - don't overwhelm user with technical messages
-                console.warn('⚠️ Non-critical media setup error:', error.message);
                 this.showNotification('تم الانضمام للجلسة بنجاح. قد تحتاج لتفعيل الكاميرا يدوياً.', 'info');
             }
         }
@@ -600,7 +495,6 @@ class LiveKitMeeting {
      * CRITICAL FIX: Enhanced local media setup with synchronization
      */
     async setupLocalMediaEnhanced() {
-        console.log('🎤 [FIXED] Setting up local media with enhanced synchronization...');
 
         try {
             const localParticipant = this.connection.getLocalParticipant();
@@ -623,10 +517,8 @@ class LiveKitMeeting {
             // Load existing participants with synchronization
             await this.loadExistingParticipantsSync();
 
-            console.log('✅ Enhanced local media setup complete');
 
         } catch (error) {
-            console.error('❌ Enhanced media setup failed:', error);
             this.handleMediaSetupError(error);
         }
     }
@@ -650,7 +542,6 @@ class LiveKitMeeting {
             };
             
             this.participantStates.set(participantId, state);
-            console.log(`📊 [FIXED] Initialized state for ${participantId}:`, state);
         }
     }
 
@@ -662,7 +553,6 @@ class LiveKitMeeting {
         
         // Prevent duplicate processing
         if (this.syncInProgress.has(participantId)) {
-            console.log(`⏭️ Already syncing ${participantId}, skipping`);
             return;
         }
         
@@ -678,7 +568,6 @@ class LiveKitMeeting {
             // Apply layout
             this.layout.applyGrid(this.participants.getParticipantCount());
             
-            console.log(`✅ Participant ${participantId} added with sync`);
             
         } finally {
             this.syncInProgress.delete(participantId);
@@ -694,28 +583,22 @@ class LiveKitMeeting {
         // Determine user role from config
         const isTeacher = this.config.role === 'teacher';
 
-        console.log(`🎤 Setting up media for role: ${this.config.role}`);
-        console.log(`   isTeacher: ${isTeacher}`);
 
         let mediaPermissionsGranted = false;
 
         // MICROPHONE: ON for teachers, OFF for students
         try {
-            console.log('🎤 Requesting microphone permission...');
             await navigator.mediaDevices.getUserMedia({ audio: true });
 
             if (isTeacher) {
                 await localParticipant.setMicrophoneEnabled(true);
-                console.log('✅ Teacher microphone enabled');
                 mediaPermissionsGranted = true;
             } else {
                 // Request permission but keep it OFF for students
                 await localParticipant.setMicrophoneEnabled(false);
-                console.log('✅ Student microphone ready (muted by default)');
                 mediaPermissionsGranted = true;
             }
         } catch (audioError) {
-            console.warn('⚠️ Microphone access denied:', audioError.message);
             if (audioError.name === 'NotAllowedError') {
                 this.showNotification('لا يمكن الوصول إلى الميكروفون. يرجى السماح بالوصول في المتصفح.', 'warning');
             }
@@ -723,13 +606,10 @@ class LiveKitMeeting {
 
         // CAMERA: OFF for everyone by default
         try {
-            console.log('📹 Requesting camera permission...');
             await navigator.mediaDevices.getUserMedia({ video: true });
             await localParticipant.setCameraEnabled(false);
-            console.log('✅ Camera ready (off by default)');
             mediaPermissionsGranted = true;
         } catch (videoError) {
-            console.warn('⚠️ Camera access denied:', videoError.message);
             if (videoError.name === 'NotAllowedError') {
                 this.showNotification('لا يمكن الوصول إلى الكاميرا. يرجى السماح بالوصول في المتصفح.', 'warning');
             }
@@ -750,7 +630,6 @@ class LiveKitMeeting {
      */
     async processParticipantTracksSync(participant) {
         const participantId = participant.identity;
-        console.log(`🔄 [FIXED] Processing tracks for ${participantId}...`);
 
         // Update participant state
         this.updateParticipantStateFromTracks(participant);
@@ -780,7 +659,6 @@ class LiveKitMeeting {
             state.lastSeen = Date.now();
         }
 
-        console.log(`✅ Tracks processed for ${participantId}`);
     }
 
     /**
@@ -818,23 +696,19 @@ class LiveKitMeeting {
         }
 
         state.lastSeen = Date.now();
-        console.log(`📊 [FIXED] Updated state for ${participantId}:`, state);
     }
 
     /**
      * CRITICAL FIX: Load existing participants with synchronization
      */
     async loadExistingParticipantsSync() {
-        console.log('👥 [FIXED] Loading existing participants with sync...');
 
         const room = this.connection.getRoom();
         if (!room) {
-            console.warn('⚠️ Room not available for loading participants');
             return;
         }
 
         for (const [identity, participant] of room.remoteParticipants) {
-            console.log(`👤 [FIXED] Processing existing participant: ${identity}`);
             
             // Initialize state
             this.initializeParticipantState(identity, false);
@@ -846,21 +720,18 @@ class LiveKitMeeting {
             await this.processParticipantTracksSync(participant);
         }
 
-                    console.log(`✅ Loaded ${room.remoteParticipants.size} existing participants with sync`);
     }
 
     /**
      * CRITICAL FIX: Handle media setup errors gracefully
      */
     handleMediaSetupError(error) {
-        console.error('❌ Media setup error:', error);
         
         if (error.name === 'NotAllowedError') {
             this.showNotification('تم رفض الوصول للكاميرا أو الميكروفون', 'error');
         } else if (error.message && (error.message.includes('room') || error.message.includes('connection'))) {
             this.showNotification('فشل في إعداد الجلسة. يرجى المحاولة مرة أخرى.', 'error');
         } else {
-            console.warn('⚠️ Non-critical media setup error:', error.message);
             this.showNotification('تم الانضمام للجلسة بنجاح. قد تحتاج لتفعيل الكاميرا يدوياً.', 'info');
         }
     }
@@ -869,14 +740,12 @@ class LiveKitMeeting {
      * CRITICAL FIX: Start continuous synchronization monitoring
      */
     startContinuousSync() {
-        console.log('⏰ [FIXED] Starting continuous synchronization monitoring...');
         
         // Check every 3 seconds for synchronization issues
         this.trackSyncInterval = setInterval(() => {
             this.performSyncCheck();
         }, 3000);
         
-        console.log('✅ Continuous sync monitoring started');
     }
 
     /**
@@ -890,7 +759,6 @@ class LiveKitMeeting {
             const state = this.participantStates.get(identity);
             
             if (!state || !state.tracksSynced) {
-                console.log(`🔧 [SYNC] Re-syncing participant ${identity}`);
                 await this.processParticipantTracksSync(participant);
             }
             
@@ -900,7 +768,6 @@ class LiveKitMeeting {
                     if (publication.track && !publication.isMuted) {
                         const videoElement = document.getElementById(`video-${identity}`);
                         if (!videoElement) {
-                            console.log(`🔧 [SYNC] Fixing missing video for ${identity}`);
                             await this.tracks.handleTrackSubscribed(publication.track, publication, participant);
                         }
                     }
@@ -914,57 +781,44 @@ class LiveKitMeeting {
      * @param {LiveKit.LocalParticipant} localParticipant - Local participant instance
      */
     processLocalTracks(localParticipant) {
-        console.log('🔄 Processing local participant tracks...');
 
         try {
             // Handle video tracks with null checks
             if (localParticipant.videoTracks && localParticipant.videoTracks.size > 0) {
-                console.log(`📹 Found ${localParticipant.videoTracks.size} local video track(s)`);
                 localParticipant.videoTracks.forEach((publication) => {
                     if (publication && publication.track) {
-                        console.log('📹 Processing local video track');
                         this.tracks.handleTrackSubscribed(publication.track, publication, localParticipant);
                     } else {
-                        console.log('📹 Local video track not yet available');
                     }
                 });
             } else {
-                console.log('📹 No local video tracks found yet');
             }
 
             // Handle audio tracks with null checks
             if (localParticipant.audioTracks && localParticipant.audioTracks.size > 0) {
-                console.log(`🎤 Found ${localParticipant.audioTracks.size} local audio track(s)`);
                 localParticipant.audioTracks.forEach((publication) => {
                     if (publication && publication.track) {
-                        console.log('🎤 Processing local audio track');
                         this.tracks.handleTrackSubscribed(publication.track, publication, localParticipant);
                     } else {
-                        console.log('🎤 Local audio track not yet available');
                     }
                 });
             } else {
-                console.log('🎤 No local audio tracks found yet');
             }
 
             // Force update video display if camera is enabled and track exists
             // But only after meeting is fully initialized to prevent flickering
             if (localParticipant.isCameraEnabled && localParticipant.videoTracks?.size > 0 && this.isInitialized) {
-                console.log('📹 Forcing video display update for local participant');
                 setTimeout(() => {
                     this.tracks.updateVideoDisplay(localParticipant.identity, true);
                 }, 200); // Small delay to ensure UI is stable
             }
 
-            console.log('✅ Local tracks processed successfully');
 
         } catch (error) {
-            console.error('❌ Error processing local tracks:', error);
             // Don't show user error for track processing issues, as this is internal
             
             // Retry after a longer delay if tracks processing failed
             setTimeout(() => {
-                console.log('🔄 Retrying local tracks processing...');
                 this.processLocalTracks(localParticipant);
             }, 2000);
         }
@@ -974,7 +828,6 @@ class LiveKitMeeting {
         const hasAudioTracks = localParticipant.audioTracks?.size > 0;
         
         if (!hasVideoTracks && !hasAudioTracks && localParticipant.isCameraEnabled) {
-            console.log('🔄 No tracks found but camera is enabled, will retry in 2 seconds...');
             setTimeout(() => {
                 this.processLocalTracks(localParticipant);
             }, 2000);
@@ -985,17 +838,14 @@ class LiveKitMeeting {
      * Load existing participants for late joiners
      */
     loadExistingParticipants() {
-        console.log('👥 Loading existing participants...');
 
         const room = this.connection.getRoom();
         if (!room) {
-            console.warn('⚠️ Room not available for loading participants');
             return;
         }
 
         // Add all existing remote participants
         for (const [identity, participant] of room.remoteParticipants) {
-            console.log(`👤 Found existing participant: ${identity}`);
 
             // Add participant to UI
             this.participants.addParticipant(participant);
@@ -1003,14 +853,11 @@ class LiveKitMeeting {
             // Handle their existing tracks (with safety checks and forced subscription)
             if (participant.videoTracks && participant.videoTracks.size > 0) {
                 participant.videoTracks.forEach((publication) => {
-                    console.log(`📹 Processing existing video track from ${identity} - subscribed: ${publication.isSubscribed}, muted: ${publication.isMuted}, hasTrack: ${!!publication.track}`);
 
                     if (publication.track) {
-                        console.log(`📹 Loading existing video track from ${identity}`);
                         this.tracks.handleTrackSubscribed(publication.track, publication, participant);
                     } else if (!publication.isSubscribed && !publication.isMuted) {
                         // Force subscription for unmuted tracks without attached track
-                        console.log(`📹 Force subscribing to video track from ${identity}`);
                         this.forceTrackSubscription(participant, publication);
                     }
                 });
@@ -1018,14 +865,11 @@ class LiveKitMeeting {
 
             if (participant.audioTracks && participant.audioTracks.size > 0) {
                 participant.audioTracks.forEach((publication) => {
-                    console.log(`🎤 Processing existing audio track from ${identity} - subscribed: ${publication.isSubscribed}, muted: ${publication.isMuted}, hasTrack: ${!!publication.track}`);
 
                     if (publication.track) {
-                        console.log(`🎤 Loading existing audio track from ${identity}`);
                         this.tracks.handleTrackSubscribed(publication.track, publication, participant);
                     } else if (!publication.isSubscribed && !publication.isMuted) {
                         // Force subscription for unmuted tracks without attached track
-                        console.log(`🎤 Force subscribing to audio track from ${identity}`);
                         this.forceTrackSubscription(participant, publication);
                     }
                 });
@@ -1037,7 +881,6 @@ class LiveKitMeeting {
         this.participants.updateParticipantsList();
         this.layout.applyGrid(this.participants.getParticipantCount());
 
-        console.log(`✅ Loaded ${room.remoteParticipants.size} existing participants`);
 
         // Ensure all tracks are properly subscribed
         this.ensureAllTracksSubscribed();
@@ -1051,7 +894,6 @@ class LiveKitMeeting {
         if (participantCountElement) {
             const count = this.participants.getParticipantCount();
             participantCountElement.textContent = count.toString();
-            console.log(`📊 Updated participant count to: ${count}`);
         }
     }
 
@@ -1059,7 +901,6 @@ class LiveKitMeeting {
      * Show the meeting interface - ENHANCED WITH SMOOTH TRANSITIONS
      */
     showMeetingInterface() {
-        console.log('🎨 [FIXED] Showing meeting interface with smooth transitions...');
 
         // CRITICAL FIX: Add a small delay to ensure everything is truly ready
         setTimeout(() => {
@@ -1075,11 +916,9 @@ class LiveKitMeeting {
         const meetingInterface = document.getElementById('meetingInterface');
 
         if (!loadingOverlay || !meetingInterface) {
-            console.warn('⚠️ Loading overlay or meeting interface not found');
             return;
         }
 
-        console.log('🎨 Starting smooth transition...');
 
         // Step 1: Start fading out the loading overlay
         loadingOverlay.classList.add('fade-out');
@@ -1089,30 +928,25 @@ class LiveKitMeeting {
             // Meeting interface is already visible, just setup controls
             this.setupControls();
             
-            console.log('✅ Meeting interface transition initiated');
         }, 100);
 
         // Step 3: Completely remove loading overlay after transition completes
         setTimeout(() => {
             if (loadingOverlay.classList.contains('fade-out')) {
                 loadingOverlay.style.display = 'none';
-                console.log('✅ Loading overlay completely hidden');
             }
         }, 600); // 500ms transition + 100ms buffer
 
-        console.log('✅ Meeting interface shown with smooth transitions');
     }
 
     /**
      * CRITICAL FIX: Show loading overlay smoothly (for reconnection, etc.)
      */
     showLoadingOverlay(message = 'جاري الاتصال بالاجتماع...') {
-        console.log('🔄 [FIXED] Showing loading overlay smoothly...');
         
         const loadingOverlay = document.getElementById('loadingOverlay');
         
         if (!loadingOverlay) {
-            console.warn('⚠️ Loading overlay not found');
             return;
         }
 
@@ -1129,7 +963,6 @@ class LiveKitMeeting {
         // CRITICAL FIX: Don't hide meeting interface - overlay is semi-transparent
         // Meeting interface should remain visible behind the overlay
         
-        console.log('✅ Loading overlay shown smoothly');
     }
 
     /**
@@ -1153,7 +986,6 @@ class LiveKitMeeting {
             // Don't set opacity to 0 - let it be visible
         }
         
-        console.log('🎨 Loading overlay initialized properly');
     }
 
     /**
@@ -1161,7 +993,6 @@ class LiveKitMeeting {
      * @param {string} state - Connection state
      */
     handleConnectionStateChange(state) {
-        console.log(`🔗 [FIXED] Connection state: ${state}`);
 
         switch (state) {
             case 'connected':
@@ -1193,7 +1024,6 @@ class LiveKitMeeting {
      */
     async handleParticipantConnected(participant) {
         const participantId = participant.identity;
-        console.log(`👤 [FIXED] Participant connected: ${participantId}`);
 
         // Don't add local participant here - it's added in setupLocalMedia
         if (!participant.isLocal) {
@@ -1212,10 +1042,8 @@ class LiveKitMeeting {
                 const displayName = participant.name || participant.identity;
                 this.showNotification(`انضم ${displayName} إلى الجلسة`, 'info');
 
-                console.log(`✅ Participant ${participantId} connected and synced`);
 
             } catch (error) {
-                console.error(`❌ Error handling participant connection for ${participantId}:`, error);
             }
         }
     }
@@ -1226,7 +1054,6 @@ class LiveKitMeeting {
      */
     handleParticipantDisconnected(participant) {
         const participantId = participant.identity;
-        console.log(`👤 [FIXED] Participant disconnected: ${participantId}`);
 
         // CRITICAL FIX: Clean up all synchronization tracking
         this.syncInProgress.delete(participantId);
@@ -1253,7 +1080,6 @@ class LiveKitMeeting {
         const displayName = participant.name || participant.identity;
         this.showNotification(`غادر ${displayName} الجلسة`, 'info');
 
-        console.log(`✅ Participant ${participantId} disconnected and cleaned up`);
     }
 
     /**
@@ -1264,7 +1090,6 @@ class LiveKitMeeting {
      */
     async handleTrackSubscribed(track, publication, participant) {
         const participantId = participant.identity;
-        console.log(`📹 [FIXED] Track subscribed: ${track.kind} from ${participantId} (local: ${participant.isLocal})`);
         
         // CRITICAL FIX: Update participant state immediately
         this.updateParticipantStateFromTracks(participant);
@@ -1282,7 +1107,6 @@ class LiveKitMeeting {
     async ensureParticipantSyncSafe(participantId) {
         // Prevent overlapping sync operations
         if (this.syncInProgress.has(participantId)) {
-            console.log(`⏭️ Sync already in progress for ${participantId}, skipping`);
             return;
         }
         
@@ -1300,7 +1124,6 @@ class LiveKitMeeting {
                 // Check if participant element exists
                 const participantElement = document.getElementById(`participant-${participantId}`);
                 if (!participantElement) {
-                    console.log(`🔧 [SYNC] Adding missing participant ${participantId}`);
                     await this.addParticipantWithSync(participant);
                 }
                 
@@ -1320,7 +1143,6 @@ class LiveKitMeeting {
      * @param {LiveKit.Participant} participant - Participant
      */
     handleTrackUnsubscribed(track, publication, participant) {
-        console.log(`📹 Track unsubscribed: ${track.kind} from ${participant.identity}`);
         this.tracks.handleTrackUnsubscribed(track, publication, participant);
     }
 
@@ -1330,11 +1152,9 @@ class LiveKitMeeting {
      * @param {LiveKit.Participant} participant - Participant
      */
     handleTrackPublished(publication, participant) {
-        console.log(`📹 Track published: ${publication.kind} from ${participant.identity} (local: ${participant.isLocal})`);
 
         // For local participant, create the track handling as if it was subscribed
         if (participant.isLocal && publication.track) {
-            console.log(`📹 Processing local published track: ${publication.kind}`);
             this.tracks.handleTrackSubscribed(publication.track, publication, participant);
         }
     }
@@ -1345,11 +1165,9 @@ class LiveKitMeeting {
      * @param {LiveKit.Participant} participant - Participant
      */
     handleTrackUnpublished(publication, participant) {
-        console.log(`📹 Track unpublished: ${publication.kind} from ${participant.identity} (local: ${participant.isLocal})`);
 
         // For local participant, handle as if it was unsubscribed
         if (participant.isLocal && publication.track) {
-            console.log(`📹 Processing local unpublished track: ${publication.kind}`);
             this.tracks.handleTrackUnsubscribed(publication.track, publication, participant);
         }
     }
@@ -1360,7 +1178,6 @@ class LiveKitMeeting {
      * @param {LiveKit.Participant} participant - Participant
      */
     handleTrackMuted(publication, participant) {
-        console.log(`🔇 Track muted: ${publication.kind} from ${participant.identity}`);
         this.tracks.handleTrackMuted(publication, participant);
     }
 
@@ -1370,20 +1187,16 @@ class LiveKitMeeting {
      * @param {LiveKit.Participant} participant - Participant
      */
     handleTrackUnmuted(publication, participant) {
-        console.log(`🔊 Track unmuted: ${publication.kind} from ${participant.identity} (local: ${participant.isLocal})`);
         this.tracks.handleTrackUnmuted(publication, participant);
 
         // CRITICAL: For remote participants, ensure all users can see the track when it's unmuted
         if (!participant.isLocal) {
-            console.log(`📹 Remote participant ${participant.identity} unmuted ${publication.kind}, ensuring all users can see it`);
 
             // Check if we have the track, if not, force subscription
             if (!publication.track && !publication.isSubscribed) {
-                console.log(`📹 No track available for unmuted ${publication.kind} from ${participant.identity}, force subscribing...`);
                 this.forceTrackSubscription(participant, publication);
             } else if (publication.track) {
                 // Ensure the track is properly processed even if we already have it
-                console.log(`📹 Re-processing existing track for ${participant.identity} after unmute`);
                 this.tracks.handleTrackSubscribed(publication.track, publication, participant);
             }
 
@@ -1408,64 +1221,41 @@ class LiveKitMeeting {
      */
     handleDataReceived(payload, participant) {
         try {
-            console.log(`📦 ==== DATA RECEIVED EVENT ====`);
-            console.log(`📦 Raw data received:`);
-            console.log(`  - From participant: ${participant?.identity}`);
-            console.log(`  - Participant SID: ${participant?.sid}`);
-            console.log(`  - Is local: ${participant?.isLocal}`);
-            console.log(`  - Payload size: ${payload?.length} bytes`);
-            console.log(`  - Payload type: ${payload?.constructor?.name}`);
 
             // Enhanced local participant context
             const localParticipant = this.connection?.getLocalParticipant();
-            console.log(`📋 Current session context:`);
-            console.log(`  - Local participant: ${localParticipant?.identity}`);
-            console.log(`  - Local SID: ${localParticipant?.sid}`);
-            console.log(`  - Room state: ${this.connection?.getRoom()?.state}`);
-            console.log(`  - Total participants: ${this.connection?.getRoom()?.numParticipants}`);
 
             // List all participants for debugging
-            console.log(`📋 All participants in room:`);
             if (localParticipant) {
-                console.log(`  - LOCAL: ${localParticipant.identity} (SID: ${localParticipant.sid})`);
             }
             this.connection?.getRoom()?.remoteParticipants?.forEach((participant, sid) => {
-                console.log(`  - REMOTE: ${participant.identity} (SID: ${sid})`);
             });
 
             // Comprehensive payload validation
             if (!payload) {
-                console.error('❌ NULL payload received');
                 return;
             }
 
             if (payload.length === 0) {
-                console.error('❌ Empty payload received (0 bytes)');
                 return;
             }
 
             // Enhanced participant validation
             if (!participant) {
-                console.error('❌ No participant information received');
                 return;
             }
 
             // Check if this is from ourselves (should not happen with proper broadcasting)
             if (participant.isLocal) {
-                console.log('💬 Received data from local participant (echo) - this is normal for testing');
                 // Don't return - process it for testing purposes
             }
 
-            console.log(`🔄 Attempting to decode payload...`);
 
             // Decode the payload with enhanced error handling
             let decodedString;
             try {
                 decodedString = new TextDecoder().decode(payload);
-                console.log(`🔄 Decoded string: "${decodedString}"`);
             } catch (decodeError) {
-                console.error('❌ Failed to decode payload as UTF-8:', decodeError);
-                console.error('❌ Raw payload bytes:', Array.from(payload).slice(0, 50)); // Show first 50 bytes
                 return;
             }
 
@@ -1473,60 +1263,35 @@ class LiveKitMeeting {
             let data;
             try {
                 data = JSON.parse(decodedString);
-                console.log(`📦 Successfully parsed JSON data:`, data);
             } catch (parseError) {
-                console.error('❌ Failed to parse decoded string as JSON:', parseError);
-                console.error('❌ Decoded string was:', decodedString);
                 return;
             }
 
             // Enhanced data structure validation
-            console.log(`🔍 Validating data structure:`);
-            console.log(`  - Type: ${data.type}`);
-            console.log(`  - Sender: ${data.sender}`);
-            console.log(`  - Sender SID: ${data.senderSid}`);
-            console.log(`  - Message ID: ${data.messageId || 'no-id'}`);
-            console.log(`  - Timestamp: ${data.timestamp}`);
 
             if (!data.type) {
-                console.error('❌ Data missing required "type" field:', data);
                 return;
             }
 
             // Check for sender mismatch (debugging)
             if (data.sender && participant.identity && data.sender !== participant.identity) {
-                console.warn(`⚠️ Sender mismatch - data.sender: "${data.sender}", participant.identity: "${participant.identity}"`);
             }
 
             if (data.senderSid && participant.sid && data.senderSid !== participant.sid) {
-                console.warn(`⚠️ Sender SID mismatch - data.senderSid: "${data.senderSid}", participant.sid: "${participant.sid}"`);
             }
 
             // Forward to controls with comprehensive validation
             if (this.controls) {
-                console.log(`📦 ✅ FORWARDING DATA TO CONTROLS for processing`);
-                console.log(`📦 Controls module is available and ready`);
 
                 this.controls.handleDataReceived(data, participant);
 
-                console.log(`📦 ✅ DATA SUCCESSFULLY FORWARDED TO CONTROLS`);
             } else {
-                console.error('❌ CRITICAL: Controls module not available to handle data');
-                console.error('❌ This means chat messages cannot be processed!');
 
                 // Try to provide helpful debugging info
-                console.error('❌ Debug info:');
-                console.error(`  - this.controls exists: ${!!this.controls}`);
-                console.error(`  - this.controls type: ${typeof this.controls}`);
-                console.error(`  - Meeting initialized: ${this.isInitialized}`);
-                console.error(`  - Meeting connected: ${this.isConnected}`);
             }
 
-            console.log(`📦 ==== END DATA RECEIVED EVENT ====`);
 
         } catch (error) {
-            console.error('❌ CRITICAL ERROR in handleDataReceived:', error);
-            console.error('❌ Error details:', {
                 name: error.name,
                 message: error.message,
                 stack: error.stack,
@@ -1538,16 +1303,10 @@ class LiveKitMeeting {
             });
 
             if (payload) {
-                console.error('❌ Payload debugging:');
-                console.error(`  - Length: ${payload.length}`);
-                console.error(`  - Type: ${payload.constructor?.name}`);
-                console.error(`  - First 20 bytes:`, Array.from(payload.slice(0, 20)));
 
                 try {
                     const asString = new TextDecoder().decode(payload);
-                    console.error(`  - As string: "${asString}"`);
                 } catch (e) {
-                    console.error(`  - Cannot decode as string: ${e.message}`);
                 }
             }
 
@@ -1564,7 +1323,6 @@ class LiveKitMeeting {
      * @param {boolean} hasVideo - Whether participant has active video
      */
     handleCameraStateChanged(participantId, hasVideo) {
-        console.log(`📹 Camera state changed for ${participantId}: ${hasVideo ? 'ON' : 'OFF'}`);
 
         // Update participant list status
         this.participants.updateParticipantListStatus(participantId, 'cam', hasVideo);
@@ -1576,7 +1334,6 @@ class LiveKitMeeting {
      * @param {boolean} hasAudio - Whether participant has active audio
      */
     handleMicrophoneStateChanged(participantId, hasAudio) {
-        console.log(`🎤 Microphone state changed for ${participantId}: ${hasAudio ? 'ON' : 'OFF'}`);
 
         // Update participant list status
         this.participants.updateParticipantListStatus(participantId, 'mic', hasAudio);
@@ -1588,7 +1345,6 @@ class LiveKitMeeting {
      * @param {LiveKit.Participant} participant - Participant object
      */
     handleParticipantClick(participantElement, participant) {
-        console.log(`👆 Participant clicked: ${participant.identity}`);
 
         const layoutState = this.layout.getLayoutState();
 
@@ -1605,16 +1361,12 @@ class LiveKitMeeting {
      * Handle leave request
      */
     handleLeaveRequest() {
-        console.log('🚪 Handling leave request...');
 
         this.destroy().then(() => {
             // Simply reload the current page instead of redirecting
-            console.log('🔄 Reloading current page after meeting cleanup');
             window.location.reload();
         }).catch(error => {
-            console.error('❌ Error during meeting cleanup:', error);
             // Still reload even if cleanup fails
-            console.log('🔄 Reloading current page despite cleanup error');
             window.location.reload();
         });
     }
@@ -1625,7 +1377,6 @@ class LiveKitMeeting {
      * @param {string} type - Notification type ('success', 'error', 'info')
      */
     showNotification(message, type = 'info') {
-        console.log(`📢 Notification (${type}): ${message}`);
 
         // Create notification element
         const notification = document.createElement('div');
@@ -1673,8 +1424,10 @@ class LiveKitMeeting {
      * @param {string} message - Error message
      */
     showError(message) {
-        console.error('❌ Meeting error:', message);
-        alert(message); // Fallback to alert, could be replaced with better UI
+        // Use toast notification if available, silent fail otherwise
+        if (window.toast?.error) {
+            window.toast.error(message);
+        }
     }
 
     /**
@@ -1697,11 +1450,9 @@ class LiveKitMeeting {
      */
     async destroy() {
         if (this.isDestroyed) {
-            console.log('⚠️ Meeting already destroyed');
             return;
         }
 
-        console.log('🧹 Destroying LiveKit meeting...');
 
         try {
             // CRITICAL FIX: Stop track synchronization check
@@ -1747,10 +1498,8 @@ class LiveKitMeeting {
             this.isConnected = false;
             this.isDestroyed = true;
 
-            console.log('✅ Meeting destroyed successfully');
 
         } catch (error) {
-            console.error('❌ Error during meeting destruction:', error);
         }
     }
 
@@ -1760,25 +1509,20 @@ class LiveKitMeeting {
      * @param {LiveKit.TrackPublication} publication - The track publication
      */
     async forceTrackSubscription(participant, publication) {
-        console.log(`🔄 Force subscribing to ${publication.kind} track from ${participant.identity}`);
 
         try {
             // Use LiveKit SDK to manually subscribe to the track
             await participant.subscribeToTrack(publication);
-            console.log(`✅ Successfully force subscribed to ${publication.kind} track from ${participant.identity}`);
 
             // Wait a bit for track to be available
             setTimeout(() => {
                 if (publication.track) {
-                    console.log(`📹 Force subscription resulted in track, processing...`);
                     this.tracks.handleTrackSubscribed(publication.track, publication, participant);
                 } else {
-                    console.warn(`⚠️ Force subscription completed but no track available for ${participant.identity}`);
                 }
             }, 500);
 
         } catch (error) {
-            console.error(`❌ Failed to force subscribe to track from ${participant.identity}:`, error);
         }
     }
 
@@ -1786,22 +1530,18 @@ class LiveKitMeeting {
      * Ensure all tracks are properly subscribed for late joiners
      */
     async ensureAllTracksSubscribed() {
-        console.log('🔄 Ensuring all tracks are subscribed...');
 
         const room = this.connection.getRoom();
         if (!room) {
-            console.warn('⚠️ Room not available for track subscription check');
             return;
         }
 
         for (const [identity, participant] of room.remoteParticipants) {
-            console.log(`📊 Checking track subscriptions for ${identity}`);
 
             // Check video tracks
             if (participant.videoTracks && participant.videoTracks.size > 0) {
                 participant.videoTracks.forEach(async (publication) => {
                     if (!publication.isSubscribed && !publication.isMuted) {
-                        console.log(`📹 Found unsubscribed video track for ${identity}, force subscribing...`);
                         await this.forceTrackSubscription(participant, publication);
                     }
                 });
@@ -1811,25 +1551,21 @@ class LiveKitMeeting {
             if (participant.audioTracks && participant.audioTracks.size > 0) {
                 participant.audioTracks.forEach(async (publication) => {
                     if (!publication.isSubscribed && !publication.isMuted) {
-                        console.log(`🎤 Found unsubscribed audio track for ${identity}, force subscribing...`);
                         await this.forceTrackSubscription(participant, publication);
                     }
                 });
             }
         }
 
-        console.log('✅ Track subscription check completed');
     }
 
     /**
      * Ensure participant synchronization across all users
      */
     ensureParticipantSync() {
-        console.log('🔄 Ensuring participant synchronization...');
 
         const room = this.connection.getRoom();
         if (!room) {
-            console.warn('⚠️ Room not available for participant sync');
             return;
         }
 
@@ -1837,7 +1573,6 @@ class LiveKitMeeting {
         for (const [identity, participant] of room.remoteParticipants) {
             const participantElement = document.getElementById(`participant-${identity}`);
             if (!participantElement) {
-                console.log(`👤 Missing participant ${identity} from UI, adding...`);
                 this.participants.addParticipant(participant);
             }
 
@@ -1847,7 +1582,6 @@ class LiveKitMeeting {
                     if (publication.track && !publication.isMuted) {
                         const videoElement = document.getElementById(`video-${identity}`);
                         if (!videoElement) {
-                            console.log(`📹 Missing video element for ${identity}, creating...`);
                             this.tracks.handleTrackSubscribed(publication.track, publication, participant);
                         }
                     }
@@ -1859,21 +1593,18 @@ class LiveKitMeeting {
         this.participants.updateParticipantsList();
         this.layout.applyGrid(this.participants.getParticipantCount());
 
-        console.log('✅ Participant synchronization completed');
     }
 
     /**
      * Start periodic track synchronization check
      */
     startTrackSyncCheck() {
-        console.log('⏰ Starting periodic track synchronization check...');
 
         // Check every 5 seconds for missing tracks
         this.trackSyncInterval = setInterval(() => {
             this.checkAndFixMissingTracks();
         }, 5000);
 
-        console.log('✅ Track sync check started');
     }
 
     /**
@@ -1883,7 +1614,6 @@ class LiveKitMeeting {
         if (this.trackSyncInterval) {
             clearInterval(this.trackSyncInterval);
             this.trackSyncInterval = null;
-            console.log('⏹️ Track sync check stopped');
         }
     }
 
@@ -1891,26 +1621,21 @@ class LiveKitMeeting {
      * Force subscribe to all available tracks for better reliability
      */
     async forceSubscribeToAllTracks() {
-        console.log('🔄 Force subscribing to all available tracks...');
 
         const room = this.connection.getRoom();
         if (!room) {
-            console.warn('⚠️ Room not available for force subscription');
             return;
         }
 
         for (const [identity, participant] of room.remoteParticipants) {
-            console.log(`🔄 Checking tracks for ${identity}...`);
 
             // Force subscribe to video tracks
             if (participant.videoTracks && participant.videoTracks.size > 0) {
                 for (const publication of participant.videoTracks.values()) {
                     if (!publication.isSubscribed && !publication.isMuted) {
-                        console.log(`📹 Force subscribing to video track from ${identity}`);
                         try {
                             await publication.setSubscribed(true);
                         } catch (error) {
-                            console.warn(`⚠️ Could not force subscribe to video track from ${identity}:`, error);
                         }
                     }
                 }
@@ -1920,18 +1645,15 @@ class LiveKitMeeting {
             if (participant.audioTracks && participant.audioTracks.size > 0) {
                 for (const publication of participant.audioTracks.values()) {
                     if (!publication.isSubscribed && !publication.isMuted) {
-                        console.log(`🎤 Force subscribing to audio track from ${identity}`);
                         try {
                             await publication.setSubscribed(true);
                         } catch (error) {
-                            console.warn(`⚠️ Could not force subscribe to audio track from ${identity}:`, error);
                         }
                     }
                 }
             }
         }
 
-        console.log('✅ Force subscription completed');
     }
 
     /**
@@ -1947,7 +1669,6 @@ class LiveKitMeeting {
                 participant.videoTracks.forEach(async (publication) => {
                     // If track is unmuted but we don't have video element, fix it
                     if (!publication.isMuted && !document.getElementById(`video-${identity}`)) {
-                        console.log(`🔧 Fixing missing video for ${identity}`);
 
                         if (!publication.track && !publication.isSubscribed) {
                             await this.forceTrackSubscription(participant, publication);
@@ -1962,7 +1683,7 @@ class LiveKitMeeting {
 }
 
 /**
- * Global meeting instance for backward compatibility
+ * Global meeting instance for cross-component access
  */
 let globalMeetingInstance = null;
 
@@ -1973,7 +1694,6 @@ let globalMeetingInstance = null;
  */
 async function initializeLiveKitMeeting(config) {
     if (globalMeetingInstance) {
-        console.log('⚠️ Meeting already exists, destroying previous instance');
         await globalMeetingInstance.destroy();
     }
 

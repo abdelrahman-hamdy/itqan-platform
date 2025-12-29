@@ -30,6 +30,19 @@ class AcademicSessionReportResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    /**
+     * Eager load relationships to prevent N+1 queries
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'session',
+                'student',
+                'academy',
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -83,7 +96,7 @@ class AcademicSessionReportResource extends Resource
                             ->options([
                                 AttendanceStatus::ATTENDED->value => 'حاضر',
                                 AttendanceStatus::LATE->value => 'متأخر',
-                                AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                                AttendanceStatus::LEFT->value => 'غادر مبكراً',
                                 AttendanceStatus::ABSENT->value => 'غائب',
                             ])
                             ->helperText('قم بالتغيير فقط إذا كان حساب الحضور التلقائي غير صحيح - اتركه فارغاً للاحتفاظ بالقيمة الحالية')
@@ -133,14 +146,14 @@ class AcademicSessionReportResource extends Resource
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                         AttendanceStatus::ABSENT->value => 'غائب',
                         default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
                         AttendanceStatus::ATTENDED->value => 'success',
                         AttendanceStatus::LATE->value => 'warning',
-                        AttendanceStatus::LEAVED->value => 'info',
+                        AttendanceStatus::LEFT->value => 'info',
                         AttendanceStatus::ABSENT->value => 'danger',
                         default => 'gray',
                     }),
@@ -170,7 +183,7 @@ class AcademicSessionReportResource extends Resource
                     ->options([
                         AttendanceStatus::ATTENDED->value => 'حاضر',
                         AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEAVED->value => 'غادر مبكراً',
+                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
                         AttendanceStatus::ABSENT->value => 'غائب',
                     ]),
                 Tables\Filters\Filter::make('has_homework_grade')

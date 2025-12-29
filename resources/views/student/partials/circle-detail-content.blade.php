@@ -169,10 +169,8 @@ function openSessionDetail(sessionId) {
         const sessionUrl = '{{ route("student.sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
 
-        console.log('Student Session URL:', finalUrl);
         window.location.href = finalUrl;
     @else
-        console.error('User not authenticated');
     @endif
 }
 
@@ -210,8 +208,8 @@ function enrollInCircle(circleId) {
     .then(data => {
         if (data.success) {
             // Show success toast
-            if (typeof showToast !== 'undefined') {
-                showToast(data.message || 'تم تسجيلك في الحلقة بنجاح', 'success');
+            if (window.toast) {
+                window.toast.show({ type: 'success', message: data.message || 'تم تسجيلك في الحلقة بنجاح' });
             }
 
             // Automatically refresh the current page to show updated enrollment status
@@ -228,7 +226,6 @@ function enrollInCircle(circleId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showConfirmModal({
             title: 'خطأ في الاتصال',
             message: 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى',
@@ -250,8 +247,8 @@ function leaveCircle(circleId) {
     .then(data => {
         if (data.success) {
             // Show success toast
-            if (typeof showToast !== 'undefined') {
-                showToast(data.message || 'تم إلغاء تسجيلك من الحلقة بنجاح', 'success');
+            if (window.toast) {
+                window.toast.show({ type: 'success', message: data.message || 'تم إلغاء تسجيلك من الحلقة بنجاح' });
             }
 
             // Automatically refresh the current page to show updated enrollment status
@@ -268,7 +265,6 @@ function leaveCircle(circleId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showConfirmModal({
             title: 'خطأ في الاتصال',
             message: 'حدث خطأ أثناء إلغاء التسجيل. يرجى المحاولة مرة أخرى',

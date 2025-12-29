@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -26,7 +27,7 @@ class ForgotPasswordController extends Controller
      */
     public function sendResetLink(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email', 'max:255'],
@@ -62,12 +63,22 @@ class ForgotPasswordController extends Controller
             ]
         );
 
-        // Send reset email (you may want to use a notification or mailable)
-        // For now, we'll return the token in development mode
-        // In production, send email with reset link
+        // Send reset email
+        try {
+            $user->notify(new \App\Notifications\ResetPasswordNotification($token, $academy));
 
-        // TODO: Implement email sending
-        // $user->notify(new ResetPasswordNotification($token, $academy));
+            Log::info('Password reset email sent', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'academy_id' => $academy->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send password reset email', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't reveal error to user for security
+        }
 
         return $this->success(
             ['email' => $request->email],
@@ -138,7 +149,7 @@ class ForgotPasswordController extends Controller
      */
     public function resetPassword(Request $request): JsonResponse
     {
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email', 'max:255'],

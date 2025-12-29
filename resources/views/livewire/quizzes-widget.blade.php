@@ -1,10 +1,10 @@
 <div>
     @if($quizzes->isEmpty())
-        <x-student-page.empty-state
+        <x-ui.empty-state
             icon="ri-file-list-3-line"
             title="لا توجد اختبارات متاحة"
             description="لم يتم تعيين أي اختبارات حالياً"
-            iconBgColor="blue"
+            color="blue"
             variant="inline"
         />
     @else

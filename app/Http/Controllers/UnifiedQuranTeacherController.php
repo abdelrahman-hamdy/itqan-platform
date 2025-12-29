@@ -19,7 +19,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Display a listing of Quran teachers (Unified for both public and authenticated)
      */
-    public function index(Request $request, $subdomain)
+    public function index(Request $request, $subdomain): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -156,7 +156,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Display the specified teacher profile (Unified for both public and authenticated)
      */
-    public function show(Request $request, $subdomain, $teacherId)
+    public function show(Request $request, $subdomain, $teacherId): \Illuminate\View\View
     {
         // Get the current academy from subdomain
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -222,7 +222,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Submit trial request (requires authentication)
      */
-    public function submitTrialRequest(Request $request, $subdomain, $teacherId)
+    public function submitTrialRequest(Request $request, $subdomain, $teacherId): \Illuminate\Http\RedirectResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
@@ -322,7 +322,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Show subscription booking form
      */
-    public function showSubscriptionBooking(Request $request, $subdomain, $teacherId, $packageId)
+    public function showSubscriptionBooking(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\View\View
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 
@@ -369,7 +369,7 @@ class UnifiedQuranTeacherController extends Controller
     /**
      * Submit subscription request
      */
-    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId)
+    public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\Http\RedirectResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->first();
 

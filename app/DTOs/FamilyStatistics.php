@@ -1,28 +1,54 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs;
 
 use Illuminate\Support\Collection;
 
 /**
- * Data Transfer Object for Family/Parent Dashboard Statistics
+ * Data Transfer Object for family/parent statistics
  *
- * Aggregates statistics across all children for parent dashboard display.
+ * Used by ParentDashboardService to return aggregated statistics about
+ * a parent's children, subscriptions, sessions, and payments.
+ *
+ * @property-read int $totalChildren Number of children registered
+ * @property-read int $activeSubscriptions Number of active subscriptions across all children
+ * @property-read int $upcomingSessions Number of upcoming sessions scheduled
+ * @property-read float $totalPayments Total amount paid (in SAR)
+ * @property-read float $attendanceRate Overall attendance rate (0-100)
  */
-class FamilyStatistics
+readonly class FamilyStatistics
 {
     public function __construct(
-        public readonly int $totalChildren,
-        public readonly int $activeSubscriptions,
-        public readonly int $upcomingSessions,
-        public readonly int $completedSessions,
-        public readonly int $totalCertificates,
-        public readonly float $averageAttendanceRate,
-        public readonly float $totalPaymentsThisMonth,
-        public readonly float $pendingPayments,
-        public readonly array $childrenStats = [],
-        public readonly array $recentActivities = [],
+        public int $totalChildren,
+        public int $activeSubscriptions,
+        public int $upcomingSessions,
+        public float $totalPayments,
+        public float $attendanceRate,
+        public int $completedSessions = 0,
+        public int $totalCertificates = 0,
+        public array $childrenStats = [],
+        public array $recentActivities = [],
     ) {}
+
+    /**
+     * Create instance from array data
+     */
+    public static function fromArray(array $data): self
+    {
+        return new self(
+            totalChildren: (int) ($data['totalChildren'] ?? $data['total_children'] ?? 0),
+            activeSubscriptions: (int) ($data['activeSubscriptions'] ?? $data['active_subscriptions'] ?? 0),
+            upcomingSessions: (int) ($data['upcomingSessions'] ?? $data['upcoming_sessions'] ?? 0),
+            totalPayments: (float) ($data['totalPayments'] ?? $data['total_payments'] ?? 0),
+            attendanceRate: (float) ($data['attendanceRate'] ?? $data['attendance_rate'] ?? 0),
+            completedSessions: (int) ($data['completedSessions'] ?? $data['completed_sessions'] ?? 0),
+            totalCertificates: (int) ($data['totalCertificates'] ?? $data['total_certificates'] ?? 0),
+            childrenStats: $data['childrenStats'] ?? $data['children_stats'] ?? [],
+            recentActivities: $data['recentActivities'] ?? $data['recent_activities'] ?? [],
+        );
+    }
 
     /**
      * Create from parent data
@@ -39,18 +65,17 @@ class FamilyStatistics
             totalChildren: $children->count(),
             activeSubscriptions: $subscriptionCounts['active'] ?? 0,
             upcomingSessions: $sessionCounts['upcoming'] ?? 0,
+            totalPayments: $paymentData['total'] ?? 0.0,
+            attendanceRate: $sessionCounts['attendance_rate'] ?? 0.0,
             completedSessions: $sessionCounts['completed'] ?? 0,
             totalCertificates: $sessionCounts['certificates'] ?? 0,
-            averageAttendanceRate: $sessionCounts['attendance_rate'] ?? 0.0,
-            totalPaymentsThisMonth: $paymentData['this_month'] ?? 0.0,
-            pendingPayments: $paymentData['pending'] ?? 0.0,
             childrenStats: $childrenStats,
             recentActivities: $recentActivities,
         );
     }
 
     /**
-     * Create empty statistics
+     * Create empty statistics (for new parents)
      */
     public static function empty(): self
     {
@@ -58,48 +83,13 @@ class FamilyStatistics
             totalChildren: 0,
             activeSubscriptions: 0,
             upcomingSessions: 0,
-            completedSessions: 0,
-            totalCertificates: 0,
-            averageAttendanceRate: 0.0,
-            totalPaymentsThisMonth: 0.0,
-            pendingPayments: 0.0,
+            totalPayments: 0.0,
+            attendanceRate: 0.0,
         );
     }
 
     /**
-     * Check if family has active content
-     */
-    public function hasActiveContent(): bool
-    {
-        return $this->activeSubscriptions > 0 || $this->upcomingSessions > 0;
-    }
-
-    /**
-     * Get formatted attendance rate
-     */
-    public function getFormattedAttendanceRate(): string
-    {
-        return number_format($this->averageAttendanceRate, 1) . '%';
-    }
-
-    /**
-     * Get formatted payments
-     */
-    public function getFormattedPaymentsThisMonth(): string
-    {
-        return number_format($this->totalPaymentsThisMonth, 2) . ' ر.س';
-    }
-
-    /**
-     * Get formatted pending payments
-     */
-    public function getFormattedPendingPayments(): string
-    {
-        return number_format($this->pendingPayments, 2) . ' ر.س';
-    }
-
-    /**
-     * Convert to array for API responses
+     * Convert to array representation
      */
     public function toArray(): array
     {
@@ -107,18 +97,62 @@ class FamilyStatistics
             'total_children' => $this->totalChildren,
             'active_subscriptions' => $this->activeSubscriptions,
             'upcoming_sessions' => $this->upcomingSessions,
+            'total_payments' => $this->totalPayments,
+            'attendance_rate' => $this->attendanceRate,
             'completed_sessions' => $this->completedSessions,
             'total_certificates' => $this->totalCertificates,
-            'average_attendance_rate' => $this->averageAttendanceRate,
-            'average_attendance_rate_formatted' => $this->getFormattedAttendanceRate(),
-            'total_payments_this_month' => $this->totalPaymentsThisMonth,
-            'total_payments_this_month_formatted' => $this->getFormattedPaymentsThisMonth(),
-            'pending_payments' => $this->pendingPayments,
-            'pending_payments_formatted' => $this->getFormattedPendingPayments(),
-            'has_active_content' => $this->hasActiveContent(),
             'children_stats' => $this->childrenStats,
             'recent_activities' => $this->recentActivities,
         ];
+    }
+
+    /**
+     * Get formatted payment amount with currency
+     */
+    public function getFormattedPayments(): string
+    {
+        return number_format($this->totalPayments, 2) . ' SAR';
+    }
+
+    /**
+     * Get formatted attendance rate as percentage
+     */
+    public function getFormattedAttendanceRate(): string
+    {
+        return number_format($this->attendanceRate, 1) . '%';
+    }
+
+    /**
+     * Check if family has any active engagement
+     */
+    public function hasActiveEngagement(): bool
+    {
+        return $this->activeSubscriptions > 0 || $this->upcomingSessions > 0;
+    }
+
+    /**
+     * Get average subscriptions per child
+     */
+    public function getAverageSubscriptionsPerChild(): float
+    {
+        if ($this->totalChildren === 0) {
+            return 0.0;
+        }
+
+        return round($this->activeSubscriptions / $this->totalChildren, 2);
+    }
+
+    /**
+     * Get attendance status based on rate
+     */
+    public function getAttendanceStatus(): string
+    {
+        return match (true) {
+            $this->attendanceRate >= 90 => 'excellent',
+            $this->attendanceRate >= 75 => 'good',
+            $this->attendanceRate >= 60 => 'fair',
+            default => 'needs_improvement',
+        };
     }
 
     /**

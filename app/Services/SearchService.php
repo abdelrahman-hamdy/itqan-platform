@@ -15,8 +15,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Contracts\SearchServiceInterface;
 
-class SearchService
+class SearchService implements SearchServiceInterface
 {
     /**
      * Safely generate a route, returning '#' if route doesn't exist (useful for tests)

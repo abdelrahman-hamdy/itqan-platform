@@ -2,6 +2,21 @@
 
 namespace App\Enums;
 
+/**
+ * Certificate Type Enum
+ *
+ * Defines the types of certificates that can be issued.
+ * Each type corresponds to a different learning program.
+ *
+ * Types:
+ * - RECORDED_COURSE: Completion of pre-recorded course
+ * - INTERACTIVE_COURSE: Completion of live interactive course
+ * - QURAN_SUBSCRIPTION: Quran memorization/recitation achievement
+ * - ACADEMIC_SUBSCRIPTION: Academic tutoring achievement
+ *
+ * @see \App\Models\Certificate
+ * @see \App\Services\CertificateService
+ */
 enum CertificateType: string
 {
     case RECORDED_COURSE = 'recorded_course';
@@ -10,16 +25,11 @@ enum CertificateType: string
     case ACADEMIC_SUBSCRIPTION = 'academic_subscription';
 
     /**
-     * Get Arabic label for the certificate type
+     * Get localized label for the certificate type
      */
     public function label(): string
     {
-        return match($this) {
-            self::RECORDED_COURSE => 'دورة مسجلة',
-            self::INTERACTIVE_COURSE => 'دورة تفاعلية',
-            self::QURAN_SUBSCRIPTION => 'حلقة قرآن',
-            self::ACADEMIC_SUBSCRIPTION => 'حصص أكاديمية',
-        };
+        return __('enums.certificate_type.' . $this->value);
     }
 
     /**

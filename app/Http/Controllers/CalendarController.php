@@ -2,6 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Requests\CheckCalendarConflictsRequest;
+use App\Http\Requests\ExportCalendarRequest;
+use App\Http\Requests\GetAvailableSlotsRequest;
+use App\Http\Requests\GetCalendarEventsRequest;
+use App\Http\Requests\GetCalendarStatsRequest;
+use App\Http\Requests\GetWeeklyAvailabilityRequest;
 use App\Services\CalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +20,8 @@ use App\Enums\SessionStatus;
 
 class CalendarController extends Controller
 {
+    use ApiResponses;
+
     private CalendarService $calendarService;
 
     public function __construct(CalendarService $calendarService)
@@ -51,17 +60,9 @@ class CalendarController extends Controller
     /**
      * Get calendar events via API
      */
-    public function getEvents(Request $request): JsonResponse
+    public function getEvents(GetCalendarEventsRequest $request): JsonResponse
     {
         $user = Auth::user();
-        
-        $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date',
-            'types' => 'array',
-            'status' => 'array',
-            'search' => 'string|max:255',
-        ]);
 
         $startDate = Carbon::parse($request->start);
         $endDate = Carbon::parse($request->end);
@@ -74,8 +75,7 @@ class CalendarController extends Controller
 
         $events = $this->calendarService->getUserCalendar($user, $startDate, $endDate, $filters);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'events' => $events,
             'count' => $events->count(),
         ]);
@@ -84,16 +84,9 @@ class CalendarController extends Controller
     /**
      * Get available time slots for scheduling
      */
-    public function getAvailableSlots(Request $request): JsonResponse
+    public function getAvailableSlots(GetAvailableSlotsRequest $request): JsonResponse
     {
         $user = Auth::user();
-        
-        $request->validate([
-            'date' => 'required|date',
-            'duration' => 'integer|min:15|max:240',
-            'start_time' => 'string|date_format:H:i',
-            'end_time' => 'string|date_format:H:i',
-        ]);
 
         $date = Carbon::parse($request->date);
         $duration = $request->duration ?? 60;
@@ -104,8 +97,7 @@ class CalendarController extends Controller
 
         $slots = $this->calendarService->getAvailableSlots($user, $date, $duration, $workingHours);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'date' => $date->toDateString(),
             'slots' => $slots,
             'count' => $slots->count(),
@@ -115,16 +107,9 @@ class CalendarController extends Controller
     /**
      * Check for conflicts when scheduling
      */
-    public function checkConflicts(Request $request): JsonResponse
+    public function checkConflicts(CheckCalendarConflictsRequest $request): JsonResponse
     {
         $user = Auth::user();
-        
-        $request->validate([
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
-            'exclude_type' => 'string',
-            'exclude_id' => 'integer',
-        ]);
 
         $startTime = Carbon::parse($request->start_time);
         $endTime = Carbon::parse($request->end_time);
@@ -137,8 +122,7 @@ class CalendarController extends Controller
             $request->exclude_id
         );
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'has_conflicts' => $conflicts->isNotEmpty(),
             'conflicts' => $conflicts,
             'count' => $conflicts->count(),
@@ -148,17 +132,9 @@ class CalendarController extends Controller
     /**
      * Get teacher weekly availability (for teachers only)
      */
-    public function getWeeklyAvailability(Request $request): JsonResponse
+    public function getWeeklyAvailability(GetWeeklyAvailabilityRequest $request): JsonResponse
     {
         $user = Auth::user();
-        
-        if (!$user->isQuranTeacher() && !$user->isAcademicTeacher()) {
-            return response()->json(['error' => 'غير مسموح'], 403);
-        }
-
-        $request->validate([
-            'week_start' => 'date',
-        ]);
 
         $weekStart = $request->week_start ? 
             Carbon::parse($request->week_start)->startOfWeek() : 
@@ -166,8 +142,7 @@ class CalendarController extends Controller
 
         $availability = $this->calendarService->getTeacherWeeklyAvailability($user, $weekStart);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'week_start' => $weekStart->toDateString(),
             'availability' => $availability,
         ]);
@@ -176,13 +151,9 @@ class CalendarController extends Controller
     /**
      * Get calendar statistics
      */
-    public function getStats(Request $request): JsonResponse
+    public function getStats(GetCalendarStatsRequest $request): JsonResponse
     {
         $user = Auth::user();
-        
-        $request->validate([
-            'month' => 'date_format:Y-m',
-        ]);
 
         $month = $request->month ? 
             Carbon::createFromFormat('Y-m', $request->month) : 
@@ -190,8 +161,7 @@ class CalendarController extends Controller
 
         $stats = $this->calendarService->getCalendarStats($user, $month);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'month' => $month->format('Y-m'),
             'stats' => $stats,
         ]);
@@ -200,15 +170,9 @@ class CalendarController extends Controller
     /**
      * Export calendar events
      */
-    public function export(Request $request): Response
+    public function export(ExportCalendarRequest $request): Response
     {
         $user = Auth::user();
-        
-        $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date|after_or_equal:start',
-            'format' => 'in:ics,csv',
-        ]);
 
         $startDate = Carbon::parse($request->start);
         $endDate = Carbon::parse($request->end);
@@ -224,7 +188,7 @@ class CalendarController extends Controller
     }
 
     /**
-     * Helper methods
+     * Helper methods (private methods already have return types)
      */
     private function getStartDate(Carbon $date, string $view): Carbon
     {

@@ -26,7 +26,7 @@ class AcademicSessionReportFactory extends Factory
             'student_id' => User::factory()->student(),
             'teacher_id' => User::factory()->academicTeacher(), // teacher_id references users, not profiles
             'academy_id' => Academy::factory(),
-            'attendance_status' => fake()->randomElement(['attended', 'absent', 'late', 'leaved']),
+            'attendance_status' => fake()->randomElement(['attended', 'absent', 'late', 'left']),
             'is_calculated' => true,
             'evaluated_at' => now(),
         ];

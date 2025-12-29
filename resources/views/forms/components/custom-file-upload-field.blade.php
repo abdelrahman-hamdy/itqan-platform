@@ -56,7 +56,7 @@
                 Array.from(files).forEach(file => {
                     // Validate file size
                     if (file.size > this.maxSize * 1024) {
-                        alert(`File ${file.name} is too large. Maximum size is ${this.maxSize}KB`);
+                        window.toast?.error(`File ${file.name} is too large. Maximum size is ${this.maxSize}KB`);
                         return;
                     }
 
@@ -65,7 +65,7 @@
                         this.acceptedTypes.some(type => file.type.includes(type.split('/')[1]) || file.type === type);
                     
                     if (!isValidType) {
-                        alert(`File ${file.name} is not an accepted file type`);
+                        window.toast?.error(`File ${file.name} is not an accepted file type`);
                         return;
                     }
 
@@ -102,22 +102,21 @@
                                 // Clear the file input
                                 this.$refs.fileInput.value = '';
                                 
-                                console.log('File uploaded successfully:', response.path);
                             } else {
-                                alert('Upload failed: ' + response.message);
+                                window.toast?.error('Upload failed: ' + response.message);
                             }
                         } catch (e) {
-                            alert('Upload failed: Invalid response');
+                            window.toast?.error('Upload failed: Invalid response');
                         }
                     } else {
-                        alert('Upload failed: Server error');
+                        window.toast?.error('Upload failed: Server error');
                     }
                     this.isUploading = false;
                     this.uploadProgress = 0;
                 });
 
                 xhr.addEventListener('error', () => {
-                    alert('Upload failed: Network error');
+                    window.toast?.error('Upload failed: Network error');
                     this.isUploading = false;
                     this.uploadProgress = 0;
                 });

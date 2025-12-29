@@ -250,13 +250,7 @@ class AcademicSubscription extends BaseSubscription
         return $this->hasMany(AcademicSession::class, 'academic_subscription_id');
     }
 
-    /**
-     * Get payment records for this subscription
-     */
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class, 'subscription_id');
-    }
+    // Note: payments() relationship is inherited from BaseSubscription using morphMany
 
     /**
      * Get quiz assignments for this subscription
@@ -663,8 +657,8 @@ class AcademicSubscription extends BaseSubscription
 
         // Auto-generate subscription code and calculate amounts on creation
         static::creating(function ($subscription) {
-            // Sync legacy date fields with standardized fields
-            // Priority: starts_at/ends_at are the source of truth
+            // Sync date fields between old (start_date/end_date) and new (starts_at/ends_at) columns
+            // Both columns must be populated for database constraints
             if ($subscription->start_date && !$subscription->starts_at) {
                 $subscription->starts_at = $subscription->start_date;
             } elseif ($subscription->starts_at && !$subscription->start_date) {

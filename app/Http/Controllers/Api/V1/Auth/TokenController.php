@@ -45,7 +45,7 @@ class TokenController extends Controller
 
         // Load relationships for response
         $user->load(['academy', 'studentProfile', 'parentProfile', 'quranTeacherProfile', 'academicTeacherProfile']);
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         return $this->success([
             'user' => new UserResource($user),
@@ -69,7 +69,7 @@ class TokenController extends Controller
         $token = $user->currentAccessToken();
 
         $user->load(['academy', 'studentProfile', 'parentProfile', 'quranTeacherProfile', 'academicTeacherProfile']);
-        $academy = $request->attributes->get('academy') ?? app('current_academy');
+        $academy = $request->attributes->get('academy') ?? current_academy();
 
         return $this->success([
             'valid' => true,

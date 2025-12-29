@@ -6,9 +6,16 @@ use App\Http\Controllers\Api\V1\ParentApi\DashboardController;
 use App\Http\Controllers\Api\V1\ParentApi\PaymentController;
 use App\Http\Controllers\Api\V1\ParentApi\ProfileController;
 use App\Http\Controllers\Api\V1\ParentApi\QuizController;
-use App\Http\Controllers\Api\V1\ParentApi\ReportController;
-use App\Http\Controllers\Api\V1\ParentApi\SessionController;
 use App\Http\Controllers\Api\V1\ParentApi\SubscriptionController;
+// New refactored controllers
+use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentUnifiedSessionController;
+use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentQuranSessionController;
+use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentAcademicSessionController;
+use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentInteractiveSessionController;
+use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentUnifiedReportController;
+use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentQuranReportController;
+use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentAcademicReportController;
+use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentInteractiveReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -75,39 +82,140 @@ Route::middleware('api.is.parent')->group(function () {
             ->name('api.v1.parent.subscriptions.show');
     });
 
-    // Reports
+    // Reports - Refactored with specialized controllers
     Route::prefix('reports')->group(function () {
-        Route::get('/progress', [ReportController::class, 'progress'])
+        // Unified reports (all session types)
+        Route::get('/progress', [ParentUnifiedReportController::class, 'progress'])
             ->name('api.v1.parent.reports.progress');
 
-        Route::get('/progress/{childId}', [ReportController::class, 'progress'])
+        Route::get('/progress/{childId}', [ParentUnifiedReportController::class, 'progress'])
             ->name('api.v1.parent.reports.child-progress');
 
-        Route::get('/attendance', [ReportController::class, 'attendance'])
+        Route::get('/attendance', [ParentUnifiedReportController::class, 'attendance'])
             ->name('api.v1.parent.reports.attendance');
 
-        Route::get('/attendance/{childId}', [ReportController::class, 'attendance'])
+        Route::get('/attendance/{childId}', [ParentUnifiedReportController::class, 'attendance'])
             ->name('api.v1.parent.reports.child-attendance');
 
-        Route::get('/subscription/{type}/{id}', [ReportController::class, 'subscription'])
-            ->where('type', 'quran|academic')
+        // Quran-specific reports
+        Route::prefix('quran')->group(function () {
+            Route::get('/progress', [ParentQuranReportController::class, 'progress'])
+                ->name('api.v1.parent.reports.quran.progress');
+
+            Route::get('/progress/{childId}', [ParentQuranReportController::class, 'progress'])
+                ->name('api.v1.parent.reports.quran.child-progress');
+
+            Route::get('/attendance', [ParentQuranReportController::class, 'attendance'])
+                ->name('api.v1.parent.reports.quran.attendance');
+
+            Route::get('/attendance/{childId}', [ParentQuranReportController::class, 'attendance'])
+                ->name('api.v1.parent.reports.quran.child-attendance');
+
+            Route::get('/subscription/{id}', [ParentQuranReportController::class, 'subscription'])
+                ->name('api.v1.parent.reports.quran.subscription');
+        });
+
+        // Academic-specific reports
+        Route::prefix('academic')->group(function () {
+            Route::get('/progress', [ParentAcademicReportController::class, 'progress'])
+                ->name('api.v1.parent.reports.academic.progress');
+
+            Route::get('/progress/{childId}', [ParentAcademicReportController::class, 'progress'])
+                ->name('api.v1.parent.reports.academic.child-progress');
+
+            Route::get('/attendance', [ParentAcademicReportController::class, 'attendance'])
+                ->name('api.v1.parent.reports.academic.attendance');
+
+            Route::get('/attendance/{childId}', [ParentAcademicReportController::class, 'attendance'])
+                ->name('api.v1.parent.reports.academic.child-attendance');
+
+            Route::get('/subscription/{id}', [ParentAcademicReportController::class, 'subscription'])
+                ->name('api.v1.parent.reports.academic.subscription');
+        });
+
+        // Interactive course reports
+        Route::prefix('interactive')->group(function () {
+            Route::get('/progress', [ParentInteractiveReportController::class, 'progress'])
+                ->name('api.v1.parent.reports.interactive.progress');
+
+            Route::get('/progress/{childId}', [ParentInteractiveReportController::class, 'progress'])
+                ->name('api.v1.parent.reports.interactive.child-progress');
+
+            Route::get('/subscription/{id}', [ParentInteractiveReportController::class, 'subscription'])
+                ->name('api.v1.parent.reports.interactive.subscription');
+        });
+
+        // Legacy routes for backward compatibility (deprecated)
+        Route::get('/subscription/{type}/{id}', function ($type, $id) {
+            return match ($type) {
+                'quran' => app(ParentQuranReportController::class)->subscription(request(), $id),
+                'academic' => app(ParentAcademicReportController::class)->subscription(request(), $id),
+                default => response()->json(['error' => 'Invalid subscription type'], 400),
+            };
+        })->where('type', 'quran|academic')
             ->name('api.v1.parent.reports.subscription');
     });
 
-    // Sessions
+    // Sessions - Refactored with specialized controllers
     Route::prefix('sessions')->group(function () {
-        Route::get('/', [SessionController::class, 'index'])
+        // Unified sessions (all types)
+        Route::get('/', [ParentUnifiedSessionController::class, 'index'])
             ->name('api.v1.parent.sessions.index');
 
-        Route::get('/today', [SessionController::class, 'today'])
+        Route::get('/today', [ParentUnifiedSessionController::class, 'today'])
             ->name('api.v1.parent.sessions.today');
 
-        Route::get('/upcoming', [SessionController::class, 'upcoming'])
+        Route::get('/upcoming', [ParentUnifiedSessionController::class, 'upcoming'])
             ->name('api.v1.parent.sessions.upcoming');
 
-        Route::get('/{type}/{id}', [SessionController::class, 'show'])
+        Route::get('/{type}/{id}', [ParentUnifiedSessionController::class, 'show'])
             ->where('type', 'quran|academic|interactive')
             ->name('api.v1.parent.sessions.show');
+
+        // Quran sessions
+        Route::prefix('quran')->group(function () {
+            Route::get('/', [ParentQuranSessionController::class, 'index'])
+                ->name('api.v1.parent.sessions.quran.index');
+
+            Route::get('/today', [ParentQuranSessionController::class, 'today'])
+                ->name('api.v1.parent.sessions.quran.today');
+
+            Route::get('/upcoming', [ParentQuranSessionController::class, 'upcoming'])
+                ->name('api.v1.parent.sessions.quran.upcoming');
+
+            Route::get('/{id}', [ParentQuranSessionController::class, 'show'])
+                ->name('api.v1.parent.sessions.quran.show');
+        });
+
+        // Academic sessions
+        Route::prefix('academic')->group(function () {
+            Route::get('/', [ParentAcademicSessionController::class, 'index'])
+                ->name('api.v1.parent.sessions.academic.index');
+
+            Route::get('/today', [ParentAcademicSessionController::class, 'today'])
+                ->name('api.v1.parent.sessions.academic.today');
+
+            Route::get('/upcoming', [ParentAcademicSessionController::class, 'upcoming'])
+                ->name('api.v1.parent.sessions.academic.upcoming');
+
+            Route::get('/{id}', [ParentAcademicSessionController::class, 'show'])
+                ->name('api.v1.parent.sessions.academic.show');
+        });
+
+        // Interactive sessions
+        Route::prefix('interactive')->group(function () {
+            Route::get('/', [ParentInteractiveSessionController::class, 'index'])
+                ->name('api.v1.parent.sessions.interactive.index');
+
+            Route::get('/today', [ParentInteractiveSessionController::class, 'today'])
+                ->name('api.v1.parent.sessions.interactive.today');
+
+            Route::get('/upcoming', [ParentInteractiveSessionController::class, 'upcoming'])
+                ->name('api.v1.parent.sessions.interactive.upcoming');
+
+            Route::get('/{id}', [ParentInteractiveSessionController::class, 'show'])
+                ->name('api.v1.parent.sessions.interactive.show');
+        });
     });
 
     // Quizzes

@@ -9,8 +9,6 @@ namespace App\Enums;
  * - QuranSubscription
  * - AcademicSubscription
  * - CourseSubscription
- *
- * Note: No PAUSED or SUSPENDED status per user requirement (no pause feature)
  */
 enum SubscriptionStatus: string
 {
@@ -23,19 +21,11 @@ enum SubscriptionStatus: string
     case REFUNDED = 'refunded';         // Payment was refunded
 
     /**
-     * Get the Arabic label for the status
+     * Get localized label for the status
      */
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => 'في انتظار الدفع',
-            self::ACTIVE => 'نشط',
-            self::PAUSED => 'موقوف مؤقتاً',
-            self::EXPIRED => 'منتهي',
-            self::CANCELLED => 'ملغي',
-            self::COMPLETED => 'مكتمل',
-            self::REFUNDED => 'مسترد',
-        };
+        return __('enums.subscription_status.' . $this->value);
     }
 
     /**

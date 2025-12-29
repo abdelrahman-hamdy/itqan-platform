@@ -64,11 +64,17 @@ abstract class BaseHomeworkSubmissionResource extends Resource
     }
 
     /**
-     * Filter query by submitable types.
+     * Filter query by submitable types and eager load relationships to prevent N+1 queries.
      */
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->with([
+                'student',
+                'submitable',
+                'grader',
+                'academy',
+            ]);
 
         $types = static::getSubmitableTypes();
 

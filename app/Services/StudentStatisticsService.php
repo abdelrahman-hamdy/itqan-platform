@@ -17,7 +17,9 @@ use App\Models\QuranSubscription;
 use App\Models\QuranTrialRequest;
 use App\Models\RecordedCourse;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use App\Contracts\StudentStatisticsServiceInterface;
 
 /**
  * Service for calculating student statistics.
@@ -25,7 +27,7 @@ use Illuminate\Support\Facades\Log;
  * Extracted from StudentProfileController::calculateStudentStats() (~292 lines).
  * Provides comprehensive statistics for the student dashboard.
  */
-class StudentStatisticsService
+class StudentStatisticsService implements StudentStatisticsServiceInterface
 {
     /**
      * Calculate all statistics for a student.
@@ -35,62 +37,66 @@ class StudentStatisticsService
      */
     public function calculate(User $user): array
     {
-        $academy = $user->academy;
-        $studentProfile = $user->studentProfileUnscoped;
-        $studentId = $studentProfile?->id;
+        $cacheKey = "student:stats:{$user->id}";
 
-        // Get next session info
-        $nextSessionData = $this->getNextSessionInfo($user, $academy, $studentId);
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user) {
+            $academy = $user->academy;
+            $studentProfile = $user->studentProfileUnscoped;
+            $studentId = $studentProfile?->id;
 
-        // Calculate homework and quizzes
-        $pendingHomework = $this->countPendingHomework($user, $academy);
-        $pendingQuizzes = $this->countPendingQuizzes($studentId);
+            // Get next session info
+            $nextSessionData = $this->getNextSessionInfo($user, $academy, $studentId);
 
-        // Calculate attendance
-        $attendanceRate = $this->calculateAttendanceRate($user, $academy);
+            // Calculate homework and quizzes
+            $pendingHomework = $this->countPendingHomework($user, $academy);
+            $pendingQuizzes = $this->countPendingQuizzes($studentId);
 
-        // Calculate today's learning time
-        $todayLearning = $this->calculateTodayLearning($user, $academy, $studentId);
+            // Calculate attendance
+            $attendanceRate = $this->calculateAttendanceRate($user, $academy);
 
-        // Count completed sessions
-        $completedSessions = $this->countCompletedSessions($user, $academy, $studentId);
+            // Calculate today's learning time
+            $todayLearning = $this->calculateTodayLearning($user, $academy, $studentId);
 
-        // Count active courses
-        $activeCourses = $this->countActiveCourses($user, $academy, $studentId);
+            // Count completed sessions
+            $completedSessions = $this->countCompletedSessions($user, $academy, $studentId);
 
-        // Calculate Quran progress
-        $quranStats = $this->calculateQuranProgress($user, $academy);
+            // Count active courses
+            $activeCourses = $this->countActiveCourses($user, $academy, $studentId);
 
-        return [
-            // Session info
-            'nextSessionText' => $nextSessionData['text'],
-            'nextSessionIcon' => $nextSessionData['icon'],
-            'nextSessionDate' => $nextSessionData['date'],
+            // Calculate Quran progress
+            $quranStats = $this->calculateQuranProgress($user, $academy);
 
-            // Tasks
-            'pendingHomework' => $pendingHomework,
-            'pendingQuizzes' => $pendingQuizzes,
+            return [
+                // Session info
+                'nextSessionText' => $nextSessionData['text'],
+                'nextSessionIcon' => $nextSessionData['icon'],
+                'nextSessionDate' => $nextSessionData['date'],
 
-            // Time tracking
-            'todayLearningHours' => $todayLearning['hours'],
-            'todayLearningMinutes' => $todayLearning['minutes'],
+                // Tasks
+                'pendingHomework' => $pendingHomework,
+                'pendingQuizzes' => $pendingQuizzes,
 
-            // Performance
-            'attendanceRate' => $attendanceRate,
-            'totalCompletedSessions' => $completedSessions['total'],
+                // Time tracking
+                'todayLearningHours' => $todayLearning['hours'],
+                'todayLearningMinutes' => $todayLearning['minutes'],
 
-            // Courses
-            'activeCourses' => $activeCourses['total'],
-            'activeInteractiveCourses' => $activeCourses['interactive'],
-            'activeRecordedCourses' => $activeCourses['recorded'],
+                // Performance
+                'attendanceRate' => $attendanceRate,
+                'totalCompletedSessions' => $completedSessions['total'],
 
-            // Quran
-            'quranProgress' => round($quranStats['progress'], 1),
-            'quranPages' => $quranStats['pages'],
-            'quranTrialRequestsCount' => $quranStats['trialRequests'],
-            'activeQuranSubscriptions' => $quranStats['activeSubscriptions'],
-            'quranCirclesCount' => $quranStats['circlesCount'],
-        ];
+                // Courses
+                'activeCourses' => $activeCourses['total'],
+                'activeInteractiveCourses' => $activeCourses['interactive'],
+                'activeRecordedCourses' => $activeCourses['recorded'],
+
+                // Quran
+                'quranProgress' => round($quranStats['progress'], 1),
+                'quranPages' => $quranStats['pages'],
+                'quranTrialRequestsCount' => $quranStats['trialRequests'],
+                'activeQuranSubscriptions' => $quranStats['activeSubscriptions'],
+                'quranCirclesCount' => $quranStats['circlesCount'],
+            ];
+        });
     }
 
     /**
@@ -268,36 +274,40 @@ class StudentStatisticsService
      */
     protected function calculateAttendanceRate(User $user, $academy): int
     {
-        $presentStatuses = [
-            AttendanceStatus::ATTENDED->value,
-            AttendanceStatus::LATE->value,
-            AttendanceStatus::LEAVED->value,
-        ];
+        $cacheKey = "student:attendance_rate:{$user->id}:{$academy->id}";
 
-        // Quran attendance
-        $quranTotal = QuranSessionAttendance::where('student_id', $user->id)
-            ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
-            ->count();
+        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($user, $academy) {
+            $presentStatuses = [
+                AttendanceStatus::ATTENDED->value,
+                AttendanceStatus::LATE->value,
+                AttendanceStatus::LEFT->value,
+            ];
 
-        $quranPresent = QuranSessionAttendance::where('student_id', $user->id)
-            ->whereIn('attendance_status', $presentStatuses)
-            ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
-            ->count();
+            // Quran attendance
+            $quranTotal = QuranSessionAttendance::where('student_id', $user->id)
+                ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
+                ->count();
 
-        // Academic attendance
-        $academicTotal = AcademicSessionAttendance::where('student_id', $user->id)
-            ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
-            ->count();
+            $quranPresent = QuranSessionAttendance::where('student_id', $user->id)
+                ->whereIn('attendance_status', $presentStatuses)
+                ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
+                ->count();
 
-        $academicPresent = AcademicSessionAttendance::where('student_id', $user->id)
-            ->whereIn('attendance_status', $presentStatuses)
-            ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
-            ->count();
+            // Academic attendance
+            $academicTotal = AcademicSessionAttendance::where('student_id', $user->id)
+                ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
+                ->count();
 
-        $total = $quranTotal + $academicTotal;
-        $present = $quranPresent + $academicPresent;
+            $academicPresent = AcademicSessionAttendance::where('student_id', $user->id)
+                ->whereIn('attendance_status', $presentStatuses)
+                ->whereHas('session', fn ($q) => $q->where('academy_id', $academy->id))
+                ->count();
 
-        return $total > 0 ? (int) round(($present / $total) * 100) : 0;
+            $total = $quranTotal + $academicTotal;
+            $present = $quranPresent + $academicPresent;
+
+            return $total > 0 ? (int) round(($present / $total) * 100) : 0;
+        });
     }
 
     /**
@@ -412,31 +422,45 @@ class StudentStatisticsService
      */
     protected function calculateQuranProgress(User $user, $academy): array
     {
-        $subscriptions = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->get();
+        $cacheKey = "student:quran_progress:{$user->id}:{$academy->id}";
 
-        $trialRequests = QuranTrialRequest::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->count();
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $academy) {
+            $subscriptions = QuranSubscription::where('student_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->get();
 
-        $activeSubscriptions = QuranSubscription::where('student_id', $user->id)
-            ->where('academy_id', $academy->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
+            $trialRequests = QuranTrialRequest::where('student_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->count();
 
-        $circlesCount = QuranCircle::where('academy_id', $academy->id)
-            ->whereHas('students', function ($query) use ($user) {
-                $query->where('users.id', $user->id);
-            })
-            ->count();
+            $activeSubscriptions = QuranSubscription::where('student_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->count();
 
-        return [
-            'progress' => $subscriptions->avg('progress_percentage') ?? 0,
-            'pages' => $subscriptions->sum('verses_memorized') ?? 0,
-            'trialRequests' => $trialRequests,
-            'activeSubscriptions' => $activeSubscriptions,
-            'circlesCount' => $circlesCount,
-        ];
+            $circlesCount = QuranCircle::where('academy_id', $academy->id)
+                ->whereHas('students', function ($query) use ($user) {
+                    $query->where('users.id', $user->id);
+                })
+                ->count();
+
+            return [
+                'progress' => $subscriptions->avg('progress_percentage') ?? 0,
+                'pages' => $subscriptions->sum('verses_memorized') ?? 0,
+                'trialRequests' => $trialRequests,
+                'activeSubscriptions' => $activeSubscriptions,
+                'circlesCount' => $circlesCount,
+            ];
+        });
+    }
+
+    /**
+     * Clear all statistics caches for a student.
+     */
+    public function clearStudentStatsCache(int $userId, int $academyId): void
+    {
+        Cache::forget("student:stats:{$userId}");
+        Cache::forget("student:attendance_rate:{$userId}:{$academyId}");
+        Cache::forget("student:quran_progress:{$userId}:{$academyId}");
     }
 }

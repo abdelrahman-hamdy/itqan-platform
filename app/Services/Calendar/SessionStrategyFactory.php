@@ -9,10 +9,15 @@ use App\Enums\SessionStatus;
  * Factory for creating session strategy instances
  *
  * Responsible for instantiating the appropriate strategy based on teacher type.
- * Uses Laravel's service container for dependency injection.
+ * Uses constructor injection for dependency management.
  */
 class SessionStrategyFactory
 {
+    public function __construct(
+        private QuranSessionStrategy $quranSessionStrategy,
+        private AcademicSessionStrategy $academicSessionStrategy,
+    ) {}
+
     /**
      * Create a session strategy instance for the given teacher type
      *
@@ -20,11 +25,11 @@ class SessionStrategyFactory
      * @return SessionStrategyInterface Strategy instance
      * @throws InvalidArgumentException If teacher type is unknown
      */
-    public static function make(string $teacherType): SessionStrategyInterface
+    public function make(string $teacherType): SessionStrategyInterface
     {
         return match ($teacherType) {
-            'quran_teacher' => app(QuranSessionStrategy::class),
-            'academic_teacher' => app(AcademicSessionStrategy::class),
+            'quran_teacher' => $this->quranSessionStrategy,
+            'academic_teacher' => $this->academicSessionStrategy,
             default => throw new InvalidArgumentException("Unknown teacher type: {$teacherType}"),
         };
     }

@@ -16,7 +16,7 @@
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-4 md:space-y-6">
             <!-- Circle Header -->
-            <x-circle.individual-header :circle="$circle" view-type="teacher" />
+            <x-circle.circle-header :circle="$circle" type="individual" view-type="teacher" />
 
             <!-- Tabs Component -->
             <x-tabs id="individual-circle-tabs" default-tab="sessions" variant="default" color="primary">
@@ -166,10 +166,8 @@ function openSessionDetail(sessionId) {
         const sessionUrl = '{{ route("teacher.sessions.show", ["subdomain" => request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy", "sessionId" => "SESSION_ID_PLACEHOLDER"]) }}';
         const finalUrl = sessionUrl.replace('SESSION_ID_PLACEHOLDER', sessionId);
         
-        console.log('Teacher Session URL:', finalUrl);
         window.location.href = finalUrl;
     @else
-        console.error('User not authenticated');
     @endif
 }
 </script>
