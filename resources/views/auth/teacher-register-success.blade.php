@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('auth.register.teacher.success.title') }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; }
-    </style>
+
+    <!-- Vite Assets (Compiled CSS & JS) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- RemixIcon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -17,7 +18,7 @@
             <!-- Success Icon and Title -->
             <div class="text-center">
                 <div class="mx-auto h-20 w-20 bg-green-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-check-circle text-green-600 text-4xl"></i>
+                    <i class="ri-checkbox-circle-fill text-green-600 text-4xl"></i>
                 </div>
                 <h2 class="mt-6 text-3xl font-bold text-gray-900">
                     {{ __('auth.register.teacher.success.title') }}
@@ -31,7 +32,7 @@
             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <div class="text-center">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-info-circle {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }} text-blue-600"></i>
+                        <i class="ri-information-fill {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }} text-blue-600"></i>
                         {{ __('auth.register.teacher.success.what_next_title') }}
                     </h3>
 
@@ -79,7 +80,7 @@
             <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                        <i class="ri-alert-fill text-yellow-400"></i>
                     </div>
                     <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
                         <h3 class="text-sm font-medium text-yellow-800">
@@ -100,13 +101,13 @@
             <div class="space-y-4">
                 <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
                    class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                    <i class="fas fa-sign-in-alt {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }}"></i>
+                    <i class="ri-login-box-line {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }}"></i>
                     {{ __('auth.register.teacher.success.login_button') }}
                 </a>
 
                 <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
                    class="w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                    <i class="fas fa-home {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }}"></i>
+                    <i class="ri-home-line {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }}"></i>
                     {{ __('auth.register.teacher.success.home_button') }}
                 </a>
             </div>

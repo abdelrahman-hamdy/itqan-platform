@@ -4,39 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $academy->name ?? __('common.academy_default') }} - {{ __('common.maintenance.title') }}</title>
     <meta name="description" content="{{ __('common.maintenance.subtitle') }}">
     <meta http-equiv="refresh" content="60">
-    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Vite Assets (Compiled CSS & JS) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- RemixIcon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
 
-    @if($academy ?? null)
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "{{ $academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }}",
-                        primaryLight: "{{ $academy->brand_color?->getHexValue(100) ?? '#e0f2fe' }}",
-                        primaryDark: "{{ $academy->brand_color?->getHexValue(700) ?? '#0369a1' }}",
-                        secondary: "{{ $academy->secondary_color?->getHexValue(500) ?? '#10B981' }}",
-                    },
-                    fontFamily: {
-                        'cairo': ['Cairo', 'sans-serif'],
-                        'tajawal': ['Tajawal', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    @endif
-
     <style>
-        body {
-            font-family: 'Tajawal', sans-serif;
+        :root {
+            --color-primary-500: {{ $academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }};
+            --color-primary-100: {{ $academy->brand_color?->getHexValue(100) ?? '#e0f2fe' }};
+            --color-primary-700: {{ $academy->brand_color?->getHexValue(700) ?? '#0369a1' }};
+            --color-secondary-500: {{ $academy->secondary_color?->getHexValue(500) ?? '#10B981' }};
         }
 
         .gear-rotate {
@@ -64,17 +48,22 @@
                 radial-gradient(circle at 40% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 50%);
         }
 
-        .text-gradient {
-            background: linear-gradient(135deg, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
         .countdown-item {
             background: linear-gradient(135deg, white 0%, rgba(255, 255, 255, 0.95) 100%);
             backdrop-filter: blur(10px);
         }
+
+        /* Primary color utilities for maintenance page */
+        .from-primary { --tw-gradient-from: var(--color-primary-500); }
+        .to-primaryDark { --tw-gradient-to: var(--color-primary-700); }
+        .bg-primaryLight\/30 { background-color: color-mix(in srgb, var(--color-primary-100) 30%, transparent); }
+        .border-primaryLight { border-color: var(--color-primary-100); }
+        .bg-primary\/10 { background-color: color-mix(in srgb, var(--color-primary-500) 10%, transparent); }
+        .text-primary { color: var(--color-primary-500); }
+        .bg-secondary\/10 { background-color: color-mix(in srgb, var(--color-secondary-500) 10%, transparent); }
+        .border-secondary\/20 { border-color: color-mix(in srgb, var(--color-secondary-500) 20%, transparent); }
+        .text-secondary { color: var(--color-secondary-500); }
+        .from-secondary { --tw-gradient-from: var(--color-secondary-500); }
     </style>
 </head>
 

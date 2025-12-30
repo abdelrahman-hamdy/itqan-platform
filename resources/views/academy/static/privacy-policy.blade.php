@@ -11,22 +11,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>سياسة الخصوصية - {{ $academy->name ?? 'أكاديمية إتقان' }}</title>
   <meta name="description" content="سياسة الخصوصية وحماية البيانات في {{ $academy->name ?? 'أكاديمية إتقان' }}">
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+
+  <!-- Vite Assets (Compiled CSS & JS) -->
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+  <!-- RemixIcon -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ $academy->brand_color ?? $academy->primary_color ?? '#4169E1' }}",
-            secondary: "{{ $academy->secondary_color ?? '#6495ED' }}",
-          },
-        },
-      },
-    };
-  </script>
+
+  <style>
+    :root {
+      --color-primary-500: {{ $academy->brand_color?->getHexValue(500) ?? '#4169E1' }};
+      --color-secondary-500: {{ $academy->secondary_color?->getHexValue(500) ?? '#6495ED' }};
+    }
+  </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
   <!-- Navigation -->

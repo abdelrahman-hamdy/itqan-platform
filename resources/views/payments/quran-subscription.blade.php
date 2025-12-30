@@ -4,22 +4,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>دفع اشتراك القرآن الكريم - {{ $academy->name ?? 'أكاديمية إتقان' }}</title>
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+
+  <!-- Vite Assets (Compiled CSS & JS) -->
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+  <!-- RemixIcon -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: @json(preg_match('/^#[a-fA-F0-9]{6}$/', $academy->primary_color ?? '') ? $academy->primary_color : '#4169E1'),
-            secondary: @json(preg_match('/^#[a-fA-F0-9]{6}$/', $academy->secondary_color ?? '') ? $academy->secondary_color : '#6495ED'),
-          }
-        }
-      }
-    };
-  </script>
+
   <style>
+    :root {
+      --color-primary-500: {{ $academy->brand_color?->getHexValue(500) ?? '#4169E1' }};
+      --color-secondary-500: {{ $academy->secondary_color?->getHexValue(500) ?? '#6495ED' }};
+    }
     .card-hover {
       transition: all 0.3s ease;
     }

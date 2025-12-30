@@ -7,40 +7,21 @@
   <title>{{ $academy->name ?? __('components.layouts.academy_default') }} - {{ $title ?? __('components.layouts.homepage') }}</title>
   <meta name="description" content="{{ $description ?? __('components.layouts.academy_elearning') }}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Vite Assets (Compiled CSS & JS) -->
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+  <!-- RemixIcon -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <!-- Flag Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Tajawal', 'sans-serif'],
-          },
-          colors: {
-            primary: "{{ $academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }}",
-            secondary: "{{ $academy->secondary_color?->getHexValue(500) ?? '#10B981' }}",
-          },
-          borderRadius: {
-            none: "0px",
-            sm: "4px",
-            DEFAULT: "8px",
-            md: "12px",
-            lg: "16px",
-            xl: "20px",
-            "2xl": "24px",
-            "3xl": "32px",
-            full: "9999px",
-            button: "8px",
-          },
-        },
-      },
-    };
-  </script>
+
   <style>
+    :root {
+      --color-primary-500: {{ $academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }};
+      --color-secondary-500: {{ $academy->secondary_color?->getHexValue(500) ?? '#10B981' }};
+    }
+
     .card-hover {
       transition: all 0.3s ease;
     }
@@ -55,33 +36,9 @@
       background: rgba(255, 255, 255, 0.95);
     }
 
-    /* LTR Direction Fixes */
-    [dir="ltr"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
-    [dir="ltr"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
-    [dir="ltr"] .ml-3 { margin-left: 0; margin-right: 0.75rem; }
-    [dir="ltr"] .mr-1 { margin-right: 0; margin-left: 0.25rem; }
-    [dir="ltr"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }
-    [dir="ltr"] .mr-3 { margin-right: 0; margin-left: 0.75rem; }
-
-    /* Arrow icon flipping for LTR */
-    [dir="ltr"] .ri-arrow-right-line,
-    [dir="ltr"] .ri-arrow-right-s-line,
-    [dir="ltr"] .ri-arrow-left-line,
-    [dir="ltr"] .ri-arrow-left-s-line {
-      transform: scaleX(-1);
-    }
-
-    /* Space-x fix for LTR */
-    [dir="ltr"] .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
-      --tw-space-x-reverse: 0;
-    }
-    [dir="ltr"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
-      margin-right: 0;
-      margin-left: 0.5rem;
-    }
-    [dir="ltr"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
-      margin-right: 0;
-      margin-left: 1rem;
+    /* Custom button radius */
+    .rounded-button {
+      border-radius: 8px;
     }
   </style>
 </head>

@@ -20,22 +20,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{{ __('public.academic_packages.title') }} - {{ $academy->name ?? __('common.academy_default') }}</title>
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+
+  <!-- Vite Assets (Compiled CSS & JS) -->
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+  <!-- RemixIcon -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ $academy->primary_color ?? '#4169E1' }}",
-            gradientFrom: "{{ $gradientPalette->getPreviewHex() }}",
-            gradientTo: "{{ $gradientToHex }}",
-          }
-        }
-      }
-    };
-  </script>
+
+  <style>
+    :root {
+      --color-primary-500: {{ $academy->brand_color?->getHexValue(500) ?? '#4169E1' }};
+      --gradient-from: {{ $gradientPalette->getPreviewHex() }};
+      --gradient-to: {{ $gradientToHex }};
+    }
+  </style>
 </head>
 
 <body class="bg-gray-50 font-sans">

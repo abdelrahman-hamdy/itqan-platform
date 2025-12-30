@@ -49,15 +49,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $academy ? $academy->name . ' - ' : '' }}{{ $title ?? __('common.platform_name') }}</title>
-    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+
+    <!-- Vite Assets (Compiled CSS & JS) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- RemixIcon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
 
     <!-- Load intl-tel-input BEFORE Alpine.js -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/css/intlTelInput.css">
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/intlTelInput.min.js"></script>
-
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <script>
         // Store colors for Alpine.js components
@@ -71,33 +74,15 @@
                 toHex: '{{ $gradientToHex }}'
             }
         };
-
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "{{ $primaryColorHex }}",
-                        secondary: "{{ $gradientToHex }}",
-                    },
-                    borderRadius: {
-                        button: "8px",
-                    },
-                },
-            },
-        };
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap');
-
         :root {
             --primary-color: {{ $primaryColorHex }};
             --gradient-from: {{ $gradientFromHex }};
             --gradient-to: {{ $gradientToHex }};
-        }
-
-        body {
-            font-family: 'Tajawal', sans-serif;
+            --color-primary-500: {{ $primaryColorHex }};
+            --color-secondary-500: {{ $gradientToHex }};
         }
 
         /* Gradient button styles */
@@ -164,6 +149,11 @@
         @keyframes validationPulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
+        }
+
+        /* Custom button radius */
+        .rounded-button {
+            border-radius: 8px;
         }
     </style>
 
